@@ -137,6 +137,7 @@ Frame::Frame(const char* _name) {
 	actualSize.h = 0;
 
 	color = 0;
+	borderColor = 0;
 
 	name = _name;
 }
@@ -229,15 +230,6 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	scaledSize.h = _size.h;
 
 	auto white = Image::get("images/system/white.png");
-	Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
-	Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
-	Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
-	Uint8 a = color >> mainsurface->format->Ashift;
-	Uint32 darkColor =
-		(Uint32)r << mainsurface->format->Rshift |
-		(Uint32)g << mainsurface->format->Gshift |
-		(Uint32)b << mainsurface->format->Bshift |
-		(Uint32)a << mainsurface->format->Ashift;
 
 	// draw frame background
 	if (!hollow) {
@@ -247,11 +239,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		inner.w = (_size.w - border*2);
 		inner.h = (_size.h - border*2);
 		if (borderStyle == BORDER_BEVEL_HIGH) {
-			white->drawColor(nullptr, scaledSize, viewport, darkColor);
+			white->drawColor(nullptr, scaledSize, viewport, borderColor);
 			white->drawColor(nullptr, inner, viewport, color);
 		} else if (borderStyle == BORDER_BEVEL_LOW) {
 			white->drawColor(nullptr, scaledSize, viewport, color);
-			white->drawColor(nullptr, inner, viewport, darkColor);
+			white->drawColor(nullptr, inner, viewport, borderColor);
 		} else {
 			white->drawColor(nullptr, scaledSize, viewport, color);
 		}
@@ -282,7 +274,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		barRect.y = scaledSize.y + scaledSize.h;
 		barRect.w = scaledSize.w;
 		barRect.h = sliderSize * (float)yres / (float)Frame::virtualScreenY;
-		white->drawColor(nullptr, barRect, viewport, darkColor);
+		white->drawColor(nullptr, barRect, viewport, borderColor);
 
 		// handle
 		float winFactor = ((float)_size.w / (float)actualSize.w);
@@ -310,7 +302,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		barRect.y = scaledSize.y;
 		barRect.w = sliderSize;
 		barRect.h = scaledSize.h;
-		white->drawColor(nullptr, barRect, viewport, darkColor);
+		white->drawColor(nullptr, barRect, viewport, borderColor);
 
 		// handle
 		float winFactor = ((float)_size.h / (float)actualSize.h);

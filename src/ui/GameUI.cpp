@@ -3092,10 +3092,10 @@ void createInventoryTooltipFrame(const int player)
 	}
 }
 
-void drawCharacterPreview(const int player, SDL_Rect pos)
+void drawCharacterPreview(const int player, SDL_Rect pos, int fov)
 {
-	double ofov = fov;
-	fov = 50;
+	auto ofov = ::fov;
+	::fov = fov;
 
 	//TempTexture* minimapTexture = new TempTexture();
 
@@ -3199,7 +3199,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 			camera_charsheet_offsetyaw += 2 * PI;
 		}
 	}
-	fov = ofov;
+	::fov = ofov;
 }
 
 Player::SkillSheet_t::SkillSheetData_t Player::SkillSheet_t::skillSheetData;
@@ -3712,7 +3712,7 @@ void createPlayerInventory(const int player)
 
 			charFrame->setSize(charSize);
 			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
-				drawCharacterPreview(widget.getOwner(), pos);
+				drawCharacterPreview(widget.getOwner(), pos, 50);
 			});
 			/*charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
 				SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),

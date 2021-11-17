@@ -4392,7 +4392,7 @@ namespace MainMenu {
 		);
 
 		static auto class_name_fn = [](Field& field, int index){
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				field.setText(find->second.name);
@@ -4797,7 +4797,7 @@ namespace MainMenu {
 		auto class_text = card->addField("class_text", 64);
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				field.setText(find->second.name);
@@ -4814,7 +4814,7 @@ namespace MainMenu {
 		(*class_text->getTickCallback())(*class_text);
 
 		static auto class_button_fn = [](Button& button, int index) {
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				auto& class_info = find->second;
@@ -5003,13 +5003,33 @@ namespace MainMenu {
 
 		for (int c = 0; c < 4; ++c) {
 			auto name = std::string("paperdoll") + std::to_string(c);
-			auto frame = lobby->addFrame(name.c_str());
-			frame->setSize(SDL_Rect{c * Frame::virtualScreenX / 4, Frame::virtualScreenY / 4, Frame::virtualScreenX / 4, Frame::virtualScreenY / 2});
-			frame->setOwner(c);
-			frame->setColor(0);
-			frame->setBorder(0);
-			frame->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-				drawCharacterPreview(widget.getOwner(), pos);
+			auto paperdoll = lobby->addFrame(name.c_str());
+			paperdoll->setOwner(c);
+			paperdoll->setColor(makeColor(33, 26, 24, 255));
+			paperdoll->setBorderColor(makeColor(116, 55, 0, 255));
+			paperdoll->setBorder(2);
+			paperdoll->setInvisible(true);
+			paperdoll->setTickCallback([](Widget& widget){
+				widget.setInvisible(true);
+				int index = widget.getOwner();
+				auto paperdoll = static_cast<Frame*>(&widget);
+				auto lobby = static_cast<Frame*>(widget.getParent());
+				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+				if (card) {
+					auto backdrop = card->findImage("backdrop");
+					paperdoll->setSize(SDL_Rect{
+						index * Frame::virtualScreenX / 4,
+						Frame::virtualScreenY / 8,
+						Frame::virtualScreenX / 4,
+						card->getSize().y - (Frame::virtualScreenY / 8) + 8
+						});
+					if (backdrop && backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+						widget.setInvisible(false);
+					}
+				}
+				});
+			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+				drawCharacterPreview(widget.getOwner(), pos, 50);
 				});
 		}
 

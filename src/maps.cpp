@@ -2613,7 +2613,7 @@ void assignActions(map_t* map)
 			{
 				if ( numplayers >= 0 && numplayers < MAXPLAYERS )
 				{
-					if ( client_disconnected[numplayers] )
+					if ( client_disconnected[numplayers] && !intro )
 					{
 						// don't spawn missing players
 						++numplayers;
