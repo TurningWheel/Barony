@@ -396,9 +396,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// init new ui engine
-#ifndef EDITOR
 	Frame::guiInit();
-#endif
 
 	// cache language entries
 	bool cacheText = false;
@@ -2071,9 +2069,7 @@ int deinitApp()
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
-#ifndef EDITOR
 	Frame::guiDestroy();
-#endif
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )

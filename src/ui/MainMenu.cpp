@@ -5,6 +5,7 @@
 #include "Button.hpp"
 #include "Slider.hpp"
 #include "Text.hpp"
+#include "GameUI.hpp"
 
 #include "../init.hpp"
 #include "../net.hpp"
@@ -4999,6 +5000,18 @@ namespace MainMenu {
 		lobby->setActualSize(SDL_Rect{0, 0, lobby->getSize().w, lobby->getSize().h});
 		lobby->setHollow(true);
 		lobby->setBorder(0);
+
+		for (int c = 0; c < 4; ++c) {
+			auto name = std::string("paperdoll") + std::to_string(c);
+			auto frame = lobby->addFrame(name.c_str());
+			frame->setSize(SDL_Rect{c * Frame::virtualScreenX / 4, Frame::virtualScreenY / 4, Frame::virtualScreenX / 4, Frame::virtualScreenY / 2});
+			frame->setOwner(c);
+			frame->setColor(0);
+			frame->setBorder(0);
+			frame->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+				drawCharacterPreview(widget.getOwner(), pos);
+				});
+		}
 
 		auto back_button = createBackWidget(lobby, [](Button&){
 			soundCancel();

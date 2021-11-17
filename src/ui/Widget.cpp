@@ -80,10 +80,12 @@ Widget* Widget::handleInput() {
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result && !result->disabled && !result->invisible) {
 						auto in = input.input(move.first.c_str());
+#ifndef EDITOR
 						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON) {
 							inputs.getVirtualMouse(owner)->draw_cursor = false;
 						}
 						playSound(495, 64);
+#endif
 						result->scrollParent();
 						return result;
 					}
@@ -99,9 +101,11 @@ Widget* Widget::handleInput() {
 					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (result && !result->disabled) {
 						auto in = input.input(action.first.c_str());
+#ifndef EDITOR
 						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON) {
 							inputs.getVirtualMouse(owner)->draw_cursor = false;
 						}
+#endif
 						result->activate();
 						return nullptr;
 					}

@@ -72,7 +72,11 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 		return;
 	}
 
+#ifdef EDITOR
+	bool focused = highlighted || selected;
+#else
 	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
+#endif
 
 	SDL_Rect scaledSize;
 	scaledSize.x = _size.x;
@@ -326,7 +330,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-#ifndef NINTENDO
+#if !defined(NINTENDO) && !defined(EDITOR)
 	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;

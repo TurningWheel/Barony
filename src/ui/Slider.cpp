@@ -23,7 +23,11 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 
 	SDL_Rect _handleSize, _railSize;
 
+#ifdef EDITOR
+	bool focused = highlighted || selected;
+#else
 	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
+#endif
 
 	auto white = Image::get("images/system/white.png");
 	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
@@ -183,7 +187,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-#ifndef NINTENDO
+#if !defined(NINTENDO) && !defined(EDITOR)
 	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;

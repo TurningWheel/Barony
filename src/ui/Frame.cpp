@@ -360,7 +360,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		drawImage(image, _size, scroll);
 	}
 
+#ifdef EDITOR
+	const bool mouseActive = true;
+#else
 	const bool mouseActive = inputs.getVirtualMouse(owner)->draw_cursor;
+#endif
 
 	// draw list entries
 	if (list.size()) {
@@ -716,7 +720,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
+#ifdef EDITOR
+	const bool mouseActive = true;
+#else
 	const bool mouseActive = inputs.getVirtualMouse(owner)->draw_cursor || mousexrel || mouseyrel;
+#endif
 
 	// scroll with mouse wheel
 	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
@@ -1404,11 +1412,13 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 
 void Frame::warpMouseToFrame(const int player, Uint32 flags) const
 {
+#ifndef EDITOR
 	SDL_Rect _size = getAbsoluteSize();
 	inputs.warpMouse(player,
 		(_size.x + _size.w / 2) * ((float)xres / (float)Frame::virtualScreenX),
 		(_size.y + _size.h / 2) * ((float)yres / (float)Frame::virtualScreenY),
 		flags);
+#endif
 }
 
 SDL_Rect Frame::getAbsoluteSize() const
