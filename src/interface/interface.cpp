@@ -1645,7 +1645,9 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	}
 	else if ( activeModule == MODULE_CHARACTERSHEET )
 	{
-		player.characterSheet.selectElement(player.characterSheet.selectedElement, true);
+		const bool updateCursor = true;
+		const bool usingMouse = false;
+		player.characterSheet.selectElement(player.characterSheet.selectedElement, usingMouse, updateCursor);
 		return true;
 	}
 	return warped;
