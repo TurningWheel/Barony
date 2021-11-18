@@ -17,6 +17,7 @@
 #include "../interface/interface.hpp"
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
+#include "../classdescriptions.hpp"
 
 #include <cassert>
 #include <functional>
@@ -3933,15 +3934,27 @@ namespace MainMenu {
 				if (strcmp(button.getName(), race) == 0) {
 					stats[index]->playerRace = c;
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
+						stats[index]->appearance = 0;
 						stats[index]->sex = FEMALE;
 					}
 					else if (stats[index]->playerRace == RACE_INCUBUS) {
+						stats[index]->appearance = 0;
 						stats[index]->sex = MALE;
+					}
+					else if (stats[index]->playerRace == RACE_HUMAN) {
+						stats[index]->appearance = rand() % NUMAPPEARANCES;
+					}
+					else {
+						stats[index]->appearance = 0;
 					}
 				} else {
 					auto other_button = frame->findButton(race);
 					other_button->setPressed(false);
 				}
+			}
+			auto disable_abilities = frame->findButton("disable_abilities");
+			if (disable_abilities) {
+				disable_abilities->setPressed(false);
 			}
 		};
 
@@ -4803,11 +4816,65 @@ namespace MainMenu {
 
 		static auto randomize_class_fn = [](Button& button, int index){
 			soundActivate();
+
+			auto card = static_cast<Frame*>(button.getParent());
+
+			// select a random sex
+			stats[index]->sex = (sex_t)(rand() % 2);
+
+			// select a random race
+			// there are 9 legal races that the player can select from the start.
+			stats[index]->playerRace = rand() % 9;
+			auto race_button = card->findButton("race");
+			if (race_button) {
+				switch (stats[index]->playerRace) {
+				case RACE_HUMAN: race_button->setText("Human"); break;
+				case RACE_SKELETON: race_button->setText("Skeleton"); break;
+				case RACE_VAMPIRE: race_button->setText("Vampire"); break;
+				case RACE_SUCCUBUS: race_button->setText("Succubus"); break;
+				case RACE_GOATMAN: race_button->setText("Goatman"); break;
+				case RACE_AUTOMATON: race_button->setText("Automaton"); break;
+				case RACE_INCUBUS: race_button->setText("Incubus"); break;
+				case RACE_GOBLIN: race_button->setText("Goblin"); break;
+				case RACE_INSECTOID: race_button->setText("Insectoid"); break;
+				case RACE_RAT: race_button->setText("Rat"); break;
+				case RACE_TROLL: race_button->setText("Troll"); break;
+				case RACE_SPIDER: race_button->setText("Spider"); break;
+				case RACE_IMP: race_button->setText("Imp"); break;
+				}
+			}
+
+			// choose a random appearance
+			if (stats[index]->playerRace == RACE_HUMAN) {
+				stats[index]->appearance = rand() % NUMAPPEARANCES;
+			} else {
+				stats[index]->appearance = 0; rand();
+			}
+
+			// update sex buttons after race selection:
+			// we might have chosen a succubus or incubus
+			auto male_button = card->findButton("male");
+			auto female_button = card->findButton("female");
+			if (male_button && female_button) {
+				if (stats[index]->sex == MALE) {
+					male_button->setColor(makeColor(255, 255, 255, 255));
+					male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					female_button->setColor(makeColor(127, 127, 127, 255));
+					female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				} else {
+					female_button->setColor(makeColor(255, 255, 255, 255));
+					female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					male_button->setColor(makeColor(127, 127, 127, 255));
+					male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				}
+			}
+
+			// select a random class
 			auto reduced_class_list = reducedClassList(index);
 			auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
-			for (int c = 0; c < num_classes; ++c) {
+			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
-					client_classes[index] = c;
+					client_classes[index] = c - 1;
 					stats[index]->clearStats();
 					initClass(index);
 					return;
@@ -5031,6 +5098,25 @@ namespace MainMenu {
 	void createLobby(LobbyType type) {
 		destroyMainMenu();
 		createDummyMainMenu();
+
+		// reset ALL player stats
+		for (int c = 0; c < 4; ++c) {
+			stats[c]->playerRace = 0;
+			stats[c]->sex = static_cast<sex_t>(rand() % 2);
+			stats[c]->appearance = rand() % NUMAPPEARANCES;
+			stats[c]->clearStats();
+			client_classes[c] = 0;
+			initClass(c);
+
+			// random name
+			auto& names = stats[c]->sex == sex_t::MALE ?
+				randomPlayerNamesMale : randomPlayerNamesFemale;
+			auto name = names[rand() % names.size()].c_str();
+			size_t len = strlen(name);
+			len = std::min(sizeof(Stat::name) - 1, len);
+			memcpy(stats[c]->name, name, len);
+			stats[c]->name[len] = '\0';
+		}
 
 		currentLobbyType = type;
 

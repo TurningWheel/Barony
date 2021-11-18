@@ -5797,7 +5797,7 @@ int main(int argc, char** argv)
 					}
 					if (((subwindow && !players[i]->shootmode) || gamePaused))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor && (i != 0 || !gamePaused) )
+						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == 0 || !gamePaused) )
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;

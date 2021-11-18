@@ -174,8 +174,8 @@ static const int STAT_FLAG_MONSTER_DISABLE_HC_SCALING = 26;
 
 typedef enum
 {
-	MALE,
-	FEMALE
+	MALE = 0,
+	FEMALE = 1
 } sex_t;
 
 class Stat
