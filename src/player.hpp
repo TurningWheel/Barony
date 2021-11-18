@@ -1099,10 +1099,16 @@ public:
 		{
 			real_t animateX = 0.0;
 			real_t animateY = 0.0;
+			real_t animateW = 0.0;
+			real_t animateH = 0.0;
 			int animateSetpointX = 0;
 			int animateSetpointY = 0;
+			int animateSetpointW = 0;
+			int animateSetpointH = 0;
 			int animateStartX = 0;
 			int animateStartY = 0;
+			int animateStartW = 0;
+			int animateStartH = 0;
 			Uint32 lastUpdateTick = 0;
 			const int cursorToSlotOffset = 7;
 		};

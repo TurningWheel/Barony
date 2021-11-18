@@ -816,7 +816,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		this->sheetFrame = sheetFrame;
 
 		const int bgWidth = 208;
-		const int leftAlignX = sheetFrame->getSize().x + sheetFrame->getSize().w - bgWidth;
+		const int leftAlignX = sheetFrame->getSize().w - bgWidth;
 		{
 			Frame* fullscreenBg = sheetFrame->addFrame("sheet bg fullscreen");
 			fullscreenBg->setSize(SDL_Rect{ leftAlignX,
@@ -849,6 +849,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapText->setVJustify(Field::justify_t::CENTER);
 			mapText->setHJustify(Field::justify_t::CENTER);
 			mapText->setText("OPEN MAP");
+			buttonFrame->addFrame("map button selector")->setSize(buttonPos);
 
 			buttonPos.y = buttonPos.y + buttonPos.h + 2;
 			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "log button img");
@@ -858,6 +859,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logText->setVJustify(Field::justify_t::CENTER);
 			logText->setHJustify(Field::justify_t::CENTER);
 			logText->setText("OPEN LOG");
+			buttonFrame->addFrame("log button selector")->setSize(buttonPos);
 		}
 
 		// game timer
@@ -895,17 +897,49 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsText->setText("Skills List");
 		}
 
+		// dungeon floor and level descriptor
+		{
+			const char* dungeonFont = "fonts/pixel_maz.ttf#32#2";
+			Uint32 dungeonTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+			Frame* dungeonFloorFrame = sheetFrame->addFrame("dungeon floor frame");
+
+			dungeonFloorFrame->setSize(SDL_Rect{ leftAlignX + 6, 118, 202, 52 });
+			auto selector = dungeonFloorFrame->addFrame("dungeon floor selector");
+			selector->setSize(SDL_Rect{ 6, 6, 190, 44 });
+
+			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
+			floorNameText->setFont(dungeonFont);
+			floorNameText->setSize(SDL_Rect{ 20, 0, 162, 26 });
+			floorNameText->setText("Sand Labyrinth");
+			floorNameText->setVJustify(Field::justify_t::CENTER);
+			floorNameText->setHJustify(Field::justify_t::CENTER);
+			floorNameText->setColor(dungeonTextColor);
+
+			auto floorLevelText = dungeonFloorFrame->addField("dungeon level text", 32);
+			floorLevelText->setFont(dungeonFont);
+			floorLevelText->setSize(SDL_Rect{ 20, 26, 162, 26 });
+			floorLevelText->setText("Floor 27");
+			floorLevelText->setVJustify(Field::justify_t::CENTER);
+			floorLevelText->setHJustify(Field::justify_t::CENTER);
+			floorLevelText->setColor(dungeonTextColor);
+		}
+
 		Frame* characterFrame = sheetFrame->addFrame("character info");
 		const char* infoFont = "fonts/pixel_maz.ttf#32#2";
 		characterFrame->setSize(SDL_Rect{ leftAlignX, 206, bgWidth, 116});
 		Uint32 infoTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
 		Uint32 classTextColor = SDL_MapRGBA(mainsurface->format, 74, 66, 207, 255);
 
+		sheetFrame->addImage(SDL_Rect{ characterFrame->getSize().x, characterFrame->getSize().y - 60, 
+			214, 170 }, 0xFFFFFFFF,
+			"images/ui/CharSheet/HUD_CharSheet_Window_01A_TopCompact.png", "character info compact img");
+
 		Frame* characterInnerFrame = characterFrame->addFrame("character info inner frame");
 		characterInnerFrame->setSize(SDL_Rect{ 6, 0, 202, 104 });
 		{
-			characterInnerFrame->addImage(SDL_Rect{ 0, 0, characterInnerFrame->getSize().w, characterInnerFrame->getSize().h }, 0xFFFFFFFF,
-				"images/ui/CharSheet/HUD_CharSheet_Window_01A_TopTmp.png", "character info tmp img");
+			//characterInnerFrame->addImage(SDL_Rect{ 0, 0, characterInnerFrame->getSize().w, characterInnerFrame->getSize().h }, 0xFFFFFFFF,
+			//	"images/ui/CharSheet/HUD_CharSheet_Window_01A_TopTmp.png", "character info tmp img");
+
 
 			SDL_Rect characterTextPos{ 2, 0, 198, 24 };
 			auto nameText = characterInnerFrame->addField("character name text", 32);
@@ -919,24 +953,32 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			nameText->setHJustify(Field::justify_t::CENTER);
 			nameText->setColor(infoTextColor);
 
+			/*characterInnerFrame->addImage(SDL_Rect{ 2, 2, 198, 20 }, makeColor(255, 255, 255, 64),
+				"images/system/white.png", "character name frame");*/
+			//characterInnerFrame->addFrame("character name selector")->setSize(SDL_Rect{ 2, 2, 198, 20 });
+
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
-			characterTextPos.y = 54;
-			characterTextPos.h = 22;
+			characterTextPos.y = 52;
+			characterTextPos.h = 26;
 			auto levelText = characterInnerFrame->addField("character level text", 32);
 			levelText->setFont(infoFont);
 			levelText->setSize(SDL_Rect{ characterTextPos.x,
 				characterTextPos.y,
 				characterTextPos.w,
 				characterTextPos.h });
-			levelText->setText("Level 237");
+			levelText->setText("");
 			levelText->setVJustify(Field::justify_t::CENTER);
 			levelText->setColor(infoTextColor);
 
+			/*characterInnerFrame->addImage(SDL_Rect{ 4, 54, 194, 22 }, makeColor(255, 255, 255, 64),
+				"images/system/white.png", "character level frame");*/
+			characterInnerFrame->addFrame("character class selector")->setSize(SDL_Rect{ 4, 54, 194, 22 });
+
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
-			characterTextPos.y = 54;
-			characterTextPos.h = 22;
+			characterTextPos.y = 52;
+			characterTextPos.h = 26;
 			auto classText = characterInnerFrame->addField("character class text", 32);
 			classText->setFont(infoFont);
 			classText->setSize(SDL_Rect{ characterTextPos.x,
@@ -950,8 +992,8 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
-			characterTextPos.y = 28;
-			characterTextPos.h = 22;
+			characterTextPos.y = 26;
+			characterTextPos.h = 26;
 			auto raceText = characterInnerFrame->addField("character race text", 32);
 			raceText->setFont(infoFont);
 			raceText->setSize(SDL_Rect{ characterTextPos.x,
@@ -967,24 +1009,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				SDL_Rect{ characterTextPos.x + characterTextPos.w - 40, characterTextPos.y - 4, 16, 28}, 0xFFFFFFFF,
 				"images/ui/CharSheet/HUD_CharSheet_Sex_M_01.png", "character sex img");
 
-			{ // to move
-				auto floorText = characterInnerFrame->addField("dungeon floor text", 32);
-				floorText->setFont(infoFont);
-				floorText->setSize(SDL_Rect{ characterTextPos.x + 18,
-					characterTextPos.y + 52,
-					146, 
-					22 });
-				floorText->setText("Floor 27");
-				floorText->setVJustify(Field::justify_t::CENTER);
-				floorText->setHJustify(Field::justify_t::CENTER);
-				floorText->setColor(infoTextColor);
-				floorText->setDisabled(true);
-			}
+			/*characterInnerFrame->addImage(SDL_Rect{ 4, 28, 194, 22 }, makeColor(255, 255, 255, 64),
+				"images/system/white.png", "character race frame");*/
+			characterInnerFrame->addFrame("character race selector")->setSize(SDL_Rect{ 4, 28, 194, 22 });
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
-			characterTextPos.y = 80;
-			characterTextPos.h = 22;
+			characterTextPos.y = 78;
+			characterTextPos.h = 26;
 			auto goldTitleText = characterInnerFrame->addField("gold text title", 8);
 			goldTitleText->setFont(infoFont);
 			goldTitleText->setSize(SDL_Rect{ 48, characterTextPos.y, 52, characterTextPos.h });
@@ -1002,6 +1034,10 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			auto goldImg = characterInnerFrame->addImage(SDL_Rect{ 24, characterTextPos.y - 4, 20, 28 },
 				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonMoney_00.png", "gold img");
+
+			/*characterInnerFrame->addImage(SDL_Rect{ 24, 80, 156, 22 }, makeColor(255, 255, 255, 64),
+				"images/system/white.png", "character gold frame");*/
+			characterInnerFrame->addFrame("character gold selector")->setSize(SDL_Rect{ 22, 80, 158, 22 });
 		}
 
 		{
@@ -1370,6 +1406,11 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		createCharacterSheet();
 	}
 
+	sheetFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
 	if ( !stats[player.playernum] || !players[player.playernum]->isLocalPlayer() )
 	{
 		sheetFrame->setDisabled(true);
@@ -1382,6 +1423,152 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		return;
 	}
 	sheetFrame->setDisabled(false);
+	
+	// resize elements for splitscreen
+	{
+		auto characterInfoFrame = sheetFrame->findFrame("character info");
+		const int bgWidth = 208;
+		const int leftAlignX = sheetFrame->getSize().w - bgWidth;
+		const int compactAlignX = leftAlignX - 256;
+		auto compactImgBg = sheetFrame->findImage("character info compact img");
+		Frame* dungeonFloorFrame = sheetFrame->findFrame("dungeon floor frame");
+		Frame* buttonFrame = sheetFrame->findFrame("log map buttons");
+		Frame* fullscreenBg = sheetFrame->findFrame("sheet bg fullscreen");
+		Frame* timerFrame = sheetFrame->findFrame("game timer");
+		Frame* skillsButtonFrame = sheetFrame->findFrame("skills button");
+
+		auto statsFrame = sheetFrame->findFrame("stats");
+		auto attributesFrame = sheetFrame->findFrame("attributes");
+
+		if ( keystatus[SDL_SCANCODE_U] )
+		{
+			// compact view
+			compactImgBg->disabled = false;
+			compactImgBg->pos.x = compactAlignX;
+			compactImgBg->pos.y = 0;
+
+			SDL_Rect pos = characterInfoFrame->getSize();
+			pos.x = compactAlignX;
+			pos.y = compactImgBg->pos.y + 60;
+			characterInfoFrame->setSize(pos);
+
+			SDL_Rect dungeonFloorFramePos = dungeonFloorFrame->getSize();
+			dungeonFloorFramePos.x = pos.x + 6;
+			dungeonFloorFramePos.y = pos.y - 56;
+			dungeonFloorFrame->setSize(dungeonFloorFramePos);
+
+			SDL_Rect buttonFramePos = buttonFrame->getSize();
+			buttonFramePos.x = compactAlignX + 8;
+			buttonFramePos.y = compactImgBg->pos.y + compactImgBg->pos.h + 1;
+			buttonFramePos.w = 198;
+			buttonFramePos.h = 40;
+			buttonFrame->setSize(buttonFramePos);
+			{
+				SDL_Rect buttonPos{ 0, 1, 98, 38 };
+				auto mapBtnImg = buttonFrame->findImage("map button img");
+				mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png";
+				mapBtnImg->pos = buttonPos;
+				auto mapText = buttonFrame->findField("map button text");
+				mapText->setSize(buttonPos);
+				mapText->setText("MAP");
+				auto mapSelector = buttonFrame->findFrame("map button selector");
+				SDL_Rect mapSelectorPos = buttonPos;
+				mapSelectorPos.x += 6;
+				mapSelectorPos.w -= 12;
+				mapSelectorPos.y += 4;
+				mapSelectorPos.h -= 8;
+				mapSelector->setSize(mapSelectorPos);
+
+				buttonPos.x = buttonFramePos.w - buttonPos.w;
+				auto logBtnImg = buttonFrame->findImage("log button img");
+				logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png";
+				logBtnImg->pos = buttonPos;
+				auto logText = buttonFrame->findField("log button text");
+				logText->setSize(buttonPos);
+				logText->setText("LOG");
+				auto logSelector = buttonFrame->findFrame("log button selector");
+				SDL_Rect logSelectorPos = buttonPos;
+				logSelectorPos.x += 6;
+				logSelectorPos.w -= 12;
+				logSelectorPos.y += 4;
+				logSelectorPos.h -= 10;
+				logSelector->setSize(logSelectorPos);
+			}
+
+			fullscreenBg->setDisabled(true);
+
+			auto statsPos = statsFrame->getSize();
+			statsPos.y = 0;
+			statsFrame->setSize(statsPos);
+
+			auto attributesPos = attributesFrame->getSize();
+			attributesPos.y = statsPos.y + statsPos.h - 4; // 4 pixels above bottom edge of stats pane
+			attributesFrame->setSize(attributesPos);
+		}
+		else
+		{
+			// standard view
+			SDL_Rect pos = characterInfoFrame->getSize();
+			pos.x = leftAlignX;
+			pos.y = 206;
+			characterInfoFrame->setSize(pos);
+
+			SDL_Rect dungeonFloorFramePos = dungeonFloorFrame->getSize();
+			dungeonFloorFramePos.x = pos.x + 6;
+			dungeonFloorFramePos.y = pos.y - 88;
+			dungeonFloorFrame->setSize(dungeonFloorFramePos);
+
+			SDL_Rect buttonFramePos = buttonFrame->getSize();
+			buttonFramePos.x = leftAlignX + 9;
+			buttonFramePos.y = 6;
+			buttonFramePos.w = 196;
+			buttonFramePos.h = 82;
+			buttonFrame->setSize(buttonFramePos);
+			{
+				SDL_Rect buttonPos{ 0, 0, buttonFramePos.w, 40 };
+				auto mapBtnImg = buttonFrame->findImage("map button img");
+				mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_Button_00.png";
+				mapBtnImg->pos = buttonPos;
+				auto mapText = buttonFrame->findField("map button text");
+				mapText->setSize(buttonPos);
+				mapText->setText("OPEN MAP");
+				auto mapSelector = buttonFrame->findFrame("map button selector");
+				mapSelector->setSize(buttonPos);
+
+				buttonPos.y = buttonPos.y + buttonPos.h + 2;
+				auto logBtnImg = buttonFrame->findImage("log button img");
+				logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png";
+				logBtnImg->pos = buttonPos;
+				auto logText = buttonFrame->findField("log button text");
+				logText->setSize(buttonPos);
+				logText->setText("OPEN LOG");
+				auto logSelector = buttonFrame->findFrame("log button selector");
+				logSelector->setSize(buttonPos);
+			}
+
+			SDL_Rect timerFramePos = timerFrame->getSize();
+			timerFramePos.x = leftAlignX + 36;
+			timerFrame->setSize(timerFramePos);
+
+			SDL_Rect skillsButtonFramePos = skillsButtonFrame->getSize();
+			skillsButtonFramePos.x = leftAlignX + 14;
+			skillsButtonFrame->setSize(skillsButtonFramePos);
+
+			fullscreenBg->setDisabled(false);
+			SDL_Rect fullscreenBgPos = fullscreenBg->getSize();
+			fullscreenBgPos.x = sheetFrame->getSize().w - fullscreenBgPos.w;
+			fullscreenBg->setSize(fullscreenBgPos);
+			compactImgBg->disabled = true;
+
+			auto attributesPos = attributesFrame->getSize();
+			attributesPos.y = sheetFrame->getSize().h - attributesPos.h;
+			attributesFrame->setSize(attributesPos);
+
+			auto statsPos = statsFrame->getSize();
+			statsPos.y = attributesPos.y - statsPos.h + 4; // 4 pixels below top edge of attributes pane
+			statsFrame->setSize(statsPos);
+		}
+	}
 
 	player.GUI.handleCharacterSheetMovement();
 
@@ -1403,13 +1590,15 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		case SHEET_OPEN_LOG:
 			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
 			{
-				img = elementFrame->findImage("log button img");
+				elementFrame = elementFrame->findFrame("log button selector");
+				//img = elementFrame->findImage("log button img");
 			}
 			break;
 		case SHEET_OPEN_MAP:
 			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
 			{
-				img = elementFrame->findImage("map button img");
+				elementFrame = elementFrame->findFrame("map button selector");
+				//img = elementFrame->findImage("map button img");
 			}
 			break;
 		case SHEET_SKILL_LIST:
@@ -1421,25 +1610,34 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		case SHEET_GOLD:
 			if ( elementFrame = sheetFrame->findFrame("character info") )
 			{
-				elementField = elementFrame->findField("gold text");
+				if ( elementFrame = elementFrame->findFrame("character info inner frame") )
+				{
+					elementFrame = elementFrame->findFrame("character gold selector");
+				}
 			}
 			break;
 		case SHEET_DUNGEON_FLOOR:
-			if ( elementFrame = sheetFrame->findFrame("character info") )
+			if ( elementFrame = sheetFrame->findFrame("dungeon floor frame") )
 			{
-				elementField = elementFrame->findField("dungeon floor text");
+				elementFrame = elementFrame->findFrame("dungeon floor selector");
 			}
 			break;
 		case SHEET_CHAR_CLASS:
 			if ( elementFrame = sheetFrame->findFrame("character info") )
 			{
-				elementField = elementFrame->findField("character class text");
+				if ( elementFrame = elementFrame->findFrame("character info inner frame") )
+				{
+					elementFrame = elementFrame->findFrame("character class selector");
+				}
 			}
 			break;
 		case SHEET_CHAR_RACE_SEX:
 			if ( elementFrame = sheetFrame->findFrame("character info") )
 			{
-				elementField = elementFrame->findField("character level text");
+				if ( elementFrame = elementFrame->findFrame("character info inner frame") )
+				{
+					elementFrame = elementFrame->findFrame("character race selector");
+				}
 			}
 			break;
 		case SHEET_STR:
@@ -1535,8 +1733,11 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		{
 			pos = elementField->getAbsoluteSize();
 		}
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= player.camera_virtualx1();
+		pos.y -= player.camera_virtualy1();
 		player.hud.setCursorDisabled(false);
-		player.hud.updateCursorAnimation(pos.x, pos.y, pos.w, pos.h, usingMouse);
+		player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
 	}
 }
 
@@ -1557,20 +1758,71 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 {
 	auto characterInfoFrame = sheetFrame->findFrame("character info");
 	assert(characterInfoFrame);
+	auto characterInnerFrame = characterInfoFrame->findFrame("character info inner frame");
+	assert(characterInnerFrame);
 
-	if ( characterInfoFrame->capturesMouse() && inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	SheetElements targetElement = SHEET_ENUM_END;
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		players[player.playernum]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-		selectElement(SheetElements::SHEET_CHAR_CLASS, true, true);
-		// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
+		if ( sheetFrame->findFrame("skills button")->capturesMouse() )
+		{
+			targetElement = SHEET_SKILL_LIST;
+		}
+		else if ( sheetFrame->findFrame("log map buttons")->findFrame("log button selector")->capturesMouse() )
+		{
+			targetElement = SHEET_OPEN_LOG;
+		}
+		else if ( sheetFrame->findFrame("log map buttons")->findFrame("map button selector")->capturesMouse() )
+		{
+			targetElement = SHEET_OPEN_MAP;
+		}
+		else if ( sheetFrame->findFrame("dungeon floor frame")->findFrame("dungeon floor selector")->capturesMouse() )
+		{
+			targetElement = SHEET_DUNGEON_FLOOR;
+		}
+		else if ( characterInfoFrame->capturesMouse() )
+		{
+			if ( characterInnerFrame->findFrame("character class selector")->capturesMouse() )
+			{
+				targetElement = SHEET_CHAR_CLASS;
+			}
+			else if ( characterInnerFrame->findFrame("character race selector")->capturesMouse() )
+			{
+				targetElement = SHEET_CHAR_RACE_SEX;
+			}
+			else if ( characterInnerFrame->findFrame("character gold selector")->capturesMouse() )
+			{
+				targetElement = SHEET_GOLD;
+			}
+			else if ( characterInnerFrame->findFrame("character gold selector")->capturesMouse() )
+			{
+				targetElement = SHEET_SKILL_LIST;
+			}
+		}
 	}
+	if ( targetElement != SHEET_ENUM_END )
+	{
+		player.GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+		selectElement(targetElement, true, true);
+	}
+	else
+	{
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+			{
+				// no moused over objects, deactivate the cursor.
+				player.GUI.activateModule(Player::GUI_t::MODULE_NONE);
+			}
+		}
+	}
+	messagePlayer(0, "%d", player.GUI.activeModule);
+	// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
 
 	//auto characterPos = characterInfoFrame->getSize();
 	//characterPos.x = player.camera_virtualWidth() - characterPos.w * 2;
 	//characterInfoFrame->setSize(characterPos);
 
-	auto characterInnerFrame = characterInfoFrame->findFrame("character info inner frame");
-	assert(characterInnerFrame);
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -1736,7 +1988,7 @@ void Player::CharacterSheet_t::updateStats()
 	assert(statsFrame);
 
 	auto statsPos = statsFrame->getSize();
-	statsPos.x = player.camera_virtualWidth() - statsPos.w * 2;
+	statsPos.x = sheetFrame->getSize().w - statsPos.w;
 	statsFrame->setSize(statsPos);
 
 	auto statsInnerFrame = statsFrame->findFrame("stats inner frame");
@@ -1912,7 +2164,7 @@ void Player::CharacterSheet_t::updateAttributes()
 	assert(attributesFrame);
 
 	auto attributesPos = attributesFrame->getSize();
-	attributesPos.x = player.camera_virtualWidth() - attributesPos.w * 3;
+	attributesPos.x = sheetFrame->getSize().w - attributesPos.w;
 	attributesFrame->setSize(attributesPos);
 
 	auto attributesInnerFrame = attributesFrame->findFrame("attributes inner frame");
@@ -5048,7 +5300,7 @@ void Player::Inventory_t::updateCursor()
 		const int smallOffset = 2;
 		const int largeOffset = 4;
 
-		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		int offset = ((ticks - cursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem 
@@ -5128,21 +5380,33 @@ void Player::HUD_t::updateCursorAnimation(int destx, int desty, int width, int h
 				);
 				cursor.animateSetpointX = destx;
 				cursor.animateSetpointY = desty;
+				cursor.animateSetpointW = width;
+				cursor.animateSetpointH = height;
+
 				cursor.animateStartX = destx;
 				cursor.animateStartY = desty;
+				cursor.animateStartW = width;
+				cursor.animateStartH = height;
 			}
 			else if ( cursor.animateSetpointX != destx || cursor.animateSetpointY != desty )
 			{
 				SDL_Rect size = hudCursor->getSize();
 				cursor.animateStartX = size.x;
 				cursor.animateStartY = size.y;
-				size.w = width + 2 * (cursor.cursorToSlotOffset + 1);
-				size.h = height + 2 * (cursor.cursorToSlotOffset + 1);
+				cursor.animateStartW = size.w;
+				cursor.animateStartH = size.h;
+
 				hudCursor->setSize(size);
 				cursor.animateSetpointX = destx;
 				cursor.animateSetpointY = desty;
+				cursor.animateSetpointW = width + 2 * (cursor.cursorToSlotOffset + 1);
+				cursor.animateSetpointH = height + 2 * (cursor.cursorToSlotOffset + 1);
+
 				cursor.animateX = 0.0;
 				cursor.animateY = 0.0;
+				cursor.animateW = 0.0;
+				cursor.animateH = 0.0;
+
 				cursor.lastUpdateTick = ticks;
 			}
 		}
@@ -5197,7 +5461,7 @@ void Player::HUD_t::updateCursor()
 		const int smallOffset = 2;
 		const int largeOffset = 4;
 
-		int offset = ((ticks - cursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		int offset = ((ticks - cursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
 			//if ( inputs.getUIInteraction(player.playernum)->selectedItem
@@ -5243,16 +5507,26 @@ void Player::HUD_t::updateCursor()
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
 			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
+			real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - cursor.animateW)) / (2.5);
+			real_t setpointDiffH = fpsScale * std::max(.1, (1.0 - cursor.animateH)) / (2.5);
 			cursor.animateX += setpointDiffX;
 			cursor.animateY += setpointDiffY;
 			cursor.animateX = std::min(1.0, cursor.animateX);
 			cursor.animateY = std::min(1.0, cursor.animateY);
+			cursor.animateW += setpointDiffW;
+			cursor.animateH += setpointDiffH;
+			cursor.animateW = std::min(1.0, cursor.animateW);
+			cursor.animateH = std::min(1.0, cursor.animateH);
 
 			int destX = cursor.animateSetpointX - cursor.animateStartX - offsetPosition;
 			int destY = cursor.animateSetpointY - cursor.animateStartY - offsetPosition;
+			int destW = cursor.animateSetpointW - cursor.animateStartW;
+			int destH = cursor.animateSetpointH - cursor.animateStartH;
 
 			currentPos.x = cursor.animateStartX + destX * cursor.animateX;
 			currentPos.y = cursor.animateStartY + destY * cursor.animateY;
+			currentPos.w = cursor.animateStartW + destW * cursor.animateW;
+			currentPos.h = cursor.animateStartH + destH * cursor.animateH;
 			hudCursor->setSize(currentPos);
 		}
 	}
@@ -5278,7 +5552,7 @@ void Player::Hotbar_t::updateCursor()
 				cursorSize.y = (oldSelectedFrame->getSize().y - 1) - shootmodeCursor.cursorToSlotOffset;
 				oldSelectedSlotCursor->setSize(cursorSize);
 
-				int offset = 8;// ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+				int offset = 8;// ((ticks - shootmodeCursor.lastUpdateTick) % TICKS_PER_SECOND < 25) ? largeOffset : smallOffset;
 
 				Uint8 r, g, b, a;
 				if ( auto tl = oldSelectedSlotCursor->findImage("hotbar old cursor topleft") )
