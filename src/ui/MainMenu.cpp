@@ -6225,9 +6225,11 @@ namespace MainMenu {
 			return;
 		}
 
+		clientnum = -1;
 		int playercount = 0;
 		for (int c = 0; c < 4; ++c) {
 			if (playersInLobby[c]) {
+				clientnum = clientnum == -1 ? c : clientnum;
 				players[c]->bSplitscreen = true;
 				client_disconnected[c] = false;
 				++playercount;

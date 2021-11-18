@@ -2992,7 +2992,7 @@ void actMonster(Entity* my)
 	int monsterclicked = -1;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if (inrange[i])
 			{
