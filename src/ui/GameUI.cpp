@@ -7316,7 +7316,8 @@ void Player::SkillSheet_t::createSkillSheet()
 	SDL_Rect skillSelectorPos{ 0, 2, 146, 32 };
 	const char* boldFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	const char* numberFont = "fonts/pixelmix.ttf#16";
-	const char* titleFont = "fonts/pixel_maz_multiline.ttf#24#2";
+	//const char* titleFont = "fonts/pixel_maz_multiline.ttf#24#2";
+	const char* titleFont = "fonts/pixelmix.ttf#24#2";
 	const char* descFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	for ( int i = 0; i < 8; ++i )
 	{
