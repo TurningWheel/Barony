@@ -332,13 +332,15 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 				{
 					diff += 2 * PI;
 				}
+				real_t curStateYaw = players[player]->entity->lerpCurrentState.yaw.position;
+				real_t prevStateYaw = players[player]->entity->lerpPreviousState.yaw.position;
 				if ( abs(diff) > PI / 8 )
 				{
-					real_t curStateYaw = players[player]->entity->lerpCurrentState.yaw.position;
-					real_t prevStateYaw = players[player]->entity->lerpPreviousState.yaw.position;
 					messagePlayer(0, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
 						players[player]->entity->lerpRenderState.yaw.position, camera.ang, curStateYaw, prevStateYaw);
 				}
+				printTextFormatted(font8x8_bmp, 8, 20, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
+					players[player]->entity->lerpRenderState.yaw.position, camera.ang, curStateYaw, prevStateYaw);
 			}
 			if ( bDebug && keystatus[SDL_SCANCODE_I] )
 			{
@@ -549,12 +551,21 @@ void TimerExperiments::updateClocks()
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		cameraRenderState[i] = cameraCurrentState[i] * alpha + cameraPreviousState[i] * (1 - alpha);
+		// make sure these are limited to prevent large jumps
+		cameraCurrentState[i].yaw.normalize(0, 2 * PI);
+		cameraCurrentState[i].roll.normalize(0, 2 * PI);
+		cameraCurrentState[i].pitch.normalize(0, 2 * PI);
+
 		cameraRenderState[i].yaw.position = 
 			lerpAngle(cameraPreviousState[i].yaw.position, cameraCurrentState[i].yaw.position, alpha);
 		cameraRenderState[i].roll.position = 
 			lerpAngle(cameraPreviousState[i].roll.position, cameraCurrentState[i].roll.position, alpha);
 		cameraRenderState[i].pitch.position = 
 			lerpAngle(cameraPreviousState[i].pitch.position, cameraCurrentState[i].pitch.position, alpha);
+
+		cameraRenderState[i].yaw.normalize(0, 2 * PI);
+		cameraRenderState[i].roll.normalize(0, 2 * PI);
+		cameraRenderState[i].pitch.normalize(0, 2 * PI);
 
 		// original angle lerp code
 		//real_t a1 = cameraPreviousState[i].yaw.position;
@@ -565,12 +576,21 @@ void TimerExperiments::updateClocks()
 	for ( auto& entity : entitiesToInterpolate )
 	{
 		entity->lerpRenderState = entity->lerpCurrentState * alpha + entity->lerpPreviousState * (1 - alpha);
+		// make sure these are limited to prevent large jumps
+		entity->lerpCurrentState.yaw.normalize(0, 2 * PI);
+		entity->lerpCurrentState.roll.normalize(0, 2 * PI);
+		entity->lerpCurrentState.pitch.normalize(0, 2 * PI);
+
 		entity->lerpRenderState.yaw.position = 
 			lerpAngle(entity->lerpPreviousState.yaw.position, entity->lerpCurrentState.yaw.position, alpha);
 		entity->lerpRenderState.roll.position = 
 			lerpAngle(entity->lerpPreviousState.roll.position, entity->lerpCurrentState.roll.position, alpha);
 		entity->lerpRenderState.pitch.position = 
 			lerpAngle(entity->lerpPreviousState.pitch.position, entity->lerpCurrentState.pitch.position, alpha);
+
+		entity->lerpRenderState.yaw.normalize(0, 2 * PI);
+		entity->lerpRenderState.roll.normalize(0, 2 * PI);
+		entity->lerpRenderState.pitch.normalize(0, 2 * PI);
 	}
 }
 
