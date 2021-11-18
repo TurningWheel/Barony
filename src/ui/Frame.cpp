@@ -249,6 +249,8 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
+	int mouseowner = (intro || gamePaused) ? 0 : owner;
+
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
@@ -257,12 +259,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	Sint32 mousex = (inputs.getMouse(intro ? 0 : owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(intro ? 0 : owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (inputs.getMouse(intro ? 0 : owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (inputs.getMouse(intro ? 0 : owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 mousexrel = (inputs.getMouse(intro ? 0 : owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mouseyrel = (inputs.getMouse(intro ? 0 : owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (inputs.getMouse(mouseowner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (inputs.getMouse(mouseowner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	// horizontal slider
@@ -576,6 +578,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
+	int mouseowner = (intro || gamePaused) ? 0 : owner;
+
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
@@ -584,12 +588,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	Sint32 mousex = (inputs.getMouse(intro ? 0 : owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(intro ? 0 : owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (inputs.getMouse(intro ? 0 : owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (inputs.getMouse(intro ? 0 : owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 mousexrel = (inputs.getMouse(intro ? 0 : owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mouseyrel = (inputs.getMouse(intro ? 0 : owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (inputs.getMouse(mouseowner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (inputs.getMouse(mouseowner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	Input& input = Input::inputs[owner];
@@ -774,10 +778,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	this->actualSize.x = std::min(std::max(0, this->actualSize.x),
-		std::max(0, this->actualSize.w - size.w));
-	this->actualSize.y = std::min(std::max(0, this->actualSize.y),
-		std::max(0, this->actualSize.h - size.h));
+	if ((scrollbars || allowScrollBinds) && allowScrolling) {
+		this->actualSize.x = std::min(std::max(0, this->actualSize.x),
+			std::max(0, this->actualSize.w - size.w));
+		this->actualSize.y = std::min(std::max(0, this->actualSize.y),
+			std::max(0, this->actualSize.h - size.h));
+	}
 
 	// process (frame view) sliders
 	if (parent != nullptr && !hollow && usable && scrollbars) {

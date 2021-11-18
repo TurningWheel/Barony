@@ -5137,9 +5137,9 @@ int main(int argc, char** argv)
 						{
 							case 0:
 							case 1:
-							case 2:
 								menuMapType = loadMainMenuMap(true, false);
 								break;
+							case 2:
 							case 3:
 								menuMapType = loadMainMenuMap(false, false);
 								break;
@@ -5217,9 +5217,9 @@ int main(int argc, char** argv)
 						{
 							case 0:
 							case 1:
-							case 2:
 								menuMapType = loadMainMenuMap(true, false);
 								break;
+							case 2:
 							case 3:
 								menuMapType = loadMainMenuMap(false, false);
 								break;
@@ -5797,7 +5797,7 @@ int main(int argc, char** argv)
 					}
 					if (((subwindow && !players[i]->shootmode) || gamePaused))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == 0 || !gamePaused) )
+						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == clientnum || !gamePaused) )
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;

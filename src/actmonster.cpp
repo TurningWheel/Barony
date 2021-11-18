@@ -1217,12 +1217,6 @@ void actMonster(Entity* my)
 	bool myReflex;
 	Sint32 previousMonsterState = my->monsterState;
 
-	// deactivate in menu
-	if ( intro )
-	{
-		return;
-	}
-
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )

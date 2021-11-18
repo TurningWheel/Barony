@@ -426,17 +426,24 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				z = 0;
 				if ( !loading )
 				{
-					if ( !pathMap[(pathnode->y + y) + (pathnode->x + x)*map.height] )
+					int index;
+					index = (pathnode->y + y) + (pathnode->x + x)*map.height;
+					index = std::min(std::max(0, index), (int)map.width * (int)map.height - 1);
+					if ( !pathMap[index] )
 					{
 						z++;
 					}
 					if ( x && y )
 					{
-						if ( !pathMap[(pathnode->y) + (pathnode->x + x)*map.height] )
+						index = (pathnode->y) + (pathnode->x + x)*map.height;
+						index = std::min(std::max(0, index), (int)map.width * (int)map.height - 1);
+						if ( !pathMap[index] )
 						{
 							z++;
 						}
-						if ( !pathMap[(pathnode->y + y) + (pathnode->x)*map.height] )
+						index = (pathnode->y + y) + (pathnode->x)*map.height;
+						index = std::min(std::max(0, index), (int)map.width * (int)map.height - 1);
+						if ( !pathMap[index] )
 						{
 							z++;
 						}

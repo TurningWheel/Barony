@@ -3274,6 +3274,8 @@ namespace MainMenu {
 				}
 			}
 		}
+		stats[index]->clearStats();
+		initClass(index);
 	};
 
 	static auto female_button_fn = [](Button& button, int index) {
@@ -3324,6 +3326,8 @@ namespace MainMenu {
 				}
 			}
 		}
+		stats[index]->clearStats();
+		initClass(index);
 	};
 
 	static Frame* initCharacterCard(int index, int height) {
@@ -3354,6 +3358,15 @@ namespace MainMenu {
 
 		static void (*back_fn)(int) = [](int index){
 			characterCardLobbySettingsMenu(index);
+			svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
+			svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
+			svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
+			svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
+			svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
+			svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
+			svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
+			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
 			auto button = card->findButton("custom_difficulty"); assert(button);
@@ -3486,20 +3499,7 @@ namespace MainMenu {
 			});
 		(*achievements->getTickCallback())(*achievements);
 
-		static auto confirmFlags = [](){
-			soundActivate();
-			svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
-			svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
-			svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
-			svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
-			svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
-			svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
-			svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
-			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
-			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
-		};
-
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
 		confirm->setColor(makeColor(255, 255, 255, 255));
@@ -3511,11 +3511,11 @@ namespace MainMenu {
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){confirmFlags(); back_fn(0);}); break;
-		case 1: confirm->setCallback([](Button&){confirmFlags(); back_fn(1);}); break;
-		case 2: confirm->setCallback([](Button&){confirmFlags(); back_fn(2);}); break;
-		case 3: confirm->setCallback([](Button&){confirmFlags(); back_fn(3);}); break;
-		}
+		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
+		}*/
 	}
 
 	void characterCardLobbySettingsMenu(int index) {
@@ -3742,10 +3742,10 @@ namespace MainMenu {
 			});
 		(*achievements->getTickCallback())(*achievements);
 
-		auto multiplayer_header = card->addField("difficulty_header", 64);
+		auto multiplayer_header = card->addField("multiplayer_header", 64);
 		multiplayer_header->setSize(SDL_Rect{70, 328, 182, 34});
 		multiplayer_header->setFont(smallfont_outline);
-		multiplayer_header->setText("DIFFICULTY SETTINGS");
+		multiplayer_header->setText("LOBBY SETTINGS");
 		multiplayer_header->setJustify(Field::justify_t::CENTER);
 
 		auto invite_label = card->addField("invite_label", 64);
@@ -3856,7 +3856,7 @@ namespace MainMenu {
 			}
 		}
 
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
 		confirm->setColor(makeColor(255, 255, 255, 255));
@@ -3876,7 +3876,7 @@ namespace MainMenu {
 		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
 		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
 		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}
+		}*/
 	}
 
 	void characterCardRaceMenu(int index) {
@@ -3956,6 +3956,8 @@ namespace MainMenu {
 			if (disable_abilities) {
 				disable_abilities->setPressed(false);
 			}
+			stats[index]->clearStats();
+			initClass(index);
 		};
 
 		auto human = card->addButton("Human");
@@ -4368,7 +4370,7 @@ namespace MainMenu {
 		show_race_info->setWidgetDown("confirm");
 		show_race_info->setWidgetLeft("female");
 
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
 		confirm->setColor(makeColor(255, 255, 255, 255));
@@ -4384,7 +4386,7 @@ namespace MainMenu {
 		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
 		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
 		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}
+		}*/
 	}
 
 	void characterCardClassMenu(int index) {
@@ -4570,7 +4572,7 @@ namespace MainMenu {
 		auto first_button = subframe->findButton(reduced_class_list[0]); assert(first_button);
 		first_button->select();
 
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
@@ -4586,7 +4588,7 @@ namespace MainMenu {
 		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
 		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
 		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}
+		}*/
 	}
 
 	void createCharacterCard(int index) {
@@ -4875,11 +4877,12 @@ namespace MainMenu {
 			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
 					client_classes[index] = c - 1;
-					stats[index]->clearStats();
-					initClass(index);
-					return;
+					break;
 				}
 			}
+
+			stats[index]->clearStats();
+			initClass(index);
 		};
 
 		auto randomize_class = card->addButton("randomize_class");

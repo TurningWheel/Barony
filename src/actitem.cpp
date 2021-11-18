@@ -300,7 +300,7 @@ void actItem(Entity* my)
 							item = itemPickup(i, item2);
 							if (item)
 							{
-								if (i == 0 || (splitscreen && i > 0) )
+								if (players[i]->isLocalPlayer())
 								{
 									// item is the new inventory stack for server, free the picked up items
 									free(item2); 
@@ -334,9 +334,6 @@ void actItem(Entity* my)
 											}
 										}
 									}
-								}
-								if ( i != 0 && !splitscreen )
-								{
 									free(item); // item is the picked up items (item == item2)
 								}
 								my->removeLightField();
