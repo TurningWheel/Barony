@@ -45,6 +45,7 @@
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
 #include "input.hpp"
+#include "ui/Image.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -4388,9 +4389,12 @@ void ingameHud()
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 				{
 					if ( followerMenu.followerToCommand
@@ -4437,11 +4441,12 @@ void ingameHud()
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				pos.w = 0;
-				pos.h = 0;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 			}
 		}
 		else if ( !nohud )
@@ -4458,7 +4463,7 @@ void ingameHud()
 				{
 					pos.x -= cursor_bmp->w / 2;
 					pos.y -= cursor_bmp->h / 2;
-					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+					drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 					pos.x += 24;
 					pos.y += 24;
 				}
@@ -4468,7 +4473,7 @@ void ingameHud()
 					{
 						pos.x -= cursor_bmp->w / 2;
 						pos.y -= cursor_bmp->h / 2;
-						drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+						drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 
 						pos.x = players[player]->camera_midx();
 						pos.y = players[player]->camera_midy();
@@ -5412,15 +5417,17 @@ int main(int argc, char** argv)
 						// draw mouse
 						if ( !movie )
 						{
-							for ( int i = 0; i < MAXPLAYERS; ++i )
+							// only draw 1 cursor in the main menu
+							for ( int i = 0; i < 1; ++i )
 							{
 								if ( inputs.getVirtualMouse(i)->draw_cursor )
 								{
-									pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-									pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-									pos.w = 0;
-									pos.h = 0;
-									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+									auto cursor = Image::get("images/system/cursor_hand.png");
+									pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+									pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+									pos.w = cursor->getWidth();
+									pos.h = cursor->getHeight();
+									cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 								}
 							}
 						}
@@ -5790,13 +5797,14 @@ int main(int argc, char** argv)
 					}
 					if (((subwindow && !players[i]->shootmode) || gamePaused))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor )
+						if ( inputs.getVirtualMouse(i)->draw_cursor && (i != 0 || !gamePaused) )
 						{
-							pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-							pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-							pos.w = 0;
-							pos.h = 0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
 

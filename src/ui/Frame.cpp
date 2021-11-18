@@ -257,12 +257,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 mousexrel = (inputs.getMouse(owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mouseyrel = (inputs.getMouse(owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(intro ? 0 : owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(intro ? 0 : owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(intro ? 0 : owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(intro ? 0 : owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (inputs.getMouse(intro ? 0 : owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (inputs.getMouse(intro ? 0 : owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	// horizontal slider
@@ -584,12 +584,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 mousexrel = (inputs.getMouse(owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mouseyrel = (inputs.getMouse(owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = (inputs.getMouse(intro ? 0 : owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(intro ? 0 : owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(intro ? 0 : owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(intro ? 0 : owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousexrel = (inputs.getMouse(intro ? 0 : owner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mouseyrel = (inputs.getMouse(intro ? 0 : owner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	Input& input = Input::inputs[owner];

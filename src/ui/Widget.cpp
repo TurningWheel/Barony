@@ -277,7 +277,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 	}
 
 	// draw selector widgets
-	if (selectedWidget == this) {
+	if (!hideSelectors && selectedWidget == this) {
 		{
 			auto image = Image::get("images/ui/Main Menus/Selector_TL.png");
 			int w = image->getWidth();

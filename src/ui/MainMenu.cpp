@@ -601,6 +601,7 @@ namespace MainMenu {
 		static bool story_text_end = false;
 
 		auto back_button = main_menu_frame->addButton("back");
+		back_button->setHideSelectors(true);
 		back_button->setText("Skip story");
 		back_button->setColor(makeColor(0, 0, 0, 0));
 		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
@@ -2914,6 +2915,7 @@ namespace MainMenu {
 		createDummyMainMenu();
 
 		auto back_button = main_menu_frame->addButton("back");
+		back_button->setHideSelectors(true);
 		back_button->setText("Return to Main Menu");
 		back_button->setColor(makeColor(0, 0, 0, 0));
 		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
@@ -5038,13 +5040,22 @@ namespace MainMenu {
 		lobby->setHollow(true);
 		lobby->setBorder(0);
 
+		auto dimmer = lobby->addImage(
+			lobby->getActualSize(),
+			makeColor(0, 0, 0, 127),
+			"images/system/white.png",
+			"dimmer");
+
 		for (int c = 0; c < 4; ++c) {
 			auto name = std::string("paperdoll") + std::to_string(c);
 			auto paperdoll = lobby->addFrame(name.c_str());
 			paperdoll->setOwner(c);
-			paperdoll->setColor(makeColor(33, 26, 24, 255));
-			paperdoll->setBorderColor(makeColor(116, 55, 0, 255));
-			paperdoll->setBorder(2);
+			//paperdoll->setColor(makeColor(33, 26, 24, 255));
+			//paperdoll->setBorderColor(makeColor(116, 55, 0, 255));
+			//paperdoll->setBorder(2);
+			paperdoll->setColor(0);
+			paperdoll->setBorderColor(0);
+			paperdoll->setBorder(0);
 			paperdoll->setInvisible(true);
 			paperdoll->setTickCallback([](Widget& widget){
 				widget.setInvisible(true);
@@ -5056,9 +5067,9 @@ namespace MainMenu {
 					auto backdrop = card->findImage("backdrop");
 					paperdoll->setSize(SDL_Rect{
 						index * Frame::virtualScreenX / 4,
-						Frame::virtualScreenY / 8,
+						0,
 						Frame::virtualScreenX / 4,
-						card->getSize().y - (Frame::virtualScreenY / 8) + 8
+						Frame::virtualScreenY - card->getSize().h / 2
 						});
 					if (backdrop && backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
 						widget.setInvisible(false);
@@ -5066,7 +5077,7 @@ namespace MainMenu {
 				}
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-				drawCharacterPreview(widget.getOwner(), pos, 50);
+				drawCharacterPreview(widget.getOwner(), pos, 80, view_t(), (330 + 20 * widget.getOwner()) * PI / 180);
 				});
 		}
 
