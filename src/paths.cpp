@@ -132,6 +132,10 @@ pathnode_t** heapRemove(pathnode_t** heap, long* length)
 
 	pathCheckObstacle
 
+	only used during the load process because it's a pretty slow way of
+	looking for potential obstacles on a map, and also it checks against
+	sprites which only correspond to entities before assignActions is called
+
 -------------------------------------------------------------------------------*/
 
 int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
@@ -145,25 +149,23 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 		return 1;
 	}
 
-	node_t* node;
-	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
-	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
-		list_t* currentList = *it;
-		for ( node = currentList->first; node != nullptr; node = node->next )
+		Entity* entity = (Entity*)node->element;
+		if (entity == my || entity == target)
 		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->sprite == 14 
-				|| entity->sprite == 15 
-				|| entity->sprite == 19 
-				|| entity->sprite == 20 
-				|| entity->sprite == 39 
-				|| entity->sprite == 44 )
+			continue;
+		}
+		if ( entity->sprite == 14		// fountain
+			|| entity->sprite == 15		// sink
+			|| entity->sprite == 19		// gate
+			|| entity->sprite == 20		// gate 2
+			|| entity->sprite == 39		// head stone
+			|| entity->sprite == 44 )	// boulder?
+		{
+			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
 			{
-				if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
-				{
-					return 1;
-				}
+				return 1;
 			}
 		}
 	}
