@@ -1816,7 +1816,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 		}
 	}
-	messagePlayer(0, "%d", player.GUI.activeModule);
+	//messagePlayer(0, "%d", player.GUI.activeModule);
 	// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
 
 	//auto characterPos = characterInfoFrame->getSize();
