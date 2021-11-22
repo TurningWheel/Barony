@@ -926,6 +926,8 @@ public:
 		int proficienciesPage = 0;
 		int attributespage = 0;
 
+		static std::map<std::string, std::pair<std::string, std::string>> mapDisplayNamesDescriptions;
+
 		enum SheetElements
 		{
 			SHEET_UNSELECTED,
@@ -961,6 +963,7 @@ public:
 		void updateStats();
 		void updateAttributes();
 		void updateCharacterInfo();
+		static void loadCharacterSheetJSON();
 	} characterSheet;
 
 	class SkillSheet_t

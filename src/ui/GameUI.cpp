@@ -799,6 +799,62 @@ void Player::MessageZone_t::processChatbox()
 	}*/
 }
 
+std::map<std::string, std::pair<std::string, std::string>> Player::CharacterSheet_t::mapDisplayNamesDescriptions;
+void Player::CharacterSheet_t::loadCharacterSheetJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/charsheet.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/charsheet.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/charsheet.json");
+		inputPath.append("/data/charsheet.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("level_strings") )
+				{
+					mapDisplayNamesDescriptions.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["level_strings"].MemberBegin();
+						itr != d["level_strings"].MemberEnd(); ++itr )
+					{
+						std::string name = "";
+						std::string desc = "";
+						if ( itr->value.HasMember("display_name") )
+						{
+							name = itr->value["display_name"].GetString();
+						}
+						if ( itr->value.HasMember("description") )
+						{
+							desc = itr->value["description"].GetString();
+						}
+						mapDisplayNamesDescriptions[itr->name.GetString()] = std::make_pair(name, desc);
+					}
+				}
+			}
+		}
+	}
+}
+
 void Player::CharacterSheet_t::createCharacterSheet()
 {
 	char name[32];
@@ -834,6 +890,35 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			characterSheetTitleText->setHJustify(Field::justify_t::CENTER);
 		}
 
+		{
+			auto tooltipFrame = sheetFrame->addFrame("sheet tooltip");
+			tooltipFrame->setSize(SDL_Rect{ leftAlignX - 200, 0, 200, 200 });
+			Uint32 color = makeColor(255, 255, 255, 255);
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+			imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+			imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
+			auto txt = tooltipFrame->addField("tooltip text", 1024);
+			txt->setFont("fonts/pixelmix.ttf#12#2");
+			txt->setColor(makeColor(188, 154, 114, 255));
+		}
+
 		// log / map buttons
 		{
 			const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
@@ -842,24 +927,46 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			buttonFrame->setSize(buttonFramePos);
 
 			SDL_Rect buttonPos{0, 0, buttonFramePos.w, 40};
-			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "map button img");
-			auto mapText = buttonFrame->addField("map button text", 32);
-			mapText->setFont(buttonFont);
-			mapText->setSize(buttonPos);
-			mapText->setVJustify(Field::justify_t::CENTER);
-			mapText->setHJustify(Field::justify_t::CENTER);
-			mapText->setText("OPEN MAP");
-			buttonFrame->addFrame("map button selector")->setSize(buttonPos);
+			//buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "map button img");
+			auto mapButton = buttonFrame->addButton("map button");
+			mapButton->setText(language[4069]);
+			mapButton->setFont(buttonFont);
+			mapButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+			mapButton->setBackgroundActivated("images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
+			mapButton->setSize(buttonPos);
+			mapButton->setColor(makeColor(255, 255, 255, 191));
+			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			
+			//auto mapText = buttonFrame->addField("map button text", 32);
+			//mapText->setFont(buttonFont);
+			//mapText->setSize(buttonPos);
+			//mapText->setVJustify(Field::justify_t::CENTER);
+			//mapText->setHJustify(Field::justify_t::CENTER);
+			//mapText->setText("OPEN MAP");
+			auto mapSelector = buttonFrame->addFrame("map button selector");
+			mapSelector->setSize(buttonPos);
+			mapSelector->setHollow(true);
 
 			buttonPos.y = buttonPos.y + buttonPos.h + 2;
-			buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "log button img");
-			auto logText = buttonFrame->addField("log button text", 32);
-			logText->setFont(buttonFont);
-			logText->setSize(buttonPos);
-			logText->setVJustify(Field::justify_t::CENTER);
-			logText->setHJustify(Field::justify_t::CENTER);
-			logText->setText("OPEN LOG");
-			buttonFrame->addFrame("log button selector")->setSize(buttonPos);
+			//buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "log button img");
+			auto logButton = buttonFrame->addButton("log button");
+			logButton->setText(language[4070]);
+			logButton->setFont(buttonFont);
+			logButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+			logButton->setBackgroundActivated("images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
+			logButton->setSize(buttonPos);
+			logButton->setColor(makeColor(255, 255, 255, 191));
+			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			
+			//auto logText = buttonFrame->addField("log button text", 32);
+			//logText->setFont(buttonFont);
+			//logText->setSize(buttonPos);
+			//logText->setVJustify(Field::justify_t::CENTER);
+			//logText->setHJustify(Field::justify_t::CENTER);
+			//logText->setText("OPEN LOG");
+			auto logSelector = buttonFrame->addFrame("log button selector");
+			logSelector->setSize(buttonPos);
+			logSelector->setHollow(true);
 		}
 
 		// game timer
@@ -869,10 +976,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			Frame* timerFrame = sheetFrame->addFrame("game timer");
 			timerFrame->setSize(SDL_Rect{leftAlignX + 36, 90, 142, 26});
-			timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
+			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
 			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
 			auto timerText = timerFrame->addField("timer text", 32);
 			timerText->setFont(timerFont);
+
+			timerFrame->addFrame("timer selector")->setSize(SDL_Rect{ 0, 0, timerToggleImg->pos.w + timerImg->pos.w, 26 });
 
 			SDL_Rect textPos = timerImg->pos;
 			textPos.x += 12;
@@ -1465,12 +1574,12 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			buttonFrame->setSize(buttonFramePos);
 			{
 				SDL_Rect buttonPos{ 0, 1, 98, 38 };
-				auto mapBtnImg = buttonFrame->findImage("map button img");
-				mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png";
-				mapBtnImg->pos = buttonPos;
-				auto mapText = buttonFrame->findField("map button text");
-				mapText->setSize(buttonPos);
-				mapText->setText("MAP");
+				//auto mapBtnImg = buttonFrame->findImage("map button img");
+				//mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png";
+				//mapBtnImg->pos = buttonPos;
+				//auto mapText = buttonFrame->findField("map button text");
+				//mapText->setSize(buttonPos);
+				//mapText->setText(language[4071]);
 				auto mapSelector = buttonFrame->findFrame("map button selector");
 				SDL_Rect mapSelectorPos = buttonPos;
 				mapSelectorPos.x += 6;
@@ -1480,12 +1589,12 @@ void Player::CharacterSheet_t::processCharacterSheet()
 				mapSelector->setSize(mapSelectorPos);
 
 				buttonPos.x = buttonFramePos.w - buttonPos.w;
-				auto logBtnImg = buttonFrame->findImage("log button img");
-				logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png";
-				logBtnImg->pos = buttonPos;
-				auto logText = buttonFrame->findField("log button text");
-				logText->setSize(buttonPos);
-				logText->setText("LOG");
+				//auto logBtnImg = buttonFrame->findImage("log button img");
+				//logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png";
+				//logBtnImg->pos = buttonPos;
+				//auto logText = buttonFrame->findField("log button text");
+				//logText->setSize(buttonPos);
+				//logText->setText(language[4072]);
 				auto logSelector = buttonFrame->findFrame("log button selector");
 				SDL_Rect logSelectorPos = buttonPos;
 				logSelectorPos.x += 6;
@@ -1526,24 +1635,28 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			buttonFrame->setSize(buttonFramePos);
 			{
 				SDL_Rect buttonPos{ 0, 0, buttonFramePos.w, 40 };
-				auto mapBtnImg = buttonFrame->findImage("map button img");
-				mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_Button_00.png";
-				mapBtnImg->pos = buttonPos;
-				auto mapText = buttonFrame->findField("map button text");
-				mapText->setSize(buttonPos);
-				mapText->setText("OPEN MAP");
+				//auto mapBtnImg = buttonFrame->findImage("map button img");
+				//mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_Button_00.png";
+				//mapBtnImg->pos = buttonPos;
+				//auto mapText = buttonFrame->findField("map button text");
+				//mapText->setSize(buttonPos);
+				//mapText->setText(language[4069]);
+				auto mapButton = buttonFrame->findButton("map button");
 				auto mapSelector = buttonFrame->findFrame("map button selector");
 				mapSelector->setSize(buttonPos);
 
 				buttonPos.y = buttonPos.y + buttonPos.h + 2;
-				auto logBtnImg = buttonFrame->findImage("log button img");
-				logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png";
-				logBtnImg->pos = buttonPos;
-				auto logText = buttonFrame->findField("log button text");
-				logText->setSize(buttonPos);
-				logText->setText("OPEN LOG");
+				//auto logBtnImg = buttonFrame->findImage("log button img");
+				//logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png";
+				//logBtnImg->pos = buttonPos;
+				//auto logText = buttonFrame->findField("log button text");
+				//logText->setSize(buttonPos);
+				//logText->setText(language[4070]);
+				auto logButton = buttonFrame->findButton("log button");
 				auto logSelector = buttonFrame->findFrame("log button selector");
 				logSelector->setSize(buttonPos);
+				//messagePlayer(0, "%d:%d | %d:%d", mapButton->isHighlighted(), mapButton->isSelected(),
+				//	logButton->isHighlighted(), logButton->isSelected());
 			}
 
 			SDL_Rect timerFramePos = timerFrame->getSize();
@@ -1776,6 +1889,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			targetElement = SHEET_OPEN_MAP;
 		}
+		else if ( sheetFrame->findFrame("game timer")->findFrame("timer selector")->capturesMouse() )
+		{
+			targetElement = SHEET_TIMER;
+		}
 		else if ( sheetFrame->findFrame("dungeon floor frame")->findFrame("dungeon floor selector")->capturesMouse() )
 		{
 			targetElement = SHEET_DUNGEON_FLOOR;
@@ -1825,6 +1942,19 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 
 
 	char buf[32] = "";
+	if ( auto logmapFrame = sheetFrame->findFrame("log map buttons") )
+	{
+		/*if ( auto logImg = logmapFrame->findImage("log button img") )
+		{
+		}
+		if ( auto mapImg = logmapFrame->findImage("map button img") )
+		{
+			if ( selectedElement == SHEET_OPEN_MAP )
+			{
+				mapImg->path = "";
+			}
+		}*/
+	}
 	if ( auto name = characterInnerFrame->findField("character name text") )
 	{
 		name->setText(stats[player.playernum]->name);
@@ -1970,10 +2100,55 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			sexImg->pos.y = raceText->getSize().y + raceText->getSize().h / 2 - sexImg->pos.h / 2;
 		}
 	}
-	if ( auto floor = characterInnerFrame->findField("dungeon floor text") )
+	if ( auto floorFrame = sheetFrame->findFrame("dungeon floor frame") )
 	{
-		snprintf(buf, sizeof(buf), language[4052], currentlevel);
-		floor->setText(buf);
+		if ( auto floorLevelText = floorFrame->findField("dungeon level text") )
+		{
+			snprintf(buf, sizeof(buf), language[4052], currentlevel);
+			floorLevelText->setText(buf);
+		}
+		if ( auto floorNameText = floorFrame->findField("dungeon name text") )
+		{
+			if ( mapDisplayNamesDescriptions.find(map.name) != mapDisplayNamesDescriptions.end() )
+			{
+				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
+				if ( auto tooltipFrame = sheetFrame->findFrame("sheet tooltip") )
+				{
+					if ( selectedElement == SHEET_DUNGEON_FLOOR )
+					{
+						const int maxWidth = 260;
+						const int padx = 16;
+						const int pady1 = 8;
+						const int pady2 = 8;
+						SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+						if ( auto txt = tooltipFrame->findField("tooltip text") )
+						{
+							txt->setText(mapDisplayNamesDescriptions[map.name].second.c_str());
+							SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
+							txt->setSize(txtPos);
+							txt->reflowTextToFit(0);
+							Font* actualFont = Font::get(txt->getFont());
+							int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+							txtPos.h = txtHeight;
+							txt->setSize(txtPos);
+							auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(), 
+								txt->getTextColor(), txt->getOutlineColor());
+							tooltipPos.w = txtGet->getWidth() + padx * 2;
+							tooltipPos.h = pady1 + txtPos.h + pady2;
+							tooltipPos.x = floorFrame->getSize().x - tooltipPos.w;
+							tooltipPos.y = floorFrame->getSize().y;
+						}
+						tooltipFrame->setSize(tooltipPos);
+						imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h}, 
+							skillsheetEffectBackgroundImages);
+					}
+				}
+			}
+			else
+			{
+				floorNameText->setText(map.name);
+			}
+		}
 	}
 	if ( auto gold = characterInnerFrame->findField("gold text") )
 	{
@@ -2174,10 +2349,10 @@ void Player::CharacterSheet_t::updateAttributes()
 	const int leftAlignPosX = 30;
 	auto attributesInnerPos = attributesInnerFrame->getSize();
 	attributesInnerPos.x = rightAlignPosX;
-	if ( keystatus[SDL_SCANCODE_I] )
+	/*if ( keystatus[SDL_SCANCODE_I] )
 	{
 		attributesInnerPos.x = leftAlignPosX;
-	}
+	}*/
 	attributesInnerFrame->setSize(attributesInnerPos);
 
 	char buf[32] = "";
@@ -9255,45 +9430,45 @@ void Player::SkillSheet_t::processSkillSheet()
 	titleTextPos.x = skillDescriptionFrame->getSize().x + skillDescriptionFrame->getSize().w / 2 - titleTextPos.w / 2;
 	titleText->setSize(titleTextPos);
 
-	if ( keystatus[SDL_SCANCODE_F1] )
-	{
-		if ( keystatus[SDL_SCANCODE_LSHIFT] )
-		{
-			windowHeightScaleX = std::max(windowHeightScaleX - .01, -1.0);
-		}
-		else
-		{
-			windowHeightScaleX = std::min(windowHeightScaleX + .01, 1.0);
-		}
-	}
-	if ( keystatus[SDL_SCANCODE_F2] )
-	{
-		if ( keystatus[SDL_SCANCODE_LSHIFT] )
-		{
-			windowHeightScaleY = std::max(windowHeightScaleY - .01, -1.0);
-		}
-		else
-		{
-			windowHeightScaleY = std::min(windowHeightScaleY + .01, 1.0);
-		}
-	}
-	if ( keystatus[SDL_SCANCODE_F3] )
-	{
-		keystatus[SDL_SCANCODE_F3] = 0;
-		if ( keystatus[SDL_SCANCODE_LCTRL] )
-		{
-			//bUseCompactSkillsView = !bUseCompactSkillsView;
-		}
-		else if ( keystatus[SDL_SCANCODE_LSHIFT] )
-		{
-			skillSlideDirection = 0;
-		}
-		else
-		{
-			skillSlideDirection = (skillSlideDirection != 1) ? 1 : -1;
-			//skillSlideAmount = 0.0;
-		}
-	}
+	//if ( keystatus[SDL_SCANCODE_F1] )
+	//{
+	//	if ( keystatus[SDL_SCANCODE_LSHIFT] )
+	//	{
+	//		windowHeightScaleX = std::max(windowHeightScaleX - .01, -1.0);
+	//	}
+	//	else
+	//	{
+	//		windowHeightScaleX = std::min(windowHeightScaleX + .01, 1.0);
+	//	}
+	//}
+	//if ( keystatus[SDL_SCANCODE_F2] )
+	//{
+	//	if ( keystatus[SDL_SCANCODE_LSHIFT] )
+	//	{
+	//		windowHeightScaleY = std::max(windowHeightScaleY - .01, -1.0);
+	//	}
+	//	else
+	//	{
+	//		windowHeightScaleY = std::min(windowHeightScaleY + .01, 1.0);
+	//	}
+	//}
+	//if ( keystatus[SDL_SCANCODE_F3] )
+	//{
+	//	keystatus[SDL_SCANCODE_F3] = 0;
+	//	if ( keystatus[SDL_SCANCODE_LCTRL] )
+	//	{
+	//		//bUseCompactSkillsView = !bUseCompactSkillsView;
+	//	}
+	//	else if ( keystatus[SDL_SCANCODE_LSHIFT] )
+	//	{
+	//		skillSlideDirection = 0;
+	//	}
+	//	else
+	//	{
+	//		skillSlideDirection = (skillSlideDirection != 1) ? 1 : -1;
+	//		//skillSlideAmount = 0.0;
+	//	}
+	//}
 	if ( skillSlideDirection != 0 )
 	{
 		const real_t fpsScale = (144.0 / std::max(1U, fpsLimit)); // ported from 144Hz
@@ -9590,11 +9765,11 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		int lowestY = 0;
 
-		if ( keystatus[SDL_SCANCODE_J] )
+		/*if ( keystatus[SDL_SCANCODE_J] )
 		{
 			keystatus[SDL_SCANCODE_J] = 0;
 			slider->setDisabled(!slider->isDisabled());
-		}
+		}*/
 		SDL_Rect sliderPos = slider->getRailSize();
 		sliderPos.x = skillDescriptionFrame->getSize().w - 34;
 		sliderPos.h = skillDescriptionFrame->getSize().h - 8;

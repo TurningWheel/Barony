@@ -323,6 +323,7 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 		{
 			if ( bDebug )
 			{
+				printTextFormatted(font8x8_bmp, 8, 32, "Timer debug is ON");
 				real_t diff = camera.ang - players[player]->entity->lerpRenderState.yaw.position;
 				while ( diff >= PI )
 				{

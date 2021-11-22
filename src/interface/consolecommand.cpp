@@ -3397,6 +3397,11 @@ void consoleCommand(char const * const command_str)
 			Player::SkillSheet_t::loadSkillSheetJSON();
 			messagePlayer(clientnum, "Reloaded skillsheet_entries.json");
 		}
+		else if ( !strncmp(command_str, "/loadcharsheet", 14) )
+		{
+			Player::CharacterSheet_t::loadCharacterSheetJSON();
+			messagePlayer(clientnum, "Reloaded charsheet_settings.json");
+		}
 		else if ( !strncmp(command_str, "/printleaderlist", 16) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
