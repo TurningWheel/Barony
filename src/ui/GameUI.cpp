@@ -9255,7 +9255,7 @@ void Player::SkillSheet_t::processSkillSheet()
 	}
 
 	// these hardcoded keypresses are evil, WOJ remove this eventually please
-	if ( !command && !inputstr && keystatus[SDL_SCANCODE_K] )
+	if ( !command && keystatus[SDL_SCANCODE_K] )
 	{
 		if ( !bSkillSheetOpen )
 		{
