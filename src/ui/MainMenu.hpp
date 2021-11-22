@@ -13,6 +13,16 @@ namespace MainMenu {
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
 
+	enum class FadeDestination : Uint8 {
+		None = 0,
+		RootMainMenu = 1,
+		IntroStoryScreen = 2,
+		HallOfTrials = 3,
+		GameStart = 4,
+	};
+
+	void beginFade(FadeDestination);
+
 	struct InventorySorting {
 		bool hotbarWeapons = true;
 		bool hotbarArmor = true;
@@ -41,6 +51,7 @@ namespace MainMenu {
 		inline void save();
 		static inline InventorySorting load();
 		static inline InventorySorting reset();
+		void serialize(FileInterface*);
 	};
 
 	struct Bindings {
@@ -51,53 +62,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Bindings load();
 		static inline Bindings reset();
-		void serialize(FileInterface* file) {
-			Uint32 num_players = 4;
-			file->propertyName("players");
-			file->beginArray(num_players);
-			for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
-				file->beginObject();
-				file->property("device", devices[c]);
-				for (int j = 0; j < 3; ++j) {
-					auto& bindings =
-						j == 0 ? kb_mouse_bindings[c]:
-						j == 1 ? gamepad_bindings[c]:
-						joystick_bindings[c];
-					file->propertyName(
-						j == 0 ? "kb_mouse_bindings":
-						j == 1 ? "gamepad_bindings":
-						"joystick_bindings");
-					if (file->isReading()) {
-						bindings.clear();
-					}
-					Uint32 count = bindings.size();
-					file->beginArray(count);
-					if (file->isReading()) {
-						for (Uint32 index = 0; index < count; ++index) {
-							file->beginObject();
-							std::string binding;
-							file->property("binding", binding);
-							std::string input;
-							file->property("input", input);
-							bindings.emplace(binding, input);
-							file->endObject();
-						}
-					} else {
-						for (auto& bind : bindings) {
-							file->beginObject();
-							std::string binding = bind.first;
-							file->property("binding", binding);
-							std::string input = bind.second;
-							file->property("input", input);
-							file->endObject();
-						}
-					}
-					file->endArray();
-				}
-				file->endObject();
-			}
-			file->endArray();
-		}
+		void serialize(FileInterface*);
 	};
 
 	struct Minimap {
@@ -108,6 +73,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Minimap load();
 		static inline Minimap reset();
+		void serialize(FileInterface*);
 	};
 
 	struct Messages {
@@ -123,17 +89,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Messages load();
 		static inline Messages reset();
-		void serialize(FileInterface* file) {
-			file->property("combat", combat);
-			file->property("status", status);
-			file->property("inventory", inventory);
-			file->property("equipment", equipment);
-			file->property("world", world);
-			file->property("chat", chat);
-			file->property("progression", progression);
-			file->property("interaction", interaction);
-			file->property("inspection", inspection);
-		}
+		void serialize(FileInterface*);
 	};
 
 	struct AllSettings {
@@ -185,7 +141,12 @@ namespace MainMenu {
 		bool random_traps_enabled;
 		bool extra_life_enabled;
 		bool cheats_enabled;
+		void serialize(FileInterface*);
 	};
+
+	void settingsSave();
+	void settingsLoad();
+	void settingsReset();
 
 	void settingsUI(Button&);
 	void settingsVideo(Button&);

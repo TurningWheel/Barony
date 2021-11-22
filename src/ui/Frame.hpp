@@ -72,6 +72,8 @@ public:
 
 	//! frame list entry
 	struct entry_t {
+		entry_t(Frame& _parent) : parent(_parent) {}
+		Frame& parent;
 		std::string name;
 		std::string text;
 		std::string tooltip;
@@ -289,6 +291,7 @@ public:
 	real_t							getOpacity() const { return opacity; }
 	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
 	justify_t						getJustify() const { return justify; }
+	const bool						isClickable() const { return clickable; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -308,6 +311,7 @@ public:
 	void	setInheritParentFrameOpacity(const bool _inherit) { inheritParentFrameOpacity = _inherit; }
 	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
 	void	setListJustify(justify_t _justify) { justify = _justify; }
+	void	setClickable(const bool _clickable) { clickable = _clickable; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -335,6 +339,9 @@ private:
 	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
 	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
 	justify_t justify = justify_t::LEFT;				//!< frame list horizontal justification
+	bool clickable = false;								//!< if true, you can activate the frame by clicking on it (used for lists)
+	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
+	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

@@ -5167,7 +5167,7 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity && !everybodyfriendly && multiplayer != CLIENT )
+			if ( hit.entity && (!everybodyfriendly && !intro) && multiplayer != CLIENT )
 			{
 				if ( hit.entity->behavior == &actMonster )
 				{

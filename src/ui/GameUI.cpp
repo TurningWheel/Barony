@@ -3790,10 +3790,10 @@ void createInventoryTooltipFrame(const int player)
 	}
 }
 
-void drawCharacterPreview(const int player, SDL_Rect pos)
+void drawCharacterPreview(const int player, SDL_Rect pos, int fov, view_t& view, real_t offsetyaw)
 {
-	double ofov = fov;
-	fov = 50;
+	auto ofov = ::fov;
+	::fov = fov;
 
 	//TempTexture* minimapTexture = new TempTexture();
 
@@ -3806,26 +3806,26 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
 		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
-		camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
-		camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
-		camera_charsheet.z = players[player]->entity->z * 2;
+		view.x = players[player]->entity->x / 16.0 + (.92 * cos(offsetyaw));
+		view.y = players[player]->entity->y / 16.0 + (.92 * sin(offsetyaw));
+		view.z = players[player]->entity->z * 2;
 		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
-		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
-		camera_charsheet.vang = PI / 20;
+		view.ang = (offsetyaw - PI); //5 * PI / 4;
+		view.vang = PI / 20;
 
-		camera_charsheet.winx = pos.x;
+		view.winx = pos.x;
 		// winy modification required due to new frame scaling method d49b1a5f34667432f2a2bd754c0abca3a09227c8
-		camera_charsheet.winy = pos.y + (yres - Frame::virtualScreenY); 
-		//camera_charsheet.winx = x1 + 8;
-		//camera_charsheet.winy = y1 + 8;
+		view.winy = pos.y + (yres - Frame::virtualScreenY); 
+		//view.winx = x1 + 8;
+		//view.winy = y1 + 8;
 
-		camera_charsheet.winw = pos.w;
-		camera_charsheet.winh = pos.h;
+		view.winw = pos.w;
+		view.winh = pos.h;
 		bool b = players[player]->entity->flags[BRIGHT];
 		players[player]->entity->flags[BRIGHT] = true;
 		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
-			glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
+			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
 		}
 		players[player]->entity->flags[BRIGHT] = b;
 		int c = 0;
@@ -3843,7 +3843,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
-					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+					glDrawVoxel(&view, entity, REALCOLORS);
 					entity->flags[BRIGHT] = b;
 				}
 				c++;
@@ -3853,7 +3853,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 				Entity* entity = (Entity*)node->element;
 				if ( (Sint32)entity->getUID() == -4 )
 				{
-					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+					glDrawSprite(&view, entity, REALCOLORS);
 				}
 			}
 		}
@@ -3868,36 +3868,18 @@ void drawCharacterPreview(const int player, SDL_Rect pos)
 					entity->flags[BRIGHT] = true;
 					if ( (Sint32)entity->getUID() == -4 )
 					{
-						glDrawSprite(&camera_charsheet, entity, REALCOLORS);
+						glDrawSprite(&view, entity, REALCOLORS);
 					}
 					else
 					{
-						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+						glDrawVoxel(&view, entity, REALCOLORS);
 					}
 					entity->flags[BRIGHT] = b;
 				}
 			}
 		}
-
-		if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
-		{
-			camera_charsheet_offsetyaw -= 0.05;
-		}
-		else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
-		{
-			camera_charsheet_offsetyaw += 0.05;
-		}
-
-		if ( camera_charsheet_offsetyaw > 2 * PI )
-		{
-			camera_charsheet_offsetyaw -= 2 * PI;
-		}
-		if ( camera_charsheet_offsetyaw < 0.0 )
-		{
-			camera_charsheet_offsetyaw += 2 * PI;
-		}
 	}
-	fov = ofov;
+	::fov = ofov;
 }
 
 Player::SkillSheet_t::SkillSheetData_t Player::SkillSheet_t::skillSheetData;
@@ -4607,8 +4589,27 @@ void createPlayerInventory(const int player)
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
 
 			charFrame->setSize(charSize);
+			charFrame->setTickCallback([](Widget& widget) {
+				int player = widget.getOwner();
+				if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+				{
+					camera_charsheet_offsetyaw -= 0.05;
+				}
+				else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+				{
+					camera_charsheet_offsetyaw += 0.05;
+				}
+				if ( camera_charsheet_offsetyaw > 2 * PI )
+				{
+					camera_charsheet_offsetyaw -= 2 * PI;
+				}
+				if ( camera_charsheet_offsetyaw < 0.0 )
+				{
+					camera_charsheet_offsetyaw += 2 * PI;
+				}
+				});
 			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
-				drawCharacterPreview(widget.getOwner(), pos);
+				drawCharacterPreview(widget.getOwner(), pos, 50, camera_charsheet, camera_charsheet_offsetyaw);
 			});
 			/*charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
 				SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
@@ -7881,6 +7882,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		"images/system/white.png", "")*/;
 
 	auto slider = skillDescriptionFrame->addSlider("skill slider");
+	slider->setBorder(24);
 	slider->setMinValue(0);
 	slider->setMaxValue(100);
 	slider->setValue(0);
@@ -7889,7 +7891,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
 	slider->setOrientation(Slider::SLIDER_VERTICAL);
 	//slider->setCallback(callback);
-	slider->setColor(makeColor(127, 127, 127, 255));
+	slider->setColor(makeColor(255, 255, 255, 255));
 	slider->setHighlightColor(makeColor(255, 255, 255, 255));
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
@@ -9252,7 +9254,8 @@ void Player::SkillSheet_t::processSkillSheet()
 		createSkillSheet();
 	}
 
-	if ( keystatus[SDL_SCANCODE_K] )
+	// these hardcoded keypresses are evil, WOJ remove this eventually please
+	if ( !command && !inputstr && keystatus[SDL_SCANCODE_K] )
 	{
 		if ( !bSkillSheetOpen )
 		{

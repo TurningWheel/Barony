@@ -2,6 +2,7 @@
 
 #include "../main.hpp"
 #include "../draw.hpp"
+#include "../player.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"
 #include "Image.hpp"
@@ -71,7 +72,11 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 		return;
 	}
 
+#ifdef EDITOR
 	bool focused = highlighted || selected;
+#else
+	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
+#endif
 
 	SDL_Rect scaledSize;
 	scaledSize.x = _size.x;
@@ -325,8 +330,8 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-#ifndef NINTENDO
-	if (rectContainsPoint(_size, omousex, omousey)) {
+#if !defined(NINTENDO) && !defined(EDITOR)
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();
@@ -349,6 +354,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 				if (style == STYLE_RADIO) {
 					if (!reallyPressed) {
 						result.pressed = pressed = reallyPressed = true;
+						result.clicked = true;
 					}
 				} else {
 					result.pressed = pressed = (reallyPressed == false);

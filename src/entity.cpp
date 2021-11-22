@@ -10804,7 +10804,7 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return false;
 	}
-	if ( everybodyfriendly )   // friendly monsters mode
+	if ( everybodyfriendly || intro )   // friendly monsters mode
 	{
 		return false;
 	}
@@ -11207,7 +11207,7 @@ bool Entity::checkFriend(Entity* your)
 		return false;
 	}
 
-	if ( everybodyfriendly )   // friendly monsters mode
+	if ( everybodyfriendly || intro )   // friendly monsters mode
 	{
 		return true;
 	}

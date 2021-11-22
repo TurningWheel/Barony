@@ -31,6 +31,8 @@
 #include "../scrolls.hpp"
 #include "../lobbies.hpp"
 #include "../ui/GameUI.hpp"
+#include "../ui/MainMenu.hpp"
+#include "../json.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -1031,6 +1033,8 @@ int loadConfig(char* filename)
 		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNL: %d (Right arrow key)\n", impulses[IN_TURNL]);
 	}
 
+	MainMenu::settingsLoad();
+
 	return 0;
 }
 
@@ -1048,10 +1052,18 @@ int loadDefaultConfig()
 	Opens the provided config file and saves the status of certain variables
 	therein
 
+	DEPRECATED
+
 -------------------------------------------------------------------------------*/
 
 int saveConfig(char const * const _filename)
 {
+	// as of 2021-11-16 saveConfig() is now deprecated.
+	// The game will still load .cfg files the same as before,
+	// it simply no longer auto-generates them.
+	// game settings are saved in config/config.json.
+	return 0;
+
 	char path[PATH_MAX];
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);

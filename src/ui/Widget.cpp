@@ -4,6 +4,7 @@
 #include "Widget.hpp"
 #include "Frame.hpp"
 #include "Image.hpp"
+#include "../player.hpp"
 #include "../input.hpp"
 #include "../engine/audio/sound.hpp"
 
@@ -64,8 +65,26 @@ Frame* Widget::findSearchRoot() {
 	}
 }
 
+const Frame* Widget::findSearchRoot() const {
+	const Widget* gui = findHead();
+	if (gui && gui->getType() == WIDGET_FRAME) {
+		if (widgetSearchParent.empty()) {
+			return static_cast<const Frame*>(gui);
+		} else {
+			auto search = gui->findWidget(widgetSearchParent.c_str(), true);
+			if (search && search->getType() == WIDGET_FRAME) {
+				return static_cast<const Frame*>(search);
+			} else {
+				return static_cast<const Frame*>(gui);
+			}
+		}
+	} else {
+		return nullptr;
+	}
+}
+
 Widget* Widget::handleInput() {
-	if (selected) {
+	if (selected && !inputstr) {
 		Input& input = Input::inputs[owner];
 
 		// find search root
@@ -73,12 +92,18 @@ Widget* Widget::handleInput() {
 
 		// move to another widget
 		for (auto& move : widgetMovements) {
-			if (input.consumeBinaryToggle(move.first.c_str())) {
-				if (!move.second.empty()) {
+			if (!move.second.empty()) {
+				if (input.consumeBinaryToggle(move.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (result && !result->disabled && !result->invisible) {
+						auto in = input.input(move.first.c_str());
+#ifndef EDITOR
+						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON) {
+							inputs.getVirtualMouse(owner)->draw_cursor = false;
+						}
 						playSound(495, 64);
+#endif
 						result->scrollParent();
 						return result;
 					}
@@ -88,11 +113,17 @@ Widget* Widget::handleInput() {
 
 		// move to another widget and activate it
 		for (auto& action : widgetActions) {
-			if (input.consumeBinaryToggle(action.first.c_str())) {
-				if (!action.second.empty()) {
+			if (!action.second.empty()) {
+				if (input.consumeBinaryToggle(action.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (result && !result->disabled) {
+						auto in = input.input(action.first.c_str());
+#ifndef EDITOR
+						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON) {
+							inputs.getVirtualMouse(owner)->draw_cursor = false;
+						}
+#endif
 						result->activate();
 						return nullptr;
 					}
@@ -117,7 +148,32 @@ Widget* Widget::findHead() {
     }
 }
 
+const Widget* Widget::findHead() const {
+	if (parent && parent->owner == owner) {
+		return parent->findHead();
+	} else {
+		return this;
+	}
+}
+
 Widget* Widget::findWidget(const char* name, bool recursive) {
+	for (auto widget : widgets) {
+		if (widget->owner != owner) {
+			continue;
+		}
+		if (widget->name == name) {
+			return widget;
+		} else if (recursive) {
+			auto result = widget->findWidget(name, recursive);
+			if (result) {
+				return result;
+			}
+		}
+	}
+	return nullptr;
+}
+
+const Widget* Widget::findWidget(const char* name, bool recursive) const {
 	for (auto widget : widgets) {
 		if (widget->owner != owner) {
 			continue;
@@ -167,7 +223,7 @@ Widget* Widget::findSelectedWidget(int owner) {
 	return nullptr;
 }
 
-bool Widget::isChildOf(Widget& widget) {
+bool Widget::isChildOf(const Widget& widget) const {
 	if (!parent) {
 		return false;
 	}
@@ -199,11 +255,12 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 		drawCallback(*this, size);
 	}
 
-#ifdef NINTENDO
 	if (hideGlyphs) {
 		return;
 	}
-	Widget* selectedWidget = nullptr;
+
+	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	const Widget* selectedWidget = nullptr;
 	for (auto widget : selectedWidgets) {
 		if (widget->owner == owner) {
 			selectedWidget = widget;
@@ -218,6 +275,53 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			return;
 		}
 	}
+
+	// draw selector widgets
+	if (!hideSelectors && selectedWidget == this) {
+		{
+			auto image = Image::get("images/ui/Main Menus/Selector_TL.png");
+			int w = image->getWidth();
+			int h = image->getHeight();
+			int x = size.x;
+			int y = size.y;
+			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
+			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
+			image->draw(nullptr, SDL_Rect{x - beatx, y - beaty, w, h}, viewport);
+		}
+		{
+			auto image = Image::get("images/ui/Main Menus/Selector_TR.png");
+			int w = image->getWidth();
+			int h = image->getHeight();
+			int x = size.x + size.w - w;
+			int y = size.y;
+			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
+			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
+			image->draw(nullptr, SDL_Rect{x + beatx, y - beaty, w, h}, viewport);
+		}
+		{
+			auto image = Image::get("images/ui/Main Menus/Selector_BL.png");
+			int w = image->getWidth();
+			int h = image->getHeight();
+			int x = size.x;
+			int y = size.y + size.h - h;
+			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
+			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
+			image->draw(nullptr, SDL_Rect{x - beatx, y + beaty, w, h}, viewport);
+		}
+		{
+			auto image = Image::get("images/ui/Main Menus/Selector_BR.png");
+			int w = image->getWidth();
+			int h = image->getHeight();
+			int x = size.x + size.w - w;
+			int y = size.y + size.h - h;
+			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
+			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
+			image->draw(nullptr, SDL_Rect{x + beatx, y + beaty, w, h}, viewport);
+		}
+	}
+
+	// button prompts
+#ifdef NINTENDO
 	int x = size.x + size.w;
 	int y = size.y + size.h;
 	auto& actions = selectedWidget->getWidgetActions();
@@ -226,7 +330,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
 		int w = image->getWidth();
 		int h = image->getHeight();
-		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 		x -= w;
 	}
 	if ((action = actions.find("MenuCancel")) != actions.end()) {
@@ -234,7 +338,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}
@@ -243,7 +347,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}
@@ -252,7 +356,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}
@@ -261,7 +365,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_+00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}
@@ -270,7 +374,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_-00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}
@@ -279,7 +383,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}
@@ -288,7 +392,7 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h});
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 			x -= w;
 		}
 	}

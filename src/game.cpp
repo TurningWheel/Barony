@@ -45,6 +45,7 @@
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
 #include "input.hpp"
+#include "ui/Image.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -4513,7 +4514,7 @@ void ingameHud()
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
-			if ( capture_mouse )
+			if ( capture_mouse && !gamePaused )
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
@@ -4801,9 +4802,12 @@ void ingameHud()
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 				{
 					if ( followerMenu.followerToCommand
@@ -4850,11 +4854,12 @@ void ingameHud()
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				pos.w = 0;
-				pos.h = 0;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 			}
 		}
 		else if ( !nohud )
@@ -4871,7 +4876,7 @@ void ingameHud()
 				{
 					pos.x -= cursor_bmp->w / 2;
 					pos.y -= cursor_bmp->h / 2;
-					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+					drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 					pos.x += 24;
 					pos.y += 24;
 				}
@@ -4881,7 +4886,7 @@ void ingameHud()
 					{
 						pos.x -= cursor_bmp->w / 2;
 						pos.y -= cursor_bmp->h / 2;
-						drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+						drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 
 						pos.x = players[player]->camera_midx();
 						pos.y = players[player]->camera_midy();
@@ -5545,9 +5550,9 @@ int main(int argc, char** argv)
 						{
 							case 0:
 							case 1:
-							case 2:
 								menuMapType = loadMainMenuMap(true, false);
 								break;
+							case 2:
 							case 3:
 								menuMapType = loadMainMenuMap(false, false);
 								break;
@@ -5625,9 +5630,9 @@ int main(int argc, char** argv)
 						{
 							case 0:
 							case 1:
-							case 2:
 								menuMapType = loadMainMenuMap(true, false);
 								break;
+							case 2:
 							case 3:
 								menuMapType = loadMainMenuMap(false, false);
 								break;
@@ -5825,15 +5830,17 @@ int main(int argc, char** argv)
 						// draw mouse
 						if ( !movie )
 						{
-							for ( int i = 0; i < MAXPLAYERS; ++i )
+							// only draw 1 cursor in the main menu
+							for ( int i = 0; i < 1; ++i )
 							{
 								if ( inputs.getVirtualMouse(i)->draw_cursor )
 								{
-									pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-									pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-									pos.w = 0;
-									pos.h = 0;
-									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+									auto cursor = Image::get("images/system/cursor_hand.png");
+									pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+									pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+									pos.w = cursor->getWidth();
+									pos.h = cursor->getHeight();
+									cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 								}
 							}
 						}
@@ -6009,40 +6016,10 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								if (playercount == 1)
-								{
-									camera.winx = 0;
-									camera.winy = 0;
-									camera.winw = xres;
-									camera.winh = yres;
-								} 
-								else if (playercount == 2)
-								{
-									if ( players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
-									{
-										// divide screen vertically
-										camera.winx = c * xres / 2;
-										camera.winy = 0;
-										camera.winw = xres / 2;
-										camera.winh = yres;
-									}
-									else
-									{
-										// divide screen horizontally
-										camera.winx = 0;
-										camera.winy = c * yres / 2;
-										camera.winw = xres;
-										camera.winh = yres / 2;
-									}
-								} 
-								else if (playercount >= 3) 
-								{
-									// divide screen into quadrants
-									camera.winx = (c % 2) * xres / 2;
-									camera.winy = (c / 2) * yres / 2;
-									camera.winw = xres / 2;
-									camera.winh = yres / 2;
-								}
+								camera.winx = players[c]->camera().winx;
+								camera.winy = players[c]->camera().winy;
+								camera.winw = players[c]->camera().winw;
+								camera.winh = players[c]->camera().winh;
 							}
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
@@ -6269,13 +6246,14 @@ int main(int argc, char** argv)
 					}
 					if (((subwindow && !players[i]->shootmode) || gamePaused))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor )
+						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == clientnum || !gamePaused) )
 						{
-							pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-							pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-							pos.w = 0;
-							pos.h = 0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
 

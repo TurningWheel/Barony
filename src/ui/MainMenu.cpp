@@ -5,6 +5,7 @@
 #include "Button.hpp"
 #include "Slider.hpp"
 #include "Text.hpp"
+#include "GameUI.hpp"
 
 #include "../init.hpp"
 #include "../net.hpp"
@@ -16,6 +17,7 @@
 #include "../interface/interface.hpp"
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
+#include "../classdescriptions.hpp"
 
 #include <cassert>
 #include <functional>
@@ -26,14 +28,6 @@ namespace MainMenu {
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
 
-	enum class FadeDestination : Uint8 {
-		None = 0,
-		RootMainMenu = 1,
-		IntroStoryScreen = 2,
-		HallOfTrials = 3,
-		GameStart = 4,
-	};
-
 	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
@@ -41,6 +35,11 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
+
+	void beginFade(FadeDestination fd) {
+		main_menu_fade_destination = fd;
+		fadeout = true;
+	}
 
 	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
@@ -325,16 +324,42 @@ namespace MainMenu {
 		return InventorySorting();
 	}
 
+	void InventorySorting::serialize(FileInterface* file) {
+		file->property("hotbarWeapons", hotbarWeapons);
+		file->property("hotbarArmor", hotbarArmor);
+		file->property("hotbarAmulets", hotbarAmulets);
+		file->property("hotbarBooks", hotbarBooks);
+		file->property("hotbarTools", hotbarTools);
+		file->property("hotbarThrown", hotbarThrown);
+		file->property("hotbarGems", hotbarGems);
+		file->property("hotbarPotions", hotbarPotions);
+		file->property("hotbarScrolls", hotbarScrolls);
+		file->property("hotbarStaves", hotbarStaves);
+		file->property("hotbarFood", hotbarFood);
+		file->property("hotbarSpells", hotbarSpells);
+		file->property("sortWeapons", sortWeapons);
+		file->property("sortArmor", sortArmor);
+		file->property("sortAmulets", sortAmulets);
+		file->property("sortBooks", sortBooks);
+		file->property("sortTools", sortTools);
+		file->property("sortThrown", sortThrown);
+		file->property("sortGems", sortGems);
+		file->property("sortPotions", sortPotions);
+		file->property("sortScrolls", sortScrolls);
+		file->property("sortStaves", sortStaves);
+		file->property("sortFood", sortFood);
+		file->property("sortEquipped", sortEquipped);
+	}
+
 /******************************************************************************/
 
 	inline void Bindings::save() {
-		FileHelper::writeObject("config/bindings.json", EFileFormat::Json, *this);
+		// TODO record these bindings to Input::inputs
 	}
 
 	inline Bindings Bindings::load() {
-		Bindings bindings;
-		bool result = FileHelper::readObject("config/bindings.json", bindings);
-		return result ? bindings : reset();
+		// TODO populate our variables with the values of some globally-accessed ones
+		return Bindings::reset();
 	}
 
 	inline Bindings Bindings::reset() {
@@ -391,6 +416,54 @@ namespace MainMenu {
 		return bindings;
 	}
 
+	void Bindings::serialize(FileInterface* file) {
+		Uint32 num_players = 4;
+		file->propertyName("players");
+		file->beginArray(num_players);
+		for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
+			file->beginObject();
+			file->property("device", devices[c]);
+			for (int j = 0; j < 3; ++j) {
+				auto& bindings =
+					j == 0 ? kb_mouse_bindings[c]:
+					j == 1 ? gamepad_bindings[c]:
+					joystick_bindings[c];
+				file->propertyName(
+					j == 0 ? "kb_mouse_bindings":
+					j == 1 ? "gamepad_bindings":
+					"joystick_bindings");
+				if (file->isReading()) {
+					bindings.clear();
+				}
+				Uint32 count = bindings.size();
+				file->beginArray(count);
+				if (file->isReading()) {
+					for (Uint32 index = 0; index < count; ++index) {
+						file->beginObject();
+						std::string binding;
+						file->property("binding", binding);
+						std::string input;
+						file->property("input", input);
+						bindings.emplace(binding, input);
+						file->endObject();
+					}
+				} else {
+					for (auto& bind : bindings) {
+						file->beginObject();
+						std::string binding = bind.first;
+						file->property("binding", binding);
+						std::string input = bind.second;
+						file->property("input", input);
+						file->endObject();
+					}
+				}
+				file->endArray();
+			}
+			file->endObject();
+		}
+		file->endArray();
+	}
+
 /******************************************************************************/
 
 	inline void Minimap::save() {
@@ -413,20 +486,93 @@ namespace MainMenu {
 		return Minimap();
 	}
 
+	void Minimap::serialize(FileInterface* file) {
+		file->property("map_scale", map_scale);
+		file->property("icon_scale", icon_scale);
+		file->property("foreground_opacity", foreground_opacity);
+		file->property("background_opacity", background_opacity);
+	}
+
 /******************************************************************************/
 
 	inline void Messages::save() {
-		FileHelper::writeObject("config/messages.json", EFileFormat::Json, *this);
+		// TODO record these message settings to some globally-accessible variables.
 	}
 
 	inline Messages Messages::load() {
-		Messages messages;
-		bool result = FileHelper::readObject("config/messages.json", messages);
-		return result ? messages : reset();
+		// TODO populate our variables with the values of some globally-accessed ones
+		return Messages::reset();
 	}
 
 	inline Messages Messages::reset() {
 		return Messages();
+	}
+
+	void Messages::serialize(FileInterface* file) {
+		file->property("combat", combat);
+		file->property("status", status);
+		file->property("inventory", inventory);
+		file->property("equipment", equipment);
+		file->property("world", world);
+		file->property("chat", chat);
+		file->property("progression", progression);
+		file->property("interaction", interaction);
+		file->property("inspection", inspection);
+	}
+
+
+	/******************************************************************************/
+
+	static AllSettings allSettings;
+
+	void AllSettings::serialize(FileInterface* file) {
+		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
+		file->property("inventory_sorting", inventory_sorting);
+		file->property("use_on_release_enabled", use_on_release_enabled);
+		file->property("minimap", minimap);
+		file->property("show_messages_enabled", show_messages_enabled);
+		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
+		file->property("show_hud_enabled", show_hud_enabled);
+		file->property("show_ip_address_enabled", show_ip_address_enabled);
+		file->property("content_control_enabled", content_control_enabled);
+		file->property("colorblind_mode_enabled", colorblind_mode_enabled);
+		file->property("arachnophobia_filter_enabled", arachnophobia_filter_enabled);
+		file->property("shaking_enabled", shaking_enabled);
+		file->property("bobbing_enabled", bobbing_enabled);
+		file->property("light_flicker_enabled", light_flicker_enabled);
+		file->property("window_mode", window_mode);
+		file->property("resolution_x", resolution_x);
+		file->property("resolution_y", resolution_y);
+		file->property("vsync_enabled", vsync_enabled);
+		file->property("vertical_split_enabled", vertical_split_enabled);
+		file->property("gamma", gamma);
+		file->property("fov", fov);
+		file->property("fps", fps);
+		file->property("master_volume", master_volume);
+		file->property("gameplay_volume", gameplay_volume);
+		file->property("ambient_volume", ambient_volume);
+		file->property("environment_volume", environment_volume);
+		file->property("music_volume", music_volume);
+		file->property("minimap_pings_enabled", minimap_pings_enabled);
+		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
+		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
+		file->property("bindings", bindings);
+		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
+		file->property("mouse_sensitivity", mouse_sensitivity);
+		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
+		file->property("smooth_mouse_enabled", smooth_mouse_enabled);
+		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
+		file->property("turn_sensitivity_x", turn_sensitivity_x);
+		file->property("turn_sensitivity_y", turn_sensitivity_y);
+		file->property("classic_mode_enabled", classic_mode_enabled);
+		file->property("hardcore_mode_enabled", hardcore_mode_enabled);
+		file->property("friendly_fire_enabled", friendly_fire_enabled);
+		file->property("keep_inventory_enabled", keep_inventory_enabled);
+		file->property("hunger_enabled", hunger_enabled);
+		file->property("minotaur_enabled", minotaur_enabled);
+		file->property("random_traps_enabled", random_traps_enabled);
+		file->property("extra_life_enabled", extra_life_enabled);
+		file->property("cheats_enabled", cheats_enabled);
 	}
 
 /******************************************************************************/
@@ -456,6 +602,7 @@ namespace MainMenu {
 		static bool story_text_end = false;
 
 		auto back_button = main_menu_frame->addButton("back");
+		back_button->setHideSelectors(true);
 		back_button->setText("Skip story");
 		back_button->setColor(makeColor(0, 0, 0, 0));
 		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
@@ -580,7 +727,6 @@ namespace MainMenu {
 /******************************************************************************/
 
 	static std::string settings_tab_name;
-	static AllSettings allSettings;
 
 	struct Setting {
 		enum class Type : Uint8 {
@@ -596,7 +742,7 @@ namespace MainMenu {
 		const char* name;
 	};
 
-	static void settingsSave() {
+	void settingsSave() {
 		auto_hotbar_new_items = allSettings.add_items_to_hotbar_enabled;
 		allSettings.inventory_sorting.save();
 		right_click_protect = !allSettings.use_on_release_enabled;
@@ -661,13 +807,15 @@ namespace MainMenu {
 		}
 		vidgamma = allSettings.gamma / 100.f;
 		verticalSync = allSettings.vsync_enabled;
-		if ( !changeVideoMode(allSettings.resolution_x, allSettings.resolution_y) ) {
-			printlog("critical error! Attempting to abort safely...\n");
-			mainloop = 0;
+		if (initialized) {
+			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
+				printlog("critical error! Attempting to abort safely...\n");
+				mainloop = 0;
+			}
 		}
 
 		// transmit server flags
-		if ( !intro && multiplayer == SERVER ) {
+		if ( initialized && !intro && multiplayer == SERVER ) {
 			strcpy((char*)net_packet->data, "SVFL");
 			SDLNet_Write32(svFlags, &net_packet->data[4]);
 			net_packet->len = 8;
@@ -684,29 +832,38 @@ namespace MainMenu {
 		}
 
 		// update volume for sound groups
+		if (initialized) {
 #ifdef USE_FMOD
-		music_group->setVolume(musvolume / 128.f);
-		sound_group->setVolume(sfxvolume / 128.f);
-		soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-		soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
+			music_group->setVolume(musvolume / 128.f);
+			sound_group->setVolume(sfxvolume / 128.f);
+			soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
+			soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
 #elif defined USE_OPENAL
-		OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-		OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-		OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-		OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
+			OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #endif
+		}
 
 		// write config file
 		saveConfig("default.cfg");
+		FileHelper::writeObject("config/config.json", EFileFormat::Json, allSettings);
 	}
 
-	static void settingsReset() {
+	void settingsLoad() {
+		if (FileHelper::readObject("config/config.json", allSettings)) {
+			settingsSave();
+		}
+	}
+
+	void settingsReset() {
 		allSettings.add_items_to_hotbar_enabled = true;
 		allSettings.inventory_sorting = InventorySorting::reset();
 		allSettings.use_on_release_enabled = true;
-		allSettings.minimap.reset();
+		allSettings.minimap = Minimap::reset();
 		allSettings.show_messages_enabled = true;
-		allSettings.show_messages.reset();
+		allSettings.show_messages = Messages::reset();
 		allSettings.show_player_nametags_enabled = true;
 		allSettings.show_hud_enabled = true;
 		allSettings.show_ip_address_enabled = true;
@@ -732,7 +889,7 @@ namespace MainMenu {
 		allSettings.minimap_pings_enabled = true;
 		allSettings.player_monster_sounds_enabled = true;
 		allSettings.out_of_focus_audio_enabled = true;
-		allSettings.bindings.reset();
+		allSettings.bindings = Bindings::reset();
 		allSettings.numkeys_in_inventory_enabled = true;
 		allSettings.mouse_sensitivity = 32.f;
 		allSettings.reverse_mouse_enabled = false;
@@ -897,7 +1054,7 @@ namespace MainMenu {
 			button->setBackground("images/ui/Main Menus/Settings/AutoSort/Button_Basic00.png");
 			button->setText(options[c].name);
 			button->setFont(bigfont_outline);
-			button->setColor(makeColor(127, 127, 127, 255));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			if (c > 0) {
 				button->setWidgetLeft(options[c - 1].name);
@@ -1192,7 +1349,8 @@ namespace MainMenu {
 		dropdown_list->setTickCallback([](Widget& widget){
 			Frame* dropdown_list = static_cast<Frame*>(&widget); assert(dropdown_list);
 			auto selection = dropdown_list->findImage("selection"); assert(selection);
-			if (dropdown_list->getSelection() >= 0 && dropdown_list->getSelection() < dropdown_list->getEntries().size()) {
+			bool inFrame = dropdown_list->capturesMouse() || !inputs.getVirtualMouse(0)->draw_cursor;
+			if (inFrame && dropdown_list->getSelection() >= 0 && dropdown_list->getSelection() < dropdown_list->getEntries().size()) {
 				selection->disabled = false;
 				int entrySize = 0;
 				Font* _font = Font::get(bigfont_outline);
@@ -1344,9 +1502,9 @@ namespace MainMenu {
 		button->setCallback(callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
@@ -1380,9 +1538,9 @@ namespace MainMenu {
 		button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_SwitchOn00.png");
 		button->setStyle(Button::style_t::STYLE_TOGGLE);
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1416,9 +1574,9 @@ namespace MainMenu {
 		button->setCallback(customize_callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetLeft((fullname + "_button").c_str());
 		button->setWidgetBack("discard_and_exit");
@@ -1459,9 +1617,9 @@ namespace MainMenu {
 		button->setCallback(callback);
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1497,9 +1655,9 @@ namespace MainMenu {
 		button->setBackground("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
 		button->setBackgroundHighlighted("images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
-		button->setColor(makeColor(127,127,127,255));
+		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
-		button->setTextColor(makeColor(127,127,127,255));
+		button->setTextColor(makeColor(255,255,255,255));
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -1571,7 +1729,7 @@ namespace MainMenu {
 		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 282 : 450, 24});
 		slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 		slider->setCallback(callback);
-		slider->setColor(makeColor(127,127,127,255));
+		slider->setColor(makeColor(255,255,255,255));
 		slider->setHighlightColor(makeColor(255,255,255,255));
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_ValueSlider_Slide00.png");
 		if (_short) {
@@ -1863,9 +2021,9 @@ namespace MainMenu {
 
 		auto defaults = window->addButton("restore_defaults");
 		defaults->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		defaults->setColor(makeColor(127, 127, 127, 255));
+		defaults->setColor(makeColor(255, 255, 255, 255));
 		defaults->setHighlightColor(makeColor(255, 255, 255, 255));
-		defaults->setTextColor(makeColor(127, 127, 127, 255));
+		defaults->setTextColor(makeColor(255, 255, 255, 255));
 		defaults->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		defaults->setSize(SDL_Rect{156, 630, 164, 62});
 		defaults->setText("Restore\nDefaults");
@@ -1879,9 +2037,9 @@ namespace MainMenu {
 
 		auto discard = window->addButton("discard_and_exit");
 		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		discard->setColor(makeColor(127, 127, 127, 255));
+		discard->setColor(makeColor(255, 255, 255, 255));
 		discard->setHighlightColor(makeColor(255, 255, 255, 255));
-		discard->setTextColor(makeColor(127, 127, 127, 255));
+		discard->setTextColor(makeColor(255, 255, 255, 255));
 		discard->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		discard->setText("Discard\n& Exit");
 		discard->setFont(smallfont_outline);
@@ -1901,9 +2059,9 @@ namespace MainMenu {
 
 		auto confirm = window->addButton("confirm_and_exit");
 		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
-		confirm->setTextColor(makeColor(127, 127, 127, 255));
+		confirm->setTextColor(makeColor(255, 255, 255, 255));
 		confirm->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setText("Confirm\n& Exit");
 		confirm->setFont(smallfont_outline);
@@ -2378,8 +2536,8 @@ namespace MainMenu {
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
 			allSettings.show_hud_enabled, [](Button& button){soundToggle(); allSettings.show_hud_enabled = button.isPressed();});
 #ifndef NINTENDO
-		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Show IP Address",
-			"Hide the display of IP addresses and other location data for privacy purposes.",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Streamer Mode",
+			"If you're a streamer and know what doxxing is, definitely press this button.",
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggle(); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
@@ -2758,6 +2916,7 @@ namespace MainMenu {
 		createDummyMainMenu();
 
 		auto back_button = main_menu_frame->addButton("back");
+		back_button->setHideSelectors(true);
 		back_button->setText("Return to Main Menu");
 		back_button->setColor(makeColor(0, 0, 0, 0));
 		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
@@ -2977,7 +3136,7 @@ namespace MainMenu {
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 127));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
@@ -3005,6 +3164,7 @@ namespace MainMenu {
 /******************************************************************************/
 
 	static LobbyType currentLobbyType;
+	static bool playersInLobby[4];
 
 	enum class DLC {
 		Base,
@@ -3067,7 +3227,14 @@ namespace MainMenu {
 	}
 
 	static auto male_button_fn = [](Button& button, int index) {
+		button.setColor(makeColor(255, 255, 255, 255));
+		button.setHighlightColor(makeColor(255, 255, 255, 255));
 		auto card = static_cast<Frame*>(button.getParent());
+		auto female = card->findButton("female");
+		if (female) {
+			female->setColor(makeColor(127, 127, 127, 255));
+			female->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		stats[index]->sex = MALE;
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
 			auto succubus = card->findButton("Succubus");
@@ -3107,10 +3274,19 @@ namespace MainMenu {
 				}
 			}
 		}
+		stats[index]->clearStats();
+		initClass(index);
 	};
 
 	static auto female_button_fn = [](Button& button, int index) {
+		button.setColor(makeColor(255, 255, 255, 255));
+		button.setHighlightColor(makeColor(255, 255, 255, 255));
 		auto card = static_cast<Frame*>(button.getParent());
+		auto male = card->findButton("male");
+		if (male) {
+			male->setColor(makeColor(127, 127, 127, 255));
+			male->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		stats[index]->sex = FEMALE;
 		if (stats[index]->playerRace == RACE_INCUBUS) {
 			auto incubus = card->findButton("Incubus");
@@ -3150,6 +3326,8 @@ namespace MainMenu {
 				}
 			}
 		}
+		stats[index]->clearStats();
+		initClass(index);
 	};
 
 	static Frame* initCharacterCard(int index, int height) {
@@ -3167,6 +3345,8 @@ namespace MainMenu {
 		card->setColor(0);
 		card->setBorder(0);
 		card->setOwner(index);
+		card->setClickable(true);
+		card->setHideGlyphs(true);
 
 		return card;
 	}
@@ -3178,6 +3358,15 @@ namespace MainMenu {
 
 		static void (*back_fn)(int) = [](int index){
 			characterCardLobbySettingsMenu(index);
+			svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
+			svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
+			svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
+			svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
+			svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
+			svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
+			svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
+			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
 			auto button = card->findButton("custom_difficulty"); assert(button);
@@ -3310,23 +3499,10 @@ namespace MainMenu {
 			});
 		(*achievements->getTickCallback())(*achievements);
 
-		static auto confirmFlags = [](){
-			soundActivate();
-			svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
-			svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
-			svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
-			svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
-			svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
-			svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
-			svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
-			svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
-			svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
-		};
-
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDiff_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 606, 202, 52});
@@ -3335,11 +3511,11 @@ namespace MainMenu {
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
 		switch (index) {
-		case 0: confirm->setCallback([](Button&){confirmFlags(); back_fn(0);}); break;
-		case 1: confirm->setCallback([](Button&){confirmFlags(); back_fn(1);}); break;
-		case 2: confirm->setCallback([](Button&){confirmFlags(); back_fn(2);}); break;
-		case 3: confirm->setCallback([](Button&){confirmFlags(); back_fn(3);}); break;
-		}
+		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
+		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
+		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
+		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
+		}*/
 	}
 
 	void characterCardLobbySettingsMenu(int index) {
@@ -3494,7 +3670,7 @@ namespace MainMenu {
 		}
 
 		auto custom_difficulty = card->addButton("custom_difficulty");
-		custom_difficulty->setColor(makeColor(127, 127, 127, 255));
+		custom_difficulty->setColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setSize(SDL_Rect{84, 210, 114, 40});
 		custom_difficulty->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_GameSettings_Button_Custom_01.png");
@@ -3566,10 +3742,10 @@ namespace MainMenu {
 			});
 		(*achievements->getTickCallback())(*achievements);
 
-		auto multiplayer_header = card->addField("difficulty_header", 64);
+		auto multiplayer_header = card->addField("multiplayer_header", 64);
 		multiplayer_header->setSize(SDL_Rect{70, 328, 182, 34});
 		multiplayer_header->setFont(smallfont_outline);
-		multiplayer_header->setText("DIFFICULTY SETTINGS");
+		multiplayer_header->setText("LOBBY SETTINGS");
 		multiplayer_header->setJustify(Field::justify_t::CENTER);
 
 		auto invite_label = card->addField("invite_label", 64);
@@ -3680,10 +3856,10 @@ namespace MainMenu {
 			}
 		}
 
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 522, 202, 52});
@@ -3700,7 +3876,7 @@ namespace MainMenu {
 		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
 		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
 		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}
+		}*/
 	}
 
 	void characterCardRaceMenu(int index) {
@@ -3758,16 +3934,30 @@ namespace MainMenu {
 				if (strcmp(button.getName(), race) == 0) {
 					stats[index]->playerRace = c;
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
+						stats[index]->appearance = 0;
 						stats[index]->sex = FEMALE;
 					}
 					else if (stats[index]->playerRace == RACE_INCUBUS) {
+						stats[index]->appearance = 0;
 						stats[index]->sex = MALE;
+					}
+					else if (stats[index]->playerRace == RACE_HUMAN) {
+						stats[index]->appearance = rand() % NUMAPPEARANCES;
+					}
+					else {
+						stats[index]->appearance = 0;
 					}
 				} else {
 					auto other_button = frame->findButton(race);
 					other_button->setPressed(false);
 				}
 			}
+			auto disable_abilities = frame->findButton("disable_abilities");
+			if (disable_abilities) {
+				disable_abilities->setPressed(false);
+			}
+			stats[index]->clearStats();
+			initClass(index);
 		};
 
 		auto human = card->addButton("Human");
@@ -3818,6 +4008,7 @@ namespace MainMenu {
 		appearances->setListOffset(SDL_Rect{12, 8, 0, 0});
 		appearances->setScrollBarsEnabled(false);
 		appearances->setAllowScrollBinds(false);
+		appearances->setClickable(true);
 		appearances->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		appearances->addWidgetMovement("MenuListCancel", "appearances");
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
@@ -3842,11 +4033,20 @@ namespace MainMenu {
 			box->pos.y = frame->getActualSize().y;
 			backdrop->pos.y = frame->getActualSize().y + 4;
 			auto appearance_uparrow = card->findButton("appearance_uparrow");
-			appearance_uparrow->setDisabled(!frame->isActivated());
-			appearance_uparrow->setInvisible(!frame->isActivated());
 			auto appearance_downarrow = card->findButton("appearance_downarrow");
-			appearance_downarrow->setDisabled(!frame->isActivated());
-			appearance_downarrow->setInvisible(!frame->isActivated());
+			if (frame->isActivated()) {
+				appearance_uparrow->setDisabled(false);
+				appearance_uparrow->setInvisible(false);
+				appearance_downarrow->setDisabled(false);
+				appearance_downarrow->setInvisible(false);
+			} else if (!frame->isSelected() &&
+				!appearance_uparrow->isSelected() &&
+				!appearance_downarrow->isSelected()) {
+				appearance_uparrow->setDisabled(true);
+				appearance_uparrow->setInvisible(true);
+				appearance_downarrow->setDisabled(true);
+				appearance_downarrow->setInvisible(true);
+			}
 			});
 
 		auto appearance_backdrop = appearances->addImage(
@@ -3871,17 +4071,36 @@ namespace MainMenu {
 		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
 		appearance_uparrow->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonUp_00.png");
 		appearance_uparrow->setHighlightColor(makeColor(255, 255, 255, 255));
-		appearance_uparrow->setColor(makeColor(223, 223, 223, 255));
+		appearance_uparrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setDisabled(true);
 		appearance_uparrow->setInvisible(true);
+		appearance_uparrow->setCallback([](Button& button){
+			auto card = static_cast<Frame*>(button.getParent());
+			auto appearances = card->findFrame("appearances"); assert(appearances);
+			int selection = std::max(appearances->getSelection() - 1, 0);
+			appearances->setSelection(selection);
+			appearances->scrollToSelection();
+			appearances->activateSelection();
+			button.select();
+			});
 
 		auto appearance_downarrow = card->addButton("appearance_downarrow");
 		appearance_downarrow->setSize(SDL_Rect{198, 114, 32, 20});
 		appearance_downarrow->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDown_00.png");
 		appearance_downarrow->setHighlightColor(makeColor(255, 255, 255, 255));
-		appearance_downarrow->setColor(makeColor(223, 223, 223, 255));
+		appearance_downarrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setDisabled(true);
 		appearance_downarrow->setInvisible(true);
+		appearance_downarrow->setCallback([](Button& button){
+			auto card = static_cast<Frame*>(button.getParent());
+			auto appearances = card->findFrame("appearances"); assert(appearances);
+			int selection = std::min(appearances->getSelection() + 1,
+				(int)appearances->getEntries().size() - 1);
+			appearances->setSelection(selection);
+			appearances->scrollToSelection();
+			appearances->activateSelection();
+			button.select();
+			});
 
 		static const char* appearance_names[] = {
 			"Landguard", "Northborn", "Firebrand", "Hardbred",
@@ -3906,10 +4125,14 @@ namespace MainMenu {
 			entry->color = makeColor(166, 123, 81, 255);
 			entry->text = name;
 			switch (index) {
-			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0);}; break;
-			case 1: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 1);}; break;
-			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2);}; break;
-			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3);}; break;
+			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0); entry.parent.activate();}; break;
+			case 1: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 1); entry.parent.activate();}; break;
+			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2); entry.parent.activate();}; break;
+			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3); entry.parent.activate();}; break;
+			}
+			if (stats[index]->appearance == c) {
+				appearances->setSelection(c);
+				appearances->scrollToSelection();
 			}
 		}
 
@@ -4050,7 +4273,7 @@ namespace MainMenu {
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
 
 		auto disable_abilities = card->addButton("disable_abilities");
-		disable_abilities->setSize(SDL_Rect{198, 290, 32, 32});
+		disable_abilities->setSize(SDL_Rect{194, 284, 44, 44});
 		disable_abilities->setIcon("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Checked_00.png");
 		disable_abilities->setColor(0);
 		disable_abilities->setBorderColor(0);
@@ -4087,8 +4310,13 @@ namespace MainMenu {
 		}
 
 		auto male_button = card->addButton("male");
-		male_button->setColor(makeColor(127, 127, 127, 255));
-		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == MALE) {
+			male_button->setColor(makeColor(255, 255, 255, 255));
+			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			male_button->setColor(makeColor(127, 127, 127, 255));
+			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 		male_button->setSize(SDL_Rect{44, 344, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4105,8 +4333,13 @@ namespace MainMenu {
 		}
 
 		auto female_button = card->addButton("female");
-		female_button->setColor(makeColor(127, 127, 127, 255));
-		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == FEMALE) {
+			female_button->setColor(makeColor(255, 255, 255, 255));
+			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			female_button->setColor(makeColor(127, 127, 127, 255));
+			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 		female_button->setSize(SDL_Rect{106, 344, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4126,7 +4359,7 @@ namespace MainMenu {
 		auto show_race_info = card->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
 		show_race_info->setText("Show Race\nInfo");
-		show_race_info->setColor(makeColor(127, 127, 127, 255));
+		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
 		show_race_info->setSize(SDL_Rect{168, 344, 110, 52});
@@ -4137,10 +4370,10 @@ namespace MainMenu {
 		show_race_info->setWidgetDown("confirm");
 		show_race_info->setWidgetLeft("female");
 
-		auto confirm = card->addButton("confirm");
+		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
 		confirm->setText("Confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonConfirm_00.png");
 		confirm->setSize(SDL_Rect{62, 430, 202, 52});
@@ -4153,7 +4386,7 @@ namespace MainMenu {
 		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
 		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
 		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}
+		}*/
 	}
 
 	void characterCardClassMenu(int index) {
@@ -4203,7 +4436,7 @@ namespace MainMenu {
 		);
 
 		static auto class_name_fn = [](Field& field, int index){
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				field.setText(find->second.name);
@@ -4257,7 +4490,7 @@ namespace MainMenu {
 		}
 
 		auto class_info = card->addButton("class_info");
-		class_info->setColor(makeColor(127, 127, 127, 255));
+		class_info->setColor(makeColor(255, 255, 255, 255));
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		class_info->setSize(SDL_Rect{236, 110, 48, 48});
 		class_info->setBackground("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_MagnifyingGlass_00.png");
@@ -4280,7 +4513,7 @@ namespace MainMenu {
 			}
 			button->setIcon((prefix + full_class.image).c_str());
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
-			button->setColor(makeColor(127, 127, 127, 255));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
@@ -4330,17 +4563,17 @@ namespace MainMenu {
 
 			switch (index) {
 			case 0: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 1: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 2: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 3: button->setCallback([](Button& button){button_fn(button, 0);}); break;
+			case 1: button->setCallback([](Button& button){button_fn(button, 1);}); break;
+			case 2: button->setCallback([](Button& button){button_fn(button, 2);}); break;
+			case 3: button->setCallback([](Button& button){button_fn(button, 3);}); break;
 			}
 		}
 
 		auto first_button = subframe->findButton(reduced_class_list[0]); assert(first_button);
 		first_button->select();
 
-		auto confirm = card->addButton("confirm");
-		confirm->setColor(makeColor(127, 127, 127, 255));
+		/*auto confirm = card->addButton("confirm");
+		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		confirm->setSize(SDL_Rect{62, 430, 202, 52});
@@ -4355,7 +4588,7 @@ namespace MainMenu {
 		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
 		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
 		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}
+		}*/
 	}
 
 	void createCharacterCard(int index) {
@@ -4403,11 +4636,14 @@ namespace MainMenu {
 		);
 
 		auto name_field = card->addField("name", 128);
+		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
-		name_field->setText(stats[0]->name);
+		name_field->setText(stats[index]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
 		name_field->setColor(makeColor(166, 123, 81, 255));
+		name_field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		name_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
 		name_field->setVJustify(Field::justify_t::CENTER);
 		name_field->setEditable(true);
@@ -4423,15 +4659,39 @@ namespace MainMenu {
 			stats[index]->name[len] = '\0';
 		};
 		switch (index) {
-		case 0: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 0);}); break;
-		case 1: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);}); break;
-		case 2: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);}); break;
-		case 3: name_field->setCallback([](Field& field){name_field_fn(field.getText(), 3);}); break;
+		case 0:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 0);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 0);
+				});
+			break;
+		case 1:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 1);
+				});
+			break;
+		case 2:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 2);
+				});
+			break;
+		case 3:
+			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 3);});
+			name_field->setTickCallback([](Widget& widget){
+				Field* field = static_cast<Field*>(&widget);
+				name_field_fn(field->getText(), 3);
+				});
+			break;
 		}
 		name_field->select();
 
 		auto randomize_name = card->addButton("randomize_name");
-		randomize_name->setColor(makeColor(127, 127, 127, 255));
+		randomize_name->setColor(makeColor(255, 255, 255, 255));
 		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_name->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
 		randomize_name->setSize(SDL_Rect{244, 26, 40, 44});
@@ -4458,7 +4718,7 @@ namespace MainMenu {
 		
 		auto game_settings = card->addButton("game_settings");
 		game_settings->setSize(SDL_Rect{62, 76, 202, 52});
-		game_settings->setColor(makeColor(127, 127, 127, 255));
+		game_settings->setColor(makeColor(255, 255, 255, 255));
 		game_settings->setHighlightColor(makeColor(255, 255, 255, 255));
 		game_settings->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		game_settings->setText("View Game Settings");
@@ -4476,8 +4736,13 @@ namespace MainMenu {
 		}
 
 		auto male_button = card->addButton("male");
-		male_button->setColor(makeColor(127, 127, 127, 255));
-		male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == MALE) {
+			male_button->setColor(makeColor(255, 255, 255, 255));
+			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			male_button->setColor(makeColor(127, 127, 127, 255));
+			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		male_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
 		male_button->setSize(SDL_Rect{42, 166, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4494,8 +4759,13 @@ namespace MainMenu {
 		}
 
 		auto female_button = card->addButton("female");
-		female_button->setColor(makeColor(127, 127, 127, 255));
-		female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		if (stats[index]->sex == FEMALE) {
+			female_button->setColor(makeColor(255, 255, 255, 255));
+			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			female_button->setColor(makeColor(127, 127, 127, 255));
+			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		}
 		female_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
 		female_button->setSize(SDL_Rect{104, 166, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -4513,7 +4783,7 @@ namespace MainMenu {
 		}
 
 		auto race_button = card->addButton("race");
-		race_button->setColor(makeColor(127, 127, 127, 255));
+		race_button->setColor(makeColor(255, 255, 255, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
 		switch (stats[index]->playerRace) {
@@ -4548,20 +4818,75 @@ namespace MainMenu {
 
 		static auto randomize_class_fn = [](Button& button, int index){
 			soundActivate();
-			auto reduced_class_list = reducedClassList(index);
-			auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
-			for (int c = 0; c < num_classes; ++c) {
-				if (strcmp(random_class, classes_in_order[c]) == 0) {
-					client_classes[index] = c;
-					stats[index]->clearStats();
-					initClass(index);
-					return;
+
+			auto card = static_cast<Frame*>(button.getParent());
+
+			// select a random sex
+			stats[index]->sex = (sex_t)(rand() % 2);
+
+			// select a random race
+			// there are 9 legal races that the player can select from the start.
+			stats[index]->playerRace = rand() % 9;
+			auto race_button = card->findButton("race");
+			if (race_button) {
+				switch (stats[index]->playerRace) {
+				case RACE_HUMAN: race_button->setText("Human"); break;
+				case RACE_SKELETON: race_button->setText("Skeleton"); break;
+				case RACE_VAMPIRE: race_button->setText("Vampire"); break;
+				case RACE_SUCCUBUS: race_button->setText("Succubus"); break;
+				case RACE_GOATMAN: race_button->setText("Goatman"); break;
+				case RACE_AUTOMATON: race_button->setText("Automaton"); break;
+				case RACE_INCUBUS: race_button->setText("Incubus"); break;
+				case RACE_GOBLIN: race_button->setText("Goblin"); break;
+				case RACE_INSECTOID: race_button->setText("Insectoid"); break;
+				case RACE_RAT: race_button->setText("Rat"); break;
+				case RACE_TROLL: race_button->setText("Troll"); break;
+				case RACE_SPIDER: race_button->setText("Spider"); break;
+				case RACE_IMP: race_button->setText("Imp"); break;
 				}
 			}
+
+			// choose a random appearance
+			if (stats[index]->playerRace == RACE_HUMAN) {
+				stats[index]->appearance = rand() % NUMAPPEARANCES;
+			} else {
+				stats[index]->appearance = 0; rand();
+			}
+
+			// update sex buttons after race selection:
+			// we might have chosen a succubus or incubus
+			auto male_button = card->findButton("male");
+			auto female_button = card->findButton("female");
+			if (male_button && female_button) {
+				if (stats[index]->sex == MALE) {
+					male_button->setColor(makeColor(255, 255, 255, 255));
+					male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					female_button->setColor(makeColor(127, 127, 127, 255));
+					female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				} else {
+					female_button->setColor(makeColor(255, 255, 255, 255));
+					female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					male_button->setColor(makeColor(127, 127, 127, 255));
+					male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				}
+			}
+
+			// select a random class
+			auto reduced_class_list = reducedClassList(index);
+			auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
+			for (int c = 1; c < num_classes; ++c) {
+				if (strcmp(random_class, classes_in_order[c]) == 0) {
+					client_classes[index] = c - 1;
+					break;
+				}
+			}
+
+			stats[index]->clearStats();
+			initClass(index);
 		};
 
 		auto randomize_class = card->addButton("randomize_class");
-		randomize_class->setColor(makeColor(127, 127, 127, 255));
+		randomize_class->setColor(makeColor(255, 255, 255, 255));
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_class->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
 		randomize_class->setSize(SDL_Rect{244, 230, 40, 44});
@@ -4581,7 +4906,8 @@ namespace MainMenu {
 		auto class_text = card->addField("class_text", 64);
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
-			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				field.setText(find->second.name);
 			}
@@ -4597,7 +4923,8 @@ namespace MainMenu {
 		(*class_text->getTickCallback())(*class_text);
 
 		static auto class_button_fn = [](Button& button, int index) {
-			auto find = classes.find(classes_in_order[client_classes[index] + 1]);
+			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				auto& class_info = find->second;
 				switch (class_info.dlc) {
@@ -4616,7 +4943,7 @@ namespace MainMenu {
 		};
 
 		auto class_button = card->addButton("class");
-		class_button->setColor(makeColor(127, 127, 127, 255));
+		class_button->setColor(makeColor(255, 255, 255, 255));
 		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		class_button->setSize(SDL_Rect{46, 226, 52, 52});
 		class_button->setBorder(0);
@@ -4648,7 +4975,7 @@ namespace MainMenu {
 
 		auto ready_button = card->addButton("ready");
 		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
-		ready_button->setColor(makeColor(127, 127, 127, 255));
+		ready_button->setColor(makeColor(255, 255, 255, 255));
 		ready_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		ready_button->setBackground("images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
 		ready_button->setFont(bigfont_outline);
@@ -4659,6 +4986,16 @@ namespace MainMenu {
 		ready_button->setWidgetUp("class");
 		ready_button->setCallback([](Button& button){
 			soundActivate();
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			for (int c = 0; c < 4; ++c) {
+				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+				auto backdrop = card->findImage("backdrop"); assert(backdrop);
+				if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+					playersInLobby[c] = true;
+				} else {
+					playersInLobby[c] = false;
+				}
+			}
 			destroyMainMenu();
 			createDummyMainMenu();
 			main_menu_fade_destination = FadeDestination::GameStart;
@@ -4765,6 +5102,25 @@ namespace MainMenu {
 		destroyMainMenu();
 		createDummyMainMenu();
 
+		// reset ALL player stats
+		for (int c = 0; c < 4; ++c) {
+			stats[c]->playerRace = 0;
+			stats[c]->sex = static_cast<sex_t>(rand() % 2);
+			stats[c]->appearance = rand() % NUMAPPEARANCES;
+			stats[c]->clearStats();
+			client_classes[c] = 0;
+			initClass(c);
+
+			// random name
+			auto& names = stats[c]->sex == sex_t::MALE ?
+				randomPlayerNamesMale : randomPlayerNamesFemale;
+			auto name = names[rand() % names.size()].c_str();
+			size_t len = strlen(name);
+			len = std::min(sizeof(Stat::name) - 1, len);
+			memcpy(stats[c]->name, name, len);
+			stats[c]->name[len] = '\0';
+		}
+
 		currentLobbyType = type;
 
 		auto lobby = main_menu_frame->addFrame("lobby");
@@ -4772,6 +5128,47 @@ namespace MainMenu {
 		lobby->setActualSize(SDL_Rect{0, 0, lobby->getSize().w, lobby->getSize().h});
 		lobby->setHollow(true);
 		lobby->setBorder(0);
+
+		auto dimmer = lobby->addImage(
+			lobby->getActualSize(),
+			makeColor(0, 0, 0, 127),
+			"images/system/white.png",
+			"dimmer");
+
+		for (int c = 0; c < 4; ++c) {
+			auto name = std::string("paperdoll") + std::to_string(c);
+			auto paperdoll = lobby->addFrame(name.c_str());
+			paperdoll->setOwner(c);
+			//paperdoll->setColor(makeColor(33, 26, 24, 255));
+			//paperdoll->setBorderColor(makeColor(116, 55, 0, 255));
+			//paperdoll->setBorder(2);
+			paperdoll->setColor(0);
+			paperdoll->setBorderColor(0);
+			paperdoll->setBorder(0);
+			paperdoll->setInvisible(true);
+			paperdoll->setTickCallback([](Widget& widget){
+				widget.setInvisible(true);
+				int index = widget.getOwner();
+				auto paperdoll = static_cast<Frame*>(&widget);
+				auto lobby = static_cast<Frame*>(widget.getParent());
+				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+				if (card) {
+					auto backdrop = card->findImage("backdrop");
+					paperdoll->setSize(SDL_Rect{
+						index * Frame::virtualScreenX / 4,
+						0,
+						Frame::virtualScreenX / 4,
+						Frame::virtualScreenY - card->getSize().h / 2
+						});
+					if (backdrop && backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+						widget.setInvisible(false);
+					}
+				}
+				});
+			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+				drawCharacterPreview(widget.getOwner(), pos, 80, view_t(), (330 + 20 * widget.getOwner()) * PI / 180);
+				});
+		}
 
 		auto back_button = createBackWidget(lobby, [](Button&){
 			soundCancel();
@@ -4851,7 +5248,7 @@ namespace MainMenu {
 		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
 		hall_of_trials_button->setBackground("images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
 		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		hall_of_trials_button->setColor(makeColor(127, 127, 127, 255));
+		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setText("HALL OF TRIALS");
 		hall_of_trials_button->setFont(smallfont_outline);
 		hall_of_trials_button->setWidgetSearchParent(window->getName());
@@ -4907,7 +5304,7 @@ namespace MainMenu {
 		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
 		new_button->setText(" \nNEW");
 		new_button->setFont(smallfont_outline);
-		new_button->setCallback(playNew);
+		new_button->setCallback([](Button& button){soundActivate(); playNew(button);});
 		new_button->setWidgetSearchParent(window->getName());
 		new_button->setWidgetLeft("continue");
 		new_button->setWidgetDown("hall_of_trials");
@@ -4924,9 +5321,157 @@ namespace MainMenu {
 		}
 	}
 
-	void playNew(Button& button) {
+	static void openLobbyBrowser(Button& button) {
 		soundActivate();
 
+		enum class BrowserMode {
+			Online,
+			Wireless,
+		};
+		static BrowserMode mode;
+		mode = BrowserMode::Online;
+
+		// remove "Local or Network" window
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		// create lobby browser window
+		auto window = dimmer->addFrame("lobby_browser_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 524) / 2,
+			(Frame::virtualScreenY - 542) / 2,
+			524,
+			542});
+		window->setActualSize(SDL_Rect{0, 0, 524, 542});
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window00.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 64);
+		banner_title->setSize(SDL_Rect{160, 24, 204, 18});
+		banner_title->setText("ONLINE LOBBY BROWSER");
+		banner_title->setFont(smallfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		auto interior = window->addImage(
+			SDL_Rect{82, 70, 358, 364},
+			0xffffffff,
+			"images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online00.png",
+			"interior"
+		);
+
+		auto online_tab = window->addButton("online_tab");
+		online_tab->setSize(SDL_Rect{144, 70, 106, 36});
+		online_tab->setHighlightColor(0);
+		online_tab->setBorder(0);
+		online_tab->setColor(0);
+		online_tab->setText("ONLINE");
+		online_tab->setFont(smallfont_outline);
+		online_tab->setWidgetSearchParent(window->getName());
+		online_tab->addWidgetAction("MenuPageLeft", "online_tab");
+		online_tab->addWidgetAction("MenuPageRight", "wireless_tab");
+		online_tab->addWidgetAction("MenuStart", "enter_code");
+		online_tab->setWidgetBack("cancel");
+		online_tab->setCallback([](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent());
+			auto interior = frame->findImage("interior");
+			interior->path = "images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online00.png";
+			});
+
+		auto wireless_tab = window->addButton("wireless_tab");
+		wireless_tab->setSize(SDL_Rect{254, 70, 128, 36});
+		wireless_tab->setHighlightColor(0);
+		wireless_tab->setBorder(0);
+		wireless_tab->setColor(0);
+		wireless_tab->setText("WIRELESS");
+		wireless_tab->setFont(smallfont_outline);
+		wireless_tab->setWidgetSearchParent(window->getName());
+		wireless_tab->addWidgetAction("MenuPageLeft", "online_tab");
+		wireless_tab->addWidgetAction("MenuPageRight", "wireless_tab");
+		wireless_tab->addWidgetAction("MenuStart", "enter_code");
+		wireless_tab->setWidgetBack("cancel");
+		wireless_tab->setCallback([](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent());
+			auto interior = frame->findImage("interior");
+			interior->path = "images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless00.png";
+			});
+
+		auto friends_only = window->addButton("friends_only");
+		friends_only->setSize(SDL_Rect{132, 372, 44, 44});
+		friends_only->setIcon("images/ui/Main Menus/Play/LobbyBrowser/Fill_Checked_00.png");
+		friends_only->setStyle(Button::style_t::STYLE_CHECKBOX);
+		friends_only->setHighlightColor(0);
+		friends_only->setBorderColor(0);
+		friends_only->setBorder(0);
+		friends_only->setColor(0);
+
+		auto friends_only_label = window->addField("friends_only_label", 64);
+		friends_only_label->setSize(SDL_Rect{166, 372, 98, 48});
+		friends_only_label->setText("Friends\nOnly");
+		friends_only_label->setFont(smallfont_no_outline);
+		friends_only_label->setJustify(Field::justify_t::CENTER);
+		friends_only_label->setColor(makeColor(166, 123, 81, 255));
+
+		auto show_full = window->addButton("show_full");
+		show_full->setSize(SDL_Rect{258, 372, 44, 44});
+		show_full->setIcon("images/ui/Main Menus/Play/LobbyBrowser/Fill_Checked_00.png");
+		show_full->setStyle(Button::style_t::STYLE_CHECKBOX);
+		show_full->setHighlightColor(0);
+		show_full->setBorderColor(0);
+		show_full->setBorder(0);
+		show_full->setColor(0);
+
+		auto show_full_label = window->addField("show_full_label", 64);
+		show_full_label->setSize(SDL_Rect{294, 372, 98, 48});
+		show_full_label->setText("Show\nFull");
+		show_full_label->setFont(smallfont_no_outline);
+		show_full_label->setJustify(Field::justify_t::CENTER);
+		show_full_label->setColor(makeColor(166, 123, 81, 255));
+
+		auto cancel = window->addButton("cancel");
+		cancel->setSize(SDL_Rect{94, 440, 164, 62});
+		cancel->setBackground("images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setText("Cancel");
+		cancel->setFont(smallfont_outline);
+		cancel->setWidgetSearchParent(window->getName());
+		cancel->addWidgetAction("MenuPageLeft", "online_tab");
+		cancel->addWidgetAction("MenuPageRight", "wireless_tab");
+		cancel->addWidgetAction("MenuStart", "enter_code");
+		cancel->setWidgetBack("cancel");
+		cancel->setWidgetRight("enter_code");
+		cancel->setCallback([](Button& button){soundCancel(); playNew(button);});
+
+		auto enter_code = window->addButton("enter_code");
+		enter_code->setSize(SDL_Rect{266, 440, 164, 62});
+		enter_code->setBackground("images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
+		enter_code->setColor(makeColor(255, 255, 255, 255));
+		enter_code->setText("Enter Lobby\nCode");
+		enter_code->setFont(smallfont_outline);
+		enter_code->setWidgetSearchParent(window->getName());
+		enter_code->addWidgetAction("MenuPageLeft", "online_tab");
+		enter_code->addWidgetAction("MenuPageRight", "wireless_tab");
+		enter_code->addWidgetAction("MenuStart", "enter_code");
+		enter_code->setWidgetBack("cancel");
+		enter_code->setWidgetLeft("cancel");
+	}
+
+	void playNew(Button& button) {
 		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -4985,19 +5530,20 @@ namespace MainMenu {
 		join_button->setSize(SDL_Rect{220, 134, 164, 62});
 		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
 		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_button->setColor(makeColor(127, 127, 127, 255));
+		join_button->setColor(makeColor(255, 255, 255, 255));
 		join_button->setText("Join Network\nParty");
 		join_button->setFont(smallfont_outline);
 		join_button->setWidgetSearchParent(window->getName());
 		join_button->setWidgetBack("back_button");
 		join_button->setWidgetUp("local");
 		join_button->setWidgetLeft("host");
+		join_button->setCallback(openLobbyBrowser);
 
 		auto host_button = window->addButton("host");
 		host_button->setSize(SDL_Rect{52, 134, 164, 62});
 		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
 		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_button->setColor(makeColor(127, 127, 127, 255));
+		host_button->setColor(makeColor(255, 255, 255, 255));
 		host_button->setText("Host Network\nParty");
 		host_button->setFont(smallfont_outline);
 		host_button->setWidgetSearchParent(window->getName());
@@ -5010,7 +5556,7 @@ namespace MainMenu {
 		local_button->setSize(SDL_Rect{134, 68, 168, 62});
 		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_01.png");
 		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		local_button->setColor(makeColor(127, 127, 127, 255));
+		local_button->setColor(makeColor(255, 255, 255, 255));
 		local_button->setText("Local Adventure");
 		local_button->setFont(smallfont_outline);
 		local_button->setWidgetSearchParent(window->getName());
@@ -5108,7 +5654,7 @@ namespace MainMenu {
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 127));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
@@ -5274,7 +5820,7 @@ namespace MainMenu {
 			button->setBackground("images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
 			button->setBackgroundActivated("images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
 			button->setSize(SDL_Rect{x + (x * c) - 184 / 2, 64, 184, 64});
-			button->setColor(makeColor(255, 255, 255, 191));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent("settings");
 			button->setWidgetPageLeft("tab_left");
@@ -5309,7 +5855,7 @@ namespace MainMenu {
 		auto tab_left = settings->addButton("tab_left");
 		tab_left->setBackground("images/ui/Main Menus/Settings/Settings_Button_L00.png");
 		tab_left->setSize(SDL_Rect{32, 68, 38, 58});
-		tab_left->setColor(makeColor(255, 255, 255, 191));
+		tab_left->setColor(makeColor(255, 255, 255, 255));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_left->setWidgetSearchParent("settings");
 		tab_left->setWidgetBack("discard_and_exit");
@@ -5349,7 +5895,7 @@ namespace MainMenu {
 		auto tab_right = settings->addButton("tab_right");
 		tab_right->setBackground("images/ui/Main Menus/Settings/Settings_Button_R00.png");
 		tab_right->setSize(SDL_Rect{1056, 68, 38, 58});
-		tab_right->setColor(makeColor(255, 255, 255, 191));
+		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_right->setWidgetSearchParent("settings");
 		tab_right->setWidgetBack("discard_and_exit");
@@ -5397,7 +5943,7 @@ namespace MainMenu {
 		restore_defaults->setText("Restore\nDefaults");
 		restore_defaults->setJustify(Button::justify_t::CENTER);
 		restore_defaults->setFont(smallfont_outline);
-		restore_defaults->setColor(makeColor(255, 255, 255, 191));
+		restore_defaults->setColor(makeColor(255, 255, 255, 255));
 		restore_defaults->setHighlightColor(makeColor(255, 255, 255, 255));
 		restore_defaults->setWidgetSearchParent("settings");
 		restore_defaults->setWidgetBack("discard_and_exit");
@@ -5418,7 +5964,7 @@ namespace MainMenu {
 		discard_and_exit->setText("Discard\n& Exit");
 		discard_and_exit->setJustify(Button::justify_t::CENTER);
 		discard_and_exit->setFont(smallfont_outline);
-		discard_and_exit->setColor(makeColor(255, 255, 255, 191));
+		discard_and_exit->setColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
@@ -5449,7 +5995,7 @@ namespace MainMenu {
 		confirm_and_exit->setText("Confirm\n& Exit");
 		confirm_and_exit->setJustify(Button::justify_t::CENTER);
 		confirm_and_exit->setFont(smallfont_outline);
-		confirm_and_exit->setColor(makeColor(255, 255, 255, 191));
+		confirm_and_exit->setColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
 			soundActivate();
@@ -5515,9 +6061,9 @@ namespace MainMenu {
 		auto okay = frame->addButton("okay");
 		okay->setSize(SDL_Rect{58, 78, 130, 52});
 		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
-		okay->setColor(makeColor(127, 127, 127, 255));
+		okay->setColor(makeColor(255, 255, 255, 255));
 		okay->setHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setTextColor(makeColor(127, 127, 127, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
 		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setFont(smallfont_outline);
 		okay->setText(okay_text);
@@ -5529,9 +6075,9 @@ namespace MainMenu {
 		auto cancel = frame->addButton("cancel");
 		cancel->setSize(SDL_Rect{196, 78, 108, 52});
 		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		cancel->setColor(makeColor(127, 127, 127, 255));
+		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setTextColor(makeColor(127, 127, 127, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
 		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		cancel->setFont(smallfont_outline);
 		cancel->setText(cancel_text);
@@ -5676,6 +6222,79 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	static void setupSplitscreen() {
+		if (multiplayer != SINGLE) {
+			splitscreen = false;
+			return;
+		}
+
+		clientnum = -1;
+		int playercount = 0;
+		for (int c = 0; c < 4; ++c) {
+			if (playersInLobby[c]) {
+				clientnum = clientnum == -1 ? c : clientnum;
+				players[c]->bSplitscreen = true;
+				client_disconnected[c] = false;
+				++playercount;
+			} else {
+				client_disconnected[c] = true;
+				players[c]->bSplitscreen = false;
+				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+		}
+		splitscreen = playercount > 1;
+
+		int c, playerindex;
+		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
+			if (client_disconnected[c]) {
+				--playerindex;
+				continue;
+			}
+			if (vertical_splitscreen) {
+				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
+			} else {
+				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+
+			if (!splitscreen) {
+				players[c]->camera().winx = 0;
+				players[c]->camera().winy = 0;
+				players[c]->camera().winw = xres;
+				players[c]->camera().winh = yres;
+			} else {
+				if (playercount == 1) {
+					players[c]->camera().winx = 0;
+					players[c]->camera().winy = 0;
+					players[c]->camera().winw = xres;
+					players[c]->camera().winh = yres;
+				} else if (playercount == 2) {
+					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
+						// divide screen vertically
+						players[c]->camera().winx = playerindex * xres / 2;
+						players[c]->camera().winy = 0;
+						players[c]->camera().winw = xres / 2;
+						players[c]->camera().winh = yres;
+					} else {
+						// divide screen horizontally
+						players[c]->camera().winx = 0;
+						players[c]->camera().winy = playerindex * yres / 2;
+						players[c]->camera().winw = xres;
+						players[c]->camera().winh = yres / 2;
+					}
+				} else if (playercount >= 3) {
+					// divide screen into quadrants
+					players[c]->camera().winx = (playerindex % 2) * xres / 2;
+					players[c]->camera().winy = (playerindex / 2) * yres / 2;
+					players[c]->camera().winw = xres / 2;
+					players[c]->camera().winh = yres / 2;
+				}
+			}
+
+			inputs.getVirtualMouse(c)->x = players[c]->camera_x1() + players[c]->camera_width() / 2;
+			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
+		}
+	}
+
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
 			createMainMenu(ingame);
@@ -5717,11 +6336,12 @@ namespace MainMenu {
 					doNewGame(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::GameStart) {
-					destroyMainMenu();
 					multiplayer = SINGLE;
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+					setupSplitscreen();
 					doNewGame(false);
+					destroyMainMenu();
 				}
 				fadeout = false;
 				main_menu_fade_destination = FadeDestination::None;
@@ -5824,7 +6444,7 @@ namespace MainMenu {
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 127));
+			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));

@@ -11,6 +11,7 @@ void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
+void drawCharacterPreview(const int player, SDL_Rect pos, int fov, view_t& view, real_t offsetyaw);
 void loadHUDSettingsJSON();
 SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite);
 struct EnemyBarSettings_t
