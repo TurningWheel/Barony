@@ -65,8 +65,8 @@ void Frame::fboInit() {
 	glBindTexture(GL_TEXTURE_2D, gui_fbo_color);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Frame::virtualScreenX, Frame::virtualScreenY, 0, GL_RGBA, GL_FLOAT, nullptr);
 	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gui_fbo_color, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -75,8 +75,8 @@ void Frame::fboInit() {
 	glBindTexture(GL_TEXTURE_2D, gui_fbo_depth);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, Frame::virtualScreenX, Frame::virtualScreenY, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr);
 	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gui_fbo_depth, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -165,6 +165,7 @@ void Frame::draw() const {
 	std::vector<const Widget*> selectedWidgets;
 	findSelectedWidgets(selectedWidgets);
 	Frame::draw(size, _actualSize, selectedWidgets);
+	Frame::drawPost(size, _actualSize, selectedWidgets);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -190,6 +191,52 @@ void Frame::draw() const {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glColor4f(1.f, 1.f, 1.f, 1.f);
+}
+
+void Frame::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (disabled || invisible)
+		return;
+
+	// warning: overloading member variable!
+	SDL_Rect actualSize = allowScrolling ? this->actualSize : SDL_Rect{0, 0, size.w, size.h};
+
+	_size.x += std::max(0, size.x - _actualSize.x);
+	_size.y += std::max(0, size.y - _actualSize.y);
+	if (scrollbars && size.h < actualSize.h) {
+		_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+	} else {
+		_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+	}
+	if (scrollbars && size.w < actualSize.w) {
+		_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+	} else {
+		_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+	}
+	if (_size.w <= 0 || _size.h <= 0)
+		return;
+
+	SDL_Rect scroll = actualSize;
+	if (size.x - _actualSize.x < 0) {
+		scroll.x -= size.x - _actualSize.x;
+	}
+	if (size.y - _actualSize.y < 0) {
+		scroll.y -= size.y - _actualSize.y;
+	}
+
+	for (auto field : fields) {
+		field->drawPost(_size, scroll, selectedWidgets);
+	}
+	for (auto button : buttons) {
+		button->drawPost(_size, scroll, selectedWidgets);
+	}
+	for (auto slider : sliders) {
+		slider->drawPost(_size, scroll, selectedWidgets);
+	}
+	for ( auto frame : frames ) {
+		frame->drawPost(_size, scroll, selectedWidgets);
+	}
+
+	Widget::drawPost(_size, selectedWidgets);
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
@@ -478,8 +525,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		drawImage(image, _size, scroll);
 	}
 
-	// draw glyphs
-	drawGlyphs(_size, selectedWidgets);
+	// draw user stuff
+	if (drawCallback) {
+		drawCallback(*this, _size);
+	}
 
 	// root frame draws tooltip
 	// TODO on Nintendo, display this next to the currently selected widget
@@ -1359,20 +1408,15 @@ void Frame::resizeForEntries() {
 	actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 }
 
-bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
+bool Frame::capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const {
 #ifdef NINTENDO
 	return false;
 #else
-	SDL_Rect newSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	SDL_Rect newActualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	SDL_Rect& _size = curSize ? *curSize : newSize;
-	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
-
 	if (parent) {
 		auto pframe = static_cast<Frame*>(parent);
-		if (pframe->capturesMouse(&_size, &_actualSize)) {
-			_size.x += std::max(0, size.x - _actualSize.x);
-			_size.y += std::max(0, size.y - _actualSize.y);
+		if (pframe->capturesMouseImpl(_size, _actualSize, realtime)) {
+			_size.x = _size.x + std::max(0, size.x - _actualSize.x);
+			_size.y = _size.y + std::max(0, size.y - _actualSize.y);
 			if (size.h < actualSize.h && allowScrolling && scrollbars) {
 				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 			} else {
@@ -1383,19 +1427,28 @@ bool Frame::capturesMouse(SDL_Rect* curSize, SDL_Rect* curActualSize) {
 			} else {
 				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 			}
+			_actualSize = actualSize;
 			if (_size.w <= 0 || _size.h <= 0) {
 				return false;
 			} else {
 #ifdef EDITOR
+				Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 				Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 				Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 #else
+				Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+				Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 				Sint32 omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 				Sint32 omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
-				if (rectContainsPoint(_size, omousex, omousey)) {
+				if (realtime && rectContainsPoint(_size, mousex, mousey)) {
 					return true;
-				} else {
+				}
+				else if (!realtime && rectContainsPoint(_size, omousex, omousey)) {
+					return true;
+				}
+				else {
 					return false;
 				}
 			}
@@ -1432,55 +1485,16 @@ SDL_Rect Frame::getAbsoluteSize() const
 	return _size;
 }
 
-bool Frame::capturesMouseInRealtimeCoords(SDL_Rect* curSize, SDL_Rect* curActualSize) {
-	SDL_Rect newSize = SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
-	SDL_Rect newActualSize = SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
-	SDL_Rect& _size = curSize ? *curSize : newSize;
-	SDL_Rect& _actualSize = curActualSize ? *curActualSize : newActualSize;
+bool Frame::capturesMouseInRealtimeCoords() const {
+	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	return capturesMouseImpl(_size, _actualSize, true);
+}
 
-	if ( parent ) {
-		auto pframe = static_cast<Frame*>(parent);
-		if ( pframe->capturesMouseInRealtimeCoords(&_size, &_actualSize) ) {
-			_size.x += std::max(0, size.x - _actualSize.x);
-			_size.y += std::max(0, size.y - _actualSize.y);
-			if ( size.h < actualSize.h && allowScrolling && scrollbars ) {
-				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
-			}
-			else {
-				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
-			}
-			if ( size.w < actualSize.w && allowScrolling && scrollbars ) {
-				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
-			}
-			else {
-				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
-			}
-			if ( _size.w <= 0 || _size.h <= 0 ) {
-				return false;
-			}
-			else {
-#ifdef EDITOR
-				Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
-#else
-				Sint32 mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-				Sint32 mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-#endif
-				if ( rectContainsPoint(_size, mousex, mousey) ) {
-					return true;
-				}
-				else {
-					return false;
-				}
-			}
-		}
-		else {
-			return false;
-		}
-	}
-	else {
-		return true;
-	}
+bool Frame::capturesMouse() const {
+	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	return capturesMouseImpl(_size, _actualSize, false);
 }
 
 Frame* Frame::getParent() {

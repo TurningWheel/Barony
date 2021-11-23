@@ -152,7 +152,7 @@ bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
 bool show_game_timer_always = false;
-bool hide_statusbar = false;
+bool hide_statusbar = true;
 bool hide_playertags = false;
 bool show_skill_values = false;
 real_t uiscale_chatlog = 1.f;
@@ -1032,8 +1032,6 @@ int loadConfig(char* filename)
 		impulses[IN_TURNL] = 80;
 		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNL: %d (Right arrow key)\n", impulses[IN_TURNL]);
 	}
-
-	MainMenu::settingsLoad();
 
 	return 0;
 }

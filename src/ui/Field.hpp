@@ -55,6 +55,12 @@ public:
 	//! @param selectedWidgets the currently selected widgets, if any
 	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
+	//! draws post elements in the field
+	//! @param _size size and position of field's parent frame
+	//! @param _actualSize offset into the parent frame space (scroll)
+	//! @param selectedWidgets the currently selected widgets, if any
+	void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+
 	//! handles clicks, etc.
 	//! @param _size size and position of field's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)

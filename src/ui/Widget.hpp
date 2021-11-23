@@ -133,6 +133,8 @@ protected:
     bool hideSelectors = false;                                 //!< true if you don't want to see selectors on the borders of this widget
     Uint32 highlightTime = 0u;						            //!< records the time since the widget was highlighted
     Sint32 owner = 0;                                           //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    SDL_Rect selectorOffset {0, 0, 0, 0};                       //!< offset for x, y, w, h in the selector box
+    SDL_Rect buttonsOffset {0, 0, 0, 0};                        //!< offset for x, y in button prompts
     void (*tickCallback)(Widget&) = nullptr;		            //!< the callback to run each frame for this widget
     void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;    //!< the callback to run after the widget is drawn
 
@@ -145,5 +147,5 @@ protected:
     Frame* findSearchRoot();
     const Frame* findSearchRoot() const;
 
-    void drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const;
+    void drawPost(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const;
 };

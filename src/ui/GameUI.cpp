@@ -6760,7 +6760,8 @@ Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
 }
 
 static Uint32 gui_ticks = 0u;
-void doFrames() {
+void doFrames()
+{
 	if ( gui )
 	{
 		while ( gui_ticks < ticks )
