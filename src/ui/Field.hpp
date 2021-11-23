@@ -71,6 +71,10 @@ public:
 	//! gets longest line of field, measured by actual text width
 	std::string getLongestLine();
 
+	//! gets the number of lines occupied by text in the field
+	//! @return number of lines of text
+	int getNumTextLines() const;
+
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
 	const char*					getText() const { return text; }
 	const char*					getFont() const { return font.c_str(); }
@@ -83,7 +87,6 @@ public:
 	const SDL_Rect				getSize() const { return size; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
-	const int                   getNumTextLines() const;
 	const bool					isEditable() const { return editable; }
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	void						(*getCallback() const)(Field&) { return callback; }

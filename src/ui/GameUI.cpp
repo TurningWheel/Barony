@@ -729,15 +729,15 @@ void Player::MessageZone_t::processChatbox()
 				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 			if ( !messageDrawDescending )
 			{
-				currentY -= textGet->getHeight();
+				currentY -= textGet->getNumTextLines() * Font::get(entry->getFont())->height();
 			}
 
 			SDL_Rect pos = entry->getSize();
-			pos.h = textGet->getHeight();
+			pos.h = textGet->getNumTextLines() * Font::get(entry->getFont())->height();
 			pos.y = currentY;
 			if ( messageDrawDescending )
 			{
-				currentY += textGet->getHeight();
+				currentY += textGet->getNumTextLines() * Font::get(entry->getFont())->height();
 			}
 			entry->setSize(pos);
 			if ( pos.y < 0 )

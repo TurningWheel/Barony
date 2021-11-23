@@ -621,16 +621,12 @@ void BookParser_t::createBook(std::string filename)
 		firstIteration = false;
 		pageText += token;
 		tmpField->setText(pageText.c_str());
-		if ( auto getText = Text::get(tmpField->getText(), tmpField->getFont(),
-			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+		int textHeight = tmpField->getNumTextLines() * Font::get(tmpField->getFont())->height();
+		if ( textHeight > tmpField->getSize().h )
 		{
-			int textHeight = getText->getHeight();
-			if ( textHeight > tmpField->getSize().h )
-			{
-				// exceeds size, move to next page.
-				newBook.formattedPages.push_back(pageText);
-				pageText = "";
-			}
+			// exceeds size, move to next page.
+			newBook.formattedPages.push_back(pageText);
+			pageText = "";
 		}
 	} while ( (token = nexttoken) != NULL );
 	newBook.formattedPages.push_back(pageText);

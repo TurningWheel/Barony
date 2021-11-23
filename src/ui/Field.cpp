@@ -603,22 +603,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 	setText(reflowText.c_str());
 }
 
-const int Field::getNumTextLines() const
-{
-	if ( text == nullptr || textlen <= 1 ) {
-		return 0;
-	}
-
-	int numLines = 1;
-
-	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
-	{
-		if ( text[i] == '\n' )
-		{
-			++numLines;
-		}
-	}
-	return numLines;
+int Field::getNumTextLines() const {
+	return Text::get(text, font.c_str(), textColor, outlineColor)->getNumTextLines();
 }
 
 SDL_Rect Field::getAbsoluteSize() const
