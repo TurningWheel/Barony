@@ -7,6 +7,7 @@
 #include "Button.hpp"
 #include "Text.hpp"
 #include "Slider.hpp"
+#include "Widget.hpp"
 
 #include "../main.hpp"
 #include "../game.hpp"
@@ -508,8 +509,10 @@ void createHotbar(const int player)
 		oldSelectedFrame->setSize(slotPos);
 		oldSelectedFrame->setDisabled(true);
 
+		SDL_Rect itemSpriteBorder{ 2, 2, oldSelectedFrame->getSize().w - 4, oldSelectedFrame->getSize().h - 4 };
+
 		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-		auto oldImg = oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "hotbar old selected item");
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
@@ -800,6 +803,8 @@ void Player::MessageZone_t::processChatbox()
 }
 
 std::map<std::string, std::pair<std::string, std::string>> Player::CharacterSheet_t::mapDisplayNamesDescriptions;
+std::string Player::CharacterSheet_t::defaultString = "";
+std::map<std::string, std::string> Player::CharacterSheet_t::hoverTextStrings;
 void Player::CharacterSheet_t::loadCharacterSheetJSON()
 {
 	if ( !PHYSFS_getRealDir("/data/charsheet.json") )
@@ -848,6 +853,15 @@ void Player::CharacterSheet_t::loadCharacterSheetJSON()
 							desc = itr->value["description"].GetString();
 						}
 						mapDisplayNamesDescriptions[itr->name.GetString()] = std::make_pair(name, desc);
+					}
+				}
+				if ( d.HasMember("hover_text") )
+				{
+					hoverTextStrings.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["hover_text"].MemberBegin();
+						itr != d["hover_text"].MemberEnd(); ++itr )
+					{
+						hoverTextStrings[itr->name.GetString()] = itr->value.GetString();
 					}
 				}
 			}
@@ -915,8 +929,41 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 			imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
 			auto txt = tooltipFrame->addField("tooltip text", 1024);
-			txt->setFont("fonts/pixelmix.ttf#12#2");
+			const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
+			txt->setFont(tooltipFont);
 			txt->setColor(makeColor(188, 154, 114, 255));
+			auto glyph1 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 1");
+			glyph1->disabled = true;
+			auto glyph2 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 2");
+			glyph2->disabled = true;
+			auto glyph3 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 3");
+			glyph3->disabled = true;
+			auto glyph4 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 4");
+			glyph4->disabled = true;
+
+			auto txtEntry = tooltipFrame->addField("txt 1", 1024);
+			txtEntry->setFont(tooltipFont);
+			txtEntry->setDisabled(true);
+			txtEntry->setVJustify(Field::justify_t::CENTER);
+			txtEntry->setColor(makeColor(188, 154, 114, 255));
+
+			txtEntry = tooltipFrame->addField("txt 2", 1024);
+			txtEntry->setFont(tooltipFont);
+			txtEntry->setDisabled(true);
+			txtEntry->setVJustify(Field::justify_t::CENTER);
+			txtEntry->setColor(makeColor(188, 154, 114, 255));
+
+			txtEntry = tooltipFrame->addField("txt 3", 1024);
+			txtEntry->setFont(tooltipFont);
+			txtEntry->setDisabled(true);
+			txtEntry->setVJustify(Field::justify_t::CENTER);
+			txtEntry->setColor(makeColor(188, 154, 114, 255));
+
+			txtEntry = tooltipFrame->addField("txt 4", 1024);
+			txtEntry->setFont(tooltipFont);
+			txtEntry->setDisabled(true);
+			txtEntry->setVJustify(Field::justify_t::CENTER);
+			txtEntry->setColor(makeColor(188, 154, 114, 255));
 		}
 
 		// log / map buttons
@@ -925,48 +972,65 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			SDL_Rect buttonFramePos{ leftAlignX + 9, 6, 196, 82 };
 			auto buttonFrame = sheetFrame->addFrame("log map buttons");
 			buttonFrame->setSize(buttonFramePos);
+			buttonFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+				auto frame = (Frame*)(&widget);
+				std::vector<const char*> buttons = {
+					"map button",
+					"log button"
+				};
+				for ( auto button : buttons )
+				{
+					if ( auto b = frame->findButton(button) )
+					{
+						if ( players[frame->getOwner()]->characterSheet.sheetDisplayType == CHARSHEET_DISPLAY_NORMAL )
+						{
+							b->setBackgroundHighlighted("images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
+							b->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+						}
+						else
+						{
+							b->setBackgroundHighlighted("images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png");
+							b->setBackground("images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png");
+						}
+					}
+				}
+			});
 
 			SDL_Rect buttonPos{0, 0, buttonFramePos.w, 40};
-			//buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "map button img");
 			auto mapButton = buttonFrame->addButton("map button");
 			mapButton->setText(language[4069]);
 			mapButton->setFont(buttonFont);
 			mapButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
-			mapButton->setBackgroundActivated("images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
 			mapButton->setSize(buttonPos);
-			mapButton->setColor(makeColor(255, 255, 255, 191));
+			mapButton->setHideGlyphs(true);
+			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			mapButton->setCallback([](Button& button){
+				messagePlayer(button.getOwner(), "%d: Map button clicked", button.getOwner());
+			});
 			
-			//auto mapText = buttonFrame->addField("map button text", 32);
-			//mapText->setFont(buttonFont);
-			//mapText->setSize(buttonPos);
-			//mapText->setVJustify(Field::justify_t::CENTER);
-			//mapText->setHJustify(Field::justify_t::CENTER);
-			//mapText->setText("OPEN MAP");
 			auto mapSelector = buttonFrame->addFrame("map button selector");
 			mapSelector->setSize(buttonPos);
 			mapSelector->setHollow(true);
+			//mapSelector->setClickable(true);
 
 			buttonPos.y = buttonPos.y + buttonPos.h + 2;
-			//buttonFrame->addImage(buttonPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Button_00.png", "log button img");
 			auto logButton = buttonFrame->addButton("log button");
 			logButton->setText(language[4070]);
 			logButton->setFont(buttonFont);
 			logButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
-			logButton->setBackgroundActivated("images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
 			logButton->setSize(buttonPos);
-			logButton->setColor(makeColor(255, 255, 255, 191));
+			logButton->setHideGlyphs(true);
+			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			logButton->setCallback([](Button& button) {
+				messagePlayer(button.getOwner(), "%d: Log button clicked", button.getOwner());
+			});
 			
-			//auto logText = buttonFrame->addField("log button text", 32);
-			//logText->setFont(buttonFont);
-			//logText->setSize(buttonPos);
-			//logText->setVJustify(Field::justify_t::CENTER);
-			//logText->setHJustify(Field::justify_t::CENTER);
-			//logText->setText("OPEN LOG");
 			auto logSelector = buttonFrame->addFrame("log button selector");
 			logSelector->setSize(buttonPos);
 			logSelector->setHollow(true);
+			//logSelector->setClickable(true);
 		}
 
 		// game timer
@@ -976,12 +1040,46 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			Frame* timerFrame = sheetFrame->addFrame("game timer");
 			timerFrame->setSize(SDL_Rect{leftAlignX + 36, 90, 142, 26});
+			timerFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+				auto frame = (Frame*)(&widget);
+				auto timerToggleImg = frame->findImage("timer icon img");
+				auto timerSelector = frame->findButton("timer selector");
+				if ( timerToggleImg && timerSelector )
+				{
+					Uint8 tmpAlpha = 128;
+					Uint8 tmpRed = 128;
+					Uint8 tmpBlue = 128;
+					if ( !players[frame->getOwner()]->characterSheet.showGameTimerAlways )
+					{
+						tmpRed = 255;
+						tmpBlue = 255;
+					}
+					if ( timerSelector->isHighlighted() )
+					{
+						tmpAlpha = 192;
+						timerToggleImg->color = makeColor(tmpRed, 255, tmpBlue, tmpAlpha);
+					}
+					else
+					{
+						tmpAlpha = 255;
+						timerToggleImg->color = makeColor(tmpRed, 255, tmpBlue, tmpAlpha);
+					}
+				}
+			});
 			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
 			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
 			auto timerText = timerFrame->addField("timer text", 32);
 			timerText->setFont(timerFont);
 
-			timerFrame->addFrame("timer selector")->setSize(SDL_Rect{ 0, 0, timerToggleImg->pos.w + timerImg->pos.w, 26 });
+			auto timerButton = timerFrame->addButton("timer selector");
+			timerButton->setSize(SDL_Rect{ 0, 0, timerToggleImg->pos.w + timerImg->pos.w, 26 });
+			timerButton->setColor(makeColor(0, 0, 0, 0));
+			timerButton->setHighlightColor(makeColor(0, 0, 0, 0));
+			timerButton->setHideGlyphs(true);
+			timerButton->setCallback([](Button& button){
+				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
+				bShowTimer = !bShowTimer;
+			});
 
 			SDL_Rect textPos = timerImg->pos;
 			textPos.x += 12;
@@ -994,16 +1092,28 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		// skills button
 		{
 			const char* skillsFont = "fonts/pixel_maz.ttf#32#2";
-			Frame* skillsButtonFrame = sheetFrame->addFrame("skills button");
+			Frame* skillsButtonFrame = sheetFrame->addFrame("skills button frame");
 			skillsButtonFrame->setSize(SDL_Rect{ leftAlignX + 14, 360 - 8 - 42, 186, 42 });
-			auto skillsImg = skillsButtonFrame->addImage(SDL_Rect{0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h},
-				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png", "skills button img");
-			auto skillsText = skillsButtonFrame->addField("skills text", 32);
-			skillsText->setFont(skillsFont);
-			skillsText->setSize(skillsImg->pos);
-			skillsText->setVJustify(Field::justify_t::CENTER);
-			skillsText->setHJustify(Field::justify_t::CENTER);
-			skillsText->setText("Skills List");
+			auto skillsButton = skillsButtonFrame->addButton("skills button");
+			skillsButton->setText(language[4074]);
+			skillsButton->setFont(skillsFont);
+			skillsButton->setBackground("images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
+			skillsButton->setSize(SDL_Rect{ 0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h });
+			skillsButton->setHideGlyphs(true);
+			skillsButton->setColor(makeColor(255, 255, 255, 191));
+			skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			skillsButton->setCallback([](Button& button) {
+				messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
+				players[button.getOwner()]->skillSheet.openSkillSheet();
+			});
+			//auto skillsImg = skillsButtonFrame->addImage(SDL_Rect{0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h},
+			//	0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png", "skills button img");
+			//auto skillsText = skillsButtonFrame->addField("skills text", 32);
+			//skillsText->setFont(skillsFont);
+			//skillsText->setSize(skillsImg->pos);
+			//skillsText->setVJustify(Field::justify_t::CENTER);
+			//skillsText->setHJustify(Field::justify_t::CENTER);
+			//skillsText->setText("Skills List");
 		}
 
 		// dungeon floor and level descriptor
@@ -1013,8 +1123,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			Frame* dungeonFloorFrame = sheetFrame->addFrame("dungeon floor frame");
 
 			dungeonFloorFrame->setSize(SDL_Rect{ leftAlignX + 6, 118, 202, 52 });
-			auto selector = dungeonFloorFrame->addFrame("dungeon floor selector");
-			selector->setSize(SDL_Rect{ 6, 6, 190, 44 });
+			auto dungeonButton = dungeonFloorFrame->addButton("dungeon floor selector");
+			dungeonButton->setSize(SDL_Rect{ 6, 6, 190, 44 });
+			dungeonButton->setColor(makeColor(0, 0, 0, 0));
+			dungeonButton->setHighlightColor(makeColor(0, 0, 0, 0));
+			dungeonButton->setHideGlyphs(true);
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
@@ -1082,7 +1195,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			/*characterInnerFrame->addImage(SDL_Rect{ 4, 54, 194, 22 }, makeColor(255, 255, 255, 64),
 				"images/system/white.png", "character level frame");*/
-			characterInnerFrame->addFrame("character class selector")->setSize(SDL_Rect{ 4, 54, 194, 22 });
+			auto classButton = characterInnerFrame->addButton("character class selector");
+			classButton->setSize(SDL_Rect{ 4, 54, 194, 22 });
+			classButton->setColor(makeColor(0, 0, 0, 0));
+			classButton->setHighlightColor(makeColor(0, 0, 0, 0));
+			classButton->setHideGlyphs(true);
 
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
@@ -1120,7 +1237,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			/*characterInnerFrame->addImage(SDL_Rect{ 4, 28, 194, 22 }, makeColor(255, 255, 255, 64),
 				"images/system/white.png", "character race frame");*/
-			characterInnerFrame->addFrame("character race selector")->setSize(SDL_Rect{ 4, 28, 194, 22 });
+			auto raceButton = characterInnerFrame->addButton("character race selector");
+			raceButton->setSize(SDL_Rect{ 4, 28, 194, 22 });
+			raceButton->setColor(makeColor(0, 0, 0, 0));
+			raceButton->setHighlightColor(makeColor(0, 0, 0, 0));
+			raceButton->setHideGlyphs(true);
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -1136,7 +1257,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			auto goldText = characterInnerFrame->addField("gold text", 32);
 			goldText->setFont(infoFont);
 			goldText->setSize(SDL_Rect{ 92, characterTextPos.y, 88, characterTextPos.h });
-			goldText->setText("270000");
+			goldText->setText("0");
 			goldText->setVJustify(Field::justify_t::CENTER);
 			goldText->setHJustify(Field::justify_t::CENTER);
 			goldText->setColor(infoTextColor);
@@ -1146,7 +1267,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			/*characterInnerFrame->addImage(SDL_Rect{ 24, 80, 156, 22 }, makeColor(255, 255, 255, 64),
 				"images/system/white.png", "character gold frame");*/
-			characterInnerFrame->addFrame("character gold selector")->setSize(SDL_Rect{ 22, 80, 158, 22 });
+			auto goldButton = characterInnerFrame->addButton("character gold selector");
+			goldButton->setSize(SDL_Rect{ 22, 80, 158, 22 });
+			goldButton->setColor(makeColor(0, 0, 0, 0));
+			goldButton->setHighlightColor(makeColor(0, 0, 0, 0));
+			goldButton->setHideGlyphs(true);
 		}
 
 		{
@@ -1526,7 +1651,8 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		return;
 	}
 
-	if ( players[player.playernum]->shootmode )
+	if ( nohud || player.shootmode || 
+		!(player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
 	{
 		sheetFrame->setDisabled(true);
 		return;
@@ -1544,7 +1670,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		Frame* buttonFrame = sheetFrame->findFrame("log map buttons");
 		Frame* fullscreenBg = sheetFrame->findFrame("sheet bg fullscreen");
 		Frame* timerFrame = sheetFrame->findFrame("game timer");
-		Frame* skillsButtonFrame = sheetFrame->findFrame("skills button");
+		Frame* skillsButtonFrame = sheetFrame->findFrame("skills button frame");
 
 		auto statsFrame = sheetFrame->findFrame("stats");
 		auto attributesFrame = sheetFrame->findFrame("attributes");
@@ -1552,6 +1678,8 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		if ( keystatus[SDL_SCANCODE_U] )
 		{
 			// compact view
+			sheetDisplayType = CHARSHEET_DISPLAY_COMPACT;
+
 			compactImgBg->disabled = false;
 			compactImgBg->pos.x = compactAlignX;
 			compactImgBg->pos.y = 0;
@@ -1574,12 +1702,9 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			buttonFrame->setSize(buttonFramePos);
 			{
 				SDL_Rect buttonPos{ 0, 1, 98, 38 };
-				//auto mapBtnImg = buttonFrame->findImage("map button img");
-				//mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png";
-				//mapBtnImg->pos = buttonPos;
-				//auto mapText = buttonFrame->findField("map button text");
-				//mapText->setSize(buttonPos);
-				//mapText->setText(language[4071]);
+				auto mapBtn = buttonFrame->findButton("map button");
+				mapBtn->setText(language[4071]);
+				mapBtn->setSize(buttonPos);
 				auto mapSelector = buttonFrame->findFrame("map button selector");
 				SDL_Rect mapSelectorPos = buttonPos;
 				mapSelectorPos.x += 6;
@@ -1589,12 +1714,9 @@ void Player::CharacterSheet_t::processCharacterSheet()
 				mapSelector->setSize(mapSelectorPos);
 
 				buttonPos.x = buttonFramePos.w - buttonPos.w;
-				//auto logBtnImg = buttonFrame->findImage("log button img");
-				//logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png";
-				//logBtnImg->pos = buttonPos;
-				//auto logText = buttonFrame->findField("log button text");
-				//logText->setSize(buttonPos);
-				//logText->setText(language[4072]);
+				auto logBtn = buttonFrame->findButton("log button");
+				logBtn->setText(language[4072]);
+				logBtn->setSize(buttonPos);
 				auto logSelector = buttonFrame->findFrame("log button selector");
 				SDL_Rect logSelectorPos = buttonPos;
 				logSelectorPos.x += 6;
@@ -1617,6 +1739,8 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		else
 		{
 			// standard view
+			sheetDisplayType = CHARSHEET_DISPLAY_NORMAL;
+
 			SDL_Rect pos = characterInfoFrame->getSize();
 			pos.x = leftAlignX;
 			pos.y = 206;
@@ -1635,28 +1759,18 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			buttonFrame->setSize(buttonFramePos);
 			{
 				SDL_Rect buttonPos{ 0, 0, buttonFramePos.w, 40 };
-				//auto mapBtnImg = buttonFrame->findImage("map button img");
-				//mapBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_Button_00.png";
-				//mapBtnImg->pos = buttonPos;
-				//auto mapText = buttonFrame->findField("map button text");
-				//mapText->setSize(buttonPos);
-				//mapText->setText(language[4069]);
-				auto mapButton = buttonFrame->findButton("map button");
+				auto mapBtn = buttonFrame->findButton("map button");
+				mapBtn->setText(language[4069]);
+				mapBtn->setSize(buttonPos);
 				auto mapSelector = buttonFrame->findFrame("map button selector");
 				mapSelector->setSize(buttonPos);
 
 				buttonPos.y = buttonPos.y + buttonPos.h + 2;
-				//auto logBtnImg = buttonFrame->findImage("log button img");
-				//logBtnImg->path = "images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png";
-				//logBtnImg->pos = buttonPos;
-				//auto logText = buttonFrame->findField("log button text");
-				//logText->setSize(buttonPos);
-				//logText->setText(language[4070]);
-				auto logButton = buttonFrame->findButton("log button");
+				auto logBtn = buttonFrame->findButton("log button");
+				logBtn->setText(language[4070]);
+				logBtn->setSize(buttonPos);
 				auto logSelector = buttonFrame->findFrame("log button selector");
 				logSelector->setSize(buttonPos);
-				//messagePlayer(0, "%d:%d | %d:%d", mapButton->isHighlighted(), mapButton->isSelected(),
-				//	logButton->isHighlighted(), logButton->isSelected());
 			}
 
 			SDL_Rect timerFramePos = timerFrame->getSize();
@@ -1683,6 +1797,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		}
 	}
 
+	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	player.GUI.handleCharacterSheetMovement();
 
 	updateGameTimer();
@@ -1698,6 +1813,7 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 	Frame* elementFrame = nullptr;
 	Frame::image_t* img = nullptr;
 	Field* elementField = nullptr;
+	Button* elementButton = nullptr;
 	switch ( element )
 	{
 		case SHEET_OPEN_LOG:
@@ -1715,7 +1831,7 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			}
 			break;
 		case SHEET_SKILL_LIST:
-			elementFrame = sheetFrame->findFrame("skills button");
+			elementFrame = sheetFrame->findFrame("skills button frame");
 			break;
 		case SHEET_TIMER:
 			elementFrame = sheetFrame->findFrame("game timer");
@@ -1725,14 +1841,14 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			{
 				if ( elementFrame = elementFrame->findFrame("character info inner frame") )
 				{
-					elementFrame = elementFrame->findFrame("character gold selector");
+					elementButton = elementFrame->findButton("character gold selector");
 				}
 			}
 			break;
 		case SHEET_DUNGEON_FLOOR:
 			if ( elementFrame = sheetFrame->findFrame("dungeon floor frame") )
 			{
-				elementFrame = elementFrame->findFrame("dungeon floor selector");
+				elementButton = elementFrame->findButton("dungeon floor selector");
 			}
 			break;
 		case SHEET_CHAR_CLASS:
@@ -1740,7 +1856,7 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			{
 				if ( elementFrame = elementFrame->findFrame("character info inner frame") )
 				{
-					elementFrame = elementFrame->findFrame("character class selector");
+					elementButton = elementFrame->findButton("character class selector");
 				}
 			}
 			break;
@@ -1749,7 +1865,7 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			{
 				if ( elementFrame = elementFrame->findFrame("character info inner frame") )
 				{
-					elementFrame = elementFrame->findFrame("character race selector");
+					elementButton = elementFrame->findButton("character race selector");
 				}
 			}
 			break;
@@ -1842,6 +1958,10 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			pos.w = img->pos.w;
 			pos.h = img->pos.h;
 		}
+		if ( elementButton )
+		{
+			pos = elementButton->getAbsoluteSize();
+		}
 		if ( elementField )
 		{
 			pos = elementField->getAbsoluteSize();
@@ -1865,6 +1985,265 @@ void Player::CharacterSheet_t::updateGameTimer()
 	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
+
+	if ( selectedElement == SHEET_TIMER )
+	{
+		updateCharacterSheetTooltip(SHEET_TIMER, sheetFrame->findFrame("game timer")->getSize());
+	}
+}
+
+std::string& Player::CharacterSheet_t::getHoverTextString(std::string key)
+{
+	if ( hoverTextStrings.find(key) != hoverTextStrings.end() )
+	{
+		return hoverTextStrings[key];
+	}
+	return defaultString;
+}
+
+void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos)
+{
+	if ( !sheetFrame )
+	{
+		return;
+	}
+	auto tooltipFrame = sheetFrame->findFrame("sheet tooltip");
+	if ( element == SHEET_ENUM_END || element == SHEET_UNSELECTED
+		|| player.GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET )
+	{
+		tooltipFrame->setDisabled(true);
+		return;
+	}
+	tooltipFrame->setDisabled(false);
+
+	auto txt = tooltipFrame->findField("tooltip text");
+
+	Uint32 defaultColor = makeColor(188, 154, 114, 255);
+	for ( int i = 1; i < 5; ++i )
+	{
+		char glyphName[32] = "";
+		snprintf(glyphName, sizeof(glyphName), "glyph %d", i);
+		char entryName[32] = "";
+		snprintf(entryName, sizeof(entryName), "txt %d", i);
+		auto glyph = tooltipFrame->findImage(glyphName); assert(glyph);
+		glyph->disabled = true;
+		auto entry = tooltipFrame->findField(entryName); assert(entry);
+		entry->setDisabled(true);
+		entry->setColor(defaultColor);
+	}
+
+	if ( element == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
+	{
+		const int maxWidth = 260;
+		const int padx = 16;
+		const int pady1 = 8;
+		const int pady2 = 8;
+		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+		
+		txt->setText(mapDisplayNamesDescriptions[map.name].second.c_str());
+		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
+		txt->setSize(txtPos);
+		txt->reflowTextToFit(0);
+		Font* actualFont = Font::get(txt->getFont());
+		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+		txtPos.h = txtHeight;
+		txt->setSize(txtPos);
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		tooltipPos.w = txtGet->getWidth() + padx * 2;
+		tooltipPos.h = pady1 + txtPos.h + pady2;
+		tooltipPos.x = pos.x - tooltipPos.w;
+		tooltipPos.y = pos.y;
+
+		tooltipFrame->setSize(tooltipPos);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			skillsheetEffectBackgroundImages);
+	}
+	else if ( element == Player::CharacterSheet_t::SHEET_GOLD )
+	{
+		const int maxWidth = 200;
+		const int padx = 16;
+		const int pady1 = 8;
+		const int pady2 = 8;
+		const int padyMid = 4;
+		const int padxMid = 4;
+		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+		if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		{
+			txt->setText(getHoverTextString("gold_controller").c_str());
+		}
+		else
+		{
+			txt->setText(getHoverTextString("gold_mouse").c_str());
+		}
+		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
+		txt->setSize(txtPos);
+		txt->reflowTextToFit(0);
+		Font* actualFont = Font::get(txt->getFont());
+		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+		txtPos.h = txtHeight + padyMid;
+		txt->setSize(txtPos);
+
+		int currentHeight = txtPos.y + txtPos.h;
+		for ( int i = 1; i < 5; ++i )
+		{
+			currentHeight += padyMid;
+			char glyphName[32] = "";
+			snprintf(glyphName, sizeof(glyphName), "glyph %d", i);
+			char entryName[32] = "";
+			snprintf(entryName, sizeof(entryName), "txt %d", i);
+			auto glyph = tooltipFrame->findImage(glyphName); assert(glyph);
+			glyph->disabled = false;
+			auto entry = tooltipFrame->findField(entryName); assert(entry);
+			entry->setDisabled(false);
+			glyph->pos.x = padx;
+			glyph->pos.y = currentHeight;
+			switch ( i )
+			{
+				case 1:
+					glyph->path = "images/ui/Glyphs/G_Switch_A00.png";
+					entry->setText(getHoverTextString("gold_option_10").c_str());
+					break;
+				case 2:
+					glyph->path = "images/ui/Glyphs/G_Switch_B00.png";
+					entry->setText(getHoverTextString("gold_option_100").c_str());
+					break;
+				case 3:
+					glyph->path = "images/ui/Glyphs/G_Switch_Y00.png";
+					entry->setText(getHoverTextString("gold_option_1000").c_str());
+					break;
+				case 4:
+					glyph->path = "images/ui/Glyphs/G_Switch_X00.png";
+					entry->setText(getHoverTextString("gold_option_all").c_str());
+					break;
+				default:
+					break;
+			}
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
+			{
+				glyph->pos.w = imgGet->getWidth();
+				glyph->pos.h = imgGet->getHeight();
+			}
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = glyph->pos.x + glyph->pos.w + padxMid;
+			entryPos.y = glyph->pos.y + glyph->pos.h / 2;
+			if ( auto textGet = Text::get(entry->getText(), entry->getFont(), entry->getTextColor(), entry->getOutlineColor()) )
+			{
+				entryPos.h = textGet->getHeight() * entry->getNumTextLines();
+				entryPos.y -= entryPos.h / 2;
+				entryPos.w = textGet->getWidth();
+			}
+			entry->setSize(entryPos);
+			currentHeight = std::max(entryPos.y + entryPos.h, glyph->pos.y + glyph->pos.h);
+		}
+
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		tooltipPos.w = txtGet->getWidth() + padx * 2;
+		tooltipPos.h = pady1 + currentHeight + pady2;
+		tooltipPos.x = pos.x - tooltipPos.w;
+		tooltipPos.y = pos.y;
+
+		tooltipFrame->setSize(tooltipPos);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			skillsheetEffectBackgroundImages);
+	}
+	else if ( element == Player::CharacterSheet_t::SHEET_TIMER )
+	{
+		const int maxWidth = 200;
+		const int padx = 16;
+		const int pady1 = 8;
+		const int pady2 = 8;
+		const int padyMid = 4;
+		const int padxMid = 4;
+		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+		if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		{
+			txt->setText(getHoverTextString("game_timer_controller").c_str());
+		}
+		else
+		{
+			txt->setText(getHoverTextString("game_timer_mouse").c_str());
+		}
+
+		int currentHeight = padyMid;
+		SDL_Rect entry1Pos { padx, currentHeight, 0, 0 };
+		SDL_Rect entry2Pos { padx, currentHeight, 0, 0 };
+		for ( int i = 1; i <= 2; ++i )
+		{
+			char entryName[32] = "";
+			snprintf(entryName, sizeof(entryName), "txt %d", i);
+			auto entry = tooltipFrame->findField(entryName); assert(entry);
+			entry->setDisabled(false);
+			
+			switch ( i )
+			{
+				case 1:
+					entry->setText(getHoverTextString("game_timer_state_desc").c_str());
+					break;
+				case 2:
+					if ( showGameTimerAlways )
+					{
+						entry->setText(getHoverTextString("game_timer_state_enabled").c_str());
+						entry->setColor(makeColor(0, 255, 0, 255));
+					}
+					else
+					{
+						entry->setText(getHoverTextString("game_timer_state_disabled").c_str());
+						entry->setColor(makeColor(255, 0, 0, 255));
+					}
+					break;
+				default:
+					break;
+			}
+
+			SDL_Rect* entryPos = nullptr;
+			if ( i == 1 )
+			{
+				entryPos = &entry1Pos;
+			}
+			else
+			{
+				entryPos = &entry2Pos;
+				entry2Pos.x = entry1Pos.x + entry1Pos.w;
+			}
+			if ( Font* actualFont = Font::get(entry->getFont()) )
+			{
+				entryPos->h = entry->getNumTextLines() * actualFont->height(true);
+			}
+			if ( auto textGet = Text::get(entry->getText(), entry->getFont(), entry->getTextColor(), entry->getOutlineColor()) )
+			{
+				entryPos->w = textGet->getWidth();
+			}
+			entry->setSize(*entryPos);
+		}
+
+		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
+		txtPos.w = std::max(entry1Pos.w + entry2Pos.w, txtPos.w);
+		txt->setSize(txtPos);
+		txt->reflowTextToFit(0);
+		Font* actualFont = Font::get(txt->getFont());
+		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+		txtPos.h = txtHeight + padyMid;
+		txt->setSize(txtPos);
+		
+		entry1Pos.y += txtPos.h;
+		entry2Pos.y += txtPos.h;
+		tooltipFrame->findField("txt 1")->setSize(entry1Pos);
+		tooltipFrame->findField("txt 2")->setSize(entry2Pos);
+		currentHeight = std::max(currentHeight, entry1Pos.y + entry1Pos.h);
+
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		tooltipPos.w = txtPos.w + padx * 2;
+		tooltipPos.h = pady1 + currentHeight + pady2;
+		tooltipPos.x = pos.x - tooltipPos.w;
+		tooltipPos.y = pos.y;
+
+		tooltipFrame->setSize(tooltipPos);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			skillsheetEffectBackgroundImages);
+	}
 }
 
 void Player::CharacterSheet_t::updateCharacterInfo()
@@ -1875,46 +2254,42 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	assert(characterInnerFrame);
 
 	SheetElements targetElement = SHEET_ENUM_END;
+	auto logButton = sheetFrame->findFrame("log map buttons")->findButton("log button");
+	auto mapButton = sheetFrame->findFrame("log map buttons")->findButton("map button");
+	auto skillsButton = sheetFrame->findFrame("skills button frame")->findButton("skills button");
 	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		if ( sheetFrame->findFrame("skills button")->capturesMouse() )
+		if ( skillsButton->isHighlighted() )
 		{
 			targetElement = SHEET_SKILL_LIST;
 		}
-		else if ( sheetFrame->findFrame("log map buttons")->findFrame("log button selector")->capturesMouse() )
+		else if ( logButton->isHighlighted() )
 		{
 			targetElement = SHEET_OPEN_LOG;
 		}
-		else if ( sheetFrame->findFrame("log map buttons")->findFrame("map button selector")->capturesMouse() )
+		else if ( mapButton->isHighlighted() )
 		{
 			targetElement = SHEET_OPEN_MAP;
 		}
-		else if ( sheetFrame->findFrame("game timer")->findFrame("timer selector")->capturesMouse() )
+		else if ( sheetFrame->findFrame("game timer")->findButton("timer selector")->isHighlighted() )
 		{
 			targetElement = SHEET_TIMER;
 		}
-		else if ( sheetFrame->findFrame("dungeon floor frame")->findFrame("dungeon floor selector")->capturesMouse() )
+		else if ( sheetFrame->findFrame("dungeon floor frame")->findButton("dungeon floor selector")->isHighlighted() )
 		{
 			targetElement = SHEET_DUNGEON_FLOOR;
 		}
-		else if ( characterInfoFrame->capturesMouse() )
+		else if ( characterInnerFrame->findButton("character class selector")->isHighlighted() )
 		{
-			if ( characterInnerFrame->findFrame("character class selector")->capturesMouse() )
-			{
-				targetElement = SHEET_CHAR_CLASS;
-			}
-			else if ( characterInnerFrame->findFrame("character race selector")->capturesMouse() )
-			{
-				targetElement = SHEET_CHAR_RACE_SEX;
-			}
-			else if ( characterInnerFrame->findFrame("character gold selector")->capturesMouse() )
-			{
-				targetElement = SHEET_GOLD;
-			}
-			else if ( characterInnerFrame->findFrame("character gold selector")->capturesMouse() )
-			{
-				targetElement = SHEET_SKILL_LIST;
-			}
+			targetElement = SHEET_CHAR_CLASS;
+		}
+		else if ( characterInnerFrame->findButton("character race selector")->isHighlighted() )
+		{
+			targetElement = SHEET_CHAR_RACE_SEX;
+		}
+		else if ( characterInnerFrame->findButton("character gold selector")->isHighlighted() )
+		{
+			targetElement = SHEET_GOLD;
 		}
 	}
 	if ( targetElement != SHEET_ENUM_END )
@@ -1940,21 +2315,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	//characterPos.x = player.camera_virtualWidth() - characterPos.w * 2;
 	//characterInfoFrame->setSize(characterPos);
 
-
 	char buf[32] = "";
-	if ( auto logmapFrame = sheetFrame->findFrame("log map buttons") )
-	{
-		/*if ( auto logImg = logmapFrame->findImage("log button img") )
-		{
-		}
-		if ( auto mapImg = logmapFrame->findImage("map button img") )
-		{
-			if ( selectedElement == SHEET_OPEN_MAP )
-			{
-				mapImg->path = "";
-			}
-		}*/
-	}
 	if ( auto name = characterInnerFrame->findField("character name text") )
 	{
 		name->setText(stats[player.playernum]->name);
@@ -2059,22 +2420,22 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			{
 				if ( type == AUTOMATON )
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_00.png";
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png";
 				}
 				else
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_M_01.png";
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
 				}
 			}
 			else if ( stats[player.playernum]->sex == sex_t::FEMALE )
 			{
 				if ( type == AUTOMATON )
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_00.png";
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png";
 				}
 				else
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_F_01.png";
+					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_F_02.png";
 				}
 			}
 			if ( auto imgGet = Image::get(sexImg->path.c_str()) )
@@ -2112,36 +2473,9 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			if ( mapDisplayNamesDescriptions.find(map.name) != mapDisplayNamesDescriptions.end() )
 			{
 				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
-				if ( auto tooltipFrame = sheetFrame->findFrame("sheet tooltip") )
+				if ( selectedElement == SHEET_DUNGEON_FLOOR )
 				{
-					if ( selectedElement == SHEET_DUNGEON_FLOOR )
-					{
-						const int maxWidth = 260;
-						const int padx = 16;
-						const int pady1 = 8;
-						const int pady2 = 8;
-						SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
-						if ( auto txt = tooltipFrame->findField("tooltip text") )
-						{
-							txt->setText(mapDisplayNamesDescriptions[map.name].second.c_str());
-							SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
-							txt->setSize(txtPos);
-							txt->reflowTextToFit(0);
-							Font* actualFont = Font::get(txt->getFont());
-							int txtHeight = txt->getNumTextLines() * actualFont->height(true);
-							txtPos.h = txtHeight;
-							txt->setSize(txtPos);
-							auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(), 
-								txt->getTextColor(), txt->getOutlineColor());
-							tooltipPos.w = txtGet->getWidth() + padx * 2;
-							tooltipPos.h = pady1 + txtPos.h + pady2;
-							tooltipPos.x = floorFrame->getSize().x - tooltipPos.w;
-							tooltipPos.y = floorFrame->getSize().y;
-						}
-						tooltipFrame->setSize(tooltipPos);
-						imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h}, 
-							skillsheetEffectBackgroundImages);
-					}
+					updateCharacterSheetTooltip(selectedElement, floorFrame->getSize());
 				}
 			}
 			else
@@ -2154,6 +2488,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->GOLD);
 		gold->setText(buf);
+		if ( selectedElement == SHEET_GOLD )
+		{
+			updateCharacterSheetTooltip(selectedElement, characterInfoFrame->getSize());
+		}
 	}
 }
 
@@ -2915,10 +3253,22 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
 
 	auto itemSpriteFrame = slotFrame->addFrame("item sprite frame");
-	itemSpriteFrame->setSize(SDL_Rect{ slotSize.x + 3, slotSize.y + 3, slotSize.w - 3, slotSize.h - 3 });
+
+	// cut off the slot 2px borders
+	SDL_Rect itemSpriteBorder = { slotSize.x + 2, slotSize.y + 2, slotFrame->getSize().w - 2, slotFrame->getSize().h - 2 };
+	const int itemSpriteSize = players[slotFrame->getOwner()]->inventoryUI.getItemSpriteSize();
+	const int alignOffset = (itemSpriteBorder.w - itemSpriteSize) / 2; // align the item sprite within the box by this offset to center
+	itemSpriteBorder.x += alignOffset;
+	itemSpriteBorder.y += alignOffset;
+	itemSpriteBorder.w = itemSpriteSize;
+	itemSpriteBorder.h = itemSpriteSize;
+
+	itemSpriteFrame->setSize(SDL_Rect{ itemSpriteBorder.x, itemSpriteBorder.y, 
+		itemSpriteBorder.w, itemSpriteBorder.h });
 	itemSpriteFrame->setHollow(true);
 	itemSpriteFrame->setDisabled(true);
-	itemSpriteFrame->addImage(slotSize, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
+	SDL_Rect imgPos{ 0, 0, itemSpriteFrame->getSize().w, itemSpriteFrame->getSize().h };
+	itemSpriteFrame->addImage(imgPos, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
 
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
@@ -3244,6 +3594,8 @@ void createInventoryTooltipFrame(const int player)
 
 	const std::string headerFont = "fonts/pixelmix.ttf#14#2";
 	const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
+	//const std::string headerFont = "fonts/pixelmix.ttf#16#2";
+	//const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#1";
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
@@ -4639,8 +4991,11 @@ void createPlayerInventory(const int player)
 		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		oldSelectedFrame->setDisabled(true);
 
+		const int itemSpriteSize = players[player]->inventoryUI.getItemSpriteSize();
+		SDL_Rect itemSpriteBorder{ 2, 2, itemSpriteSize, itemSpriteSize };
+
 		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-		auto oldImg = oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
+		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "inventory old selected item");
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
@@ -4656,6 +5011,7 @@ void createPlayerInventory(const int player)
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
+		oldCursorFrame->setHollow(true);
 		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/SelectorGrey_TL.png", "inventory old cursor topleft");
@@ -4670,6 +5026,7 @@ void createPlayerInventory(const int player)
 		players[player]->inventoryUI.selectedItemCursorFrame = cursorFrame;
 		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		cursorFrame->setDisabled(true);
+		cursorFrame->setHollow(true);
 		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
@@ -4689,11 +5046,19 @@ void createPlayerInventory(const int player)
 	}
 
 	{
+		// unused for now, only animating cycling items
 		auto draggingInventoryItemOld = frame->addFrame("dragging inventory item old");
-		draggingInventoryItemOld->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		const int itemSpriteSize = players[player]->inventoryUI.getItemSpriteSize();
+		SDL_Rect draggingInventoryItemPos{ 2, 2, inventorySlotSize - 2, inventorySlotSize - 2 };
+		const int alignOffset = (draggingInventoryItemPos.w - itemSpriteSize) / 2; // align the item sprite within the box by this offset to center
+		draggingInventoryItemPos.x += alignOffset;
+		draggingInventoryItemPos.y += alignOffset;
+		draggingInventoryItemPos.w = itemSpriteSize;
+		draggingInventoryItemPos.h = itemSpriteSize;
+		draggingInventoryItemOld->setSize(draggingInventoryItemPos);
 		draggingInventoryItemOld->setDisabled(true);
 		
-		SDL_Rect imgPos{ 3, 3, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h };
+		SDL_Rect imgPos{ 0, 0, draggingInventoryItemOld->getSize().w, draggingInventoryItemOld->getSize().h };
 		auto itemSprite = draggingInventoryItemOld->addImage(imgPos, 0xFFFFFFFF, "", "item sprite img");
 	}
 }
@@ -5601,6 +5966,7 @@ void Player::HUD_t::updateCursor()
 		cursorFrame->setOwner(player.playernum);
 
 		auto cursor = cursorFrame->addFrame("hud cursor");
+		cursor->setHollow(true);
 		cursor->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -7697,7 +8063,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		players[player.playernum]->camera_virtualy1(),
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
-	frame->setHollow(true);
+	frame->setHollow(false);
 	frame->setBorder(0);
 	frame->setOwner(player.playernum);
 	frame->setInheritParentFrameOpacity(false);
@@ -7895,6 +8261,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setHighlightColor(makeColor(255, 255, 255, 255));
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+	slider->setHideGlyphs(true);
 
 	Font* actualFont = Font::get(descFont);
 	int fontHeight;
@@ -8160,12 +8527,25 @@ void Player::SkillSheet_t::closeSkillSheet()
 		skillFrame->setDisabled(true);
 	}
 	resetSkillDisplay();
+
+	if ( player.gui_mode == GUI_MODE_NONE )
+	{
+		player.shootmode = true;
+	}
 }
 
 void Player::SkillSheet_t::openSkillSheet()
 {
-	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
-		INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
+	if ( player.shootmode )
+	{
+		players[player.playernum]->openStatusScreen(GUI_MODE_NONE,
+			INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST);
+	}
+	else
+	{
+		players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
+			INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
+	}
 	bSkillSheetOpen = true;
 	openTick = ticks;
 	scrollPercent = 0.0;
@@ -10420,6 +10800,10 @@ void Player::SkillSheet_t::processSkillSheet()
 
 	if ( closeSheetAction || mouseClickedOutOfBounds )
 	{
+		if ( mouseClickedOutOfBounds )
+		{
+			inputs.mouseClearLeft(player.playernum);
+		}
 		closeSkillSheet();
 		return;
 	}
