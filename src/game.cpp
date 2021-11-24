@@ -224,7 +224,7 @@ std::chrono::duration<long long, std::ratio<1, 60>> TimerExperiments::dt = std::
 TimerExperiments::EntityStates TimerExperiments::cameraPreviousState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
-bool TimerExperiments::bUseTimerInterpolation = true;
+bool TimerExperiments::bUseTimerInterpolation = false;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = true;
 real_t TimerExperiments::lerpFactor = 30.0;
@@ -248,7 +248,8 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actHudAdditional
 		|| entity->behavior == &actHudArrowModel
 		|| entity->behavior == &actLeftHandMagic
-		|| entity->behavior == &actRightHandMagic )
+		|| entity->behavior == &actRightHandMagic
+		|| entity->behavior == &actDoor )
 	{
 		entity->bUseRenderInterpolation = false;
 	}
