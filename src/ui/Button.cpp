@@ -279,7 +279,24 @@ next:
 		}
 	}
 
-	drawGlyphs(scaledSize, selectedWidgets);
+	// draw user stuff
+	if (drawCallback) {
+		drawCallback(*this, scaledSize);
+	}
+}
+
+void Button::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (invisible) {
+		return;
+	}
+	_size.x += std::max(0, size.x - _actualSize.x);
+	_size.y += std::max(0, size.y - _actualSize.y);
+	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+	_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+	if (_size.w <= 0 || _size.h <= 0) {
+		return;
+	}
+	Widget::drawPost(_size, selectedWidgets);
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

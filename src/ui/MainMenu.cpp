@@ -39,6 +39,7 @@ namespace MainMenu {
 	void beginFade(FadeDestination fd) {
 		main_menu_fade_destination = fd;
 		fadeout = true;
+		fadefinished = false;
 	}
 
 	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
@@ -520,10 +521,185 @@ namespace MainMenu {
 		file->property("inspection", inspection);
 	}
 
-
 	/******************************************************************************/
 
 	static AllSettings allSettings;
+
+	inline void AllSettings::save() {
+		auto_hotbar_new_items = add_items_to_hotbar_enabled;
+		inventory_sorting.save();
+		right_click_protect = !use_on_release_enabled;
+		minimap.save();
+		disable_messages = !show_messages_enabled;
+		show_messages.save();
+		hide_playertags = !show_player_nametags_enabled;
+		nohud = !show_hud_enabled;
+		broadcast = !show_ip_address_enabled;
+		spawn_blood = !content_control_enabled;
+		colorblind = colorblind_mode_enabled;
+		arachnophobia_filter = arachnophobia_filter_enabled;
+		shaking = shaking_enabled;
+		bobbing = bobbing_enabled;
+		flickerLights = light_flicker_enabled;
+		switch (allSettings.window_mode) {
+		case 0:
+			fullscreen = false;
+			borderless = false;
+			break;
+		case 1:
+			fullscreen = true;
+			borderless = false;
+			break;
+		case 2:
+			fullscreen = true;
+			borderless = true;
+			break;
+		default:
+			assert("Unknown video mode" && 0);
+			break;
+		}
+		xres = resolution_x;
+		yres = resolution_y;
+		verticalSync = vsync_enabled;
+		vertical_splitscreen = vertical_split_enabled;
+		vidgamma = gamma / 100.f;
+		::fov = fov;
+		fpsLimit = fps;
+		MainMenu::master_volume = master_volume;
+		sfxvolume = (gameplay_volume / 100.f) * 128.f;
+		sfxAmbientVolume = (ambient_volume / 100.f) * 128.f;
+		sfxEnvironmentVolume = (environment_volume / 100.f) * 128.f;
+		musvolume = (music_volume / 100.f) * 128.f;
+		minimapPingMute = !minimap_pings_enabled;
+		mute_player_monster_sounds = !player_monster_sounds_enabled;
+		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
+		bindings.save();
+		hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
+		mousespeed = mouse_sensitivity;
+		reversemouse = reverse_mouse_enabled;
+		smoothmouse = smooth_mouse_enabled;
+		disablemouserotationlimit = !rotation_speed_limit_enabled;
+		gamepad_rightx_sensitivity = turn_sensitivity_x * 10.f;
+		gamepad_righty_sensitivity = turn_sensitivity_y * 10.f;
+		svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
+		svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
+		svFlags = friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
+		svFlags = keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
+		svFlags = hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
+		svFlags = minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
+		svFlags = random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
+		svFlags = extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+		svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
+		::skipintro = skipintro;
+	}
+
+	inline AllSettings AllSettings::load() {
+		AllSettings settings;
+		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
+		settings.inventory_sorting = InventorySorting::load();
+		settings.use_on_release_enabled = !right_click_protect;
+		settings.minimap = Minimap::load();
+		settings.show_messages_enabled = !disable_messages;
+		settings.show_messages = Messages::load();
+		settings.show_player_nametags_enabled = !hide_playertags;
+		settings.show_hud_enabled = !nohud;
+		settings.show_ip_address_enabled = !broadcast;
+		settings.content_control_enabled = !spawn_blood;
+		settings.colorblind_mode_enabled = colorblind;
+		settings.arachnophobia_filter_enabled = arachnophobia_filter;
+		settings.shaking_enabled = shaking;
+		settings.bobbing_enabled = bobbing;
+		settings.light_flicker_enabled = flickerLights;
+		settings.window_mode = fullscreen ? (borderless ? 2 : 1) : 0;
+		settings.resolution_x = xres;
+		settings.resolution_y = yres;
+		settings.vsync_enabled = verticalSync;
+		settings.vertical_split_enabled = vertical_splitscreen;
+		settings.gamma = vidgamma * 100.f;
+		settings.fov = ::fov;
+		settings.fps = fpsLimit;
+		settings.master_volume = MainMenu::master_volume;
+		settings.gameplay_volume = (float)sfxvolume / 128.f * 100.f;
+		settings.ambient_volume = (float)sfxAmbientVolume / 128.f * 100.f;
+		settings.environment_volume = (float)sfxEnvironmentVolume / 128.f * 100.f;
+		settings.music_volume = (float)musvolume / 128.f * 100.f;
+		settings.minimap_pings_enabled = !minimapPingMute;
+		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
+		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
+		settings.bindings = Bindings::load();
+		settings.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
+		settings.mouse_sensitivity = mousespeed;
+		settings.reverse_mouse_enabled = reversemouse;
+		settings.smooth_mouse_enabled = smoothmouse;
+		settings.rotation_speed_limit_enabled = !disablemouserotationlimit;
+		settings.turn_sensitivity_x = gamepad_rightx_sensitivity / 10;
+		settings.turn_sensitivity_y = gamepad_righty_sensitivity / 10;
+		settings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
+		settings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
+		settings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
+		settings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
+		settings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
+		settings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
+		settings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
+		settings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+		settings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+		settings.skipintro = ::skipintro;
+		return settings;
+	}
+
+	inline AllSettings AllSettings::reset() {
+		AllSettings settings;
+		settings.add_items_to_hotbar_enabled = true;
+		settings.inventory_sorting = InventorySorting::reset();
+		settings.use_on_release_enabled = true;
+		settings.minimap = Minimap::reset();
+		settings.show_messages_enabled = true;
+		settings.show_messages = Messages::reset();
+		settings.show_player_nametags_enabled = true;
+		settings.show_hud_enabled = true;
+		settings.show_ip_address_enabled = true;
+		settings.content_control_enabled = false;
+		settings.colorblind_mode_enabled = false;
+		settings.arachnophobia_filter_enabled = false;
+		settings.shaking_enabled = true;
+		settings.bobbing_enabled = true;
+		settings.light_flicker_enabled = true;
+		settings.window_mode = 0;
+		settings.resolution_x = 1280;
+		settings.resolution_y = 720;
+		settings.vsync_enabled = true;
+		settings.vertical_split_enabled = false;
+		settings.gamma = 100.f;
+		settings.fov = 65;
+		settings.fps = 60;
+		settings.master_volume = 100.f;
+		settings.gameplay_volume = 100.f;
+		settings.ambient_volume = 100.f;
+		settings.environment_volume = 100.f;
+		settings.music_volume = 100.f;
+		settings.minimap_pings_enabled = true;
+		settings.player_monster_sounds_enabled = true;
+		settings.out_of_focus_audio_enabled = true;
+		settings.bindings = Bindings::reset();
+		settings.numkeys_in_inventory_enabled = true;
+		settings.mouse_sensitivity = 32.f;
+		settings.reverse_mouse_enabled = false;
+		settings.smooth_mouse_enabled = false;
+		settings.rotation_speed_limit_enabled = true;
+		settings.turn_sensitivity_x = 50.f;
+		settings.turn_sensitivity_y = 50.f;
+		settings.classic_mode_enabled = false;
+		settings.hardcore_mode_enabled = false;
+		settings.friendly_fire_enabled = true;
+		settings.keep_inventory_enabled = false;
+		settings.hunger_enabled = true;
+		settings.minotaur_enabled = true;
+		settings.random_traps_enabled = true;
+		settings.extra_life_enabled = false;
+		settings.cheats_enabled = false;
+		settings.skipintro = false;
+		return settings;
+	}
 
 	void AllSettings::serialize(FileInterface* file) {
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
@@ -573,6 +749,7 @@ namespace MainMenu {
 		file->property("random_traps_enabled", random_traps_enabled);
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
+		file->property("skipintro", skipintro);
 	}
 
 /******************************************************************************/
@@ -613,9 +790,8 @@ namespace MainMenu {
 		back_button->setHJustify(Button::justify_t::RIGHT);
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
-		back_button->setCallback([](Button& b){
-			fadeout = true;
-			main_menu_fade_destination = FadeDestination::RootMainMenu;
+		back_button->setCallback([](Button&){
+			beginFade(MainMenu::FadeDestination::RootMainMenu);
 			});
 		back_button->setWidgetBack("back");
 		back_button->select();
@@ -681,8 +857,7 @@ namespace MainMenu {
 					--story_text_pause;
 					if (story_text_pause == 0) {
 						if (story_text_end == true) {
-							fadeout = true;
-							main_menu_fade_destination = FadeDestination::RootMainMenu;
+							beginFade(MainMenu::FadeDestination::RootMainMenu);
 						} else {
 							story_text_scroll = story_font->height() * 2;
 						}
@@ -742,71 +917,10 @@ namespace MainMenu {
 		const char* name;
 	};
 
-	void settingsSave() {
-		auto_hotbar_new_items = allSettings.add_items_to_hotbar_enabled;
-		allSettings.inventory_sorting.save();
-		right_click_protect = !allSettings.use_on_release_enabled;
-		allSettings.minimap.save();
-		disable_messages = !allSettings.show_messages_enabled;
-		allSettings.show_messages.save();
-		hide_playertags = !allSettings.show_player_nametags_enabled;
-		nohud = !allSettings.show_hud_enabled;
-		broadcast = !allSettings.show_ip_address_enabled;
-		spawn_blood = !allSettings.content_control_enabled;
-		colorblind = allSettings.colorblind_mode_enabled;
-		arachnophobia_filter = allSettings.arachnophobia_filter_enabled;
-		shaking = allSettings.shaking_enabled;
-		bobbing = allSettings.bobbing_enabled;
-		flickerLights = allSettings.light_flicker_enabled;
-		vertical_splitscreen = allSettings.vertical_split_enabled;
-		fov = allSettings.fov;
-		fpsLimit = allSettings.fps;
-		master_volume = allSettings.master_volume;
-		sfxvolume = (allSettings.gameplay_volume / 100.f) * 128.f;
-		sfxAmbientVolume = (allSettings.ambient_volume / 100.f) * 128.f;
-		sfxEnvironmentVolume = (allSettings.environment_volume / 100.f) * 128.f;
-		musvolume = (allSettings.music_volume / 100.f) * 128.f;
-		minimapPingMute = !allSettings.minimap_pings_enabled;
-		mute_player_monster_sounds = !allSettings.player_monster_sounds_enabled;
-		mute_audio_on_focus_lost = !allSettings.out_of_focus_audio_enabled;
-		allSettings.bindings.save();
-		hotbar_numkey_quick_add = allSettings.numkeys_in_inventory_enabled;
-		mousespeed = allSettings.mouse_sensitivity;
-		reversemouse = allSettings.reverse_mouse_enabled;
-		smoothmouse = allSettings.smooth_mouse_enabled;
-		disablemouserotationlimit = !allSettings.rotation_speed_limit_enabled;
-		gamepad_rightx_sensitivity = allSettings.turn_sensitivity_x * 10.f;
-		gamepad_righty_sensitivity = allSettings.turn_sensitivity_y * 10.f;
-		svFlags = allSettings.classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
-		svFlags = allSettings.hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
-		svFlags = allSettings.friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
-		svFlags = allSettings.keep_inventory_enabled ? svFlags | SV_FLAG_KEEPINVENTORY : svFlags & ~(SV_FLAG_KEEPINVENTORY);
-		svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
-		svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
-		svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
-		svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
-		svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
+	void settingsApply() {
+		allSettings.save();
 
 		// change video mode
-		switch (allSettings.window_mode) {
-		case 0:
-			fullscreen = false;
-			borderless = false;
-			break;
-		case 1:
-			fullscreen = true;
-			borderless = false;
-			break;
-		case 2:
-			fullscreen = true;
-			borderless = true;
-			break;
-		default:
-			assert("Unknown video mode" && 0);
-			break;
-		}
-		vidgamma = allSettings.gamma / 100.f;
-		verticalSync = allSettings.vsync_enabled;
 		if (initialized) {
 			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
 				printlog("critical error! Attempting to abort safely...\n");
@@ -845,67 +959,22 @@ namespace MainMenu {
 			OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 #endif
 		}
-
-		// write config file
-		saveConfig("default.cfg");
-		FileHelper::writeObject("config/config.json", EFileFormat::Json, allSettings);
 	}
 
-	void settingsLoad() {
-		if (FileHelper::readObject("config/config.json", allSettings)) {
-			settingsSave();
-		}
+	void settingsMount() {
+		allSettings = AllSettings::load();
+	}
+
+	bool settingsSave() {
+		return FileHelper::writeObject("config/config.json", EFileFormat::Json, allSettings);
+	}
+
+	bool settingsLoad() {
+		return FileHelper::readObject("config/config.json", allSettings);
 	}
 
 	void settingsReset() {
-		allSettings.add_items_to_hotbar_enabled = true;
-		allSettings.inventory_sorting = InventorySorting::reset();
-		allSettings.use_on_release_enabled = true;
-		allSettings.minimap = Minimap::reset();
-		allSettings.show_messages_enabled = true;
-		allSettings.show_messages = Messages::reset();
-		allSettings.show_player_nametags_enabled = true;
-		allSettings.show_hud_enabled = true;
-		allSettings.show_ip_address_enabled = true;
-		allSettings.content_control_enabled = false;
-		allSettings.colorblind_mode_enabled = false;
-		allSettings.arachnophobia_filter_enabled = false;
-		allSettings.shaking_enabled = true;
-		allSettings.bobbing_enabled = true;
-		allSettings.light_flicker_enabled = true;
-		allSettings.window_mode = 0;
-		allSettings.resolution_x = 1280;
-		allSettings.resolution_y = 720;
-		allSettings.vsync_enabled = true;
-		allSettings.vertical_split_enabled = false;
-		allSettings.gamma = 100.f;
-		allSettings.fov = 65;
-		allSettings.fps = 60;
-		allSettings.master_volume = 100.f;
-		allSettings.gameplay_volume = 100.f;
-		allSettings.ambient_volume = 100.f;
-		allSettings.environment_volume = 100.f;
-		allSettings.music_volume = 100.f;
-		allSettings.minimap_pings_enabled = true;
-		allSettings.player_monster_sounds_enabled = true;
-		allSettings.out_of_focus_audio_enabled = true;
-		allSettings.bindings = Bindings::reset();
-		allSettings.numkeys_in_inventory_enabled = true;
-		allSettings.mouse_sensitivity = 32.f;
-		allSettings.reverse_mouse_enabled = false;
-		allSettings.smooth_mouse_enabled = false;
-		allSettings.rotation_speed_limit_enabled = true;
-		allSettings.turn_sensitivity_x = 50.f;
-		allSettings.turn_sensitivity_y = 50.f;
-		allSettings.classic_mode_enabled = false;
-		allSettings.hardcore_mode_enabled = false;
-		allSettings.friendly_fire_enabled = true;
-		allSettings.keep_inventory_enabled = false;
-		allSettings.hunger_enabled = true;
-		allSettings.minotaur_enabled = true;
-		allSettings.random_traps_enabled = true;
-		allSettings.extra_life_enabled = false;
-		allSettings.cheats_enabled = false;
+		allSettings = AllSettings::reset();
 	}
 
 	static void settingsCustomizeInventorySorting(Button&);
@@ -932,7 +1001,6 @@ namespace MainMenu {
 				}
 			}
 		}
-		allSettings.inventory_sorting = InventorySorting::load();
 	}
 
 	static void inventorySortingConfirm(Button& button) {
@@ -2269,7 +2337,12 @@ namespace MainMenu {
 			if (input_to_store.empty()) {
 				return false;
 			} else {
-				bindings.insert_or_assign(binding, input_to_store.c_str());
+				auto find = bindings.find(binding);
+				if (find == bindings.end()) {
+					bindings.insert(std::make_pair(binding, input_to_store.c_str()));
+				} else {
+					find->second = input_to_store.c_str();
+				}
 				return true;
 			}
 		}
@@ -2397,7 +2470,7 @@ namespace MainMenu {
 			y += settingsAddBinding(*subwindow, y, player_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
-					auto& name = std::string(button.getName());
+					auto name = std::string(button.getName());
 					bind_mode = true;
 					bound_button = &button;
 					bound_input = button.getText();
@@ -2514,7 +2587,7 @@ namespace MainMenu {
 			allSettings.add_items_to_hotbar_enabled, [](Button& button){soundToggle(); allSettings.add_items_to_hotbar_enabled = button.isPressed();});
 		y += settingsAddCustomize(*settings_subwindow, y, "inventory_sorting", "Inventory Sorting",
 			"Customize the way items are automatically sorted in your inventory.",
-			settingsCustomizeInventorySorting);
+			[](Button& button){allSettings.inventory_sorting = InventorySorting::load(); settingsCustomizeInventorySorting(button);});
 #ifndef NINTENDO
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_on_release", "Use on Release",
 			"Activate an item as soon as the Use key is released in the inventory window.",
@@ -2905,8 +2978,7 @@ namespace MainMenu {
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		fadeout = true;
-		main_menu_fade_destination = FadeDestination::IntroStoryScreen;
+		beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 	}
 
 	void recordsCredits(Button& button) {
@@ -3135,7 +3207,7 @@ namespace MainMenu {
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
-			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
@@ -4998,8 +5070,7 @@ namespace MainMenu {
 			}
 			destroyMainMenu();
 			createDummyMainMenu();
-			main_menu_fade_destination = FadeDestination::GameStart;
-			fadeout = true;
+			beginFade(MainMenu::FadeDestination::GameStart);
 			});
 	}
 
@@ -5166,7 +5237,9 @@ namespace MainMenu {
 				}
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-				drawCharacterPreview(widget.getOwner(), pos, 80, view_t(), (330 + 20 * widget.getOwner()) * PI / 180);
+				view_t view;
+				auto angle = (330.0 + 20.0 * widget.getOwner()) * PI / 180.0;
+				drawCharacterPreview(widget.getOwner(), pos, 80, view, angle);
 				});
 		}
 
@@ -5262,8 +5335,7 @@ namespace MainMenu {
 			soundActivate();
 			destroyMainMenu();
 			createDummyMainMenu();
-			main_menu_fade_destination = FadeDestination::HallOfTrials;
-			fadeout = true;
+			beginFade(MainMenu::FadeDestination::HallOfTrials);
 			});
 
 		(void)createBackWidget(window, [](Button& button){
@@ -5653,7 +5725,7 @@ namespace MainMenu {
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
-			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
@@ -5689,54 +5761,7 @@ namespace MainMenu {
 
 		settings_tab_name = "";
 
-		allSettings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
-		allSettings.inventory_sorting = InventorySorting::load();
-		allSettings.use_on_release_enabled = !right_click_protect;
-		allSettings.minimap = Minimap::load();
-		allSettings.show_messages_enabled = !disable_messages;
-		allSettings.show_messages = Messages::load();
-		allSettings.show_player_nametags_enabled = !hide_playertags;
-		allSettings.show_hud_enabled = !nohud;
-		allSettings.show_ip_address_enabled = !broadcast;
-		allSettings.content_control_enabled = !spawn_blood;
-		allSettings.colorblind_mode_enabled = colorblind;
-		allSettings.arachnophobia_filter_enabled = arachnophobia_filter;
-		allSettings.shaking_enabled = shaking;
-		allSettings.bobbing_enabled = bobbing;
-		allSettings.light_flicker_enabled = flickerLights;
-		allSettings.window_mode = fullscreen ? (borderless ? 2 : 1) : 0;
-		allSettings.resolution_x = xres;
-		allSettings.resolution_y = yres;
-		allSettings.vsync_enabled = verticalSync;
-		allSettings.vertical_split_enabled = vertical_splitscreen;
-		allSettings.gamma = vidgamma * 100.f;
-		allSettings.fov = fov;
-		allSettings.fps = fpsLimit;
-		allSettings.master_volume = master_volume;
-		allSettings.gameplay_volume = (float)sfxvolume / 128.f * 100.f;
-		allSettings.ambient_volume = (float)sfxAmbientVolume / 128.f * 100.f;
-		allSettings.environment_volume = (float)sfxEnvironmentVolume / 128.f * 100.f;
-		allSettings.music_volume = (float)musvolume / 128.f * 100.f;
-		allSettings.minimap_pings_enabled = !minimapPingMute;
-		allSettings.player_monster_sounds_enabled = !mute_player_monster_sounds;
-		allSettings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
-		allSettings.bindings = Bindings::load();
-		allSettings.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
-		allSettings.mouse_sensitivity = mousespeed;
-		allSettings.reverse_mouse_enabled = reversemouse;
-		allSettings.smooth_mouse_enabled = smoothmouse;
-		allSettings.rotation_speed_limit_enabled = !disablemouserotationlimit;
-		allSettings.turn_sensitivity_x = gamepad_rightx_sensitivity / 10;
-		allSettings.turn_sensitivity_y = gamepad_righty_sensitivity / 10;
-		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
-		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
-		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
-		allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
-		allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
-		allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
-		allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
-		allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
-		allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+		settingsMount();
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -5999,7 +6024,8 @@ namespace MainMenu {
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
 			soundActivate();
-			settingsSave();
+			settingsApply();
+			(void)settingsSave();
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
@@ -6120,11 +6146,10 @@ namespace MainMenu {
 				destroyMainMenu();
 				createDummyMainMenu();
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
-					main_menu_fade_destination = FadeDestination::GameStart;
+					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
-					main_menu_fade_destination = FadeDestination::HallOfTrials;
+					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
-				fadeout = true;
 			},
 			[](Button&){ // cancel
 				soundCancel();
@@ -6149,8 +6174,7 @@ namespace MainMenu {
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				main_menu_fade_destination = FadeDestination::RootMainMenu;
-				fadeout = true;
+				beginFade(MainMenu::FadeDestination::RootMainMenu);
 			},
 			[](Button&){ // cancel
 				soundCancel();
@@ -6298,9 +6322,8 @@ namespace MainMenu {
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
 			createMainMenu(ingame);
+			assert(main_menu_frame);
 		}
-
-		assert(main_menu_frame);
 
 		if (fadeout && fadealpha >= 255) {
 			if (main_menu_fade_destination == FadeDestination::None) {
@@ -6318,6 +6341,8 @@ namespace MainMenu {
 					createMainMenu(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
+					destroyMainMenu();
+					createDummyMainMenu();
 					createStoryScreen();
 					playMusic(sounds[501], false, true, false);
 				}
@@ -6443,7 +6468,7 @@ namespace MainMenu {
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
-			button->setBackground("images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));

@@ -141,12 +141,18 @@ namespace MainMenu {
 		bool random_traps_enabled;
 		bool extra_life_enabled;
 		bool cheats_enabled;
+		bool skipintro;
+		inline void save();
+		static inline AllSettings load();
+		static inline AllSettings reset();
 		void serialize(FileInterface*);
 	};
 
-	void settingsSave();
-	void settingsLoad();
-	void settingsReset();
+	void settingsApply();	// write settings to global variables
+	void settingsMount();	// read settings from global variables
+	bool settingsSave();	// write settings to disk
+	bool settingsLoad();	// read settings from disk
+	void settingsReset();	// default settings
 
 	void settingsUI(Button&);
 	void settingsVideo(Button&);

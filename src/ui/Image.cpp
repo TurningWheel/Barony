@@ -28,14 +28,29 @@ const GLuint Image::indices[6]{
 Image::Image(const char* _name) {
 	name = _name;
 
+	const char* clippedName = _name;
+	do {
+		if (clippedName[0] == '#') {
+			++clippedName;
+			clamp = true;
+		}
+		else if (clippedName[0] == '*') {
+			++clippedName;
+			point = true;
+		}
+		else {
+			break;
+		}
+	} while (1);
+
 #ifdef NINTENDO
 	std::string path = std::string("rom:/") + _name;
 #else
-	std::string path = _name;
+	std::string path = clippedName;
 #endif
-	printlog("loading image '%s'...", _name);
+	printlog("loading image '%s'...", clippedName);
 	if ((surf = IMG_Load(path.c_str())) == NULL) {
-		printlog("failed to load image '%s'", _name);
+		printlog("failed to load image '%s'", clippedName);
 		return;
 	}
 

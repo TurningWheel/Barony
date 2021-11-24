@@ -223,7 +223,25 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	free(buf);
 
-	drawGlyphs(scaledRect, selectedWidgets);
+	// draw user stuff
+	if (drawCallback) {
+		drawCallback(*this, scaledRect);
+	}
+}
+
+void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (invisible) {
+		return;
+	}
+	SDL_Rect rect;
+	rect.x = _size.x + std::max(0, size.x - _actualSize.x);
+	rect.y = _size.y + std::max(0, size.y - _actualSize.y);
+	rect.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+	rect.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+	if (rect.w <= 0 || rect.h <= 0) {
+		return;
+	}
+	Widget::drawPost(rect, selectedWidgets);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
@@ -529,7 +547,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 		char* token = text;
 		do {
 			nexttoken = tokenize(token, "\n");
-			auto result = reflowTextLine(std::string(token), (getSize().w), font.c_str());
+			std::string tokenStr(token);
+			auto result = reflowTextLine(tokenStr, (getSize().w), font.c_str());
 			for ( size_t i = 0; i < result.size(); ++i )
 			{
 				allLines.push_back(result[i]);
@@ -603,22 +622,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 	setText(reflowText.c_str());
 }
 
-const int Field::getNumTextLines() const
-{
-	if ( text == nullptr || textlen <= 1 ) {
-		return 0;
-	}
-
-	int numLines = 1;
-
-	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
-	{
-		if ( text[i] == '\n' )
-		{
-			++numLines;
-		}
-	}
-	return numLines;
+int Field::getNumTextLines() const {
+	return Text::get(text, font.c_str(), textColor, outlineColor)->getNumTextLines();
 }
 
 SDL_Rect Field::getAbsoluteSize() const

@@ -250,11 +250,7 @@ void Widget::adoptWidget(Widget& widget) {
 	widgets.push_back(&widget);
 }
 
-void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const {
-	if (drawCallback) {
-		drawCallback(*this, size);
-	}
-
+void Widget::drawPost(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const {
 	if (hideGlyphs) {
 		return;
 	}
@@ -282,8 +278,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Main Menus/Selector_TL.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			int x = size.x;
-			int y = size.y;
+			int x = size.x + selectorOffset.x;
+			int y = size.y + selectorOffset.y;
 			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
 			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
 			image->draw(nullptr, SDL_Rect{x - beatx, y - beaty, w, h}, viewport);
@@ -292,8 +288,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Main Menus/Selector_TR.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			int x = size.x + size.w - w;
-			int y = size.y;
+			int x = size.x + size.w - w + selectorOffset.w;
+			int y = size.y + selectorOffset.y;
 			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
 			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
 			image->draw(nullptr, SDL_Rect{x + beatx, y - beaty, w, h}, viewport);
@@ -302,8 +298,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Main Menus/Selector_BL.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			int x = size.x;
-			int y = size.y + size.h - h;
+			int x = size.x + selectorOffset.x;
+			int y = size.y + size.h - h + selectorOffset.h;
 			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
 			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
 			image->draw(nullptr, SDL_Rect{x - beatx, y + beaty, w, h}, viewport);
@@ -312,8 +308,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 			auto image = Image::get("images/ui/Main Menus/Selector_BR.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
-			int x = size.x + size.w - w;
-			int y = size.y + size.h - h;
+			int x = size.x + size.w - w + selectorOffset.w;
+			int y = size.y + size.h - h + selectorOffset.h;
 			int beatx = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? w / 2 : w / 4;
 			int beaty = (ticks % TICKS_PER_SECOND) < (TICKS_PER_SECOND / 2) ? h / 2 : h / 4;
 			image->draw(nullptr, SDL_Rect{x + beatx, y + beaty, w, h}, viewport);
@@ -322,8 +318,8 @@ void Widget::drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& s
 
 	// button prompts
 #ifdef NINTENDO
-	int x = size.x + size.w;
-	int y = size.y + size.h;
+	int x = size.x + size.w + buttonsOffset.x;
+	int y = size.y + size.h + buttonsOffset.y;
 	auto& actions = selectedWidget->getWidgetActions();
 	auto action = actions.begin();
 	if (selectedWidget == this) {

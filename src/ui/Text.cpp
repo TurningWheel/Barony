@@ -32,6 +32,7 @@ const GLuint Text::indices[6]{
 
 Text::Text(const char* _name) {
 	name = _name;
+	render();
 }
 
 Text::~Text() {
@@ -99,6 +100,7 @@ void Text::render() {
 
 	Font* font = Font::get(fontName.c_str());
 	if (!font) {
+		assert(0 && "Text tried to render, but font failed to load");
 		return;
 	}
 	TTF_Font* ttf = font->getTTF();
@@ -189,22 +191,16 @@ void Text::render() {
 	{
 		rendered = false;
 	}
+
+	num_text_lines = countNumTextLines();
 }
 
-void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) {
+void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) const {
 	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) {
-	if (!rendered) {
-		render();
-	}
-	if (!rendered) {
-		return;
-	}
-	if ( !surf ) {
-		return;
-	}
+void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
+	assert(rendered && surf);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -257,6 +253,19 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	glColor4f(1.f, 1.f, 1.f, 1.f);
 }
 
+int Text::countNumTextLines() const {
+	int numLines = 1;
+	for (auto c : name) {
+		switch (c) {
+		case fontBreak: return numLines;
+		case '\0': return numLines;
+		case '\n': ++numLines; break;
+		default: continue;
+		}
+	}
+	return numLines;
+}
+
 static std::unordered_map<std::string, Text*> hashed_text;
 static const int TEXT_BUDGET = 1000;
 
@@ -296,10 +305,6 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 		hashed_text.insert(std::make_pair(textAndFont, text));
 	} else {
 		text = search->second;
-	}
-
-	if (text && !text->rendered) {
-		text->render();
 	}
 	return text;
 }

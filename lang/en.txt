@@ -6022,5 +6022,6 @@ Changing this gameflag is disabled in current game mode.#
 4070 OPEN LOG#
 4071 MAP#
 4072 LOG#
+4073 You see a signpost.#
 
 4099 end#

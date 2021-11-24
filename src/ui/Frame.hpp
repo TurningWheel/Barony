@@ -233,16 +233,12 @@ public:
 	void activateSelection();
 
 	//! determines if the mouse is currently within the frame or not
-	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
-	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
 	//! @return true if it is, false otherwise
-	bool capturesMouse(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
+	bool capturesMouse() const;
 
 	//! determines if the mouse is currently within the frame or not - but uses X/Y not OX/OY (OX/OY remain constant when dragging)
-	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
-	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
 	//! @return true if it is, false otherwise
-	bool capturesMouseInRealtimeCoords(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
+	bool capturesMouseInRealtimeCoords() const;
 
 	//! warps the player's mouse cursor to the center location of the frame
 	void warpMouseToFrame(const int player, Uint32 flags) const;
@@ -360,6 +356,12 @@ private:
 	//! @param selectedWidgets the currently selected widgets, if any
 	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
+	//! draws post elements in the frame and all of its subelements
+	//! @param _size real position of the frame onscreen
+	//! @param _actualSize offset into the frame space (scroll)
+	//! @param selectedWidgets the currently selected widgets, if any
+	void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
@@ -367,6 +369,8 @@ private:
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return compiled results of frame processing
 	result_t process(SDL_Rect _size, SDL_Rect actualSize, const std::vector<Widget*>& selectedWidgets, const bool usable);
+
+	bool capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
 };
 
 // root frame object

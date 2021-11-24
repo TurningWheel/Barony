@@ -388,7 +388,7 @@ void clickDescription(int player, Entity* entity)
 				{
 					if ( entity->sprite == 991 )
 					{
-						messagePlayer(player, language[4048]);
+						messagePlayer(player, language[4073]);
 					}
 				}
 			}

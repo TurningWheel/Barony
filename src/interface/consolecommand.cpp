@@ -171,7 +171,7 @@ void consoleCommand(char const * const command_str)
 
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strstr(items[c].name_identified, name) )
+			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
 				if ( c == TOOL_TINOPENER )
 				{
@@ -179,6 +179,21 @@ void consoleCommand(char const * const command_str)
 				}
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; c++ )
+			{
+				if ( strstr(items[c].name_identified, name) )
+				{
+					if ( c == TOOL_TINOPENER )
+					{
+						dropItem(newItem(FOOD_TIN, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					}
+					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					break;
+				}
 			}
 		}
 		if ( c == NUMITEMS )
@@ -196,7 +211,7 @@ void consoleCommand(char const * const command_str)
 		strcpy(name, command_str + 13);
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strstr(items[c].name_identified, name) )
+			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
 				if ( c == TOOL_TINOPENER )
 				{
@@ -204,6 +219,21 @@ void consoleCommand(char const * const command_str)
 				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; c++ )
+			{
+				if ( strstr(items[c].name_identified, name) )
+				{
+					if ( c == TOOL_TINOPENER )
+					{
+						dropItem(newItem(FOOD_TIN, WORN, -2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					}
+					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+					break;
+				}
 			}
 		}
 		if ( c == NUMITEMS )
@@ -221,7 +251,7 @@ void consoleCommand(char const * const command_str)
 		strcpy(name, command_str + 14);
 		for ( c = 0; c < NUMITEMS; ++c )
 		{
-			if ( strstr(items[c].name_identified, name) )
+			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
 				if ( c == TOOL_TINOPENER )
 				{
@@ -229,6 +259,21 @@ void consoleCommand(char const * const command_str)
 				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; ++c )
+			{
+				if ( strstr(items[c].name_identified, name) )
+				{
+					if ( c == TOOL_TINOPENER )
+					{
+						dropItem(newItem(FOOD_TIN, WORN, 2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					}
+					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+					break;
+				}
 			}
 		}
 		if ( c == NUMITEMS )

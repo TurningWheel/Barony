@@ -110,12 +110,40 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 		}
 	}
 
+	// draw user stuff
 	SDL_Rect scaledHandle;
 	scaledHandle.x = _handleSize.x;
 	scaledHandle.y = _handleSize.y;
 	scaledHandle.w = _handleSize.w;
 	scaledHandle.h = _handleSize.h;
-	drawGlyphs(scaledHandle, selectedWidgets);
+	if (drawCallback) {
+		drawCallback(*this, scaledHandle);
+	}
+}
+
+void Slider::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (invisible) {
+		return;
+	}
+	SDL_Rect _handleSize;
+	SDL_Rect handleSize = this->handleSize;
+	if (handleSize.x == 0 && handleSize.y == 0) {
+		if (orientation == SLIDER_HORIZONTAL) {
+			handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
+			handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+		} else if (orientation == SLIDER_VERTICAL) {
+			handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+			handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
+		}
+	}
+	_handleSize.x = _size.x + std::max(0, handleSize.x - _actualSize.x);
+	_handleSize.y = _size.y + std::max(0, handleSize.y - _actualSize.y);
+	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
+	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
+	if (_handleSize.w <= 0 || _handleSize.h <= 0) {
+		return;
+	}
+	Widget::drawPost(_handleSize, selectedWidgets);
 }
 
 void Slider::updateHandlePosition() {
