@@ -208,7 +208,6 @@ TileEntityListHandler TileEntityList;
 // res of 480x270
 // /nohud
 // undefine SOUND, MUSIC (see sound.h)
-
 int game = 1;
 Uint32 uniqueGameKey = 0;
 DebugStatsClass DebugStats;
@@ -4855,8 +4854,25 @@ void ingameHud()
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
 				auto cursor = Image::get("images/system/cursor_hand.png");
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				real_t& mouseAnim = inputs.getVirtualMouse(player)->mouseAnimationPercent;
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mouseAnim = .5;
+				}
+				if ( mouseAnim > .25 )
+				{
+					cursor = Image::get("images/system/cursor_hand2.png");
+				}
+				if ( mouseAnim > 0.0 )
+				{
+					mouseAnim -= .05;
+				}
+				if ( keystatus[SDL_SCANCODE_J] )
+				{
+					cursor = Image::get("images/system/cursor.png");
+				}
+				pos.x = inputs.getMouse(player, Inputs::X) - (mouseAnim * cursor->getWidth() / 7) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * cursor->getHeight() / 7) - cursor->getHeight() / 2;
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
