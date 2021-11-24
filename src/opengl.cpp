@@ -46,30 +46,55 @@ void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar
 	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
 }
 
-// WIP vector helpers
 typedef struct vec4 {
-	float x; float y; float z; float w;
+	vec4(float f):
+		x(f),
+		y(f),
+		z(f),
+		w(f)
+	{}
+	vec4(float _x, float _y, float _z, float _w):
+		x(_x),
+		y(_y),
+		z(_z),
+		w(_w)
+	{}
+	vec4() = default;
+	float x;
+	float y;
+	float z;
+	float w;
 } vec4_t;
 
 typedef struct mat4x4 {
-	vec4_t x; vec4_t y; vec4_t z; vec4_t w;
+	mat4x4(float f):
+		x(f, 0.f, 0.f, 0.f),
+		y(0.f, f, 0.f, 0.f),
+		z(0.f, 0.f, f, 0.f),
+		w(0.f, 0.f, 0.f, f)
+	{}
+	mat4x4(
+		float xx, float xy, float xz, float xw,
+		float yx, float yy, float yz, float yw,
+		float zx, float zy, float zz, float zw,
+		float wx, float wy, float wz, float ww):
+		x(xx, xy, xz, xw),
+		y(yx, yy, yz, yw),
+		z(zx, zy, zz, zw),
+		w(wx, wy, wz, ww)
+	{}
+	mat4x4():
+		mat4x4(1.f)
+	{}
+	vec4_t x;
+	vec4_t y;
+	vec4_t z;
+	vec4_t w;
 } mat4x4_t;
 
-#define mat4x4(F) (mat4x4_t {\
-    F, 0.f, 0.f, 0.f,\
-    0.f, F, 0.f, 0.f,\
-    0.f, 0.f, F, 0.f,\
-    0.f, 0.f, 0.f, F,\
-})
-#define mat4x4_copy(M) (mat4x4_t {\
-    M.x.x, M.x.y, M.x.z, M.x.w,\
-    M.y.x, M.y.y, M.y.z, M.y.w,\
-    M.z.x, M.z.y, M.z.z, M.z.w,\
-    M.w.x, M.w.y, M.w.z, M.w.w,\
-})
-
-#define vec4(F) (vec4_t{F, F, F, F})
-#define vec4_copy(V) (vec4_t{V.x, V.y, V.z, V.w})
+vec4_t vec4_copy(const vec4_t* v) {
+	return vec4_t(v->x, v->y, v->z, v->w);
+}
 
 vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v) {
 	result->x = m->x.x * v->x + m->y.x * v->y + m->z.x * v->z + m->w.x * v->w;
@@ -333,8 +358,8 @@ vec4_t project(
 	const vec4_t* window
 ) {
 	vec4_t result = *world; result.w = 1.f;
-	mul_mat_vec4(&result, model, &vec4_copy(result));
-	mul_mat_vec4(&result, projview, &vec4_copy(result));
+	mul_mat_vec4(&result, model, &vec4_copy(&result));
+	mul_mat_vec4(&result, projview, &vec4_copy(&result));
 
 	//float invertedProjview[16];
 	//invertMatrix4x4(projview, invertedProjview);
@@ -369,7 +394,7 @@ vec4_t unproject(
 	invertMatrix4x4(projview, invertedProjview);
 	mat4x4_t invertedProjviewMat;
 	mat_from_array(&invertedProjviewMat, invertedProjview);
-	mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
+	mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(&result));
 
 	div_vec4(&result, &result, &vec4(result.w));
 
@@ -1046,7 +1071,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	mat4x4_t modelMat4;
 	mat_from_array(&modelMat4, modelViewMatrix);
 
-	vec4_t window = { camera->winx, camera->winy, camera->winw, camera->winh };
+	vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
 	mat4x4_t projViewModel4;
 	mul_mat(&projViewModel4, &projMat4, &modelMat4);
 

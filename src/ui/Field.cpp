@@ -547,7 +547,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 		char* token = text;
 		do {
 			nexttoken = tokenize(token, "\n");
-			auto result = reflowTextLine(std::string(token), (getSize().w), font.c_str());
+			std::string tokenStr(token);
+			auto result = reflowTextLine(tokenStr, (getSize().w), font.c_str());
 			for ( size_t i = 0; i < result.size(); ++i )
 			{
 				allLines.push_back(result[i]);

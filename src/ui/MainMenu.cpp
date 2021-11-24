@@ -521,7 +521,6 @@ namespace MainMenu {
 		file->property("inspection", inspection);
 	}
 
-
 	/******************************************************************************/
 
 	static AllSettings allSettings;
@@ -2338,7 +2337,12 @@ namespace MainMenu {
 			if (input_to_store.empty()) {
 				return false;
 			} else {
-				bindings.insert_or_assign(binding, input_to_store.c_str());
+				auto find = bindings.find(binding);
+				if (find == bindings.end()) {
+					bindings.insert(std::make_pair(binding, input_to_store.c_str()));
+				} else {
+					find->second = input_to_store.c_str();
+				}
 				return true;
 			}
 		}
@@ -2466,7 +2470,7 @@ namespace MainMenu {
 			y += settingsAddBinding(*subwindow, y, player_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
-					auto& name = std::string(button.getName());
+					auto name = std::string(button.getName());
 					bind_mode = true;
 					bound_button = &button;
 					bound_input = button.getText();
@@ -5233,7 +5237,9 @@ namespace MainMenu {
 				}
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-				drawCharacterPreview(widget.getOwner(), pos, 80, view_t(), (330 + 20 * widget.getOwner()) * PI / 180);
+				view_t view;
+				auto angle = (330.0 + 20.0 * widget.getOwner()) * PI / 180.0;
+				drawCharacterPreview(widget.getOwner(), pos, 80, view, angle);
 				});
 		}
 
