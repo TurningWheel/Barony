@@ -365,6 +365,32 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, language[2377]);
 				}
+				else if ( entity->behavior == &actTeleporter || entity->behavior == &actCustomPortal )
+				{
+					if ( entity->sprite == 161 )
+					{
+						messagePlayer(player, language[264]);
+					}
+					else if ( entity->sprite == 253 )
+					{
+						messagePlayer(player, language[265]);
+					}
+					else if ( (entity->sprite >= 254 && entity->sprite < 258) ||
+						(entity->sprite >= 278 && entity->sprite < 282) ||
+						(entity->sprite >= 614 && entity->sprite < 618) ||
+						(entity->sprite >= 992 && entity->sprite < 995) ||
+						(entity->sprite == 620))
+					{
+						messagePlayer(player, language[272]);
+					}
+				}
+				else if ( entity->behavior == &actFloorDecoration )
+				{
+					if ( entity->sprite == 991 )
+					{
+						messagePlayer(player, language[4073]);
+					}
+				}
 			}
 			else
 			{

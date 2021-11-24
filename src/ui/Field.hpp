@@ -55,6 +55,12 @@ public:
 	//! @param selectedWidgets the currently selected widgets, if any
 	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
+	//! draws post elements in the field
+	//! @param _size size and position of field's parent frame
+	//! @param _actualSize offset into the parent frame space (scroll)
+	//! @param selectedWidgets the currently selected widgets, if any
+	void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+
 	//! handles clicks, etc.
 	//! @param _size size and position of field's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
@@ -71,16 +77,22 @@ public:
 	//! gets longest line of field, measured by actual text width
 	std::string getLongestLine();
 
+	//! gets the number of lines occupied by text in the field
+	//! @return number of lines of text
+	int getNumTextLines() const;
+
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
 	const char*					getText() const { return text; }
 	const char*					getFont() const { return font.c_str(); }
 	const Uint32				getColor() const { return color; }
 	const Uint32				getTextColor() const { return textColor; }
 	const Uint32				getOutlineColor() const { return outlineColor; }
+	const Uint32				getBackgroundColor() const { return backgroundColor; }
+	const Uint32				getBackgroundActivatedColor() const { return backgroundActivatedColor; }
+	const Uint32				getBackgroundSelectAllColor() const { return backgroundSelectAllColor; }
 	const SDL_Rect				getSize() const { return size; }
 	const int					getHJustify() const { return static_cast<int>(hjustify); }
 	const int					getVJustify() const { return static_cast<int>(vjustify); }
-	const int                   getNumTextLines() const;
 	const bool					isEditable() const { return editable; }
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	void						(*getCallback() const)(Field&) { return callback; }
@@ -93,6 +105,9 @@ public:
 	void	setColor(const Uint32 _color) { color = _color; }
 	void	setTextColor(const Uint32 _color) { textColor = _color; }
 	void	setOutlineColor(const Uint32 _color) { outlineColor = _color; }
+	void	setBackgroundColor(const Uint32 _color) { backgroundColor = _color; }
+	void	setBackgroundActivatedColor(const Uint32 _color) { backgroundActivatedColor = _color; }
+	void	setBackgroundSelectAllColor(const Uint32 _color) { backgroundSelectAllColor = _color; }
 	void	setEditable(const bool _editable) { editable = _editable; }
 	void	setNumbersOnly(const bool _numbersOnly) { numbersOnly = _numbersOnly; }
 	void	setJustify(const int _justify) { hjustify = vjustify = static_cast<justify_t>(_justify); }
@@ -114,6 +129,9 @@ private:
 	Uint32 color;										//!< color mixed w/ final rendered text
 	Uint32 textColor;									//!< text color
 	Uint32 outlineColor;								//!< outline color
+	Uint32 backgroundColor = 0;							//!< background color
+	Uint32 backgroundActivatedColor = 0;				//!< background color (when activated)
+	Uint32 backgroundSelectAllColor = 0;				//!< background color (when activated and all text selected)
 	SDL_Rect size;										//!< size of the field in pixels
 	justify_t hjustify = LEFT;							//!< horizontal text justification
 	justify_t vjustify = TOP;							//!< vertical text justification

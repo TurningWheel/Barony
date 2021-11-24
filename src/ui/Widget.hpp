@@ -33,6 +33,7 @@ public:
     bool			isDisabled() const { return disabled; }
     bool            isInvisible() const { return invisible; }
     bool            isHideGlyphs() const { return hideGlyphs; }
+    bool            isHideSelectors() const { return hideSelectors; }
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
     void			(*getTickCallback() const)(Widget&) { return tickCallback; }
@@ -48,6 +49,7 @@ public:
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }
+    void    setHideSelectors(bool _hideSelectors) { hideSelectors = _hideSelectors; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
     void	setTickCallback(void (*const fn)(Widget&)) { tickCallback = fn; }
     void	setDrawCallback(void (*const fn)(const Widget&, const SDL_Rect)) { drawCallback = fn; }
@@ -66,6 +68,7 @@ public:
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
     Widget* findHead();
+    const Widget* findHead() const;
 
     //! scroll the parent frame (if any) to be within our bounds
     virtual void scrollParent();
@@ -89,7 +92,7 @@ public:
     //! return true if this widget is the descendant of another widget
     //! @param widget the widget who is supposedly our ancestor
     //! @return true if it is, otherwise false
-    bool isChildOf(Widget& widget);
+    bool isChildOf(const Widget& widget) const;
 
     //! adopt a new widget as one of our children
     //! @param widget the widget to adopt
@@ -100,6 +103,7 @@ public:
     //! @param recursive true to search recursively or not
     //! @return the widget found, or nullptr if it was not found
     Widget* findWidget(const char* name, bool recursive);
+    const Widget* findWidget(const char* name, bool recursive) const;
 
     //! build a list of all the selected widgets amongst our children
     //! @param outResult a list containing all the selected widgets
@@ -125,9 +129,12 @@ protected:
     bool disabled = false;							            //!< if true, the widget is unusable and grayed out
     bool invisible = false;                                     //!< if true, widget is both unusable and invisible
 	bool toBeDeleted = false;						            //!< if true, the widget will be removed at the end of its process
-    bool hideGlyphs = false;                                    //!< true if you don't want to see button prompts on the widget
+    bool hideGlyphs = false;                                    //!< true if you don't want to see button prompts or any other graphics on the widget
+    bool hideSelectors = false;                                 //!< true if you don't want to see selectors on the borders of this widget
     Uint32 highlightTime = 0u;						            //!< records the time since the widget was highlighted
     Sint32 owner = 0;                                           //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    SDL_Rect selectorOffset {0, 0, 0, 0};                       //!< offset for x, y, w, h in the selector box
+    SDL_Rect buttonsOffset {0, 0, 0, 0};                        //!< offset for x, y in button prompts
     void (*tickCallback)(Widget&) = nullptr;		            //!< the callback to run each frame for this widget
     void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;    //!< the callback to run after the widget is drawn
 
@@ -138,6 +145,7 @@ protected:
     std::string widgetSearchParent;                 //!< widget to search from for actions and movements
 
     Frame* findSearchRoot();
+    const Frame* findSearchRoot() const;
 
-    void drawGlyphs(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const;
+    void drawPost(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const;
 };

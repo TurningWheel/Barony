@@ -6004,12 +6004,24 @@ Changing this gameflag is disabled in current game mode.#
 4056 LEGEND BONUS#
 4057 None#
 4058 All items#
-4059 2 Metal
-/ 0 Magic#
-4060 1 Metal
-/ 0 Magic#
+4059 %d Metal#
+4060 %d Magic#
 4061 Tier#
 4062 Scroll up/down#
 4063 Scroll#
+4064 Instant#
+4065 Any#
+# Skillsheet - Casting MP Regen for insectoid
+4066 N/A
+(Insectoid)#
+# Skillsheet - Casting MP Regen for automaton
+4067 N/A
+(Automaton)#
+4068 Guised#
+4069 OPEN MAP#
+4070 OPEN LOG#
+4071 MAP#
+4072 LOG#
+4073 You see a signpost.#
 
 4099 end#

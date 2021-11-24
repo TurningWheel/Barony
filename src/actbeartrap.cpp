@@ -61,9 +61,9 @@ void actBeartrap(Entity* my)
 	// undo beartrap
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
-			if (inrange[i])
+			if ( inrange[i] )
 			{
 				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 				entity->flags[INVISIBLE] = true;
@@ -667,7 +667,7 @@ void actBomb(Entity* my)
 	// undo bomb
 	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if ( inrange[i] )
 			{

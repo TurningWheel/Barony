@@ -45,6 +45,7 @@
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
 #include "input.hpp"
+#include "ui/Image.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -3661,6 +3662,10 @@ Uint64 lastGameTickCount = 0;
 float framerateAccumulatedTime = 0.f;
 bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
 {
+	if (maxFrameRate == 0)
+	{
+		return false;
+	}
 	float desiredFrameMilliseconds = 1.0f / maxFrameRate;
 	Uint64 gameTickCount = SDL_GetPerformanceCounter();
 	Uint64 ticksPerSecond = SDL_GetPerformanceFrequency();
@@ -4100,7 +4105,7 @@ void ingameHud()
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
-			if ( capture_mouse )
+			if ( capture_mouse && !gamePaused )
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
@@ -4388,9 +4393,12 @@ void ingameHud()
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 				{
 					if ( followerMenu.followerToCommand
@@ -4437,11 +4445,12 @@ void ingameHud()
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				pos.w = 0;
-				pos.h = 0;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 			}
 		}
 		else if ( !nohud )
@@ -4458,7 +4467,7 @@ void ingameHud()
 				{
 					pos.x -= cursor_bmp->w / 2;
 					pos.y -= cursor_bmp->h / 2;
-					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+					drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 					pos.x += 24;
 					pos.y += 24;
 				}
@@ -4468,7 +4477,7 @@ void ingameHud()
 					{
 						pos.x -= cursor_bmp->w / 2;
 						pos.y -= cursor_bmp->h / 2;
-						drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+						drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 
 						pos.x = players[player]->camera_midx();
 						pos.y = players[player]->camera_midy();
@@ -4949,6 +4958,15 @@ int main(int argc, char** argv)
 		{
 			loadDefaultConfig();
 		}
+		bool load_successful = MainMenu::settingsLoad();
+		if (load_successful) {
+			MainMenu::settingsApply();
+		}
+		else {
+			MainMenu::settingsReset();
+			MainMenu::settingsApply();
+			skipintro = false;
+		}
 
 		// initialize map
 		map.tiles = nullptr;
@@ -5106,35 +5124,34 @@ int main(int argc, char** argv)
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
 					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 255, 32, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
-					if ( (logoalpha >= 255 
-						|| keystatus[SDL_SCANCODE_ESCAPE] 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL)) && !fadeout )
+					if ( logoalpha >= 255 && !fadeout )
+						if ( !skipintro && !strcmp(classtoquickstart, "") )
+						{
+							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
+						}
+						else
+						{
+							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
+						}
 					{
-						fadeout = true;
 					}
 					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] 
 						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT)
 						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL))
 					{
+						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
-						// Yeah we're just not going to do the "Please don't pirate us" message anymore
-#if (0)
-						introstage = 0;
-						fadeout = false;
-						fadefinished = false;
-#else
 						int menuMapType = 0;
 						switch ( rand() % 4 ) // STEAM VERSION INTRO
 						{
 							case 0:
 							case 1:
-							case 2:
 								menuMapType = loadMainMenuMap(true, false);
 								break;
+							case 2:
 							case 3:
 								menuMapType = loadMainMenuMap(false, false);
 								break;
@@ -5145,115 +5162,20 @@ int main(int argc, char** argv)
 						multiplayer = 0;
 						assignActions(&map);
 						generatePathMaps();
-						fadeout = true;
-						fadefinished = false;
+						introstage = 1;
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
-							introstage = 6;
-#if defined(USE_FMOD) || defined(USE_OPENAL)
-							playMusic(introductionmusic, true, false, false);
-#endif
+							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 						}
 						else
 						{
-							introstage = 1;
-							fadeout = false;
-							fadefinished = false;
-#if defined(USE_FMOD) || defined(USE_OPENAL)
-							if ( menuMapType == 1 )
-							{
-								playMusic(intromusic[2], true, false, false);
-							}
-							else
-							{
-								playMusic(intromusic[1], true, false, false);
-							}
-#endif
+							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
 						}
-#endif
 					}
 				}
 				else if ( introstage == 0 )
 				{
-					// hack to fix these things from breaking everything...
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						players[i]->hud.arm = nullptr;
-						players[i]->hud.weapon = nullptr;
-						players[i]->hud.magicLeftHand = nullptr;
-						players[i]->hud.magicRightHand = nullptr;
-					}
-
-					drawRect(NULL, 0, 255);
-					char* banner_text1 = language[738];
-					char const * const banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
-					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
-					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
-					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, true, banner_text2);
-
-					int time_passed = 0;
-					if (old_sdl_ticks == 0)
-					{
-						old_sdl_ticks = SDL_GetTicks();
-					}
-					time_passed = SDL_GetTicks() - old_sdl_ticks;
-					old_sdl_ticks = SDL_GetTicks();
-					indev_timer += time_passed;
-
-					int menuMapType = 0;
-					//if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
-					if ( (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL)
-						|| keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE]
-						|| keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] 
-						|| indev_timer >= indev_displaytime) && !fadeout)
-					{
-						switch ( rand() % 4 ) // DRM FREE VERSION INTRO
-						{
-							case 0:
-							case 1:
-							case 2:
-								menuMapType = loadMainMenuMap(true, false);
-								break;
-							case 3:
-								menuMapType = loadMainMenuMap(false, false);
-								break;
-							default:
-								break;
-						}
-						numplayers = 0;
-						multiplayer = 0;
-						assignActions(&map);
-						generatePathMaps();
-						fadeout = true;
-						fadefinished = false;
-					}
-					if ( fadefinished )
-					{
-						if ( !skipintro && !strcmp(classtoquickstart, "") )
-						{
-							introstage = 6;
-#ifdef MUSIC
-							playMusic(introductionmusic, true, false, false);
-#endif
-						}
-						else
-						{
-							introstage = 1;
-							fadeout = false;
-							fadefinished = false;
-#ifdef MUSIC
-							if ( menuMapType == 1 )
-							{
-								playMusic(intromusic[2], true, false, false);
-							}
-							else
-							{
-								playMusic(intromusic[1], true, false, false);
-							}
-#endif
-						}
-					}
+					// DEPRECATED
 				}
 				else
 				{
@@ -5412,15 +5334,17 @@ int main(int argc, char** argv)
 						// draw mouse
 						if ( !movie )
 						{
-							for ( int i = 0; i < MAXPLAYERS; ++i )
+							// only draw 1 cursor in the main menu
+							for ( int i = 0; i < 1; ++i )
 							{
 								if ( inputs.getVirtualMouse(i)->draw_cursor )
 								{
-									pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-									pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-									pos.w = 0;
-									pos.h = 0;
-									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+									auto cursor = Image::get("images/system/cursor_hand.png");
+									pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+									pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+									pos.w = cursor->getWidth();
+									pos.h = cursor->getHeight();
+									cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 								}
 							}
 						}
@@ -5567,40 +5491,10 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								if (playercount == 1)
-								{
-									camera.winx = 0;
-									camera.winy = 0;
-									camera.winw = xres;
-									camera.winh = yres;
-								} 
-								else if (playercount == 2)
-								{
-									if ( players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
-									{
-										// divide screen vertically
-										camera.winx = c * xres / 2;
-										camera.winy = 0;
-										camera.winw = xres / 2;
-										camera.winh = yres;
-									}
-									else
-									{
-										// divide screen horizontally
-										camera.winx = 0;
-										camera.winy = c * yres / 2;
-										camera.winw = xres;
-										camera.winh = yres / 2;
-									}
-								} 
-								else if (playercount >= 3) 
-								{
-									// divide screen into quadrants
-									camera.winx = (c % 2) * xres / 2;
-									camera.winy = (c / 2) * yres / 2;
-									camera.winw = xres / 2;
-									camera.winh = yres / 2;
-								}
+								camera.winx = players[c]->camera().winx;
+								camera.winy = players[c]->camera().winy;
+								camera.winw = players[c]->camera().winw;
+								camera.winh = players[c]->camera().winh;
 							}
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
@@ -5820,13 +5714,14 @@ int main(int argc, char** argv)
 					}
 					if (((subwindow && !players[i]->shootmode) || gamePaused))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor )
+						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == clientnum || !gamePaused) )
 						{
-							pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-							pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-							pos.w = 0;
-							pos.h = 0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
 
@@ -5935,7 +5830,12 @@ int main(int argc, char** argv)
 			// increase the cycle count
 			cycles++;
 		}
+		if (!load_successful) {
+			skipintro = true;
+		}
 		saveConfig("default.cfg");
+		MainMenu::settingsMount();
+		(void)MainMenu::settingsSave();
 
 		// deinit
 		deinitGame();

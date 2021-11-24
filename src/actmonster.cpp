@@ -1217,12 +1217,6 @@ void actMonster(Entity* my)
 	bool myReflex;
 	Sint32 previousMonsterState = my->monsterState;
 
-	// deactivate in menu
-	if ( intro )
-	{
-		return;
-	}
-
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )
@@ -2992,7 +2986,7 @@ void actMonster(Entity* my)
 	int monsterclicked = -1;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if (inrange[i])
 			{

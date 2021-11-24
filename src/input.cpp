@@ -98,6 +98,8 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot8", "8");
 		inputs[c].bind("HotbarSlot9", "9");
 		inputs[c].bind("HotbarSlot10", "0");
+		inputs[c].bind("MenuMouseWheelUp", "MouseWheelUp");
+		inputs[c].bind("MenuMouseWheelDown", "MouseWheelDown");
 	}
 #ifndef NINTENDO
 	inputs[0].bind("MenuUp", "Up");
