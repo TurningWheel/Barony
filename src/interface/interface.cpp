@@ -1704,6 +1704,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		return;
 	}
 
+	bool oldShootmode = shootmode;
 	shootmode = false;
 
 	if ( whichGUIMode != GUI_MODE_NONE && whichGUIMode != GUI_MODE_FOLLOWERMENU )
@@ -1721,6 +1722,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
+	inputs.getUIInteraction(playernum)->itemMenuOpen = false;
+	inputs.getUIInteraction(playernum)->itemMenuItem = 0;
 
 	inventory_mode = whichInventoryMode;
 
@@ -1759,7 +1762,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		}
 	}
 
-	if ( !warped )
+	if ( !warped && oldShootmode )
 	{
 		inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
 	}
@@ -1815,6 +1818,8 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	{
 		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 		inputs.getUIInteraction(playernum)->toggleclick = false;
+		inputs.getUIInteraction(playernum)->itemMenuOpen = false;
+		inputs.getUIInteraction(playernum)->itemMenuItem = 0;
 		shootmode = true;
 	}
 }

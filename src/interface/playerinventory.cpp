@@ -4621,6 +4621,7 @@ void Player::Inventory_t::updateInventory()
 	{
 		// hide
 		frame->setDisabled(true);
+		updateItemContextMenu(); // process + close the item context menu
 		return;
 	}
 
