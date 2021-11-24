@@ -509,7 +509,8 @@ void createHotbar(const int player)
 		oldSelectedFrame->setSize(slotPos);
 		oldSelectedFrame->setDisabled(true);
 
-		SDL_Rect itemSpriteBorder{ 2, 2, oldSelectedFrame->getSize().w - 4, oldSelectedFrame->getSize().h - 4 };
+		const int itemSpriteSize = players[oldSelectedFrame->getOwner()]->inventoryUI.getItemSpriteSize();
+		SDL_Rect itemSpriteBorder{ 4, 4, itemSpriteSize, itemSpriteSize };
 
 		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
