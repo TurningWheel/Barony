@@ -2262,7 +2262,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 		if ( textGet )
 		{
 			textx = textGet->getWidth();
-			texty = textGet->getHeight() * txtHeader->getNumTextLines();
+			texty = textGet->getNumTextLines() * Font::get(txtHeader->getFont())->height();
 		}
 
 		std::string minWidthKey = "default";
@@ -2332,19 +2332,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 					}
 				}
 
-				if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
-					txtHeader->getTextColor(), txtHeader->getOutlineColor()) )
-				{
-					textx = newWidth;
-					texty = textGet->getHeight() * txtHeader->getNumTextLines();
-					imgTopBackground->pos.h = imgTopBackground2XHeight;
-					imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
-					imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
-					imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
-					imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
-					imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
-					useDefaultHeaderHeight = false;
-				}
+				textx = newWidth;
+				texty = txtHeader->getNumTextLines() * Font::get(txtHeader->getFont())->height();
+				imgTopBackground->pos.h = imgTopBackground2XHeight;
+				imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
+				imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
+				imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
+				imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
+				imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
+				useDefaultHeaderHeight = false;
 			}
 
 			//if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
@@ -3087,13 +3083,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			int numLines = txtPrimaryValue->getNumTextLines();
 			if ( numLines > 1 )
 			{
-				auto textGet = Text::get(txtPrimaryValue->getText(), txtPrimaryValue->getFont(),
-					txtPrimaryValue->getTextColor(), txtPrimaryValue->getOutlineColor());
-				if ( textGet )
-				{
-					imgPrimaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
-					iconMultipleLinePadding = textGet->getHeight() * numLines - imgPrimaryIcon->pos.h;
-				}
+				imgPrimaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
+				iconMultipleLinePadding = numLines * Font::get(txtPrimaryValue->getFont())->height() - imgPrimaryIcon->pos.h;
 			}
 
 			txtPrimaryValue->setSize(SDL_Rect{ 
@@ -3131,13 +3122,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			int numLines = txtSecondaryValue->getNumTextLines();
 			if ( numLines > 1 )
 			{
-				auto textGet = Text::get(txtSecondaryValue->getText(), txtSecondaryValue->getFont(),
-					txtSecondaryValue->getTextColor(), txtSecondaryValue->getOutlineColor());
-				if ( textGet )
-				{
-					imgSecondaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
-					iconMultipleLinePadding = textGet->getHeight() * numLines - imgSecondaryIcon->pos.h;
-				}
+				imgSecondaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
+				iconMultipleLinePadding = numLines * Font::get(txtSecondaryValue->getFont())->height() - imgSecondaryIcon->pos.h;
 			}
 
 			txtSecondaryValue->setSize(SDL_Rect{ 
@@ -3170,13 +3156,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			int numLines = txtThirdValue->getNumTextLines();
 			if ( numLines > 1 )
 			{
-				auto textGet = Text::get(txtThirdValue->getText(), txtThirdValue->getFont(),
-					txtThirdValue->getTextColor(), txtThirdValue->getOutlineColor());
-				if ( textGet )
-				{
-					imgThirdIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
-					iconMultipleLinePadding = textGet->getHeight() * numLines - imgThirdIcon->pos.h;
-				}
+				imgThirdIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
+				iconMultipleLinePadding = numLines * Font::get(txtThirdValue->getFont())->height() - imgThirdIcon->pos.h;
 			}
 
 			txtThirdValue->setSize(SDL_Rect{ 
@@ -3272,7 +3253,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			if ( textGet )
 			{
 				auto tmp = textGet->getWidth();
-				auto tmp2 = textGet->getHeight();
+				auto tmp2 = textGet->getNumTextLines() * Font::get(txtHeader->getFont())->height();
 			}*/
 		
 			txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
