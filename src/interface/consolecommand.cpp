@@ -548,7 +548,7 @@ void consoleCommand(char const * const command_str)
 	}
 	else if ( !strncmp(command_str, "/smoothlighting", 15) )
 	{
-		smoothlighting = (smoothlighting == 0);
+		smoothlighting = true;
 	}
 	else if ( !strncmp(command_str, "/fullscreen", 11) )
 	{

@@ -177,25 +177,26 @@ vec4_t* normal_vec4(vec4_t* result, const vec4_t* v) {
 }
 
 mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2) {
+	vec4 v[6];
 	(void)add_vec4(
 		&result->x,
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->x.x), pow_vec4(&vec4(0.f), &m1->y, m2->x.y)),
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->x.z), pow_vec4(&vec4(0.f), &m1->w, m2->x.w))
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->x.x), pow_vec4(&v[2], &m1->y, m2->x.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->x.z), pow_vec4(&v[5], &m1->w, m2->x.w))
 	);
 	(void)add_vec4(
 		&result->y,
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->y.x), pow_vec4(&vec4(0.f), &m1->y, m2->y.y)),
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->y.z), pow_vec4(&vec4(0.f), &m1->w, m2->y.w))
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->y.x), pow_vec4(&v[2], &m1->y, m2->y.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->y.z), pow_vec4(&v[5], &m1->w, m2->y.w))
 	);
 	(void)add_vec4(
 		&result->z,
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->z.x), pow_vec4(&vec4(0.f), &m1->y, m2->z.y)),
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->z.z), pow_vec4(&vec4(0.f), &m1->w, m2->z.w))
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->z.x), pow_vec4(&v[2], &m1->y, m2->z.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->z.z), pow_vec4(&v[5], &m1->w, m2->z.w))
 	);
 	(void)add_vec4(
 		&result->w,
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->x, m2->w.x), pow_vec4(&vec4(0.f), &m1->y, m2->w.y)),
-		add_vec4(&vec4(0.f), pow_vec4(&vec4(0.f), &m1->z, m2->w.z), pow_vec4(&vec4(0.f), &m1->w, m2->w.w))
+		add_vec4(&v[0], pow_vec4(&v[1], &m1->x, m2->w.x), pow_vec4(&v[2], &m1->y, m2->w.y)),
+		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->w.z), pow_vec4(&v[5], &m1->w, m2->w.w))
 	);
 	return result;
 }
@@ -357,9 +358,10 @@ vec4_t project(
 	const mat4x4_t* projview,
 	const vec4_t* window
 ) {
+	vec4 copy;
 	vec4_t result = *world; result.w = 1.f;
-	mul_mat_vec4(&result, model, &vec4_copy(&result));
-	mul_mat_vec4(&result, projview, &vec4_copy(&result));
+	copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
 
 	//float invertedProjview[16];
 	//invertMatrix4x4(projview, invertedProjview);
@@ -367,9 +369,11 @@ vec4_t project(
 	//mat_from_array(&invertedProjviewMat, invertedProjview);
 	//mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
 
-	div_vec4(&result, &result, &vec4(result.w));
-	mul_vec4(&result, &result, &vec4(0.5f));
-	add_vec4(&result, &result, &vec4(0.5f));
+	vec4 half(0.5f);
+	vec4 w(result.w);
+	div_vec4(&result, &result, &w);
+	mul_vec4(&result, &result, &half);
+	add_vec4(&result, &result, &half);
 	result.x = result.x * window->z + window->x;
 	result.y = result.y * window->w + window->y;
 	return result;
@@ -387,16 +391,19 @@ vec4_t unproject(
 	result.x /= window->z;
 	result.y /= window->w;
 
-	sub_vec4(&result, &result, &vec4(0.5f));
-	div_vec4(&result, &result, &vec4(0.5f));
+	vec4 half(0.5f);
+	sub_vec4(&result, &result, &half);
+	div_vec4(&result, &result, &half);
 
 	float invertedProjview[16];
 	invertMatrix4x4(projview, invertedProjview);
 	mat4x4_t invertedProjviewMat;
 	mat_from_array(&invertedProjviewMat, invertedProjview);
-	mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(&result));
+	vec4 copy = vec4_copy(&result);
+	mul_mat_vec4(&result, &invertedProjviewMat, &copy);
 
-	div_vec4(&result, &result, &vec4(result.w));
+	vec4 w(result.w);
+	div_vec4(&result, &result, &w);
 
 	return result;
 }
