@@ -1,5 +1,12 @@
+#include "main.hpp"
 #include "input.hpp"
+#ifdef EDITOR
+#ifndef TICKS_PER_SECOND
+#define TICKS_PER_SECOND 50
+#endif
+#else
 #include "player.hpp"
+#endif
 
 #include <algorithm>
 
@@ -91,13 +98,50 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot8", "8");
 		inputs[c].bind("HotbarSlot9", "9");
 		inputs[c].bind("HotbarSlot10", "0");
+		inputs[c].bind("MenuMouseWheelUp", "MouseWheelUp");
+		inputs[c].bind("MenuMouseWheelDown", "MouseWheelDown");
 	}
+#ifndef NINTENDO
+	inputs[0].bind("MenuUp", "Up");
+	inputs[0].bind("MenuLeft", "Left");
+	inputs[0].bind("MenuRight", "Right");
+	inputs[0].bind("MenuDown", "Down");
+	inputs[0].bind("MenuConfirm", "Space");
+	inputs[0].bind("MenuCancel", "Escape");
+	inputs[0].bind("MenuAlt1", "Left Shift");
+	inputs[0].bind("MenuAlt2", "Left Alt");
+	inputs[0].bind("MenuStart", "Return");
+	inputs[0].bind("MenuSelect", "Backspace");
+	inputs[0].bind("MenuPageLeft", "[");
+	inputs[0].bind("MenuPageRight", "]");
+#endif
 }
 
-void Input::addGameController(int id, GameController& controller) {
-	gameControllers.emplace(id, controller.sdl_device);
-	for (auto& input : inputs) {
-		input.refresh();
+void Input::clearDefaultBindings() {
+	// This is used to disable UI bindings while the player is rebinding keys
+	// in the game settings. Maybe it will be used for other things though...
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		inputs[c].bind("MenuTab", "");
+		inputs[c].bind("MenuUp", "");
+		inputs[c].bind("MenuLeft", "");
+		inputs[c].bind("MenuRight", "");
+		inputs[c].bind("MenuDown", "");
+		inputs[c].bind("MenuConfirm", "");
+		inputs[c].bind("MenuCancel", "");
+		inputs[c].bind("MenuAlt1", "");
+		inputs[c].bind("MenuAlt2", "");
+		inputs[c].bind("MenuStart", "");
+		inputs[c].bind("MenuSelect", "");
+		inputs[c].bind("MenuPageLeft", "");
+		inputs[c].bind("MenuPageRight", "");
+		inputs[c].bind("AltMenuUp", "");
+		inputs[c].bind("AltMenuLeft", "");
+		inputs[c].bind("AltMenuRight", "");
+		inputs[c].bind("AltMenuDown", "");
+		inputs[c].bind("MenuScrollUp", "");
+		inputs[c].bind("MenuScrollLeft", "");
+		inputs[c].bind("MenuScrollRight", "");
+		inputs[c].bind("MenuScrollDown", "");
 	}
 }
 
@@ -108,6 +152,7 @@ float Input::analog(const char* binding) const {
 
 bool Input::binary(const char* binding) const {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -115,11 +160,13 @@ bool Input::binary(const char* binding) const {
 			return false;
 		}
 	}
+#endif
 	return b != bindings.end() ? (*b).second.binary : false;
 }
 
 bool Input::binaryToggle(const char* binding) const {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -127,11 +174,13 @@ bool Input::binaryToggle(const char* binding) const {
 			return false;
 		}
 	}
+#endif
 	return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
 bool Input::analogToggle(const char* binding) const {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -139,11 +188,13 @@ bool Input::analogToggle(const char* binding) const {
 			return false;
 		}
 	}
+#endif
 	return b != bindings.end() ? (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed : false;
 }
 
 bool Input::binaryReleaseToggle(const char* binding) const {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -151,11 +202,13 @@ bool Input::binaryReleaseToggle(const char* binding) const {
 			return false;
 		}
 	}
+#endif
 	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
 }
 
 bool Input::consumeAnalogToggle(const char* binding) {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -163,6 +216,7 @@ bool Input::consumeAnalogToggle(const char* binding) {
 			return false;
 		}
 	}
+#endif
 	if ( b != bindings.end() && (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed ) {
 		(*b).second.analogConsumed = true;
 		return true;
@@ -174,6 +228,7 @@ bool Input::consumeAnalogToggle(const char* binding) {
 
 bool Input::consumeBinaryToggle(const char* binding) {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -181,6 +236,7 @@ bool Input::consumeBinaryToggle(const char* binding) {
 			return false;
 		}
 	}
+#endif
 	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
 		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
@@ -197,6 +253,7 @@ bool Input::consumeBinaryToggle(const char* binding) {
 
 bool Input::consumeBinaryReleaseToggle(const char* binding) {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -204,6 +261,7 @@ bool Input::consumeBinaryReleaseToggle(const char* binding) {
 			return false;
 		}
 	}
+#endif
 	if ( b != bindings.end() && (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed ) {
 		(*b).second.binaryReleaseConsumed = true;
 		return true;
@@ -215,6 +273,7 @@ bool Input::consumeBinaryReleaseToggle(const char* binding) {
 
 bool Input::binaryHeldToggle(const char* binding) const {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -222,6 +281,7 @@ bool Input::binaryHeldToggle(const char* binding) const {
 			return false;
 		}
 	}
+#endif
 	return b != bindings.end() 
 		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.binaryHeldTicks) > BUTTON_HELD_TICKS)
 		: false;
@@ -229,6 +289,7 @@ bool Input::binaryHeldToggle(const char* binding) const {
 
 bool Input::analogHeldToggle(const char* binding) const {
 	auto b = bindings.find(binding);
+#ifndef EDITOR
 	if ( b != bindings.end() )
 	{
 		if ( (*b).second.type == binding_t::bindtype_t::KEYBOARD && ::inputs.bPlayerUsingKeyboardControl(player) == false )
@@ -236,6 +297,7 @@ bool Input::analogHeldToggle(const char* binding) const {
 			return false;
 		}
 	}
+#endif
 	return b != bindings.end()
 		? ((*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed && (ticks - (*b).second.analogHeldTicks) > BUTTON_HELD_TICKS)
 		: false;
@@ -336,6 +398,22 @@ std::string Input::getGlyphPathForInput(binding_t binding) const
 				return "";
 		}
 #endif
+	}
+	else if ( binding.type == binding_t::bindtype_t::CONTROLLER_AXIS )
+	{
+		switch ( binding.padAxis )
+		{
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+				return rootPath + "G_Switch_LStick00.png";
+			default:
+				return "";
+		}
 	}
 	else if ( binding.type == binding_t::bindtype_t::KEYBOARD )
 	{

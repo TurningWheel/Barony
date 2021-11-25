@@ -28,6 +28,12 @@ PFNGLBINDVERTEXARRAYPROC SDL_glBindVertexArray;
 PFNGLDELETEVERTEXARRAYSPROC SDL_glDeleteVertexArrays;
 PFNGLENABLEVERTEXATTRIBARRAYPROC SDL_glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
+PFNGLGENFRAMEBUFFERSPROC SDL_glGenFramebuffers;
+PFNGLDELETEFRAMEBUFFERSPROC SDL_glDeleteFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC SDL_glBindFramebuffer;
+PFNGLFRAMEBUFFERTEXTURE2DPROC SDL_glFramebufferTexture2D;
+PFNGLDRAWBUFFERSPROC SDL_glDrawBuffers;
+PFNGLBLENDFUNCSEPARATEPROC SDL_glBlendFuncSeparate;
 #endif
 
 void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
@@ -40,30 +46,55 @@ void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar
 	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
 }
 
-// WIP vector helpers
 typedef struct vec4 {
-	float x; float y; float z; float w;
+	vec4(float f):
+		x(f),
+		y(f),
+		z(f),
+		w(f)
+	{}
+	vec4(float _x, float _y, float _z, float _w):
+		x(_x),
+		y(_y),
+		z(_z),
+		w(_w)
+	{}
+	vec4() = default;
+	float x;
+	float y;
+	float z;
+	float w;
 } vec4_t;
 
 typedef struct mat4x4 {
-	vec4_t x; vec4_t y; vec4_t z; vec4_t w;
+	mat4x4(float f):
+		x(f, 0.f, 0.f, 0.f),
+		y(0.f, f, 0.f, 0.f),
+		z(0.f, 0.f, f, 0.f),
+		w(0.f, 0.f, 0.f, f)
+	{}
+	mat4x4(
+		float xx, float xy, float xz, float xw,
+		float yx, float yy, float yz, float yw,
+		float zx, float zy, float zz, float zw,
+		float wx, float wy, float wz, float ww):
+		x(xx, xy, xz, xw),
+		y(yx, yy, yz, yw),
+		z(zx, zy, zz, zw),
+		w(wx, wy, wz, ww)
+	{}
+	mat4x4():
+		mat4x4(1.f)
+	{}
+	vec4_t x;
+	vec4_t y;
+	vec4_t z;
+	vec4_t w;
 } mat4x4_t;
 
-#define mat4x4(F) (mat4x4_t {\
-    F, 0.f, 0.f, 0.f,\
-    0.f, F, 0.f, 0.f,\
-    0.f, 0.f, F, 0.f,\
-    0.f, 0.f, 0.f, F,\
-})
-#define mat4x4_copy(M) (mat4x4_t {\
-    M.x.x, M.x.y, M.x.z, M.x.w,\
-    M.y.x, M.y.y, M.y.z, M.y.w,\
-    M.z.x, M.z.y, M.z.z, M.z.w,\
-    M.w.x, M.w.y, M.w.z, M.w.w,\
-})
-
-#define vec4(F) (vec4_t{F, F, F, F})
-#define vec4_copy(V) (vec4_t{V.x, V.y, V.z, V.w})
+vec4_t vec4_copy(const vec4_t* v) {
+	return vec4_t(v->x, v->y, v->z, v->w);
+}
 
 vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v) {
 	result->x = m->x.x * v->x + m->y.x * v->y + m->z.x * v->z + m->w.x * v->w;
@@ -327,8 +358,8 @@ vec4_t project(
 	const vec4_t* window
 ) {
 	vec4_t result = *world; result.w = 1.f;
-	mul_mat_vec4(&result, model, &vec4_copy(result));
-	mul_mat_vec4(&result, projview, &vec4_copy(result));
+	mul_mat_vec4(&result, model, &vec4_copy(&result));
+	mul_mat_vec4(&result, projview, &vec4_copy(&result));
 
 	//float invertedProjview[16];
 	//invertMatrix4x4(projview, invertedProjview);
@@ -363,7 +394,7 @@ vec4_t unproject(
 	invertMatrix4x4(projview, invertedProjview);
 	mat4x4_t invertedProjviewMat;
 	mat_from_array(&invertedProjviewMat, invertedProjview);
-	mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
+	mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(&result));
 
 	div_vec4(&result, &result, &vec4(result.w));
 
@@ -517,6 +548,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			highlightEntityFromParent = true;
 			highlightEntity = highlightEntityFromParent;
 		}
+	}
+
+	bool doGrayScale = false;
+	real_t grayScaleFactor = 0.0;
+	if ( entity->grayscaleGLRender > 0.001 )
+	{
+		doGrayScale = true;
+		grayScaleFactor = entity->grayscaleGLRender;
 	}
 
 	// get shade factor
@@ -710,22 +749,27 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			{
 				if ( mode == REALCOLORS )
 				{
+					Uint8 r, g, b;
+					r = polymodels[modelindex].faces[index].r;
+					b = polymodels[modelindex].faces[index].g;
+					g = polymodels[modelindex].faces[index].b;
+
 					if ( entity->flags[USERFLAG2] )
 					{
 						if ( entity->behavior == &actMonster 
 							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 						{
 							// dont invert human heads, or automaton heads.
-							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
+							glColor3f((r / 255.f)*s, (g / 255.f)*s, (b / 255.f)*s );
 						}
 						else
 						{
-							glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s);
+							glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s);
 						}
 					}
 					else
 					{
-						glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s );
+						glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s );
 					}
 				}
 				else
@@ -758,16 +802,37 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
 						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+						if ( doGrayScale )
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+						}
+						else
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+						}
 					}
 					else
 					{
-						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+						if ( doGrayScale )
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors_shifted);
+						}
+						else
+						{
+							SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+						}
 					}
 				}
 				else
 				{
-					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					if ( doGrayScale )
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+					}
+					else
+					{
+						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+					}
 				}
 				glColorPointer(3, GL_FLOAT, 0, 0);
 				GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
@@ -838,14 +903,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 {
 	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[sprites[0]->refcount];
+	GLuint textureId = texid[(long int)sprites[0]->userdata];
 	char textToRetrieve[128];
 	strncpy(textToRetrieve, text.c_str(), 127);
 	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 127)] = '\0';
 
 	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
 	{
-		textureId = texid[image->refcount];
+		textureId = texid[(long int)image->userdata];
 	}
 	else
 	{
@@ -870,7 +935,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 		SDL_FreeSurface(textSurf);
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->refcount = imgref;
+		allsurfaces[imgref]->userdata = (void *)((long int)imgref);
 		glLoadTexture(allsurfaces[imgref], imgref);
 		imgref++;
 		// store the surface in the text surface cache
@@ -878,7 +943,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 		{
 			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
 		}
-		textureId = texid[image->refcount];
+		textureId = texid[(long int)image->userdata];
 	}
 	if ( outTextId )
 	{
@@ -1006,7 +1071,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	mat4x4_t modelMat4;
 	mat_from_array(&modelMat4, modelViewMatrix);
 
-	vec4_t window = { camera->winx, camera->winy, camera->winw, camera->winh };
+	vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
 	mat4x4_t projViewModel4;
 	mul_mat(&projViewModel4, &projMat4, &modelMat4);
 
@@ -1054,18 +1119,21 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	//	//drawRect(&resPos, 0xFFFFFF00, 255);
 	//}
 
+	int drawOffsetY = (enemybar->worldSurfaceSpriteStatusEffects ? -enemybar->worldSurfaceSpriteStatusEffects->h / 2 : 0);
+	drawOffsetY += enemybar->glWorldOffsetY;
+
 	if ( !doVisibilityCheckOnly )
 	{
 		// draw quad
 		glBegin(GL_QUADS);
 		glTexCoord2f(0, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(0, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
 		glTexCoord2f(1, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glTexCoord2f(1, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - enemybar->glWorldOffsetY, GLfloat(-sprite->w / 2));
+		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glEnd();
 	}
 	glDepthRange(0, 1);
@@ -1493,7 +1561,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 
 	if ( mode == REALCOLORS )
 	{
-		glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
+		glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
 	}
 	else
 	{
@@ -1583,7 +1651,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#16#2");
+	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
+		makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
 	// setup projection
@@ -1826,7 +1895,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// first (higher) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
@@ -1843,7 +1912,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// second (closer) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
@@ -1916,12 +1985,12 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
 							{
-								new_tex = texid[sprites[0]->refcount];
+								new_tex = texid[(long int)sprites[0]->userdata];
 								//glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
 							}
 							else
 							{
-								new_tex = texid[tiles[map.tiles[index]]->refcount];
+								new_tex = texid[(long int)tiles[map.tiles[index]]->userdata];
 								//glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
 							}
 						}
@@ -2244,7 +2313,7 @@ void glDrawWorld(view_t* camera, int mode)
 						// bind texture
 						if ( mode == REALCOLORS )
 						{
-							new_tex = texid[tiles[mapceilingtile]->refcount];
+							new_tex = texid[(long int)tiles[mapceilingtile]->userdata];
 							//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
 							if (cur_tex!=new_tex)
 							{

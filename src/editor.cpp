@@ -73,10 +73,6 @@ void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
 void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
 void actRightHandMagic(Entity* my) {} // dummy for draw.cpp
 void messagePlayer(int player, char const * const message, ...) {} // dummy
-void updateLoadingScreen(real_t progress) {} // dummy
-void doLoadingScreen() {}
-void destroyLoadingScreen() {}
-void createLoadingScreen(real_t progress) {}
 
 map_t copymap;
 
@@ -315,6 +311,12 @@ char gatePropertyNames[1][35] =
 char playerSpawnPropertyNames[1][35] =
 {
 	"Spawn Facing Direction (-1 - 7)"
+};
+
+char statuePropertyNames[2][16] =
+{
+	"Direction (0-3)",
+	"Statue ID",
 };
 
 const char* playerClassLangEntry(int classnum, int playernum)
@@ -7453,6 +7455,113 @@ int main(int argc, char** argv)
 
 							// set the maximum length allowed for user input
 							inputlen = 2;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
+				else if ( newwindow == 29 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(statuePropertyNames) / sizeof(statuePropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(statuePropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, statuePropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							if ( i == 1 )
+							{
+								inputFieldWidth = 80; // width of the text field
+							}
+							else
+							{
+								inputFieldWidth = 64; // width of the text field
+							}
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "South");
+												break;
+											case 2:
+												strcpy(tmpStr, "West");
+												break;
+											case 3:
+												strcpy(tmpStr, "North");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 10;
 							propertyPageCursorFlash(spacing);
 						}
 					}

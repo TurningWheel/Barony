@@ -39,7 +39,13 @@ public:
     //! @param _size size and position of slider's parent frame
     //! @param _actualSize offset into the parent frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-    void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
+    void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+
+    //! draws post elements in the slider
+    //! @param _size size and position of slider's parent frame
+    //! @param _actualSize offset into the parent frame space (scroll)
+    //! @param selectedWidgets the currently selected widgets, if any
+    void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
     //! handles slider clicks, etc.
     //! @param _size size and position of slider's parent frame
@@ -56,6 +62,9 @@ public:
 
     //! trigger callback
     void fireCallback();
+
+    //! update the position of the handle
+    void updateHandlePosition();
 
     //! deselect the slider
     virtual void deselect() override;
@@ -101,7 +110,7 @@ private:
     float maxValue = 0.f;                           //!< maximum value
     float minValue = 0.f;                           //!< minimum value
     float valueSpeed = 1.f;                         //!< how fast the slider moves when we press a button
-    int border = 2;                                 //!< border size in pixels
+    int border = 0;                                 //!< border size in pixels
     bool activated = false;                         //!< if true, the slider captures all input
     SDL_Rect handleSize;                            //!< size of the handle in pixels
     SDL_Rect railSize;                              //!< size of the rail in pixels

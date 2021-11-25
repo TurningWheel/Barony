@@ -24,9 +24,6 @@
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity[MAXPLAYERS];
 extern Entity* lastSelectedEntity[MAXPLAYERS];
-extern Sint32 mousex, mousey;
-extern Sint32 omousex, omousey;
-extern Sint32 mousexrel, mouseyrel;
 
 /*
  * TODO: Will need to make messages work for each hotseat player.
@@ -60,7 +57,6 @@ extern bool gamepad_menuy_invert;
 
 class GameController
 {
-	friend class Input;
 	SDL_GameController* sdl_device;
 	SDL_Haptic* sdl_haptic;
 	int id;
@@ -346,6 +342,7 @@ class Inputs
 		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
 		bool lastMovementFromController = false;
+		real_t mouseAnimationPercent = 0.0;
 		VirtualMouse() {};
 		~VirtualMouse() {};
 
@@ -779,6 +776,7 @@ public:
 		const int getSizeX() const { return sizex; }
 		const int getSizeY() const { return sizey; }
 		const int getSlotSize() const { return 40; }
+		const int getItemSpriteSize() const { return 36; }
 		void setSizeY(int size) { sizey = size; }
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
@@ -929,7 +927,10 @@ public:
 		bool lock_right_sidebar = false;
 		int proficienciesPage = 0;
 		int attributespage = 0;
+		bool showGameTimerAlways = false;
 
+		static std::map<std::string, std::pair<std::string, std::string>> mapDisplayNamesDescriptions;
+		static std::map<std::string, std::string> hoverTextStrings;
 		enum SheetElements
 		{
 			SHEET_UNSELECTED,
@@ -955,17 +956,118 @@ public:
 			SHEET_WGT,
 			SHEET_ENUM_END
 		};
-
+		enum SheetDisplay
+		{
+			CHARSHEET_DISPLAY_NORMAL,
+			CHARSHEET_DISPLAY_COMPACT
+		};
+		SheetDisplay sheetDisplayType = CHARSHEET_DISPLAY_NORMAL;
 		Frame* sheetFrame = nullptr;
 		SheetElements selectedElement = SHEET_UNSELECTED;
-		void selectElement(SheetElements element, bool moveCursor = false);
+		void selectElement(SheetElements element, bool usingMouse, bool moveCursor = false);
 		void createCharacterSheet();
 		void processCharacterSheet();
 		void updateGameTimer();
 		void updateStats();
 		void updateAttributes();
 		void updateCharacterInfo();
+		static void loadCharacterSheetJSON();
+		static std::string defaultString;
+		static std::string& getHoverTextString(std::string key);
+		void updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos);
 	} characterSheet;
+
+	class SkillSheet_t
+	{
+		Player& player;
+	public:
+		SkillSheet_t(Player& p) : player(p)
+		{};
+		~SkillSheet_t() {};
+
+		Frame* skillFrame = nullptr;
+		int selectedSkill = 0;
+		int highlightedSkill = 0;
+		real_t skillsFadeInAnimationY = 0.0;
+		bool bSkillSheetOpen = false;
+		Uint32 openTick = 0;
+		bool bSkillSheetEntryLoaded = false;
+		real_t scrollPercent = 0.0;
+		real_t scrollInertia = 0.0;
+		int skillSlideDirection = 0;
+		real_t skillSlideAmount = 0.0;
+		bool bUseCompactSkillsView = false;
+		bool bSlideWindowsOnly = false;
+		static real_t windowHeightScaleX;
+		static real_t windowHeightScaleY;
+		static real_t windowCompactHeightScaleX;
+		static real_t windowCompactHeightScaleY;
+		static bool generateFollowerTableForSkillsheet;
+		static struct SkillSheetData_t
+		{
+			Uint32 defaultTextColor = 0xFFFFFFFF;
+			Uint32 noviceTextColor = 0xFFFFFFFF;
+			Uint32 expertTextColor = 0xFFFFFFFF;
+			Uint32 legendTextColor = 0xFFFFFFFF;
+			struct SkillEntry_t
+			{
+				SkillEntry_t() {};
+				~SkillEntry_t() {};
+				std::string name;
+				int skillId = -1;
+				std::string skillIconPath;
+				std::string skillIconPathLegend;
+				std::string statIconPath;
+				std::string description;
+				std::string legendaryDescription;
+				int effectStartOffsetX = 72;
+				int effectBackgroundOffsetX = 8;
+				int effectBackgroundWidth = 80;
+				struct SkillEffect_t
+				{
+					SkillEffect_t() {};
+					~SkillEffect_t() {};
+					std::string tag;
+					std::string title;
+					std::string rawValue;
+					std::string value;
+					int valueCustomWidthOffset = 0;
+					bool bAllowAutoResizeValue = false;
+					bool bAllowRealtimeUpdate = false;
+					real_t marquee = 0.0;
+					Uint32 marqueeTicks = 0;
+					bool marqueeCompleted = false;
+					int effectUpdatedAtSkillLevel = -1;
+				};
+				std::vector<SkillEffect_t> effects;
+			};
+			std::vector<SkillEntry_t> skillEntries;
+			std::string iconBgPathDefault = "";
+			std::string iconBgPathNovice = "";
+			std::string iconBgPathExpert = "";
+			std::string iconBgPathLegend = "";
+			std::string iconBgSelectedPathDefault = "";
+			std::string iconBgSelectedPathNovice = "";
+			std::string iconBgSelectedPathExpert = "";
+			std::string iconBgSelectedPathLegend = "";
+			std::string highlightSkillImg = "";
+			std::string selectSkillImg = "";
+			std::string highlightSkillImg_Right = "";
+			std::string selectSkillImg_Right = "";
+			std::vector<std::string> potionNamesToFilter;
+			std::map<Monster, std::vector<Monster>> leadershipAllyTableBase;
+			std::map<Monster, std::vector<Monster>> leadershipAllyTableLegendary;
+			std::map<Monster, std::vector<std::pair<Monster, std::string>>> leadershipAllyTableSpecialRecruitment;
+		} skillSheetData;
+
+		void selectSkill(int skill);
+		void createSkillSheet();
+		void processSkillSheet();
+		void closeSkillSheet();
+		void openSkillSheet();
+		void resetSkillDisplay();
+		static void loadSkillSheetJSON();
+	} skillSheet;
 
 	class HUD_t
 	{
@@ -1011,10 +1113,16 @@ public:
 		{
 			real_t animateX = 0.0;
 			real_t animateY = 0.0;
+			real_t animateW = 0.0;
+			real_t animateH = 0.0;
 			int animateSetpointX = 0;
 			int animateSetpointY = 0;
+			int animateSetpointW = 0;
+			int animateSetpointH = 0;
 			int animateStartX = 0;
 			int animateStartY = 0;
+			int animateStartW = 0;
+			int animateStartH = 0;
 			Uint32 lastUpdateTick = 0;
 			const int cursorToSlotOffset = 7;
 		};

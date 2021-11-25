@@ -28,14 +28,29 @@ const GLuint Image::indices[6]{
 Image::Image(const char* _name) {
 	name = _name;
 
+	const char* clippedName = _name;
+	do {
+		if (clippedName[0] == '#') {
+			++clippedName;
+			clamp = true;
+		}
+		else if (clippedName[0] == '*') {
+			++clippedName;
+			point = true;
+		}
+		else {
+			break;
+		}
+	} while (1);
+
 #ifdef NINTENDO
 	std::string path = std::string("rom:/") + _name;
 #else
-	std::string path = _name;
+	std::string path = clippedName;
 #endif
-	printlog("loading image '%s'...", _name);
+	printlog("loading image '%s'...", clippedName);
 	if ((surf = IMG_Load(path.c_str())) == NULL) {
-		printlog("failed to load image '%s'", _name);
+		printlog("failed to load image '%s'", clippedName);
 		return;
 	}
 
@@ -87,21 +102,22 @@ Image::~Image() {
 	}
 }
 
-void Image::draw(const SDL_Rect* src, const SDL_Rect dest) const {
-	drawColor(src, dest, 0xffffffff);
+void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport) const {
+	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const Uint32& color) const {
+void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const {
 	if (!surf) {
 		return;
 	}
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
-	glViewport(0, 0, xres, yres);
+	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
+	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
 	// for the use of a whole image
 	SDL_Rect secondsrc;
@@ -126,13 +142,13 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const Uint32& co
 	// draw quad
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x, yres - dest.y);
+	glVertex2f(dest.x, viewport.h - dest.y);
 	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x, yres - dest.y - dest.h);
+	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x + dest.w, yres - dest.y - dest.h);
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x + dest.w, yres - dest.y);
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
 	glEnd();
 
 	// unbind texture

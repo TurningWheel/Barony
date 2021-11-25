@@ -22,29 +22,35 @@ private:
 
 public:
 	//! special char marks font to be used
-	static const char fontBreak = 8;
+	static const char fontBreak = '\b';
 
 	const char*				getName() const { return name.c_str(); }
 	const GLuint			getTexID() const { return texid; }
 	const SDL_Surface*		getSurf() const { return surf; }
 	const unsigned int		getWidth() const { return width; }
 	const unsigned int		getHeight()	const { return height; }
+	int						getNumTextLines() const { return num_text_lines; }
 
 	//! draws the text
 	//! @param src defines a subsection of the text image to actually draw (width 0 and height 0 uses whole image)
 	//! @param dest the position and size of the image on-screen (width 0 and height 0 defaults to 1:1 scale)
-	void draw(SDL_Rect src, SDL_Rect dest);
+	//! @param viewport the dimensions of the viewport
+	void draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) const;
 
 	//! draws the text with the given color
 	//! @param src defines a subsection of the text image to actually draw (width 0 and height 0 uses whole image)
 	//! @param dest the position and size of the image on-screen (width 0 and height 0 defaults to 1:1 scale)
-	void drawColor(SDL_Rect src, SDL_Rect dest, const Uint32& color);
+	//! @param viewport the dimensions of the viewport
+	//! @param color 32-bit encoded color to colorize the text
+	void drawColor(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const;
 
 	//! get a Text object from the engine
 	//! @param str The Text's string
 	//! @param font the Text's font
+	//! @param textColor the color of the rendered text
+	//! @param outlineColor the color of the rendered outline
 	//! @return the Text or nullptr if it could not be retrieved
-	static Text* get(const char* str, const char* font);
+	static Text* get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor);
 
 	//! dump engine's text cache
 	static void dumpCache();
@@ -70,4 +76,9 @@ private:
 	int width = 0;
 	int height = 0;
 	bool rendered = false;
+	int num_text_lines = 0;
+
+	//! get the number of text lines occupied by the text
+	//! @return number of lines of text
+	int countNumTextLines() const;
 };

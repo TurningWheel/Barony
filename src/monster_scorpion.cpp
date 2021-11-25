@@ -106,7 +106,7 @@ void initScorpion(Entity* my, Stat* myStats)
 	}
 
 	// tail
-	Entity* entity = newEntity(197, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(197, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -158,15 +158,7 @@ void actScorpionTail(Entity* my)
 		{
 			if ( inrange[i] )
 			{
-				if ( i == 0 && selectedEntity[0] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( i > 0 && splitscreen && selectedEntity[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
+				if ( selectedEntity[i] == my || client_selected[i] == my )
 				{
 					parent->skill[13] = i + 1;
 				}

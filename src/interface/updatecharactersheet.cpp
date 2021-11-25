@@ -1168,7 +1168,8 @@ void drawSkillsSheet(const int player)
 					std::string secondaryIngredients;
 					int lines = 0;
 					int lines2 = 0;
-					for ( auto it = clientLearnedAlchemyIngredients.begin(); it != clientLearnedAlchemyIngredients.end(); ++it )
+					for ( auto it = clientLearnedAlchemyIngredients[player].begin();
+						it != clientLearnedAlchemyIngredients[player].end(); ++it )
 					{
 						auto alchemyEntry = *it;
 						if ( GenericGUI[player].isItemBaseIngredient(alchemyEntry) )

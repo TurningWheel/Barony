@@ -36,6 +36,14 @@ public:
 		BORDER_MAX
 	};
 
+	//! list text justification
+	enum justify_t {
+		LEFT,
+		RIGHT,
+		CENTER,
+		JUSTIFY_TYPE_LENGTH
+	};
+
 	//! frame image
 	struct image_t {
 		std::string name;
@@ -64,6 +72,8 @@ public:
 
 	//! frame list entry
 	struct entry_t {
+		entry_t(Frame& _parent) : parent(_parent) {}
+		Frame& parent;
 		std::string name;
 		std::string text;
 		std::string tooltip;
@@ -103,8 +113,16 @@ public:
 	//! virtual screen size (height)
 	static const int virtualScreenY = 720;
 
+	//! init ui engine
+	static void guiInit();
+	static void fboInit();
+
+	//! destroy ui engine
+	static void guiDestroy();
+	static void fboDestroy();
+
 	//! draws the frame and all of its subelements
-	void draw();
+	void draw() const;
 
 	//! handle clicks and other events
 	//! @return compiled results of frame processing
@@ -215,16 +233,12 @@ public:
 	void activateSelection();
 
 	//! determines if the mouse is currently within the frame or not
-	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
-	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
 	//! @return true if it is, false otherwise
-	bool capturesMouse(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
+	bool capturesMouse() const;
 
 	//! determines if the mouse is currently within the frame or not - but uses X/Y not OX/OY (OX/OY remain constant when dragging)
-	//! @param curSize used by the recursion algorithm, ignore or always pass nullptr
-	//! @param curActualSize used by the recursion algorithm, ignore or always pass nullptr
 	//! @return true if it is, false otherwise
-	bool capturesMouseInRealtimeCoords(SDL_Rect* curSize = nullptr, SDL_Rect* curActualSize = nullptr);
+	bool capturesMouseInRealtimeCoords() const;
 
 	//! warps the player's mouse cursor to the center location of the frame
 	void warpMouseToFrame(const int player, Uint32 flags) const;
@@ -244,7 +258,11 @@ public:
 	//! @param image the image to draw
 	//! @param _size the size of the rectangle to clip against
 	//! @param scroll the amount by which to offset the image in x/y
-	void drawImage(image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll);
+	void drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const;
+
+	//! scroll to the current list entry selection in the frame
+	//! @param scroll_to_top if true, scroll the selection to the very top of the frame
+	void scrollToSelection(bool scroll_to_top = false);
 
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
@@ -268,6 +286,8 @@ public:
 	int								getSelection() const { return selection; }
 	real_t							getOpacity() const { return opacity; }
 	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
+	justify_t						getJustify() const { return justify; }
+	const bool						isClickable() const { return clickable; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -286,6 +306,8 @@ public:
 	void	setListOffset(SDL_Rect _size) { listOffset = _size; }
 	void	setInheritParentFrameOpacity(const bool _inherit) { inheritParentFrameOpacity = _inherit; }
 	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
+	void	setListJustify(justify_t _justify) { justify = _justify; }
+	void	setClickable(const bool _clickable) { clickable = _clickable; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -312,6 +334,10 @@ private:
 	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
 	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
 	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
+	justify_t justify = justify_t::LEFT;				//!< frame list horizontal justification
+	bool clickable = false;								//!< if true, you can activate the frame by clicking on it (used for lists)
+	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
+	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -319,9 +345,6 @@ private:
 	std::vector<image_t*> images;
 	std::vector<Slider*> sliders;
 	std::vector<entry_t*> list;
-
-	//! scroll to the current list entry selection in the frame
-	void scrollToSelection();
 
 	//! activate the given list entry
 	//! @param entry the entry to activate
@@ -331,7 +354,13 @@ private:
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+
+	//! draws post elements in the frame and all of its subelements
+	//! @param _size real position of the frame onscreen
+	//! @param _actualSize offset into the frame space (scroll)
+	//! @param selectedWidgets the currently selected widgets, if any
+	void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen
@@ -340,6 +369,8 @@ private:
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return compiled results of frame processing
 	result_t process(SDL_Rect _size, SDL_Rect actualSize, const std::vector<Widget*>& selectedWidgets, const bool usable);
+
+	bool capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
 };
 
 // root frame object

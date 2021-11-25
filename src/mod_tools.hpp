@@ -2754,3 +2754,53 @@ public:
 	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
 };
 extern ItemTooltips_t ItemTooltips;
+
+class StatueManager_t
+{
+public:
+	StatueManager_t() {};
+	~StatueManager_t() {};
+	int processStatueExport();
+
+	bool activeEditing = false;
+	Uint32 lastEntityUnderMouse = 0;
+	Uint32 editingPlayerUid = 0;
+	real_t statueEditorHeightOffset = 0.0;
+	bool drawGreyscale = false;
+	void readStatueFromFile(int index);
+	static Uint32 statueId;
+	std::string exportFileName = "";
+	int exportRotations = 0;
+	bool exportActive = false;
+	rapidjson::Document exportDocument;
+
+	class Statue_t
+	{
+		Uint32 id;
+	public:
+		struct StatueLimb_t
+		{
+			real_t x;
+			real_t y;
+			real_t z;
+			real_t pitch;
+			real_t roll;
+			real_t yaw;
+			real_t focalx;
+			real_t focaly;
+			real_t focalz;
+			Sint32 sprite;
+			bool visible = true;
+		};
+		std::map<std::string, std::vector<StatueLimb_t>> limbs;
+		Statue_t() {
+			id = statueId; 
+			++statueId;
+		}
+		real_t heightOffset = 0.0;
+	};
+
+	const std::vector<std::string> directionKeys{ "east", "south", "west", "north" };
+	std::map<Uint32, Statue_t> allStatues;
+};
+extern StatueManager_t StatueManager;

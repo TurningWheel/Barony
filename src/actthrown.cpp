@@ -529,7 +529,7 @@ void actThrown(Entity* my)
 	{
 		for ( int i = 0; i < MAXPLAYERS; i++ )
 		{
-			if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+			if ( selectedEntity[i] == my || client_selected[i] == my )
 			{
 				if ( inrange[i] )
 				{
@@ -1102,7 +1102,10 @@ void actThrown(Entity* my)
 						{
 							if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 							{
-								steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+								if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+								{
+									steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+								}
 							}
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
@@ -1121,14 +1124,7 @@ void actThrown(Entity* my)
 				{
 					if ( !strcmp(hitstats->name, "") )
 					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-						}
+						updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 					}
 					else
 					{

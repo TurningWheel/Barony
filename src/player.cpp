@@ -833,7 +833,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 		{
 			currentElement = Player::CharacterSheet_t::SHEET_ENUM_END - 1;
 		}
-		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement);
+		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
 	}
 
@@ -848,7 +848,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 		{
 			currentElement = Player::CharacterSheet_t::SHEET_UNSELECTED + 1;
 		}
-		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement);
+		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
 	}
 
@@ -883,7 +883,7 @@ bool Player::GUI_t::handleInventoryMovement()
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 		{
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-			players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP);
+			players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 			players[player]->GUI.warpControllerToModule(false);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
@@ -1261,6 +1261,11 @@ void initGameControllers()
 		{
 			printlog("(Device %d successfully initialized as game controller.)\n", c);
 			inputs.setControllerID(c, controller_itr->getID());
+			Input::gameControllers[controller_itr->getID()] = 
+				const_cast<SDL_GameController*>(controller_itr->getControllerDevice());
+			for ( int c = 0; c < 4; ++c ) {
+				Input::inputs[c].refresh();
+			}
 			found = true;
 
 			controller_itr = std::next(controller_itr);
@@ -1608,6 +1613,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	hud(*this),
 	magic(*this),
 	characterSheet(*this),
+	skillSheet(*this),
 	movement(*this),
 	messageZone(*this),
 	worldUI(*this),
@@ -1657,7 +1663,7 @@ void Player::cleanUpOnEntityRemoval()
 
 const bool Player::isLocalPlayer() const
 {
-	return ((splitscreen && bSplitscreen) || playernum == clientnum);
+	return ((splitscreen && bSplitscreen) || playernum == clientnum || intro);
 }
 const bool Player::isLocalPlayerAlive() const
 {
@@ -1990,14 +1996,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			}
 			else
 			{
-				if ( monsterType < KOBOLD ) //Original monster count
-				{
-					name = language[90 + monsterType];
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
-				{
-					name = language[2000 + monsterType - KOBOLD];
-				}
+				name = getMonsterLocalizedName((Monster)monsterType).c_str();
 			}
 
 			if ( parent->monsterAllyGetPlayerLeader() 

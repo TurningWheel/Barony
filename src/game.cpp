@@ -45,6 +45,7 @@
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
 #include "input.hpp"
+#include "ui/Image.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -207,7 +208,6 @@ TileEntityListHandler TileEntityList;
 // res of 480x270
 // /nohud
 // undefine SOUND, MUSIC (see sound.h)
-
 int game = 1;
 Uint32 uniqueGameKey = 0;
 DebugStatsClass DebugStats;
@@ -216,6 +216,415 @@ bool gameloopFreezeEntities = false;
 Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
+
+TimerExperiments::time_point TimerExperiments::timepoint{};
+TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();
+TimerExperiments::duration TimerExperiments::accumulator = std::chrono::milliseconds{ 0 };
+std::chrono::duration<long long, std::ratio<1, 60>> TimerExperiments::dt = std::chrono::duration<long long, std::ratio<1, 60>>{ 1 };
+TimerExperiments::EntityStates TimerExperiments::cameraPreviousState[MAXPLAYERS];
+TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
+TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
+bool TimerExperiments::bUseTimerInterpolation = false;
+bool TimerExperiments::bIsInit = false;
+bool TimerExperiments::bDebug = true;
+real_t TimerExperiments::lerpFactor = 30.0;
+void TimerExperiments::integrate(TimerExperiments::State& state,
+	std::chrono::time_point<Clock, std::chrono::duration<double>>,
+	std::chrono::duration<double> dt)
+{
+	state.velocity += state.acceleration * dt / std::chrono::seconds{ 1 };
+	state.position += state.velocity * dt / std::chrono::seconds{ 1 };
+};
+
+void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation ) { return; }
+	if ( !entity ) { return; }
+
+	entity->bUseRenderInterpolation = true;
+	if ( entity->behavior == &actHudWeapon
+		|| entity->behavior == &actHudShield
+		|| entity->behavior == &actHudArm
+		|| entity->behavior == &actHudAdditional
+		|| entity->behavior == &actHudArrowModel
+		|| entity->behavior == &actLeftHandMagic
+		|| entity->behavior == &actRightHandMagic
+		|| entity->behavior == &actDoor )
+	{
+		entity->bUseRenderInterpolation = false;
+	}
+	if ( !entity->bUseRenderInterpolation )
+	{
+		return;
+	}
+
+	if ( entity->bNeedsRenderPositionInit )
+	{
+		entity->bNeedsRenderPositionInit = false;
+
+		entity->lerpCurrentState.x.position = entity->x / 16.0;
+		entity->lerpCurrentState.y.position = entity->y / 16.0;
+		entity->lerpCurrentState.z.position = entity->z;
+		entity->lerpCurrentState.pitch.position = entity->pitch;
+		entity->lerpCurrentState.yaw.position = entity->yaw;
+		entity->lerpCurrentState.roll.position = entity->roll;
+		entity->lerpCurrentState.resetMovement();
+		entity->lerpPreviousState = entity->lerpCurrentState;
+		entity->lerpRenderState = entity->lerpCurrentState;
+		return;
+	}
+
+	entity->lerpCurrentState.x.velocity = TimerExperiments::lerpFactor * (entity->x / 16.0 - entity->lerpCurrentState.x.position);
+	entity->lerpCurrentState.y.velocity = TimerExperiments::lerpFactor * (entity->y / 16.0 - entity->lerpCurrentState.y.position);
+	entity->lerpCurrentState.z.velocity = TimerExperiments::lerpFactor * (entity->z - entity->lerpCurrentState.z.position);
+	real_t diff = entity->yaw - entity->lerpCurrentState.yaw.position;
+	if ( diff >= PI )
+	{
+		diff -= 2 * PI;
+	}
+	else if ( diff < -PI )
+	{
+		diff += 2 * PI;
+	}
+	entity->lerpCurrentState.yaw.velocity = TimerExperiments::lerpFactor * (diff);
+
+	diff = entity->pitch - entity->lerpCurrentState.pitch.position;
+	if ( diff >= PI )
+	{
+		diff -= 2 * PI;
+	}
+	else if ( diff < -PI )
+	{
+		diff += 2 * PI;
+	}
+	entity->lerpCurrentState.pitch.velocity = TimerExperiments::lerpFactor * (diff);
+
+	diff = entity->roll - entity->lerpCurrentState.roll.position;
+	if ( diff >= PI )
+	{
+		diff -= 2 * PI;
+	}
+	else if ( diff < -PI )
+	{
+		diff += 2 * PI;
+	}
+	entity->lerpCurrentState.roll.velocity = TimerExperiments::lerpFactor * (diff);
+}
+
+void TimerExperiments::renderCameras(view_t& camera, int player)
+{
+	if ( !bUseTimerInterpolation )
+	{
+		return;
+	}
+
+	if ( players[player]->entity )
+	{
+		if ( !(players[player]->entity->skill[3] == 1) ) // skill[3] is debug cam
+		{
+			if ( bDebug )
+			{
+				printTextFormatted(font8x8_bmp, 8, 32, "Timer debug is ON");
+				real_t diff = camera.ang - players[player]->entity->lerpRenderState.yaw.position;
+				while ( diff >= PI )
+				{
+					diff -= 2 * PI;
+				}
+				while ( diff < -PI )
+				{
+					diff += 2 * PI;
+				}
+				real_t curStateYaw = players[player]->entity->lerpCurrentState.yaw.position;
+				real_t prevStateYaw = players[player]->entity->lerpPreviousState.yaw.position;
+				if ( abs(diff) > PI / 8 )
+				{
+					messagePlayer(0, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
+						players[player]->entity->lerpRenderState.yaw.position, camera.ang, curStateYaw, prevStateYaw);
+				}
+				printTextFormatted(font8x8_bmp, 8, 20, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
+					players[player]->entity->lerpRenderState.yaw.position, camera.ang, curStateYaw, prevStateYaw);
+			}
+			if ( bDebug && keystatus[SDL_SCANCODE_I] )
+			{
+				camera.x = players[player]->entity->x / 16.0;
+				camera.y = players[player]->entity->y / 16.0;
+				camera.ang = players[player]->entity->yaw;
+				camera.vang = players[player]->entity->pitch;
+
+				camera.z = TimerExperiments::cameraRenderState[player].z.position; // this uses PLAYER_CAMERAZ_ACCEL, not entity Z
+			}
+			else
+			{
+				camera.x = players[player]->entity->lerpRenderState.x.position;
+				camera.y = players[player]->entity->lerpRenderState.y.position;
+				camera.ang = players[player]->entity->lerpRenderState.yaw.position;
+				camera.vang = players[player]->entity->lerpRenderState.pitch.position;
+
+				camera.z = TimerExperiments::cameraRenderState[player].z.position; // this uses PLAYER_CAMERAZ_ACCEL, not entity Z
+			}
+		}
+	}
+	else
+	{
+		camera.x = TimerExperiments::cameraRenderState[player].x.position;
+		camera.y = TimerExperiments::cameraRenderState[player].y.position;
+		camera.ang = TimerExperiments::cameraRenderState[player].yaw.position;
+		camera.vang = TimerExperiments::cameraRenderState[player].pitch.position;
+		camera.z = TimerExperiments::cameraRenderState[player].z.position; // this uses PLAYER_CAMERAZ_ACCEL, not entity Z
+	}
+	return;
+	//if ( players[player]->entity )
+	//{
+	//	// store original x/y by game logic
+	//	playerBodypartOffsets[player].entity_ox = players[player]->entity->x;
+	//	playerBodypartOffsets[player].entity_oy = players[player]->entity->y;
+
+	//	players[player]->entity->lerp_ox = players[player]->entity->x;
+	//	players[player]->entity->lerp_oy = players[player]->entity->y;
+
+	//	// set to interpolated position
+	//	players[player]->entity->x = TimerExperiments::cameraRenderState[player].x.position * 16.0;
+	//	players[player]->entity->y = TimerExperiments::cameraRenderState[player].y.position * 16.0;
+
+	//	// adjust bodyparts for this interpolation too, ignore static HUD elements
+	//	playerBodypartOffsets[player].limb_newx = players[player]->entity->x - playerBodypartOffsets[player].entity_ox;
+	//	playerBodypartOffsets[player].limb_newy = players[player]->entity->y - playerBodypartOffsets[player].entity_oy;
+	//	for ( Entity *bodypart : players[player]->entity->bodyparts )
+	//	{
+	//		if ( players[player]->isLocalPlayer() )
+	//		{
+	//			if ( bodypart->behavior == &actHudAdditional
+	//				|| bodypart->behavior == &actHudWeapon
+	//				|| bodypart->behavior == &actHudArm
+	//				|| bodypart->behavior == &actHudArrowModel
+	//				|| bodypart->behavior == &actHudShield
+	//				|| bodypart->behavior == &actLeftHandMagic
+	//				|| bodypart->behavior == &actRightHandMagic )
+	//			{
+	//				continue;
+	//			}
+	//		}
+	//		bodypart->x += playerBodypartOffsets[player].limb_newx;
+	//		bodypart->y += playerBodypartOffsets[player].limb_newy;
+	//	}
+	//}
+}
+
+void TimerExperiments::postRenderRestore(view_t& camera, int player)
+{
+	// unused for now?
+	if ( !players[player]->entity || !bUseTimerInterpolation )
+	{
+		reset();
+		return;
+	}
+
+	players[player]->entity->x = players[player]->entity->lerp_ox;
+	players[player]->entity->y = players[player]->entity->lerp_oy;
+	return;
+	/*players[player]->entity->x = playerBodypartOffsets[player].entity_ox;
+	players[player]->entity->y = playerBodypartOffsets[player].entity_oy;
+	for ( Entity *bodypart : players[player]->entity->bodyparts )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			if ( bodypart->behavior == &actHudAdditional
+				|| bodypart->behavior == &actHudWeapon
+				|| bodypart->behavior == &actHudArm
+				|| bodypart->behavior == &actHudArrowModel
+				|| bodypart->behavior == &actHudShield
+				|| bodypart->behavior == &actLeftHandMagic
+				|| bodypart->behavior == &actRightHandMagic )
+			{
+				continue;
+			}
+		}
+		bodypart->x -= playerBodypartOffsets[player].limb_newx;
+		bodypart->y -= playerBodypartOffsets[player].limb_newy;
+	}*/
+}
+
+void TimerExperiments::State::resetMovement()
+{
+	velocity = 0.0;
+	acceleration = 0.0;
+}
+
+void TimerExperiments::State::resetPosition()
+{
+	position = 0.0;
+}
+
+void TimerExperiments::State::normalize(real_t min, real_t max)
+{
+	while ( position >= max )
+	{
+		position -= 2 * PI;
+	}
+	while ( position < min )
+	{
+		position += 2 * PI;
+	}
+}
+
+void TimerExperiments::EntityStates::resetMovement()
+{
+	x.resetMovement();
+	y.resetMovement();
+	z.resetMovement();
+	pitch.resetMovement();
+	yaw.resetMovement();
+	roll.resetMovement();
+}
+
+void TimerExperiments::EntityStates::resetPosition()
+{
+	x.resetPosition();
+	y.resetPosition();
+	z.resetPosition();
+	pitch.resetPosition();
+	yaw.resetPosition();
+	roll.resetPosition();
+}
+
+void TimerExperiments::reset()
+{
+
+}
+
+void TimerExperiments::updateClocks()
+{
+	if ( !bUseTimerInterpolation )
+	{
+		bIsInit = false;
+		return;
+	}
+
+	if ( !bIsInit )
+	{
+		reset();
+		bIsInit = true;
+	}
+
+	time_point newTime = Clock::now();
+	auto frameTime = newTime - currentTime;
+	if ( frameTime > std::chrono::milliseconds{ 250 } )
+		frameTime = std::chrono::milliseconds{ 250 };
+	currentTime = newTime;
+	accumulator += frameTime;
+
+	std::vector<Entity*> entitiesToInterpolate;
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity->bUseRenderInterpolation )
+		{
+			entitiesToInterpolate.push_back(entity);
+		}
+	}
+
+	while ( accumulator >= dt )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			cameraPreviousState[i] = cameraCurrentState[i];
+			integrate(cameraCurrentState[i].x, timepoint, dt);
+			integrate(cameraCurrentState[i].y, timepoint, dt);
+			integrate(cameraCurrentState[i].z, timepoint, dt);
+			integrate(cameraCurrentState[i].yaw, timepoint, dt);
+			integrate(cameraCurrentState[i].pitch, timepoint, dt);
+			integrate(cameraCurrentState[i].roll, timepoint, dt);
+		}
+		for ( auto& entity : entitiesToInterpolate )
+		{
+			entity->lerpPreviousState = entity->lerpCurrentState;
+			integrate(entity->lerpCurrentState.x, timepoint, dt);
+			integrate(entity->lerpCurrentState.y, timepoint, dt);
+			integrate(entity->lerpCurrentState.z, timepoint, dt);
+			integrate(entity->lerpCurrentState.yaw, timepoint, dt);
+			integrate(entity->lerpCurrentState.pitch, timepoint, dt);
+			integrate(entity->lerpCurrentState.roll, timepoint, dt);
+		}
+		timepoint += dt;
+		accumulator -= dt;
+	}
+
+	double alpha = std::chrono::duration<double>{ accumulator } / dt;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		cameraRenderState[i] = cameraCurrentState[i] * alpha + cameraPreviousState[i] * (1 - alpha);
+		// make sure these are limited to prevent large jumps
+		cameraCurrentState[i].yaw.normalize(0, 2 * PI);
+		cameraCurrentState[i].roll.normalize(0, 2 * PI);
+		cameraCurrentState[i].pitch.normalize(0, 2 * PI);
+
+		cameraRenderState[i].yaw.position = 
+			lerpAngle(cameraPreviousState[i].yaw.position, cameraCurrentState[i].yaw.position, alpha);
+		cameraRenderState[i].roll.position = 
+			lerpAngle(cameraPreviousState[i].roll.position, cameraCurrentState[i].roll.position, alpha);
+		cameraRenderState[i].pitch.position = 
+			lerpAngle(cameraPreviousState[i].pitch.position, cameraCurrentState[i].pitch.position, alpha);
+
+		cameraRenderState[i].yaw.normalize(0, 2 * PI);
+		cameraRenderState[i].roll.normalize(0, 2 * PI);
+		cameraRenderState[i].pitch.normalize(0, 2 * PI);
+
+		// original angle lerp code
+		//real_t a1 = cameraPreviousState[i].yaw.position;
+		//real_t a2 = cameraCurrentState[i].yaw.position;
+		//real_t adiff = a2 - a1;
+		//cameraRenderState[i].yaw.position = a1 + alpha * (fmod(3 * PI + fmod(adiff, 2 * PI), 2 * PI) - PI);
+	}
+	for ( auto& entity : entitiesToInterpolate )
+	{
+		entity->lerpRenderState = entity->lerpCurrentState * alpha + entity->lerpPreviousState * (1 - alpha);
+		// make sure these are limited to prevent large jumps
+		entity->lerpCurrentState.yaw.normalize(0, 2 * PI);
+		entity->lerpCurrentState.roll.normalize(0, 2 * PI);
+		entity->lerpCurrentState.pitch.normalize(0, 2 * PI);
+
+		entity->lerpRenderState.yaw.position = 
+			lerpAngle(entity->lerpPreviousState.yaw.position, entity->lerpCurrentState.yaw.position, alpha);
+		entity->lerpRenderState.roll.position = 
+			lerpAngle(entity->lerpPreviousState.roll.position, entity->lerpCurrentState.roll.position, alpha);
+		entity->lerpRenderState.pitch.position = 
+			lerpAngle(entity->lerpPreviousState.pitch.position, entity->lerpCurrentState.pitch.position, alpha);
+
+		entity->lerpRenderState.yaw.normalize(0, 2 * PI);
+		entity->lerpRenderState.roll.normalize(0, 2 * PI);
+		entity->lerpRenderState.pitch.normalize(0, 2 * PI);
+	}
+}
+
+real_t TimerExperiments::lerpAngle(real_t angle1, real_t angle2, real_t alpha)
+{
+	real_t adiff = angle2 - angle1;
+	return angle1 + alpha * (fmod(3 * PI + fmod(adiff, 2 * PI), 2 * PI) - PI);
+}
+
+std::string TimerExperiments::render(State state)
+{
+	using namespace std::chrono;
+	static auto t = time_point_cast<seconds>(Clock::now());
+	static int frame_count = 0;
+	static int frame_rate = 0;
+	auto pt = t;
+	t = time_point_cast<seconds>(Clock::now());
+	++frame_count;
+	if ( t != pt )
+	{
+		frame_rate = frame_count;
+		frame_count = 0;
+	}
+
+	char output[256] = "";
+	snprintf(output, sizeof(output), "Frame rate is %d frames per second. Position = %.4f", frame_rate, state.position);
+	/*if ( abs(state.velocity) > 0.01 )
+	{
+		printlog("FPS: %d | Velocity: %.4f | Position: %.4f", frame_rate, state.velocity, state.position);
+	}*/
+	return output;
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -1028,6 +1437,8 @@ void gameLogic(void)
 										TileEntityList.updateEntity(*entity);
 									}
 								}
+								TimerExperiments::updateEntityInterpolationPosition(entity);
+
 								entity->ranbehavior = true;
 							}
 							nextnode = map.entities->first;
@@ -1044,6 +1455,8 @@ void gameLogic(void)
 									TileEntityList.updateEntity(*entity);
 								}
 							}
+							TimerExperiments::updateEntityInterpolationPosition(entity);
+
 							entity->ranbehavior = true;
 							nextnode = node->next;
 							if ( debugMonsterTimer && entity->behavior == &actMonster )
@@ -2421,6 +2834,7 @@ void gameLogic(void)
 											}
 										}
 									}
+									TimerExperiments::updateEntityInterpolationPosition(entity);
 								}
 							}
 						}
@@ -2850,6 +3264,7 @@ void handleEvents(void)
 		inputs.updateAllMouse();
 	}
 
+	Input::lastInputOfAnyKind = "";
 	for (auto& input : Input::inputs) {
 		input.updateReleasedBindings();
 		input.update();
@@ -3188,7 +3603,10 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
 						inputs.addControllerIDToNextAvailableInput(id);
-						Input::addGameController(id, controller);
+						Input::gameControllers[id]= const_cast<SDL_GameController*>(controller.getControllerDevice());
+						for (int c = 0; c < 4; ++c) {
+							Input::inputs[c].refresh();
+						}
 					}
 					else
 					{
@@ -3211,7 +3629,6 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
-						Input::gameControllers.erase(instanceID);
 						inputs.removeControllerWithDeviceID(controller.getID());
 						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
 						controller.close();
@@ -3415,16 +3832,6 @@ void handleEvents(void)
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
 					}
-					if (zbuffer != NULL)
-					{
-						free(zbuffer);
-					}
-					zbuffer = (real_t*)malloc(sizeof(real_t) * xres * yres);
-					if (clickmap != NULL)
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**)malloc(sizeof(Entity*)*xres * yres);
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:
@@ -3668,6 +4075,10 @@ Uint64 lastGameTickCount = 0;
 float framerateAccumulatedTime = 0.f;
 bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
 {
+	if ( maxFrameRate == 0 )
+	{
+		return false;
+	}
 	float desiredFrameMilliseconds = 1.0f / maxFrameRate;
 	Uint64 gameTickCount = SDL_GetPerformanceCounter();
 	Uint64 ticksPerSecond = SDL_GetPerformanceFrequency();
@@ -4100,10 +4511,14 @@ void ingameHud()
 			{
 				players[player]->bookGUI.closeBookGUI();
 			}
+			if ( players[player]->skillSheet.bSkillSheetOpen )
+			{
+				players[player]->skillSheet.closeSkillSheet();
+			}
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
-			if ( capture_mouse )
+			if ( capture_mouse && !gamePaused )
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
@@ -4145,6 +4560,7 @@ void ingameHud()
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
@@ -4153,12 +4569,15 @@ void ingameHud()
 			continue;
 		}
 		//drawSkillsSheet(player);
-		if ( !nohud )
+		if ( !gamePaused )
 		{
-			drawStatusNew(player);
+			if ( !nohud )
+			{
+				drawStatusNew(player);
+			}
+			drawSustainedSpells(player);
+			updateAppraisalItemBox(player);
 		}
-		drawSustainedSpells(player);
-		updateAppraisalItemBox(player);
 
 		// inventory and stats
 		if ( players[player]->shootmode == false )
@@ -4387,9 +4806,12 @@ void ingameHud()
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 				{
 					if ( followerMenu.followerToCommand
@@ -4436,11 +4858,29 @@ void ingameHud()
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
-				pos.x = inputs.getMouse(player, Inputs::X) - cursor_bmp->w / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - cursor_bmp->h / 2;
-				pos.w = 0;
-				pos.h = 0;
-				drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				real_t& mouseAnim = inputs.getVirtualMouse(player)->mouseAnimationPercent;
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mouseAnim = .5;
+				}
+				if ( mouseAnim > .25 )
+				{
+					cursor = Image::get("images/system/cursor_hand2.png");
+				}
+				if ( mouseAnim > 0.0 )
+				{
+					mouseAnim -= .05;
+				}
+				if ( keystatus[SDL_SCANCODE_J] )
+				{
+					cursor = Image::get("images/system/cursor.png");
+				}
+				pos.x = inputs.getMouse(player, Inputs::X) - (mouseAnim * cursor->getWidth() / 7) - cursor->getWidth() / 2;
+				pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * cursor->getHeight() / 7) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 			}
 		}
 		else if ( !nohud )
@@ -4457,7 +4897,7 @@ void ingameHud()
 				{
 					pos.x -= cursor_bmp->w / 2;
 					pos.y -= cursor_bmp->h / 2;
-					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+					drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 					pos.x += 24;
 					pos.y += 24;
 				}
@@ -4467,7 +4907,7 @@ void ingameHud()
 					{
 						pos.x -= cursor_bmp->w / 2;
 						pos.y -= cursor_bmp->h / 2;
-						drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+						drawImageAlpha(cursor_bmp, NULL, &pos, 191);
 
 						pos.x = players[player]->camera_midx();
 						pos.y = players[player]->camera_midy();
@@ -4948,6 +5388,15 @@ int main(int argc, char** argv)
 		{
 			loadDefaultConfig();
 		}
+		bool load_successful = MainMenu::settingsLoad();
+		if ( load_successful ) {
+			MainMenu::settingsApply();
+		}
+		else {
+			MainMenu::settingsReset();
+			MainMenu::settingsApply();
+			skipintro = false;
+		}
 
 		// initialize map
 		map.tiles = nullptr;
@@ -5105,34 +5554,34 @@ int main(int argc, char** argv)
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
 					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 255, 32, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
-					if ( (logoalpha >= 255 
-						|| keystatus[SDL_SCANCODE_ESCAPE] 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL)) && !fadeout )
+					if ( logoalpha >= 255 && !fadeout )
 					{
-						fadeout = true;
+						if ( !skipintro && !strcmp(classtoquickstart, "") )
+						{
+							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
+						}
+						else
+						{
+							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
+						}
 					}
 					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] 
 						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT)
 						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL))
 					{
+						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
 						fadealpha = 255;
-#if (!defined STEAMWORKS && !defined USE_EOS && !defined NINTENDO)
-						introstage = 0;
-						fadeout = false;
-						fadefinished = false;
-#else
 						int menuMapType = 0;
 						switch ( rand() % 4 ) // STEAM VERSION INTRO
 						{
 							case 0:
 							case 1:
-							case 2:
 								menuMapType = loadMainMenuMap(true, false);
 								break;
+							case 2:
 							case 3:
 								menuMapType = loadMainMenuMap(false, false);
 								break;
@@ -5143,115 +5592,20 @@ int main(int argc, char** argv)
 						multiplayer = 0;
 						assignActions(&map);
 						generatePathMaps();
-						fadeout = true;
-						fadefinished = false;
+						introstage = 1;
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
-							introstage = 6;
-#if defined(USE_FMOD) || defined(USE_OPENAL)
-							playMusic(introductionmusic, true, false, false);
-#endif
+							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 						}
 						else
 						{
-							introstage = 1;
-							fadeout = false;
-							fadefinished = false;
-#if defined(USE_FMOD) || defined(USE_OPENAL)
-							if ( menuMapType == 1 )
-							{
-								playMusic(intromusic[2], true, false, false);
-							}
-							else
-							{
-								playMusic(intromusic[1], true, false, false);
-							}
-#endif
+							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
 						}
-#endif
 					}
 				}
 				else if ( introstage == 0 )
 				{
-					// hack to fix these things from breaking everything...
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						players[i]->hud.arm = nullptr;
-						players[i]->hud.weapon = nullptr;
-						players[i]->hud.magicLeftHand = nullptr;
-						players[i]->hud.magicRightHand = nullptr;
-					}
-
-					drawRect(NULL, 0, 255);
-					char* banner_text1 = language[738];
-					char const * const banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
-					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
-					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
-					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, true, banner_text2);
-
-					int time_passed = 0;
-					if (old_sdl_ticks == 0)
-					{
-						old_sdl_ticks = SDL_GetTicks();
-					}
-					time_passed = SDL_GetTicks() - old_sdl_ticks;
-					old_sdl_ticks = SDL_GetTicks();
-					indev_timer += time_passed;
-
-					int menuMapType = 0;
-					//if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
-					if ( (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL)
-						|| keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE]
-						|| keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] 
-						|| indev_timer >= indev_displaytime) && !fadeout)
-					{
-						switch ( rand() % 4 ) // DRM FREE VERSION INTRO
-						{
-							case 0:
-							case 1:
-							case 2:
-								menuMapType = loadMainMenuMap(true, false);
-								break;
-							case 3:
-								menuMapType = loadMainMenuMap(false, false);
-								break;
-							default:
-								break;
-						}
-						numplayers = 0;
-						multiplayer = 0;
-						assignActions(&map);
-						generatePathMaps();
-						fadeout = true;
-						fadefinished = false;
-					}
-					if ( fadefinished )
-					{
-						if ( !skipintro && !strcmp(classtoquickstart, "") )
-						{
-							introstage = 6;
-#ifdef MUSIC
-							playMusic(introductionmusic, true, false, false);
-#endif
-						}
-						else
-						{
-							introstage = 1;
-							fadeout = false;
-							fadefinished = false;
-#ifdef MUSIC
-							if ( menuMapType == 1 )
-							{
-								playMusic(intromusic[2], true, false, false);
-							}
-							else
-							{
-								playMusic(intromusic[1], true, false, false);
-							}
-#endif
-						}
-					}
+					// DEPRECATED
 				}
 				else
 				{
@@ -5396,7 +5750,7 @@ int main(int argc, char** argv)
 
 						if (newui)
 						{
-							MainMenu::doMainMenu();
+							MainMenu::doMainMenu(!intro);
 						}
 						else
 						{
@@ -5410,15 +5764,17 @@ int main(int argc, char** argv)
 						// draw mouse
 						if ( !movie )
 						{
-							for ( int i = 0; i < MAXPLAYERS; ++i )
+							// only draw 1 cursor in the main menu
+							for ( int i = 0; i < 1; ++i )
 							{
 								if ( inputs.getVirtualMouse(i)->draw_cursor )
 								{
-									pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-									pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-									pos.w = 0;
-									pos.h = 0;
-									drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+									auto cursor = Image::get("images/system/cursor_hand.png");
+									pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+									pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+									pos.w = cursor->getWidth();
+									pos.h = cursor->getHeight();
+									cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 								}
 							}
 						}
@@ -5519,12 +5875,41 @@ int main(int argc, char** argv)
 
 				// main drawing
 				drawClearBuffers();
+
+				if ( TimerExperiments::bUseTimerInterpolation )
+				{
+					TimerExperiments::updateClocks();
+					//std::string timerOutput = TimerExperiments::render(TimerExperiments::cameraRenderState[0].yaw);
+					//cameras[0].x = players[0]->entity->x / 16.0;//TimerExperiments::cameraRenderState.x.position;
+					//cameras[0].y = players[0]->entity->y / 16.0;//TimerExperiments::cameraRenderState.y.position;
+					//cameras[0].z = TimerExperiments::cameraRenderState.z.position;
+					//printTextFormatted(font8x8_bmp, 8, 20, "%s", timerOutput.c_str());
+					for ( node_t* node = map.entities->first; node; node = node->next )
+					{
+						entity = (Entity*)node->element;
+						if ( entity->bUseRenderInterpolation )
+						{
+							entity->lerp_ox = entity->x;
+							entity->lerp_oy = entity->y;
+							entity->x = entity->lerpRenderState.x.position * 16.0;
+							entity->y = entity->lerpRenderState.y.position * 16.0;
+						}
+					}
+				}
+
+
 				for (int c = 0; c < MAXPLAYERS; ++c) 
 				{
 					auto& camera = cameras[c];
 					auto& cvars = cameravars[c];
+					TimerExperiments::renderCameras(camera, c);
 					camera.ang += cvars.shakex2;
 					camera.vang += cvars.shakey2 / 200.0;
+
+					for ( auto& HPBar : enemyHPDamageBarHandler[c].HPBars )
+					{
+						HPBar.second.updateWorldCoordinates(); // update enemy bar world coordinates before drawEntities3D called
+					}
 				}
 
 				if ( true )
@@ -5565,40 +5950,10 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								if (playercount == 1)
-								{
-									camera.winx = 0;
-									camera.winy = 0;
-									camera.winw = xres;
-									camera.winh = yres;
-								} 
-								else if (playercount == 2)
-								{
-									if ( players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL )
-									{
-										// divide screen vertically
-										camera.winx = c * xres / 2;
-										camera.winy = 0;
-										camera.winw = xres / 2;
-										camera.winh = yres;
-									}
-									else
-									{
-										// divide screen horizontally
-										camera.winx = 0;
-										camera.winy = c * yres / 2;
-										camera.winw = xres;
-										camera.winh = yres / 2;
-									}
-								} 
-								else if (playercount >= 3) 
-								{
-									// divide screen into quadrants
-									camera.winx = (c % 2) * xres / 2;
-									camera.winy = (c / 2) * yres / 2;
-									camera.winw = xres / 2;
-									camera.winh = yres / 2;
-								}
+								camera.winx = players[c]->camera().winx;
+								camera.winy = players[c]->camera().winy;
+								camera.winw = players[c]->camera().winw;
+								camera.winh = players[c]->camera().winh;
 							}
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
@@ -5718,6 +6073,7 @@ int main(int argc, char** argv)
 
 							//drawFloors(&camera);
 							drawEntities3D(&camera, REALCOLORS);
+
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
 								camera.ang -= cosspin * drunkextend;
@@ -5727,6 +6083,19 @@ int main(int argc, char** argv)
 							auto& cvars = cameravars[c];
 							camera.ang -= cvars.shakex2;
 							camera.vang -= cvars.shakey2 / 200.0;
+						}
+					}
+				}
+
+				if ( TimerExperiments::bUseTimerInterpolation )
+				{
+					for ( node_t* node = map.entities->first; node; node = node->next )
+					{
+						entity = (Entity*)node->element;
+						if ( entity->bUseRenderInterpolation )
+						{
+							entity->x = entity->lerp_ox;
+							entity->y = entity->lerp_oy;
 						}
 					}
 				}
@@ -5756,33 +6125,14 @@ int main(int argc, char** argv)
 
 				doFrames();
 
-				if ( !gamePaused )
-				{
-					if ( newui ) 
-					{
-						newIngameHud();
-					}
-					else 
-					{
-						ingameHud();
-					}
-				}
-				else if ( !multiplayer )
-				{
-					// darken the rest of the screen
-					src.x = 0;
-					src.y = 0;
-					src.w = mainsurface->w;
-					src.h = mainsurface->h;
-					drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 127);
-				}
+				ingameHud();
 
 				if ( gamePaused )
 				{
 					// handle menu
 					if (newui)
 					{
-						MainMenu::doMainMenu();
+						MainMenu::doMainMenu(!intro);
 					}
 					else
 					{
@@ -5791,6 +6141,8 @@ int main(int argc, char** argv)
 				}
 				else
 				{
+					MainMenu::destroyMainMenu();
+
 					// draw subwindow
 					if ( !movie )
 					{
@@ -5828,13 +6180,14 @@ int main(int argc, char** argv)
 					}
 					if (((subwindow && !players[i]->shootmode) || gamePaused))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor )
+						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == clientnum || !gamePaused) )
 						{
-							pos.x = inputs.getMouse(i, Inputs::X) - cursor_bmp->w / 2;
-							pos.y = inputs.getMouse(i, Inputs::Y) - cursor_bmp->h / 2;
-							pos.w = 0;
-							pos.h = 0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
 
@@ -5943,7 +6296,12 @@ int main(int argc, char** argv)
 			// increase the cycle count
 			cycles++;
 		}
+		if ( !load_successful ) {
+			skipintro = true;
+		}
 		saveConfig("default.cfg");
+		MainMenu::settingsMount();
+		(void)MainMenu::settingsSave();
 
 		// deinit
 		deinitGame();

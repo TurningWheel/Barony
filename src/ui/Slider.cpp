@@ -13,8 +13,8 @@ Slider::Slider(Frame& _parent) {
 	_parent.adoptWidget(*this);
 }
 
-void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
-	if (invisible) {
+void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if ( invisible || isDisabled() ) {
 		return;
 	}
 	if (maxValue == minValue) {
@@ -23,15 +23,14 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 
 	SDL_Rect _handleSize, _railSize;
 
-	if (orientation == SLIDER_HORIZONTAL) {
-		handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
-		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
-	} else if (orientation == SLIDER_VERTICAL) {
-		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
-		handleSize.y = railSize.y - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.h;
-	}
-
+#ifdef EDITOR
 	bool focused = highlighted || selected;
+#else
+	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
+#endif
+
+	auto white = Image::get("images/system/white.png");
+	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 
 	// draw rail
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
@@ -40,11 +39,16 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
 		if (railImage.empty()) {
-			int x = (_railSize.x) * (float)xres / (float)Frame::virtualScreenX;
-			int y = (_railSize.y) * (float)yres / (float)Frame::virtualScreenY;
-			int w = (_railSize.x + _railSize.w) * (float)xres / (float)Frame::virtualScreenX;
-			int h = (_railSize.y + _railSize.h) * (float)yres / (float)Frame::virtualScreenY;
-			drawDepressed(x, y, w, h);
+			Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
+			Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
+			Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
+			Uint8 a = color >> mainsurface->format->Ashift;
+			Uint32 darkColor =
+				(Uint32)r << mainsurface->format->Rshift |
+				(Uint32)g << mainsurface->format->Gshift |
+				(Uint32)b << mainsurface->format->Bshift |
+				(Uint32)a << mainsurface->format->Ashift;
+			white->drawColor(nullptr, _railSize, viewport, darkColor);
 		} else {
 			Frame::image_t image;
 			image.path = railImage;
@@ -66,6 +70,16 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 	}
 	
 	// draw handle
+	SDL_Rect handleSize = this->handleSize;
+	if (handleSize.x == 0 && handleSize.y == 0) {
+		if (orientation == SLIDER_HORIZONTAL) {
+			handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
+			handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+		} else if (orientation == SLIDER_VERTICAL) {
+			handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+			handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
+		}
+	}
 	_handleSize.x = _size.x + std::max(0, handleSize.x - _actualSize.x);
 	_handleSize.y = _size.y + std::max(0, handleSize.y - _actualSize.y);
 	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
@@ -75,11 +89,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 			(handleImageActivated.empty() ? handleImage : handleImageActivated) :
 			handleImage;
 		if (imageToUse.empty()) {
-			int x = (_handleSize.x) * (float)xres / (float)Frame::virtualScreenX;
-			int y = (_handleSize.y) * (float)yres / (float)Frame::virtualScreenY;
-			int w = (_handleSize.x + _handleSize.w) * (float)xres / (float)Frame::virtualScreenX;
-			int h = (_handleSize.y + _handleSize.h) * (float)yres / (float)Frame::virtualScreenY;
-			drawWindow(x, y, w, h);
+			white->drawColor(nullptr, _handleSize, viewport, color);
 		} else {
 			Frame::image_t image;
 			image.path = imageToUse;
@@ -100,16 +110,56 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 		}
 	}
 
+	// draw user stuff
 	SDL_Rect scaledHandle;
-	scaledHandle.x = _handleSize.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledHandle.y = _handleSize.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledHandle.w = _handleSize.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledHandle.h = _handleSize.h * (float)yres / (float)Frame::virtualScreenY;
-	drawExtra(scaledHandle, selectedWidgets);
+	scaledHandle.x = _handleSize.x;
+	scaledHandle.y = _handleSize.y;
+	scaledHandle.w = _handleSize.w;
+	scaledHandle.h = _handleSize.h;
+	if (drawCallback) {
+		drawCallback(*this, scaledHandle);
+	}
+}
+
+void Slider::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (invisible) {
+		return;
+	}
+	SDL_Rect _handleSize;
+	SDL_Rect handleSize = this->handleSize;
+	if (handleSize.x == 0 && handleSize.y == 0) {
+		if (orientation == SLIDER_HORIZONTAL) {
+			handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
+			handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+		} else if (orientation == SLIDER_VERTICAL) {
+			handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+			handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
+		}
+	}
+	_handleSize.x = _size.x + std::max(0, handleSize.x - _actualSize.x);
+	_handleSize.y = _size.y + std::max(0, handleSize.y - _actualSize.y);
+	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
+	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
+	if (_handleSize.w <= 0 || _handleSize.h <= 0) {
+		return;
+	}
+	Widget::drawPost(_handleSize, selectedWidgets);
+}
+
+void Slider::updateHandlePosition() {
+	if (orientation == SLIDER_HORIZONTAL) {
+		handleSize.x = (railSize.x + border) - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.w - border * 2);
+		handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
+	} else if (orientation == SLIDER_VERTICAL) {
+		handleSize.x = railSize.x + railSize.w / 2 - handleSize.w / 2;
+		handleSize.y = (railSize.y + border) - handleSize.h / 2 + ((float)(value - minValue) / (maxValue - minValue)) * (railSize.h - border * 2);
+	}
 }
 
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
 	Widget::process();
+
+	updateHandlePosition();
 
 	result_t result;
 	result.tooltip = nullptr;
@@ -131,9 +181,6 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 
 	SDL_Rect _handleSize, _railSize;
 
-	handleSize.x = railSize.x - handleSize.w / 2 + ((float)(value - minValue) / (maxValue - minValue)) * railSize.w;
-	handleSize.y = railSize.y + railSize.h / 2 - handleSize.h / 2;
-
 	_railSize.x = _size.x + std::max(0, railSize.x - _actualSize.x);
 	_railSize.y = _size.y + std::max(0, railSize.y - _actualSize.y);
 	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
@@ -144,8 +191,8 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	_handleSize.w = std::min(handleSize.w, _size.w - handleSize.x + _actualSize.x) + std::min(0, handleSize.x - _actualSize.x);
 	_handleSize.h = std::min(handleSize.h, _size.h - handleSize.y + _actualSize.y) + std::min(0, handleSize.y - _actualSize.y);
 
-	int offX = _size.x + railSize.x - _actualSize.x;
-	int offY = _size.y + railSize.y - _actualSize.y;
+	int offX = _size.x + (railSize.x + border) - _actualSize.x;
+	int offY = _size.y + (railSize.y + border) - _actualSize.y;
 	if (orientation == SLIDER_HORIZONTAL) {
 		_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
 		_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
@@ -168,8 +215,8 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-#ifndef NINTENDO
-	if (rectContainsPoint(_size, omousex, omousey)) {
+#if !defined(NINTENDO) && !defined(EDITOR)
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();
@@ -191,10 +238,10 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 			pressed = true;
 			float oldValue = value;
 			if (orientation == SLIDER_HORIZONTAL) {
-				value = ((float)(mousex - offX) / railSize.w) * (float)(maxValue - minValue) + minValue;
+				value = ((float)(mousex - offX) / (railSize.w - border * 2)) * (float)(maxValue - minValue) + minValue;
 			}
 			else if (orientation == SLIDER_VERTICAL) {
-				value = ((float)(mousey - offY) / railSize.h) * (float)(maxValue - minValue) + minValue;
+				value = ((float)(mousey - offY) / (railSize.h - border * 2)) * (float)(maxValue - minValue) + minValue;
 			}
 			value = std::min(std::max(minValue, value), maxValue);
 			if (oldValue != value) {

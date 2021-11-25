@@ -2613,7 +2613,7 @@ void assignActions(map_t* map)
 			{
 				if ( numplayers >= 0 && numplayers < MAXPLAYERS )
 				{
-					if ( client_disconnected[numplayers] )
+					if ( client_disconnected[numplayers] && !intro )
 					{
 						// don't spawn missing players
 						++numplayers;
@@ -5646,6 +5646,29 @@ void assignActions(map_t* map)
 				item = nullptr;
 			}
 				break;
+			case 168: 
+				//Statue Animator
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 3.5;
+				entity->behavior = &actStatueAnimator;
+				entity->sprite = 995;
+				entity->skill[0] = 0;
+				entity->flags[BRIGHT] = true;
+				break;
+			case 169:
+				//Statue
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 3.5;
+				entity->behavior = &actStatue;
+				entity->sprite = 995;
+				entity->yaw = entity->statueDir * PI / 2;
+				break;
 			default:
 				break;
 		}
@@ -5824,7 +5847,7 @@ void mapFoodOnLevel(int player)
 	}
 }
 
-int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
+int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap)
 {
 	bool foundVictory = false;
 	for ( node_t* node = topscores.first; node != nullptr && !foundVictory; node = node->next )
@@ -5846,8 +5869,89 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 
 	std::string fullMapName;
 
-	if ( forceVictoryMap || (foundVictory && rand() % 5 == 0) )
+	int selection = forcemap;
+	if (selection <= 0) {
+		if ( forceVictoryMap || (foundVictory && rand() % 5 == 0) )
+		{
+			selection = 9;
+		}
+		else if ( blessedAdditionMaps )
+		{
+			selection = 5 + rand() % 4;
+		}
+		else
+		{
+			selection = 1 + rand() % 4;
+		}
+	}
+
+	switch ( selection )
 	{
+	case 1:
+		fullMapName = physfsFormatMapName("mainmenu1");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 8;
+		menucam.y = 4.5;
+		menucam.z = 0;
+		menucam.ang = 0.6;
+		return 0;
+	case 2:
+		fullMapName = physfsFormatMapName("mainmenu2");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 7;
+		menucam.y = 4;
+		menucam.z = -4;
+		menucam.ang = 1.0;
+		return 0;
+	case 3:
+		fullMapName = physfsFormatMapName("mainmenu3");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 5;
+		menucam.y = 3;
+		menucam.z = 0;
+		menucam.ang = 1.0;
+		return 0;
+	case 4:
+		fullMapName = physfsFormatMapName("mainmenu4");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 6;
+		menucam.y = 14.5;
+		menucam.z = -24;
+		menucam.ang = 5.0;
+		return 0;
+	case 5:
+		fullMapName = physfsFormatMapName("mainmenu5");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 30.8;
+		menucam.y = 24.3;
+		menucam.z = 0;
+		menucam.ang = 2.76;
+		return 0;
+	case 6:
+		fullMapName = physfsFormatMapName("mainmenu6");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 11;
+		menucam.y = 4;
+		menucam.z = 0;
+		menucam.ang = 2.4;
+		return 0;
+	case 7:
+		fullMapName = physfsFormatMapName("mainmenu7");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 8.7;
+		menucam.y = 9.3;
+		menucam.z = 0;
+		menucam.ang = 5.8;
+		return 0;
+	case 8:
+		fullMapName = physfsFormatMapName("mainmenu8");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+		menucam.x = 3.31;
+		menucam.y = 5.34;
+		menucam.z = 0;
+		menucam.ang = 0.96;
+		return 0;
+	case 9:
 		fullMapName = physfsFormatMapName("mainmenu9");
 		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 		menucam.x = 34.3;
@@ -5855,86 +5959,9 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 		menucam.z = -20;
 		menucam.ang = 5.84;
 		return 1;
+	default:
+		assert(0 && "selected invalid main menu map");
+		return -1;
 	}
-	else if ( blessedAdditionMaps )
-	{
-		switch ( rand() % 4 )
-		{
-			case 0:
-				fullMapName = physfsFormatMapName("mainmenu5");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 30.8;
-				menucam.y = 24.3;
-				menucam.z = 0;
-				menucam.ang = 2.76;
-				break;
-			case 1:
-				fullMapName = physfsFormatMapName("mainmenu6");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 11;
-				menucam.y = 4;
-				menucam.z = 0;
-				menucam.ang = 2.4;
-				break;
-			case 2:
-				fullMapName = physfsFormatMapName("mainmenu7");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 8.7;
-				menucam.y = 9.3;
-				menucam.z = 0;
-				menucam.ang = 5.8;
-				break;
-			case 3:
-				fullMapName = physfsFormatMapName("mainmenu8");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 3.31;
-				menucam.y = 5.34;
-				menucam.z = 0;
-				menucam.ang = 0.96;
-				break;
-			default:
-				break;
-		}
-	}
-	else
-	{
-		switch ( rand() % 4 )
-		{
-			case 0:
-				fullMapName = physfsFormatMapName("mainmenu1");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 8;
-				menucam.y = 4.5;
-				menucam.z = 0;
-				menucam.ang = 0.6;
-				break;
-			case 1:
-				fullMapName = physfsFormatMapName("mainmenu2");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 7;
-				menucam.y = 4;
-				menucam.z = -4;
-				menucam.ang = 1.0;
-				break;
-			case 2:
-				fullMapName = physfsFormatMapName("mainmenu3");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 5;
-				menucam.y = 3;
-				menucam.z = 0;
-				menucam.ang = 1.0;
-				break;
-			case 3:
-				fullMapName = physfsFormatMapName("mainmenu4");
-				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-				menucam.x = 6;
-				menucam.y = 14.5;
-				menucam.z = -24;
-				menucam.ang = 5.0;
-				break;
-		}
-	}
-
-	return 0;
 }
 

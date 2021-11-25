@@ -1,5 +1,10 @@
 #pragma once
 
+#include <unordered_map>
+#include <string>
+#include "../main.hpp"
+#include "../json.hpp"
+
 class Button;
 
 namespace MainMenu {
@@ -7,6 +12,16 @@ namespace MainMenu {
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
+
+	enum class FadeDestination : Uint8 {
+		None = 0,
+		RootMainMenu = 1,
+		IntroStoryScreen = 2,
+		HallOfTrials = 3,
+		GameStart = 4,
+	};
+
+	void beginFade(FadeDestination);
 
 	struct InventorySorting {
 		bool hotbarWeapons = true;
@@ -36,15 +51,54 @@ namespace MainMenu {
 		inline void save();
 		static inline InventorySorting load();
 		static inline InventorySorting reset();
+		void serialize(FileInterface*);
+	};
+
+	struct Bindings {
+		int devices[4];
+		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
+		std::unordered_map<std::string, std::string> gamepad_bindings[4];
+		std::unordered_map<std::string, std::string> joystick_bindings[4];
+		inline void save();
+		static inline Bindings load();
+		static inline Bindings reset();
+		void serialize(FileInterface*);
+	};
+
+	struct Minimap {
+		int map_scale = 2;
+		int icon_scale = 2;
+		int foreground_opacity = 100;
+		int background_opacity = 100;
+		inline void save();
+		static inline Minimap load();
+		static inline Minimap reset();
+		void serialize(FileInterface*);
+	};
+
+	struct Messages {
+		bool combat = true;
+		bool status = true;
+		bool inventory = true;
+		bool equipment = true;
+		bool world = true;
+		bool chat = true;
+		bool progression = true;
+		bool interaction = true;
+		bool inspection = true;
+		inline void save();
+		static inline Messages load();
+		static inline Messages reset();
+		void serialize(FileInterface*);
 	};
 
 	struct AllSettings {
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
-		//Whatever minimap;
+		Minimap minimap;
 		bool show_messages_enabled;
-		//Whatever show_messages;
+		Messages show_messages;
 		bool show_player_nametags_enabled;
 		bool show_hud_enabled;
 		bool show_ip_address_enabled;
@@ -54,6 +108,7 @@ namespace MainMenu {
 		bool shaking_enabled;
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
+		int window_mode; // 0 = windowed, 1 = fullscreen, 2 = borderless
 		int resolution_x;
 		int resolution_y;
 		bool vsync_enabled;
@@ -69,7 +124,7 @@ namespace MainMenu {
 		bool minimap_pings_enabled;
 		bool player_monster_sounds_enabled;
 		bool out_of_focus_audio_enabled;
-		//Whatever bindings;
+		Bindings bindings;
 		bool numkeys_in_inventory_enabled;
 		float mouse_sensitivity;
 		bool reverse_mouse_enabled;
@@ -86,7 +141,18 @@ namespace MainMenu {
 		bool random_traps_enabled;
 		bool extra_life_enabled;
 		bool cheats_enabled;
+		bool skipintro;
+		inline void save();
+		static inline AllSettings load();
+		static inline AllSettings reset();
+		void serialize(FileInterface*);
 	};
+
+	void settingsApply();	// write settings to global variables
+	void settingsMount();	// read settings from global variables
+	bool settingsSave();	// write settings to disk
+	bool settingsLoad();	// read settings from disk
+	void settingsReset();	// default settings
 
 	void settingsUI(Button&);
 	void settingsVideo(Button&);
@@ -108,12 +174,17 @@ namespace MainMenu {
 	void mainPlayModdedGame(Button&);
 	void mainHallOfRecords(Button&);
 	void mainSettings(Button&);
-	void mainQuit(Button&);
+	void mainClose(Button&);
+	void mainEndLife(Button&);
+	void mainRestartGame(Button&);
+	void mainQuitToMainMenu(Button&);
+	void mainQuitToDesktop(Button&);
 
-	void doMainMenu();
-	void createMainMenu();
+	void doMainMenu(bool ingame);
+	void createMainMenu(bool ingame);
 	void destroyMainMenu();
 	void createDummyMainMenu();
+	void closeMainMenu();
 
 	enum class LobbyType {
 		LobbyLocal,

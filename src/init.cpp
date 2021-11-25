@@ -33,7 +33,9 @@
  #include <steam/steam_api.h>
  #include "steam.hpp"
 #endif // STEAMWORKS
+#ifndef EDITOR
 #include "player.hpp"
+#endif
 #include "items.hpp"
 #include "cppfuncs.hpp"
 #include "ui/Text.hpp"
@@ -134,6 +136,7 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("logfiles");
 			PHYSFS_mkdir("data");
 			PHYSFS_mkdir("data/custom-monsters");
+			PHYSFS_mkdir("data/statues");
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;
@@ -284,6 +287,30 @@ int initApp(char const * const title, int fullscreen)
 		{
 			noextensions = true;
 		}
+		else if ( (SDL_glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)SDL_GL_GetProcAddress("glFramebufferTexture2D")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glDrawBuffers = (PFNGLDRAWBUFFERSPROC)SDL_GL_GetProcAddress("glDrawBuffers")) == NULL )
+		{
+			noextensions = true;
+		}
+		else if ( (SDL_glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)SDL_GL_GetProcAddress("glBlendFuncSeparate")) == NULL )
+		{
+			noextensions = true;
+		}
 /*
 // Unused
 		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
@@ -369,17 +396,7 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// init new ui engine
-#ifndef EDITOR
-	gui = new Frame("root");
-	SDL_Rect guiRect;
-	guiRect.x = 0;
-	guiRect.y = 0;
-	guiRect.w = Frame::virtualScreenX;
-	guiRect.h = Frame::virtualScreenY;
-	gui->setSize(guiRect);
-	gui->setActualSize(guiRect);
-	gui->setHollow(true);
-#endif
+	Frame::guiInit();
 
 	// cache language entries
 	bool cacheText = false;
@@ -401,12 +418,13 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	// create player classes
+	// TODO/FIXME: why isn't this in initGame? why is it in init.cpp?
 #ifndef EDITOR
 	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		players[c] = new Player(c, true);
 	}
-#endif // !EDITOR
+#endif
 
 	createLoadingScreen(10);
 	doLoadingScreen();
@@ -964,8 +982,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 				{
 					FileIO::close(model_cache);
 				}
+				return;
 			}
-			return;
 		}
 	}
 
@@ -1924,12 +1942,20 @@ void generateVBOs(int start, int end)
 	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
 	SDL_glGenBuffers(count, color_shifted_buffers.get());
 
+	std::unique_ptr<GLuint[]> grayscale_color_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, grayscale_color_buffers.get());
+
+	std::unique_ptr<GLuint[]> grayscale_color_shifted_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, grayscale_color_shifted_buffers.get());
+
 	for ( int c = start; c < end; ++c )
 	{
 		polymodel_t *model = &polymodels[c];
 		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> grayscale_colors(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> grayscale_colors_shifted(new GLfloat[9 * model->numfaces]);
 		for ( int i = 0; i < model->numfaces; i++ )
 		{
 			const polytriangle_t *face = &model->faces[i];
@@ -1949,12 +1975,23 @@ void generateVBOs(int start, int end)
 				colors_shifted[data_index] = face->b / 255.f;
 				colors_shifted[data_index + 1] = face->r / 255.f;
 				colors_shifted[data_index + 2] = face->g / 255.f;
+
+				real_t grayscaleFactor = (face->r + face->g + face->b) / 3.0;
+				grayscale_colors[data_index] = grayscaleFactor / 255.f;
+				grayscale_colors[data_index + 1] = grayscaleFactor / 255.f;
+				grayscale_colors[data_index + 2] = grayscaleFactor / 255.f;
+
+				grayscale_colors_shifted[data_index] = grayscaleFactor / 255.f;
+				grayscale_colors_shifted[data_index + 1] = grayscaleFactor / 255.f;
+				grayscale_colors_shifted[data_index + 2] = grayscaleFactor / 255.f;
 			}
 		}
 		model->va = vas[c - start];
 		model->vbo = vbos[c - start];
 		model->colors = color_buffers[c - start];
 		model->colors_shifted = color_shifted_buffers[c - start];
+		model->grayscale_colors = grayscale_color_buffers[c - start];
+		model->grayscale_colors_shifted = grayscale_color_shifted_buffers[c - start];
 		SDL_glBindVertexArray(model->va);
 
 		// vertex data
@@ -1969,6 +2006,14 @@ void generateVBOs(int start, int end)
 		// shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+
+		// grayscale color data
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+
+		// grayscale shifted color data
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 	}
 }
 
@@ -2024,12 +2069,7 @@ int deinitApp()
 	Text::dumpCache();
 	Image::dumpCache();
 	Font::dumpCache();
-#ifndef EDITOR
-	if (gui) {
-		delete gui;
-		gui = nullptr;
-	}
-#endif
+	Frame::guiDestroy();
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )
@@ -2161,6 +2201,18 @@ int deinitApp()
 				if ( polymodels[c].va )
 				{
 					SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+				}
+				if ( polymodels[c].colors_shifted )
+				{
+					SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+				}
+				if ( polymodels[c].grayscale_colors )
+				{
+					SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+				}
+				if ( polymodels[c].grayscale_colors_shifted )
+				{
+					SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 				}
 			}
 		}
@@ -2597,9 +2649,15 @@ bool initVideo()
 
 -------------------------------------------------------------------------------*/
 
-bool changeVideoMode()
+bool changeVideoMode(int new_xres, int new_yres)
 {
-	printlog("changing video mode.\n");
+	if (new_xres) {
+		xres = new_xres;
+	}
+	if (new_yres) {
+		yres = new_yres;
+	}
+	printlog("changing video mode (%d x %d).\n", xres, yres);
 #ifdef PANDORA
 	GO_InitFBO();
 #else
@@ -2607,6 +2665,11 @@ bool changeVideoMode()
 
 	// delete old texture names (they're going away anyway)
 	glDeleteTextures(MAXTEXTURES, texid);
+
+	// destroy gui fbo
+#ifndef EDITOR
+	Frame::fboDestroy();
+#endif
 
 	// delete vertex data
 	if ( !disablevbos )
@@ -2616,6 +2679,9 @@ bool changeVideoMode()
 			SDL_glDeleteBuffers(1, &polymodels[c].vbo);
 			SDL_glDeleteBuffers(1, &polymodels[c].colors);
 			SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+			SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+			SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+			SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 		}
 	}
 
@@ -2673,7 +2739,24 @@ bool changeVideoMode()
 	Font::dumpCache();
 #endif // !EDITOR
 
+	// create new frame fbo
+#ifndef EDITOR
+	Frame::fboInit();
 #endif
+
+#endif
+
+	if ( zbuffer != NULL )
+	{
+		free(zbuffer);
+	}
+	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
+	if ( clickmap != NULL )
+	{
+		free(clickmap);
+	}
+	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
+
 	// success
 	return true;
 }

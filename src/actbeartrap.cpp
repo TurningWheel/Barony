@@ -61,9 +61,9 @@ void actBeartrap(Entity* my)
 	// undo beartrap
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
-			if (inrange[i])
+			if ( inrange[i] )
 			{
 				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 				entity->flags[INVISIBLE] = true;
@@ -212,14 +212,7 @@ void actBeartrap(Entity* my)
 							// update enemy bar for attacker
 							if ( !strcmp(stat->name, "") )
 							{
-								if ( stat->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, entity, language[90 + stat->type], stat->HP, stat->MAXHP);
-								}
-								else if ( stat->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, entity, language[2000 + (stat->type - KOBOLD)], stat->HP, stat->MAXHP);
-								}
+								updateEnemyBar(parent, entity, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP);
 							}
 							else
 							{
@@ -623,14 +616,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( !strcmp(stat->name, "") )
 				{
-					if ( stat->type < KOBOLD ) //Original monster count
-					{
-						updateEnemyBar(parent, triggered, language[90 + stat->type], stat->HP, stat->MAXHP);
-					}
-					else if ( stat->type >= KOBOLD ) //New monsters
-					{
-						updateEnemyBar(parent, triggered, language[2000 + (stat->type - KOBOLD)], stat->HP, stat->MAXHP);
-					}
+					updateEnemyBar(parent, triggered, getMonsterLocalizedName(stat->type).c_str(), stat->HP, stat->MAXHP);
 				}
 				else
 				{
@@ -667,7 +653,7 @@ void actBomb(Entity* my)
 	// undo bomb
 	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if ( inrange[i] )
 			{

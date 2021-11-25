@@ -78,6 +78,10 @@ public:
 		Uint32 enemy_timer = 0;
 		Uint32 enemy_bar_color = 0;
 		Uint32 enemy_uid = 0;
+		Uint32 enemy_statusEffects1 = 0;
+		Uint32 enemy_statusEffects2 = 0;
+		Uint32 enemy_statusEffectsLowDuration1 = 0;
+		Uint32 enemy_statusEffectsLowDuration2 = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
 		bool hasDistanceCheck = false;
@@ -86,7 +90,7 @@ public:
 		real_t depletionAnimationPercent = 100.0;
 		float glWorldOffsetY = 0.0;
 		EnemyHPDetails() {};
-		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, char* name, bool isLowPriority)
+		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, const char* name, bool isLowPriority)
 		{
 			if ( Entity* entity = uidToEntity(uid) )
 			{
@@ -114,6 +118,10 @@ public:
 				delete worldTexture;
 				worldTexture = nullptr;
 			}
+			if ( worldSurfaceSpriteStatusEffects ) {
+				SDL_FreeSurface(worldSurfaceSpriteStatusEffects);
+				worldSurfaceSpriteStatusEffects = nullptr;
+			}
 			if ( worldSurfaceSprite ) {
 				SDL_FreeSurface(worldSurfaceSprite);
 				worldSurfaceSprite = nullptr;
@@ -126,11 +134,14 @@ public:
 		real_t screenDistance = 0.0;
 		TempTexture* worldTexture = nullptr;
 		SDL_Surface* worldSurfaceSprite = nullptr;
+		SDL_Surface* worldSurfaceSpriteStatusEffects = nullptr;
+		SDL_Surface* blitEnemyBarStatusEffects(const int player);
+		void updateWorldCoordinates();
 	};
 
 	Uint32 enemy_bar_client_color = 0;
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
-	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority);
+	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority);
 	void displayCurrentHPBar(const int player);
 	void cullExpiredHPBars();
 	EnemyHPDetails* getMostRecentHPBar(int index = 0);
@@ -213,7 +224,7 @@ void updateChestInventory(const int player);
 void updateAppraisalItemBox(const int player);
 void updatePlayerInventory(const int player);
 void updateShopWindow(const int player);
-void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
+void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(const int player, double x, double y);
 
 void selectItemMenuSlot(const int player, const Item& item, int entry);
@@ -295,6 +306,7 @@ void updateMagicGUI();
 extern SDL_Surface* identifyGUI_img;
 
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
+SDL_Surface* getStatusEffectSprite(Entity* entity, Stat* stat, const int effect, const int player);
 
 enum GUICurrentType
 {

@@ -144,6 +144,13 @@ public:
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
 
+	TimerExperiments::EntityStates lerpPreviousState;
+	TimerExperiments::EntityStates lerpCurrentState;
+	TimerExperiments::EntityStates lerpRenderState;
+	real_t lerp_ox;
+	real_t lerp_oy;
+	bool bNeedsRenderPositionInit = true;
+	bool bUseRenderInterpolation = false;
 
 	//--PUBLIC CHEST SKILLS--
 
@@ -219,6 +226,7 @@ public:
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 	real_t& highlightForUI; //fskill[29] for highlighting interactibles
 	real_t& highlightForUIGlow; //fskill[28] for highlighting animation
+	real_t& grayscaleGLRender; //fskill[27] for grayscale rendering
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -504,6 +512,11 @@ public:
 	Sint32& worldTooltipIgnoreDrawing; //skill[5]
 	Sint32& worldTooltipRequiresButtonHeld; //skill[6]
 
+	//--STATUES--
+	Sint32& statueInit; //skill[0]
+	Sint32& statueDir; //skill[1]
+	Sint32& statueId; //skill[3]
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
@@ -524,8 +537,6 @@ public:
 	bool ranbehavior;
 
 	void setObituary(char* obituary);
-
-	char* getMonsterLangEntry();
 
 	void killedByMonsterObituary(Entity* victim);
 
@@ -1033,7 +1044,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 290;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 168;
+static const int NUM_EDITOR_SPRITES = 170;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

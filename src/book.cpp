@@ -358,6 +358,7 @@ void BookParser_t::writeCompiledBooks()
 	std::string inputPath = outputdir;
 	inputPath.append(PHYSFS_getDirSeparator());
 	std::string fileName = "books/compiled_books.json";
+	inputPath.append(fileName);
 
 	File* fp = FileIO::open(inputPath.c_str(), "rb");
 	rapidjson::Document d;
@@ -598,7 +599,7 @@ void BookParser_t::createBook(std::string filename)
 	const int MAX_PARSE_CHARACTERS = 65535;
 	Field* tmpField = new Field(MAX_PARSE_CHARACTERS);
 	tmpField->setSize(SDL_Rect{ 0, 0, Player::BookGUI_t::BOOK_PAGE_WIDTH, Player::BookGUI_t::BOOK_PAGE_HEIGHT });
-	tmpField->setFont("fonts/pixel_maz.ttf#16");
+	tmpField->setFont("fonts/pixel_maz.ttf#32");
 	tmpField->setText(pageText.c_str());
 	tmpField->reflowTextToFit(0);
 
@@ -620,15 +621,12 @@ void BookParser_t::createBook(std::string filename)
 		firstIteration = false;
 		pageText += token;
 		tmpField->setText(pageText.c_str());
-		if ( auto getText = Text::get(tmpField->getText(), tmpField->getFont()) )
+		int textHeight = tmpField->getNumTextLines() * Font::get(tmpField->getFont())->height();
+		if ( textHeight > tmpField->getSize().h )
 		{
-			int textHeight = getText->getHeight();
-			if ( textHeight > tmpField->getSize().h )
-			{
-				// exceeds size, move to next page.
-				newBook.formattedPages.push_back(pageText);
-				pageText = "";
-			}
+			// exceeds size, move to next page.
+			newBook.formattedPages.push_back(pageText);
+			pageText = "";
 		}
 	} while ( (token = nexttoken) != NULL );
 	newBook.formattedPages.push_back(pageText);
@@ -694,7 +692,8 @@ void BookParser_t::createBook(std::string filename)
 	//		}
 	//	}
 	//	tmpField.setText(pageText.c_str());
-	//	if ( auto getText = Text::get(tmpField.getText(), tmpField.getFont()) )
+	//	if ( auto getText = Text::get(tmpField.getText(), tmpField.getFont(),
+	//		makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 	//	{
 	//		if ( getText->getHeight() > tmpField.getSize().h - tmpField.getSize().y )
 	//		{

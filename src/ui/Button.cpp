@@ -1,8 +1,8 @@
 ﻿// Button.cpp
 
 #include "../main.hpp"
-#include "../player.hpp"
 #include "../draw.hpp"
+#include "../player.hpp"
 #include "Frame.hpp"
 #include "Button.hpp"
 #include "Image.hpp"
@@ -60,7 +60,7 @@ static char* tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (invisible) {
 		return;
 	}
@@ -72,64 +72,56 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 		return;
 	}
 
+#ifdef EDITOR
 	bool focused = highlighted || selected;
+#else
+	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
+#endif
 
 	SDL_Rect scaledSize;
-	scaledSize.x = _size.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledSize.y = _size.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledSize.w = _size.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledSize.h = _size.h * (float)yres / (float)Frame::virtualScreenY;
+	scaledSize.x = _size.x;
+	scaledSize.y = _size.y;
+	scaledSize.w = _size.w;
+	scaledSize.h = _size.h;
 
-	if (background.empty()) {
-		SDL_Rect inner;
-		inner.x = (_size.x + border) * (float)xres / (float)Frame::virtualScreenX;
-		inner.y = (_size.y + border) * (float)yres / (float)Frame::virtualScreenY;
-		inner.w = (_size.w - border*2) * (float)xres / (float)Frame::virtualScreenX;
-		inner.h = (_size.h - border*2) * (float)yres / (float)Frame::virtualScreenY;
-		Uint32 color = focused ? highlightColor : this->color;
-		if (pressed) {
-			drawRect(&scaledSize, color, (Uint8)(color>>mainsurface->format->Ashift));
-			drawRect(&inner, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
+	const char* path;
+	auto _background = background.empty() ? "images/system/white.png" : background.c_str();
+	if (pressed) {
+		if (!backgroundActivated.empty()) {
+			path = backgroundActivated.c_str();
+		} else if (!backgroundHighlighted.empty()) {
+			path = backgroundHighlighted.c_str();
 		} else {
-			drawRect(&scaledSize, borderColor, (Uint8)(borderColor>>mainsurface->format->Ashift));
-			drawRect(&inner, color, (Uint8)(color>>mainsurface->format->Ashift));
+			path = _background;
+		}
+	} else if (focused) {
+		if (!backgroundHighlighted.empty()) {
+			path = backgroundHighlighted.c_str();
+		} else {
+			path = _background;
 		}
 	} else {
-		const char* path = "";
-		if (pressed) {
-			if (!backgroundActivated.empty()) {
-				path = backgroundActivated.c_str();
-			} else if (!backgroundHighlighted.empty()) {
-				path = backgroundHighlighted.c_str();
-			} else {
-				path = background.c_str();
-			}
-		} else if (focused) {
-			if (!backgroundHighlighted.empty()) {
-				path = backgroundHighlighted.c_str();
-			} else {
-				path = background.c_str();
-			}
-		} else {
-			path = background.c_str();
-		}
-		Frame::image_t image;
-		image.path = path;
-		image.color = focused ? highlightColor : color;
-		image.disabled = false;
-		image.name = "temp";
-		image.ontop = false;
-		image.pos = {0, 0, size.w, size.h};
-		image.tiled = false;
-		auto frame = static_cast<Frame*>(parent);
-		frame->drawImage(&image, _size,
-			SDL_Rect{
-				std::max(0, _actualSize.x - size.x),
-				std::max(0, _actualSize.y - size.y),
-				0, 0
-			}
-		);
+		path = _background;
 	}
+
+	auto viewport = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+
+	Frame::image_t image;
+	image.path = path;
+	image.color = focused ? highlightColor : color;
+	image.disabled = false;
+	image.name = "temp";
+	image.ontop = false;
+	image.pos = {0, 0, size.w, size.h};
+	image.tiled = false;
+	auto frame = static_cast<Frame*>(parent);
+	frame->drawImage(&image, _size,
+		SDL_Rect{
+			std::max(0, _actualSize.x - size.x),
+			std::max(0, _actualSize.y - size.y),
+			0, 0
+		}
+	);
 
 	SDL_Rect scroll{0, 0, 0, 0};
 	if (size.x - _actualSize.x < 0) {
@@ -161,7 +153,8 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 
 				std::string str = token;
 
-				Text* _text = Text::get(str.c_str(), font.c_str());
+				Text* _text = Text::get(str.c_str(), font.c_str(),
+					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
 				assert(_text);
 
 				int x, y, w, h;
@@ -203,14 +196,14 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 				}
 
 				SDL_Rect scaledPos;
-				scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
-				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
-				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
-				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
+				scaledPos.x = pos.x;
+				scaledPos.y = pos.y;
+				scaledPos.w = pos.w;
+				scaledPos.h = pos.h;
 				if (focused) {
-					_text->drawColor(section, scaledPos, textHighlightColor);
+					_text->drawColor(section, scaledPos, viewport, textHighlightColor);
 				} else {
-					_text->drawColor(section, scaledPos, textColor);
+					_text->drawColor(section, scaledPos, viewport, textColor);
 				}
 			} while ((token = nexttoken) != NULL);
 			free(buf);
@@ -243,11 +236,11 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget
 				}
 
 				SDL_Rect scaledPos;
-				scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
-				scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
-				scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
-				scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
-				iconImg->draw(&section, scaledPos);
+				scaledPos.x = pos.x;
+				scaledPos.y = pos.y;
+				scaledPos.w = pos.w;
+				scaledPos.h = pos.h;
+				iconImg->draw(&section, scaledPos, viewport);
 			}
 		}
 	}
@@ -278,15 +271,32 @@ next:
 			}
 
 			SDL_Rect scaledPos;
-			scaledPos.x = pos.x * (float)xres / (float)Frame::virtualScreenX;
-			scaledPos.y = pos.y * (float)yres / (float)Frame::virtualScreenY;
-			scaledPos.w = pos.w * (float)xres / (float)Frame::virtualScreenX;
-			scaledPos.h = pos.h * (float)yres / (float)Frame::virtualScreenY;
-			iconImg->draw(&section, scaledPos);
+			scaledPos.x = pos.x;
+			scaledPos.y = pos.y;
+			scaledPos.w = pos.w;
+			scaledPos.h = pos.h;
+			iconImg->draw(&section, scaledPos, viewport);
 		}
 	}
 
-	drawExtra(scaledSize, selectedWidgets);
+	// draw user stuff
+	if (drawCallback) {
+		drawCallback(*this, scaledSize);
+	}
+}
+
+void Button::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (invisible) {
+		return;
+	}
+	_size.x += std::max(0, size.x - _actualSize.x);
+	_size.y += std::max(0, size.y - _actualSize.y);
+	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+	_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+	if (_size.w <= 0 || _size.h <= 0) {
+		return;
+	}
+	Widget::drawPost(_size, selectedWidgets);
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
@@ -337,8 +347,8 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 
-#ifndef NINTENDO
-	if (rectContainsPoint(_size, omousex, omousey)) {
+#if !defined(NINTENDO) && !defined(EDITOR)
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();
@@ -361,6 +371,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 				if (style == STYLE_RADIO) {
 					if (!reallyPressed) {
 						result.pressed = pressed = reallyPressed = true;
+						result.clicked = true;
 					}
 				} else {
 					result.pressed = pressed = (reallyPressed == false);
@@ -406,4 +417,16 @@ void Button::scrollParent() {
 		fActualSize.x = (size.x + size.w) - fSize.w;
 	}
 	fparent->setActualSize(fActualSize);
+}
+
+SDL_Rect Button::getAbsoluteSize() const
+{
+	SDL_Rect _size{ size.x, size.y, size.w, size.h };
+	auto _parent = static_cast<Frame*>(this->parent);
+	if ( _parent ) {
+		SDL_Rect absoluteSize = _parent->getAbsoluteSize();
+		_size.x += std::max(0, absoluteSize.x);
+		_size.y += std::max(0, absoluteSize.y);
+	}
+	return _size;
 }

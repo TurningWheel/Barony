@@ -220,6 +220,8 @@ void actLiquid(Entity* my);
 void actEmpty(Entity* my);
 void actFurniture(Entity* my);
 void actMCaxe(Entity* my);
+void actStatueAnimator(Entity* my);
+void actStatue(Entity* my);
 void actDoorFrame(Entity* my);
 void actDeathCam(Entity* my);
 void actPlayerLimb(Entity* my);
@@ -481,3 +483,92 @@ public:
 };
 extern DebugStatsClass DebugStats;
 
+class TimerExperiments
+{
+public:
+	static bool bUseTimerInterpolation;
+	static bool bIsInit;
+	static real_t lerpFactor;
+	static int timeDivision;
+	static bool bDebug;
+	struct Clock
+	{
+		using duration = std::chrono::milliseconds;
+		using rep = duration::rep;
+		using period = duration::period;
+		using time_point = std::chrono::time_point<Clock>;
+		static constexpr bool is_steady = true;
+
+		static time_point now() noexcept
+		{
+			return time_point{ duration{ SDL_GetTicks() } };
+		}
+	};
+
+	struct State
+	{
+		double acceleration;
+		double velocity;
+		double position;
+		void resetMovement();
+		void resetPosition();
+		void normalize(real_t min, real_t max);
+	};
+
+	struct EntityStates
+	{
+		State x;
+		State y;
+		State z;
+		State yaw;
+		State pitch;
+		State roll;
+		void resetMovement();
+		void resetPosition();
+	};
+
+	friend EntityStates operator+(EntityStates lhs, EntityStates rhs)
+	{
+		return{ lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, 
+			lhs.yaw + rhs.yaw, lhs.pitch + rhs.pitch, lhs.roll + rhs.roll };
+	}
+	friend EntityStates operator*(EntityStates lhs, double rhs)
+	{
+		return{ lhs.x * rhs, lhs.y * rhs, lhs.z * rhs,
+			lhs.yaw * rhs, lhs.pitch * rhs, lhs.roll * rhs };
+	}
+	friend State operator+(State x, State y)
+	{
+		return{ x.acceleration + y.acceleration, x.velocity + y.velocity, x.position + y.position };
+	}
+	friend State operator*(State x, double y)
+	{
+		return{ x.acceleration * y, x.velocity * y, x.position * y };
+	}
+
+	static void
+		integrate(State& state,
+			std::chrono::time_point<Clock, std::chrono::duration<double>>,
+			std::chrono::duration<double> dt);
+
+	static std::chrono::duration<long long, std::ratio<1, 60>> dt;
+	using duration = decltype(Clock::duration{} +dt);
+	using time_point = std::chrono::time_point<Clock, duration>;
+
+	static time_point timepoint;
+	static time_point currentTime;
+	static duration accumulator;
+
+	static EntityStates cameraPreviousState[MAXPLAYERS];
+	static EntityStates cameraCurrentState[MAXPLAYERS];
+	static EntityStates cameraRenderState[MAXPLAYERS];
+
+	static std::string render(State state);
+
+	static void reset();
+	static void updateClocks();
+	static real_t lerpAngle(real_t angle1, real_t angle2, real_t alpha);
+	static void renderCameras(view_t& camera, int player);
+	static void postRenderRestore(view_t& camera, int player);
+	static void updateEntityInterpolationPosition(Entity* entity);
+};

@@ -24,6 +24,7 @@ ItemTooltips_t ItemTooltips;
 #ifndef NINTENDO
 IRCHandler_t IRCHandler;
 #endif // !NINTENDO
+StatueManager_t StatueManager;
 
 const std::vector<std::string> MonsterStatCustomManager::itemStatusStrings =
 {
@@ -1484,6 +1485,9 @@ bool ItemTooltips_t::bIsSpellDamageOrHealingType(spell_t* spell)
 
 int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook)
 {
+#ifdef EDITOR
+	return 0;
+#else
 	if ( !spell )
 	{
 		return 0;
@@ -1534,10 +1538,14 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		}
 	}
 	return damage;
+#endif
 }
 
 std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell || spellItems.find(spell->ID) == spellItems.end() )
 	{
@@ -1562,10 +1570,12 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 		}
 	}
 	return str;
+#endif
 }
 
 std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 {
+#ifndef EDITOR
 	spell_t* spell = nullptr;
 	
 	if ( itemCategory(&item) == SPELLBOOK )
@@ -1633,6 +1643,9 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item)
 	}
 
 	return str;
+#else
+	return std::string("");
+#endif
 }
 
 real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
@@ -1666,6 +1679,9 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 
 std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell )
 	{
@@ -1693,10 +1709,14 @@ std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 			return defaultString;
 			break;
 	}
+#endif
 }
 
 std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	spell_t* spell = getSpellFromItem(player, &item);
 	if ( !spell )
 	{
@@ -1779,10 +1799,14 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 		}
 	}
 	return buf;
+#endif
 }
 
 std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 {
+#ifdef EDITOR
+	return "items/images/null.png";
+#else
 	node_t* spellImageNode = nullptr;
 	if ( itemCategory(&item) == MAGICSTAFF )
 	{
@@ -1829,15 +1853,19 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 		}
 	}
 	return "items/images/null.png";
+#endif
 }
 
 std::string& ItemTooltips_t::getItemPotionAlchemyAdjective(const int player, Uint32 itemType)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	if ( adjectives.find("potion_alchemy_types") == adjectives.end() )
 	{
 		return defaultString;
 	}
-	if ( clientLearnedAlchemyIngredients.find(itemType) == clientLearnedAlchemyIngredients.end() )
+	if ( clientLearnedAlchemyIngredients[player].find(itemType) == clientLearnedAlchemyIngredients[player].end() )
 	{
 		return adjectives["potion_alchemy_types"]["unknown"];
 	}
@@ -1853,10 +1881,14 @@ std::string& ItemTooltips_t::getItemPotionAlchemyAdjective(const int player, Uin
 	{
 		return adjectives["potion_alchemy_types"]["no_ingredient"];
 	}
+#endif
 }
 
 std::string& ItemTooltips_t::getItemPotionHarmAllyAdjective(Item& item)
 {
+#ifdef EDITOR
+	return defaultString;
+#else
 	if ( adjectives.find("potion_ally_damage") == adjectives.end() )
 	{
 		return defaultString;
@@ -1871,6 +1903,7 @@ std::string& ItemTooltips_t::getItemPotionHarmAllyAdjective(Item& item)
 	{
 		return adjectives["potion_ally_damage"]["harm_ally"];
 	}
+#endif
 }
 
 std::string& ItemTooltips_t::getItemProficiencyName(int proficiency)
@@ -2017,6 +2050,7 @@ std::string& ItemTooltips_t::getItemEquipmentEffectsForAttributesText(std::strin
 
 Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& attribute)
 {
+#ifndef EDITOR
 	Sint32 stat = 0;
 	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
 	if ( item.beatitude >= 0 || cursedItemIsBuff )
@@ -2025,10 +2059,14 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 	}
 	stat += (cursedItemIsBuff ? abs(item.beatitude) : item.beatitude);
 	return stat;
+#else
+	return 0;
+#endif
 }
 
 void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute)
 {
+#ifndef EDITOR
 	auto itemTooltip = tooltips[tooltipType];
 
 	char buf[128];
@@ -2242,7 +2280,8 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		else if ( conditionalAttribute == "AC" )
 		{
 			Sint32 AC = item.armorGetAC(stats[player]);
-			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
+			std::string attribute("AC");
+			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(attribute).c_str());
 		}
 		else
 		{
@@ -2257,7 +2296,8 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		|| tooltipType.find("tooltip_ring") != std::string::npos )
 	{
 		Sint32 AC = item.armorGetAC(stats[player]);
-		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(std::string("AC")).c_str());
+		std::string attribute("AC");
+		snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName(attribute).c_str());
 	}
 	else if ( tooltipType.find("tooltip_mace") != std::string::npos
 		|| tooltipType.find("tooltip_sword") != std::string::npos
@@ -2353,6 +2393,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		return;
 	}
 	str = buf;
+#endif
 }
 
 void ItemTooltips_t::formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str)
@@ -2366,6 +2407,7 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 
 void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag)
 {
+#ifndef EDITOR
 	if ( !stats[player] )
 	{
 		str = "";
@@ -2890,8 +2932,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				damageOrHealing = adjectives["spell_strings"]["healing"];
 			}
 
+			std::string attribute("INT");
 			snprintf(buf, sizeof(buf), str.c_str(),
-				intBonus, damageOrHealing.c_str(), getItemStatShortName(std::string("INT")).c_str(),
+				intBonus, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str(),
 				beatitudeBonus, damageOrHealing.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("spellbook_cast_success") == 0 )
@@ -2974,8 +3017,9 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				damageOrHealing = adjectives["spell_strings"]["healing"];
 			}
+			std::string attribute("INT");
 			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(std::string("INT")).c_str());
+				bonusPercent, damageOrHealing.c_str(), getItemStatShortName(attribute).c_str());
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{
@@ -3046,6 +3090,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		return;
 	}
 	str = buf;
+#endif
 }
 
 void ItemTooltips_t::stripOutHighlightBracketText(std::string& str, std::string& bracketText)
@@ -3237,3 +3282,190 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 	}
 }
 #endif // !EDITOR
+
+Uint32 StatueManager_t::statueId = 0;
+int StatueManager_t::processStatueExport()
+{
+	if ( !exportActive )
+	{
+		return 0;
+	}
+
+	Entity* player = uidToEntity(editingPlayerUid);
+
+	if ( exportRotations >= 4 || !player )
+	{
+		if ( player ) // save the file.
+		{
+			std::string outputPath = PHYSFS_getRealDir("/data/statues");
+			outputPath.append(PHYSFS_getDirSeparator());
+			std::string fileName = "data/statues/" + exportFileName;
+			outputPath.append(fileName.c_str());
+
+			exportRotations = 0;
+			exportFileName = "";
+			exportActive = false;
+
+			File* fp = FileIO::open(outputPath.c_str(), "wb");
+			if ( !fp )
+			{
+				return 0;
+			}
+			rapidjson::StringBuffer os;
+			rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+			exportDocument.Accept(writer);
+			fp->write(os.GetString(), sizeof(char), os.GetSize());
+			FileIO::close(fp);
+			return 2; // success
+		}
+		else
+		{
+			exportRotations = 0;
+			exportFileName = "";
+			exportActive = false;
+			return 0;
+		}
+	}
+
+	bool newDocument = false;
+
+	if ( exportFileName == "" ) // find a new filename
+	{
+		int filenum = 0;
+		std::string testPath = "/data/statues/statue" + std::to_string(filenum) + ".json";
+		while ( PHYSFS_getRealDir(testPath.c_str()) != nullptr && filenum < 1000 )
+		{
+			++filenum;
+			testPath = "/data/statues/statue" + std::to_string(filenum) + ".json";
+		}
+		exportFileName = "statue" + std::to_string(filenum) + ".json";
+		newDocument = true;
+	}
+
+	if ( newDocument )
+	{
+		if ( exportDocument.IsObject() )
+		{
+			exportDocument.RemoveAllMembers();
+		}
+		exportDocument.SetObject();
+		CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(1));
+		CustomHelpers::addMemberToRoot(exportDocument, "statue_id", rapidjson::Value(rand()));
+		CustomHelpers::addMemberToRoot(exportDocument, "height_offset", rapidjson::Value(0));
+		rapidjson::Value limbsObject(rapidjson::kObjectType);
+		CustomHelpers::addMemberToRoot(exportDocument, "limbs", limbsObject);
+	}
+
+	rapidjson::Value limbsArray(rapidjson::kArrayType);
+
+	std::vector<Entity*> allLimbs;
+	allLimbs.push_back(player);
+
+	for ( auto& bodypart : player->bodyparts )
+	{
+		allLimbs.push_back(bodypart);
+	}
+
+	int index = 0;
+	for ( auto& limb : allLimbs )
+	{
+		if ( limb->flags[INVISIBLE] )
+		{
+			continue;
+		}
+		rapidjson::Value limbsObj(rapidjson::kObjectType);
+
+		if ( index != 0 )
+		{
+			limbsObj.AddMember("x", rapidjson::Value(player->x - limb->x), exportDocument.GetAllocator());
+			limbsObj.AddMember("y", rapidjson::Value(player->y - limb->y), exportDocument.GetAllocator());
+			limbsObj.AddMember("z", rapidjson::Value(limb->z), exportDocument.GetAllocator());
+		}
+		else
+		{
+			limbsObj.AddMember("x", rapidjson::Value(0), exportDocument.GetAllocator());
+			limbsObj.AddMember("y", rapidjson::Value(0), exportDocument.GetAllocator());
+			limbsObj.AddMember("z", rapidjson::Value(limb->z), exportDocument.GetAllocator());
+		}
+		limbsObj.AddMember("pitch", rapidjson::Value(limb->pitch), exportDocument.GetAllocator());
+		limbsObj.AddMember("roll", rapidjson::Value(limb->roll), exportDocument.GetAllocator());
+		limbsObj.AddMember("yaw", rapidjson::Value(limb->yaw), exportDocument.GetAllocator());
+		limbsObj.AddMember("focalx", rapidjson::Value(limb->focalx), exportDocument.GetAllocator());
+		limbsObj.AddMember("focaly", rapidjson::Value(limb->focaly), exportDocument.GetAllocator());
+		limbsObj.AddMember("focalz", rapidjson::Value(limb->focalz), exportDocument.GetAllocator());
+		limbsObj.AddMember("sprite", rapidjson::Value(limb->sprite), exportDocument.GetAllocator());
+		limbsArray.PushBack(limbsObj, exportDocument.GetAllocator());
+
+		++index;
+	}
+
+	CustomHelpers::addMemberToSubkey(exportDocument, "limbs", directionKeys[exportRotations], limbsArray);
+	++exportRotations;
+	return 1;
+}
+
+void StatueManager_t::readStatueFromFile(int index)
+{
+	std::string fileName = "/data/statues/statue" + std::to_string(index) + ".json";
+	if ( PHYSFS_getRealDir(fileName.c_str()) )
+	{
+		std::string inputPath = PHYSFS_getRealDir(fileName.c_str());
+		inputPath.append(fileName);
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return;
+		}
+		char buf[65536];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") || !d.HasMember("limbs") || !d.HasMember("statue_id") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return;
+		}
+		int version = d["version"].GetInt();
+		Uint32 statueId = d["statue_id"].GetUint();
+		auto findStatue = allStatues.find(statueId);
+		if ( findStatue != allStatues.end() )
+		{
+			allStatues.erase(findStatue);
+		}
+		allStatues.insert(std::make_pair(statueId, Statue_t()));
+		for ( rapidjson::Value::ConstMemberIterator limb_itr = d["limbs"].MemberBegin(); limb_itr != d["limbs"].MemberEnd(); ++limb_itr )
+		{
+			auto& statue = allStatues[statueId];
+			if ( d.HasMember("height_offset") )
+			{
+				statue.heightOffset = d["height_offset"].GetDouble();
+			}
+			for ( rapidjson::Value::ConstValueIterator dir_itr = limb_itr->value.Begin(); dir_itr != limb_itr->value.End(); ++dir_itr )
+			{
+				const rapidjson::Value& attributes = *dir_itr;
+				std::string direction = limb_itr->name.GetString();
+				auto& limbVector = statue.limbs[direction];
+				limbVector.push_back(Statue_t::StatueLimb_t());
+				auto& limb = limbVector[limbVector.size() - 1];
+				limb.x = attributes["x"].GetDouble();
+				limb.y = attributes["y"].GetDouble();
+				limb.z = attributes["z"].GetDouble();
+				limb.focalx = attributes["focalx"].GetDouble();
+				limb.focaly = attributes["focaly"].GetDouble();
+				limb.focalz = attributes["focalz"].GetDouble();
+				limb.pitch = attributes["pitch"].GetDouble();
+				limb.roll = attributes["roll"].GetDouble();
+				limb.yaw = attributes["yaw"].GetDouble();
+				limb.sprite = attributes["sprite"].GetInt();
+			}
+		}
+
+		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+	}
+}

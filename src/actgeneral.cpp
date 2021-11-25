@@ -22,6 +22,7 @@
 #include "interface/interface.hpp"
 #include "items.hpp"
 #include "scores.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -242,7 +243,7 @@ void Entity::actFurniture()
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity[0] == this) || (client_selected[i] == this) || (splitscreen && selectedEntity[i] == this) )
+				if ( selectedEntity[i] == this || client_selected[i] == this )
 				{
 					if (inrange[i])
 					{
@@ -305,7 +306,7 @@ void actMCaxe(Entity* my)
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+				if ( selectedEntity[i] == my || client_selected[i] == my )
 				{
 					if (inrange[i])
 					{
@@ -382,6 +383,119 @@ void actStalagColumn(Entity* my)
 void Entity::actStalagColumn()
 {
 
+}
+
+void actStatue(Entity* my)
+{
+	if ( my->statueInit == 0 && StatueManager.allStatues.size() > 0 )
+	{
+		// needs to init.
+		if ( StatueManager.allStatues.find(my->statueId) != StatueManager.allStatues.end() )
+		{
+			my->statueInit = 1;
+			if ( my->statueDir >= 0 && my->statueDir < StatueManager.directionKeys.size() )
+			{
+				int index = 0;
+				real_t baseHeight = 0.0;
+				std::string directionString = StatueManager.directionKeys[my->statueDir];
+				for ( auto& limb : StatueManager.allStatues[my->statueId].limbs[directionString] )
+				{
+					Entity* childEntity = newEntity(limb.sprite, 1, map.entities, nullptr);
+					childEntity->parent = my->getUID();
+					childEntity->x = my->x - limb.x;
+					childEntity->y = my->y - limb.y;
+					childEntity->z = limb.z + StatueManager.allStatues[my->statueId].heightOffset;
+					childEntity->focalx = limb.focalx;
+					childEntity->focaly = limb.focaly;
+					childEntity->focalz = limb.focalz;
+					childEntity->pitch = limb.pitch;
+					childEntity->roll = limb.roll;
+					childEntity->yaw = limb.yaw;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->grayscaleGLRender = 1.0;
+					node_t* tempNode = list_AddNodeLast(&my->children);
+					tempNode->element = childEntity; // add the node to the children list.
+					tempNode->deconstructor = &emptyDeconstructor;
+					tempNode->size = sizeof(Entity*);
+					++index;
+				}
+			}
+		}
+	}
+}
+
+void actStatueAnimator(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( StatueManager.processStatueExport() == 1 ) // in progress
+	{
+		if ( Entity* player = uidToEntity(StatueManager.editingPlayerUid) )
+		{
+			player->yaw += PI / 2;
+			while ( player->yaw >= 2 * PI )
+			{
+				player->yaw -= 2 * PI;
+			}
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; i++ )
+	{
+		if ( selectedEntity[i] == my || client_selected[i] == my )
+		{
+			if ( inrange[i] )
+			{
+				if ( !StatueManager.activeEditing )
+				{
+					StatueManager.statueEditorHeightOffset = 0.0;
+				}
+				StatueManager.activeEditing = !StatueManager.activeEditing;
+				messagePlayer(0, "Statue editing mode: %d", StatueManager.activeEditing);
+
+				my->skill[0] = StatueManager.activeEditing ? 1 : 0;
+			}
+		}
+	}
+
+	if ( StatueManager.activeEditing )
+	{
+		if ( !players[1]->entity )
+		{
+			client_disconnected[1] = false;
+			Entity* entity = newEntity(0, 1, map.entities, nullptr);
+			entity->behavior = &actPlayer;
+			entity->addToCreatureList(map.creatures);
+
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = my->z;
+
+			entity->z -= 15 + StatueManager.statueEditorHeightOffset;
+			entity->focalx = limbs[HUMAN][0][0]; // 0
+			entity->focaly = limbs[HUMAN][0][1]; // 0
+			entity->focalz = limbs[HUMAN][0][2]; // -1.5
+			entity->sprite = 113; // head model
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->flags[GENIUS] = true;
+			entity->flags[BLOCKSIGHT] = true;
+			entity->flags[PASSABLE] = true;
+			entity->skill[2] = 1; // skill[2] == PLAYER_NUM
+			players[1]->entity = entity;
+			StatueManager.editingPlayerUid = entity->getUID();
+		}
+		else
+		{
+			players[1]->entity->x = my->x;
+			players[1]->entity->y = my->y;
+			players[1]->entity->z = my->z;
+			players[1]->entity->z -= 15 + StatueManager.statueEditorHeightOffset;
+		}
+	}
 }
 
 void actColumn(Entity* my)
@@ -527,7 +641,7 @@ void actFloorDecoration(Entity* my)
 	int i;
 	for ( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if ( (i == 0 && selectedEntity[0] == my) || (client_selected[i] == my) || (splitscreen && selectedEntity[i] == my) )
+		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
 			if ( inrange[i] )
 			{

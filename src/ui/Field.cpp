@@ -7,17 +7,24 @@
 #include "Field.hpp"
 #include "Text.hpp"
 #include "GameUI.hpp"
+#include "Image.hpp"
 #include <cassert>
 
 Field::Field(const int _textLen) {
 	textlen = std::max(_textLen, 0);
 	text = new char[textlen + 1];
+	color = makeColor(255, 255, 255, 255);
+	textColor = makeColor(255, 255, 255, 255);
+	outlineColor = makeColor(0, 0, 0, 255);
 	memset(text, 0, textlen + 1);
 }
 
 Field::Field(const char* _text) {
 	textlen = strlen(_text);
 	text = new char[textlen + 1];
+	color = makeColor(255, 255, 255, 255);
+	textColor = makeColor(255, 255, 255, 255);
+	outlineColor = makeColor(0, 0, 0, 255);
 	setText(_text);
 }
 
@@ -35,6 +42,7 @@ Field::Field(Frame& _parent, const char* _text) : Field(_text) {
 
 Field::~Field() {
 	deselect();
+	deactivate();
 	if (text) {
 		if (inputstr == text) {
 			inputstr = nullptr;
@@ -65,9 +73,6 @@ void Field::activate() {
 }
 
 void Field::deselect() {
-	if (editable) {
-		deactivate();
-	}
 	Widget::deselect();
 }
 
@@ -99,7 +104,7 @@ char* Field::tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets) {
+void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if ( invisible || isDisabled() ) {
 		return;
 	}
@@ -113,21 +118,19 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		return;
 
 	SDL_Rect scaledRect;
-	scaledRect.x = rect.x * (float)xres / (float)Frame::virtualScreenX;
-	scaledRect.y = rect.y * (float)yres / (float)Frame::virtualScreenY;
-	scaledRect.w = rect.w * (float)xres / (float)Frame::virtualScreenX;
-	scaledRect.h = rect.h * (float)yres / (float)Frame::virtualScreenY;
+	scaledRect.x = rect.x;
+	scaledRect.y = rect.y;
+	scaledRect.w = rect.w;
+	scaledRect.h = rect.h;
 
-	if (activated) {
-		if (selectAll) {
-			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 127, 127, 0), 255);
-		} else {
-			drawRect(&scaledRect, SDL_MapRGB(mainsurface->format, 0, 0, 127), 255);
-		}
-	}
-
-	if (!text || text[0] == '\0') {
-		return;
+	auto white = Image::get("images/system/white.png");
+	const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+	if (activated && selectAll) {
+		white->drawColor(nullptr, scaledRect, viewport, backgroundSelectAllColor);
+	} else if (activated) {
+		white->drawColor(nullptr, scaledRect, viewport, backgroundActivatedColor);
+	} else {
+		white->drawColor(nullptr, scaledRect, viewport, backgroundColor);
 	}
 
 	bool showCursor = (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
@@ -137,10 +140,10 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		return;
 	}
 	int lines = std::max(1, getNumTextLines());
-	int fullH = lines * actualFont->height(false) + actualFont->getOutline() * 2;
+	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
 
 	char* buf = (char*)malloc(textlen + 1);
-	memcpy(buf, text, textlen + 1);
+	memcpy(buf, text ? text : "\0", textlen + 1);
 
 	int yoff = 0;
 	char* nexttoken;
@@ -148,40 +151,12 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 	do {
 		nexttoken = tokenize(token, "\n");
 
-		std::string str;
-		if (!nexttoken && activated && showCursor) {
-			str.reserve((Uint32)strlen(token) + 2);
-			str.assign(token);
-			str.append("_");
-		} else if (!nexttoken && activated) {
-			str.reserve((Uint32)strlen(token) + 2);
-			str.assign(token);
-			str.append(" ");
-		} else {
-			str.assign(token);
-		}
-
-		Text* text = Text::get(str.c_str(), font.c_str());
+		Text* text = Text::get(token, font.c_str(), textColor, outlineColor);
 		assert(text);
 
 		// get the size of the rendered text
 		int textSizeW = text->getWidth();
 		int textSizeH = text->getHeight();
-
-		if (activated) {
-			textSizeH += 2;
-			if (hjustify == RIGHT || hjustify == BOTTOM) {
-				textSizeH -= 4;
-			} else if (hjustify == CENTER) {
-				textSizeH -= 2;
-			}
-			if (!showCursor) {
-				int w;
-				actualFont->sizeText("_", &w, nullptr);
-				textSizeW += w;
-				textSizeH += 2;
-			}
-		}
 
 		SDL_Rect pos;
 		if (hjustify == LEFT || hjustify == TOP) {
@@ -216,7 +191,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (rect.y + rect.h));
 
 		// fit text to window
-		if ((hjustify == LEFT || hjustify == TOP) && scroll && selected) {
+		if ((hjustify == LEFT || hjustify == TOP) && scroll && activated) {
 			src.x = std::max(src.x, textSizeW - rect.w);
 		}
 
@@ -225,27 +200,48 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*
 		}
 
 		SDL_Rect scaledDest;
-		scaledDest.x = dest.x * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.y = dest.y * (float)yres / (float)Frame::virtualScreenY;
-		scaledDest.w = dest.w * (float)xres / (float)Frame::virtualScreenX;
-		scaledDest.h = dest.h * (float)yres / (float)Frame::virtualScreenY;
+		scaledDest.x = dest.x;
+		scaledDest.y = dest.y;
+		scaledDest.w = dest.w;
+		scaledDest.h = dest.h;
 
-		if ( parent && static_cast<Frame*>(parent)->getOpacity() < 100.0 )
-		{
+		if (parent && static_cast<Frame*>(parent)->getOpacity() < 100.0) {
 			Uint8 r, g, b, a;
 			SDL_GetRGBA(color, mainsurface->format, &r, &g, &b, &a);
 			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
-			text->drawColor(src, scaledDest, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+			text->drawColor(src, scaledDest, viewport, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+		} else {
+			text->drawColor(src, scaledDest, viewport, color);
 		}
-		else
-		{
-			text->drawColor(src, scaledDest, color);
+
+		// draw cursor
+		if (!nexttoken && showCursor && activated) {
+			SDL_Rect cursorSize{scaledDest.x + scaledDest.w - 2, scaledDest.y, 2, scaledDest.h};
+			white->drawColor(nullptr, cursorSize, viewport, color);
 		}
 	} while ((token = nexttoken) != NULL);
 
 	free(buf);
 
-	drawExtra(scaledRect, selectedWidgets);
+	// draw user stuff
+	if (drawCallback) {
+		drawCallback(*this, scaledRect);
+	}
+}
+
+void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+	if (invisible) {
+		return;
+	}
+	SDL_Rect rect;
+	rect.x = _size.x + std::max(0, size.x - _actualSize.x);
+	rect.y = _size.y + std::max(0, size.y - _actualSize.y);
+	rect.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+	rect.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+	if (rect.w <= 0 || rect.h <= 0) {
+		return;
+	}
+	Widget::drawPost(rect, selectedWidgets);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
@@ -281,11 +277,14 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 				SDL_StopTextInput();
 			}
 		}
-		if (keystatus[SDL_SCANCODE_RETURN] || keystatus[SDL_SCANCODE_KP_ENTER]) {
+		if (Input::keys[SDL_SCANCODE_RETURN] || Input::keys[SDL_SCANCODE_KP_ENTER]) {
+			Input::keys[SDL_SCANCODE_RETURN] = 0;
+			Input::keys[SDL_SCANCODE_KP_ENTER] = 0;
 			result.entered = true;
 			deactivate();
 		}
-		if (keystatus[SDL_SCANCODE_ESCAPE] || mousestatus[SDL_BUTTON_RIGHT]) {
+		if (Input::keys[SDL_SCANCODE_ESCAPE]) {
+			Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 			result.entered = true;
 			deactivate();
 		}
@@ -301,10 +300,12 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		}*/
 	}
 
-#ifndef NINTENDO
-	if (omousex >= _size.x && omousex < _size.x + _size.w &&
-		omousey >= _size.y && omousey < _size.y + _size.h) {
-		result.highlighted = true;
+#if !defined(NINTENDO) && !defined(EDITOR)
+	if (inputs.getVirtualMouse(owner)->draw_cursor) {
+		if (omousex >= _size.x && omousex < _size.x + _size.w &&
+			omousey >= _size.y && omousey < _size.y + _size.h) {
+			result.highlighted = true;
+		}
 	}
 
 	if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
@@ -403,7 +404,8 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 		{
 			// this is probably OK
 		}
-		else if ( getText = Text::get(std::string(result[currentLine] + " " + token).c_str(), font) )
+		else if ( getText = Text::get(std::string(result[currentLine] + " " + token).c_str(), font,
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
 		{
 			if ( getText->getWidth() > width )
 			{
@@ -444,12 +446,41 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 	return result;
 }
 
+std::string Field::getLongestLine()
+{
+	if ( text == nullptr || textlen <= 1 ) {
+		return "";
+	}
+	if ( getNumTextLines() <= 1 )
+	{
+		return text;
+	}
+	char* nexttoken;
+	char* token = text;
+	std::string originalText = text;
+	std::string longestLine = "";
+	int longestLineWidth = 0;
+	do {
+		nexttoken = tokenize(token, "\n");
+		if ( auto getText = Text::get(token, font.c_str(), textColor, outlineColor) )
+		{
+			if ( getText->getWidth() > longestLineWidth )
+			{
+				longestLineWidth = getText->getWidth();
+				longestLine = token;
+			}
+		}
+	} while ( (token = nexttoken) != NULL );
+	setText(originalText.c_str()); // make sure to replace the original text field, as tokenize will modify it
+	return longestLine;
+}
+
 int Field::getLastLineThatFitsWithinHeight()
 {
 	if ( text == nullptr || textlen <= 1 ) {
 		return -1;
 	}
-	if ( auto getText = Text::get(text, font.c_str()) )
+	if ( auto getText = Text::get(text, font.c_str(), textColor, outlineColor) )
 	{
 		if ( getText->getHeight() <= getSize().h/* - getSize().y*/ )
 		{
@@ -465,6 +496,7 @@ int Field::getLastLineThatFitsWithinHeight()
 	int lineNumber = 0;
 	char* nexttoken;
 	char* token = text;
+	std::string originalText = text;
 	do {
 		nexttoken = tokenize(token, "\n");
 		if ( !allLines.empty() )
@@ -472,17 +504,18 @@ int Field::getLastLineThatFitsWithinHeight()
 			allLines.push_back('\n');
 		}
 		allLines += token[0];
-		if ( auto getText = Text::get(allLines.c_str(), font.c_str()) )
+		if ( auto getText = Text::get(allLines.c_str(), font.c_str(), textColor, outlineColor) )
 		{
 			if ( getText->getHeight() > getSize().h )
 			{
 				// doesn't fit, return the last line number.
+				setText(originalText.c_str()); // make sure to replace the original text field, as tokenize will modify it
 				return lineNumber;
 			}
 		}
 		++lineNumber;
 	} while ( (token = nexttoken) != NULL );
-
+	setText(originalText.c_str()); // make sure to replace the original text field, as tokenize will modify it
 	return -1;
 }
 
@@ -491,7 +524,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 		return;
 	}
 
-	if ( auto getText = Text::get(text, font.c_str()) )
+	if ( auto getText = Text::get(text, font.c_str(), textColor, outlineColor) )
 	{
 		if ( getText->getWidth() <= (getSize().w) )
 		{
@@ -501,7 +534,11 @@ void Field::reflowTextToFit(const int characterOffset) {
 	}
 	std::string reflowText = "";
 
+#ifndef EDITOR
 	bool usePreciseStringWidth = bUsePreciseFieldTextReflow;
+#else
+	bool usePreciseStringWidth = true;
+#endif
 	if ( usePreciseStringWidth )
 	{
 		// more expensive, but accurate text reflow.
@@ -510,7 +547,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 		char* token = text;
 		do {
 			nexttoken = tokenize(token, "\n");
-			auto result = reflowTextLine(std::string(token), (getSize().w), font.c_str());
+			std::string tokenStr(token);
+			auto result = reflowTextLine(tokenStr, (getSize().w), font.c_str());
 			for ( size_t i = 0; i < result.size(); ++i )
 			{
 				allLines.push_back(result[i]);
@@ -538,7 +576,7 @@ void Field::reflowTextToFit(const int characterOffset) {
 	
 	int charWidth = 0;
 	actualFont->sizeText("_", &charWidth, nullptr);
-	//if ( auto textGet = Text::get("_", font.c_str()) )
+	//if ( auto textGet = Text::get("_", font.c_str(), textColor, outlineColor) )
 	//{
 	//	charWidth = textGet->getWidth();
 	//}
@@ -584,22 +622,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 	setText(reflowText.c_str());
 }
 
-const int Field::getNumTextLines() const
-{
-	if ( text == nullptr || textlen <= 1 ) {
-		return 0;
-	}
-
-	int numLines = 1;
-
-	for ( int i = 0; text[i] != '\0' && i < textlen - 1; ++i )
-	{
-		if ( text[i] == '\n' )
-		{
-			++numLines;
-		}
-	}
-	return numLines;
+int Field::getNumTextLines() const {
+	return Text::get(text, font.c_str(), textColor, outlineColor)->getNumTextLines();
 }
 
 SDL_Rect Field::getAbsoluteSize() const

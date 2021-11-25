@@ -168,7 +168,6 @@ int serialVerifyWindow = 0;
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
-typedef std::tuple<int, int> resolution;
 std::list<resolution> resolutions;
 Uint32 settings_fov;
 Uint32 settings_fps;
@@ -1607,32 +1606,6 @@ void handleMainMenu(bool mode)
 		if ( mode || introstage != 5 )
 		{
 			drawImageScaled(title_bmp, nullptr, &src);
-		}
-
-		const bool i_want_to_test_sdl_ttf = false;
-		if (i_want_to_test_sdl_ttf) {
-			const char* font = Font::defaultFont;
-			Text* text = Text::get("This. Is. For. BARONY!!", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, yres - 100, 0, 0}, 0xFF00FFFF);
-
-			font = "lang/en.ttf#32";
-			text = Text::get("Will the real Baron Herx PLEASE stand up!", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{300, 32, 0, 0}, 0xFFFF00FF);
-
-			int text_y = 300;
-			font = "lang/en.ttf#92";
-			text = Text::get("SDL_TTF SPONSORED BY me.", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFFF00FF);
-
-			text_y += text->getHeight() + 4;
-			font = "lang/en.ttf#92";
-			text = Text::get("ALL HAIL POTATO KING", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{32, text_y, 0, 0}, 0xFFEF23FF);
-
-			text_y += text->getHeight();
-			font = "lang/en.ttf#22";
-			text = Text::get("run the gauntlet f00lz!!1!", font);
-			text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{100, text_y, 0, 0}, 0xFFEF23FF);
 		}
 
 		if ( mode && subtitleVisible )
@@ -7972,25 +7945,13 @@ void handleMainMenu(bool mode)
 					nokills = false;
 					if ( kills[x] > 1 )
 					{
-						if ( x < KOBOLD )
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
-						}
-						else
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
-						}
+						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", 
+							kills[x], getMonsterLocalizedPlural((Monster)x).c_str());
 					}
 					else
 					{
-						if ( x < KOBOLD )
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
-						}
-						else
-						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
-						}
+						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", 
+							kills[x], getMonsterLocalizedName((Monster)x).c_str());
 					}
 					y++;
 				}
@@ -12149,7 +12110,7 @@ void openGameoverWindow()
 }
 
 // get
-void getResolutionList()
+void getResolutionList(std::list<resolution>& resolutions)
 {
 	// for now just use the resolution modes on the first
 	// display.
@@ -12171,9 +12132,13 @@ void getResolutionList()
 		}
 	}
 
-	// Sort by total number of pixels
+	// Sort first by xres and then by yres
 	resolutions.sort([](resolution a, resolution b) {
-		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
+		if (std::get<0>(a) == std::get<0>(b)) {
+			return std::get<1>(a) > std::get<1>(b);
+		} else {
+			return std::get<0>(a) > std::get<0>(b);
+		}
 	});
 	resolutions.unique();
 
@@ -12288,7 +12253,7 @@ void openSettingsWindow()
 	button_t* button;
 	int c;
 
-	getResolutionList();
+	getResolutionList(resolutions);
 
 	// set the "settings" variables
 	settings_xres = xres;
@@ -14230,16 +14195,6 @@ void applySettings()
 			printlog("critical error! Attempting to abort safely...\n");
 			mainloop = 0;
 		}
-		if ( zbuffer != NULL )
-		{
-			free(zbuffer);
-		}
-		zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-		if ( clickmap != NULL )
-		{
-			free(clickmap);
-		}
-		clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	}
 	// set audio options
 	sfxvolume = settings_sfxvolume;

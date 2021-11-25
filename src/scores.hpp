@@ -267,7 +267,7 @@ extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
 extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 extern bool achievementStatusBaitAndSwitch[MAXPLAYERS];
 extern Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS];
-extern std::unordered_set<int> clientLearnedAlchemyIngredients;
+extern std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];

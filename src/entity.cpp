@@ -301,6 +301,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	interactedByMonster(skill[47]),
 	highlightForUI(fskill[29]),
 	highlightForUIGlow(fskill[28]),
+	grayscaleGLRender(fskill[27]),
 	soundSourceFired(skill[0]),
 	soundSourceToPlay(skill[1]),
 	soundSourceVolume(skill[2]),
@@ -339,7 +340,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	worldTooltipInit(skill[3]),
 	worldTooltipFadeDelay(skill[4]),
 	worldTooltipIgnoreDrawing(skill[5]),
-	worldTooltipRequiresButtonHeld(skill[6])
+	worldTooltipRequiresButtonHeld(skill[6]),
+	statueInit(skill[0]),
+	statueDir(skill[1]),
+	statueId(skill[3])
 {
 	int c;
 	// add the entity to the entity list
@@ -390,6 +394,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	new_yaw = 0;
 	new_pitch = 0;
 	new_roll = 0;
+	lerpCurrentState.resetMovement();
+	lerpCurrentState.resetPosition();
+	lerpPreviousState.resetMovement();
+	lerpPreviousState.resetPosition();
+	lerpRenderState.resetMovement();
+	lerpRenderState.resetPosition();
+	bNeedsRenderPositionInit = true;
+	bUseRenderInterpolation = false;
+	lerp_ox = 0.0;
+	lerp_oy = 0.0;
 	sprite = in_sprite;
 	light = nullptr;
 	string = nullptr;
@@ -610,25 +624,11 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	{
 		if ( hitstats->sex == MALE )
 		{
-			if ( hitstats->type < KOBOLD ) //Original monster count
-			{
-				snprintf(tempstr, 256, language[1509], language[90 + hitstats->type]);
-			}
-			else if ( hitstats->type >= KOBOLD ) //New monsters
-			{
-				snprintf(tempstr, 256, language[1509], language[2000 + (hitstats->type - KOBOLD)]);
-			}
+			snprintf(tempstr, 256, language[1509], getMonsterLocalizedName(hitstats->type).c_str());
 		}
 		else
 		{
-			if ( hitstats->type < KOBOLD ) //Original monster count
-			{
-				snprintf(tempstr, 256, language[1510], language[90 + hitstats->type]);
-			}
-			else if ( hitstats->type >= KOBOLD ) //New monsters
-			{
-				snprintf(tempstr, 256, language[1510], language[2000 + (hitstats->type - KOBOLD)]);
-			}
+			snprintf(tempstr, 256, language[1510], getMonsterLocalizedName(hitstats->type).c_str());
 		}
 		victim->setObituary(tempstr);
 	}
@@ -689,14 +689,7 @@ void Entity::killedByMonsterObituary(Entity* victim)
 				{
 					if ( hitstats->type != HUMAN )
 					{
-						if ( hitstats->type < KOBOLD )
-						{
-							snprintf(hitstats->obituary, 127, language[3244], language[111 + hitstats->type], myStats->name);
-						}
-						else if ( hitstats->type >= KOBOLD )
-						{
-							snprintf(hitstats->obituary, 127, language[3244], language[2050 + hitstats->type - KOBOLD], myStats->name);
-						}
+						snprintf(hitstats->obituary, 127, language[3244], getMonsterLocalizedPlural(hitstats->type).c_str(), myStats->name);
 					}
 					else
 					{
@@ -3760,14 +3753,7 @@ void Entity::handleEffects(Stat* myStats)
 				// update enemy bar for attacker
 				if ( !strcmp(myStats->name, "") )
 				{
-					if ( myStats->type < KOBOLD ) //Original monster count
-					{
-						updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
-					}
-					else if ( myStats->type >= KOBOLD ) //New monsters
-					{
-						updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
-					}
+					updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority);
 				}
 				else
 				{
@@ -3898,14 +3884,7 @@ void Entity::handleEffects(Stat* myStats)
 					// update enemy bar for attacker
 					if ( !strcmp(myStats->name, "") )
 					{
-						if ( myStats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
-						}
-						else if ( myStats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
-						}
+						updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority);
 					}
 					else
 					{
@@ -4085,14 +4064,7 @@ void Entity::handleEffects(Stat* myStats)
 						// update enemy bar for attacker
 						if ( !strcmp(myStats->name, "") )
 						{
-							if ( myStats->type < KOBOLD ) //Original monster count
-							{
-								updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP, lowPriority);
-							}
-							else if ( myStats->type >= KOBOLD ) //New monsters
-							{
-								updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP, lowPriority);
-							}
+							updateEnemyBar(killer, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, lowPriority);
 						}
 						else
 						{
@@ -9198,14 +9170,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-						}
+						updateEnemyBar(this, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 					}
 					else
 					{
@@ -9251,14 +9216,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// update enemy bar for attacker
 								if ( !strcmp(myStats->name, "") )
 								{
-									if ( myStats->type < KOBOLD ) //Original monster count
-									{
-										updateEnemyBar(illusionParent, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
-									}
-									else if ( myStats->type >= KOBOLD ) //New monsters
-									{
-										updateEnemyBar(illusionParent, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
-									}
+									updateEnemyBar(illusionParent, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP);
 								}
 								else
 								{
@@ -9405,7 +9363,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 										if ( !strcmp(hitstats->name, "") )
 										{
-											messagePlayerColor(player, color, monsterHitMessage, hit.entity->getMonsterLangEntry());
+											messagePlayerColor(player, color, monsterHitMessage, getMonsterLocalizedName(hitstats->type).c_str());
 										}
 										else
 										{
@@ -9641,7 +9599,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( !strcmp(hitstats->name, "") )
 								{
-									messagePlayerColor(player, color, language[2440], hit.entity->getMonsterLangEntry());
+									messagePlayerColor(player, color, language[2440], getMonsterLocalizedName(hitstats->type).c_str());
 								}
 								else
 								{
@@ -10846,7 +10804,7 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return false;
 	}
-	if ( everybodyfriendly )   // friendly monsters mode
+	if ( everybodyfriendly || intro )   // friendly monsters mode
 	{
 		return false;
 	}
@@ -11249,7 +11207,7 @@ bool Entity::checkFriend(Entity* your)
 		return false;
 	}
 
-	if ( everybodyfriendly )   // friendly monsters mode
+	if ( everybodyfriendly || intro )   // friendly monsters mode
 	{
 		return true;
 	}
@@ -12327,7 +12285,6 @@ int getStatForProficiency(int skill)
 		case PRO_UNARMED:
 			statForProficiency = STAT_STR;
 			break;
-		case PRO_LOCKPICKING:	// base attribute: dex
 		case PRO_STEALTH:		// base attribute: dex
 		case PRO_RANGED:        // base attribute: dex
 			statForProficiency = STAT_DEX;
@@ -12341,6 +12298,7 @@ int getStatForProficiency(int skill)
 		case PRO_ALCHEMY:       // base attribute: int
 			statForProficiency = STAT_INT;
 			break;
+		case PRO_LOCKPICKING:	// base attribute: per
 		case PRO_APPRAISAL:		// base attribute: per
 			statForProficiency = STAT_PER;
 			break;
@@ -14445,16 +14403,8 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			if ( targetStats->type != HUMAN )
 			{
-				if ( targetStats->type < KOBOLD ) //Original monster count
-				{
-					messagePlayer(target.skill[2], language[3243],
-						namesays, language[90 + targetStats->type]);
-				}
-				else if ( targetStats->type >= KOBOLD ) //New monsters
-				{
-					messagePlayer(target.skill[2], language[3243], namesays,
-						language[2000 + (targetStats->type - KOBOLD)]);
-				}
+				messagePlayer(target.skill[2], language[3243],
+					namesays, getMonsterLocalizedName(targetStats->type).c_str());
 				steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 			}
 			else
@@ -15795,31 +15745,6 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 	return false;
 }
 
-char* Entity::getMonsterLangEntry()
-{
-	Stat* myStats = getStats();
-	if ( !myStats )
-	{
-		return nullptr;
-	}
-	if ( !strcmp(myStats->name, "") )
-	{
-		if ( myStats->type < KOBOLD ) //Original monster count
-		{
-			return language[90 + myStats->type];
-		}
-		else if ( myStats->type >= KOBOLD ) //New monsters
-		{
-			return language[2000 + (myStats->type - KOBOLD)];
-		}
-	}
-	else
-	{
-		return myStats->name;
-	}
-	return nullptr;
-}
-
 void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 {
 	std::mt19937 seed(rand()); // seed of distribution.
@@ -16385,7 +16310,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 int Entity::getBaseManaRegen(Stat& myStats)
 {
 	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
-	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 2 to 7
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
@@ -16401,19 +16326,20 @@ int Entity::getBaseManaRegen(Stat& myStats)
 		multipliedTotal += amount;
 	}
 
-	if ( behavior == &actPlayer && myStats.playerRace == INSECTOID && myStats.appearance == 0 )
-	{
-		int base = MAGIC_REGEN_TIME / 3;
-		if ( myStats.HUNGER < 50 )
-		{
-			base = MAGIC_REGEN_TIME * 3;
-		}
-		else if ( myStats.HUNGER < 250 )
-		{
-			base = MAGIC_REGEN_TIME;
-		}
-		return (base - static_cast<int>(std::min(multipliedTotal, 100))); // return 100-33 ticks, 2-0.67 seconds.
-	}
+	// unused - this is never hit by insectoid mana regen, old code
+	//if ( behavior == &actPlayer && myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+	//{
+	//	int base = MAGIC_REGEN_TIME / 3;
+	//	if ( myStats.HUNGER < 50 )
+	//	{
+	//		base = MAGIC_REGEN_TIME * 3;
+	//	}
+	//	else if ( myStats.HUNGER < 250 )
+	//	{
+	//		base = MAGIC_REGEN_TIME;
+	//	}
+	//	return (base - static_cast<int>(std::min(multipliedTotal, 100))); // return 100-33 ticks, 2-0.67 seconds.
+	//}
 
 	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
 }
@@ -16736,51 +16662,24 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				}
 				if ( c == player )
 				{
-					if ( monsterType < KOBOLD ) // Original monster count
-					{
-						messagePlayerColor(c, color, msgNamed, language[90 + monsterType], monsterStats.obituary);
-					}
-					else if ( monsterType >= KOBOLD ) //New monsters
-					{
-						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterType - KOBOLD)], monsterStats.obituary);
-					}
+					messagePlayerColor(c, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
 				else
 				{
-					if ( monsterType < KOBOLD ) // Original monster count
-					{
-						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterType], monsterStats.obituary);
-					}
-					else if ( monsterType >= KOBOLD ) //New monsters
-					{
-						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterType - KOBOLD)], monsterStats.obituary);
-					}
+					messagePlayerColor(c, color, msgGeneric, stats[player]->name, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
 		{
-			if ( monsterType < KOBOLD ) // Original monster count
-			{
-				messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], language[132 + monsterType]);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], language[2100 + (monsterType - KOBOLD)]);
-			}
+			messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), 
+				getMonsterLocalizedInjury((Monster)monsterType).c_str());
 		}
 		else if ( detailType == MSG_STEAL_WEAPON )
 		{
 			if ( monsterStats.weapon )
 			{
-				if ( monsterType < KOBOLD ) // Original monster count
-				{
-					messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], monsterStats.weapon->getName());
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
-				{
-					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], monsterStats.weapon->getName());
-				}
+				messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.weapon->getName());
 			}
 		}
 		else if ( detailType == MSG_TOOL_BOMB )
@@ -16789,26 +16688,12 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			if ( optionalEntity && optionalEntity->behavior == &actBomb )
 			{
 				itemType = optionalEntity->skill[21];
-				if ( monsterType < KOBOLD ) // Original monster count
-				{
-					messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], items[itemType].name_identified);
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
-				{
-					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], items[itemType].name_identified);
-				}
+				messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
 			}
 		}
 		else
 		{
-			if ( monsterType < KOBOLD ) // Original monster count
-			{
-				messagePlayerColor(player, color, msgGeneric, language[90 + monsterType]);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)]);
-			}
+			messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
 	}
 	else
@@ -16820,13 +16705,9 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterType < KOBOLD ) //Original monster count
+			else
 			{
-				messagePlayerColor(player, color, msgNamed, language[90 + monsterType], monsterStats.name);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgNamed, language[2000 + (monsterType - KOBOLD)], monsterStats.name);
+				messagePlayerColor(player, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.name);
 			}
 		}
 		else if ( detailType == MSG_COMBAT )
@@ -16875,35 +16756,20 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterType < KOBOLD ) // Original monster count
+			else
 			{
-				messagePlayerColor(player, color, msgGeneric, language[90 + monsterType]);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)]);
+				messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
 		{
 			if ( namedMonsterAsGeneric )
 			{
-				if ( monsterType < KOBOLD ) // Original monster count
-				{
-					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[132 + monsterType]);
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
-				{
-					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[2100 + (monsterType - KOBOLD)]);
-				}
+				messagePlayerColor(player, color, msgGeneric, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
-			else if ( monsterType < KOBOLD ) // Original monster count
+			else
 			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[132 + monsterType]);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[2100 + (monsterType - KOBOLD)]);
+				messagePlayerColor(player, color, msgNamed, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
 		}
 		else if ( detailType == MSG_STEAL_WEAPON )
@@ -16934,13 +16800,9 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				{
 					messagePlayerColor(player, color, msgGeneric, monsterStats.name, items[itemType].name_identified);
 				}
-				else if ( monsterType < KOBOLD ) // Original monster count
+				else
 				{
-					messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], items[itemType].name_identified);
-				}
-				else if ( monsterType >= KOBOLD ) //New monsters
-				{
-					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], items[itemType].name_identified);
+					messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
 				}
 			}
 		}
@@ -19056,6 +18918,11 @@ bool Entity::bEntityHighlightedForPlayer(const int player) const
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
 		return false;
+	}
+	if ( (behavior == &actPlayer || behavior == &actPlayerLimb) 
+		&& StatueManager.activeEditing && highlightForUI > 0.001 )
+	{
+		return true;
 	}
 	if ( behavior == &actMonster || behavior == &actPlayer )
 	{

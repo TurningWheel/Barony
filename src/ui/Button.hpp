@@ -57,11 +57,16 @@ public:
 	virtual void scrollParent();
 
 	//! draws the button
-	//! @param renderer the renderer object used to draw the button
 	//! @param _size size and position of button's parent frame
 	//! @param _actualSize offset into the parent frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets);
+	void draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+
+	//! draws post elements on the button
+	//! @param _size size and position of button's parent frame
+	//! @param _actualSize offset into the parent frame space (scroll)
+	//! @param selectedWidgets the currently selected widgets, if any
+	void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
 
 	//! handles button clicks, etc.
 	//! @param _size size and position of button's parent frame
@@ -69,6 +74,9 @@ public:
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return resultant state of the button after processing
 	result_t process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable);
+
+	//! gets the physical screen-space x/y (not relative to current parent - but to the absolute root)
+	SDL_Rect getAbsoluteSize() const;
 
 	//! activates the button
 	virtual void activate() override;

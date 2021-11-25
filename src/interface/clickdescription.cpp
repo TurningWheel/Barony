@@ -93,6 +93,11 @@ void clickDescription(int player, Entity* entity)
 				{
 					return;    //Click falls inside the right sidebar.
 				}
+
+			if ( players[player]->skillSheet.bSkillSheetOpen )
+			{
+				return;
+			}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
@@ -359,6 +364,32 @@ void clickDescription(int player, Entity* entity)
 				else if ( entity->behavior == &actPedestalOrb )
 				{
 					messagePlayer(player, language[2377]);
+				}
+				else if ( entity->behavior == &actTeleporter || entity->behavior == &actCustomPortal )
+				{
+					if ( entity->sprite == 161 )
+					{
+						messagePlayer(player, language[264]);
+					}
+					else if ( entity->sprite == 253 )
+					{
+						messagePlayer(player, language[265]);
+					}
+					else if ( (entity->sprite >= 254 && entity->sprite < 258) ||
+						(entity->sprite >= 278 && entity->sprite < 282) ||
+						(entity->sprite >= 614 && entity->sprite < 618) ||
+						(entity->sprite >= 992 && entity->sprite < 995) ||
+						(entity->sprite == 620))
+					{
+						messagePlayer(player, language[272]);
+					}
+				}
+				else if ( entity->behavior == &actFloorDecoration )
+				{
+					if ( entity->sprite == 991 )
+					{
+						messagePlayer(player, language[4073]);
+					}
 				}
 			}
 			else

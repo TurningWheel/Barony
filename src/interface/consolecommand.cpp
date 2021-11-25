@@ -29,6 +29,7 @@
 #include "../collision.hpp"
 #include "../player.hpp"
 #include "../ui/GameUI.hpp"
+#include "../classdescriptions.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -170,7 +171,7 @@ void consoleCommand(char const * const command_str)
 
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strstr(items[c].name_identified, name) )
+			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
 				if ( c == TOOL_TINOPENER )
 				{
@@ -178,6 +179,21 @@ void consoleCommand(char const * const command_str)
 				}
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; c++ )
+			{
+				if ( strstr(items[c].name_identified, name) )
+				{
+					if ( c == TOOL_TINOPENER )
+					{
+						dropItem(newItem(FOOD_TIN, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					}
+					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					break;
+				}
 			}
 		}
 		if ( c == NUMITEMS )
@@ -195,7 +211,7 @@ void consoleCommand(char const * const command_str)
 		strcpy(name, command_str + 13);
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strstr(items[c].name_identified, name) )
+			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
 				if ( c == TOOL_TINOPENER )
 				{
@@ -203,6 +219,21 @@ void consoleCommand(char const * const command_str)
 				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; c++ )
+			{
+				if ( strstr(items[c].name_identified, name) )
+				{
+					if ( c == TOOL_TINOPENER )
+					{
+						dropItem(newItem(FOOD_TIN, WORN, -2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					}
+					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+					break;
+				}
 			}
 		}
 		if ( c == NUMITEMS )
@@ -220,7 +251,7 @@ void consoleCommand(char const * const command_str)
 		strcpy(name, command_str + 14);
 		for ( c = 0; c < NUMITEMS; ++c )
 		{
-			if ( strstr(items[c].name_identified, name) )
+			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
 				if ( c == TOOL_TINOPENER )
 				{
@@ -228,6 +259,21 @@ void consoleCommand(char const * const command_str)
 				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; ++c )
+			{
+				if ( strstr(items[c].name_identified, name) )
+				{
+					if ( c == TOOL_TINOPENER )
+					{
+						dropItem(newItem(FOOD_TIN, WORN, 2, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					}
+					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+					break;
+				}
 			}
 		}
 		if ( c == NUMITEMS )
@@ -486,6 +532,14 @@ void consoleCommand(char const * const command_str)
 			{
 				yres = atoi(&command_str[c + 1]);
 				break;
+			}
+		}
+		if (initialized)
+		{
+			if ( !changeVideoMode() )
+			{
+				printlog("critical error! Attempting to abort safely...\n");
+				mainloop = 0;
 			}
 		}
 	}
@@ -1359,6 +1413,14 @@ void consoleCommand(char const * const command_str)
 					{
 						SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
 					}
+					if ( polymodels[c].grayscale_colors )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+					}
+					if ( polymodels[c].grayscale_colors_shifted )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
+					}
 				}
 				models[c] = loadVoxel(name2);
 			}
@@ -1496,25 +1558,12 @@ void consoleCommand(char const * const command_str)
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( i < KOBOLD ) //Search original monsters
+				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
 				{
-					if ( strstr(language[90 + i], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
+					creature = i;
+					found = true;
+					break;
 				}
-				else if ( i >= KOBOLD ) //Search additional monsters
-				{
-					if ( strstr(language[2000 + (i - KOBOLD)], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
-				}
-
 			}
 
 			if (found)
@@ -1549,23 +1598,11 @@ void consoleCommand(char const * const command_str)
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( i < KOBOLD ) //Search original monsters
+				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
 				{
-					if ( strstr(language[90 + i], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
-				}
-				else if ( i >= KOBOLD ) //Search additional monsters
-				{
-					if ( strstr(language[2000 + (i - KOBOLD)], name) )
-					{
-						creature = i;
-						found = true;
-						break;
-					}
+					creature = i;
+					found = true;
+					break;
 				}
 			}
 			if ( !found )
@@ -1576,14 +1613,7 @@ void consoleCommand(char const * const command_str)
 					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 					if ( monster )
 					{
-						if ( static_cast<Monster>(statEntry->type) < KOBOLD )
-						{
-							messagePlayer(clientnum, language[302], language[90 + static_cast<Monster>(statEntry->type)]);
-						}
-						else if ( static_cast<Monster>(statEntry->type) >= KOBOLD )
-						{
-							messagePlayer(clientnum, language[302], language[2000 + (static_cast<Monster>(statEntry->type) - 21)]);
-						}
+						messagePlayer(clientnum, language[302], getMonsterLocalizedName(static_cast<Monster>(statEntry->type)).c_str());
 						if ( monster->getStats() )
 						{
 							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
@@ -1635,25 +1665,11 @@ void consoleCommand(char const * const command_str)
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					if ( i < KOBOLD )
-					{
-						messagePlayer(clientnum, language[302], language[90 + creature]);
-					}
-					else if ( i >= KOBOLD )
-					{
-						messagePlayer(clientnum, language[302], language[2000 + (creature-21)]);
-					}
+					messagePlayer(clientnum, language[302], getMonsterLocalizedName((Monster)creature).c_str());
 				}
 				else
 				{
-					if ( i < KOBOLD )
-					{
-						messagePlayer(clientnum, language[303], language[90 + creature]);
-					}
-					else if ( i >= KOBOLD )
-					{
-						messagePlayer(clientnum, language[303], language[2000 + (creature - KOBOLD)]);
-					}
+					messagePlayer(clientnum, language[303], getMonsterLocalizedName((Monster)creature).c_str());
 				}
 			}
 			else
@@ -2692,7 +2708,7 @@ void consoleCommand(char const * const command_str)
 		{
 			networkTickrate = atoi(&command_str[10]);
 			networkTickrate = std::max<Uint32>(1, networkTickrate);
-			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.", 
+			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.",
 				networkTickrate, 100.f / networkTickrate);
 		}
 		else if ( !strncmp(command_str, "/disablenetcodefpslimit", 23) )
@@ -2726,7 +2742,7 @@ void consoleCommand(char const * const command_str)
 				messagePlayer(clientnum, language[284]);
 				return;
 			}
-			
+
 			Uint32 newseed = atoi(&command_str[12]);
 			forceMapSeed = newseed;
 			messagePlayer(clientnum, "Set next map seed to: %d", forceMapSeed);
@@ -2967,23 +2983,11 @@ void consoleCommand(char const * const command_str)
 
 			for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
 			{
-				if ( i < KOBOLD ) //Search original monsters
+				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
 				{
-					if ( strstr(language[90 + i], name) )
-					{
-						creature = i;
-						break;
-					}
+					creature = i;
+					break;
 				}
-				else if ( i >= KOBOLD ) //Search additional monsters
-				{
-					if ( strstr(language[2000 + (i - KOBOLD)], name) )
-					{
-						creature = i;
-						break;
-					}
-				}
-
 			}
 
 			if ( creature != NOTHING )
@@ -3433,10 +3437,104 @@ void consoleCommand(char const * const command_str)
 			loadHUDSettingsJSON();
 			messagePlayer(clientnum, "Reloaded HUD_settings.json");
 		}
+		else if ( !strncmp(command_str, "/loadskillsheet", 15) )
+		{
+			Player::SkillSheet_t::loadSkillSheetJSON();
+			messagePlayer(clientnum, "Reloaded skillsheet_entries.json");
+		}
+		else if ( !strncmp(command_str, "/loadcharsheet", 14) )
+		{
+			Player::CharacterSheet_t::loadCharacterSheetJSON();
+			messagePlayer(clientnum, "Reloaded charsheet_settings.json");
+		}
+		else if ( !strncmp(command_str, "/printleaderlist", 16) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
+			messagePlayer(clientnum, "On next human right click leader list will be generated.");
+		}
+		else if ( !strncmp(command_str, "/poly", 5) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( players[clientnum]->entity )
+			{
+				spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
+			}
+		}
+		else if ( !strncmp(command_str, "/sexchange", 10) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			stats[clientnum]->sex = stats[clientnum]->sex == sex_t::MALE ? sex_t::FEMALE : sex_t::MALE;
+		}
+		else if ( !strncmp(command_str, "/appearances", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			++stats[clientnum]->appearance;
+			if ( stats[clientnum]->appearance >= NUMAPPEARANCES )
+			{
+				stats[clientnum]->appearance = 0;
+			}
+		}
+		else if ( !strncmp(command_str, "/classdebug", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			client_classes[clientnum] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+		}
+		else if ( !strncmp(command_str, "/unpoly", 7) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( players[clientnum]->entity )
+			{
+				players[clientnum]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+			}
+		}
 		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
 		{
 			restrictPaperDollMovement = !restrictPaperDollMovement;
 			messagePlayer(clientnum, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
+		}
+		else if ( !strncmp(command_str, "/exportstatue", 13) )
+		{
+			StatueManager.exportActive = true;
+		}
+		else if ( !strncmp(command_str, "/importstatue ", 14) )
+		{
+			int index = atoi(&command_str[14]);
+			StatueManager.readStatueFromFile(index);
+		}
+		else if ( !strncmp(command_str, "/timertests", 11) )
+		{
+			TimerExperiments::bUseTimerInterpolation = !TimerExperiments::bUseTimerInterpolation;
+			messagePlayer(clientnum, "Set bUseTimerInterpolation to %d", TimerExperiments::bUseTimerInterpolation);
+		}
+		else if ( !strncmp(command_str, "/timertestsdebug", 16) )
+		{
+			TimerExperiments::bDebug = !TimerExperiments::bDebug;
+			messagePlayer(clientnum, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
 		}
 		else
 		{
