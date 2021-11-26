@@ -1572,6 +1572,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 			//TODO UI: CLEANUP COMMENTS
 			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY);
+			bool mouseInInventory = mouseInsidePlayerInventory(player);
 			if ( mouseOverSlot && slotFrameY > Player::Inventory_t::DOLL_ROW_5 )
 			{
 				if ( bPaperDollItem )
@@ -1723,44 +1724,6 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 				playSound(139, 64); // click sound
 			}
-			else if (itemCategory(selectedItem) == SPELL_CAT)
-			{
-				//Outside inventory. Spells can't be dropped.
-				int slotNum = 0;
-				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
-				if (slot)
-				{
-					//Add spell to hotbar.
-					Item* tempItem = uidToItem(slot->item);
-					if (tempItem)
-					{
-						slot->item = selectedItem->uid;
-						selectedItem = tempItem;
-						toggleclick = true;
-					}
-					else
-					{
-						slot->item = selectedItem->uid;
-						selectedItem = NULL;
-						toggleclick = false;
-					}
-					// empty out duplicate slots that match this item uid.
-					int i = 0;
-					for ( auto& s : players[player]->hotbar.slots() )
-					{
-						if ( i != slotNum && s.item == slot->item )
-						{
-							s.item = 0;
-						}
-						++i;
-					}
-					playSound(139, 64); // click sound
-				}
-				else
-				{
-					selectedItem = NULL;
-				}
-			}
 			else if ( frame && frame->findFrame("paperdoll slots") && frame->findFrame("paperdoll slots")->capturesMouseInRealtimeCoords() )
 			{
 				// get slot for item type
@@ -1856,6 +1819,44 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					}
 
 					playSound(139, 64); // click sound
+				}
+			}
+			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory )
+			{
+				//Outside inventory. Spells can't be dropped.
+				int slotNum = 0;
+				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
+				if ( slot )
+				{
+					//Add spell to hotbar.
+					Item* tempItem = uidToItem(slot->item);
+					if ( tempItem )
+					{
+						slot->item = selectedItem->uid;
+						selectedItem = tempItem;
+						toggleclick = true;
+					}
+					else
+					{
+						slot->item = selectedItem->uid;
+						selectedItem = NULL;
+						toggleclick = false;
+					}
+					// empty out duplicate slots that match this item uid.
+					int i = 0;
+					for ( auto& s : players[player]->hotbar.slots() )
+					{
+						if ( i != slotNum && s.item == slot->item )
+						{
+							s.item = 0;
+						}
+						++i;
+					}
+					playSound(139, 64); // click sound
+				}
+				else
+				{
+					selectedItem = NULL;
 				}
 			}
 			else
@@ -7601,6 +7602,13 @@ bool mouseInsidePlayerInventory(const int player)
 		if ( auto dollSlots = players[player]->inventoryUI.frame->findFrame("paperdoll slots") )
 		{
 			if ( !dollSlots->isDisabled() && dollSlots->capturesMouse() )
+			{
+				return true;
+			}
+		}
+		if ( auto backpackSlots = players[player]->inventoryUI.frame->findFrame("backpack slots") )
+		{
+			if ( !backpackSlots->isDisabled() && backpackSlots->capturesMouse() )
 			{
 				return true;
 			}
