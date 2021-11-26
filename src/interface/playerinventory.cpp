@@ -2020,7 +2020,7 @@ int getContextMenuOptionOrder(ItemContextMenuPrompts prompt)
 	return 5;
 }
 
-void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
+void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int justify)
 {
 	const int player = this->player.playernum;
 
@@ -3507,8 +3507,12 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 		// get left anchor for tooltip - if we want moving x tooltips, otherwise currently anchor to right of inventory panel
 		//auto inventoryBgFrame = frameInventory->findFrame("inventory base");
 		//const int tooltipPosX = frameInventory->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
-
-		frameMain->setSize(SDL_Rect{ x, y, tooltipDisplayedSettings.tooltipWidth, tooltipDisplayedSettings.tooltipHeight - heightDiff });
+		SDL_Rect newPos { x, y, tooltipDisplayedSettings.tooltipWidth, tooltipDisplayedSettings.tooltipHeight - heightDiff };
+		if ( justify == Player::Inventory_t::PANEL_JUSTIFY_RIGHT )
+		{
+			newPos.x -= newPos.w;
+		}
+		frameMain->setSize(newPos);
 	}
 
 	// position the background elements.
@@ -4390,7 +4394,7 @@ void updatePlayerInventory(const int player)
 						{
 							if ( frame )
 							{
-								players[player]->hud.updateFrameTooltip(item, itemCoordX, itemCoordY);
+								players[player]->hud.updateFrameTooltip(item, itemCoordX, itemCoordY, players[player]->inventoryUI.PANEL_JUSTIFY_LEFT);
 							}
 							spell_t* spell = getSpellFromItem(player, item);
 							drawSpellTooltip(player, spell, item, nullptr);
@@ -4399,7 +4403,7 @@ void updatePlayerInventory(const int player)
 						{
 							if ( frame )
 							{
-								players[player]->hud.updateFrameTooltip(item, itemCoordX, itemCoordY);
+								players[player]->hud.updateFrameTooltip(item, itemCoordX, itemCoordY, players[player]->inventoryUI.PANEL_JUSTIFY_LEFT);
 							}
 							else
 							{
@@ -4591,6 +4595,184 @@ void updatePlayerInventory(const int player)
 	itemContextMenu(player);
 }
 
+void Player::Inventory_t::setCompactView(bool bCompact)
+{
+	bCompactView = bCompact;
+
+	if ( bCompactView )
+	{
+		bool invertJustification = false;
+		if ( player.camera_virtualWidth() == Frame::virtualScreenX
+			&& player.camera_virtualHeight() == Frame::virtualScreenY )
+		{
+			// fullscreen
+			invertJustification = false;
+		}
+		else if ( player.camera_virtualWidth() == Frame::virtualScreenX )
+		{
+			// widescreen
+			invertJustification = false;
+		}
+		else if ( player.camera_virtualHeight() == Frame::virtualScreenY )
+		{
+			// tallscreen
+			invertJustification = false;
+		}
+		else if ( player.camera_virtualWidth() < Frame::virtualScreenX * .8 
+			&& player.camera_virtualHeight() < Frame::virtualScreenY * .8 )
+		{
+			// quadrants
+			invertJustification = false;
+			if ( player.camera_virtualx1() > 0 ) // right-side
+			{
+				invertJustification = true;
+			}
+		}
+		if ( keystatus[SDL_SCANCODE_T] )
+		{
+			invertJustification = !invertJustification;
+		}
+		inventoryPanelJustify = (invertJustification == false) ? PANEL_JUSTIFY_LEFT : PANEL_JUSTIFY_RIGHT;
+		paperDollPanelJustify = (invertJustification == false) ? PANEL_JUSTIFY_RIGHT : PANEL_JUSTIFY_LEFT;
+	}
+	else
+	{
+		inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
+		paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
+	}
+}
+
+void Player::Inventory_t::resizeAndPositionInventoryElements()
+{
+	if ( !frame ) { return; }
+	auto inventoryBaseImagesFrame = frame->findFrame("inventory base");
+	auto invSlotsFrame = frame->findFrame("inventory slots");
+	auto dollSlotsFrame = frame->findFrame("paperdoll slots");
+	SDL_Rect invSlotsPos = invSlotsFrame->getSize();
+	SDL_Rect dollSlotsPos = dollSlotsFrame->getSize();
+
+	auto defaultInvImg = inventoryBaseImagesFrame->findImage("inventory base img");
+	if ( auto img = Image::get(defaultInvImg->path.c_str()) )
+	{
+		defaultInvImg->pos.x = 0;
+		defaultInvImg->pos.y = 0;
+		defaultInvImg->pos.w = img->getWidth();
+		defaultInvImg->pos.h = img->getHeight();
+		defaultInvImg->disabled = bCompactView ? true : false;
+	}
+
+	if ( !bCompactView )
+	{
+		SDL_Rect pos = inventoryBaseImagesFrame->getSize();
+		pos.w = defaultInvImg->pos.w;
+		pos.h = frame->getSize().h;
+		inventoryBaseImagesFrame->setSize(pos);
+	}
+	else
+	{
+		SDL_Rect pos = inventoryBaseImagesFrame->getSize();
+		// consume the entire window to position things on both sides
+		pos.w = frame->getSize().w;
+		pos.h = frame->getSize().h;
+		inventoryBaseImagesFrame->setSize(pos);
+	}
+
+	auto compactInvImg = inventoryBaseImagesFrame->findImage("inventory base compact img");
+	if ( auto img = Image::get(compactInvImg->path.c_str()) )
+	{
+		compactInvImg->pos.w = img->getWidth();
+		compactInvImg->pos.h = img->getHeight();
+		if ( inventoryPanelJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			compactInvImg->pos.x = inventoryBaseImagesFrame->getSize().w - compactInvImg->pos.w;
+		}
+		else if ( inventoryPanelJustify == PANEL_JUSTIFY_LEFT )
+		{
+			compactInvImg->pos.x = 0;
+		}
+		compactInvImg->pos.y = 4;
+		compactInvImg->disabled = bCompactView ? false : true;
+	}
+	auto compactCharImg = inventoryBaseImagesFrame->findImage("inventory character compact img");
+	if ( auto img = Image::get(compactCharImg->path.c_str()) )
+	{
+		compactCharImg->pos.w = img->getWidth();
+		compactCharImg->pos.h = img->getHeight();
+		if ( paperDollPanelJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			compactCharImg->pos.x = inventoryBaseImagesFrame->getSize().w - compactCharImg->pos.w;
+		}
+		else if ( paperDollPanelJustify == PANEL_JUSTIFY_LEFT )
+		{
+			compactCharImg->pos.x = 0;
+		}
+		compactCharImg->pos.y = 0;
+		compactCharImg->disabled = bCompactView ? false : true;
+	}
+
+	if ( !bCompactView )
+	{
+		invSlotsPos.x = 0;
+		invSlotsPos.y = 202;
+		invSlotsPos.w = defaultInvImg->pos.w;
+		invSlotsPos.h = 242;
+
+		dollSlotsPos.x = 0;
+		dollSlotsPos.y = 0;
+		dollSlotsPos.w = defaultInvImg->pos.w;
+		dollSlotsPos.h = 202;
+	}
+	else
+	{
+		invSlotsPos.w = compactInvImg->pos.w;
+		invSlotsPos.h = 242;
+		invSlotsPos.x = (inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? 0 
+			: inventoryBaseImagesFrame->getSize().w - invSlotsPos.w;
+		invSlotsPos.y = 8;
+
+		dollSlotsPos.w = defaultInvImg->pos.w;
+		dollSlotsPos.h = 202;
+		dollSlotsPos.x = (paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? 0 
+			: inventoryBaseImagesFrame->getSize().w - dollSlotsPos.w;
+		dollSlotsPos.y = 8;
+	}
+
+	invSlotsFrame->setSize(invSlotsPos);
+	dollSlotsFrame->setSize(dollSlotsPos);
+
+	auto characterPreview = frame->findFrame("inventory character preview");
+	auto characterPreviewPos = characterPreview->getSize();
+	characterPreviewPos.y = dollSlotsPos.y;
+	characterPreviewPos.h = dollSlotsPos.h;
+	characterPreviewPos.x = dollSlotsPos.x + getSlotSize() + 8;
+	characterPreview->setSize(characterPreviewPos);
+
+	auto flourishFrame = frame->findFrame("inventory base flourish");
+	auto flourishFramePos = flourishFrame->getSize();
+	flourishFramePos.x = dollSlotsPos.x + dollSlotsPos.w / 2 - flourishFramePos.w / 2;
+	flourishFramePos.y = dollSlotsPos.y + dollSlotsPos.h - flourishFramePos.h + 6;
+	flourishFrame->setSize(flourishFramePos);
+
+	auto backpackFrame = frame->findFrame("inventory backpack");
+	backpackFrame->setDisabled(true);
+	if ( getSizeY() > DEFAULT_INVENTORY_SIZEY )
+	{
+		backpackFrame->setDisabled(false);
+	}
+	auto backpackFramePos = backpackFrame->getSize();
+	if ( bCompactView )
+	{
+		backpackFramePos.x = compactInvImg->pos.x;
+		backpackFramePos.y = compactInvImg->pos.y + compactInvImg->pos.h - 6;
+	}
+	else
+	{
+		backpackFramePos.x = defaultInvImg->pos.x;
+		backpackFramePos.y = defaultInvImg->pos.y + defaultInvImg->pos.h - 6;
+	}
+	backpackFrame->setSize(backpackFramePos);
+}
+
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
@@ -4607,6 +4789,17 @@ void Player::Inventory_t::updateInventory()
 	}
 
 	frame->setDisabled(false);
+
+	{
+		// resize/position elements based on compact view or not
+		bool bCompactView = false;
+		if ( keystatus[SDL_SCANCODE_Y] )
+		{
+			bCompactView = true;
+		}
+		setCompactView(bCompactView);
+		resizeAndPositionInventoryElements();
+	}
 
 	bool disableMouseDisablingHotbarFocus = false;
 	SDL_Rect mode_pos{-100, -100, 0, 0};
@@ -4927,8 +5120,8 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( slotFrame = getInventorySlotFrame(selectedItem->x, selectedItem->y) )
 						{
-							borderPos.x = invSlotsFrame->getSize().x + slotFrame->getSize().x;
-							borderPos.y = invSlotsFrame->getSize().y + slotFrame->getSize().y;
+							borderPos.x = slotFrame->getAbsoluteSize().x;
+							borderPos.y = slotFrame->getAbsoluteSize().y;
 						}
 					}
 					if ( slotFrame )
@@ -5134,11 +5327,48 @@ void Player::Inventory_t::updateInventory()
 			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
 			{
 				auto inventoryBgFrame = frame->findFrame("inventory base");
-				int tooltipCoordX = frame->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
-				int tooltipCoordY = frame->getSize().y + slotFrame->getSize().y;
+				int tooltipCoordX = 0;
+				PanelJustify_t justify = itemOnPaperDoll ? paperDollPanelJustify : inventoryPanelJustify;
+				if ( !bCompactView )
+				{
+					auto invBaseImg = inventoryBgFrame->findImage("inventory base img");
+
+					if ( justify == PANEL_JUSTIFY_LEFT )
+					{
+						tooltipCoordX = inventoryBgFrame->getSize().x + 8;
+						tooltipCoordX += invBaseImg->pos.w;
+					}
+					else
+					{
+						tooltipCoordX = inventoryBgFrame->getSize().x - 8;
+						tooltipCoordX += invBaseImg->pos.x;
+					}
+				}
+				else
+				{
+					auto compactImg = itemOnPaperDoll ? 
+						inventoryBgFrame->findImage("inventory character compact img")
+						: inventoryBgFrame->findImage("inventory base compact img");
+
+					if ( justify == PANEL_JUSTIFY_LEFT )
+					{
+						tooltipCoordX = inventoryBgFrame->getSize().x + 8;
+						tooltipCoordX += compactImg->pos.w;
+					}
+					else
+					{
+						tooltipCoordX = inventoryBgFrame->getSize().x - 8;
+						tooltipCoordX += compactImg->pos.x;
+					}
+				}
+				int tooltipCoordY = slotFrame->getSize().y;
 				if ( !itemOnPaperDoll )
 				{
-					tooltipCoordY += frame->findFrame("inventory slots")->getSize().y;
+					tooltipCoordY += invSlotsFrame->getSize().y;
+				}
+				else
+				{
+					tooltipCoordY += dollSlotsFrame->getSize().y;
 				}
 
 				// tooltip
@@ -5152,7 +5382,7 @@ void Player::Inventory_t::updateInventory()
 				if ( !itemMenuOpen )
 				{
 					tooltipOpen = true;
-					players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY);
+					players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
 				}
 
 				if ( stats[player]->HP <= 0 )

@@ -30,6 +30,8 @@ int selectedCursorOpacity = 255;
 int oldSelectedCursorOpacity = 255;
 int hotbarSlotOpacity = 255;
 int hotbarSelectedSlotOpacity = 255;
+int hotbarCompactOffsetX = 0;
+real_t hotbarCompactSlotOverlapPercent = 0.0;
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 struct CustomColors_t
@@ -369,7 +371,7 @@ void createEnemyBar(const int player, Frame*& frame)
 	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face2_00.png", "skull 50 img");
 	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face1_00.png", "skull 100 img");
 
-	std::string font = "fonts/pixel_maz.ttf#16#2";
+	std::string font = "fonts/pixel_maz.ttf#32#2";
 	Uint32 color = makeColor(235, 191, 140, 255);
 	auto enemyName = frame->addField("enemy name txt", 128);
 	enemyName->setSize(SDL_Rect{ 0, 0, frame->getSize().w, frame->getSize().h});
@@ -450,13 +452,16 @@ void createHotbar(const int player)
 	}
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, hotbarSlotOpacity);
 	SDL_Rect slotPos{ 0, 0, hotbar_t.getSlotSize(), hotbar_t.getSlotSize() };
-	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	std::array<int, NUM_HOTBAR_SLOTS> slotCreationOrder = {
+		0, 2, 3, 5, 6, 8, 9, 1, 4, 7
+	};
+	for ( auto& i : slotCreationOrder )
 	{
 		char slotname[32];
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
 		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
 		slot->setSize(slotPos);
-		slot->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_00.png", "slot img");
+		slot->addImage(slotPos, color, "images/ui/HUD/HUD_ActionPromptBacking.png", "slot img");
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
@@ -494,7 +499,7 @@ void createHotbar(const int player)
 
 	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
 	highlightFrame->setSize(slotPos);
-	highlightFrame->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_00.png", "highlight img");
+	highlightFrame->addImage(slotPos, color, "images/ui/HUD/HUD_ActionPromptBacking.png", "highlight img");
 
 	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
 	SDL_Rect itemSlotTempSize = slotPos;
@@ -557,6 +562,259 @@ void createHotbar(const int player)
 	text->setOntop(true);
 }
 
+void createActionPrompts(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto& actionPromptFrame = hud_t.actionPromptsFrame;
+	actionPromptFrame = hud_t.hudFrame->addFrame("action prompts");
+	actionPromptFrame->setHollow(true);
+	actionPromptFrame->setBorder(0);
+	actionPromptFrame->setOwner(player);
+	actionPromptFrame->setSize(SDL_Rect{ 0, 0, hud_t.hudFrame->getSize().w, hud_t.hudFrame->getSize().h });
+	actionPromptFrame->setDisabled(true);
+
+	const int iconSize = Player::HUD_t::actionPromptIconSize;
+	const int glyphSize = 32;
+	const int iconBackingSize = Player::HUD_t::actionPromptBackingSize;
+	const int maxWidth = std::max(iconSize, iconBackingSize);
+	const int maxHeight = std::max(iconSize, iconBackingSize);
+	const int promptHeight = maxHeight + glyphSize; // vertical space for prompts
+
+	SDL_Rect iconPos{ maxWidth / 2 - iconSize / 2 - 1, 
+		promptHeight - maxHeight / 2 - iconSize / 2 - 1, 
+		iconSize, 
+		iconSize };
+	SDL_Rect iconBackingPos{ maxWidth / 2 - iconBackingSize / 2, 
+		promptHeight - maxHeight / 2 - iconBackingSize / 2, 
+		iconBackingSize, 
+		iconBackingSize };
+
+	const char* promptFont = "fonts/pixel_maz_multiline.ttf#16#2";
+
+	auto mainHand = actionPromptFrame->addFrame("action mainhand");
+	mainHand->setSize(SDL_Rect{ 400, 400, maxWidth, promptHeight });
+	mainHand->addImage(iconBackingPos,
+		0xFFFFFFFF, "#*images/ui/HUD/HUD_ActionPromptBacking.png", "action img backing");
+	mainHand->addImage(iconPos,
+		0xFFFFFFFF, "images/system/white.png", "action img");
+	mainHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	auto mainHandText = actionPromptFrame->addField("action mainhand text", 64);
+	mainHandText->setFont(promptFont);
+	mainHandText->setText("Attack");
+	mainHandText->setHJustify(Field::justify_t::CENTER);
+
+	auto offHand = actionPromptFrame->addFrame("action offhand");
+	offHand->setSize(SDL_Rect{ 440, 400, maxWidth, promptHeight });
+	offHand->addImage(iconBackingPos,
+		0xFFFFFFFF, "#*images/ui/HUD/HUD_ActionPromptBacking.png", "action img backing");
+	offHand->addImage(iconPos,
+		0xFFFFFFFF, "images/system/white.png", "action img");
+	offHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	auto offHandText = actionPromptFrame->addField("action offhand text", 64);
+	offHandText->setFont(promptFont);
+	offHandText->setText("Sneak");
+	offHandText->setHJustify(Field::justify_t::CENTER);
+
+	auto magic = actionPromptFrame->addFrame("action magic");
+	magic->setSize(SDL_Rect{ 480, 400, maxWidth, promptHeight });
+	magic->addImage(iconBackingPos,
+		0xFFFFFFFF, "#*images/ui/HUD/HUD_ActionPromptBacking.png", "action img backing");
+	magic->addImage(iconPos,
+		0xFFFFFFFF, "images/system/white.png", "action img");
+	magic->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	auto magicText = actionPromptFrame->addField("action magic text", 64);
+	magicText->setFont(promptFont);
+	magicText->setText("Cast spell");
+	magicText->setHJustify(Field::justify_t::CENTER);
+}
+
+int Player::HUD_t::actionPromptOffsetX = 0;
+int Player::HUD_t::actionPromptOffsetY = 0;
+int Player::HUD_t::actionPromptBackingSize = 0;
+int Player::HUD_t::actionPromptIconSize = 0;
+void Player::HUD_t::updateActionPrompts()
+{
+	if ( !hudFrame )
+	{
+		return;
+	}
+
+	if ( !actionPromptsFrame )
+	{
+		createActionPrompts(player.playernum);
+		if ( !actionPromptsFrame )
+		{
+			return;
+		}
+	}
+
+	if ( !bShowActionPrompts )
+	{
+		actionPromptsFrame->setDisabled(true);
+		return;
+	}
+	actionPromptsFrame->setDisabled(false);
+	actionPromptsFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
+
+	const int iconSize = Player::HUD_t::actionPromptIconSize;
+	const int glyphSize = 32;
+	const int iconBackingSize = Player::HUD_t::actionPromptBackingSize;
+	const int maxWidth = std::max(iconSize, iconBackingSize);
+	const int maxHeight = std::max(iconSize, iconBackingSize);
+	const int promptHeight = maxHeight + glyphSize; // vertical space for prompts
+
+	SDL_Rect iconPos{ maxWidth / 2 - iconSize / 2 - 1,
+		maxHeight / 2 - iconSize / 2 - 1,
+		iconSize,
+		iconSize };
+	SDL_Rect iconBackingPos{ maxWidth / 2 - iconBackingSize / 2,
+		maxHeight / 2 - iconBackingSize / 2,
+		iconBackingSize,
+		iconBackingSize };
+
+	struct PromptInfo {
+		std::string name;
+		ActionPrompts promptType;
+		std::string inputName;
+	};
+	std::vector<PromptInfo> allPrompts;
+	allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast" });
+	allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
+	allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+
+	int index = 0;
+	for ( auto& promptInfo : allPrompts )
+	{
+		if ( auto prompt = actionPromptsFrame->findFrame(promptInfo.name.c_str()) )
+		{
+			auto img = prompt->findImage("action img");
+			auto glyph = prompt->findImage("action glyph");
+			auto imgBacking = prompt->findImage("action img backing");
+
+			SDL_Rect promptPos = prompt->getSize();
+			promptPos.w = maxWidth;
+			promptPos.h = promptHeight;
+			switch ( index )
+			{
+				case 0: // to the left of hotbar
+					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetX;
+					break;
+				case 1: // to the left after the previous
+					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetX;
+					promptPos.x -= 16;
+					promptPos.x -= promptPos.w;
+					break;
+				case 2: // to the right of hotbar
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x -= promptPos.w;
+					break;
+				default:
+					break;
+			}
+			promptPos.y = hudFrame->getSize().h + player.hotbar.getHotbarStartY2() - promptPos.h;
+			promptPos.y += maxHeight / 2;
+			promptPos.y += actionPromptOffsetY;
+			prompt->setSize(promptPos);
+
+			img->pos = iconPos;
+			imgBacking->pos = iconBackingPos;
+
+			std::string textForPrompt = "";
+			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
+
+			Field* promptText = nullptr;
+			switch ( promptInfo.promptType )
+			{
+				case ACTION_PROMPT_MAINHAND:
+					promptText = actionPromptsFrame->findField("action mainhand text");
+					break;
+				case ACTION_PROMPT_OFFHAND:
+					promptText = actionPromptsFrame->findField("action offhand text");
+					break;
+				case ACTION_PROMPT_MAGIC:
+					promptText = actionPromptsFrame->findField("action magic text");
+					break;
+				default:
+					break;
+			}
+
+			if ( player.shootmode )
+			{
+				promptText->setDisabled(true);
+			}
+			else
+			{
+				promptText->setDisabled(false);
+				promptText->setText(textForPrompt.c_str());
+				SDL_Rect textPos;
+				auto textGetLongestLine = Text::get(promptText->getLongestLine().c_str(),
+					promptText->getFont(),
+					promptText->getTextColor(),
+					promptText->getOutlineColor());
+				textPos.w = textGetLongestLine->getWidth();
+				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height();
+				textPos.x = promptPos.x + promptPos.w / 2 - textPos.w / 2;
+				textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4;
+				promptText->setSize(textPos);
+			}
+
+			std::string skillImg = "";
+			if ( skillForPrompt >= 0 && skillForPrompt < NUMPROFICIENCIES )
+			{
+				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+				{
+					if ( skill.skillId == skillForPrompt )
+					{
+						if ( skillCapstoneUnlocked(player.playernum, skillForPrompt) )
+						{
+							skillImg = skill.skillIconPathLegend;
+						}
+						else
+						{
+							skillImg = skill.skillIconPath;
+						}
+						break;
+					}
+				}
+			}
+			if ( skillImg == "" )
+			{
+				prompt->setDisabled(true);
+			}
+			else
+			{
+				prompt->setDisabled(false);
+				img->path = skillImg;
+				if ( img->path[0] != '*' )
+				{
+					img->path = '*' + img->path;
+				}
+			}
+			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str());
+			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				glyph->disabled = false; // keyboard glyph support TODO
+			}
+			else
+			{
+				glyph->disabled = false;
+			}
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
+			{
+				glyph->pos.w = imgGet->getWidth();
+				glyph->pos.h = imgGet->getHeight();
+			}
+			glyph->pos.x = prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
+			const int glyphToImgPadY = 0;
+			glyph->pos.y = img->pos.y + img->pos.h - glyphToImgPadY; // just above the skill img with some padding
+		}
+		++index;
+	}
+}
+
 void Player::HUD_t::processHUD()
 {
 	char name[32];
@@ -599,9 +857,11 @@ void Player::HUD_t::processHUD()
 	{
 		createEnemyBar(player.playernum, enemyBarFrameHUD);
 	}
+
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
+	updateActionPrompts();
 	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
 	enemyBarFrame->setDisabled(true);
 	enemyBarFrameHUD->setDisabled(true);
@@ -3310,7 +3570,7 @@ void resetInventorySlotFrames(const int player)
 	{
 		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 		{
-			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
+			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
 			{
 				if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
 				{
@@ -4682,14 +4942,6 @@ void loadHUDSettingsJSON()
 			}
 			else
 			{
-				if ( d.HasMember("hotbar_slot_opacity") )
-				{
-					hotbarSlotOpacity = d["hotbar_slot_opacity"].GetInt();
-				}
-				if ( d.HasMember("hotbar_selected_slot_opacity") )
-				{
-					hotbarSelectedSlotOpacity = d["hotbar_selected_slot_opacity"].GetInt();
-				}
 				if ( d.HasMember("selected_cursor_opacity") )
 				{
 					selectedCursorOpacity = d["selected_cursor_opacity"].GetInt();
@@ -4697,6 +4949,44 @@ void loadHUDSettingsJSON()
 				if ( d.HasMember("selected_old_cursor_opacity") )
 				{
 					oldSelectedCursorOpacity = d["selected_old_cursor_opacity"].GetInt();
+				}
+				if ( d.HasMember("hotbar") )
+				{
+					if ( d["hotbar"].HasMember("hotbar_slot_opacity") )
+					{
+						hotbarSlotOpacity = d["hotbar"]["hotbar_slot_opacity"].GetInt();
+					}
+					if ( d["hotbar"].HasMember("hotbar_selected_slot_opacity") )
+					{
+						hotbarSelectedSlotOpacity = d["hotbar"]["hotbar_selected_slot_opacity"].GetInt();
+					}
+					if ( d["hotbar"].HasMember("hotbar_compact_x_offset") )
+					{
+						hotbarCompactOffsetX = d["hotbar"]["hotbar_compact_x_offset"].GetInt();
+					}
+					if ( d["hotbar"].HasMember("hotbar_compact_slot_overlap") )
+					{
+						hotbarCompactSlotOverlapPercent = d["hotbar"]["hotbar_compact_slot_overlap"].GetDouble();
+					}
+				}
+				if ( d.HasMember("action_prompts") )
+				{
+					if ( d["action_prompts"].HasMember("x_offset") )
+					{
+						Player::HUD_t::actionPromptOffsetX = d["action_prompts"]["x_offset"].GetInt();
+					}
+					if ( d["action_prompts"].HasMember("y_offset") )
+					{
+						Player::HUD_t::actionPromptOffsetY = d["action_prompts"]["y_offset"].GetInt();
+					}
+					if ( d["action_prompts"].HasMember("icon_size") )
+					{
+						Player::HUD_t::actionPromptIconSize = d["action_prompts"]["icon_size"].GetInt();
+					}
+					if ( d["action_prompts"].HasMember("icon_backing_size") )
+					{
+						Player::HUD_t::actionPromptBackingSize = d["action_prompts"]["icon_backing_size"].GetInt();
+					}
 				}
 				if ( d.HasMember("enemy_hp_bars") )
 				{
@@ -4859,14 +5149,34 @@ void createPlayerInventory(const int player)
 
 	createInventoryTooltipFrame(player);
 
-	SDL_Rect basePos{ 0, 0, 105 * 2, 224 * 2 };
+	SDL_Rect basePos{ 0, 0, 210, 448 };
 	{
 		auto bgFrame = frame->addFrame("inventory base");
 		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, bgSize.h },
+		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
+
+		auto compactBase = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Inventory_BaseCompact_02.png", "inventory base compact img");
+		compactBase->disabled = true;
+
+		auto compactCharacterView = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 214 },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Inventory_CharacterCompact_02.png", "inventory character compact img");
+		compactCharacterView->disabled = true;
+
+	}
+
+	{
+		auto backpackFrame = frame->addFrame("inventory backpack");
+		backpackFrame->setSize(SDL_Rect{ 0, 202 + 242 - 2, 226, 102 });
+		auto backpackImg = backpackFrame->addImage(SDL_Rect{ 0, 0, 226, 102 },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Inventory_Base_Bag_00a.png", "inventory backpack img");
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
@@ -4893,6 +5203,39 @@ void createPlayerInventory(const int player)
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
 
 				auto slotFrame = invSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+				//slotFrame->setDisabled(true);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+	}
+
+	SDL_Rect backpackSlotsPos{ 0, 202 + 242, basePos.w, 242 };
+	{
+		const auto backPackSlotsFrame = frame->addFrame("backpack slots");
+		backPackSlotsFrame->setSize(backpackSlotsPos);
+		const int backpackBaseSlotOffsetY = 8;
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, backpackBaseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+
+		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			if ( x == 0 ) { currentSlotPos.x -= 4; } // backpack has unique first/last column entries
+			if ( x == players[player]->inventoryUI.getSizeX() - 1 ) { currentSlotPos.x += 4; }
+
+			for ( int y = players[player]->inventoryUI.getSizeY(); 
+				y < players[player]->inventoryUI.getSizeY() + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+			{
+				currentSlotPos.y = backpackBaseSlotOffsetY + ((y - players[player]->inventoryUI.getSizeY()) * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
+
+				auto slotFrame = backPackSlotsFrame->addFrame(slotname);
 				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
@@ -7652,11 +7995,16 @@ void Player::Hotbar_t::updateHotbar()
 		return;
 	}
 
-	const int hotbarStartY1 = hotbarFrame->getSize().h - 106; // higher row (center group)
-	const int hotbarStartY2 = hotbarFrame->getSize().h - 96; // lower row (left/right)
+	bool bCompactView = false;
+	if ( keystatus[SDL_SCANCODE_U] )
+	{
+		bCompactView = true;
+	}
+	const int hotbarStartY1 = hotbarFrame->getSize().h + getHotbarStartY1(); // higher row (center group)
+	const int hotbarStartY2 = hotbarFrame->getSize().h + getHotbarStartY2(); // lower row (left/right)
 	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
-	const int hotbarCentreXLeft = hotbarCentreX - 148;
-	const int hotbarCentreXRight = hotbarCentreX + 148;
+	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
+	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
 
 	if ( !player.shootmode )
 	{
@@ -7768,6 +8116,11 @@ void Player::Hotbar_t::updateHotbar()
 		SDL_Rect pos = slot->getSize();
 		pos.x = hotbarCentreX;
 		pos.y = hotbarStartY2;
+		int compactViewOffset = 0;
+		if ( bCompactView )
+		{
+			compactViewOffset = pos.w * hotbarCompactSlotOverlapPercent;
+		}
 
 		int slotYMovement = pos.h / 4;
 
@@ -7787,10 +8140,11 @@ void Player::Hotbar_t::updateHotbar()
 			{
 				// left group
 				case 0:
-					pos.x = hotbarCentreXLeft - pos.w / 2 - pos.w + 2;
+					pos.x = hotbarCentreXLeft - pos.w / 2 - pos.w + 2 + compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+						pos.x -= compactViewOffset * selectedSlotAnimateCurrentValue;
 					}
 					else
 					{
@@ -7804,10 +8158,11 @@ void Player::Hotbar_t::updateHotbar()
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarLeft");
 					break;
 				case 2:
-					pos.x = hotbarCentreXLeft + (pos.w / 2 - 2);
+					pos.x = hotbarCentreXLeft + (pos.w / 2 - 2) - compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+						pos.x += compactViewOffset * selectedSlotAnimateCurrentValue;
 					}
 					else
 					{
@@ -7818,10 +8173,11 @@ void Player::Hotbar_t::updateHotbar()
 				// middle group
 				case 3:
 					pos.y = hotbarStartY1;
-					pos.x = hotbarCentreX - pos.w / 2 - pos.w + 2;
+					pos.x = hotbarCentreX - pos.w / 2 - pos.w + 2 + compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+						pos.x -= compactViewOffset * selectedSlotAnimateCurrentValue;
 					}
 					else
 					{
@@ -7837,10 +8193,11 @@ void Player::Hotbar_t::updateHotbar()
 					break;
 				case 5:
 					pos.y = hotbarStartY1;
-					pos.x = hotbarCentreX + (pos.w / 2 - 2);
+					pos.x = hotbarCentreX + (pos.w / 2 - 2) - compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+						pos.x += compactViewOffset * selectedSlotAnimateCurrentValue;
 					}
 					else
 					{
@@ -7850,10 +8207,11 @@ void Player::Hotbar_t::updateHotbar()
 					break;
 				// right group
 				case 6:
-					pos.x = hotbarCentreXRight - pos.w / 2 - pos.w + 2;
+					pos.x = hotbarCentreXRight - pos.w / 2 - pos.w + 2 + compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+						pos.x -= compactViewOffset * selectedSlotAnimateCurrentValue;
 					}
 					else
 					{
@@ -7867,10 +8225,11 @@ void Player::Hotbar_t::updateHotbar()
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarRight");
 					break;
 				case 8:
-					pos.x = hotbarCentreXRight + (pos.w / 2 - 2);
+					pos.x = hotbarCentreXRight + (pos.w / 2 - 2) - compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
+						pos.x += compactViewOffset * selectedSlotAnimateCurrentValue;
 					}
 					else
 					{
@@ -8513,8 +8872,9 @@ void Player::SkillSheet_t::resetSkillDisplay()
 	{
 		for ( auto& skillEffect : skillEntry.effects )
 		{
-			skillEffect.marqueeTicks = 0;
-			skillEffect.marquee = 0.0;
+			skillEffect.marqueeTicks[player.playernum] = 0;
+			skillEffect.marquee[player.playernum] = 0.0;
+			skillEffect.marqueeCompleted[player.playernum] = false;
 			skillEffect.effectUpdatedAtSkillLevel = -1;
 		}
 	}
@@ -10460,17 +10820,17 @@ void Player::SkillSheet_t::processSkillSheet()
 						if ( doMarquee )
 						{
 							const real_t fpsScale = (60.f / std::max(1U, fpsLimit)); // ported from 60Hz
-							effect_t.marquee += (.005 * fpsScale);
-							//effect_t.marquee = std::min(1.0, effect_t.marquee);
+							effect_t.marquee[player.playernum] += (.005 * fpsScale);
+							//effect_t.marquee[player.playernum] = std::min(1.0, effect_t.marquee[player.playernum]);
 
-							/*if ( effect_t.marqueeTicks == 0 && effect_t.marquee >= 1.0 )
+							/*if ( effect_t.marqueeTicks[player.playernum] == 0 && effect_t.marquee[player.playernum] >= 1.0 )
 							{
-								effect_t.marqueeTicks = ticks;
+								effect_t.marqueeTicks[player.playernum] = ticks;
 							}*/
-							/*if ( effect_t.marqueeTicks > 0 && (ticks - effect_t.marqueeTicks > TICKS_PER_SECOND * 2) )
+							/*if ( effect_t.marqueeTicks[player.playernum] > 0 && (ticks - effect_t.marqueeTicks[player.playernum] > TICKS_PER_SECOND * 2) )
 							{
-								effect_t.marqueeTicks = 0;
-								effect_t.marquee = 0.0;
+								effect_t.marqueeTicks[player.playernum] = 0;
+								effect_t.marquee[player.playernum] = 0.0;
 							}*/
 						}
 					}
@@ -10480,27 +10840,27 @@ void Player::SkillSheet_t::processSkillSheet()
 					{
 						scrollTitleLength = 0;
 						posTitle.x = 0;
-						effect_t.marqueeCompleted = false;
-						effect_t.marquee = 0.0;
-						effect_t.marqueeTicks = 0;
+						effect_t.marqueeCompleted[player.playernum] = false;
+						effect_t.marquee[player.playernum] = 0.0;
+						effect_t.marqueeTicks[player.playernum] = 0;
 					}
 					else
 					{
-						posTitle.x = std::max((int)(-effect_t.marquee * 100), -scrollTitleLength);
+						posTitle.x = std::max((int)(-effect_t.marquee[player.playernum] * 100), -scrollTitleLength);
 						if ( posTitle.x == -scrollTitleLength )
 						{
-							if ( !effect_t.marqueeCompleted )
+							if ( !effect_t.marqueeCompleted[player.playernum] )
 							{
-								effect_t.marqueeTicks = ticks;
+								effect_t.marqueeTicks[player.playernum] = ticks;
 							}
-							effect_t.marqueeCompleted = true;
+							effect_t.marqueeCompleted[player.playernum] = true;
 						}
 						else
 						{
-							effect_t.marqueeCompleted = false;
+							effect_t.marqueeCompleted[player.playernum] = false;
 						}
 					}
-					//posTitle.x = -scrollTitleLength * effect_t.marquee;
+					//posTitle.x = -scrollTitleLength * effect_t.marquee[player.playernum];
 					effectTxt->setSize(posTitle);
 
 					SDL_Rect posValue = effectVal->getSize();
@@ -10509,7 +10869,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					{
 						scrollValueLength = 0;
 					}
-					posValue.x = -scrollValueLength * effect_t.marquee;
+					posValue.x = -scrollValueLength * effect_t.marquee[player.playernum];
 					effectVal->setSize(posValue);
 				}
 
@@ -10520,22 +10880,22 @@ void Player::SkillSheet_t::processSkillSheet()
 			bool allMarqueeCompleted = true;
 			for ( auto& effect_t : skillSheetData.skillEntries[selectedSkill].effects )
 			{
-				if ( effect_t.marquee > 0.0 )
+				if ( effect_t.marquee[player.playernum] > 0.0 )
 				{
-					if ( !effect_t.marqueeCompleted )
+					if ( !effect_t.marqueeCompleted[player.playernum] )
 					{
 						allMarqueeCompleted = false;
 					}
-					lastMarqueeTick = std::max(effect_t.marqueeTicks, lastMarqueeTick);
+					lastMarqueeTick = std::max(effect_t.marqueeTicks[player.playernum], lastMarqueeTick);
 				}
 			}
 			if ( allMarqueeCompleted && lastMarqueeTick > 0 && ((ticks - lastMarqueeTick) > 2 * TICKS_PER_SECOND) )
 			{
 				for ( auto& effect_t : skillSheetData.skillEntries[selectedSkill].effects )
 				{
-					effect_t.marquee = 0.0;
-					effect_t.marqueeCompleted = false;
-					effect_t.marqueeTicks = 0;
+					effect_t.marquee[player.playernum] = 0.0;
+					effect_t.marqueeCompleted[player.playernum] = false;
+					effect_t.marqueeTicks[player.playernum] = 0;
 				}
 				openTick = (ticks > TICKS_PER_SECOND) ? (ticks - TICKS_PER_SECOND) : ticks;
 			}

@@ -927,15 +927,16 @@ void drawStatus(int player)
 		SDL_Rect skillPos{0, 0, iconSize, iconSize };
 		skillPos.x = hotbar_t.hotbarBox.x - 3.5 * iconSize;
 		skillPos.y = players[player]->camera_y2() - 106 - iconSize - 16;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND));
+		std::string promptString;
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_OFFHAND);
 
 		skillPos.x = hotbar_t.hotbarBox.x - 2.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND));
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAINHAND);
 
 		skillPos.x = hotbar_t.hotbarBox.x + hotbar_t.hotbarBox.w + 0.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC));
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAGIC);
 	}
 
@@ -2640,26 +2641,6 @@ void drawStatusNew(const int player)
 		drawImageScaled(minotaur_bmp, nullptr, &pos);
 	}
 
-	// draw action prompts.
-	if ( players[player]->hud.bShowActionPrompts )
-	{
-		int skill = (ticks / 100) % 16;
-		int iconSize = 48;
-		SDL_Rect skillPos{ 0, 0, iconSize, iconSize };
-		skillPos.x = hotbar_t.hotbarBox.x - 3.5 * iconSize;
-		skillPos.y = players[player]->camera_y2() - 106 - iconSize - 16;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND));
-		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_OFFHAND);
-
-		skillPos.x = hotbar_t.hotbarBox.x - 2.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND));
-		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAINHAND);
-
-		skillPos.x = hotbar_t.hotbarBox.x + hotbar_t.hotbarBox.w + 0.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC));
-		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAGIC);
-	}
-
 	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
@@ -3195,7 +3176,7 @@ void drawStatusNew(const int player)
 						src.y = hotbarSlotFrame->getSize().y - 16;
 						src.x += players[player]->camera_virtualx1();
 						src.y += players[player]->camera_virtualy1();
-						players[player]->hud.updateFrameTooltip(item, src.x, src.y);
+						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->inventoryUI.PANEL_JUSTIFY_LEFT);
 						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;

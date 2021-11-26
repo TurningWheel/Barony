@@ -702,6 +702,17 @@ public:
 		Frame* tooltipPromptFrame = nullptr;
 		Frame* selectedItemCursorFrame = nullptr;
 		std::unordered_map<int, Frame*> slotFrames;
+		bool bCompactView = false;
+
+		enum PanelJustify_t
+		{
+			PANEL_JUSTIFY_LEFT,
+			PANEL_JUSTIFY_RIGHT
+		};
+		PanelJustify_t inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
+		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
+		void setCompactView(bool bCompact);
+		void resizeAndPositionInventoryElements();
 
 		struct Cursor_t
 		{
@@ -1034,9 +1045,9 @@ public:
 					int valueCustomWidthOffset = 0;
 					bool bAllowAutoResizeValue = false;
 					bool bAllowRealtimeUpdate = false;
-					real_t marquee = 0.0;
-					Uint32 marqueeTicks = 0;
-					bool marqueeCompleted = false;
+					real_t marquee[MAXPLAYERS] = { 0.0 };
+					Uint32 marqueeTicks[MAXPLAYERS] = { 0 };
+					bool marqueeCompleted[MAXPLAYERS] = { false };
 					int effectUpdatedAtSkillLevel = -1;
 				};
 				std::vector<SkillEffect_t> effects;
@@ -1079,6 +1090,7 @@ public:
 		Frame* mpFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
+		Frame* actionPromptsFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
 		Frame* cursorFrame = nullptr;
@@ -1180,7 +1192,7 @@ public:
 		};
 		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
 		void drawActionIcon(SDL_Rect& pos, int skill) const;
-		const int getActionIconForPlayer(ActionPrompts prompt) const;
+		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
 		int XP_FRAME_WIDTH = 650;
 		int XP_FRAME_START_Y = 44;
@@ -1196,11 +1208,16 @@ public:
 		const int ENEMYBAR_BAR_WIDTH = 556;
 		const int ENEMYBAR_FRAME_START_Y = 182;
 		const int ENEMYBAR_FRAME_HEIGHT = 44;
+		static int actionPromptOffsetX;
+		static int actionPromptOffsetY;
+		static int actionPromptBackingSize;
+		static int actionPromptIconSize;
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
-		void updateFrameTooltip(Item* item, const int x, const int y);
+		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
 		void updateCursor();
+		void updateActionPrompts();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;
@@ -1475,6 +1492,8 @@ public:
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
 		const int getSlotSize() const { return 44; }
+		const int getHotbarStartY1() const { return -106; }
+		const int getHotbarStartY2() const { return -96; }
 
 		Hotbar_t(Player& p) : player(p)
 		{

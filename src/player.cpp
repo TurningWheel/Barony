@@ -2955,9 +2955,13 @@ void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
 	}
 }
 
-const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
+const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const
 {
-	if ( prompt == ACTION_PROMPT_MAGIC ) { return PRO_SPELLCASTING; }
+	if ( prompt == ACTION_PROMPT_MAGIC ) 
+	{ 
+		promptString = language[4078];
+		return PRO_SPELLCASTING;
+	}
 
 	bool shapeshifted = false;
 	Monster playerRace = HUMAN;
@@ -2975,6 +2979,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
 	if ( prompt == ACTION_PROMPT_OFFHAND )
 	{
 		int skill = PRO_SHIELD;
+		promptString = language[4076];
 		if ( stats[player.playernum] )
 		{
 			if ( stats[player.playernum]->shield )
@@ -2989,6 +2994,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
 				}
 				if ( hasSpellBook && allowCasting )
 				{
+					promptString = language[4079];
 					return PRO_MAGIC;
 				}
 
@@ -2999,13 +3005,16 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
 
 				if ( allowDefending )
 				{ 
+					promptString = language[4076];
 					return PRO_SHIELD; 
 				}
+				promptString = language[4077];
 				return PRO_STEALTH;
 			}
 			else
 			{
 				skill = PRO_STEALTH;
+				promptString = language[4077];
 			}
 		}
 		return skill;
@@ -3013,12 +3022,14 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
 	else // prompt == ACTION_PROMPT_MAINHAND
 	{
 		int skill = PRO_UNARMED;
+		promptString = language[4075];
 		if ( stats[player.playernum] )
 		{
 			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 			{
 				if ( !shapeshifted && stats[player.playernum]->defending )
 				{
+					promptString = language[4081];
 					return PRO_LOCKPICKING;
 				}
 			}
@@ -3029,6 +3040,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
 					if ( !shapeshifted || (shapeshifted && playerRace == CREATURE_IMP) )
 					{
 						skill = PRO_SPELLCASTING;
+						promptString = language[4083];
 					}
 				}
 				else if ( !shapeshifted )
@@ -3036,10 +3048,19 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt) const
 					if ( itemCategory(stats[player.playernum]->weapon) == POTION )
 					{
 						skill = PRO_ALCHEMY;
+						promptString = language[4082];
 					}
 					else if ( itemCategory(stats[player.playernum]->weapon) == TOOL )
 					{
 						skill = PRO_LOCKPICKING;
+						promptString = language[4080];
+						if ( stats[player.playernum]->weapon )
+						{
+							if ( stats[player.playernum]->weapon->type == TOOL_PICKAXE )
+							{
+								promptString = language[4084];
+							}
+						}
 					}
 					else
 					{
