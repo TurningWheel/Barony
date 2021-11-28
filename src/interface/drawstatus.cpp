@@ -2350,8 +2350,6 @@ void drawStatusNew(const int player)
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t.slots();
 
-	hotbar_t.updateHotbar();
-
 	int gui_mode = players[player]->gui_mode;
 	bool shootmode = players[player]->shootmode;
 
