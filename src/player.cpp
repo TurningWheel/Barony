@@ -880,11 +880,26 @@ bool Player::GUI_t::handleInventoryMovement()
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
 			players[player]->GUI.warpControllerToModule(false);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
+			players[player]->GUI.warpControllerToModule(false);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-			players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
-			players[player]->GUI.warpControllerToModule(false);
+			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				players[player]->GUI.warpControllerToModule(false);
+			}
+			else if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
+			{
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				players[player]->GUI.warpControllerToModule(false);
+			}
+			//players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+			//players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+			//players[player]->GUI.warpControllerToModule(false);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
 		{
@@ -931,6 +946,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			}*/
 			warpMouseToSelectedHotbarSlot(player);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			select_spell_slot(player,
+				players[player]->inventoryUI.getSelectedSpellX(), 
+				players[player]->inventoryUI.getSelectedSpellY(),
+				-1, 0);
+		}
 		else
 		{
 			//Navigate inventory.
@@ -969,6 +991,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			}*/
 			warpMouseToSelectedHotbarSlot(player);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			select_spell_slot(player,
+				players[player]->inventoryUI.getSelectedSpellX(),
+				players[player]->inventoryUI.getSelectedSpellY(),
+				1, 0);
+		}
 		else
 		{
 			//Navigate inventory.
@@ -990,9 +1019,19 @@ bool Player::GUI_t::handleInventoryMovement()
 			&& hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to top of inventory.
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1, 0, 0);
+			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				select_spell_slot(player, 
+					(percentage) * Player::Inventory_t::MAX_SPELLS_X - 1,
+					Player::Inventory_t::MAX_SPELLS_Y - Player::Inventory_t::MAX_SPELLS_Y + 3, 0, 0);
+			}
+			else
+			{
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1, 0, 0);
+			}
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
 			{
 				int newSlot = hotbar_t.current_hotbar - 1;
@@ -1002,6 +1041,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			else
 			{
 			}*/
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			select_spell_slot(player,
+				players[player]->inventoryUI.getSelectedSpellX(),
+				players[player]->inventoryUI.getSelectedSpellY(),
+				0, -1);
 		}
 		else
 		{
@@ -1024,9 +1070,17 @@ bool Player::GUI_t::handleInventoryMovement()
 			&& hotbarGamepadControlEnabled(player) )
 		{
 			//Warp back to bottom of inventory.
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
-			select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0, 0, 0);
+			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				select_spell_slot(player, (percentage) * Player::Inventory_t::MAX_SPELLS_X - 1, 0, 0, 0);
+			}
+			else
+			{
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0, 0, 0);
+			}
 			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
 			{
 				int newSlot = hotbar_t.current_hotbar + 1;
@@ -1036,6 +1090,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			else
 			{
 			}*/
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			select_spell_slot(player,
+				players[player]->inventoryUI.getSelectedSpellX(),
+				players[player]->inventoryUI.getSelectedSpellY(),
+				0, 1);
 		}
 		else
 		{
@@ -3213,6 +3274,27 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags
 	return false;
 }
 
+bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags) const
+{
+	if ( spellFrame )
+	{
+		int x = getSelectedSpellX();
+		int y = getSelectedSpellY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( auto slot = getSpellSlotFrame(x, y) )
+		{
+			slot->warpMouseToFrame(player.playernum, flags);
+			return true;
+		}
+	}
+	return false;
+}
+
 Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 {
 	if ( frame )
@@ -3225,6 +3307,32 @@ Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 		assert(slotFrames.find(key) == slotFrames.end());
 	}
 	return nullptr;
+}
+
+Frame* Player::Inventory_t::getSpellSlotFrame(int x, int y) const
+{
+	if ( spellFrame )
+	{
+		int key = x + y * 100;
+		if ( spellSlotFrames.find(key) != spellSlotFrames.end() )
+		{
+			return spellSlotFrames.at(key);
+		}
+		assert(spellSlotFrames.find(key) == spellSlotFrames.end());
+	}
+	return nullptr;
+}
+
+Frame* Player::Inventory_t::getItemSlotFrame(Item* item, int x, int y) const
+{
+	if ( item && itemCategory(item) == SPELL_CAT )
+	{
+		return getSpellSlotFrame(x, y);
+	}
+	else
+	{
+		return getInventorySlotFrame(x, y);
+	}
 }
 
 const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const

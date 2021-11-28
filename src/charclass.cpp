@@ -42,6 +42,7 @@ void initClass(const int player)
 		//TODO: Dedicated gameStartStuff() function. Seriously.
 		//(same for deathStuff() and/or gameEndStuff().
 		players[player]->inventoryUI.selectSlot(0, 0);
+		players[player]->inventoryUI.selectSpell(0, 0);
 		hotbar_t.clear();
 		players[player]->paperDoll.clear();
 	}

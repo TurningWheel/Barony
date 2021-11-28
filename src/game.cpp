@@ -224,7 +224,7 @@ std::chrono::duration<long long, std::ratio<1, 60>> TimerExperiments::dt = std::
 TimerExperiments::EntityStates TimerExperiments::cameraPreviousState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
-bool TimerExperiments::bUseTimerInterpolation = false;
+bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = true;
 real_t TimerExperiments::lerpFactor = 30.0;
@@ -232,7 +232,7 @@ void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
 	std::chrono::duration<double> dt)
 {
-	state.velocity += state.acceleration * dt / std::chrono::seconds{ 1 };
+	//state.velocity += state.acceleration * dt / std::chrono::seconds{ 1 };
 	state.position += state.velocity * dt / std::chrono::seconds{ 1 };
 };
 
@@ -5490,6 +5490,7 @@ int main(int argc, char** argv)
 		printlog("running main loop.\n");
 		while (mainloop)
 		{
+			Frame::numFindFrameCalls = 0;
 			// record the time at the start of this cycle
 			lastGameTickCount = SDL_GetPerformanceCounter();
 			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
@@ -6237,6 +6238,8 @@ int main(int argc, char** argv)
 					printTextFormatted(font8x8_bmp, 8, 200 + 100, DebugStats.debugEventOutput);
 				}
 			}
+
+			printTextFormatted(font8x8_bmp, 200, 8, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
 			UIToastNotificationManager.drawNotifications(movie, false);
 

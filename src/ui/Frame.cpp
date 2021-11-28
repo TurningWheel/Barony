@@ -27,6 +27,8 @@ static unsigned int gui_fbo_depth = 0;
 // root of all widgets
 Frame* gui = nullptr;
 
+Frame::FrameSearchType Frame::findFrameDefaultSearchType = Frame::FRAME_SEARCH_BREADTH_FIRST;
+
 void Frame::listener_t::onDeleted() {
 	if (!entry) {
 		return;
@@ -1335,17 +1337,73 @@ bool Frame::removeEntry(const char* name, bool resizeFrame) {
 	return false;
 }
 
-Frame* Frame::findFrame(const char* name) {
-	for (auto frame : frames) {
-		if (frame->toBeDeleted) {
-			continue;
+int Frame::numFindFrameCalls = 0;
+
+Frame* Frame::findFrame(const char* name, const FrameSearchType frameSearchType) {
+
+	if ( frameSearchType == FRAME_SEARCH_DEPTH_FIRST )
+	{
+		++numFindFrameCalls;
+		int localNumberOfCalls = 0;
+		for (auto frame : frames) {
+			if (frame->toBeDeleted) {
+				continue;
+			}
+			if (strcmp(frame->getName(), name) == 0) {
+				return frame;
+			} else {
+				Frame* subFrame = frame->findFrame(name);
+				if (subFrame) {
+					return subFrame;
+				}
+			}
 		}
-		if (strcmp(frame->getName(), name) == 0) {
-			return frame;
-		} else {
-			Frame* subFrame = frame->findFrame(name);
-			if (subFrame) {
-				return subFrame;
+	}
+	else if ( frameSearchType == FRAME_SEARCH_BREADTH_FIRST )
+	{
+		int localNumberOfCalls = 0;
+		std::queue<Frame*> q;
+		for ( auto frame : frames )
+		{
+			if ( frame->toBeDeleted ) 
+			{
+				continue;
+			}
+			q.push(frame);
+		}
+		q.push(nullptr);
+
+		int currentDepth = 0;
+
+		while ( !q.empty() )
+		{
+			auto subFrame = q.front();
+			q.pop();
+			++numFindFrameCalls;
+			++localNumberOfCalls;
+			if ( subFrame == nullptr )
+			{
+				++currentDepth;
+			}
+			else
+			{
+				if ( strcmp(subFrame->getName(), name) == 0 )
+				{
+					if ( localNumberOfCalls > 1 )
+					{
+						//printlog("findFrame(): [%s]: searching for '%s' - misses: %d", getName(), name, localNumberOfCalls);
+					}
+					return subFrame;
+				}
+				for ( auto frame : subFrame->frames )
+				{
+					if ( frame->toBeDeleted )
+					{
+						continue;
+					}
+					q.push(frame);
+				}
+				q.push(nullptr);
 			}
 		}
 	}
@@ -1478,8 +1536,8 @@ SDL_Rect Frame::getAbsoluteSize() const
 	auto _parent = this->parent;
 	while ( _parent ) {
 		auto pframe = static_cast<Frame*>(_parent);
-		_size.x += std::max(0, pframe->size.x);
-		_size.y += std::max(0, pframe->size.y);
+		_size.x += pframe->size.x;
+		_size.y += pframe->size.y;
 		_parent = pframe->parent;
 	}
 	return _size;

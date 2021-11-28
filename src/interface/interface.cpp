@@ -1619,6 +1619,7 @@ bool Player::GUI_t::bActiveModuleUsesInventory()
 		case MODULE_REMOVECURSE:
 		case MODULE_IDENTIFY:
 		case MODULE_TINKERING:
+		case MODULE_SPELLS:
 			return true;
 		default:
 			break;
@@ -1644,6 +1645,19 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		warpMouseToSelectedInventorySlot(player.playernum);
 
 		if ( auto slot = inventoryUI.getInventorySlotFrame(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY()) )
+		{
+			SDL_Rect pos = slot->getAbsoluteSize();
+			inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+				inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+		}
+		return true;
+	}
+	else if ( activeModule == MODULE_SPELLS )
+	{
+		auto& inventoryUI = player.inventoryUI;
+		warpMouseToSelectedSpellSlot(player.playernum);
+
+		if ( auto slot = inventoryUI.getSpellSlotFrame(inventoryUI.getSelectedSpellX(), inventoryUI.getSelectedSpellY()) )
 		{
 			SDL_Rect pos = slot->getAbsoluteSize();
 			inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
@@ -1680,15 +1694,15 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 		}
 		if ( hudCursor && player.inventoryUI.selectedItemCursorFrame )
 		{
-			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR)
-				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR)
+			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS)
+				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR || activeModule == MODULE_SPELLS)
 				&& !bActiveModuleHasNoCursor() )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
 				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
 			}
-			else if ( (activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR)
-				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR) )
+			else if ( (activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR || activeModule == MODULE_SPELLS)
+				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS) )
 			{
 				SDL_Rect size = hudCursor->getSize();
 				player.inventoryUI.updateSelectedSlotAnimation(size.x, size.y, size.w, size.h, true);

@@ -462,6 +462,7 @@ void createHotbar(const int player)
 		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
 		slot->setSize(slotPos);
 		slot->addImage(slotPos, color, "images/ui/HUD/HUD_ActionPromptBacking.png", "slot img");
+		hotbar_t.hotbarSlotFrames[i] = slot;
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
@@ -473,9 +474,7 @@ void createHotbar(const int player)
 
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
-		char slotname[32];
-		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
-		auto slot = hotbar_t.hotbarFrame->findFrame(slotname);
+		auto slot = hotbar_t.getHotbarSlotFrame(i);
 		assert(slot);
 
 		auto itemSlot = slot->addFrame("hotbar slot item");
@@ -3136,10 +3135,10 @@ void Player::CharacterSheet_t::updateAttributes()
 
 void Player::Hotbar_t::processHotbar()
 {
-	char name[32];
-	snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
 	if ( !hotbarFrame )
 	{
+		char name[32];
+		snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
 		hotbarFrame = gui->addFrame(name);
 		hotbarFrame->setHollow(true);
 		hotbarFrame->setBorder(0);
@@ -3155,6 +3154,7 @@ void Player::Hotbar_t::processHotbar()
 	{
 		// hide
 		hotbarFrame->setDisabled(true);
+		return;
 	}
 	else
 	{
@@ -3564,38 +3564,65 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 
 void resetInventorySlotFrames(const int player)
 {
-	char name[32];
-	snprintf(name, sizeof(name), "player inventory %d", player);
-	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 	{
-		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+		for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
 		{
-			for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+			if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
 			{
-				if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
-				{
-					slotFrame->setDisabled(true);
-				}
+				slotFrame->setDisabled(true);
+			}
+		}
+	}
+
+	for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+	{
+		for ( int y = 0; y < Player::Inventory_t::MAX_SPELLS_Y; ++y )
+		{
+			if ( auto slotFrame = players[player]->inventoryUI.getSpellSlotFrame(x, y) )
+			{
+				slotFrame->setDisabled(true);
 			}
 		}
 	}
 }
 
-bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy)
+bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells)
 {
 	if ( !gui )
 	{
 		return false;
 	}
-	char name[32];
-	snprintf(name, sizeof(name), "player inventory %d", player);
-	if ( Frame* inventoryFrame = gui->findFrame(name) )
+	if ( players[player]->inventoryUI.frame && !spells 
+		&& players[player]->inventory_mode == INVENTORY_MODE_ITEM )
 	{
 		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 		{
 			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < players[player]->inventoryUI.getSizeY(); ++y )
 			{
 				auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y);
+				if ( !slotFrame )
+				{
+					continue;
+				}
+
+				if ( slotFrame->capturesMouseInRealtimeCoords() )
+				{
+					outx = x;
+					outy = y;
+					return true;
+				}
+			}
+		}
+	}
+	if ( players[player]->inventoryUI.spellFrame && spells 
+		&& players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+	{
+		for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+		{
+			for ( int y = 0; y < Player::Inventory_t::MAX_SPELLS_Y; ++y )
+			{
+				auto slotFrame = players[player]->inventoryUI.getSpellSlotFrame(x, y);
 				if ( !slotFrame )
 				{
 					continue;
@@ -5132,6 +5159,76 @@ void loadHUDSettingsJSON()
 	}
 }
 
+void createPlayerSpellList(const int player)
+{
+	if ( !gui )
+	{
+		return;
+	}
+
+	if ( players[player]->inventoryUI.spellFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+
+	Frame* frame = players[player]->inventoryUI.frame->addFrame("player spells");
+	players[player]->inventoryUI.spellFrame = frame;
+	frame->setSize(SDL_Rect{ 0,
+		0,
+		210,
+		250 });
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player);
+	frame->setInheritParentFrameOpacity(false);
+
+	SDL_Rect basePos{ 0, 0, 210, 250 };
+	{
+		auto bgFrame = frame->addFrame("spell base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
+		const auto bgSize = bgFrame->getSize();
+		bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
+	}
+
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	players[player]->inventoryUI.spellSlotFrames.clear();
+
+	const int baseSlotOffsetX = 4;
+	const int baseSlotOffsetY = 4;
+	SDL_Rect invSlotsPos{ basePos.x, basePos.y, basePos.w, 242 };
+	{
+		const auto spellSlotsFrame = frame->addFrame("spell slots");
+		spellSlotsFrame->setSize(invSlotsPos);
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+		const int maxSpellsX = Player::Inventory_t::MAX_SPELLS_X;
+		const int maxSpellsY = Player::Inventory_t::MAX_SPELLS_Y;
+
+		for ( int x = 0; x < maxSpellsX; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			for ( int y = 0; y < maxSpellsY; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "spell %d %d", x, y);
+
+				auto slotFrame = spellSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.spellSlotFrames[x + y * 100] = slotFrame;
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+	}
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -5320,6 +5417,8 @@ void createPlayerInventory(const int player)
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");*/
 	}
+
+	createPlayerSpellList(player);
 
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
@@ -5788,6 +5887,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_GRAB )
 	{
+		inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
 		inputs.getUIInteraction(player)->selectedItem = item;
 		playSound(139, 64); // click sound
 		inputs.getUIInteraction(player)->toggleclick = true;
@@ -5954,6 +6054,11 @@ void Player::Hotbar_t::updateSelectedSlotAnimation(int destx, int desty, int wid
 
 void Player::Inventory_t::updateSelectedItemAnimation()
 {
+	if ( !player.isLocalPlayer() )
+	{
+		return;
+	}
+
 	if ( frame )
 	{
 		if ( auto selectedSlotFrame = frame->findFrame("inventory selected item") )
@@ -5965,6 +6070,7 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 			selectedItemCursorFrame->setDisabled(true);
 		}
 	}
+
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 	{
 		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
@@ -6116,6 +6222,11 @@ Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
 void Player::Inventory_t::updateCursor()
 {
 	if ( !frame )
+	{
+		return;
+	}
+
+	if ( !player.isLocalPlayer() )
 	{
 		return;
 	}
@@ -6421,6 +6532,11 @@ void Player::HUD_t::updateCursor()
 void Player::Hotbar_t::updateCursor()
 {
 	if ( !hotbarFrame )
+	{
+		return;
+	}
+
+	if ( !player.isLocalPlayer() )
 	{
 		return;
 	}
@@ -8078,9 +8194,7 @@ void Player::Hotbar_t::updateHotbar()
 			}
 		}
 
-		char slotname[32];
-		snprintf(slotname, sizeof(slotname), "hotbar slot %d", num);
-		auto slot = hotbarFrame->findFrame(slotname);
+		auto slot = getHotbarSlotFrame(num);
 		assert(slot);
 
 		if ( auto img = slot->findImage("slot img") ) // apply any opacity from config
@@ -8384,9 +8498,7 @@ Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
 		return nullptr;
 	}
 
-	char slotname[32];
-	snprintf(slotname, sizeof(slotname), "hotbar slot %d", hotbarSlot);
-	return hotbarFrame->findFrame(slotname);
+	return hotbarSlotFrames[hotbarSlot];
 }
 
 static Uint32 gui_ticks = 0u;

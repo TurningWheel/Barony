@@ -190,6 +190,7 @@ extern view_t camera_charsheet;
 extern real_t camera_charsheet_offsetyaw;
 
 void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -271,6 +272,7 @@ int numItemsInChest(const int player);
 void warpMouseToSelectedChestSlot(const int player);
 
 void warpMouseToSelectedInventorySlot(const int player);
+void warpMouseToSelectedSpellSlot(const int player);
 
 //Magic GUI definitions.
 extern SDL_Surface* magicspellList_bmp;

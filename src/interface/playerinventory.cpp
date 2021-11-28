@@ -127,6 +127,17 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	return false;
 }
 
+void warpMouseToSelectedSpellSlot(const int player)
+{
+	if ( players[player]->inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER)) )
+	{
+		return;
+	}
+
+	// TODO UI: REMOVE DEBUG AND CLEAN UP
+	messagePlayer(0, "[Debug]: warpMouseToSelectedSpellSlot failed");
+}
+
 void warpMouseToSelectedInventorySlot(const int player)
 {
 	if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
@@ -1241,6 +1252,31 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	if ( x < 0 ) 
+	{ 
+		x = Player::Inventory_t::MAX_SPELLS_X - 1; 
+	}
+	if ( x >= Player::Inventory_t::MAX_SPELLS_X ) 
+	{ 
+		x = 0;
+	}
+	if ( y < 0 ) 
+	{ 
+		y = Player::Inventory_t::MAX_SPELLS_Y - 1; 
+	}
+	if ( y >= Player::Inventory_t::MAX_SPELLS_Y ) 
+	{ 
+		y = 0;
+	}
+	players[player]->inventoryUI.selectSpell(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	auto& selectedItem = inputs.getUIInteraction(player)->selectedItem;
@@ -1475,9 +1511,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
 
-	char name[32];
-	snprintf(name, sizeof(name), "player inventory %d", player);
-	Frame* frame = gui->findFrame(name);
+	Frame* frame = players[player]->inventoryUI.frame;
 
 	auto& hotbar = players[player]->hotbar.slots();
 
@@ -1497,19 +1531,30 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 		}
 		else
 		{
-			if ( !players[player]->inventoryUI.warpMouseToSelectedItem(selectedItem, (Inputs::SET_CONTROLLER)) )
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 			{
-				//messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
-				// TODO UI: REMOVE DEBUG AND CLEAN UP
-				//Warp cursor back into inventory, for gamepad convenience.
-				//int newx = players[player]->inventoryUI.getSelectedSlotPositionX(selectedItem);
-				//int newy = players[player]->inventoryUI.getSelectedSlotPositionY(selectedItem);
-				//
-				////SDL_WarpMouseInWindow(screen, newx, newy);
-				//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-				//inputs.warpMouse(player, newx, newy, flags);
+				if ( !players[player]->inventoryUI.warpMouseToSelectedSpell(selectedItem, (Inputs::SET_CONTROLLER)) )
+				{
+					//messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+					// TODO UI: REMOVE DEBUG AND CLEAN UP
+				}
 			}
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			else
+			{
+				if ( !players[player]->inventoryUI.warpMouseToSelectedItem(selectedItem, (Inputs::SET_CONTROLLER)) )
+				{
+					//messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+					// TODO UI: REMOVE DEBUG AND CLEAN UP
+					//Warp cursor back into inventory, for gamepad convenience.
+					//int newx = players[player]->inventoryUI.getSelectedSlotPositionX(selectedItem);
+					//int newy = players[player]->inventoryUI.getSelectedSlotPositionY(selectedItem);
+					//
+					////SDL_WarpMouseInWindow(screen, newx, newy);
+					//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+					//inputs.warpMouse(player, newx, newy, flags);
+				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			}
 		}
 
 		selectedItem = nullptr;
@@ -1571,7 +1616,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			int slotFrameY = UNKNOWN_SLOT;
 
 			//TODO UI: CLEANUP COMMENTS
-			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY);
+			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY, itemCategory(selectedItem) == SPELL_CAT);
 			bool mouseInInventory = mouseInsidePlayerInventory(player);
 			if ( mouseOverSlot && slotFrameY > Player::Inventory_t::DOLL_ROW_5 )
 			{
@@ -1724,7 +1769,8 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 				playSound(139, 64); // click sound
 			}
-			else if ( frame && frame->findFrame("paperdoll slots") && frame->findFrame("paperdoll slots")->capturesMouseInRealtimeCoords() )
+			else if ( frame && frame->findFrame("paperdoll slots") && players[player]->inventory_mode == INVENTORY_MODE_ITEM
+				&& frame->findFrame("paperdoll slots")->capturesMouseInRealtimeCoords() )
 			{
 				// get slot for item type
 				// if slot type is invalid, cancel.
@@ -1824,6 +1870,8 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory )
 			{
 				//Outside inventory. Spells can't be dropped.
+				//If mouseInInventory, we dropped onto a slot frame area and the item should return to where it was
+				//Catches cases like 1px between slots in backpack.
 				int slotNum = 0;
 				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
 				if ( slot )
@@ -1933,18 +1981,23 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 void cycleInventoryTab(const int player)
 {
-	if ( inputs.getUIInteraction(player)->selectedItem )
-	{
-		return;
-	}
 	if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM)
 	{
 		players[player]->inventory_mode = INVENTORY_MODE_SPELL;
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+			players[player]->inventoryUI.selectSpell(0, 0);
+		}
 	}
 	else
 	{
 		//inventory_mode == INVENTORY_MODE_SPELL
 		players[player]->inventory_mode = INVENTORY_MODE_ITEM;
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		}
 	}
 }
 
@@ -4643,6 +4696,8 @@ void Player::Inventory_t::setCompactView(bool bCompact)
 	}
 }
 
+real_t spellFrameAnimX = 0.0;
+
 void Player::Inventory_t::resizeAndPositionInventoryElements()
 {
 	if ( !frame ) { return; }
@@ -4772,6 +4827,22 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		backpackFramePos.y = defaultInvImg->pos.y + defaultInvImg->pos.h - 6;
 	}
 	backpackFrame->setSize(backpackFramePos);
+
+	auto spellFramePos = spellFrame->getSize();
+	if ( !spellFrame->isDisabled() )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - spellFrameAnimX)) / 2.0;
+		spellFrameAnimX += setpointDiffX;
+		spellFrameAnimX = std::min(1.0, spellFrameAnimX);
+	}
+	else
+	{
+		spellFrameAnimX = 0.0;
+	}
+	spellFramePos.x = -spellFramePos.w + spellFrameAnimX * spellFramePos.w * 2;
+	spellFramePos.y = invSlotsFrame->getSize().y;
+	spellFrame->setSize(spellFramePos);
 }
 
 void Player::Inventory_t::updateInventory()
@@ -4785,11 +4856,34 @@ void Player::Inventory_t::updateInventory()
 	{
 		// hide
 		frame->setDisabled(true);
+		spellFrame->setDisabled(true);
+		if ( player == 0 )
+		{
+			spellFrameAnimX = 0.0;
+		}
 		updateItemContextMenu(); // process + close the item context menu
 		return;
 	}
 
+	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+
 	frame->setDisabled(false);
+	spellFrame->setDisabled(true);
+	if ( selectedItem )
+	{
+		if ( itemCategory(selectedItem) == SPELL_CAT && players[player]->inventory_mode != INVENTORY_MODE_SPELL )
+		{
+			cycleInventoryTab(player);
+		}
+		else if ( itemCategory(selectedItem) != SPELL_CAT && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+		{
+			cycleInventoryTab(player);
+		}
+	}
+	if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+	{
+		spellFrame->setDisabled(false);
+	}
 
 	{
 		// resize/position elements based on compact view or not
@@ -4825,7 +4919,6 @@ void Player::Inventory_t::updateInventory()
 	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
 	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
-	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
 	if ( inputs.hasController(player) )
 	{
@@ -4859,6 +4952,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					warpMouseToSelectedInventorySlot(player);
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+				{
+					warpMouseToSelectedSpellSlot(player);
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
@@ -4891,7 +4988,10 @@ void Player::Inventory_t::updateInventory()
 		if ( inputs.bControllerInputPressed(player, INJOY_MENU_INVENTORY_TAB) )
 		{
 			inputs.controllerClearInput(player, INJOY_MENU_INVENTORY_TAB);
-			cycleInventoryTab(player);
+			if ( !selectedItem )
+			{
+				cycleInventoryTab(player);
+			}
 		}
 
 		if ( lastkeypressed == 300 )
@@ -4902,7 +5002,10 @@ void Player::Inventory_t::updateInventory()
 		if ( inputs.bControllerInputPressed(player, INJOY_MENU_MAGIC_TAB) )
 		{
 			inputs.controllerClearInput(player, INJOY_MENU_MAGIC_TAB);
-			cycleInventoryTab(player);
+			if ( !selectedItem )
+			{
+				cycleInventoryTab(player);
+			}
 		}
 	}
 
@@ -4934,52 +5037,98 @@ void Player::Inventory_t::updateInventory()
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open, no chest slot is selected, no shop slot is selected.
 
-		for ( int x = 0; x < getSizeX(); ++x )
+		Frame* slotFrameToHighlight = nullptr;
+		int startx = 0;
+		int starty = 0;
+
+		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
 		{
-			for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
+			for ( int x = 0; x < getSizeX(); ++x )
 			{
-				if ( auto slotFrame = getInventorySlotFrame(x, y) )
+				for ( int y = Player::Inventory_t::DOLL_ROW_1; y < getSizeY(); ++y )
 				{
-					if ( !itemMenuOpen ) // don't update selected slot while item menu open
+					if ( auto slotFrame = getInventorySlotFrame(x, y) )
 					{
-						if ( slotFrame->capturesMouseInRealtimeCoords() )
+						if ( !itemMenuOpen ) // don't update selected slot while item menu open
 						{
-							selectSlot(x, y);
-							if ( inputs.getVirtualMouse(player)->draw_cursor )
+							if ( slotFrame->capturesMouseInRealtimeCoords() )
 							{
-								// mouse movement captures the inventory
-								players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+								selectSlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+								}
+								/*if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !disableMouseDisablingHotbarFocus )
+								{
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+								}*/
 							}
-							/*if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !disableMouseDisablingHotbarFocus )
-							{
-								players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-							}*/
 						}
-					}
 
-					int startx = slotFrame->getAbsoluteSize().x;
-					int starty = slotFrame->getAbsoluteSize().y;
-					startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
-					starty -= players[player]->camera_virtualy1();
-
-					if ( x == getSelectedSlotX()
-						&& y == getSelectedSlotY()
-						&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
-					{
-						if ( itemMenuOpen || // if item menu open, then always draw cursor on current item.
-							(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
-								&& (!inputs.getVirtualMouse(player)->draw_cursor 
-								|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrame->capturesMouse()))) )
+						if ( x == getSelectedSlotX()
+							&& y == getSelectedSlotY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 						{
-							selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
-							selectedSlotFrame->setDisabled(false);
-
-							selectedSlotCursor->setDisabled(false);
-							updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-							//messagePlayer(0, "0: %d, %d", x, y);
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
 						}
 					}
 				}
+			}
+		}
+		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+		{
+			for ( int x = 0; x < MAX_SPELLS_X; ++x )
+			{
+				for ( int y = 0; y < MAX_SPELLS_Y; ++y )
+				{
+					if ( auto slotFrame = getSpellSlotFrame(x, y) )
+					{
+						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						{
+							if ( slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								selectSpell(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the spells list
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+								}
+							}
+						}
+
+						if ( x == getSelectedSpellX()
+							&& y == getSelectedSpellY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
+
+		if ( slotFrameToHighlight )
+		{
+			if ( itemMenuOpen || // if item menu open, then always draw cursor on current item.
+				(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
+					&& (!inputs.getVirtualMouse(player)->draw_cursor
+						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
+			{
+				selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
+				selectedSlotFrame->setDisabled(false);
+
+				selectedSlotCursor->setDisabled(false);
+				updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+				//messagePlayer(0, "0: %d, %d", x, y);
 			}
 		}
 	}
@@ -4993,7 +5142,7 @@ void Player::Inventory_t::updateInventory()
 		int loopStartY = 0;
 		if ( inputs.getVirtualMouse(player)->draw_cursor )
 		{
-			if ( dollSlotsFrame && dollSlotsFrame->capturesMouseInRealtimeCoords() )
+			if ( dollSlotsFrame && dollSlotsFrame->capturesMouseInRealtimeCoords() && players[player]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				auto slotName = items[selectedItem->type].item_slot;
 				Player::PaperDoll_t::PaperDollSlotType dollSlot = getPaperDollSlotFromItemType(*selectedItem);
@@ -5002,7 +5151,7 @@ void Player::Inventory_t::updateInventory()
 					// get coordinates of doll slot
 					int slotFrameX, slotFrameY;
 					players[player]->paperDoll.getCoordinatesFromSlotType(dollSlot, slotFrameX, slotFrameY);
-					hoveringDollSlotFrame = getInventorySlotFrame(slotFrameX, slotFrameY);
+					hoveringDollSlotFrame = getItemSlotFrame(selectedItem, slotFrameX, slotFrameY);
 				}
 			}
 		}
@@ -5011,11 +5160,11 @@ void Player::Inventory_t::updateInventory()
 			loopStartY = DOLL_ROW_1;
 		}
 
-		for ( int x = 0; x < getSizeX(); ++x )
+		for ( int x = 0; x < std::max(getSizeX(), MAX_SPELLS_X); ++x )
 		{
-			for ( int y = loopStartY; y < getSizeY(); ++y )
+			for ( int y = loopStartY; y < std::max(getSizeY(), MAX_SPELLS_Y); ++y )
 			{
-				auto slotFrame = getInventorySlotFrame(x, y);
+				auto slotFrame = getItemSlotFrame(selectedItem, x, y);
 				if ( hoveringDollSlotFrame )
 				{
 					slotFrame = dollSlotsFrame;
@@ -5023,6 +5172,15 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				if ( !slotFrame )
+				{
+					continue;
+				}
+
+				if ( itemCategory(selectedItem) == SPELL_CAT && players[player]->inventory_mode == INVENTORY_MODE_ITEM )
+				{
+					continue;
+				}
+				else if ( itemCategory(selectedItem) != SPELL_CAT && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 				{
 					continue;
 				}
@@ -5038,6 +5196,14 @@ void Player::Inventory_t::updateInventory()
 
 				startx -= players[player]->camera_virtualx1();  // offset any splitscreen camera positioning.
 				starty -= players[player]->camera_virtualy1();
+
+				int selectedSlotX = getSelectedSlotX();
+				int selectedSlotY = getSelectedSlotY();
+				if ( itemCategory(selectedItem) == SPELL_CAT )
+				{
+					selectedSlotX = getSelectedSpellX();
+					selectedSlotY = getSelectedSpellY();
+				}
 
 				if ( inputs.getVirtualMouse(player)->draw_cursor )
 				{
@@ -5061,7 +5227,7 @@ void Player::Inventory_t::updateInventory()
 						//messagePlayer(0, "1: %d, %d", x, y);
 					}
 				}
-				else if ( slotFrame->capturesMouse() && x == getSelectedSlotX() && y == getSelectedSlotY() )
+				else if ( slotFrame->capturesMouse() && x == selectedSlotX && y == selectedSlotY )
 				{
 					selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 					selectedSlotFrame->setDisabled(false);
@@ -5093,12 +5259,12 @@ void Player::Inventory_t::updateInventory()
 		if ( !item ) { continue; }
 
 		if ( item == selectedItem
-			|| (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-			|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+			/*|| (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
+			|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT)*/ )
 		{
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
-			if ( !(players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-				|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+			/*if ( !(players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
+				|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )*/
 			{
 				if ( item == selectedItem )
 				{
@@ -5111,7 +5277,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						int slotx, sloty;
 						this->player.paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), slotx, sloty);
-						if ( slotFrame = getInventorySlotFrame(slotx, sloty) )
+						if ( slotFrame = getItemSlotFrame(item, slotx, sloty) )
 						{
 							borderPos.x = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
 							borderPos.y = dollSlotsFrame->getSize().y + slotFrame->getSize().y;
@@ -5119,7 +5285,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					else
 					{
-						if ( slotFrame = getInventorySlotFrame(selectedItem->x, selectedItem->y) )
+						if ( slotFrame = getItemSlotFrame(selectedItem, selectedItem->x, selectedItem->y) )
 						{
 							borderPos.x = slotFrame->getAbsoluteSize().x;
 							borderPos.y = slotFrame->getAbsoluteSize().y;
@@ -5160,7 +5326,14 @@ void Player::Inventory_t::updateInventory()
 			players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
 		}
 
-		if ( itemx >= 0 && itemx < getSizeX()
+		if ( itemCategory(item) == SPELL_CAT )
+		{
+			if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
+			{
+				updateSlotFrameFromItem(slotFrame, item);
+			}
+		}
+		else if ( itemx >= 0 && itemx < getSizeX()
 			&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < getSizeY() )
 		{
 			if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
@@ -5315,14 +5488,28 @@ void Player::Inventory_t::updateInventory()
 				players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
 			}
 
-			auto slotFrame = getInventorySlotFrame(itemx, itemy);
+			auto slotFrame = getItemSlotFrame(item, itemx, itemy);
 			if ( !slotFrame ) { continue; }
+
+			if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
+				|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+			{
+				continue;    //Skip over this item if not in inventory mode
+			}
+
 			mouseOverSlot = slotFrame->capturesMouse();
 
 			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
 			{
 				// mouse movement captures the inventory
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				}
+				else
+				{
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				}
 			}
 
 			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
@@ -5370,13 +5557,6 @@ void Player::Inventory_t::updateInventory()
 				else
 				{
 					tooltipCoordY += dollSlotsFrame->getSize().y;
-				}
-
-				// tooltip
-				if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-					|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
-				{
-					continue;    //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
 				}
 
 				bool tooltipOpen = false;
@@ -5603,7 +5783,8 @@ void Player::Inventory_t::updateInventory()
 	else if ( stats[player]->HP > 0 )
 	{
 		// releasing items
-		bool oldSelectedItem = selectedItem != nullptr;
+		Item* oldSelectedItem = selectedItem;
+		Category cat = itemCategory(oldSelectedItem);
 		Uint32 oldUid = selectedItem ? selectedItem->uid : 0;
 
 		releaseItem(player);
@@ -5615,9 +5796,9 @@ void Player::Inventory_t::updateInventory()
 			auto selectedSlotFrame = frame->findFrame("inventory selected item");
 			int selectedSlotFrameX = 0;
 			int selectedSlotFrameY = 0;
-			if ( getSlotFrameXYFromMousePos(player, selectedSlotFrameX, selectedSlotFrameY) )
+			if ( getSlotFrameXYFromMousePos(player, selectedSlotFrameX, selectedSlotFrameY, cat == SPELL_CAT) )
 			{
-				if ( auto slotFrame = getInventorySlotFrame(selectedSlotFrameX, selectedSlotFrameY) )
+				if ( auto slotFrame = getItemSlotFrame(oldSelectedItem, selectedSlotFrameX, selectedSlotFrameY) )
 				{
 					int startx = slotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
 					int starty = slotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
@@ -5669,8 +5850,13 @@ void Player::Inventory_t::updateInventory()
 				Item* item = (Item*)node->element;
 				if ( !item ) { continue; }
 
-				if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-					|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+				//if ( (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
+				//	|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+				//{
+				//	// don't update hidden items
+				//	continue;
+				//}
+				if ( itemCategory(item) == SPELL_CAT && spellFrame->isDisabled() )
 				{
 					// don't update hidden items
 					continue;
@@ -5694,7 +5880,14 @@ void Player::Inventory_t::updateInventory()
 					players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
 				}
 
-				if ( itemx >= 0 && itemx < getSizeX()
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
+				else if ( itemx >= 0 && itemx < getSizeX()
 					&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < getSizeY() )
 				{
 					if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
@@ -5729,7 +5922,6 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 	updateItemContextMenu();
-	itemContextMenu(player);
 }
 
 void Player::PaperDoll_t::warpMouseToMostRecentReturnedInventoryItem()
@@ -6957,9 +7149,19 @@ void itemContextMenu(const int player)
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
 
-		if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
-			return;
+			if ( players[player]->inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER)) )
+			{
+				return;
+			}
+		}
+		else
+		{
+			if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
+			{
+				return;
+			}
 		}
 
 		messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
@@ -7058,18 +7260,28 @@ void itemContextMenu(const int player)
 		inputs.controllerClearInput(player, INJOY_MENU_USE);
 		activateSelection = true;
 
-		if ( !players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
-			// TODO UI: REMOVE DEBUG AND CLEAN UP
-			messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
-			////Warp cursor back into inventory, for gamepad convenience.
-			//int newx = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
-			//int newy = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
-			////SDL_WarpMouseInWindow(screen, newx, newy);
-			//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-			//inputs.warpMouse(player, newx, newy, flags);
+			if ( !players[player]->inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER)) )
+			{
+				// TODO UI: REMOVE DEBUG AND CLEAN UP
+				messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+			}
 		}
-
+		else
+		{
+			if ( !players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
+			{
+				// TODO UI: REMOVE DEBUG AND CLEAN UP
+				messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+				////Warp cursor back into inventory, for gamepad convenience.
+				//int newx = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
+				//int newy = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
+				////SDL_WarpMouseInWindow(screen, newx, newy);
+				//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
+				//inputs.warpMouse(player, newx, newy, flags);
+			}
+		}
 	}
 
 	bool itemWasOnPaperDoll = players[player]->paperDoll.isItemOnDoll(*current_item);

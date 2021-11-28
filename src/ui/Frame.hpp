@@ -28,6 +28,8 @@ public:
 	Frame& operator=(const Frame&) = delete;
 	Frame& operator=(Frame&&) = delete;
 
+	static int numFindFrameCalls;
+
 	//! border style
 	enum border_style_t {
 		BORDER_FLAT,
@@ -186,10 +188,16 @@ public:
 	//! @return true if the entry was successfully removed, false otherwise
 	bool removeEntry(const char* name, bool resizeFrame);
 
+	enum FrameSearchType : int {
+		FRAME_SEARCH_DEPTH_FIRST,
+		FRAME_SEARCH_BREADTH_FIRST
+	};
+	static FrameSearchType findFrameDefaultSearchType;
 	//! recursively searches all embedded frames for a specific frame
 	//! @param name the name of the frame to find
+	//! @param use depth or breadth-first search
 	//! @return the frame with the given name, or nullptr if the frame could not be found
-	Frame* findFrame(const char* name);
+	Frame* findFrame(const char* name, const FrameSearchType frameSearchType = findFrameDefaultSearchType);
 
 	//! find a button in this frame
 	//! @param name the name of the button to find

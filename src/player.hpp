@@ -668,7 +668,8 @@ public:
 			MODULE_CHARACTERSHEET,
 			MODULE_SKILLS_LIST,
 			MODULE_BOOK_VIEW,
-			MODULE_HOTBAR
+			MODULE_HOTBAR,
+			MODULE_SPELLS
 		};
 		GUIModules activeModule = MODULE_NONE;
 		void activateModule(GUIModules module);
@@ -695,13 +696,18 @@ public:
 
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
+
+		int selectedSpellX = 0;
+		int selectedSpellY = 0;
 	public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
 		Frame* selectedItemCursorFrame = nullptr;
+		Frame* spellFrame = nullptr;
 		std::unordered_map<int, Frame*> slotFrames;
+		std::unordered_map<int, Frame*> spellSlotFrames;
 		bool bCompactView = false;
 
 		enum PanelJustify_t
@@ -773,6 +779,8 @@ public:
 
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
+		static const int MAX_SPELLS_X = 4;
+		static const int MAX_SPELLS_Y = 20;
 		Inventory_t(Player& p) : 
 			player(p), 
 			appraisal(p), 
@@ -792,8 +800,12 @@ public:
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
+		void selectSpell(const int x, const int y) { selectedSpellX = x; selectedSpellY = y; }
+		const int getSelectedSpellX() const { return selectedSpellX; }
+		const int getSelectedSpellY() const { return selectedSpellY; }
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
 		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const;
+		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags) const;
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
@@ -835,6 +847,8 @@ public:
 		}
 		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		Frame* getInventorySlotFrame(int x, int y) const;
+		Frame* getSpellSlotFrame(int x, int y) const;
+		Frame* getItemSlotFrame(Item* item, int x, int y) const;
 
 		enum PaperDollRows : int
 		{
@@ -1447,6 +1461,7 @@ public:
 		std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
 		Player& player;
 	public:
+		std::array<Frame*, NUM_HOTBAR_SLOTS> hotbarSlotFrames;
 		int current_hotbar = 0;
 		bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
 		int swapHotbarOnShapeshift = 0;
@@ -1497,6 +1512,10 @@ public:
 
 		Hotbar_t(Player& p) : player(p)
 		{
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				hotbarSlotFrames[i] = nullptr;
+			}
 			clear();
 		};
 		~Hotbar_t() {};
