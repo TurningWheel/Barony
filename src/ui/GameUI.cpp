@@ -461,7 +461,7 @@ void createHotbar(const int player)
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
 		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
 		slot->setSize(slotPos);
-		slot->addImage(slotPos, color, "images/ui/HUD/HUD_ActionPromptBacking.png", "slot img");
+		slot->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_01.png", "slot img");
 		hotbar_t.hotbarSlotFrames[i] = slot;
 
 		char glyphname[32];
@@ -498,7 +498,7 @@ void createHotbar(const int player)
 
 	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
 	highlightFrame->setSize(slotPos);
-	highlightFrame->addImage(slotPos, color, "images/ui/HUD/HUD_ActionPromptBacking.png", "highlight img");
+	highlightFrame->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_01.png", "highlight img");
 
 	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
 	SDL_Rect itemSlotTempSize = slotPos;
@@ -590,12 +590,15 @@ void createActionPrompts(const int player)
 
 	const char* promptFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
+	Uint32 iconColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity);
+	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
+
 	auto mainHand = actionPromptFrame->addFrame("action mainhand");
 	mainHand->setSize(SDL_Rect{ 400, 400, maxWidth, promptHeight });
 	mainHand->addImage(iconBackingPos,
-		0xFFFFFFFF, "#*images/ui/HUD/HUD_ActionPromptBacking.png", "action img backing");
+		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
 	mainHand->addImage(iconPos,
-		0xFFFFFFFF, "images/system/white.png", "action img");
+		iconColor, "images/system/white.png", "action img");
 	mainHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
 		0xFFFFFFFF, "images/system/white.png", "action glyph");
 	auto mainHandText = actionPromptFrame->addField("action mainhand text", 64);
@@ -606,9 +609,9 @@ void createActionPrompts(const int player)
 	auto offHand = actionPromptFrame->addFrame("action offhand");
 	offHand->setSize(SDL_Rect{ 440, 400, maxWidth, promptHeight });
 	offHand->addImage(iconBackingPos,
-		0xFFFFFFFF, "#*images/ui/HUD/HUD_ActionPromptBacking.png", "action img backing");
+		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
 	offHand->addImage(iconPos,
-		0xFFFFFFFF, "images/system/white.png", "action img");
+		iconColor, "images/system/white.png", "action img");
 	offHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
 		0xFFFFFFFF, "images/system/white.png", "action glyph");
 	auto offHandText = actionPromptFrame->addField("action offhand text", 64);
@@ -619,9 +622,9 @@ void createActionPrompts(const int player)
 	auto magic = actionPromptFrame->addFrame("action magic");
 	magic->setSize(SDL_Rect{ 480, 400, maxWidth, promptHeight });
 	magic->addImage(iconBackingPos,
-		0xFFFFFFFF, "#*images/ui/HUD/HUD_ActionPromptBacking.png", "action img backing");
+		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
 	magic->addImage(iconPos,
-		0xFFFFFFFF, "images/system/white.png", "action img");
+		iconColor, "images/system/white.png", "action img");
 	magic->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
 		0xFFFFFFFF, "images/system/white.png", "action glyph");
 	auto magicText = actionPromptFrame->addField("action magic text", 64);
@@ -630,10 +633,12 @@ void createActionPrompts(const int player)
 	magicText->setHJustify(Field::justify_t::CENTER);
 }
 
-int Player::HUD_t::actionPromptOffsetX = 0;
-int Player::HUD_t::actionPromptOffsetY = 0;
-int Player::HUD_t::actionPromptBackingSize = 0;
-int Player::HUD_t::actionPromptIconSize = 0;
+int Player::HUD_t::actionPromptOffsetX = 280;
+int Player::HUD_t::actionPromptOffsetY = 22;
+int Player::HUD_t::actionPromptBackingSize = 44;
+int Player::HUD_t::actionPromptIconSize = 32;
+int Player::HUD_t::actionPromptIconOpacity = 255;
+int Player::HUD_t::actionPromptIconBackingOpacity = 255;
 void Player::HUD_t::updateActionPrompts()
 {
 	if ( !hudFrame )
@@ -665,8 +670,8 @@ void Player::HUD_t::updateActionPrompts()
 	const int maxHeight = std::max(iconSize, iconBackingSize);
 	const int promptHeight = maxHeight + glyphSize; // vertical space for prompts
 
-	SDL_Rect iconPos{ maxWidth / 2 - iconSize / 2 - 1,
-		maxHeight / 2 - iconSize / 2 - 1,
+	SDL_Rect iconPos{ maxWidth / 2 - iconSize / 2 - 0,
+		maxHeight / 2 - iconSize / 2 - 0,
 		iconSize,
 		iconSize };
 	SDL_Rect iconBackingPos{ maxWidth / 2 - iconBackingSize / 2,
@@ -683,6 +688,9 @@ void Player::HUD_t::updateActionPrompts()
 	allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast" });
 	allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 	allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+
+	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
+	Uint32 iconColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity);
 
 	int index = 0;
 	for ( auto& promptInfo : allPrompts )
@@ -720,6 +728,8 @@ void Player::HUD_t::updateActionPrompts()
 
 			img->pos = iconPos;
 			imgBacking->pos = iconBackingPos;
+			img->color = iconColor;
+			imgBacking->color = iconBackingColor;
 
 			std::string textForPrompt = "";
 			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
@@ -5013,6 +5023,14 @@ void loadHUDSettingsJSON()
 					if ( d["action_prompts"].HasMember("icon_backing_size") )
 					{
 						Player::HUD_t::actionPromptBackingSize = d["action_prompts"]["icon_backing_size"].GetInt();
+					}
+					if ( d["action_prompts"].HasMember("icon_opacity") )
+					{
+						Player::HUD_t::actionPromptIconOpacity = d["action_prompts"]["icon_opacity"].GetInt();
+					}
+					if ( d["action_prompts"].HasMember("icon_backing_opacity") )
+					{
+						Player::HUD_t::actionPromptIconBackingOpacity = d["action_prompts"]["icon_backing_opacity"].GetInt();
 					}
 				}
 				if ( d.HasMember("enemy_hp_bars") )

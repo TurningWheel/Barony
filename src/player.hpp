@@ -1226,6 +1226,8 @@ public:
 		static int actionPromptOffsetY;
 		static int actionPromptBackingSize;
 		static int actionPromptIconSize;
+		static int actionPromptIconOpacity;
+		static int actionPromptIconBackingOpacity;
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
