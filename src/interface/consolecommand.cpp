@@ -3536,6 +3536,21 @@ void consoleCommand(char const * const command_str)
 			TimerExperiments::bDebug = !TimerExperiments::bDebug;
 			messagePlayer(clientnum, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
 		}
+		else if ( !strncmp(command_str, "/framesearchdebug", 17) )
+		{
+			Frame::findFrameDefaultSearchType = 
+				Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST 
+				? Frame::FRAME_SEARCH_BREADTH_FIRST
+				: Frame::FRAME_SEARCH_DEPTH_FIRST;
+			if ( Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST )
+			{
+				messagePlayer(clientnum, "Set Frame::findFrameDefaultSearchType to depth first");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Set Frame::findFrameDefaultSearchType to breadth first");
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
