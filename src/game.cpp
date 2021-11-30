@@ -5251,6 +5251,8 @@ int main(int argc, char** argv)
 	sa.sa_flags = SA_SIGINFO;
 
 	sigaction(SIGSEGV, &sa, NULL);
+
+	(void)chdir(BASE_DATA_DIR); // fixes a lot of headaches...
 #endif
 
 #ifndef NINTENDO
