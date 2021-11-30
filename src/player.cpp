@@ -922,7 +922,7 @@ bool Player::GUI_t::handleInventoryMovement()
 	//}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") 
-		|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog") )
+		/*|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog")*/ )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -962,13 +962,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				-1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
+		//Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
-		|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog") )
+		/*|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog")*/ )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1007,40 +1007,79 @@ bool Player::GUI_t::handleInventoryMovement()
 				1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
+		//Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
-		|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog") )
+		/*|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog")*/ )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
-			//Warp back to top of inventory.
-			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
 			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
+				Item* itemToSnapTo = nullptr;
+				if ( auto& selectedItem = inputs.getUIInteraction(player)->selectedItem )
+				{
+					if ( itemCategory(selectedItem) == SPELL_CAT )
+					{
+						itemToSnapTo = selectedItem;
+					}
+				}
+				else
+				{
+					itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
+					if ( itemToSnapTo && itemCategory(itemToSnapTo) != SPELL_CAT )
+					{
+						itemToSnapTo = nullptr;
+					}
+				}
+				if ( itemToSnapTo )
+				{
+					players[player]->inventoryUI.selectSpell(itemToSnapTo->x, itemToSnapTo->y);
+				}
+				players[player]->inventoryUI.spellPanel.scrollToSlot(players[player]->inventoryUI.getSelectedSpellX(),
+					players[player]->inventoryUI.getSelectedSpellY(), false);
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-				select_spell_slot(player, 
-					(percentage) * Player::Inventory_t::MAX_SPELLS_X - 1,
-					Player::Inventory_t::MAX_SPELLS_Y - Player::Inventory_t::MAX_SPELLS_Y + 3, 0, 0);
 			}
 			else
 			{
+				Item* itemToSnapTo = nullptr;
+				if ( auto& selectedItem = inputs.getUIInteraction(player)->selectedItem )
+				{
+					if ( itemCategory(selectedItem) != SPELL_CAT )
+					{
+						itemToSnapTo = selectedItem;
+					}
+				}
+				else
+				{
+					itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
+					if ( itemToSnapTo && itemCategory(itemToSnapTo) == SPELL_CAT )
+					{
+						itemToSnapTo = nullptr;
+					}
+				}
+				if ( itemToSnapTo )
+				{
+					auto slot = players[player]->paperDoll.getSlotForItem(*itemToSnapTo);
+					if ( slot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+					{
+						int x, y;
+						players[player]->paperDoll.getCoordinatesFromSlotType(slot, x, y);
+						players[player]->inventoryUI.selectSlot(x, y);
+					}
+					else
+					{
+						select_inventory_slot(player,
+							itemToSnapTo->x,
+							itemToSnapTo->y, 0, 0);
+					}
+				}
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, players[player]->inventoryUI.getSizeY() - 1, 0, 0);
 			}
-			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6) )
-			{
-				int newSlot = hotbar_t.current_hotbar - 1;
-				hotbar_t.selectHotbarSlot(newSlot);
-				warpMouseToSelectedHotbarSlot(player);
-			}
-			else
-			{
-			}*/
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
@@ -1058,38 +1097,79 @@ bool Player::GUI_t::handleInventoryMovement()
 			//Will handle warping to hotbar.
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
+		//Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
-		|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog") )
+		/*|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog")*/ )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
-			//Warp back to bottom of inventory.
-			float percentage = static_cast<float>(hotbar_t.current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
 			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
+				Item* itemToSnapTo = nullptr;
+				if ( auto& selectedItem = inputs.getUIInteraction(player)->selectedItem )
+				{
+					if ( itemCategory(selectedItem) == SPELL_CAT )
+					{
+						itemToSnapTo = selectedItem;
+					}
+				}
+				else
+				{
+					itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
+					if ( itemToSnapTo && itemCategory(itemToSnapTo) != SPELL_CAT )
+					{
+						itemToSnapTo = nullptr;
+					}
+				}
+				if ( itemToSnapTo )
+				{
+					players[player]->inventoryUI.selectSpell(itemToSnapTo->x, itemToSnapTo->y);
+				}
+				players[player]->inventoryUI.spellPanel.scrollToSlot(players[player]->inventoryUI.getSelectedSpellX(), 
+					players[player]->inventoryUI.getSelectedSpellY(), false);
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-				select_spell_slot(player, (percentage) * Player::Inventory_t::MAX_SPELLS_X - 1, 0, 0, 0);
 			}
 			else
 			{
+				Item* itemToSnapTo = nullptr;
+				if ( auto& selectedItem = inputs.getUIInteraction(player)->selectedItem )
+				{
+					if ( itemCategory(selectedItem) != SPELL_CAT )
+					{
+						itemToSnapTo = selectedItem;
+					}
+				}
+				else
+				{
+					itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
+					if ( itemToSnapTo && itemCategory(itemToSnapTo) == SPELL_CAT )
+					{
+						itemToSnapTo = nullptr;
+					}
+				}
+				if ( itemToSnapTo )
+				{
+					auto slot = players[player]->paperDoll.getSlotForItem(*itemToSnapTo);
+					if ( slot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+					{
+						int x, y;
+						players[player]->paperDoll.getCoordinatesFromSlotType(slot, x, y);
+						players[player]->inventoryUI.selectSlot(x, y);
+					}
+					else
+					{
+						select_inventory_slot(player,
+							itemToSnapTo->x,
+							itemToSnapTo->y, 0, 0);
+					}
+				}
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-				select_inventory_slot(player, (percentage) * players[player]->inventoryUI.getSizeX() - 1, 0, 0, 0);
 			}
-			/*if ( hotbar_t.useHotbarFaceMenu && (hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5) )
-			{
-				int newSlot = hotbar_t.current_hotbar + 1;
-				hotbar_t.selectHotbarSlot(newSlot);
-				warpMouseToSelectedHotbarSlot(player);
-			}
-			else
-			{
-			}*/
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
@@ -1106,7 +1186,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				0, 1);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
+		//Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
 
 		dpad_moved = true;
 	}
@@ -3274,7 +3354,7 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags
 	return false;
 }
 
-bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags) const
+bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags)
 {
 	if ( spellFrame )
 	{
@@ -3284,6 +3364,12 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 		{
 			x = snapToItem->x;
 			y = snapToItem->y;
+		}
+
+		if ( abs(spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) > 0.00001 )
+		{
+			int diff = (spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) / getSlotSize();
+			y += diff; // if we have a scroll in the works, then manipulate y to pretend where we'd be ahead of time.
 		}
 
 		if ( auto slot = getSpellSlotFrame(x, y) )

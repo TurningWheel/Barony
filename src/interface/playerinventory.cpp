@@ -1265,15 +1265,26 @@ void select_spell_slot(int player, int currentx, int currenty, int diffx, int di
 	{ 
 		x = 0;
 	}
+
+	int lowestItemY = players[player]->inventoryUI.spellPanel.kNumSpellsToDisplayVertical - 1;
+	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item ) { continue; }
+		if ( itemCategory(item) != SPELL_CAT ) { continue; }
+
+		lowestItemY = std::max(lowestItemY, item->y);
+	}
 	if ( y < 0 ) 
 	{ 
-		y = Player::Inventory_t::MAX_SPELLS_Y - 1; 
+		y = lowestItemY;
 	}
-	if ( y >= Player::Inventory_t::MAX_SPELLS_Y ) 
+	if ( y > lowestItemY )
 	{ 
 		y = 0;
 	}
 	players[player]->inventoryUI.selectSpell(x, y);
+	players[player]->inventoryUI.spellPanel.scrollToSlot(x, y, false);
 }
 
 // only called by handleInventoryMovement in player.cpp
@@ -1531,13 +1542,17 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 		}
 		else
 		{
-			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+			if ( itemCategory(selectedItem) == SPELL_CAT )
 			{
+				players[player]->inventoryUI.selectSpell(selectedItem->x, selectedItem->y);
+				players[player]->inventoryUI.spellPanel.scrollToSlot(players[player]->inventoryUI.getSelectedSpellX(),
+					players[player]->inventoryUI.getSelectedSpellY(), false);
 				if ( !players[player]->inventoryUI.warpMouseToSelectedSpell(selectedItem, (Inputs::SET_CONTROLLER)) )
 				{
-					//messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
+					//messagePlayer(0, "[Debug]: warpMouseToSelectedSpell failed");
 					// TODO UI: REMOVE DEBUG AND CLEAN UP
 				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 			}
 			else
 			{
@@ -1979,24 +1994,33 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 	}
 }
 
-void cycleInventoryTab(const int player)
+void Player::Inventory_t::cycleInventoryTab()
 {
-	if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM)
+	if ( player.inventory_mode == INVENTORY_MODE_ITEM)
 	{
-		players[player]->inventory_mode = INVENTORY_MODE_SPELL;
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+		player.inventory_mode = INVENTORY_MODE_SPELL;
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-			players[player]->inventoryUI.selectSpell(0, 0);
+			player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+			if ( auto selectedItem = inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				player.inventoryUI.selectSpell(selectedItem->x, selectedItem->y);
+			}
+			player.inventoryUI.spellPanel.scrollToSlot(player.inventoryUI.getSelectedSpellX(),
+				player.inventoryUI.getSelectedSpellY(), true);
 		}
 	}
 	else
 	{
 		//inventory_mode == INVENTORY_MODE_SPELL
-		players[player]->inventory_mode = INVENTORY_MODE_ITEM;
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+		player.inventory_mode = INVENTORY_MODE_ITEM;
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			player.GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				player.GUI.warpControllerToModule(false);
+			}
 		}
 	}
 }
@@ -3854,7 +3878,7 @@ void updatePlayerInventory(const int player)
 		if ( inputs.bControllerInputPressed(player, INJOY_MENU_INVENTORY_TAB) )
 		{
 			inputs.controllerClearInput(player, INJOY_MENU_INVENTORY_TAB);
-			cycleInventoryTab(player);
+			//cycleInventoryTab(player);
 		}
 
 		if ( lastkeypressed == 300 )
@@ -3865,7 +3889,7 @@ void updatePlayerInventory(const int player)
 		if ( inputs.bControllerInputPressed(player, INJOY_MENU_MAGIC_TAB) )
 		{
 			inputs.controllerClearInput(player, INJOY_MENU_MAGIC_TAB);
-			cycleInventoryTab(player);
+			//cycleInventoryTab(player);
 		}
 	}
 
@@ -4696,8 +4720,6 @@ void Player::Inventory_t::setCompactView(bool bCompact)
 	}
 }
 
-real_t spellFrameAnimX = 0.0;
-
 void Player::Inventory_t::resizeAndPositionInventoryElements()
 {
 	if ( !frame ) { return; }
@@ -4829,19 +4851,7 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	backpackFrame->setSize(backpackFramePos);
 
 	auto spellFramePos = spellFrame->getSize();
-	if ( !spellFrame->isDisabled() )
-	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - spellFrameAnimX)) / 2.0;
-		spellFrameAnimX += setpointDiffX;
-		spellFrameAnimX = std::min(1.0, spellFrameAnimX);
-	}
-	else
-	{
-		spellFrameAnimX = 0.0;
-	}
-	spellFramePos.x = -spellFramePos.w + spellFrameAnimX * spellFramePos.w * 2;
-	spellFramePos.y = invSlotsFrame->getSize().y;
+	spellFramePos.y = invSlotsFrame->getSize().y - 100;
 	spellFrame->setSize(spellFramePos);
 }
 
@@ -4857,10 +4867,6 @@ void Player::Inventory_t::updateInventory()
 		// hide
 		frame->setDisabled(true);
 		spellFrame->setDisabled(true);
-		if ( player == 0 )
-		{
-			spellFrameAnimX = 0.0;
-		}
 		updateItemContextMenu(); // process + close the item context menu
 		return;
 	}
@@ -4868,21 +4874,28 @@ void Player::Inventory_t::updateInventory()
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
 	frame->setDisabled(false);
-	spellFrame->setDisabled(true);
+
+	if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+	{
+		spellPanel.openSpellPanel();
+	}
+	else
+	{
+		spellPanel.closeSpellPanel();
+	}
+
+	spellPanel.updateSpellPanel();
+
 	if ( selectedItem )
 	{
 		if ( itemCategory(selectedItem) == SPELL_CAT && players[player]->inventory_mode != INVENTORY_MODE_SPELL )
 		{
-			cycleInventoryTab(player);
+			cycleInventoryTab();
 		}
 		else if ( itemCategory(selectedItem) != SPELL_CAT && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 		{
-			cycleInventoryTab(player);
+			cycleInventoryTab();
 		}
-	}
-	if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-	{
-		spellFrame->setDisabled(false);
 	}
 
 	{
@@ -4990,7 +5003,7 @@ void Player::Inventory_t::updateInventory()
 			inputs.controllerClearInput(player, INJOY_MENU_INVENTORY_TAB);
 			if ( !selectedItem )
 			{
-				cycleInventoryTab(player);
+				cycleInventoryTab();
 			}
 		}
 
@@ -5004,7 +5017,7 @@ void Player::Inventory_t::updateInventory()
 			inputs.controllerClearInput(player, INJOY_MENU_MAGIC_TAB);
 			if ( !selectedItem )
 			{
-				cycleInventoryTab(player);
+				cycleInventoryTab();
 			}
 		}
 	}
@@ -5090,26 +5103,32 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( !itemMenuOpen ) // don't update selected slot while item menu open
 						{
-							if ( slotFrame->capturesMouseInRealtimeCoords() )
+							if ( spellPanel.isSlotVisible(x, y) && spellPanel.isInteractable )
 							{
-								selectSpell(x, y);
-								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								if ( slotFrame->capturesMouseInRealtimeCoords() )
 								{
-									// mouse movement captures the spells list
-									players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+									selectSpell(x, y);
+									if ( inputs.getVirtualMouse(player)->draw_cursor )
+									{
+										// mouse movement captures the spells list
+										players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+									}
 								}
 							}
 						}
 
 						if ( x == getSelectedSpellX()
 							&& y == getSelectedSpellY()
-							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+							&& spellPanel.isInteractable
+							&& spellPanel.isSlotVisible(x, y) )
 						{
 							slotFrameToHighlight = slotFrame;
 							startx = slotFrame->getAbsoluteSize().x;
 							starty = slotFrame->getAbsoluteSize().y;
 							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
 							starty -= players[player]->camera_virtualy1();
+							spellPanel.scrollToSlot(x, y, false);
 						}
 					}
 				}
@@ -5160,6 +5179,7 @@ void Player::Inventory_t::updateInventory()
 			loopStartY = DOLL_ROW_1;
 		}
 
+		bool isSpell = itemCategory(selectedItem) == SPELL_CAT;
 		for ( int x = 0; x < std::max(getSizeX(), MAX_SPELLS_X); ++x )
 		{
 			for ( int y = loopStartY; y < std::max(getSizeY(), MAX_SPELLS_Y); ++y )
@@ -5176,6 +5196,11 @@ void Player::Inventory_t::updateInventory()
 					continue;
 				}
 
+				if ( isSpell 
+					&& (!spellPanel.isSlotVisible(x, y)) )
+				{
+					continue;
+				}
 				if ( itemCategory(selectedItem) == SPELL_CAT && players[player]->inventory_mode == INVENTORY_MODE_ITEM )
 				{
 					continue;
@@ -5266,7 +5291,15 @@ void Player::Inventory_t::updateInventory()
 			/*if ( !(players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
 				|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )*/
 			{
-				if ( item == selectedItem )
+				bool interactable = true;
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					if ( !spellPanel.isItemVisible(item) )
+					{
+						interactable = false;
+					}
+				}
+				if ( interactable )
 				{
 					//Draw blue border around the slot if it's the currently grabbed item.
 					//drawBlueInventoryBorder(player, *item, x, y);
@@ -5512,14 +5545,39 @@ void Player::Inventory_t::updateInventory()
 				}
 			}
 
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+				&& (!spellPanel.isInteractable) && itemCategory(item) == SPELL_CAT )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+				&& itemCategory(item) == SPELL_CAT && !spellPanel.isItemVisible(item) )
+			{
+				// this item is obscured by the spell panel scroll, ignore.
+				continue;
+			}
+
 			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
 			{
 				auto inventoryBgFrame = frame->findFrame("inventory base");
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					inventoryBgFrame = spellFrame;
+				}
 				int tooltipCoordX = 0;
 				PanelJustify_t justify = itemOnPaperDoll ? paperDollPanelJustify : inventoryPanelJustify;
 				if ( !bCompactView )
 				{
-					auto invBaseImg = inventoryBgFrame->findImage("inventory base img");
+					Frame::image_t* invBaseImg = nullptr;
+					if ( itemCategory(item) == SPELL_CAT )
+					{
+						invBaseImg = inventoryBgFrame->findFrame("spell base")->findImage("spell base img");
+					}
+					else
+					{
+						invBaseImg = inventoryBgFrame->findImage("inventory base img");
+					}
 
 					if ( justify == PANEL_JUSTIFY_LEFT )
 					{
@@ -5534,9 +5592,17 @@ void Player::Inventory_t::updateInventory()
 				}
 				else
 				{
-					auto compactImg = itemOnPaperDoll ? 
-						inventoryBgFrame->findImage("inventory character compact img")
-						: inventoryBgFrame->findImage("inventory base compact img");
+					Frame::image_t* compactImg = nullptr;
+					if ( itemCategory(item) == SPELL_CAT )
+					{
+						compactImg = inventoryBgFrame->findFrame("spell base")->findImage("spell base img");
+					}
+					else
+					{
+						compactImg = itemOnPaperDoll ?
+							inventoryBgFrame->findImage("inventory character compact img")
+							: inventoryBgFrame->findImage("inventory base compact img");
+					}
 
 					if ( justify == PANEL_JUSTIFY_LEFT )
 					{
@@ -5549,14 +5615,15 @@ void Player::Inventory_t::updateInventory()
 						tooltipCoordX += compactImg->pos.x;
 					}
 				}
-				int tooltipCoordY = slotFrame->getSize().y;
+				int tooltipCoordY = slotFrame->getAbsoluteSize().y;
+				tooltipCoordX -= players[player]->camera_virtualx1();
 				if ( !itemOnPaperDoll )
 				{
-					tooltipCoordY += invSlotsFrame->getSize().y;
+				//	tooltipCoordY += invSlotsFrame->getSize().y;
 				}
 				else
 				{
-					tooltipCoordY += dollSlotsFrame->getSize().y;
+				//	tooltipCoordY += dollSlotsFrame->getSize().y;
 				}
 
 				bool tooltipOpen = false;
@@ -5856,11 +5923,6 @@ void Player::Inventory_t::updateInventory()
 				//	// don't update hidden items
 				//	continue;
 				//}
-				if ( itemCategory(item) == SPELL_CAT && spellFrame->isDisabled() )
-				{
-					// don't update hidden items
-					continue;
-				}
 
 				int itemx = item->x;
 				int itemy = item->y;
@@ -7666,11 +7728,6 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 
 			bool is_spell = false;
 			int inventory_y = std::min(std::max(players[player]->inventoryUI.getSizeY(), 2), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
-			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
-			{
-				is_spell = true;
-				inventory_y = std::min(inventory_y, players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
-			}
 
 			if ( sortRightToLeft )
 			{

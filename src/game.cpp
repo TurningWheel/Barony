@@ -2211,25 +2211,19 @@ void gameLogic(void)
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
 				auto& playerInventory = players[player]->inventoryUI;
 
-				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
 				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
 					backpack_sizey[player] = playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY();
 				}
 
-				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-				{
-					playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
-						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
-				}
-				else if ( backpack_sizey[player] == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
+				if ( backpack_sizey[player] == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 				{
 					playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 				}
 				else
 				{
-					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
 					{
 						// we should rearrange our spells.
 						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
@@ -2857,7 +2851,6 @@ void gameLogic(void)
 
 			auto& playerInventory = players[clientnum]->inventoryUI;
 			const int inventorySizeX = playerInventory.getSizeX();
-			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
 			int backpack_sizey = playerInventory.DEFAULT_INVENTORY_SIZEY;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
@@ -2865,18 +2858,13 @@ void gameLogic(void)
 				backpack_sizey += playerInventory.getPlayerBackpackBonusSizeY();
 			}
 
-			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
-			{
-				playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
-					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
-			}
-			else if ( backpack_sizey == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
+			if ( backpack_sizey == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 			{
 				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 			}
 			else
 			{
-				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -4133,12 +4121,10 @@ void ingameHud()
 			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
-				players[player]->inventory_mode = INVENTORY_MODE_SPELL;
+				players[player]->inventoryUI.cycleInventoryTab();
 				if ( players[player]->shootmode )
 				{
 					players[player]->shootmode = false;
-					players[player]->characterSheet.attributespage = 0;
-					//proficienciesPage = 0;
 				}
 			}
 		}
@@ -4763,6 +4749,17 @@ void ingameHud()
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 						}
 					}
+					// debug for controllers
+					auto cursor = Image::get("images/system/cursor_hand.png");
+					if ( keystatus[SDL_SCANCODE_J] )
+					{
+						cursor = Image::get("images/system/cursor.png");
+					}
+					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
+					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+					pos.w = cursor->getWidth();
+					pos.h = cursor->getHeight();
+					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 				}
 				else
 				{
@@ -4881,6 +4878,20 @@ void ingameHud()
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+			}
+			else
+			{
+				// debug for controllers
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				if ( keystatus[SDL_SCANCODE_J] )
+				{
+					cursor = Image::get("images/system/cursor.png");
+				}
+				pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
+				pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 			}
 		}
 		else if ( !nohud )

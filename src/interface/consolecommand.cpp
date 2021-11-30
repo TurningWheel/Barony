@@ -3419,6 +3419,21 @@ void consoleCommand(char const * const command_str)
 			}
 			return;
 		}
+		else if ( !strncmp(command_str, "/allspells3", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			{
+				spell_t* spell = *it;
+				bool learned = addSpell(spell->ID, clientnum, true);
+			}
+			return;
+		}
 		else if ( !strncmp(command_str, "/gimmexp", 8) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )

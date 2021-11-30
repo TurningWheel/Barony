@@ -740,6 +740,31 @@ public:
 		};
 		SelectedItemAnimate_t selectedItemAnimate;
 
+		struct SpellPanel_t
+		{
+			Player& player;
+			PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+			real_t animx = 0.0;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = true;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+			const int kNumSpellsToDisplayVertical = 6;
+			void openSpellPanel();
+			void closeSpellPanel();
+			void updateSpellPanel();
+			void scrollToSlot(int x, int y, bool instantly);
+			bool isSlotVisible(int x, int y) const;
+			bool isItemVisible(Item* item) const;
+			SpellPanel_t(Player& p) :
+				player(p) {}
+		};
+		SpellPanel_t spellPanel;
+
 		struct ItemTooltipDisplay_t
 		{
 			Uint32 type;
@@ -784,6 +809,7 @@ public:
 		Inventory_t(Player& p) : 
 			player(p), 
 			appraisal(p), 
+			spellPanel(p),
 			DEFAULT_INVENTORY_SIZEX(12),
 			DEFAULT_INVENTORY_SIZEY(3)
 		{
@@ -805,13 +831,14 @@ public:
 		const int getSelectedSpellY() const { return selectedSpellY; }
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
 		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const;
-		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags) const;
+		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
 		void updateInventoryItemTooltip();
 		void updateSelectedItemAnimation();
 		void updateItemContextMenu();
+		void cycleInventoryTab();
 		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
 		void resetInventory()
 		{

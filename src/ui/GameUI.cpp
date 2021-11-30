@@ -3638,6 +3638,11 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 					continue;
 				}
 
+				if ( !players[player]->inventoryUI.spellPanel.isSlotVisible(x, y) )
+				{
+					continue;
+				}
+
 				if ( slotFrame->capturesMouseInRealtimeCoords() )
 				{
 					outx = x;
@@ -5194,33 +5199,83 @@ void createPlayerSpellList(const int player)
 	frame->setSize(SDL_Rect{ 0,
 		0,
 		210,
-		250 });
-	frame->setHollow(true);
+		350 });
+	//frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
 
-	SDL_Rect basePos{ 0, 0, 210, 250 };
+	SDL_Rect basePos{ 0, 0, 210, 350 };
 	{
 		auto bgFrame = frame->addFrame("spell base");
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 100, 210, 250 },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
+		//bg->disabled = false;
+
+		auto slider = bgFrame->addSlider("spell slider");
+		slider->setBorder(24);
+		slider->setMinValue(0);
+		slider->setMaxValue(100);
+		slider->setValue(0);
+		SDL_Rect sliderPos{ basePos.w - 34, 100 + 4, 30, 242 };
+		slider->setRailSize(SDL_Rect{ sliderPos });
+		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		//slider->setCallback(callback);
+		slider->setColor(makeColor(255, 255, 255, 255));
+		slider->setHighlightColor(makeColor(255, 255, 255, 255));
+		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+		slider->setHideGlyphs(true);
+
+		const char* font = "fonts/pixel_maz.ttf#32#2";
+		auto titleText = bgFrame->addField("title txt", 64);
+		titleText->setFont(font);
+		titleText->setText("Spell List");
+		titleText->setHJustify(Field::justify_t::CENTER);
+		titleText->setVJustify(Field::justify_t::CENTER);
+		titleText->setSize(SDL_Rect{ basePos.x + 4, 100 - 32, 162, 32 });
+		titleText->setColor(makeColor(188, 154, 114, 255));
+
+		auto closeBtn = bgFrame->addButton("close spell button");
+		SDL_Rect closeBtnPos = titleText->getSize();
+		closeBtnPos.x = closeBtnPos.x + closeBtnPos.w - 32;
+		closeBtnPos.w = 32;
+		closeBtn->setSize(closeBtnPos);
+		closeBtn->setColor(makeColor(255, 255, 255, 255));
+		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		closeBtn->setText("Close");
+		closeBtn->setFont(font);
+		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Magic_00.png");
+		closeBtn->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), "%d: Close spell button clicked", button.getOwner());
+		});
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
 	players[player]->inventoryUI.spellSlotFrames.clear();
 
-	const int baseSlotOffsetX = 4;
-	const int baseSlotOffsetY = 4;
-	SDL_Rect invSlotsPos{ basePos.x, basePos.y, basePos.w, 242 };
+	const int baseSlotOffsetX = 0;
+	const int baseSlotOffsetY = 0;
+
+	SDL_Rect invSlotsPos{ basePos.x + 4, basePos.y + 4 + 100, basePos.w, 242 };
 	{
+		int numGrids = (players[player]->inventoryUI.MAX_SPELLS_Y / 6) + 1;
+
 		const auto spellSlotsFrame = frame->addFrame("spell slots");
 		spellSlotsFrame->setSize(invSlotsPos);
+		spellSlotsFrame->setActualSize(SDL_Rect{ 0, 0, basePos.w, 242 * numGrids });
+		spellSlotsFrame->setHollow(true);
+		spellSlotsFrame->setAllowScrollBinds(false);
+
+		auto gridImg = spellSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, 242 * numGrids },
+			0xFFFFFFFF, "images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
+		gridImg->tiled = true;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 		const int maxSpellsX = Player::Inventory_t::MAX_SPELLS_X;
@@ -11310,4 +11365,254 @@ void Player::SkillSheet_t::processSkillSheet()
 		bSkillSheetEntryLoaded = true;
 	}
 
+}
+
+void Player::Inventory_t::SpellPanel_t::openSpellPanel()
+{
+	if ( player.inventoryUI.spellFrame )
+	{
+		bool wasDisabled = player.inventoryUI.spellFrame->isDisabled();
+		player.inventoryUI.spellFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			isInteractable = false;
+			currentScrollRow = 0;
+			scrollPercent = 0.0;
+			scrollInertia = 0.0;
+			bFirstTimeSnapCursor = false;
+		}
+		bOpen = true;
+	}
+}
+
+void Player::Inventory_t::SpellPanel_t::closeSpellPanel()
+{
+	if ( player.inventoryUI.spellFrame )
+	{
+		player.inventoryUI.spellFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	isInteractable = false;
+	currentScrollRow = 0;
+	scrollPercent = 0.0;
+	scrollInertia = 0.0;
+	scrollAnimateX = scrollSetpoint;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+}
+
+void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
+{
+	Frame* spellFrame = player.inventoryUI.spellFrame;
+	if ( !spellFrame ) { return; }
+
+	auto spellFramePos = spellFrame->getSize();
+	if ( !spellFrame->isDisabled() && bOpen )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			if ( !bFirstTimeSnapCursor )
+			{
+				bFirstTimeSnapCursor = true;
+				if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+					&& player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+				{
+					player.inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
+				}
+			}
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		isInteractable = false;
+		scrollInertia = 0.0;
+	}
+	spellFramePos.x = -spellFramePos.w + animx * spellFramePos.w * 2;
+	spellFrame->setSize(spellFramePos);
+
+	auto baseFrame = spellFrame->findFrame("spell base");
+	auto slider = baseFrame->findSlider("spell slider");
+
+	int lowestItemY = kNumSpellsToDisplayVertical - 1;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item ) { continue; }
+		if ( itemCategory(item) != SPELL_CAT ) { continue; }
+
+		lowestItemY = std::max(lowestItemY, item->y);
+	}
+
+	int scrollAmount = std::max((lowestItemY + 1) - (kNumSpellsToDisplayVertical), 0) * player.inventoryUI.getSlotSize();
+	if ( scrollAmount == 0 )
+	{
+		slider->setDisabled(true);
+	}
+	else
+	{
+		slider->setDisabled(false);
+	}
+
+	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+
+	if ( bOpen && isInteractable )
+	{
+		// do sliders
+		if ( !slider->isDisabled() )
+		{
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+				&& player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+				{
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					{
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+					}
+					if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+					}
+				}
+				if ( Input::inputs[player.playernum].analogToggle("MenuScrollDown") )
+				{
+					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollDown");
+					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+				}
+				else if ( Input::inputs[player.playernum].analogToggle("MenuScrollUp") )
+				{
+					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollUp");
+					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+				}
+			}
+		}
+
+		scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
+		currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+
+		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+		{
+			isInteractable = false;
+			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			real_t setpointDiff = 0.0;
+			if ( scrollSetpoint - scrollAnimateX > 0.0 )
+			{
+				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			else
+			{
+				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			scrollAnimateX += setpointDiff;
+			if ( setpointDiff > 0.0 )
+			{
+				scrollAnimateX = std::min((real_t)scrollSetpoint, scrollAnimateX);
+			}
+			else
+			{
+				scrollAnimateX = std::max((real_t)scrollSetpoint, scrollAnimateX);
+			}
+		}
+		else
+		{
+			scrollAnimateX = scrollSetpoint;
+		}
+	}
+
+	if ( scrollAmount > 0 )
+	{
+		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+	}
+	else
+	{
+		slider->setValue(0.0);
+	}
+
+	//SDL_Rect scrollAreaPos = scrollArea->getSize();
+	auto spellSlotsFrame = spellFrame->findFrame("spell slots");
+	SDL_Rect actualSize = spellSlotsFrame->getActualSize();
+	actualSize.y = scrollAnimateX;
+	spellSlotsFrame->setActualSize(actualSize);
+	//scrollArea->setSize(scrollAreaPos);
+}
+
+bool Player::Inventory_t::SpellPanel_t::isSlotVisible(int x, int y) const
+{
+	if ( player.inventoryUI.spellFrame )
+	{
+		if ( player.inventoryUI.spellFrame->isDisabled() )
+		{
+			return false;
+		}
+	}
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + kNumSpellsToDisplayVertical - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Player::Inventory_t::SpellPanel_t::isItemVisible(Item* item) const
+{
+	if ( !item ) { return false; }
+	return isSlotVisible(item->x, item->y);
+}
+
+void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantly)
+{
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + kNumSpellsToDisplayVertical - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		// no work to do.
+		return;
+	}
+
+	int lowestItemY = kNumSpellsToDisplayVertical - 1;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item ) { continue; }
+		if ( itemCategory(item) != SPELL_CAT ) { continue; }
+
+		lowestItemY = std::max(lowestItemY, item->y);
+	}
+	int maxScroll = std::max((lowestItemY + 1) - (kNumSpellsToDisplayVertical), 0) * player.inventoryUI.getSlotSize();
+	
+	int scrollAmount = 0;
+	if ( y < lowerY )
+	{
+		scrollAmount = (y) * player.inventoryUI.getSlotSize();
+		//scrollAmount += scrollSetpoint;
+	}
+	else if ( y > upperY )
+	{
+		scrollAmount = (y - upperY) * player.inventoryUI.getSlotSize();
+		scrollAmount += scrollSetpoint;
+	}
+	scrollAmount = std::min(scrollAmount, maxScroll);
+
+	scrollSetpoint = scrollAmount;
+	if ( instantly )
+	{
+		scrollAnimateX = scrollSetpoint;
+	}
+	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+	if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+	{
+		isInteractable = false;
+	}
 }
