@@ -31,7 +31,9 @@ int oldSelectedCursorOpacity = 255;
 int hotbarSlotOpacity = 255;
 int hotbarSelectedSlotOpacity = 255;
 int hotbarCompactOffsetX = 0;
-real_t hotbarCompactSlotOverlapPercent = 0.0;
+real_t hotbarCompactSlotOverlapPercent = 0.0; // % of a slot to overlap facemenu buttons in compact view
+int hotbarCompactInactiveSlotMovementX = 0; // inactive facemenu groups move over by this much out of the way in compact view
+int hotbarCompactExpandedOffsetX = 0; // navigating the hotbar in inventory mode will expand the centers of groups out by this much
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 struct CustomColors_t
@@ -561,6 +563,272 @@ void createHotbar(const int player)
 	text->setOntop(true);
 }
 
+void createUINavigation(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto& uiNavFrame = hud_t.uiNavFrame;
+	uiNavFrame = hud_t.hudFrame->addFrame("ui navigation");
+	uiNavFrame->setHollow(true);
+	uiNavFrame->setBorder(0);
+	uiNavFrame->setOwner(player);
+	uiNavFrame->setSize(SDL_Rect{ 0, 0, hud_t.hudFrame->getSize().w, hud_t.hudFrame->getSize().h });
+	uiNavFrame->setDisabled(true);
+	{
+		const int glyphSize = 32;
+
+		const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
+		auto magicButton = uiNavFrame->addButton("magic button");
+		magicButton->setText("Magic");
+		magicButton->setFont(buttonFont);
+		magicButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		magicButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
+		magicButton->setHideGlyphs(true);
+		magicButton->setColor(makeColor(255, 255, 255, 191));
+		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
+		magicButton->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), "%d: Magic button clicked", button.getOwner());
+			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
+			{
+				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+				players[button.getOwner()]->inventoryUI.spellPanel.openSpellPanel();
+			}
+			else if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+				players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
+			}
+		});
+		auto magicButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "magic button glyph")->disabled = true;
+
+		auto statusButton = uiNavFrame->addButton("status button");
+		statusButton->setText("Status");
+		statusButton->setFont(buttonFont);
+		statusButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		statusButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
+		statusButton->setHideGlyphs(true);
+		statusButton->setColor(makeColor(255, 255, 255, 191));
+		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
+		statusButton->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), "%d: Status button clicked", button.getOwner());
+			if ( players[button.getOwner()]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
+			}
+			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_CHARSHEET;
+		});
+		auto statusButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "status button glyph")->disabled = true;
+
+		auto itemsButton = uiNavFrame->addButton("items button");
+		itemsButton->setText("Items");
+		itemsButton->setFont(buttonFont);
+		itemsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		itemsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
+		itemsButton->setHideGlyphs(true);
+		itemsButton->setColor(makeColor(255, 255, 255, 191));
+		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
+		itemsButton->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), "%d: Item button clicked", button.getOwner());
+			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+			players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
+		});
+		auto itemsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "items button glyph")->disabled = true;
+
+		auto skillsButton = uiNavFrame->addButton("skills button");
+		skillsButton->setText("Skills");
+		skillsButton->setFont(buttonFont);
+		skillsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		skillsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
+		skillsButton->setHideGlyphs(true);
+		skillsButton->setColor(makeColor(255, 255, 255, 191));
+		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
+		skillsButton->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
+			players[button.getOwner()]->skillSheet.openSkillSheet();
+		});
+		auto skillsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "skills button glyph")->disabled = true;
+	}
+}
+
+void Player::HUD_t::updateUINavigation()
+{
+	if ( !hudFrame )
+	{
+		return;
+	}
+
+	if ( !uiNavFrame )
+	{
+		createUINavigation(player.playernum);
+		if ( !uiNavFrame )
+		{
+			return;
+		}
+	}
+
+	bShowUINavigation = false;
+	if ( player.gui_mode != GUI_MODE_NONE )
+	{
+		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || keystatus[SDL_SCANCODE_Y] )
+		{
+			bShowUINavigation = true;
+		}
+	}
+
+	if ( !bShowUINavigation )
+	{
+		uiNavFrame->setDisabled(true);
+		return;
+	}
+	uiNavFrame->setDisabled(false);
+	uiNavFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
+
+	auto magicButton = uiNavFrame->findButton("magic button");
+	auto magicButtonGlyph = uiNavFrame->findImage("magic button glyph");
+	auto itemsButton = uiNavFrame->findButton("items button");
+	auto itemsButtonGlyph = uiNavFrame->findImage("items button glyph");
+	auto statusButton = uiNavFrame->findButton("status button");
+	auto statusButtonGlyph = uiNavFrame->findImage("status button glyph");
+	auto skillsButton = uiNavFrame->findButton("skills button");
+	auto skillsButtonGlyph = uiNavFrame->findImage("skills button glyph");
+
+	struct ButtonsAndGlyphs {
+		std::string name;
+		Button* button = nullptr;
+		Frame::image_t* glyph = nullptr;
+		std::string inputName;
+		CompactLayoutModes layoutMode;
+		ButtonsAndGlyphs(std::string _name, 
+			Button* _button, 
+			Frame::image_t* _glyph,
+			std::string _inputName, 
+			CompactLayoutModes _layoutMode) :
+			name(_name),
+			button(_button),
+			glyph(_glyph),
+			inputName(_inputName),
+			layoutMode(_layoutMode)
+		{
+		}
+	};
+	std::vector<ButtonsAndGlyphs> allButtonsAndGlyphs;
+	allButtonsAndGlyphs.emplace_back(
+		ButtonsAndGlyphs{ "magic button", magicButton, magicButtonGlyph, 
+		"MenuPageLeftAlt", COMPACT_LAYOUT_INVENTORY });
+	allButtonsAndGlyphs.emplace_back(
+		ButtonsAndGlyphs{ "status button", statusButton, statusButtonGlyph, 
+		"MenuPageRightAlt", COMPACT_LAYOUT_INVENTORY });
+	allButtonsAndGlyphs.emplace_back(
+		ButtonsAndGlyphs{ "items button", itemsButton, itemsButtonGlyph,
+		"MenuPageLeftAlt", COMPACT_LAYOUT_CHARSHEET });
+	allButtonsAndGlyphs.emplace_back(
+		ButtonsAndGlyphs{ "skills button", skillsButton, skillsButtonGlyph,
+		"MenuPageRightAlt", COMPACT_LAYOUT_CHARSHEET });
+
+	int buttonWidth = 98;
+	int buttonHeight = 38;
+	int alignPaddingX = 2;
+	int leftAlignX = uiNavFrame->getSize().w / 2 - buttonWidth - alignPaddingX;
+	int rightAlignX = uiNavFrame->getSize().w / 2 + alignPaddingX;
+	int topAlignY = 26;
+	int bottomAlignY = topAlignY + 52;
+
+	int numButtonsToShow = 4;
+
+	for ( auto& buttonAndGlyph : allButtonsAndGlyphs )
+	{
+		auto& button = buttonAndGlyph.button;
+		button->setDisabled(true);
+		SDL_Rect buttonPos = button->getSize();
+		auto& glyph = buttonAndGlyph.glyph;
+		glyph->disabled = true;
+		if ( buttonAndGlyph.name == "magic button" || buttonAndGlyph.name == "items button" )
+		{
+			buttonPos.x = leftAlignX;
+			if ( numButtonsToShow < 4 )
+			{
+				buttonPos.y = topAlignY;
+				if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+				{
+					button->setDisabled(false);
+					glyph->disabled = false;
+				}
+			}
+			else
+			{
+				button->setDisabled(false);
+				glyph->disabled = false;
+				if ( buttonAndGlyph.name == "magic button" )
+				{
+					buttonPos.y = topAlignY;
+				}
+				else if ( buttonAndGlyph.name == "items button" )
+				{
+					buttonPos.y = bottomAlignY;
+				}
+			}
+			buttonPos.w = buttonWidth;
+			buttonPos.h = buttonHeight;
+			button->setSize(buttonPos);
+		}
+		if ( buttonAndGlyph.name == "status button" || buttonAndGlyph.name == "skills button" )
+		{
+			buttonPos.x = rightAlignX;
+			if ( numButtonsToShow < 4 )
+			{
+				buttonPos.y = topAlignY;
+				if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+				{
+					button->setDisabled(false);
+					glyph->disabled = false;
+				}
+			}
+			else
+			{
+				button->setDisabled(false);
+				glyph->disabled = false;
+				if ( buttonAndGlyph.name == "status button" )
+				{
+					buttonPos.y = topAlignY;
+				}
+				else if ( buttonAndGlyph.name == "skills button" )
+				{
+					buttonPos.y = bottomAlignY;
+				}
+			}
+			buttonPos.w = buttonWidth;
+			buttonPos.h = buttonHeight;
+			button->setSize(buttonPos);
+		}
+
+		if ( !button->isDisabled() )
+		{
+			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(buttonAndGlyph.inputName.c_str());
+			glyph->ontop = true;
+			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				glyph->disabled = false; // keyboard glyph support TODO
+			}
+			else
+			{
+				glyph->disabled = false;
+			}
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
+			{
+				glyph->pos.w = imgGet->getWidth();
+				glyph->pos.h = imgGet->getHeight();
+			}
+
+			glyph->pos.x = button->getSize().x + button->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
+			const int glyphToImgPadY = 8;
+			glyph->pos.y = button->getSize().y + button->getSize().h - glyphToImgPadY; // just below the button with some padding
+		}
+	}
+}
+
 void createActionPrompts(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -871,6 +1139,7 @@ void Player::HUD_t::processHUD()
 	updateHPBar();
 	updateMPBar();
 	updateActionPrompts();
+	updateUINavigation();
 	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
 	enemyBarFrame->setDisabled(true);
 	enemyBarFrameHUD->setDisabled(true);
@@ -1376,14 +1645,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
 				players[button.getOwner()]->skillSheet.openSkillSheet();
 			});
-			//auto skillsImg = skillsButtonFrame->addImage(SDL_Rect{0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h},
-			//	0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png", "skills button img");
-			//auto skillsText = skillsButtonFrame->addField("skills text", 32);
-			//skillsText->setFont(skillsFont);
-			//skillsText->setSize(skillsImg->pos);
-			//skillsText->setVJustify(Field::justify_t::CENTER);
-			//skillsText->setHJustify(Field::justify_t::CENTER);
-			//skillsText->setText("Skills List");
 		}
 
 		// dungeon floor and level descriptor
@@ -1921,20 +2182,30 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		return;
 	}
 
-	if ( nohud || player.shootmode || 
-		!(player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
+	bool bCompactView = false;
+	if ( keystatus[SDL_SCANCODE_U] || player.bUseCompactGUIHeight() )
 	{
-		sheetFrame->setDisabled(true);
-		return;
+		bCompactView = true;
 	}
+
+	bool hideAndExit = false;
+	if ( nohud || player.shootmode || !(player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
+	{
+		hideAndExit = true;
+	}
+	else if ( bCompactView && player.hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+	{
+		hideAndExit = true;
+	}
+
 	sheetFrame->setDisabled(false);
-	
+
 	// resize elements for splitscreen
 	{
 		auto characterInfoFrame = sheetFrame->findFrame("character info");
 		const int bgWidth = 208;
-		const int leftAlignX = sheetFrame->getSize().w - bgWidth;
-		const int compactAlignX = leftAlignX - 256;
+		const int leftAlignX = sheetFrame->getSize().w - bgWidth + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+		const int compactAlignX = -player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 		auto compactImgBg = sheetFrame->findImage("character info compact img");
 		Frame* dungeonFloorFrame = sheetFrame->findFrame("dungeon floor frame");
 		Frame* buttonFrame = sheetFrame->findFrame("log map buttons");
@@ -1945,7 +2216,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		auto statsFrame = sheetFrame->findFrame("stats");
 		auto attributesFrame = sheetFrame->findFrame("attributes");
 
-		if ( keystatus[SDL_SCANCODE_U] )
+		if ( bCompactView )
 		{
 			// compact view
 			sheetDisplayType = CHARSHEET_DISPLAY_COMPACT;
@@ -1999,10 +2270,12 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			fullscreenBg->setDisabled(true);
 
 			auto statsPos = statsFrame->getSize();
+			statsPos.x = sheetFrame->getSize().w - statsPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 			statsPos.y = 0;
 			statsFrame->setSize(statsPos);
 
 			auto attributesPos = attributesFrame->getSize();
+			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 			attributesPos.y = statsPos.y + statsPos.h - 4; // 4 pixels above bottom edge of stats pane
 			attributesFrame->setSize(attributesPos);
 		}
@@ -2053,18 +2326,26 @@ void Player::CharacterSheet_t::processCharacterSheet()
 
 			fullscreenBg->setDisabled(false);
 			SDL_Rect fullscreenBgPos = fullscreenBg->getSize();
-			fullscreenBgPos.x = sheetFrame->getSize().w - fullscreenBgPos.w;
+			fullscreenBgPos.x = sheetFrame->getSize().w - fullscreenBgPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 			fullscreenBg->setSize(fullscreenBgPos);
 			compactImgBg->disabled = true;
 
 			auto attributesPos = attributesFrame->getSize();
+			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 			attributesPos.y = sheetFrame->getSize().h - attributesPos.h;
 			attributesFrame->setSize(attributesPos);
 
 			auto statsPos = statsFrame->getSize();
+			statsPos.x = sheetFrame->getSize().w - statsPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 			statsPos.y = attributesPos.y - statsPos.h + 4; // 4 pixels below top edge of attributes pane
 			statsFrame->setSize(statsPos);
 		}
+	}
+
+	if ( hideAndExit )
+	{
+		sheetFrame->setDisabled(true);
+		return;
 	}
 
 	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
@@ -2771,7 +3052,7 @@ void Player::CharacterSheet_t::updateStats()
 	assert(statsFrame);
 
 	auto statsPos = statsFrame->getSize();
-	statsPos.x = sheetFrame->getSize().w - statsPos.w;
+	//statsPos.x = sheetFrame->getSize().w - statsPos.w;
 	statsFrame->setSize(statsPos);
 
 	auto statsInnerFrame = statsFrame->findFrame("stats inner frame");
@@ -2947,7 +3228,7 @@ void Player::CharacterSheet_t::updateAttributes()
 	assert(attributesFrame);
 
 	auto attributesPos = attributesFrame->getSize();
-	attributesPos.x = sheetFrame->getSize().w - attributesPos.w;
+	//attributesPos.x = sheetFrame->getSize().w - attributesPos.w;
 	attributesFrame->setSize(attributesPos);
 
 	auto attributesInnerFrame = attributesFrame->findFrame("attributes inner frame");
@@ -5010,6 +5291,14 @@ void loadHUDSettingsJSON()
 					{
 						hotbarCompactSlotOverlapPercent = d["hotbar"]["hotbar_compact_slot_overlap"].GetDouble();
 					}
+					if ( d["hotbar"].HasMember("hotbar_compact_inactive_slot_movement_x") )
+					{
+						hotbarCompactInactiveSlotMovementX = d["hotbar"]["hotbar_compact_inactive_slot_movement_x"].GetInt();
+					}
+					if ( d["hotbar"].HasMember("hotbar_compact_expanded_x_offset") )
+					{
+						hotbarCompactExpandedOffsetX = d["hotbar"]["hotbar_compact_expanded_x_offset"].GetInt();
+					}
 				}
 				if ( d.HasMember("action_prompts") )
 				{
@@ -5199,19 +5488,19 @@ void createPlayerSpellList(const int player)
 	frame->setSize(SDL_Rect{ 0,
 		0,
 		210,
-		350 });
-	//frame->setHollow(true);
+		250 });
+	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
 
-	SDL_Rect basePos{ 0, 0, 210, 350 };
+	SDL_Rect basePos{ 0, 0, 210, 250 };
 	{
 		auto bgFrame = frame->addFrame("spell base");
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		auto bg = bgFrame->addImage(SDL_Rect{ 0, 100, 210, 250 },
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
 		//bg->disabled = false;
@@ -5221,7 +5510,7 @@ void createPlayerSpellList(const int player)
 		slider->setMinValue(0);
 		slider->setMaxValue(100);
 		slider->setValue(0);
-		SDL_Rect sliderPos{ basePos.w - 34, 100 + 4, 30, 242 };
+		SDL_Rect sliderPos{ basePos.w - 38, 8, 30, 234 };
 		slider->setRailSize(SDL_Rect{ sliderPos });
 		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
@@ -5238,21 +5527,27 @@ void createPlayerSpellList(const int player)
 		titleText->setText("Spell List");
 		titleText->setHJustify(Field::justify_t::CENTER);
 		titleText->setVJustify(Field::justify_t::CENTER);
-		titleText->setSize(SDL_Rect{ basePos.x + 4, 100 - 32, 162, 32 });
+		titleText->setSize(SDL_Rect{ basePos.x + 4, 0, 162, 32 });
 		titleText->setColor(makeColor(188, 154, 114, 255));
 
 		auto closeBtn = bgFrame->addButton("close spell button");
 		SDL_Rect closeBtnPos = titleText->getSize();
-		closeBtnPos.x = closeBtnPos.x + closeBtnPos.w - 32;
-		closeBtnPos.w = 32;
+		closeBtnPos.x = closeBtnPos.x + closeBtnPos.w - 98;
+		closeBtnPos.w = 98;
+		closeBtnPos.h = 38;
 		closeBtn->setSize(closeBtnPos);
 		closeBtn->setColor(makeColor(255, 255, 255, 255));
 		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
 		closeBtn->setText("Close");
 		closeBtn->setFont(font);
-		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Magic_00.png");
+		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), "%d: Close spell button clicked", button.getOwner());
+			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+			}
+			players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 		});
 	}
 
@@ -5263,9 +5558,9 @@ void createPlayerSpellList(const int player)
 	const int baseSlotOffsetX = 0;
 	const int baseSlotOffsetY = 0;
 
-	SDL_Rect invSlotsPos{ basePos.x + 4, basePos.y + 4 + 100, basePos.w, 242 };
+	SDL_Rect invSlotsPos{ basePos.x + 4, basePos.y + 4, basePos.w, 242 };
 	{
-		int numGrids = (players[player]->inventoryUI.MAX_SPELLS_Y / 6) + 1;
+		int numGrids = (players[player]->inventoryUI.MAX_SPELLS_Y / players[player]->inventoryUI.spellPanel.kNumSpellsToDisplayVertical) + 1;
 
 		const auto spellSlotsFrame = frame->addFrame("spell slots");
 		spellSlotsFrame->setSize(invSlotsPos);
@@ -8185,7 +8480,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool bCompactView = false;
-	if ( keystatus[SDL_SCANCODE_U] )
+	if ( keystatus[SDL_SCANCODE_U] || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}
@@ -8220,7 +8515,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool faceMenuSnapCursorInstantly = false;
-	if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE || (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !player.shootmode) )
 	{
 		if ( selectedSlotAnimateCurrentValue == 0.0 )
 		{
@@ -8301,13 +8596,50 @@ void Player::Hotbar_t::updateHotbar()
 		}
 
 		SDL_Rect pos = slot->getSize();
-		pos.x = hotbarCentreX;
-		pos.y = hotbarStartY2;
 		int compactViewOffset = 0;
+		int compactInactiveSlotOffset = 0;
+		int compactExpandedOffsetX = 0;
+		int centreXLeft = hotbarCentreXLeft;
+		int centreXRight = hotbarCentreXRight;
+		int centreX = hotbarCentreX;
+		bool compactViewNavigation = (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !player.shootmode);
 		if ( bCompactView )
 		{
-			compactViewOffset = pos.w * hotbarCompactSlotOverlapPercent;
+			if ( compactViewNavigation )
+			{
+				compactViewOffset = pos.w * hotbarCompactSlotOverlapPercent / 2.0;
+
+				compactExpandedOffsetX = hotbarCompactExpandedOffsetX;
+				centreXLeft -= compactExpandedOffsetX;
+				centreXRight += compactExpandedOffsetX;
+			}
+			else
+			{
+				compactViewOffset = pos.w * hotbarCompactSlotOverlapPercent;
+			}
+			compactInactiveSlotOffset = hotbarCompactInactiveSlotMovementX * selectedSlotAnimateCurrentValue;
+
+			if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+			{
+				if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
+				{
+					centreX += compactInactiveSlotOffset;
+					centreXRight += compactInactiveSlotOffset;
+				}
+				else if( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
+				{
+					centreXLeft -= compactInactiveSlotOffset;
+					centreXRight += compactInactiveSlotOffset;
+				}
+				else if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
+				{
+					centreXLeft -= compactInactiveSlotOffset;
+					centreX -= compactInactiveSlotOffset;
+				}
+			}
 		}
+		pos.x = centreX;
+		pos.y = hotbarStartY2;
 
 		int slotYMovement = pos.h / 4;
 
@@ -8327,7 +8659,7 @@ void Player::Hotbar_t::updateHotbar()
 			{
 				// left group
 				case 0:
-					pos.x = hotbarCentreXLeft - pos.w / 2 - pos.w + 2 + compactViewOffset;
+					pos.x = centreXLeft - pos.w / 2 - pos.w + 2 + compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
@@ -8340,12 +8672,12 @@ void Player::Hotbar_t::updateHotbar()
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
 					break;
 				case 1:
-					pos.x = hotbarCentreXLeft - pos.w / 2;
+					pos.x = centreXLeft - pos.w / 2;
 					pos.y -= slotYMovement;
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarLeft");
 					break;
 				case 2:
-					pos.x = hotbarCentreXLeft + (pos.w / 2 - 2) - compactViewOffset;
+					pos.x = centreXLeft + (pos.w / 2 - 2) - compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
@@ -8360,7 +8692,7 @@ void Player::Hotbar_t::updateHotbar()
 				// middle group
 				case 3:
 					pos.y = hotbarStartY1;
-					pos.x = hotbarCentreX - pos.w / 2 - pos.w + 2 + compactViewOffset;
+					pos.x = centreX - pos.w / 2 - pos.w + 2 + compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
@@ -8375,12 +8707,12 @@ void Player::Hotbar_t::updateHotbar()
 				case 4:
 					pos.y = hotbarStartY1;
 					pos.y -= slotYMovement;
-					pos.x = hotbarCentreX - pos.w / 2;
+					pos.x = centreX - pos.w / 2;
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarUp");
 					break;
 				case 5:
 					pos.y = hotbarStartY1;
-					pos.x = hotbarCentreX + (pos.w / 2 - 2) - compactViewOffset;
+					pos.x = centreX + (pos.w / 2 - 2) - compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
@@ -8394,7 +8726,7 @@ void Player::Hotbar_t::updateHotbar()
 					break;
 				// right group
 				case 6:
-					pos.x = hotbarCentreXRight - pos.w / 2 - pos.w + 2 + compactViewOffset;
+					pos.x = centreXRight - pos.w / 2 - pos.w + 2 + compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
@@ -8407,12 +8739,12 @@ void Player::Hotbar_t::updateHotbar()
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
 					break;
 				case 7:
-					pos.x = hotbarCentreXRight - pos.w / 2;
+					pos.x = centreXRight - pos.w / 2;
 					pos.y -= slotYMovement;
 					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarRight");
 					break;
 				case 8:
-					pos.x = hotbarCentreXRight + (pos.w / 2 - 2) - compactViewOffset;
+					pos.x = centreXRight + (pos.w / 2 - 2) - compactViewOffset;
 					if ( faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT )
 					{
 						pos.y -= slotYMovement * selectedSlotAnimateCurrentValue;
@@ -10220,13 +10552,10 @@ void Player::SkillSheet_t::processSkillSheet()
 
 	bool oldCompactViewVal = bUseCompactSkillsView;
 	bool oldSlideWindowsOnly = bSlideWindowsOnly;
-	if ( splitscreen && 
-		((players[player.playernum]->camera_virtualHeight() < Frame::virtualScreenY * .8)
-		|| (players[player.playernum]->camera_virtualWidth() < Frame::virtualScreenX * .8)) )
+	if ( splitscreen && (player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth()) )
 	{
 		// use compact view.
-		if ( (players[player.playernum]->camera_virtualWidth() < Frame::virtualScreenX * .8)
-			&& !(players[player.playernum]->camera_virtualHeight() < Frame::virtualScreenY * .8) )
+		if ( player.bUseCompactGUIWidth() && !player.bUseCompactGUIHeight() )
 		{
 			bSlideWindowsOnly = true; // 2 player vertical splitscreen, slide but don't use compact view
 		}
@@ -10359,45 +10688,6 @@ void Player::SkillSheet_t::processSkillSheet()
 	titleTextPos.x = skillDescriptionFrame->getSize().x + skillDescriptionFrame->getSize().w / 2 - titleTextPos.w / 2;
 	titleText->setSize(titleTextPos);
 
-	//if ( keystatus[SDL_SCANCODE_F1] )
-	//{
-	//	if ( keystatus[SDL_SCANCODE_LSHIFT] )
-	//	{
-	//		windowHeightScaleX = std::max(windowHeightScaleX - .01, -1.0);
-	//	}
-	//	else
-	//	{
-	//		windowHeightScaleX = std::min(windowHeightScaleX + .01, 1.0);
-	//	}
-	//}
-	//if ( keystatus[SDL_SCANCODE_F2] )
-	//{
-	//	if ( keystatus[SDL_SCANCODE_LSHIFT] )
-	//	{
-	//		windowHeightScaleY = std::max(windowHeightScaleY - .01, -1.0);
-	//	}
-	//	else
-	//	{
-	//		windowHeightScaleY = std::min(windowHeightScaleY + .01, 1.0);
-	//	}
-	//}
-	//if ( keystatus[SDL_SCANCODE_F3] )
-	//{
-	//	keystatus[SDL_SCANCODE_F3] = 0;
-	//	if ( keystatus[SDL_SCANCODE_LCTRL] )
-	//	{
-	//		//bUseCompactSkillsView = !bUseCompactSkillsView;
-	//	}
-	//	else if ( keystatus[SDL_SCANCODE_LSHIFT] )
-	//	{
-	//		skillSlideDirection = 0;
-	//	}
-	//	else
-	//	{
-	//		skillSlideDirection = (skillSlideDirection != 1) ? 1 : -1;
-	//		//skillSlideAmount = 0.0;
-	//	}
-	//}
 	if ( skillSlideDirection != 0 )
 	{
 		const real_t fpsScale = (144.0 / std::max(1U, fpsLimit)); // ported from 144Hz
@@ -10694,11 +10984,6 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		int lowestY = 0;
 
-		/*if ( keystatus[SDL_SCANCODE_J] )
-		{
-			keystatus[SDL_SCANCODE_J] = 0;
-			slider->setDisabled(!slider->isDisabled());
-		}*/
 		SDL_Rect sliderPos = slider->getRailSize();
 		sliderPos.x = skillDescriptionFrame->getSize().w - 34;
 		sliderPos.h = skillDescriptionFrame->getSize().h - 8;
@@ -11402,12 +11687,24 @@ void Player::Inventory_t::SpellPanel_t::closeSpellPanel()
 	bFirstTimeSnapCursor = false;
 }
 
+int Player::Inventory_t::SpellPanel_t::getNumSpellsToDisplayVertical() const
+{
+	if ( !player.bUseCompactGUIHeight() )
+	{
+		return kNumSpellsToDisplayVertical;
+	}
+	else
+	{
+		return kNumSpellsToDisplayVertical - 2;
+	}
+}
+
+int Player::Inventory_t::SpellPanel_t::heightOffsetWhenNotCompact = 50;
 void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 {
 	Frame* spellFrame = player.inventoryUI.spellFrame;
 	if ( !spellFrame ) { return; }
 
-	auto spellFramePos = spellFrame->getSize();
 	if ( !spellFrame->isDisabled() && bOpen )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -11434,13 +11731,73 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		isInteractable = false;
 		scrollInertia = 0.0;
 	}
-	spellFramePos.x = -spellFramePos.w + animx * spellFramePos.w * 2;
+	auto spellFramePos = spellFrame->getSize();
+	if ( player.inventoryUI.inventoryPanelJustify == Player::Inventory_t::PANEL_JUSTIFY_LEFT )
+	{
+		spellFramePos.x = -spellFramePos.w + animx * spellFramePos.w;
+		if ( player.bUseCompactGUIWidth()
+			&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+			spellFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+		}
+	}
+	else
+	{
+		spellFramePos.x = player.camera_virtualWidth() - animx * spellFramePos.w;
+		if ( player.bUseCompactGUIWidth()
+			&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+			spellFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+		}
+	}
 	spellFrame->setSize(spellFramePos);
 
 	auto baseFrame = spellFrame->findFrame("spell base");
 	auto slider = baseFrame->findSlider("spell slider");
+	auto spellSlotsFrame = spellFrame->findFrame("spell slots");
+	auto baseBackgroundImg = baseFrame->findImage("spell base img");
+	// handle height changing..
+	{
+		int frameHeight = 250;
+		int totalFrameHeightChange = 0;
+		if ( !player.bUseCompactGUIHeight() )
+		{
+			totalFrameHeightChange = heightOffsetWhenNotCompact;
+		}
+		spellFramePos.h = frameHeight + totalFrameHeightChange;
+		spellFrame->setSize(spellFramePos);
+		baseBackgroundImg->pos.y = totalFrameHeightChange;
+		SDL_Rect spellBasePos = baseFrame->getSize();
+		spellBasePos.h = spellFramePos.h;
+		baseFrame->setSize(spellBasePos);
 
-	int lowestItemY = kNumSpellsToDisplayVertical - 1;
+		int numGrids = (players[player.playernum]->inventoryUI.MAX_SPELLS_Y / getNumSpellsToDisplayVertical()) + 1;
+		SDL_Rect spellSlotsFramePos = spellSlotsFrame->getSize();
+
+		int heightChange = 0;
+		if ( getNumSpellsToDisplayVertical() < kNumSpellsToDisplayVertical )
+		{
+			heightChange = player.inventoryUI.getSlotSize() * (kNumSpellsToDisplayVertical - getNumSpellsToDisplayVertical());
+		}
+		spellSlotsFramePos.y = 4 + heightChange + totalFrameHeightChange;
+		spellSlotsFramePos.h = 242 - heightChange;
+		spellSlotsFrame->setActualSize(SDL_Rect{ spellSlotsFrame->getActualSize().x, 
+			spellSlotsFrame->getActualSize().y, 
+			spellSlotsFrame->getActualSize().w, 
+			(spellSlotsFramePos.h) * numGrids });
+		spellSlotsFrame->setSize(spellSlotsFramePos);
+		auto gridImg = spellSlotsFrame->findImage("grid img");
+		gridImg->pos.y = 0;
+		gridImg->pos.h = (spellSlotsFramePos.h) * numGrids;
+
+		SDL_Rect sliderPos = slider->getRailSize();
+		sliderPos.y = 8 + heightChange + totalFrameHeightChange;
+		sliderPos.h = 234 - heightChange;
+		slider->setRailSize(sliderPos);
+	}
+
+
+	int lowestItemY = getNumSpellsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -11450,7 +11807,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		lowestItemY = std::max(lowestItemY, item->y);
 	}
 
-	int scrollAmount = std::max((lowestItemY + 1) - (kNumSpellsToDisplayVertical), 0) * player.inventoryUI.getSlotSize();
+	int scrollAmount = std::max((lowestItemY + 1) - (getNumSpellsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
 	if ( scrollAmount == 0 )
 	{
 		slider->setDisabled(true);
@@ -11537,12 +11894,9 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		slider->setValue(0.0);
 	}
 
-	//SDL_Rect scrollAreaPos = scrollArea->getSize();
-	auto spellSlotsFrame = spellFrame->findFrame("spell slots");
 	SDL_Rect actualSize = spellSlotsFrame->getActualSize();
 	actualSize.y = scrollAnimateX;
 	spellSlotsFrame->setActualSize(actualSize);
-	//scrollArea->setSize(scrollAreaPos);
 }
 
 bool Player::Inventory_t::SpellPanel_t::isSlotVisible(int x, int y) const
@@ -11555,7 +11909,7 @@ bool Player::Inventory_t::SpellPanel_t::isSlotVisible(int x, int y) const
 		}
 	}
 	int lowerY = currentScrollRow;
-	int upperY = currentScrollRow + kNumSpellsToDisplayVertical - 1;
+	int upperY = currentScrollRow + getNumSpellsToDisplayVertical() - 1;
 
 	if ( y >= lowerY && y <= upperY )
 	{
@@ -11573,7 +11927,7 @@ bool Player::Inventory_t::SpellPanel_t::isItemVisible(Item* item) const
 void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantly)
 {
 	int lowerY = currentScrollRow;
-	int upperY = currentScrollRow + kNumSpellsToDisplayVertical - 1;
+	int upperY = currentScrollRow + getNumSpellsToDisplayVertical() - 1;
 
 	if ( y >= lowerY && y <= upperY )
 	{
@@ -11581,7 +11935,7 @@ void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantl
 		return;
 	}
 
-	int lowestItemY = kNumSpellsToDisplayVertical - 1;
+	int lowestItemY = getNumSpellsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -11590,7 +11944,7 @@ void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantl
 
 		lowestItemY = std::max(lowestItemY, item->y);
 	}
-	int maxScroll = std::max((lowestItemY + 1) - (kNumSpellsToDisplayVertical), 0) * player.inventoryUI.getSlotSize();
+	int maxScroll = std::max((lowestItemY + 1) - (getNumSpellsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
 	
 	int scrollAmount = 0;
 	if ( y < lowerY )

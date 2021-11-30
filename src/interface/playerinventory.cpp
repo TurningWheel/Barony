@@ -1266,7 +1266,7 @@ void select_spell_slot(int player, int currentx, int currenty, int diffx, int di
 		x = 0;
 	}
 
-	int lowestItemY = players[player]->inventoryUI.spellPanel.kNumSpellsToDisplayVertical - 1;
+	int lowestItemY = players[player]->inventoryUI.spellPanel.getNumSpellsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -1977,8 +1977,10 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 
 void Player::Inventory_t::cycleInventoryTab()
 {
-	if ( player.inventory_mode == INVENTORY_MODE_ITEM)
+	if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+		|| player.hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_INVENTORY )
 	{
+		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_SPELL;
 		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 		{
@@ -1993,7 +1995,7 @@ void Player::Inventory_t::cycleInventoryTab()
 	}
 	else
 	{
-		//inventory_mode == INVENTORY_MODE_SPELL
+		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_ITEM;
 		if ( player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
@@ -3761,24 +3763,23 @@ void Player::Inventory_t::setCompactView(bool bCompact)
 	if ( bCompactView )
 	{
 		bool invertJustification = false;
-		if ( player.camera_virtualWidth() == Frame::virtualScreenX
-			&& player.camera_virtualHeight() == Frame::virtualScreenY )
+		if ( !player.bUseCompactGUIHeight()
+			&& !player.bUseCompactGUIWidth() )
 		{
 			// fullscreen
 			invertJustification = false;
 		}
-		else if ( player.camera_virtualWidth() == Frame::virtualScreenX )
+		else if ( !player.bUseCompactGUIWidth() )
 		{
 			// widescreen
 			invertJustification = false;
 		}
-		else if ( player.camera_virtualHeight() == Frame::virtualScreenY )
+		else if ( !player.bUseCompactGUIHeight() )
 		{
 			// tallscreen
 			invertJustification = false;
 		}
-		else if ( player.camera_virtualWidth() < Frame::virtualScreenX * .8 
-			&& player.camera_virtualHeight() < Frame::virtualScreenY * .8 )
+		else if ( player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth() )
 		{
 			// quadrants
 			invertJustification = false;
@@ -3801,6 +3802,7 @@ void Player::Inventory_t::setCompactView(bool bCompact)
 	}
 }
 
+int Player::Inventory_t::slideOutWidth = 100;
 void Player::Inventory_t::resizeAndPositionInventoryElements()
 {
 	if ( !frame ) { return; }
@@ -3894,7 +3896,40 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		dollSlotsPos.x = (paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? 0 
 			: inventoryBaseImagesFrame->getSize().w - dollSlotsPos.w;
 		dollSlotsPos.y = 8;
+
 	}
+
+	if ( bCompactView 
+		&& player.bUseCompactGUIWidth() 
+		&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.01, (1.0 - slideOutPercent)) / 2.0;
+		slideOutPercent += setpointDiff;
+		slideOutPercent = std::min(1.0, slideOutPercent);
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.01, (slideOutPercent)) / 2.0;
+		slideOutPercent -= setpointDiff;
+		slideOutPercent = std::max(0.0, slideOutPercent);
+	}
+
+	int hideFrameAmount = 0;
+	if ( !bCompactView )
+	{
+		hideFrameAmount = slideOutWidth * slideOutPercent;
+	}
+	else
+	{
+		hideFrameAmount = slideOutWidth * slideOutPercent;
+	}
+	invSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	compactInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	defaultInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 
 	invSlotsFrame->setSize(invSlotsPos);
 	dollSlotsFrame->setSize(dollSlotsPos);
@@ -3932,7 +3967,11 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	backpackFrame->setSize(backpackFramePos);
 
 	auto spellFramePos = spellFrame->getSize();
-	spellFramePos.y = invSlotsFrame->getSize().y - 100;
+	spellFramePos.y = invSlotsFrame->getSize().y - 4;
+	if ( !player.bUseCompactGUIHeight() )
+	{
+		spellFramePos.y -= spellPanel.heightOffsetWhenNotCompact;
+	}
 	spellFrame->setSize(spellFramePos);
 }
 
@@ -3942,18 +3981,43 @@ void Player::Inventory_t::updateInventory()
 	assert(frame);
 	assert(tooltipFrame);
 
-	if ( nohud || !players[player]->isLocalPlayer() || players[player]->shootmode
-		|| !(players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP) )
+	bool bCompactView = false;
+	if ( keystatus[SDL_SCANCODE_Y] || players[player]->bUseCompactGUIHeight() )
 	{
-		// hide
+		bCompactView = true;
+	}
+	setCompactView(bCompactView);
+
+	bool hideAndExit = false;
+	if ( nohud || !players[player]->isLocalPlayer() || players[player]->shootmode
+		|| !((players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP)) )
+	{
+		hideAndExit = true;
+	}
+	else if ( bCompactView && players[player]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_INVENTORY )
+	{
+		hideAndExit = true;
+	}
+
+	if ( hideAndExit )
+	{
 		frame->setDisabled(true);
-		spellFrame->setDisabled(true);
+		spellPanel.closeSpellPanel();
 		updateItemContextMenu(); // process + close the item context menu
+
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.01, (slideOutPercent)) / 2.0;
+		slideOutPercent -= setpointDiff;
+		slideOutPercent = std::max(0.0, slideOutPercent);
 		return;
 	}
 
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
+	if ( frame->isDisabled() )
+	{
+		slideOutPercent = 1.0;
+	}
 	frame->setDisabled(false);
 
 	if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
@@ -3981,12 +4045,6 @@ void Player::Inventory_t::updateInventory()
 
 	{
 		// resize/position elements based on compact view or not
-		bool bCompactView = false;
-		if ( keystatus[SDL_SCANCODE_Y] )
-		{
-			bCompactView = true;
-		}
-		setCompactView(bCompactView);
 		resizeAndPositionInventoryElements();
 	}
 
@@ -4458,8 +4516,6 @@ void Player::Inventory_t::updateInventory()
 	}
 
 	// autosort button
-	//mode_pos.x = getStartX() + getSizeX() * inventorySlotSize + inventory_mode_item_img->w * uiscale_inventory + 2;
-	//mode_pos.y = getStartY();
 	if ( bNewInventoryLayout )
 	{
 		// draw halfway down
@@ -4498,77 +4554,6 @@ void Player::Inventory_t::updateInventory()
 			autosortInventory(player);
 			playSound(139, 64);
 		}
-	}
-	// do inventory mode buttons
-	//mode_pos.x = getStartX() + getSizeX() * inventorySlotSize + 1;
-	//mode_pos.y = getStartY() + inventory_mode_spell_img->h * uiscale_inventory;
-	if ( bNewInventoryLayout )
-	{
-		// draw halfway down
-		mode_pos.y += (getSizeY() / 2) * inventorySlotSize;
-	}
-	mode_pos.w = inventory_mode_spell_img->w * uiscale_inventory;
-	mode_pos.h = inventory_mode_spell_img->h * uiscale_inventory + 1;
-	mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w,
-		mode_pos.y, mode_pos.y + mode_pos.h);
-	if ( mouse_in_bounds )
-	{
-		drawImageScaled(inventory_mode_spell_highlighted_img, NULL, &mode_pos);
-
-		// tooltip
-		SDL_Rect src;
-		src.x = mousex + 16;
-		src.y = mousey + 8;
-		src.h = TTF12_HEIGHT + 8;
-		src.w = longestline(language[342]) * TTF12_WIDTH + 8;
-		drawTooltip(&src);
-		ttfPrintText(ttf12, src.x + 4, src.y + 4, language[342]);
-
-		if ( inputs.bMouseLeft(player) )
-		{
-			inputs.mouseClearLeft(player);
-			players[player]->inventory_mode = INVENTORY_MODE_SPELL;
-			playSound(139, 64);
-		}
-	}
-	else
-	{
-		drawImageScaled(inventory_mode_spell_img, NULL, &mode_pos);
-	}
-	//mode_pos.x = getStartX() + getSizeX() * inventorySlotSize + 1;
-	//mode_pos.y = getStartY() - 1;
-	if ( bNewInventoryLayout )
-	{
-		// draw halfway down
-		mode_pos.y += (getSizeY() / 2) * inventorySlotSize;
-	}
-	mode_pos.w = inventory_mode_item_img->w * uiscale_inventory;
-	mode_pos.h = inventory_mode_item_img->h * uiscale_inventory + 2;
-	mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w,
-		mode_pos.y, mode_pos.y + mode_pos.h);
-	if ( mouse_in_bounds )
-	{
-		drawImageScaled(inventory_mode_item_highlighted_img, NULL, &mode_pos);
-
-		// tooltip
-		SDL_Rect src;
-		src.x = mousex + 16;
-		src.y = mousey + 8;
-		src.h = TTF12_HEIGHT + 8;
-		src.w = longestline(language[343]) * TTF12_WIDTH + 8;
-		drawTooltip(&src);
-		ttfPrintText(ttf12, src.x + 4, src.y + 4, language[343]);
-
-		if ( inputs.bMouseLeft(player) )
-		{
-			inputs.mouseClearLeft(player);
-			players[player]->inventory_mode = INVENTORY_MODE_ITEM;
-			playSound(139, 64);
-		}
-	}
-	else
-	{
-		drawImageScaled(inventory_mode_item_img, NULL, &mode_pos);
 	}
 
 	// mouse interactions

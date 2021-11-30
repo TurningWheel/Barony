@@ -646,6 +646,8 @@ public:
 	const int camera_midy() const { return camera_y1() + camera_height() / 2; }
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
+	const bool bUseCompactGUIWidth() const;
+	const bool bUseCompactGUIHeight() const;
 
 	class GUI_t
 	{
@@ -709,6 +711,8 @@ public:
 		std::unordered_map<int, Frame*> slotFrames;
 		std::unordered_map<int, Frame*> spellSlotFrames;
 		bool bCompactView = false;
+		real_t slideOutPercent = 0.0;
+		static int slideOutWidth;
 
 		enum PanelJustify_t
 		{
@@ -754,12 +758,14 @@ public:
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
 			const int kNumSpellsToDisplayVertical = 6;
+			int getNumSpellsToDisplayVertical() const;
 			void openSpellPanel();
 			void closeSpellPanel();
 			void updateSpellPanel();
 			void scrollToSlot(int x, int y, bool instantly);
 			bool isSlotVisible(int x, int y) const;
 			bool isItemVisible(Item* item) const;
+			static int heightOffsetWhenNotCompact;
 			SpellPanel_t(Player& p) :
 				player(p) {}
 		};
@@ -1132,6 +1138,7 @@ public:
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
+		Frame* uiNavFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
 		Frame* cursorFrame = nullptr;
@@ -1207,6 +1214,13 @@ public:
 		Bar_t MPBar;
 		Bar_t enemyBar;
 
+		enum CompactLayoutModes : int {
+			COMPACT_LAYOUT_INVENTORY,
+			COMPACT_LAYOUT_CHARSHEET
+		};
+		CompactLayoutModes compactLayoutMode = COMPACT_LAYOUT_CHARSHEET;
+		bool bShowUINavigation = false;
+
 		HUD_t(Player& p) : player(p)
 		{};
 		~HUD_t() {};
@@ -1261,6 +1275,7 @@ public:
 		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
 		void updateCursor();
 		void updateActionPrompts();
+		void updateUINavigation();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;

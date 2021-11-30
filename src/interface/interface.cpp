@@ -1728,10 +1728,11 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 	int oldgui = gui_mode;
 	gui_mode = whichGUIMode;
-	/*if ( oldgui == GUI_MODE_NONE && gui_mode == GUI_MODE_INVENTORY )
+	if ( oldgui == GUI_MODE_NONE && whichGUIMode == GUI_MODE_INVENTORY )
 	{
-	//	GUI.activateModule(GUI_t::MODULE_INVENTORY);
-	}*/
+		this->hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
+	}
+
 	int oldmodule = GUI.activeModule;
 	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;

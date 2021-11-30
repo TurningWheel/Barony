@@ -4121,11 +4121,11 @@ void ingameHud()
 			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
-				players[player]->inventoryUI.cycleInventoryTab();
 				if ( players[player]->shootmode )
 				{
-					players[player]->shootmode = false;
+					players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 				}
+				players[player]->inventoryUI.cycleInventoryTab();
 			}
 		}
 
@@ -4541,11 +4541,11 @@ void ingameHud()
 	{
 		players[player]->messageZone.processChatbox();
 		players[player]->hud.processHUD();
-		players[player]->characterSheet.processCharacterSheet();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();

@@ -883,6 +883,7 @@ bool Player::GUI_t::handleInventoryMovement()
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
+			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 			players[player]->GUI.warpControllerToModule(false);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
@@ -1779,6 +1780,7 @@ Player::~Player()
 void Player::init() // for use on new/restart game, UI related
 {
 	hud.resetBars();
+	hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
 	inventoryUI.resetInventory();
 	selectedChestSlot[playernum] = -1;
 	selectedShopSlot[playernum] = -1;
@@ -3483,6 +3485,29 @@ void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)
 		return;
 	}
 	quick_cast_spell = getSpellFromItem(player.playernum, item);
+}
+
+const bool Player::bUseCompactGUIWidth() const
+{
+	if ( splitscreen )
+	{
+		if ( camera_virtualWidth() < Frame::virtualScreenX * .8 )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+const bool Player::bUseCompactGUIHeight() const
+{
+	if ( splitscreen )
+	{
+		if ( camera_virtualHeight() < Frame::virtualScreenY * .8 )
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
