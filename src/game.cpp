@@ -4571,7 +4571,6 @@ void ingameHud()
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
 				//updateCharacterSheet(player);
-				//updatePlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
@@ -4586,7 +4585,6 @@ void ingameHud()
 			else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				updateCharacterSheet(player);
-				//updatePlayerInventory(player);
 				updateShopWindow(player);
 			}
 		}
