@@ -1536,8 +1536,8 @@ SDL_Rect Frame::getAbsoluteSize() const
 	auto _parent = this->parent;
 	while ( _parent ) {
 		auto pframe = static_cast<Frame*>(_parent);
-		_size.x += pframe->size.x;
-		_size.y += pframe->size.y;
+		_size.x += pframe->size.x - pframe->actualSize.x;
+		_size.y += pframe->size.y - pframe->actualSize.y;
 		_parent = pframe->parent;
 	}
 	return _size;
