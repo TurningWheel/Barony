@@ -966,11 +966,11 @@ namespace MainMenu {
 	}
 
 	bool settingsSave() {
-		return FileHelper::writeObject("config/config.json", EFileFormat::Json, allSettings);
+		return FileHelper::writeObject((std::string(outputdir) + "config/config.json").c_str(), EFileFormat::Json, allSettings);
 	}
 
 	bool settingsLoad() {
-		return FileHelper::readObject("config/config.json", allSettings);
+		return FileHelper::readObject((std::string(outputdir) + "config/config.json").c_str(), allSettings);
 	}
 
 	void settingsReset() {
