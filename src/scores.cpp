@@ -43,7 +43,7 @@ bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
 std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
 bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
 Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
-std::unordered_set<int> clientLearnedAlchemyIngredients;
+std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
@@ -3431,8 +3431,8 @@ void setDefaultPlayerConducts()
 		achievementStatusBaitAndSwitch[c] = false;
 		achievementBaitAndSwitchTimer[c] = 0;
 		playerFailedRangedOnlyConduct[c] = false;
+		clientLearnedAlchemyIngredients[c].clear();
 	}
-	clientLearnedAlchemyIngredients.clear();
 	achievementObserver.clearPlayerAchievementData();
 }
 
@@ -3569,7 +3569,7 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
-	if ( gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 && clientLearnedAlchemyIngredients.empty() )
+	if ( gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 && clientLearnedAlchemyIngredients[clientnum].empty() )
 	{
 		int numpotions = static_cast<int>(potionStandardAppearanceMap.size());
 		for ( int i = 0; i < numpotions; ++i )
@@ -3579,7 +3579,7 @@ void updateGameplayStatisticsInMainLoop()
 			{
 				auto typeAppearance = potionStandardAppearanceMap.at(i);
 				int type = typeAppearance.first;
-				clientLearnedAlchemyIngredients.insert(type);
+				clientLearnedAlchemyIngredients[clientnum].insert(type);
 			}
 		}
 	}

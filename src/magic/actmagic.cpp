@@ -1157,14 +1157,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1282,14 +1275,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1506,14 +1492,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1759,14 +1738,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -1987,14 +1959,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{
@@ -2467,14 +2432,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-								}
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 							}
 							else
 							{

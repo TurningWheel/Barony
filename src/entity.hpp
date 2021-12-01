@@ -144,6 +144,13 @@ public:
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
 
+	TimerExperiments::EntityStates lerpPreviousState;
+	TimerExperiments::EntityStates lerpCurrentState;
+	TimerExperiments::EntityStates lerpRenderState;
+	real_t lerp_ox;
+	real_t lerp_oy;
+	bool bNeedsRenderPositionInit = true;
+	bool bUseRenderInterpolation = false;
 
 	//--PUBLIC CHEST SKILLS--
 
@@ -530,8 +537,6 @@ public:
 	bool ranbehavior;
 
 	void setObituary(char* obituary);
-
-	char* getMonsterLangEntry();
 
 	void killedByMonsterObituary(Entity* victim);
 

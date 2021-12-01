@@ -93,6 +93,9 @@
     <ClInclude Include="..\..\src\engine\audio\music_pc.hpp">
       <Filter>Header Files\engine\audio</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\input.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\buttons.cpp">
@@ -169,6 +172,27 @@
     </ClCompile>
     <ClCompile Include="..\..\src\engine\audio\sound.cpp">
       <Filter>Source Files\engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Button.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Field.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Frame.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\LoadingScreen.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Slider.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\Widget.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\input.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

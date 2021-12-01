@@ -106,7 +106,7 @@ void initLich(Entity* my, Stat* myStats)
 	}
 
 	// right arm
-	Entity* entity = newEntity(276, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(276, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -125,7 +125,7 @@ void initLich(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(275, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(275, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -144,7 +144,7 @@ void initLich(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// head
-	entity = newEntity(277, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(277, 1, map.entities, nullptr); //Limb entity.
 	entity->yaw = my->yaw;
 	entity->sizex = 4;
 	entity->sizey = 4;

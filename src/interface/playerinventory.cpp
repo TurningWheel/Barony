@@ -2258,7 +2258,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 		}
 		txtHeader->setText(buf);
 		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
-			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
+			txtHeader->getTextColor(), txtHeader->getOutlineColor());
 		if ( textGet )
 		{
 			textx = textGet->getWidth();
@@ -2326,7 +2326,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				for ( auto& str : tokens ) 
 				{
 					if ( Text* textGet = Text::get(str.c_str(), txtHeader->getFont(),
-						makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+						txtHeader->getTextColor(), txtHeader->getOutlineColor()) )
 					{
 						newWidth = std::max(newWidth, textGet->getWidth());
 					}
@@ -2432,8 +2432,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			headerBg->disabled = false;
 		}
 	
-		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, pady, textx + 3 * padx, imgTopBackground->pos.h - pady});
-
+		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 0, textx + 3 * padx, imgTopBackground->pos.h});
+		txtHeader->setVJustify(Field::justify_t::CENTER);
 		int totalHeight = txtHeader->getSize().h;
 
 		// get total width of tooltip
@@ -3115,7 +3115,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			}
 			else
 			{
-				imgSecondaryIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+				imgSecondaryIcon->pos.y = pady * 2 + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
 			}
 
 			int iconMultipleLinePadding = 0;
@@ -3145,11 +3145,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			}
 			else if ( imgSecondaryIcon->disabled )
 			{
-				imgThirdIcon->pos.y = pady + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+				imgThirdIcon->pos.y = pady * 2 + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
 			}
 			else
 			{
-				imgThirdIcon->pos.y = pady + imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h;
+				imgThirdIcon->pos.y = pady * 2 + imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h;
 			}
 
 			int iconMultipleLinePadding = 0;
@@ -3209,8 +3209,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 
 		if ( !txtAttributes->isDisabled() )
 		{
-			const int charHeight = 13;
-			//Font::get(txtAttributes->getFont())->sizeText("_", nullptr, &charHeight); -- this produces 13px @ 12 point font, used above
+			int charHeight = 13;
+			Font::get(txtAttributes->getFont())->sizeText("_", nullptr, &charHeight);
+			//messagePlayer(0, "%d", charHeight);
+
 
 			int attributesWidth = frameAttrPos.w;
 			txtAttributes->setSize(SDL_Rect{ padx * 2, frameAttrPos.h + pady, attributesWidth - padx * 2, frameAttrPos.h - pady });
@@ -3242,8 +3244,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				_pady = 2 * pady;
 			}
 
-			const int charHeight = 13;
-			//Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight); -- this produces 13px @ 12 point font, used above
+			int charHeight = 13;
+			Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight);
+			//messagePlayer(0, "%d", charHeight);
 
 			/*auto textGet = Text::get(txtDescription->getText(), txtDescription->getFont(),
 				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
@@ -3323,16 +3326,16 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			}
 			txtGoldValue->setDisabled(false);
 
-			const int charWidth = 8;
-			const int charHeight = 13;
-			const int lowerIconImgToTextOffset = 2;
+			int charWidth = 8;
+			int charHeight = 13;
+			const int lowerIconImgToTextOffset = 0;
 
 			const std::string goldImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
 			const std::string weightImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png";
 			const std::string spellMPCostImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_ManaRegen_00.png";
 
-			//Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);  -- this produces 8px/13px @ 12 point font, used above
-			//Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
+			Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
+			Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
 			if ( tooltipType.find("tooltip_spell_") != std::string::npos )
 			{
 				auto imgMPCost = imgGoldIcon;
@@ -3340,7 +3343,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				auto txtMPCost = txtGoldValue;
 				auto txtSustainedMPCost = txtWeightValue;
 
-				imgMPCost->pos.x = frameValuesPos.w - (charWidth * (strlen(txtMPCost->getText()) + 1)) - (imgMPCost->pos.w + padx);
+				auto textGetMPCost = Text::get(txtMPCost->getText(), txtMPCost->getFont(),
+					txtMPCost->getTextColor(), txtMPCost->getOutlineColor());
+
+				imgMPCost->pos.x = frameValuesPos.w - (textGetMPCost->getWidth()) - (imgMPCost->pos.w + padx);
 				imgMPCost->pos.y = pady;
 				txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
 					imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
@@ -3352,7 +3358,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				if ( !txtSustainedMPCost->isDisabled() )
 				{
 					// get alignment of longer text for sustained MP cost
-					imgSustainedMPCost->pos.x = frameValuesPos.w - (charWidth * (strlen(txtSustainedMPCost->getText()) + 1)) - (imgSustainedMPCost->pos.w + padx);
+					auto textGetSustainedMPCost = Text::get(txtSustainedMPCost->getText(), txtSustainedMPCost->getFont(),
+						txtSustainedMPCost->getTextColor(), txtSustainedMPCost->getOutlineColor());
+
+					imgSustainedMPCost->pos.x = frameValuesPos.w - (textGetSustainedMPCost->getWidth()) - (imgSustainedMPCost->pos.w + padx);
 					imgSustainedMPCost->pos.y = pady + imgMPCost->pos.h;
 					txtSustainedMPCost->setSize(SDL_Rect{ imgSustainedMPCost->pos.x + imgSustainedMPCost->pos.w + padx,
 						imgSustainedMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgSustainedMPCost->pos.h });
@@ -3371,7 +3380,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 			}
 			else
 			{
-				imgGoldIcon->pos.x = frameValuesPos.w - (charWidth * (strlen(txtGoldValue->getText()) + 1)) - (imgGoldIcon->pos.w + padx);
+				auto textGetGoldValue = Text::get(txtGoldValue->getText(), txtGoldValue->getFont(),
+					txtGoldValue->getTextColor(), txtGoldValue->getOutlineColor());
+
+				imgGoldIcon->pos.x = frameValuesPos.w - (textGetGoldValue->getWidth()) - (imgGoldIcon->pos.w + padx);
 				imgGoldIcon->pos.y = pady;
 				txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
 					imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
@@ -3382,7 +3394,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				txtWeightValue->setDisabled(false);
 				imgWeightIcon->disabled = false;
 
-				imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (charWidth * (strlen(txtWeightValue->getText()) + 1)) - (imgWeightIcon->pos.w + padx);
+				auto textGetWeightValue = Text::get(txtWeightValue->getText(), txtWeightValue->getFont(),
+					txtWeightValue->getTextColor(), txtWeightValue->getOutlineColor());
+
+				imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (textGetWeightValue->getWidth()) - (imgWeightIcon->pos.w + padx);
 				imgWeightIcon->pos.y = pady;
 				txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
 					imgWeightIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
@@ -3604,7 +3619,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				if ( !txt->isDisabled() )
 				{
 					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
-						makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+						txt->getTextColor(), txt->getOutlineColor()) )
 					{
 						if ( txt->getHJustify() == Field::justify_t::RIGHT )
 						{
@@ -3637,7 +3652,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y)
 				if ( !txt->isDisabled() )
 				{
 					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
-						makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+						txt->getTextColor(), txt->getOutlineColor()) )
 					{
 						if ( txt->getHJustify() == Field::justify_t::LEFT )
 						{
@@ -4587,6 +4602,7 @@ void Player::Inventory_t::updateInventory()
 	{
 		// hide
 		frame->setDisabled(true);
+		updateItemContextMenu(); // process + close the item context menu
 		return;
 	}
 

@@ -729,6 +729,10 @@ extern int monsterGlobalAttackTimeMultiplier;
 bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats);
 // check qty of a certain creature race alive on a map
 int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
+// get monster strings from language file
+std::string getMonsterLocalizedName(Monster creature);
+std::string getMonsterLocalizedPlural(Monster creature);
+std::string getMonsterLocalizedInjury(Monster creature);
 
 //-----RACE SPECIFIC CONSTANTS-----
 

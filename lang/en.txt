@@ -6023,5 +6023,6 @@ Changing this gameflag is disabled in current game mode.#
 4071 MAP#
 4072 LOG#
 4073 You see a signpost.#
+4074 Skills List#
 
 4099 end#

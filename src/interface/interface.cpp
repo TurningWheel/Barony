@@ -1033,6 +1033,8 @@ int loadConfig(char* filename)
 		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNL: %d (Right arrow key)\n", impulses[IN_TURNL]);
 	}
 
+	MainMenu::settingsLoad();
+
 	return 0;
 }
 
@@ -1598,6 +1600,7 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 	{
 		case MODULE_BOOK_VIEW:
 		case MODULE_SKILLS_LIST:
+		case MODULE_NONE:
 			return true;
 		default:
 			break;
@@ -1655,7 +1658,9 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	}
 	else if ( activeModule == MODULE_CHARACTERSHEET )
 	{
-		player.characterSheet.selectElement(player.characterSheet.selectedElement, true);
+		const bool updateCursor = true;
+		const bool usingMouse = false;
+		player.characterSheet.selectElement(player.characterSheet.selectedElement, usingMouse, updateCursor);
 		return true;
 	}
 	return warped;
@@ -1699,6 +1704,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		return;
 	}
 
+	bool oldShootmode = shootmode;
 	shootmode = false;
 
 	if ( whichGUIMode != GUI_MODE_NONE && whichGUIMode != GUI_MODE_FOLLOWERMENU )
@@ -1716,6 +1722,8 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
+	inputs.getUIInteraction(playernum)->itemMenuOpen = false;
+	inputs.getUIInteraction(playernum)->itemMenuItem = 0;
 
 	inventory_mode = whichInventoryMode;
 
@@ -1754,7 +1762,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		}
 	}
 
-	if ( !warped )
+	if ( !warped && oldShootmode )
 	{
 		inputs.warpMouse(playernum, camera_x1() + (camera_width() / 2), camera_y1() + (camera_height() / 2), flags);
 	}
@@ -1810,6 +1818,8 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	{
 		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 		inputs.getUIInteraction(playernum)->toggleclick = false;
+		inputs.getUIInteraction(playernum)->itemMenuOpen = false;
+		inputs.getUIInteraction(playernum)->itemMenuItem = 0;
 		shootmode = true;
 	}
 }
@@ -2099,35 +2109,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 					else if ( usingLastCmd )
 					{
 						// tell player current monster can't do what you asked (e.g using last command & swapping between monsters with different requirements)
-						if ( followerStats->type < KOBOLD ) // Original monster count
+						if ( disableOption < 0 )
 						{
-							if ( disableOption < 0 )
-							{
-								messagePlayer(gui_player, language[3640], language[90 + followerStats->type]);
-							}
-							else if ( tinkeringFollower )
-							{
-								messagePlayer(gui_player, language[3639], language[90 + followerStats->type]);
-							}
-							else
-							{
-								messagePlayer(gui_player, language[3638], language[90 + followerStats->type]);
-							}
+							messagePlayer(gui_player, language[3640], getMonsterLocalizedName(followerStats->type).c_str());
 						}
-						else if ( followerStats->type >= KOBOLD ) //New monsters
+						else if ( tinkeringFollower )
 						{
-							if ( disableOption < 0 )
-							{
-								messagePlayer(gui_player, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
-							}
-							else if ( tinkeringFollower )
-							{
-								messagePlayer(gui_player, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
-							}
-							else
-							{
-								messagePlayer(gui_player, language[3638], language[2000 + (followerStats->type - KOBOLD)]);
-							}
+							messagePlayer(gui_player, language[3639], getMonsterLocalizedName(followerStats->type).c_str());
+						}
+						else
+						{
+							messagePlayer(gui_player, language[3638], getMonsterLocalizedName(followerStats->type).c_str());
 						}
 					}
 
@@ -2644,33 +2636,20 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3103]) * TTF12_WIDTH + 8;
-				if ( followerStats->type < KOBOLD ) //Original monster count
-				{
-					tooltip.w += strlen(language[90 + followerStats->type]) * TTF12_WIDTH;
-					drawTooltip(&tooltip);
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-						uint32ColorOrange(*mainsurface), language[3103], language[90 + followerStats->type]);
-				}
-				else if ( followerStats->type >= KOBOLD ) //New monsters
-				{
-					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
-					drawTooltip(&tooltip);
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-						uint32ColorOrange(*mainsurface), language[3103], language[2000 + followerStats->type - KOBOLD]);
-				}
+				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
+				drawTooltip(&tooltip);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					uint32ColorOrange(*mainsurface), language[3103], getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
 				drawTooltip(&tooltip);
-				if ( followerStats->type >= KOBOLD ) //New monsters
-				{
-					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
-					drawTooltip(&tooltip);
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-						uint32ColorOrange(*mainsurface), language[3673], language[2000 + followerStats->type - KOBOLD]);
-				}
+				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
+				drawTooltip(&tooltip);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					uint32ColorOrange(*mainsurface), language[3673], getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else
 			{
@@ -3029,14 +3008,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 		{
 			strcpy(interactText, language[4043]); // "Attack "
 			int monsterType = selectedEntity.getMonsterTypeFromSprite();
-			if ( monsterType < KOBOLD ) //Original monster count
-			{
-				strcat(interactText, language[90 + monsterType]);
-			}
-			else if ( monsterType >= KOBOLD ) //New monsters
-			{
-				strcat(interactText, language[2000 + monsterType - KOBOLD]);
-			}
+			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
 	}
 	else
@@ -5344,7 +5316,8 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_JUICE:
 			case POTION_ACID:
 			case POTION_INVISIBILITY:
-				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				if ( clientLearnedAlchemyIngredients[gui_player].find(item->type) 
+					!= clientLearnedAlchemyIngredients[gui_player].end() )
 				{
 					return true;
 				}
@@ -5377,7 +5350,8 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_RESTOREMAGIC:
 			case POTION_SPEED:
 			case POTION_POLYMORPH:
-				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				if ( clientLearnedAlchemyIngredients[gui_player].find(item->type) 
+					!= clientLearnedAlchemyIngredients[gui_player].end() )
 				{
 					return true;
 				}
@@ -5808,9 +5782,11 @@ void GenericGUIMenu::alchemyCombinePotions()
 	}
 
 	bool knewBothBaseIngredients = false;
-	if ( clientLearnedAlchemyIngredients.find(basePotion->type) != clientLearnedAlchemyIngredients.end() )
+	if ( clientLearnedAlchemyIngredients[gui_player].find(basePotion->type) 
+		!= clientLearnedAlchemyIngredients[gui_player].end() )
 	{
-		if ( clientLearnedAlchemyIngredients.find(secondaryPotion->type) != clientLearnedAlchemyIngredients.end() )
+		if ( clientLearnedAlchemyIngredients[gui_player].find(secondaryPotion->type)
+			!= clientLearnedAlchemyIngredients[gui_player].end() )
 		{
 			// knew about both combinations.
 			if ( !tryDuplicatePotion && !explodeSelf && result != POTION_SICKNESS )
@@ -6001,10 +5977,11 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 		// loop through to get the index number to insert into gameStatistics[STATISTICS_ALCHEMY_RECIPES]
 		if ( (*it).first == type )
 		{
-			if ( clientLearnedAlchemyIngredients.find(type) == clientLearnedAlchemyIngredients.end() )
+			if ( clientLearnedAlchemyIngredients[gui_player].find(type) 
+				== clientLearnedAlchemyIngredients[gui_player].end() )
 			{
 				// new recipe!
-				clientLearnedAlchemyIngredients.insert(type);
+				clientLearnedAlchemyIngredients[gui_player].insert(type);
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( notify )
 				{
@@ -6339,6 +6316,30 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				break;
 			default:
 				break;
+		}
+		int metalCraftCost = 0;
+		int magicCraftCost = 0;
+		tinkeringGetCraftingCost(item, &metalCraftCost, &magicCraftCost);
+		// prevent bonus scrap being more than the amount required to create.
+		if ( metalCraftCost > 0 )
+		{
+			if ( metal > 0 && bonusMetalScrap > 0 )
+			{
+				if ( (metal + bonusMetalScrap) > metalCraftCost )
+				{
+					bonusMetalScrap = std::max(0, (metalCraftCost - metal));
+				}
+			}
+		}
+		if ( magicCraftCost > 0 )
+		{
+			if ( magic > 0 && bonusMagicScrap > 0 )
+			{
+				if ( (magic + bonusMagicScrap) > magicCraftCost )
+				{
+					bonusMagicScrap = std::max(0, (magicCraftCost - magic));
+				}
+			}
 		}
 	}
 	if ( metal > 0 )
@@ -7127,6 +7128,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case ENCHANTED_FEATHER:
 			*metal = 0;
 			*magic = 8;
+			break;
 
 		case IRON_SPEAR:
 		case IRON_SWORD:
@@ -8592,7 +8594,39 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	}
 }
 
-void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, char* name, bool isLowPriority)
+void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
+{
+	Entity* entity = uidToEntity(enemy_uid);
+	if ( entity )
+	{
+		if ( TimerExperiments::bUseTimerInterpolation && entity->bUseRenderInterpolation )
+		{
+			worldX = entity->lerpRenderState.x.position * 16.0;
+			worldY = entity->lerpRenderState.y.position * 16.0;
+			worldZ = entity->lerpRenderState.z.position + enemyBarSettings.getHeightOffset(entity);
+		}
+		else
+		{
+			worldX = entity->x;
+			worldY = entity->y;
+			worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
+		}
+		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
+		{
+			if ( entity->doorStartAng == 0 )
+			{
+				worldY -= 5;
+			}
+			else
+			{
+				worldX -= 5;
+			}
+		}
+		screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+	}
+}
+
+void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority)
 {
 	auto find = HPBars.find(uid);
 	EnemyHPDetails* details = nullptr;
@@ -8635,21 +8669,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 
 	if ( entity )
 	{
-		details->worldX = entity->x;
-		details->worldY = entity->y;
-		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
-		{
-			if ( entity->doorStartAng == 0 )
-			{
-				details->worldY -= 5;
-			}
-			else
-			{
-				details->worldX -= 5;
-			}
-		}
-		details->worldZ = entity->z + enemyBarSettings.getHeightOffset(entity);
-		details->screenDistance = enemyBarSettings.getScreenDistanceOffset(entity);
+		details->updateWorldCoordinates();
 	}
 	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
 	{

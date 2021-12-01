@@ -418,3 +418,15 @@ void Button::scrollParent() {
 	}
 	fparent->setActualSize(fActualSize);
 }
+
+SDL_Rect Button::getAbsoluteSize() const
+{
+	SDL_Rect _size{ size.x, size.y, size.w, size.h };
+	auto _parent = static_cast<Frame*>(this->parent);
+	if ( _parent ) {
+		SDL_Rect absoluteSize = _parent->getAbsoluteSize();
+		_size.x += std::max(0, absoluteSize.x);
+		_size.y += std::max(0, absoluteSize.y);
+	}
+	return _size;
+}

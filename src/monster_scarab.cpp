@@ -164,7 +164,7 @@ void initScarab(Entity* my, Stat* myStats)
 	}
 
 	// right wing
-	Entity* entity = newEntity(483, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(483, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -183,7 +183,7 @@ void initScarab(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(484, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(484, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();

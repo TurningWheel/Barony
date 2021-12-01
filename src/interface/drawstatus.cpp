@@ -171,7 +171,7 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick)
+void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick)
 {
 	// server/singleplayer only function.
 	hp = std::max(0, hp); // bounds checking - furniture can go negative

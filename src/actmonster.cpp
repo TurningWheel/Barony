@@ -159,6 +159,44 @@ double sightranges[NUMMONSTERS] =
 int monsterGlobalAnimationMultiplier = 10;
 int monsterGlobalAttackTimeMultiplier = 1;
 
+std::string getMonsterLocalizedName(Monster creature)
+{
+	if ( creature < KOBOLD )
+	{
+		return language[90 + creature];
+	}
+	else
+	{
+		return language[2000 + creature - KOBOLD];
+	}
+	return "nothing";
+}
+
+std::string getMonsterLocalizedPlural(Monster creature)
+{
+	if ( creature < KOBOLD )
+	{
+		return language[111 + creature];
+	}
+	else
+	{
+		return language[2050 + creature - KOBOLD];
+	}
+	return "nothings";
+}
+std::string getMonsterLocalizedInjury(Monster creature)
+{
+	if ( creature < KOBOLD )
+	{
+		return language[132 + creature];
+	}
+	else
+	{
+		return language[2100 + creature - KOBOLD];
+	}
+	return "hit type";
+}
+
 /*-------------------------------------------------------------------------------
 
 	summonMonster
@@ -647,7 +685,8 @@ int devilacted = 0;
 int devilroar = 0;
 int devilsummonedtimes = 0;
 
-bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
+bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], 
+	Entity* my, Stat* myStats, bool checkReturnValueOnly)
 {
 	if ( !myStats )
 	{
@@ -768,6 +807,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					&& stats[monsterclicked]->type != INCUBUS )
 				{
 					canAlly = true;
+					if ( stats[monsterclicked]->type == SUCCUBUS )
+					{
+						steamAchievementClient(monsterclicked, "BARONY_ACH_TEMPTRESS");
+					}
 					if ( myStats->EFFECTS[EFF_CONFUSED] )
 					{
 						my->setEffect(EFF_CONFUSED, false, 0, false);
@@ -1023,6 +1066,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 		return false;
 	}
 
+	if ( checkReturnValueOnly )
+	{
+		return true;
+	}
+
 	node_t* newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
 	newNode->deconstructor = &defaultDeconstructor;
 	Uint32* myuid = (Uint32*) (malloc(sizeof(Uint32)));
@@ -1156,6 +1204,182 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 	}
 
 	return true;
+}
+
+void printFollowerTableForSkillsheet(int monsterclicked, Entity* my, Stat* myStats)
+{
+	if ( !players[monsterclicked]->entity ) { return; }
+	if ( !my || !myStats ) { return; }
+
+	std::string outputList = "{";
+	int originalLeadershipSkill = stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP];
+	Sint32 originalCHR = stats[monsterclicked]->CHR;
+	stats[monsterclicked]->CHR = 10;
+
+	outputList += "\"version\": 1";
+
+	std::unordered_map<Monster, std::vector<int>> allyListBase;
+	for ( int iterations = 0; iterations < 2; ++iterations )
+	{
+		outputList += ",";
+		if ( iterations == 0 )
+		{
+			stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = 50;
+			outputList += "\"leadership_allies_base\":";
+		}
+		else if ( iterations == 1 )
+		{
+			stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = 100;
+			outputList += "\"leadership_allies_legendary\":";
+		}
+
+		outputList += "{";
+
+		Monster originalPlayerType = stats[monsterclicked]->type;
+		std::unordered_map<Monster, std::vector<int>> allyList;
+		std::unordered_set<Monster> skipMonsterTypes = {
+			SENTRYBOT,
+			GYROBOT,
+			SPELLBOT,
+			DUMMYBOT,
+			SHOPKEEPER,
+			DEVIL,
+			LICH,
+			LICH_FIRE,
+			LICH_ICE
+		};
+		std::unordered_set<Monster> playerRaces;
+		for ( int i = 0; i < NUMRACES; ++i )
+		{
+			playerRaces.insert(players[monsterclicked]->entity->getMonsterFromPlayerRace(i));
+		}
+		for ( auto& playerRace : playerRaces )
+		{
+			stats[monsterclicked]->type = playerRace;
+			Monster originalRace = my->getRace();
+			for ( int j = 0; j < NUMMONSTERS; ++j )
+			{
+				myStats->type = (Monster)j;
+				if ( skipMonsterTypes.find(myStats->type) != skipMonsterTypes.end() ) { continue; }
+
+				char namesays[64] = "";
+				if ( makeFollower(monsterclicked, false, namesays, my, myStats, true) )
+				{
+					if ( iterations == 1 )
+					{
+						if ( allyListBase.find(stats[monsterclicked]->type) != allyListBase.end() )
+						{
+							auto& vec = allyListBase[stats[monsterclicked]->type];
+							if ( std::find(vec.begin(), vec.end(), myStats->type) != vec.end() )
+							{
+								// exists in base list, skip adding this entry
+								continue;
+							}
+						}
+					}
+					allyList[stats[monsterclicked]->type].push_back(myStats->type);
+				}
+			}
+			myStats->type = originalRace;
+		}
+		stats[monsterclicked]->type = originalPlayerType;
+
+		bool firstRace = true;
+		for ( auto& playerRace : playerRaces )
+		{
+			if ( !firstRace ) { outputList += ",\n"; }
+			firstRace = false;
+
+			outputList += "\"";
+			outputList += monstertypename[(int)playerRace];
+			outputList += "\": [";
+			std::string arrayList = "";
+			if ( allyList.find(playerRace) != allyList.end() )
+			{
+				bool firstAlly = true;
+				for ( auto& ally : allyList[playerRace] )
+				{
+					if ( !firstAlly ) { arrayList += ",\n"; }
+					firstAlly = false;
+					arrayList += "\"";
+					arrayList += monstertypename[(int)ally];
+					arrayList += "\"";
+				}
+			}
+			outputList += arrayList;
+			outputList += "]";
+		}
+		outputList += "}";
+
+		if ( iterations == 0 )
+		{
+			allyListBase = allyList; // store this to compare with legendary leadership values.
+		}
+	}
+
+	stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] = originalLeadershipSkill;
+	stats[monsterclicked]->CHR = originalCHR;
+
+	// special exeptions here.
+	outputList += ",\"leadership_allies_unique_recruits\":{";
+	{
+		outputList += "\"";
+		outputList += monstertypename[SUCCUBUS];
+		outputList += "\":";
+		outputList += "[{";
+			outputList += "\"";
+			outputList += monstertypename[HUMAN];
+			outputList += "\":\"";
+			outputList += "   (Drunk)";
+			outputList += "\"";
+			outputList += "}";
+
+			outputList += ",{";
+			outputList += "\"";
+			outputList += monstertypename[HUMAN];
+			outputList += "\":\"";
+			outputList += "   (Confused)";
+			outputList += "\"";
+			outputList += "}";
+		outputList += "]";
+
+		outputList += ",";
+		outputList += "\"";
+		outputList += monstertypename[GOATMAN];
+		outputList += "\":";
+		outputList += "[{";
+			outputList += "\"";
+			outputList += monstertypename[HUMAN];
+			outputList += "\":\"";
+			outputList += "   (Throw Booze\\n   while drunk)";
+			outputList += "\"";
+			outputList += "}";
+		outputList += "]";
+	}
+	outputList += "}";
+
+	outputList += "}";
+
+	rapidjson::Document d;
+	d.Parse(outputList.c_str());
+
+	std::string outputPath = outputdir;
+	outputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "data/skillsheet_leadership_entries.json";
+	outputPath.append(fileName.c_str());
+
+	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	if ( !fp )
+	{
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	d.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+
+	FileIO::close(fp);
+	messagePlayer(0, "Exported file: %s", outputPath.c_str());
 }
 
 void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
@@ -2970,14 +3194,7 @@ void actMonster(Entity* my)
 		{
 			snprintf(namesays, 63, language[1302], myStats->name);
 		}
-		else if ( myStats->type < KOBOLD ) //Original monster count
-		{
-			snprintf(namesays, 63, language[513], language[90 + myStats->type]);
-		}
-		else if ( myStats->type >= KOBOLD ) //New monsters
-		{
-			snprintf(namesays, 63, language[513], language[2000 + myStats->type - KOBOLD]);
-		}
+		snprintf(namesays, 63, language[513], getMonsterLocalizedName(myStats->type).c_str());
 	}
 	else
 	{
@@ -3021,16 +3238,8 @@ void actMonster(Entity* my)
 						{
 							if ( stats[monsterclicked]->type != HUMAN )
 							{
-								if ( stats[monsterclicked]->type < KOBOLD ) //Original monster count
-								{
-									messagePlayer(monsterclicked, language[3243], 
-										namesays, language[90 + stats[monsterclicked]->type]);
-								}
-								else if ( stats[monsterclicked]->type >= KOBOLD ) //New monsters
-								{
-									messagePlayer(monsterclicked, language[3243], namesays,
-										language[2000 + (stats[monsterclicked]->type - KOBOLD)]);
-								}
+								messagePlayer(monsterclicked, language[3243], 
+									namesays, getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
 							}
 							else
 							{
@@ -3070,7 +3279,15 @@ void actMonster(Entity* my)
 				{
 					if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 					{
-						makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+						if ( Player::SkillSheet_t::generateFollowerTableForSkillsheet )
+						{
+							Player::SkillSheet_t::generateFollowerTableForSkillsheet = false;
+							printFollowerTableForSkillsheet(monsterclicked, my, myStats);
+						}
+						else
+						{
+							makeFollower(monsterclicked, ringconflict, namesays, my, myStats, false);
+						}
 					}
 					else
 					{
@@ -9639,14 +9856,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	char namesays[32];
 	if ( !strcmp(myStats.name, "") )
 	{
-		if ( myStats.type < KOBOLD ) //Original monster count
-		{
-			snprintf(namesays, 31, language[513], language[90 + myStats.type]); // The %s says
-		}
-		else if ( myStats.type >= KOBOLD ) //New monsters
-		{
-			snprintf(namesays, 31, language[513], language[2000 + myStats.type - KOBOLD]); // The %s says
-		}
+		snprintf(namesays, 31, language[513], getMonsterLocalizedName(myStats.type).c_str()); // The %s says
 	}
 	else
 	{

@@ -146,7 +146,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(476, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(476, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -165,7 +165,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(480, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(480, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -184,7 +184,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(479, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(479, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -203,7 +203,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(478, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(478, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -222,7 +222,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(477, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(477, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

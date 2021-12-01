@@ -101,7 +101,7 @@ void initImp(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(290, 0, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(290, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
@@ -121,7 +121,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(292, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(292, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -140,7 +140,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(291, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(291, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -159,7 +159,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(294, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(294, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -178,7 +178,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(293, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(293, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -197,7 +197,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right wing
-	entity = newEntity(310, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(310, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -216,7 +216,7 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(309, 0, map.entities, nullptr); //Limb entity.
+	entity = newEntity(309, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
