@@ -34,6 +34,32 @@ int hotbarCompactOffsetX = 0;
 real_t hotbarCompactSlotOverlapPercent = 0.0; // % of a slot to overlap facemenu buttons in compact view
 int hotbarCompactInactiveSlotMovementX = 0; // inactive facemenu groups move over by this much out of the way in compact view
 int hotbarCompactExpandedOffsetX = 0; // navigating the hotbar in inventory mode will expand the centers of groups out by this much
+int hotbarOffsetY = 0;
+int hotbarCompactOffsetY = 0;
+
+int xpbarOffsetWidth = 0;
+int xpbarOffsetY = 0;
+int xpbarCompactOffsetWidth = 0;
+int xpbarCompactOffsetY = 0;
+
+int hpmpbarOffsetWidth = 0;
+int hpmpbarOffsetX = 0;
+int hpmpbarOffsetY = 0;
+int hpmpbarCompactOffsetWidth = 0;
+int hpmpbarCompactOffsetX = 0;
+int hpmpbarCompactOffsetY = 0;
+
+int hpmpbarMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
+int hpmpbarIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
+int hpmpbarIntervalStartValue = 20; // hp / mp of this value is the smallest interval
+int hpmpbarBasePercentSize = 30; // smallest width at low hp/mp value
+real_t hpmpbarWidthIncreasePercentOnInterval = 2.5; // % to grow bar per interval
+int hpmpbarCompactMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
+int hpmpbarCompactIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
+int hpmpbarCompactIntervalStartValue = 20; // hp / mp of this value is the smallest interval
+int hpmpbarCompactBasePercentSize = 30; // smallest width at low hp/mp value
+real_t hpmpbarCompactWidthIncreasePercentOnInterval = 2.5; // % to grow bar per interval
+
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 struct CustomColors_t
@@ -302,7 +328,7 @@ void createEnemyBar(const int player, Frame*& frame)
 	frame->setInheritParentFrameOpacity(false);
 	frame->setOpacity(0.0);
 	const int barTotalHeight = hud_t.ENEMYBAR_FRAME_HEIGHT;
-	const int barStartY = (hud_t.hudFrame->getSize().h - hud_t.ENEMYBAR_FRAME_START_Y- 100);
+	const int barStartY = (hud_t.hudFrame->getSize().h - hud_t.ENEMYBAR_FRAME_START_Y - 100);
 	const int barWidth = hud_t.ENEMYBAR_FRAME_WIDTH;
 
 	SDL_Rect pos{ (hud_t.hudFrame->getSize().w / 2) - barWidth / 2 - 6, barStartY, barWidth, barTotalHeight };
@@ -406,30 +432,45 @@ void createXPBar(const int player)
 	SDL_Rect pos { (hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
 	hud_t.xpFrame->setSize(pos);
 
-	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
+	//auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
+	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Exp_Surround_01.png", "xp img base");
 	bg->pos.x = 0;
 	bg->pos.h = 26;
 	bg->pos.y = 4;
+	auto bgFlair = hud_t.xpFrame->addImage(SDL_Rect{4, 10, 0, 14}, makeColor(255, 255, 255, 192), "images/ui/HUD/xpbar/HUD_Exp_GlassShine_03.png", "xp img base flair");
 
 	// xpProgress only adjusts width
 	const int progressBarHeight = 22;
+	/*auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
+		"images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");*/
+	auto progressClipFrame = hud_t.xpFrame->addFrame("xp progress clipping frame");
+	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
+	auto progressClipImg = progressClipFrame->addImage(SDL_Rect{ 0, 0, 634, progressBarHeight }, 0xFFFFFFFF,
+		"images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress clipped");
+
 	auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");
+		"images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress");
 
 	// xpProgressEndCap only adjusts x position based on xpProgress->pos.x + xpProgress->pos.w
-	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");
+	/*auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
+		"images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");*/
+	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 38, progressBarHeight }, 0xFFFFFFFF,
+		"images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png", "xp img progress endcap");
+
 
 	const int endCapWidth = 26;
 	SDL_Rect endCapPos {0, 0, endCapWidth, xpBarTotalHeight};
 	auto endCapLeft = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap1_00.png", "xp img endcap left");
+	endCapLeft->ontop = true;
 	endCapPos.x = pos.w - endCapPos.w;
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
+	endCapRight->ontop = true;
 
 	const int textWidth = 40;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
-	textStatic->setText("/100");
+	textStatic->setText("/ 100");
+	textStatic->setOntop(true);
 	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
 	textStatic->setFont(font);
 	textStatic->setVJustify(Field::justify_t::CENTER);
@@ -438,6 +479,7 @@ void createXPBar(const int player)
 
 	auto text = hud_t.xpFrame->addField("xp text current", 16);
 	text->setText("0");
+	text->setOntop(true);
 	text->setSize(SDL_Rect{ pos.w / 2 - (4 * 2) - textWidth, 0, textWidth, pos.h }); // x - 4 to center the slash
 	text->setFont(font);
 	text->setVJustify(Field::justify_t::CENTER);
@@ -5299,6 +5341,106 @@ void loadHUDSettingsJSON()
 					{
 						hotbarCompactExpandedOffsetX = d["hotbar"]["hotbar_compact_expanded_x_offset"].GetInt();
 					}
+					if ( d["hotbar"].HasMember("hotbar_y_offset") )
+					{
+						hotbarOffsetY = d["hotbar"]["hotbar_y_offset"].GetInt();
+					}
+					if ( d["hotbar"].HasMember("hotbar_compact_y_offset") )
+					{
+						hotbarCompactOffsetY = d["hotbar"]["hotbar_compact_y_offset"].GetInt();
+					}
+				}
+				if ( d.HasMember("xpbar") )
+				{
+					if ( d["xpbar"].HasMember("xpbar_width_offset") )
+					{
+						xpbarOffsetWidth = d["xpbar"]["xpbar_width_offset"].GetInt();
+					}
+					if ( d["xpbar"].HasMember("xpbar_compact_width_offset") )
+					{
+						xpbarCompactOffsetWidth = d["xpbar"]["xpbar_compact_width_offset"].GetInt();
+					}
+					if ( d["xpbar"].HasMember("xpbar_y_offset") )
+					{
+						xpbarOffsetY = d["xpbar"]["xpbar_y_offset"].GetInt();
+					}
+					if ( d["xpbar"].HasMember("xpbar_compact_y_offset") )
+					{
+						xpbarCompactOffsetY = d["xpbar"]["xpbar_compact_y_offset"].GetInt();
+					}
+				}
+				if ( d.HasMember("hpmpbar") )
+				{
+					if ( d["hpmpbar"].HasMember("hpmpbar_width_offset") )
+					{
+						hpmpbarOffsetWidth = d["hpmpbar"]["hpmpbar_width_offset"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_x_offset") )
+					{
+						hpmpbarOffsetX = d["hpmpbar"]["hpmpbar_x_offset"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_y_offset") )
+					{
+						hpmpbarOffsetY = d["hpmpbar"]["hpmpbar_y_offset"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_width_offset") )
+					{
+						hpmpbarCompactOffsetWidth = d["hpmpbar"]["hpmpbar_compact_width_offset"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_x_offset") )
+					{
+						hpmpbarCompactOffsetX = d["hpmpbar"]["hpmpbar_compact_x_offset"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_y_offset") )
+					{
+						hpmpbarCompactOffsetY = d["hpmpbar"]["hpmpbar_compact_y_offset"].GetInt();
+					}
+
+					if ( d["hpmpbar"].HasMember("hpmpbar_max_amount_threshold") )
+					{
+						hpmpbarMaxWidthAmount = d["hpmpbar"]["hpmpbar_max_amount_threshold"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_interval_to_increase_width") )
+					{
+						hpmpbarIntervalToIncreaseWidth 
+							= d["hpmpbar"]["hpmpbar_interval_to_increase_width"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_base_percent") )
+					{
+						hpmpbarBasePercentSize = d["hpmpbar"]["hpmpbar_base_percent"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_interval_start_value") )
+					{
+						hpmpbarIntervalStartValue = d["hpmpbar"]["hpmpbar_interval_start_value"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_width_increase_percent_on_interval") )
+					{
+						hpmpbarWidthIncreasePercentOnInterval = 
+							d["hpmpbar"]["hpmpbar_width_increase_percent_on_interval"].GetDouble();
+					}
+
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_max_amount_threshold") )
+					{
+						hpmpbarCompactMaxWidthAmount = d["hpmpbar"]["hpmpbar_compact_max_amount_threshold"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_interval_to_increase_width") )
+					{
+						hpmpbarCompactIntervalToIncreaseWidth = 
+							d["hpmpbar"]["hpmpbar_compact_interval_to_increase_width"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_base_percent") )
+					{
+						hpmpbarCompactBasePercentSize = d["hpmpbar"]["hpmpbar_compact_base_percent"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_interval_start_value") )
+					{
+						hpmpbarCompactIntervalStartValue = d["hpmpbar"]["hpmpbar_compact_interval_start_value"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_width_increase_percent_on_interval") )
+					{
+						hpmpbarCompactWidthIncreasePercentOnInterval = 
+							d["hpmpbar"]["hpmpbar_compact_width_increase_percent_on_interval"].GetDouble();
+					}
 				}
 				if ( d.HasMember("action_prompts") )
 				{
@@ -7077,10 +7219,38 @@ void Player::HUD_t::updateXPBar()
 		return;
 	}
 
+	bool bCompact = false;
+	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	{
+		bCompact = true;
+	}
+
+	xpFrame->setInheritParentFrameOpacity(false);
+	xpFrame->setOpacity(100.0);
 	SDL_Rect pos = xpFrame->getSize();
+	pos.w = XP_FRAME_WIDTH + (bCompact ? xpbarCompactOffsetWidth : xpbarOffsetWidth);
 	pos.x = hudFrame->getSize().w / 2 - pos.w / 2;
-	pos.y = hudFrame->getSize().h - XP_FRAME_START_Y;
+	if ( bCompact )
+	{
+		pos.y = 0 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+	}
+	else
+	{
+		pos.y = hudFrame->getSize().h - XP_FRAME_START_Y + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+	}
 	xpFrame->setSize(pos);
+
+	auto xpBg = xpFrame->findImage("xp img base");
+	auto xpProgress = xpFrame->findImage("xp img progress");
+	xpProgress->disabled = true;
+	auto xpProgressEndCap = xpFrame->findImage("xp img progress endcap");
+	auto endCapRight = xpFrame->findImage("xp img endcap right");
+	xpBg->pos.w = pos.w;
+	if ( auto xpBgFlair = xpFrame->findImage("xp img base flair") )
+	{
+		xpBgFlair->pos.w = pos.w - 8;
+	}
+	endCapRight->pos.x = pos.w - endCapRight->pos.w;
 
 	xpBar.animateSetpoint = std::min(100, stats[player.playernum]->EXP);
 	xpBar.maxValue = 1000.0;
@@ -7135,9 +7305,9 @@ void Player::HUD_t::updateXPBar()
 			//scaledIncrement *= 0.2 * pow(diff, 2) + .5;
 			//xpBar.animateValue = std::min(xpBar.animateSetpoint * 10.0, xpBar.animateValue + scaledIncrement);
 
-			real_t setpointDiff = std::max(50.0, xpBar.animateSetpoint * 10.0 - xpBar.animateValue);
+			real_t setpointDiff = std::max(10.0, xpBar.animateSetpoint * 10.0 - xpBar.animateValue);
 			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
-			xpBar.animateValue += fpsScale * (setpointDiff / 50.0); // reach it in x intervals, scaled to FPS
+			xpBar.animateValue += fpsScale * (setpointDiff / 100.0); // reach it in x intervals, scaled to FPS
 			xpBar.animateValue = std::min(static_cast<real_t>(xpBar.animateSetpoint * 10.0), xpBar.animateValue);
 			//messagePlayer(0, "%.2f | %.2f", diff, scaledIncrement);
 		}
@@ -7165,14 +7335,57 @@ void Player::HUD_t::updateXPBar()
 	
 	auto xpText = xpFrame->findField("xp text current");
 	xpText->setText(playerXPText);
-
-	auto xpBg = xpFrame->findImage("xp img base");
-	auto xpProgress = xpFrame->findImage("xp img progress");
-	auto xpProgressEndCap = xpFrame->findImage("xp img progress endcap");
+	SDL_Rect xpTextPos = xpText->getSize();
+	xpTextPos.x = pos.w / 2 - (4 * 2) - xpTextPos.w;
+	xpText->setSize(xpTextPos);
+	auto xpTextStatic = xpFrame->findField("xp text static");
+	SDL_Rect xpTextStaticPos = xpTextStatic->getSize();
+	xpTextStaticPos.x = pos.w / 2 - 4;
+	xpTextStatic->setSize(xpTextStaticPos);
 
 	real_t percent = xpBar.animateValue / 1000.0;
 	xpProgress->pos.w = std::max(1, static_cast<int>((xpBg->pos.w - xpProgressEndCap->pos.w) * percent));
-	xpProgressEndCap->pos.x = xpProgress->pos.x + xpProgress->pos.w;
+	if ( !xpProgress->disabled )
+	{
+		xpProgressEndCap->pos.x = xpProgress->pos.x + xpProgress->pos.w;
+	}
+
+	auto xpProgressClipFrame = xpFrame->findFrame("xp progress clipping frame");
+	SDL_Rect clipFramePos = xpProgressClipFrame->getSize();
+	clipFramePos.w = std::max(1, static_cast<int>((xpBg->pos.w ) * percent));
+	if ( xpProgress->disabled )
+	{
+		xpProgressEndCap->pos.x = clipFramePos.x + clipFramePos.w;
+
+		bool animate = true;
+		if ( ticks % 5 == 0 )
+		{
+			bool moving = (xpBar.animateSetpoint * 10.0 - xpBar.animateValue != 0);
+			if ( moving && xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png" )
+			{
+				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png";
+			}
+			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png" )
+			{
+				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png";
+			}
+			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png" )
+			{
+				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png";
+			}
+			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png" )
+			{
+				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png";
+			}
+			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png" )
+			{
+				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png";
+			}
+		}
+	}
+	xpProgressClipFrame->setSize(clipFramePos);
+	auto xpProgressClipFrameImg = xpProgressClipFrame->findImage("xp img progress clipped");
+	xpProgressClipFrameImg->pos.x = -(xpProgressClipFrameImg->pos.w - pos.w) / 2;
 }
 
 SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
@@ -8176,18 +8389,35 @@ void Player::HUD_t::updateHPBar()
 		return;
 	}
 
+	bool bCompact = false;
+	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	{
+		bCompact = true;
+	}
+
 	SDL_Rect pos = hpFrame->getSize();
-	pos.x = HPMP_FRAME_START_X;
-	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y;
+	pos.w = HPMP_FRAME_WIDTH + (bCompact ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	pos.x = HPMP_FRAME_START_X + (bCompact ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + (bCompact ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	hpFrame->setSize(pos);
 
 	auto hpForegroundFrame = hpFrame->findFrame("hp foreground frame");
+	{
+		auto _pos = hpForegroundFrame->getSize();
+		_pos.w = pos.w;
+		hpForegroundFrame->setSize(_pos);
+	}
 	auto hpBg = hpFrame->findImage("hp img base");
 	auto hpEndcap = hpForegroundFrame->findImage("hp img endcap");
 	auto hpProgressBot = hpForegroundFrame->findImage("hp img progress bot");
 	auto hpProgress = hpForegroundFrame->findImage("hp img progress");
 	auto hpProgressEndCap = hpForegroundFrame->findImage("hp img progress endcap");
 	auto hpFadeFrame = hpFrame->findFrame("hp fade frame");
+	{
+		auto _pos = hpFadeFrame->getSize();
+		_pos.w = pos.w;
+		hpFadeFrame->setSize(_pos);
+	}
 	auto hpFadedBase = hpFadeFrame->findImage("hp img fade bot");
 	auto hpFaded = hpFadeFrame->findImage("hp img fade");
 	auto hpFadedEndCap = hpFadeFrame->findImage("hp img fade endcap");
@@ -8198,11 +8428,15 @@ void Player::HUD_t::updateHPBar()
 	// handle bar size changing
 	{
 		real_t multiplier = 1.0;
-		const Sint32 maxHPWidth = 160;
+		const Sint32 maxHPWidth = (bCompact ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
 		if ( stats[player.playernum]->MAXHP < maxHPWidth )
 		{
 			// start at 30%, increase 2.5% every 5 HP past 20 MAXHP
-			multiplier = .3 + (.025 * ((std::max(0, stats[player.playernum]->MAXHP - 20) / 5)));
+			multiplier = (bCompact ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
+			real_t widthIntervalPercent = (bCompact ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
+			int intervalThreshold = (bCompact ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
+			int baseIntervalStart = (bCompact ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
+			multiplier += (widthIntervalPercent * ((std::max(0, stats[player.playernum]->MAXHP - baseIntervalStart) / intervalThreshold)));
 		}
 
 		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
@@ -8334,18 +8568,35 @@ void Player::HUD_t::updateMPBar()
 		return;
 	}
 
+	bool bCompact = false;
+	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	{
+		bCompact = true;
+	}
+
 	SDL_Rect pos = mpFrame->getSize();
-	pos.x = HPMP_FRAME_START_X;
-	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT;
+	pos.w = HPMP_FRAME_WIDTH + (bCompact ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	pos.x = HPMP_FRAME_START_X + (bCompact ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + (bCompact ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	mpFrame->setSize(pos);
 
 	auto mpForegroundFrame = mpFrame->findFrame("mp foreground frame");
+	{
+		auto _pos = mpForegroundFrame->getSize();
+		_pos.w = pos.w;
+		mpForegroundFrame->setSize(_pos);
+	}
 	auto mpBg = mpFrame->findImage("mp img base");
 	auto mpEndcap = mpForegroundFrame->findImage("mp img endcap");
 	auto mpProgressBot = mpForegroundFrame->findImage("mp img progress bot");
 	auto mpProgress = mpForegroundFrame->findImage("mp img progress");
 	auto mpProgressEndCap = mpForegroundFrame->findImage("mp img progress endcap");
 	auto mpFadeFrame = mpFrame->findFrame("mp fade frame");
+	{
+		auto _pos = mpFadeFrame->getSize();
+		_pos.w = pos.w;
+		mpFadeFrame->setSize(_pos);
+	}
 	auto mpFadedBase = mpFadeFrame->findImage("mp img fade bot");
 	auto mpFaded = mpFadeFrame->findImage("mp img fade");
 	auto mpFadedEndCap = mpFadeFrame->findImage("mp img fade endcap");
@@ -8356,11 +8607,15 @@ void Player::HUD_t::updateMPBar()
 	// handle bar size changing
 	{
 		real_t multiplier = 1.0;
-		const Sint32 maxMPWidth = 160;
+		const Sint32 maxMPWidth = (bCompact ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
 		if ( stats[player.playernum]->MAXMP < maxMPWidth )
 		{
 			// start at 30%, increase 2.5% every 5 MP past 20 MAXMP
-			multiplier = .3 + (.025 * ((std::max(0, stats[player.playernum]->MAXMP - 20) / 5)));
+			multiplier = (bCompact ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
+			real_t widthIntervalPercent = (bCompact ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
+			int intervalThreshold = (bCompact ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
+			int baseIntervalStart = (bCompact ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
+			multiplier += (widthIntervalPercent * ((std::max(0, stats[player.playernum]->MAXMP - baseIntervalStart) / intervalThreshold)));
 		}
 
 		int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
@@ -8484,8 +8739,10 @@ void Player::Hotbar_t::updateHotbar()
 	{
 		bCompactView = true;
 	}
-	const int hotbarStartY1 = hotbarFrame->getSize().h + getHotbarStartY1(); // higher row (center group)
-	const int hotbarStartY2 = hotbarFrame->getSize().h + getHotbarStartY2(); // lower row (left/right)
+	int hotbarStartY1 = hotbarFrame->getSize().h + getHotbarStartY1(); // higher row (center group)
+	int hotbarStartY2 = hotbarFrame->getSize().h + getHotbarStartY2(); // lower row (left/right)
+	hotbarStartY1 += (bCompactView ? hotbarCompactOffsetY : hotbarOffsetY);
+	hotbarStartY2 += (bCompactView ? hotbarCompactOffsetY : hotbarOffsetY);
 	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
 	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
 	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
@@ -11412,7 +11669,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			SDL_Rect legendTextPos = legendText->getSize();
 			legendTextPos.w = tm->pos.w;
 			legendText->setSize(legendTextPos);
-			legendText->reflowTextToFit(0);
+			//legendText->reflowTextToFit(0);
 			legendTextPos.h = legendText->getNumTextLines() * actualFont->height(true);
 			legendTextPos.y = tm->pos.y + tm->pos.h / 2;
 			legendText->setSize(legendTextPos);
