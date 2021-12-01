@@ -297,12 +297,6 @@ public:
 	bool handleShopMovement(const int player);
 
 	/*
-	 * Uses dpad to move the cursor through the item context menu and select entries.
-	 * Returns true if moved.
-	 */
-	bool handleItemContextMenu(const int player, const Item& item);
-
-	/*
 	* Uses dpad to move the cursor through the item context menu and select entries.
 	* Returns true if moved.
 	*/
@@ -713,6 +707,10 @@ public:
 		bool bCompactView = false;
 		real_t slideOutPercent = 0.0;
 		static int slideOutWidth;
+		bool bFirstTimeSnapCursor = false;
+		bool isInteractable = false;
+		void openInventory();
+		void closeInventory();
 
 		enum PanelJustify_t
 		{

@@ -1642,7 +1642,7 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	if ( activeModule == MODULE_INVENTORY )
 	{
 		auto& inventoryUI = player.inventoryUI;
-		warpMouseToSelectedInventorySlot(player.playernum);
+		inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 
 		if ( auto slot = inventoryUI.getInventorySlotFrame(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY()) )
 		{
@@ -1655,7 +1655,7 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	else if ( activeModule == MODULE_SPELLS )
 	{
 		auto& inventoryUI = player.inventoryUI;
-		warpMouseToSelectedSpellSlot(player.playernum);
+		inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
 
 		if ( auto slot = inventoryUI.getSpellSlotFrame(inventoryUI.getSelectedSpellX(), inventoryUI.getSelectedSpellY()) )
 		{
@@ -1828,6 +1828,8 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	gui_mode = GUI_MODE_NONE;
 	GUI.activateModule(GUI_t::MODULE_NONE);
 
+	inventoryUI.closeInventory();
+	skillSheet.closeSkillSheet();
 
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{
@@ -4420,7 +4422,7 @@ void GenericGUIMenu::updateGUI()
 							{
 								//Go back to inventory.
 								selectedSlot = -1;
-								warpMouseToSelectedInventorySlot(gui_player);
+								players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 							}
 							else
 							{

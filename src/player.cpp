@@ -891,12 +891,18 @@ bool Player::GUI_t::handleInventoryMovement()
 			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-				players[player]->GUI.warpControllerToModule(false);
+				if ( players[player]->inventoryUI.spellPanel.isInteractable )
+				{
+					players[player]->GUI.warpControllerToModule(false);
+				}
 			}
 			else if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-				players[player]->GUI.warpControllerToModule(false);
+				if ( players[player]->inventoryUI.isInteractable )
+				{
+					players[player]->GUI.warpControllerToModule(false);
+				}
 			}
 			//players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
 			//players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
@@ -1328,43 +1334,6 @@ bool GameController::handleRepairGUIMovement(const int player)
 
 	return false;
 }
-
-bool GameController::handleItemContextMenu(const int player, const Item& item)
-{
-	bool dpad_moved = false;
-
-	if (!inputs.getUIInteraction(player)->itemMenuOpen)
-	{
-		return false;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
-	{
-		selectItemMenuSlot(player, item, inputs.getUIInteraction(player)->itemMenuSelected - 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_UP);
-
-		dpad_moved = true;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
-	{
-		selectItemMenuSlot(player, item, inputs.getUIInteraction(player)->itemMenuSelected + 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
-
-		dpad_moved = true;
-	}
-
-	if (dpad_moved)
-	{
-		dpad_moved = false;
-		//inputs.getVirtualMouse(player)->draw_cursor = false;
-
-		return true;
-	}
-
-	return false;
-}
-
 
 void initGameControllers()
 {

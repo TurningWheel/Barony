@@ -6248,7 +6248,7 @@ int main(int argc, char** argv)
 				}
 			}
 
-			printTextFormatted(font8x8_bmp, 200, 8, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
+			printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
 			UIToastNotificationManager.drawNotifications(movie, false);
 

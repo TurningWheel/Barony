@@ -270,9 +270,6 @@ void selectChestSlot(const int player, const int slot);
 int numItemsInChest(const int player);
 void warpMouseToSelectedChestSlot(const int player);
 
-void warpMouseToSelectedInventorySlot(const int player);
-void warpMouseToSelectedSpellSlot(const int player);
-
 //Magic GUI definitions.
 extern SDL_Surface* magicspellList_bmp;
 extern SDL_Surface* spell_list_titlebar_bmp;

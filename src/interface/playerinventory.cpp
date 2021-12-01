@@ -40,7 +40,6 @@ SDL_Surface* inventory_mode_item_highlighted_img = NULL;
 SDL_Surface* inventory_mode_spell_img = NULL;
 SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 
-void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell);
 bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 {
 	//TODO UI: VERIFY
@@ -73,7 +72,6 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 	openedChest[player] = nullptr;
 
 	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
-	//executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -115,7 +113,6 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	Entity* oldChest = openedChest[player];
 	int oldGUI = players[player]->gui_mode;
 
-	//executeItemMenuOption0(player, item, isBadPotion, learnedSpell);
 	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
 
 	players[player]->paperDoll.updateSlots();
@@ -125,40 +122,6 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	}
 	// cursed or couldn't unequip existing item
 	return false;
-}
-
-void warpMouseToSelectedSpellSlot(const int player)
-{
-	if ( players[player]->inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER)) )
-	{
-		return;
-	}
-
-	// TODO UI: REMOVE DEBUG AND CLEAN UP
-	messagePlayer(0, "[Debug]: warpMouseToSelectedSpellSlot failed");
-}
-
-void warpMouseToSelectedInventorySlot(const int player)
-{
-	if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
-	{
-		return;
-	}
-
-	// TODO UI: REMOVE DEBUG AND CLEAN UP
-	messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
-
-	//int xres = players[player]->camera_width();
-	//int yres = players[player]->camera_height();
-	//int x = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
-	//int y = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
-	//
-	//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-	//inputs.warpMouse(player, x, y, flags);
-
-	//SDL_WarpMouseInWindow(screen, 
-	//	INVENTORY_STARTX + (selected_inventory_slot_x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), 
-	//	INVENTORY_STARTY + (selected_inventory_slot_y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 }
 
 /*-------------------------------------------------------------------------------
@@ -3975,6 +3938,33 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	spellFrame->setSize(spellFramePos);
 }
 
+void Player::Inventory_t::openInventory()
+{
+	bool wasDisabled = true;
+	if ( frame )
+	{
+		wasDisabled = frame->isDisabled();
+		frame->setDisabled(false);
+	}
+	if ( wasDisabled )
+	{
+		bFirstTimeSnapCursor = false;
+		slideOutPercent = 1.0;
+		isInteractable = false;
+	}
+}
+void Player::Inventory_t::closeInventory()
+{
+	if ( frame )
+	{
+		frame->setDisabled(true);
+	}
+	spellPanel.closeSpellPanel();
+	updateItemContextMenu(); // process + close the item context menu
+	bFirstTimeSnapCursor = false;
+	isInteractable = false;
+}
+
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
@@ -4001,10 +3991,9 @@ void Player::Inventory_t::updateInventory()
 
 	if ( hideAndExit )
 	{
-		frame->setDisabled(true);
-		spellPanel.closeSpellPanel();
-		updateItemContextMenu(); // process + close the item context menu
+		closeInventory();
 
+		// process the slide out animation for other panels (character sheet view)
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.01, (slideOutPercent)) / 2.0;
 		slideOutPercent -= setpointDiff;
@@ -4014,11 +4003,25 @@ void Player::Inventory_t::updateInventory()
 
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
-	if ( frame->isDisabled() )
+	openInventory();
+
+	if ( slideOutPercent <= .0001 )
 	{
-		slideOutPercent = 1.0;
+		if ( !bFirstTimeSnapCursor )
+		{
+			bFirstTimeSnapCursor = true;
+			if ( !inputs.getUIInteraction(player)->selectedItem
+				&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+			{
+				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+		}
+		isInteractable = true;
 	}
-	frame->setDisabled(false);
+	else
+	{
+		isInteractable = false;
+	}
 
 	if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 	{
@@ -4102,11 +4105,11 @@ void Player::Inventory_t::updateInventory()
 			{
 				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
-					warpMouseToSelectedInventorySlot(player);
+					warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 				{
-					warpMouseToSelectedSpellSlot(player);
+					warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
 				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
@@ -4119,21 +4122,21 @@ void Player::Inventory_t::updateInventory()
 			if ( selectedChestSlot[player] < 0 )
 			{
 				//Move out of chest. Warp cursor back to selected inventory slot.
-				warpMouseToSelectedInventorySlot(player);
+				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
 		else if ( selectedShopSlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
 		{
 			if ( selectedShopSlot[player] < 0 )
 			{
-				warpMouseToSelectedInventorySlot(player);
+				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
 		else if ( GenericGUI[player].selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
 		{
 			if ( GenericGUI[player].selectedSlot < 0 )
 			{
-				warpMouseToSelectedInventorySlot(player);
+				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
 
@@ -4203,7 +4206,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( !itemMenuOpen ) // don't update selected slot while item menu open
 						{
-							if ( slotFrame->capturesMouseInRealtimeCoords() )
+							if ( isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
 								selectSlot(x, y);
 								if ( inputs.getVirtualMouse(player)->draw_cursor )
@@ -4220,7 +4223,8 @@ void Player::Inventory_t::updateInventory()
 
 						if ( x == getSelectedSlotX()
 							&& y == getSelectedSlotY()
-							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+							&& isInteractable )
 						{
 							slotFrameToHighlight = slotFrame;
 							startx = slotFrame->getAbsoluteSize().x;
@@ -4613,6 +4617,12 @@ void Player::Inventory_t::updateInventory()
 
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
 				&& (!spellPanel.isInteractable) && itemCategory(item) == SPELL_CAT )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+				&& !isInteractable && itemCategory(item) != SPELL_CAT )
 			{
 				// don't do anything while in motion
 				break;
@@ -5066,7 +5076,7 @@ void Player::PaperDoll_t::warpMouseToMostRecentReturnedInventoryItem()
 			&& item->y >= 0 && item->y < player.inventoryUI.getSizeY() )
 		{
 			player.inventoryUI.selectSlot(item->x, item->y);
-			warpMouseToSelectedInventorySlot(player.playernum);
+			player.inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 		}
 	}
 	returningItemsToInventory.clear();
@@ -5454,250 +5464,19 @@ inline bool itemMenuSkipRow1ForShopsAndChests(const int player, const Item& item
 	return false;
 }
 
-/*
- * Helper function to drawItemMenuSlots. Draws the empty window for an individual item context menu slot.
- */
-inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected = false)
-{
-	if (selected)
-	{
-		drawDepressed(x, y, x + width, y + height);
-	}
-	else
-	{
-		drawWindow(x, y, x + width, y + height);
-	}
-}
-
-/*
- * Helper function to itemContextMenu(). Draws the context menu slots.
- */
-inline void drawItemMenuSlots(const int player, const Item& item, int slot_width, int slot_height)
-{
-	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
-	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
-	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
-
-	//Draw the action select boxes. "Appraise", "Use, "Equip", etc.
-	int current_x = itemMenuX + 300;
-	int current_y = itemMenuY + 300;
-	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest, sell, use.
-	if (itemCategory(&item) != SPELL_CAT)
-	{
-		if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
-		{
-			current_y += slot_height;
-			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 1 => appraise
-
-			current_y += slot_height;
-			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 2 => drop
-			return; // only draw 3 lines.
-		}
-
-		current_y += slot_height;
-		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 1); //Option 1 => wield, unwield, use, appraise
-
-		current_y += slot_height;
-		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
-
-		if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(item)
-			&& itemCategory(&item) != FOOD )
-		{
-			current_y += slot_height;
-			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
-		}
-		if (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT )
-		{
-			current_y += slot_height;
-			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
-		}
-		else if ( itemCategory(&item) == SPELLBOOK )
-		{
-			current_y += slot_height;
-			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
-		}
-		else if ( item.type == FOOD_CREAMPIE )
-		{
-			current_y += slot_height;
-			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
-		}
-	}
-}
-
-/*
- * drawOptionX() - renders the specified option in the given item option menu slot.
- */
-inline void drawOptionStoreInChest(int x, int y)
-{
-	int width = 0;
-	getSizeOfText(ttf12, language[344], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[344]);
-}
-
-inline void drawOptionSell(int x, int y)
-{
-	int width = 0;
-	getSizeOfText(ttf12, language[345], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[345]);
-}
-
-inline void drawOptionUse(const int player, const Item& item, int x, int y)
-{
-	int width = 0;
-	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(player, item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(player, item));
-}
-
-inline void drawOptionUnwield(int x, int y)
-{
-	int width = 0;
-	getSizeOfText(ttf12, language[323], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[323]);
-}
-
-inline void drawOptionWield(int x, int y)
-{
-	int width = 0;
-	getSizeOfText(ttf12, language[324], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[324]);
-}
-
-inline void drawOptionAppraise(int x, int y)
-{
-	int width = 0;
-	getSizeOfText(ttf12, language[1161], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1161]);
-}
-
-inline void drawOptionDrop(int x, int y)
-{
-	int width = 0;
-	getSizeOfText(ttf12, language[1162], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1162]);
-}
-
-/*
- * Helper function to itemContextMenu(). Draws a spell's options.
- */
-inline void drawItemMenuOptionSpell(const int player, const Item& item, int x, int y)
-{
-	if (itemCategory(&item) != SPELL_CAT)
-	{
-		return;
-	}
-
-	int width = 0;
-
-	//Option 0.
-	drawOptionUse(player, item, x, y);
-}
-
-/*
- * Helper function to itemContextMenu(). Draws a potion's options.
- */
-inline void drawItemMenuOptionPotion(const int player, const Item& item, int x, int y, int height, bool is_potion_bad = false)
-{
-	if (itemCategory(&item) != POTION && item.type != TOOL_ALEMBIC && item.type != TOOL_TINKERING_KIT )
-	{
-		return;
-	}
-
-	int width = 0;
-
-	//Option 0.
-	if (openedChest[player])
-	{
-		drawOptionStoreInChest(x, y);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP)
-	{
-		drawOptionSell(x, y);
-	}
-	else
-	{
-		if ( item.type == TOOL_TINKERING_KIT )
-		{
-			if ( itemIsEquipped(&item, player) )
-			{
-				drawOptionUnwield(x, y);
-			}
-			else
-			{
-				drawOptionWield(x, y);
-			}
-		}
-		else if (!is_potion_bad)
-		{
-			drawOptionUse(player, item, x, y);
-		}
-		else
-		{
-			if (itemIsEquipped(&item, player))
-			{
-				drawOptionUnwield(x, y);
-			}
-			else
-			{
-				drawOptionWield(x, y);
-			}
-		}
-	}
-	y += height;
-
-	//Option 1.
-	if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
-	{
-		// skip this row.
-	}
-	else
-	{
-		if (!is_potion_bad)
-		{
-			if ( item.type == TOOL_ALEMBIC )
-			{
-				getSizeOfText(ttf12, language[3341], &width, nullptr);
-				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
-			}
-			else if ( item.type == TOOL_TINKERING_KIT )
-			{
-				getSizeOfText(ttf12, language[3670], &width, nullptr);
-				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
-			}
-			else if (itemIsEquipped(&item, player))
-			{
-				drawOptionUnwield(x, y);
-			}
-			else
-			{
-				drawOptionWield(x, y);
-			}
-		}
-		else
-		{
-			drawOptionUse(player, item, x, y);
-		}
-		y += height;
-	}
-
-	//Option 1.
-	drawOptionAppraise(x, y);
-	y += height;
-
-	//Option 2.
-	drawOptionDrop(x, y);
-}
-
 inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int x, int y, int height, bool is_potion_bad)
 {
+	return;
 	int width = 0;
 
 	//Option 0.
 	if ( openedChest[player] )
 	{
-		drawOptionStoreInChest(x, y);
+		//drawOptionStoreInChest(x, y);
 	}
 	else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 	{
-		drawOptionSell(x, y);
+		//drawOptionSell(x, y);
 	}
 	else
 	{
@@ -5705,7 +5484,7 @@ inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int 
 		{
 			if ( !itemIsConsumableByAutomaton(item) || (itemCategory(&item) != FOOD && item.type != TOOL_METAL_SCRAP && item.type != TOOL_MAGIC_SCRAP) )
 			{
-				drawOptionUse(player, item, x, y);
+				//drawOptionUse(player, item, x, y);
 			}
 			else
 			{
@@ -5717,11 +5496,11 @@ inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int 
 		{
 			if ( itemIsEquipped(&item, player) )
 			{
-				drawOptionUnwield(x, y);
+				//drawOptionUnwield(x, y);
 			}
 			else
 			{
-				drawOptionWield(x, y);
+				//drawOptionWield(x, y);
 			}
 		}
 	}
@@ -5742,748 +5521,11 @@ inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int 
 	}
 
 	//Option 1.
-	drawOptionAppraise(x, y);
+	//drawOptionAppraise(x, y);
 	y += height;
 
 	//Option 2.
-	drawOptionDrop(x, y);
-}
-
-/*
- * Helper function to itemContextMenu(). Draws all other items's options.
- */
-inline void drawItemMenuOptionGeneric(const int player, const Item& item, int x, int y, int height)
-{
-	if (itemCategory(&item) == SPELL_CAT || itemCategory(&item) == POTION)
-	{
-		return;
-	}
-
-	int width = 0;
-
-	//Option 0.
-	if (openedChest[player])
-	{
-		drawOptionStoreInChest(x, y);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP)
-	{
-		drawOptionSell(x, y);
-	}
-	else
-	{
-		drawOptionUse(player, item, x, y);
-	}
-	y += height;
-
-	//Option 1
-	drawOptionAppraise(x, y);
-	y += height;
-
-	//Option 2
-	drawOptionDrop(x, y);
-}
-
-inline void drawItemMenuOptionSpellbook(const int player, const Item& item, int x, int y, int height, bool learnedSpell)
-{
-	int width = 0;
-
-	//Option 0.
-	if ( openedChest[player] )
-	{
-		drawOptionStoreInChest(x, y);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP )
-	{
-		drawOptionSell(x, y);
-	}
-	else
-	{
-		if ( learnedSpell )
-		{
-			if ( itemIsEquipped(&item, player) )
-			{
-				drawOptionUnwield(x, y);
-			}
-			else
-			{
-				drawOptionWield(x, y);
-			}
-		}
-		else
-		{
-			drawOptionUse(player, item, x, y);
-		}
-	}
-	y += height;
-
-	//Option 1
-	if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
-	{
-		// skip this row.
-	}
-	else
-	{
-		if ( learnedSpell )
-		{
-			drawOptionUse(player, item, x, y);
-		}
-		else
-		{
-			if ( itemIsEquipped(&item, player) )
-			{
-				drawOptionUnwield(x, y);
-			}
-			else
-			{
-				drawOptionWield(x, y);
-			}
-		}
-		y += height;
-	}
-
-	//Option 2
-	drawOptionAppraise(x, y);
-	y += height;
-
-	//Option 3
-	drawOptionDrop(x, y);
-}
-
-inline void drawItemMenuOptionUsableAndWieldable(const int player, const Item& item, int x, int y, int height)
-{
-	int width = 0;
-
-	//Option 0.
-	if ( openedChest[player] )
-	{
-		drawOptionStoreInChest(x, y);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP )
-	{
-		drawOptionSell(x, y);
-	}
-	else
-	{
-		drawOptionUse(player, item, x, y);
-	}
-	y += height;
-
-	//Option 1
-	if ( itemIsEquipped(&item, player) )
-	{
-		drawOptionUnwield(x, y);
-	}
-	else
-	{
-		drawOptionWield(x, y);
-	}
-	y += height;
-
-	//Option 2
-	drawOptionAppraise(x, y);
-	y += height;
-
-	//Option 3
-	drawOptionDrop(x, y);
-}
-
-/*
- * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
- */
-inline void selectItemMenuSlot(const int player, const Item& item, int x, int y, int slot_width, int slot_height)
-{
-	return;
-	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
-	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
-	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
-
-	int current_x = itemMenuX;
-	int current_y = itemMenuY;
-
-	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
-	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-
-	if (mousey < current_y - slot_height)   //Check if out of bounds above.
-	{
-		itemMenuSelected = -1; //For canceling out.
-	}
-	if (mousey >= current_y - 2 && mousey < current_y + slot_height)
-	{
-		itemMenuSelected = 0;
-	}
-	if (itemCategory(&item) != SPELL_CAT)
-	{
-		if ( itemMenuSkipRow1ForShopsAndChests(player, item) )
-		{
-			current_y += slot_height;
-			if ( mousey >= current_y && mousey < current_y + slot_height )
-			{
-				itemMenuSelected = 2;
-			}
-			current_y += slot_height;
-			if ( mousey >= current_y && mousey < current_y + slot_height )
-			{
-				itemMenuSelected = 3;
-			}
-		}
-		else
-		{
-			current_y += slot_height;
-			if (mousey >= current_y && mousey < current_y + slot_height)
-			{
-				itemMenuSelected = 1;
-			}
-			current_y += slot_height;
-			if (mousey >= current_y && mousey < current_y + slot_height)
-			{
-				itemMenuSelected = 2;
-			}
-			current_y += slot_height;
-			if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
-				|| (stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(item)
-					&& itemCategory(&item) != FOOD) )
-			{
-				if (mousey >= current_y && mousey < current_y + slot_height)
-				{
-					itemMenuSelected = 3;
-				}
-				current_y += slot_height;
-			}
-		}
-	}
-
-	if (mousey >= current_y + slot_height)   //Check if out of bounds below.
-	{
-		itemMenuSelected = -1; //For canceling out.
-	}
-
-	if (mousex >= current_x + slot_width)   //Check if out of bounds to the right.
-	{
-		itemMenuSelected = -1; //For canceling out.
-	}
-	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && right_click_protect) )   //Check if out of bounds to the left.
-	{
-		itemMenuSelected = -1; //For canceling out.
-	}
-}
-
-/*
- * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
- */
-void executeItemMenuOption0(const int player, Item* item, bool is_potion_bad, bool learnedSpell)
-{
-	if (!item)
-	{
-		return;
-	}
-
-	bool disableItemUsage = false;
-	if ( players[player] && players[player]->entity )
-	{
-		if ( players[player]->entity->effectShapeshift != NOTHING )
-		{
-			// shape shifted, disable some items
-			if ( !item->usableWhileShapeshifted(stats[player]) )
-			{
-				disableItemUsage = true;
-			}
-		}
-		else
-		{
-			if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
-			{
-				if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 )
-				{
-					disableItemUsage = true;
-				}
-			}
-		}
-	}
-
-	if ( client_classes[player] == CLASS_SHAMAN )
-	{
-		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
-		{
-			disableItemUsage = true;
-		}
-	}
-
-	if (openedChest[player] && itemCategory(item) != SPELL_CAT)
-	{
-		//Option 0 = store in chest.
-		openedChest[player]->addItemToChestFromInventory(player, item, false);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT)
-	{
-		//Option 0 = sell.
-		sellItemToShop(player, item);
-	}
-	else
-	{
-		if (!is_potion_bad && !learnedSpell)
-		{
-			//Option 0 = use.
-			if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
-			{
-				if ( !disableItemUsage )
-				{
-					if ( stats[player] && stats[player]->type == AUTOMATON
-						&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-					{
-						// consume item
-						if ( multiplayer == CLIENT )
-						{
-							strcpy((char*)net_packet->data, "FODA");
-							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-							net_packet->data[24] = item->identified;
-							net_packet->data[25] = player;
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 26;
-							sendPacketSafe(net_sock, -1, net_packet, 0);
-						}
-						item_FoodAutomaton(item, player);
-					}
-					else
-					{
-						useItem(item, player);
-					}
-				}
-				else
-				{
-					if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-					{
-						messagePlayer(player, language[3488]); // unable to use with current level.
-					}
-					else
-					{
-						messagePlayer(player, language[3432]); // unable to use in current form message.
-					}
-				}
-			}
-		}
-		else
-		{
-			if ( !disableItemUsage )
-			{
-				//Option 0 = equip.
-				playerTryEquipItemAndUpdateServer(player, item, true);
-			}
-			else
-			{
-				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-				{
-					messagePlayer(player, language[3488]); // unable to use with current level.
-				}
-				else
-				{
-					messagePlayer(player, language[3432]); // unable to use in current form message.
-				}
-			}
-		}
-	}
-}
-
-inline void executeItemMenuOption1(const int player, Item* item, bool is_potion_bad, bool learnedSpell)
-{
-	if (!item || itemCategory(item) == SPELL_CAT)
-	{
-		return;
-	}
-
-	bool disableItemUsage = false;
-	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
-	{
-		// shape shifted, disable some items
-		if ( !item->usableWhileShapeshifted(stats[player]) )
-		{
-			disableItemUsage = true;
-		}
-		if ( item->type == FOOD_CREAMPIE )
-		{
-			disableItemUsage = true;
-		}
-	}
-
-	if ( client_classes[player] == CLASS_SHAMAN )
-	{
-		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
-		{
-			disableItemUsage = true;
-		}
-	}
-
-	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item)
-		&& itemCategory(item) != FOOD )
-	{
-		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
-		{
-			useItem(item, player);
-		}
-		else
-		{
-			// consume item
-			if ( multiplayer == CLIENT )
-			{
-				strcpy((char*)net_packet->data, "FODA");
-				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-				net_packet->data[24] = item->identified;
-				net_packet->data[25] = player;
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 26;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
-			}
-			item_FoodAutomaton(item, player);
-		}
-	}
-	else if ( item->type == TOOL_ALEMBIC )
-	{
-		// experimenting!
-		if ( !disableItemUsage )
-		{
-			GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
-		}
-		else
-		{
-			messagePlayer(player, language[3432]); // unable to use in current form message.
-		}
-	}
-	else if ( item->type == TOOL_TINKERING_KIT )
-	{
-		if ( !disableItemUsage )
-		{
-			GenericGUI[player].openGUI(GUI_TYPE_TINKERING, item);
-		}
-		else
-		{
-			messagePlayer(player, language[3432]); // unable to use in current form message.
-		}
-	}
-	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK && item->type != FOOD_CREAMPIE)
-	{
-		//Option 1 = appraise.
-		players[player]->inventoryUI.appraisal.appraiseItem(item);
-	}
-	else
-	{
-		if ( !disableItemUsage )
-		{
-			if (!is_potion_bad && !learnedSpell)
-			{
-				//Option 1 = equip.
-				playerTryEquipItemAndUpdateServer(player, item, true);
-			}
-			else
-			{
-				//Option 1 = drink/use/whatever.
-				if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
-				{
-					useItem(item, player);
-				}
-			}
-		}
-		else
-		{
-			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-			{
-				messagePlayer(player, language[3488]); // unable to use with current level.
-			}
-			else
-			{
-				messagePlayer(player, language[3432]); // unable to use in current form message.
-			}
-		}
-	}
-}
-
-inline void executeItemMenuOption2(const int player, Item* item)
-{
-	if (!item || itemCategory(item) == SPELL_CAT)
-	{
-		return;
-	}
-
-	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
-	{
-		//Option 2 = appraise.
-		players[player]->inventoryUI.appraisal.appraiseItem(item);
-	}
-	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
-		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT
-		&& item->type != FOOD_CREAMPIE )
-	{
-		//Option 2 = drop.
-		dropItem(item, player);
-	}
-	else
-	{
-		//Option 2 = appraise.
-		players[player]->inventoryUI.appraisal.appraiseItem(item);
-	}
-}
-
-inline void executeItemMenuOption3(const int player, Item* item)
-{
-	if ( !item )
-	{
-		return;
-	}
-	if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
-	{
-		//Option 3 = drop (automaton has 4 options on consumable items).
-		dropItem(item, player);
-		return;
-	}
-	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
-		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT
-		&& item->type != FOOD_CREAMPIE )
-	{
-		return;
-	}
-
-	//Option 3 = drop (only spellbooks/potions have option 3).
-	dropItem(item, player);
-}
-
-void itemContextMenu(const int player)
-{
-	return;
-	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
-	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
-	Uint32& itemMenuItem = inputs.getUIInteraction(player)->itemMenuItem;
-	int itemMenuX = inputs.getUIInteraction(player)->itemMenuX + 300;
-	int itemMenuY = inputs.getUIInteraction(player)->itemMenuY + 300;
-	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
-	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
-
-	if (!itemMenuOpen)
-	{
-		return;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_MENU_CANCEL) )
-	{
-		inputs.controllerClearInput(player, INJOY_MENU_CANCEL);
-		itemMenuOpen = false;
-		//Warp cursor back into inventory, for gamepad convenience.
-
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
-		{
-			if ( players[player]->inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER)) )
-			{
-				return;
-			}
-		}
-		else
-		{
-			if ( players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
-			{
-				return;
-			}
-		}
-
-		messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
-		// TODO UI: REMOVE DEBUG AND CLEAN UP
-		//int newx = players[player]->inventoryUI.getSelectedSlotPositionX(uidToItem(itemMenuItem));
-		//int newy = players[player]->inventoryUI.getSelectedSlotPositionY(uidToItem(itemMenuItem));
-		////SDL_WarpMouseInWindow(screen, newx, newy);
-		//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-		//inputs.warpMouse(player, newx, newy, flags);
-		return;
-	}
-
-	//Item *item = uidToItem(itemMenuItem);
-
-	Item* current_item = uidToItem(itemMenuItem);
-	if (!current_item)
-	{
-		itemMenuOpen = false;
-		return;
-	}
-
-	bool is_potion_bad = isPotionBad(*current_item);
-
-	const int slot_width = 100;
-	const int slot_height = 20;
-
-	if ( inputs.hasController(player) && inputs.getController(player)->handleItemContextMenu(player, *current_item) )
-	{
-		//SDL_WarpMouseInWindow(screen, itemMenuX + (slot_width / 2), itemMenuY + (itemMenuSelected * slot_height) + (slot_height / 2));
-		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-		inputs.warpMouse(player, itemMenuX + (slot_width / 2), itemMenuY + (itemMenuSelected * slot_height) + (slot_height / 2), flags);
-	}
-
-	drawItemMenuSlots(player, *current_item, slot_width, slot_height);
-	bool learnedSpell = false;
-
-	if (itemCategory(current_item) == SPELL_CAT)
-	{
-		drawItemMenuOptionSpell(player, *current_item, itemMenuX, itemMenuY);
-	}
-	else
-	{
-		if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*current_item)
-			&& current_item->type != FOOD_CREAMPIE )
-		{
-			drawItemMenuOptionAutomaton(player, *current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
-		}
-		else if ( current_item->type == TOOL_ALEMBIC || current_item->type == TOOL_TINKERING_KIT )
-		{
-			drawItemMenuOptionPotion(player, *current_item, itemMenuX, itemMenuY, slot_height, false);
-		}
-		else if (itemCategory(current_item) == POTION || current_item->type == TOOL_ALEMBIC)
-		{
-			drawItemMenuOptionPotion(player, *current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
-		}
-		else if ( itemCategory(current_item) == SPELLBOOK )
-		{
-			learnedSpell = playerLearnedSpellbook(player, current_item);
-			if ( itemIsEquipped(current_item, player) )
-			{
-				learnedSpell = true; // equipped spellbook will unequip on use.
-			}
-			else if ( players[player] && players[player]->entity )
-			{
-				if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
-				{
-					learnedSpell = true; // imps can't learn spells but always equip books.
-				}
-				else if ( stats[player] && stats[player]->type == GOBLIN )
-				{
-					learnedSpell = true; // goblinos can't learn spells but always equip books.
-				}
-			}
-
-			drawItemMenuOptionSpellbook(player, *current_item, itemMenuX, itemMenuY, slot_height, learnedSpell);
-		}
-		else if ( current_item->type == FOOD_CREAMPIE )
-		{
-			drawItemMenuOptionUsableAndWieldable(player, *current_item, itemMenuX, itemMenuY, slot_height);
-		}
-		else
-		{
-			drawItemMenuOptionGeneric(player, *current_item, itemMenuX, itemMenuY, slot_height); //Every other item besides potions and spells.
-		}
-	}
-
-	selectItemMenuSlot(player, *current_item, itemMenuX, itemMenuY, slot_width, slot_height);
-	return;
-	bool activateSelection = false;
-	if (!inputs.bMouseRight(player) && !toggleclick)
-	{
-		activateSelection = true;
-	}
-	else if ( inputs.bControllerInputPressed(player, INJOY_MENU_USE) )
-	{
-		inputs.controllerClearInput(player, INJOY_MENU_USE);
-		activateSelection = true;
-
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
-		{
-			if ( !players[player]->inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER)) )
-			{
-				// TODO UI: REMOVE DEBUG AND CLEAN UP
-				messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
-			}
-		}
-		else
-		{
-			if ( !players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)) )
-			{
-				// TODO UI: REMOVE DEBUG AND CLEAN UP
-				messagePlayer(0, "[Debug]: warpMouseToSelectedInventorySlot failed");
-				////Warp cursor back into inventory, for gamepad convenience.
-				//int newx = players[player]->inventoryUI.getSelectedSlotPositionX(nullptr);
-				//int newy = players[player]->inventoryUI.getSelectedSlotPositionY(nullptr);
-				////SDL_WarpMouseInWindow(screen, newx, newy);
-				//Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-				//inputs.warpMouse(player, newx, newy, flags);
-			}
-		}
-	}
-
-	bool itemWasOnPaperDoll = players[player]->paperDoll.isItemOnDoll(*current_item);
-
-	if (activateSelection)
-	{
-		switch (itemMenuSelected)
-		{
-			case 0:
-				executeItemMenuOption0(player, current_item, is_potion_bad, learnedSpell);
-				break;
-			case 1:
-				executeItemMenuOption1(player, current_item, is_potion_bad, learnedSpell);
-				break;
-			case 2:
-				executeItemMenuOption2(player, current_item);
-				break;
-			case 3:
-				executeItemMenuOption3(player, current_item);
-				break;
-			default:
-				break;
-		}
-
-		if ( itemWasOnPaperDoll )
-		{
-			players[player]->paperDoll.warpMouseToMostRecentReturnedInventoryItem();
-		}
-
-		//Close the menu.
-		itemMenuOpen = false;
-		itemMenuItem = 0;
-	}
-}
-
-int numItemMenuSlots(const Item& item)
-{
-	int numSlots = 1; //Option 0 => store in chest, sell, use.
-
-	if (itemCategory(&item) != SPELL_CAT)
-	{
-		numSlots += 2; //Option 1 => wield, unwield, use, appraise. & Option 2 => appraise, drop
-
-		if (itemCategory(&item) == POTION)
-		{
-			numSlots += 1; //Option 3 => drop.
-		}
-		else if ( itemCategory(&item) == SPELLBOOK )
-		{
-			numSlots += 1; //Can read/equip spellbooks
-		}
-		else if ( item.type == FOOD_CREAMPIE )
-		{
-			numSlots += 1; //Can equip
-		}
-	}
-
-	return numSlots;
-}
-
-//Used by the gamepad, primarily. Dpad buttons changes selection.
-void selectItemMenuSlot(const int player, const Item& item, int entry)
-{
-	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
-	if (entry >= numItemMenuSlots(item))
-	{
-		entry = 0;
-	}
-	if (entry < 0)
-	{
-		entry = numItemMenuSlots(item) - 1;
-	}
-
-	itemMenuSelected = entry;
+	//drawOptionDrop(x, y);
 }
 
 // filters out items excluded by auto_hotbar_categories
