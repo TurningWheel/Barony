@@ -6024,5 +6024,17 @@ Changing this gameflag is disabled in current game mode.#
 4072 LOG#
 4073 You see a signpost.#
 4074 Skills List#
+# Action Prompts
+4075 Attack#
+4076 Block#
+4077 Sneak#
+4078 Cast#
+4079 Spellbook
+Cast#
+4080 Lockpick#
+4081 Tinker#
+4082 Throw#
+4083 Zap#
+4084 Dig#
 
 4099 end#
