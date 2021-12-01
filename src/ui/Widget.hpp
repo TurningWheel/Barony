@@ -42,6 +42,10 @@ public:
     auto&           getWidgetActions() const { return widgetActions; }
     auto&           getWidgetMovements() const { return widgetMovements; }
     auto&           getWidgets() const { return widgets; }
+    const void*     getUserData() const { return userData; }
+    void*           getUserData() { return userData; }
+    SDL_Rect        getButtonsOffset() const { return buttonsOffset; }
+    SDL_Rect        getSelectorOffset() const { return selectorOffset; }
 
     void	setName(const char* _name) { name = _name; }
     void	setPressed(bool _pressed) { reallyPressed = pressed = _pressed; }
@@ -64,6 +68,9 @@ public:
     void    setWidgetSearchParent(const char* s) { widgetSearchParent = s; }
     void    addWidgetAction(const char* binding, const char* action) { widgetActions.emplace(binding, action); }
     void    addWidgetMovement(const char* binding, const char* action) { widgetMovements.emplace(binding, action); }
+    void    setUserData(void* p) { userData = p; }
+    void    setButtonsOffset(SDL_Rect r) { buttonsOffset = r; }
+    void    setSelectorOffset(SDL_Rect r) { selectorOffset = r; }
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
@@ -119,24 +126,25 @@ public:
     Widget* findSelectedWidget(int owner);
 
 protected:
-    Widget* parent = nullptr;                                   //!< parent widget
-    std::list<Widget*> widgets;                                 //!< widget children
-    std::string name;                                           //!< widget name
-    bool pressed = false;							            //!< pressed state
-    bool reallyPressed = false;						            //!< the "actual" pressed state, pre-mouse process
-    bool highlighted = false;                                   //!< if true, this widget has the mouse over it
-    bool selected = false;							            //!< if true, this widget has focus
-    bool disabled = false;							            //!< if true, the widget is unusable and grayed out
-    bool invisible = false;                                     //!< if true, widget is both unusable and invisible
-	bool toBeDeleted = false;						            //!< if true, the widget will be removed at the end of its process
-    bool hideGlyphs = false;                                    //!< true if you don't want to see button prompts or any other graphics on the widget
-    bool hideSelectors = false;                                 //!< true if you don't want to see selectors on the borders of this widget
-    Uint32 highlightTime = 0u;						            //!< records the time since the widget was highlighted
-    Sint32 owner = 0;                                           //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
-    SDL_Rect selectorOffset {0, 0, 0, 0};                       //!< offset for x, y, w, h in the selector box
-    SDL_Rect buttonsOffset {0, 0, 0, 0};                        //!< offset for x, y in button prompts
-    void (*tickCallback)(Widget&) = nullptr;		            //!< the callback to run each frame for this widget
-    void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;    //!< the callback to run after the widget is drawn
+    Widget* parent = nullptr;                                       //!< parent widget
+    std::list<Widget*> widgets;                                     //!< widget children
+    std::string name;                                               //!< widget name
+    bool pressed = false;							                //!< pressed state
+    bool reallyPressed = false;						                //!< the "actual" pressed state, pre-mouse process
+    bool highlighted = false;                                       //!< if true, this widget has the mouse over it
+    bool selected = false;							                //!< if true, this widget has focus
+    bool disabled = false;							                //!< if true, the widget is unusable and grayed out
+    bool invisible = false;                                         //!< if true, widget is both unusable and invisible
+	bool toBeDeleted = false;						                //!< if true, the widget will be removed at the end of its process
+    bool hideGlyphs = false;                                        //!< true if you don't want to see button prompts or any other graphics on the widget
+    bool hideSelectors = false;                                     //!< true if you don't want to see selectors on the borders of this widget
+    Uint32 highlightTime = 0u;						                //!< records the time since the widget was highlighted
+    Sint32 owner = 0;                                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
+    SDL_Rect selectorOffset {0, 0, 0, 0};                           //!< offset for x, y, w, h in the selector box
+    SDL_Rect buttonsOffset {0, 0, 0, 0};                            //!< offset for x, y in button prompts
+    void (*tickCallback)(Widget&) = nullptr;		                //!< the callback to run each frame for this widget
+    void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;  //!< the callback to run after the widget is drawn
+    void* userData = nullptr;                                       //!< user data
 
     std::unordered_map<std::string, std::string>
         widgetActions;                              //!< widgets to select and activate when input is pressed

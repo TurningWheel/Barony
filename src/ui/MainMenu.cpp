@@ -224,9 +224,9 @@ namespace MainMenu {
 		}
 	}
 
-	static Button* createBackWidget(Frame* parent, void (*callback)(Button&)) {
+	static Button* createBackWidget(Frame* parent, void (*callback)(Button&), SDL_Rect offset = SDL_Rect{5, 5, 0, 0}) {
 		auto back = parent->addFrame("back");
-		back->setSize(SDL_Rect{5, 5, 66, 36});
+		back->setSize(SDL_Rect{offset.x, offset.y, 66, 36});
 		back->setActualSize(SDL_Rect{0, 0, 66, 36});
 		back->setColor(0);
 		back->setBorderColor(0);
@@ -5315,7 +5315,7 @@ namespace MainMenu {
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
-		bool continueAvailable = saveGameExists(true) || saveGameExists(false);
+		bool continueAvailable = anySaveFileExists();
 
 		auto hall_of_trials_button = window->addButton("hall_of_trials");
 		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
@@ -5359,9 +5359,9 @@ namespace MainMenu {
 		continue_button->setFont(smallfont_outline);
 		if (continueAvailable) {
 			continue_button->setBackgroundHighlighted("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
-			continue_button->setCallback(playContinue);
+			continue_button->setCallback([](Button& button){soundActivate(); playContinue(button);});
 		} else {
-			continue_button->setCallback([](Button&){ soundError(); });
+			continue_button->setCallback([](Button&){soundError();});
 		}
 		continue_button->setWidgetSearchParent(window->getName());
 		continue_button->setWidgetRight("new");
@@ -5641,9 +5641,142 @@ namespace MainMenu {
 	}
 
 	void playContinue(Button& button) {
-		soundActivate();
 
-		// TODO continue menu
+
+		// remove "Play Game" window
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		// create "Local or Network" window
+		auto window = dimmer->addFrame("continue_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1080) / 2,
+			(Frame::virtualScreenY - 474) / 2,
+			1080,
+			474});
+		window->setActualSize(SDL_Rect{0, 0, 1080, 474});
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/ContinueGame/UI_Cont_Window_00.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 32);
+		banner_title->setSize(SDL_Rect{
+		    (window->getActualSize().w - 256) / 2,
+		    8,
+		    256,
+		    48});
+		banner_title->setText("CONTINUE ADVENTURE");
+		banner_title->setFont(bigfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setActualSize(SDL_Rect{0, 0, 898, 294});
+		subwindow->setSize(SDL_Rect{90, 82, 898, 294});
+		subwindow->setColor(0);
+		subwindow->setBorder(0);
+
+		auto gradient = subwindow->addImage(
+		    subwindow->getActualSize(),
+		    0xffffffff,
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Grad_01.png",
+		    "gradient"
+		);
+		gradient->ontop = true;
+
+		auto singleplayer = window->addButton("singleplayer");
+		singleplayer->setText("        Singleplayer");
+		singleplayer->setFont(smallfont_outline);
+		singleplayer->setSize(SDL_Rect{224, 36, 156, 36});
+		singleplayer->setColor(0xffffffff);
+		singleplayer->setHighlightColor(0xffffffff);
+		singleplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
+		singleplayer->setBackgroundHighlighted("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png");
+		singleplayer->setButtonsOffset(SDL_Rect{-134, -16, 0, 0});
+		singleplayer->setWidgetBack("back");
+		singleplayer->addWidgetAction("MenuAlt2", "delete");
+		//singleplayer->addWidgetAction("MenuConfirm", "enter");
+		singleplayer->addWidgetAction("MenuPageLeft", "singleplayer");
+		singleplayer->addWidgetAction("MenuPageRight", "multiplayer");
+
+		auto multiplayer = window->addButton("multiplayer");
+		multiplayer->setText("Multiplayer        ");
+		multiplayer->setFont(smallfont_outline);
+		multiplayer->setSize(SDL_Rect{700, 36, 144, 36});
+		multiplayer->setColor(0xffffffff);
+		multiplayer->setHighlightColor(0xffffffff);
+		multiplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png");
+		multiplayer->setBackgroundHighlighted("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
+		multiplayer->setButtonsOffset(SDL_Rect{-24, -16, 0, 0});
+		multiplayer->setWidgetBack("back");
+		multiplayer->addWidgetAction("MenuAlt2", "delete");
+		//multiplayer->addWidgetAction("MenuConfirm", "enter");
+		multiplayer->addWidgetAction("MenuPageLeft", "singleplayer");
+		multiplayer->addWidgetAction("MenuPageRight", "multiplayer");
+
+		auto delete_button = window->addButton("delete");
+		delete_button->setText("Delete Save");
+		delete_button->setFont(smallfont_outline);
+		delete_button->setSize(SDL_Rect{276, 390, 164, 62});
+		delete_button->setColor(0xffffffff);
+		delete_button->setHighlightColor(0xffffffff);
+		delete_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
+		delete_button->setWidgetBack("back");
+		delete_button->addWidgetAction("MenuAlt2", "delete");
+		//delete_button->addWidgetAction("MenuConfirm", "enter");
+		delete_button->addWidgetAction("MenuPageLeft", "singleplayer");
+		delete_button->addWidgetAction("MenuPageRight", "multiplayer");
+
+		auto enter_button = window->addButton("enter");
+		enter_button->setText("Enter Dungeon");
+		enter_button->setFont(smallfont_outline);
+		enter_button->setSize(SDL_Rect{640, 390, 164, 62});
+		enter_button->setColor(0xffffffff);
+		enter_button->setHighlightColor(0xffffffff);
+		enter_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
+		enter_button->setWidgetBack("back");
+		enter_button->addWidgetAction("MenuAlt2", "delete");
+		//enter_button->addWidgetAction("MenuConfirm", "enter");
+		enter_button->addWidgetAction("MenuPageLeft", "singleplayer");
+		enter_button->addWidgetAction("MenuPageRight", "multiplayer");
+
+		auto slider = window->addSlider("slider");
+		slider->setHandleSize(SDL_Rect{0, 0, 98, 16});
+		slider->setHandleImage("images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderBar_00.png");
+		slider->setRailSize(SDL_Rect{137, 374, 800, 16});
+		slider->setRailImage("__empty");
+		slider->setMinValue(0.f);
+		slider->setValue(50.f);
+		slider->setMaxValue(100.f);
+
+		for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+            if (saveGameExists(true, i)) {
+                //auto str = std::string("savegame") + i;
+                //auto savegame_book = subwindow->addButton(str.c_str());
+                //savegame_book->
+            }
+		}
+
+		(void)createBackWidget(window, [](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			createPlayWindow();
+			}, SDL_Rect{16, 0, 0, 0});
 	}
 
 /******************************************************************************/
@@ -6174,6 +6307,7 @@ namespace MainMenu {
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
+				savethisgame = true;
 				beginFade(MainMenu::FadeDestination::RootMainMenu);
 			},
 			[](Button&){ // cancel
@@ -6336,8 +6470,10 @@ namespace MainMenu {
 			} else {
 				if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 					destroyMainMenu();
-					victory = 0;
-					doEndgame();
+					if (ingame) {
+					    victory = 0;
+					    doEndgame();
+					}
 					createMainMenu(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
