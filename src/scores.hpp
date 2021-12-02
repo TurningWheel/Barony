@@ -289,6 +289,7 @@ int loadGame(int player, int saveIndex = savegameCurrentFileIndex);
 list_t* loadGameFollowers(int saveIndex = savegameCurrentFileIndex);
 int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
 bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+bool anySaveFileExists(bool singleplayer);
 bool anySaveFileExists();
 
 char* getSaveGameName(bool singleplayer, int saveIndex = savegameCurrentFileIndex);

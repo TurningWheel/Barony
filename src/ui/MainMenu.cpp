@@ -224,7 +224,7 @@ namespace MainMenu {
 		}
 	}
 
-	static Button* createBackWidget(Frame* parent, void (*callback)(Button&), SDL_Rect offset = SDL_Rect{5, 5, 0, 0}) {
+	static Button* createBackWidget(Frame* parent, void (*callback)(Button&), SDL_Rect offset = SDL_Rect{4, 4, 0, 0}) {
 		auto back = parent->addFrame("back");
 		back->setSize(SDL_Rect{offset.x, offset.y, 66, 36});
 		back->setActualSize(SDL_Rect{0, 0, 66, 36});
@@ -966,11 +966,11 @@ namespace MainMenu {
 	}
 
 	bool settingsSave() {
-		return FileHelper::writeObject((std::string(outputdir) + "config/config.json").c_str(), EFileFormat::Json, allSettings);
+		return FileHelper::writeObject((std::string(outputdir) + "/config/config.json").c_str(), EFileFormat::Json, allSettings);
 	}
 
 	bool settingsLoad() {
-		return FileHelper::readObject((std::string(outputdir) + "config/config.json").c_str(), allSettings);
+		return FileHelper::readObject((std::string(outputdir) + "/config/config.json").c_str(), allSettings);
 	}
 
 	void settingsReset() {
@@ -5640,8 +5640,38 @@ namespace MainMenu {
 		local_button->select();
 	}
 
-	void playContinue(Button& button) {
+	static int populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
+	    subwindow.clear();
+	    int saveGameCount = 0;
+        if (!anySaveFileExists(singleplayer)) {
+            auto none_exists = subwindow.addField("none_exists", 256);
+            none_exists->setFont(bigfont_outline);
+            none_exists->setText("No compatible save files found.");
+            none_exists->setJustify(Field::justify_t::CENTER);
+        } else {
+		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                if (saveGameExists(true, i)) {
+                    auto str = std::string("savegame") + std::to_string(i);
+                    auto savegame_book = subwindow.addButton(str.c_str());
+                    savegame_book->setSize(SDL_Rect{saveGameCount * 220 + (898 - 220) / 2, 0, 220, 280});
+                    savegame_book->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
+		            savegame_book->setColor(makeColor(255, 255, 255, 255));
+		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
+                    ++saveGameCount;
+                }
+		    }
+        }
+		subwindow.setActualSize(SDL_Rect{0, 0, 898 + 220 * (saveGameCount - 1), 294});
+        return saveGameCount;
+	}
 
+	void playContinue(Button& button) {
+	    static bool continueSingleplayer;
+        if (anySaveFileExists(true)) {
+            continueSingleplayer = true;
+        } else {
+            continueSingleplayer = false;
+        }
 
 		// remove "Play Game" window
 		auto frame = static_cast<Frame*>(button.getParent());
@@ -5687,9 +5717,10 @@ namespace MainMenu {
 		subwindow->setSize(SDL_Rect{90, 82, 898, 294});
 		subwindow->setColor(0);
 		subwindow->setBorder(0);
+		(void)populateContinueSubwindow(*subwindow, continueSingleplayer);
 
-		auto gradient = subwindow->addImage(
-		    subwindow->getActualSize(),
+		auto gradient = window->addImage(
+		    subwindow->getSize(),
 		    0xffffffff,
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Grad_01.png",
 		    "gradient"
@@ -5697,41 +5728,71 @@ namespace MainMenu {
 		gradient->ontop = true;
 
 		auto singleplayer = window->addButton("singleplayer");
-		singleplayer->setText("        Singleplayer");
+		singleplayer->setText("Singleplayer");
 		singleplayer->setFont(smallfont_outline);
-		singleplayer->setSize(SDL_Rect{224, 36, 156, 36});
-		singleplayer->setColor(0xffffffff);
-		singleplayer->setHighlightColor(0xffffffff);
-		singleplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
-		singleplayer->setBackgroundHighlighted("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png");
-		singleplayer->setButtonsOffset(SDL_Rect{-134, -16, 0, 0});
+		singleplayer->setSize(SDL_Rect{226, 36, 156, 36});
+		singleplayer->setColor(makeColor(255, 255, 255, 255));
+		singleplayer->setHighlightColor(makeColor(255, 255, 255, 255));
+		singleplayer->setTextColor(
+		    continueSingleplayer ?
+		    makeColor(255, 255, 255, 255) :
+		    makeColor(127, 127, 127, 255));
+		singleplayer->setBackground(
+		    continueSingleplayer ?
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png" :
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
+		singleplayer->setButtonsOffset(SDL_Rect{-singleplayer->getSize().w, -singleplayer->getSize().h/2, 0, 0});
 		singleplayer->setWidgetBack("back");
 		singleplayer->addWidgetAction("MenuAlt2", "delete");
 		//singleplayer->addWidgetAction("MenuConfirm", "enter");
 		singleplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		singleplayer->addWidgetAction("MenuPageRight", "multiplayer");
+		singleplayer->setCallback([](Button& button){
+		    continueSingleplayer = true;
+            Frame* window = static_cast<Frame*>(button.getParent());
+            button.setTextColor(makeColor(255, 255, 255, 255));
+            button.setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png");
+            auto multiplayer = window->findButton("multiplayer");
+		    multiplayer->setTextColor(makeColor(127, 127, 127, 255));
+		    multiplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png");
+		    });
 
 		auto multiplayer = window->addButton("multiplayer");
-		multiplayer->setText("Multiplayer        ");
+		multiplayer->setText("Multiplayer");
 		multiplayer->setFont(smallfont_outline);
-		multiplayer->setSize(SDL_Rect{700, 36, 144, 36});
-		multiplayer->setColor(0xffffffff);
-		multiplayer->setHighlightColor(0xffffffff);
-		multiplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png");
-		multiplayer->setBackgroundHighlighted("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
-		multiplayer->setButtonsOffset(SDL_Rect{-24, -16, 0, 0});
+		multiplayer->setSize(SDL_Rect{702, 36, 144, 36});
+		multiplayer->setColor(makeColor(255, 255, 255, 255));
+		multiplayer->setHighlightColor(makeColor(255, 255, 255, 255));
+		multiplayer->setTextColor(
+		    continueSingleplayer ?
+		    makeColor(127, 127, 127, 255) :
+		    makeColor(255, 255, 255, 255));
+		multiplayer->setBackground(
+		    continueSingleplayer ?
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png" :
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
+		multiplayer->setButtonsOffset(SDL_Rect{0, -singleplayer->getSize().h/2, 0, 0});
 		multiplayer->setWidgetBack("back");
 		multiplayer->addWidgetAction("MenuAlt2", "delete");
 		//multiplayer->addWidgetAction("MenuConfirm", "enter");
 		multiplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		multiplayer->addWidgetAction("MenuPageRight", "multiplayer");
+		multiplayer->setCallback([](Button& button){
+		    continueSingleplayer = false;
+            Frame* window = static_cast<Frame*>(button.getParent());
+            button.setTextColor(makeColor(255, 255, 255, 255));
+            button.setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
+            auto singleplayer = window->findButton("singleplayer");
+		    singleplayer->setTextColor(makeColor(127, 127, 127, 255));
+		    singleplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
+		    });
 
 		auto delete_button = window->addButton("delete");
 		delete_button->setText("Delete Save");
 		delete_button->setFont(smallfont_outline);
-		delete_button->setSize(SDL_Rect{276, 390, 164, 62});
-		delete_button->setColor(0xffffffff);
-		delete_button->setHighlightColor(0xffffffff);
+		delete_button->setSize(SDL_Rect{278, 390, 164, 62});
+		delete_button->setColor(makeColor(255, 255, 255, 255));
+		delete_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		delete_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
 		delete_button->setWidgetBack("back");
 		delete_button->addWidgetAction("MenuAlt2", "delete");
@@ -5742,9 +5803,9 @@ namespace MainMenu {
 		auto enter_button = window->addButton("enter");
 		enter_button->setText("Enter Dungeon");
 		enter_button->setFont(smallfont_outline);
-		enter_button->setSize(SDL_Rect{640, 390, 164, 62});
-		enter_button->setColor(0xffffffff);
-		enter_button->setHighlightColor(0xffffffff);
+		enter_button->setSize(SDL_Rect{642, 390, 164, 62});
+		enter_button->setColor(makeColor(255, 255, 255, 255));
+		enter_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		enter_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
 		enter_button->setWidgetBack("back");
 		enter_button->addWidgetAction("MenuAlt2", "delete");
@@ -5755,19 +5816,46 @@ namespace MainMenu {
 		auto slider = window->addSlider("slider");
 		slider->setHandleSize(SDL_Rect{0, 0, 98, 16});
 		slider->setHandleImage("images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderBar_00.png");
-		slider->setRailSize(SDL_Rect{137, 374, 800, 16});
+		slider->setRailSize(SDL_Rect{129, 374, 820, 16});
 		slider->setRailImage("__empty");
 		slider->setMinValue(0.f);
 		slider->setValue(50.f);
 		slider->setMaxValue(100.f);
+		slider->setTickCallback([](Widget& widget){
+		    auto slider = static_cast<Slider*>(&widget);
+		    auto frame = static_cast<Frame*>(slider->getParent());
+		    auto slider_left = frame->findImage("slider_left");
+		    auto slider_right = frame->findImage("slider_right");
+		    if (slider->isActivated()) {
+		        slider_left->pos.x = slider->getHandleSize().x - 20;
+		        slider_right->pos.x = slider->getHandleSize().x + slider->getHandleSize().w;
+		        slider_left->disabled = false;
+		        slider_right->disabled = false;
+		    } else {
+		        slider_left->disabled = true;
+		        slider_right->disabled = true;
+		    }
+		});
+		slider->setCallback([](Slider& slider){
+		    });
 
-		for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
-            if (saveGameExists(true, i)) {
-                //auto str = std::string("savegame") + i;
-                //auto savegame_book = subwindow->addButton(str.c_str());
-                //savegame_book->
-            }
-		}
+		auto slider_left = window->addImage(
+		    SDL_Rect{0, 354, 20, 30},
+		    0xffffffff,
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderL_00.png",
+		    "slider_left"
+		);
+		slider_left->ontop = true;
+		slider_left->disabled = true;
+
+		auto slider_right = window->addImage(
+		    SDL_Rect{0, 354, 20, 30},
+		    0xffffffff,
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderR_00.png",
+		    "slider_right"
+		);
+		slider_right->ontop = true;
+		slider_right->disabled = true;
 
 		(void)createBackWidget(window, [](Button& button){
 			soundCancel();

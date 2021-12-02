@@ -3843,6 +3843,18 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 	return filename;
 }
 
+bool anySaveFileExists(bool singleplayer)
+{
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(singleplayer, fileNumber) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 bool anySaveFileExists()
 {
 	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
