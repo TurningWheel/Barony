@@ -5897,6 +5897,14 @@ int main(int argc, char** argv)
 
 				if ( TimerExperiments::bUseTimerInterpolation )
 				{
+					if ( !(!gamePaused || (multiplayer && !client_disconnected[0])) )
+					{
+						// game paused, dont't process any velocities for camera
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							TimerExperiments::cameraCurrentState[c].resetMovement();
+						}
+					}
 					TimerExperiments::updateClocks();
 					//std::string timerOutput = TimerExperiments::render(TimerExperiments::cameraRenderState[0].yaw);
 					//cameras[0].x = players[0]->entity->x / 16.0;//TimerExperiments::cameraRenderState.x.position;
