@@ -50,6 +50,7 @@
 
 #include "ui/Text.hpp"
 #include "ui/Font.hpp"
+#include "ui/MainMenu.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -13389,6 +13390,7 @@ void buttonStartSingleplayer(button_t* my)
 	numplayers = 0;
 	introstage = 3;
 	fadeout = true;
+	MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
 	if ( !intro )
 	{
 		// intro is true if starting from main menu, otherwise we're restarting the game.
