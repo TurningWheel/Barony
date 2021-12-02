@@ -49,8 +49,15 @@ bool partymode = false;
 #define DEATHCAM_TIME my->skill[0]
 #define DEATHCAM_PLAYERTARGET my->skill[1]
 #define DEATHCAM_PLAYERNUM my->skill[2]
+#define DEATHCAM_IDLETIME my->skill[3]
+#define DEATHCAM_IDLEROTATEDIRYAW my->skill[4]
+#define DEATHCAM_IDLEROTATEPITCHINIT my->skill[5]
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
+#define DEATHCAM_IDLEPITCH my->fskill[2]
+#define DEATHCAM_IDLEPITCH_START my->fskill[3]
+#define DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO my->fskill[4]
+#define DEATHCAM_IDLEYAWSPEED my->fskill[5]
 
 void actDeathCam(Entity* my)
 {
@@ -81,7 +88,8 @@ void actDeathCam(Entity* my)
 
 	if ( DEATHCAM_TIME == 1 )
 	{
-		DEATHCAM_PLAYERTARGET = -1;
+		DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
+		DEATHCAM_IDLEROTATEDIRYAW = (rand() % 2 == 0) ? 1 : -1;
 	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
@@ -148,6 +156,72 @@ void actDeathCam(Entity* my)
 		{
 			my->pitch = -PI / 2;
 		}
+
+		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY < 0.0001)
+			&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM
+			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks + TICKS_PER_SECOND * 3) )
+		{
+			++DEATHCAM_IDLETIME;
+			if ( DEATHCAM_IDLETIME >= TICKS_PER_SECOND * 3 )
+			{
+				my->yaw += DEATHCAM_IDLEYAWSPEED * DEATHCAM_IDLEROTATEDIRYAW;
+				if ( my->yaw >= PI * 2 )
+				{
+					my->yaw -= PI * 2;
+				}
+				else if ( my->yaw < 0 )
+				{
+					my->yaw += PI * 2;
+				}
+
+				if ( !DEATHCAM_IDLEROTATEPITCHINIT )
+				{
+					DEATHCAM_IDLEROTATEPITCHINIT = 1;
+					DEATHCAM_IDLEPITCH_START = my->pitch;
+					DEATHCAM_IDLEPITCH = 0.0;
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO = 0.0;
+					DEATHCAM_IDLEYAWSPEED = 0.0;
+				}
+				DEATHCAM_IDLEPITCH += PI / 1024;
+				if ( DEATHCAM_IDLEPITCH >= PI * 2 )
+				{
+					DEATHCAM_IDLEPITCH -= PI * 2;
+				}
+				else if ( DEATHCAM_IDLEPITCH < 0 )
+				{
+					DEATHCAM_IDLEPITCH += PI * 2;
+				}
+				if ( (DEATHCAM_IDLEPITCH_START - DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO) > .001 )
+				{
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO += .0001;
+				}
+				else if ( (DEATHCAM_IDLEPITCH_START - DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO) < .001 )
+				{
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO -= .0001;
+				}
+				my->pitch = -DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO + DEATHCAM_IDLEPITCH_START + (PI / 64) * sin(DEATHCAM_IDLEPITCH);
+				if ( my->pitch > PI / 2 )
+				{
+					my->pitch = PI / 2;
+				}
+				else if ( my->pitch < -PI / 2 )
+				{
+					my->pitch = -PI / 2;
+				}
+
+				if ( DEATHCAM_IDLEYAWSPEED < .001 )
+				{
+					DEATHCAM_IDLEYAWSPEED += .00001;
+				}
+			}
+		}
+		else
+		{
+			DEATHCAM_IDLETIME = 0;
+			DEATHCAM_IDLEROTATEPITCHINIT = 0;
+			DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO = 0.0;
+			DEATHCAM_IDLEYAWSPEED = 0.0;
+		}
 	}
 	if ( smoothmouse )
 	{
@@ -198,6 +272,10 @@ void actDeathCam(Entity* my)
 		{
 			my->x = players[DEATHCAM_PLAYERTARGET]->entity->x;
 			my->y = players[DEATHCAM_PLAYERTARGET]->entity->y;
+		}
+		else
+		{
+			DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
 		}
 	}
 
