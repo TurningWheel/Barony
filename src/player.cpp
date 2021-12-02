@@ -878,6 +878,7 @@ bool Player::GUI_t::handleInventoryMovement()
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 		{
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
+			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 			players[player]->GUI.warpControllerToModule(false);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -891,18 +892,12 @@ bool Player::GUI_t::handleInventoryMovement()
 			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-				if ( players[player]->inventoryUI.spellPanel.isInteractable )
-				{
-					players[player]->GUI.warpControllerToModule(false);
-				}
+				players[player]->GUI.warpControllerToModule(false);
 			}
 			else if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-				if ( players[player]->inventoryUI.isInteractable )
-				{
-					players[player]->GUI.warpControllerToModule(false);
-				}
+				players[player]->GUI.warpControllerToModule(false);
 			}
 			//players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
 			//players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
@@ -943,14 +938,6 @@ bool Player::GUI_t::handleInventoryMovement()
 				// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
 				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
 			}
-			/*if ( hotbar_t.useHotbarFaceMenu )
-			{
-				if ( hotbar_t.current_hotbar == 2 || hotbar_t.current_hotbar == 6 
-					|| hotbar_t.current_hotbar == 3 || hotbar_t.current_hotbar == 7 )
-				{
-					newSlot = hotbar_t.current_hotbar - 2;
-				}
-			}*/
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -981,7 +968,6 @@ bool Player::GUI_t::handleInventoryMovement()
 			&& hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-			
 			hotbar_t.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
 			auto slotFrame = hotbar_t.getHotbarSlotFrame(hotbar_t.current_hotbar);
 			if ( slotFrame && slotFrame->isDisabled() )
@@ -989,13 +975,6 @@ bool Player::GUI_t::handleInventoryMovement()
 				// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
 				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar + 1);
 			}
-			/*if ( hotbar_t.useHotbarFaceMenu )
-			{
-				if ( hotbar_t.current_hotbar == 1 || hotbar_t.current_hotbar == 5 )
-				{
-					newSlot = hotbar_t.current_hotbar + 2;
-				}
-			}*/
 			warpMouseToSelectedHotbarSlot(player);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -3290,7 +3269,7 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 //	}
 //}
 
-bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const
+bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags)
 {
 	if ( frame )
 	{
@@ -3318,7 +3297,20 @@ bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags
 
 		if ( auto slot = getInventorySlotFrame(x, y) )
 		{
-			slot->warpMouseToFrame(player.playernum, flags);
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select item queued");
+				cursor.queuedModule = Player::GUI_t::MODULE_INVENTORY;
+				cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select item warped");
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				cursor.queuedFrameToWarpTo = nullptr;
+				slot->warpMouseToFrame(player.playernum, flags);
+			}
 			return true;
 		}
 	}
@@ -3337,15 +3329,31 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 			y = snapToItem->y;
 		}
 
-		if ( abs(spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) > 0.00001 )
+		if ( isInteractable )
 		{
-			int diff = (spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) / getSlotSize();
-			y += diff; // if we have a scroll in the works, then manipulate y to pretend where we'd be ahead of time.
+			if ( abs(spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) > 0.00001 )
+			{
+				int diff = (spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) / getSlotSize();
+				y += diff; // if we have a scroll in the works, then manipulate y to pretend where we'd be ahead of time.
+			}
 		}
 
 		if ( auto slot = getSpellSlotFrame(x, y) )
 		{
-			slot->warpMouseToFrame(player.playernum, flags);
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select spell queued");
+				cursor.queuedModule = Player::GUI_t::MODULE_SPELLS;
+				cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select spell warped");
+				slot->warpMouseToFrame(player.playernum, flags);
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				cursor.queuedFrameToWarpTo = nullptr;
+			}
 			return true;
 		}
 	}

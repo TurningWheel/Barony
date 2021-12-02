@@ -6053,6 +6053,7 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int 
 			}
 		}
 	}
+	//messagePlayer(player.playernum, "%d %d", destx, desty);
 }
 
 void Player::Inventory_t::updateItemContextMenu()
@@ -6739,6 +6740,63 @@ void Player::Inventory_t::updateCursor()
 	if ( !player.isLocalPlayer() )
 	{
 		return;
+	}
+
+	if ( cursor.queuedModule != Player::GUI_t::MODULE_NONE
+		&& !player.shootmode && !nohud )
+	{
+		bool moveMouse = false;
+		auto queuedModule = cursor.queuedModule;
+		if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
+		{
+			if ( frame->isDisabled() || player.inventory_mode != INVENTORY_MODE_ITEM )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			if ( spellFrame->isDisabled() || player.inventory_mode != INVENTORY_MODE_SPELL )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( spellPanel.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		if ( moveMouse && cursor.queuedFrameToWarpTo )
+		{
+			//messagePlayer(0, "Queue warp: %d", queuedModule);
+			cursor.queuedFrameToWarpTo->warpMouseToFrame(player.playernum, (Inputs::SET_CONTROLLER));
+			SDL_Rect pos = cursor.queuedFrameToWarpTo->getAbsoluteSize();
+			pos.x -= player.camera_virtualx1(); // offset any splitscreen camera positioning
+			pos.y -= player.camera_virtualy1();
+			player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+				player.inventoryUI.getSlotSize(), player.inventoryUI.getSlotSize(), false);
+			cursor.queuedFrameToWarpTo = nullptr;
+		}
+		else if ( cursor.queuedFrameToWarpTo && cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			//messagePlayer(0, "Queue cancel: %d", queuedModule);
+		}
+		else if ( cursor.queuedFrameToWarpTo )
+		{
+			//selectedItemCursorFrame->setDisabled(false); // show the cursor while we wait
+		}
+	}
+	else
+	{
+		cursor.queuedFrameToWarpTo = nullptr;
+		cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 	}
 
 	if ( auto oldSelectedSlotCursor = frame->findFrame("inventory old item cursor") )
@@ -11669,7 +11727,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			SDL_Rect legendTextPos = legendText->getSize();
 			legendTextPos.w = tm->pos.w;
 			legendText->setSize(legendTextPos);
-			//legendText->reflowTextToFit(0);
+			legendText->reflowTextToFit(0);
 			legendTextPos.h = legendText->getNumTextLines() * actualFont->height(true);
 			legendTextPos.y = tm->pos.y + tm->pos.h / 2;
 			legendText->setSize(legendTextPos);
@@ -11992,18 +12050,24 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	if ( player.inventoryUI.inventoryPanelJustify == Player::Inventory_t::PANEL_JUSTIFY_LEFT )
 	{
 		spellFramePos.x = -spellFramePos.w + animx * spellFramePos.w;
-		if ( player.bUseCompactGUIWidth()
-			&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		if ( player.bUseCompactGUIWidth() )
 		{
+			if ( player.inventoryUI.slideOutPercent >= .0001 )
+			{
+				isInteractable = false;
+			}
 			spellFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
 		}
 	}
 	else
 	{
 		spellFramePos.x = player.camera_virtualWidth() - animx * spellFramePos.w;
-		if ( player.bUseCompactGUIWidth()
-			&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		if ( player.bUseCompactGUIWidth() )
 		{
+			if ( player.inventoryUI.slideOutPercent >= .0001 )
+			{
+				isInteractable = false;
+			}
 			spellFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
 		}
 	}

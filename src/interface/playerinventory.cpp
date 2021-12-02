@@ -1483,6 +1483,8 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
 			selectedItemFromHotbar = -1;
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
+			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+			warpMouseToSelectedHotbarSlot(player);
 		}
 		else
 		{
@@ -4013,7 +4015,7 @@ void Player::Inventory_t::updateInventory()
 			if ( !inputs.getUIInteraction(player)->selectedItem
 				&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 			{
-				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+				//warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
 		isInteractable = true;
@@ -4929,6 +4931,7 @@ void Player::Inventory_t::updateInventory()
 		Item* oldSelectedItem = selectedItem;
 		Category cat = itemCategory(oldSelectedItem);
 		Uint32 oldUid = selectedItem ? selectedItem->uid : 0;
+		bool oldQueuedCursor = !(cursor.queuedModule == Player::GUI_t::MODULE_NONE);
 
 		releaseItem(player);
 
@@ -4963,22 +4966,25 @@ void Player::Inventory_t::updateInventory()
 					oldselectedSlotCursor->setDisabled(true);
 				}
 
-				for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+				if ( cursor.queuedModule == Player::GUI_t::MODULE_NONE && !oldQueuedCursor )
 				{
-					auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
-					if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+					for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
 					{
-						players[player]->hotbar.selectHotbarSlot(c);
+						auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
+						if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+						{
+							players[player]->hotbar.selectHotbarSlot(c);
 
-						selectedSlotCursor->setDisabled(false);
+							selectedSlotCursor->setDisabled(false);
 
-						int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
-						int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
+							int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
+							int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
 
-						updateSelectedSlotAnimation(startx - 1, starty - 1,
-							hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-						//messagePlayer(player, "7: hotbar: %d", c);
-						break;
+							updateSelectedSlotAnimation(startx - 1, starty - 1,
+								hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+							//messagePlayer(player, "7: hotbar: %d", c);
+							break;
+						}
 					}
 				}
 			}
@@ -5260,6 +5266,11 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 
 std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item)
 {
+	if ( stats[player] && stats[player]->HP <= 0 )
+	{
+		// ded, cant do anything with items
+		return std::vector<ItemContextMenuPrompts>();
+	}
 	auto options = getContextMenuOptionsForItem(player, item);
 	options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
 	auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);

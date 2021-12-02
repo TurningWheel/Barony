@@ -732,6 +732,8 @@ public:
 			int animateStartY = 0;
 			Uint32 lastUpdateTick = 0;
 			const int cursorToSlotOffset = 7;
+			Player::GUI_t::GUIModules queuedModule = Player::GUI_t::GUIModules::MODULE_NONE;
+			Frame* queuedFrameToWarpTo = nullptr;
 		};
 		Cursor_t cursor;
 
@@ -834,7 +836,7 @@ public:
 		const int getSelectedSpellX() const { return selectedSpellX; }
 		const int getSelectedSpellY() const { return selectedSpellY; }
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
-		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const;
+		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags);
 		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
 		void processInventory();
 		void updateInventory();
@@ -1545,6 +1547,7 @@ public:
 		int faceButtonTopYPosition = yres;
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
+		int oldSlotFrameTrackSlot = -1;
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;

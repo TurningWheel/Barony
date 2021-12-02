@@ -1642,26 +1642,34 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	if ( activeModule == MODULE_INVENTORY )
 	{
 		auto& inventoryUI = player.inventoryUI;
-		inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
-
-		if ( auto slot = inventoryUI.getInventorySlotFrame(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY()) )
+		if ( inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
 		{
-			SDL_Rect pos = slot->getAbsoluteSize();
-			inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
-				inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			if ( auto slot = inventoryUI.getInventorySlotFrame(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
 		}
 		return true;
 	}
 	else if ( activeModule == MODULE_SPELLS )
 	{
 		auto& inventoryUI = player.inventoryUI;
-		inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
-
-		if ( auto slot = inventoryUI.getSpellSlotFrame(inventoryUI.getSelectedSpellX(), inventoryUI.getSelectedSpellY()) )
+		if ( inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
 		{
-			SDL_Rect pos = slot->getAbsoluteSize();
-			inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
-				inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			if ( auto slot = inventoryUI.getSpellSlotFrame(inventoryUI.getSelectedSpellX(), inventoryUI.getSelectedSpellY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
 		}
 		return true;
 	}
@@ -1705,7 +1713,10 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS) )
 			{
 				SDL_Rect size = hudCursor->getSize();
-				player.inventoryUI.updateSelectedSlotAnimation(size.x, size.y, size.w, size.h, true);
+				if ( !player.hud.cursorFrame->isDisabled() )
+				{
+					player.inventoryUI.updateSelectedSlotAnimation(size.x, size.y, size.w, size.h, true);
+				}
 			}
 		}
 	}
@@ -1731,6 +1742,21 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	if ( oldgui == GUI_MODE_NONE && whichGUIMode == GUI_MODE_INVENTORY )
 	{
 		this->hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
+	}
+
+	if ( oldShootmode )
+	{
+		if ( hud.cursorFrame )
+		{
+			// center the hud cursor - there is a first time warping of the inventory cursor but we can leave that in
+			auto hudCursor = hud.cursorFrame->findFrame("hud cursor");
+			hud.updateCursorAnimation((camera_virtualWidth() / 2), (camera_virtualHeight() / 2),
+				hudCursor->getSize().w, hudCursor->getSize().h, true);
+
+			// uncomment to always warp the inventory cursor from center of screen
+			//SDL_Rect size = hudCursor->getSize();
+			//inventoryUI.updateSelectedSlotAnimation(size.x, size.y, size.w, size.h, true);
+		}
 	}
 
 	int oldmodule = GUI.activeModule;
