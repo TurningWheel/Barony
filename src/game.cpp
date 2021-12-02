@@ -3617,9 +3617,14 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
-						inputs.removeControllerWithDeviceID(controller.getID());
-						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
+						int id = controller.getID();
+						inputs.removeControllerWithDeviceID(id);
+						printlog("(Device %d removed as game controller, instance id: %d.)\n", id, instanceID);
 						controller.close();
+						Input::gameControllers.erase(id);
+						for ( int c = 0; c < 4; ++c ) {
+							Input::inputs[c].refresh();
+						}
 					}
 				}
 				break;
@@ -3630,7 +3635,7 @@ void handleEvents(void)
 				if (!joystick) {
 					printlog("A joystick was plugged in, but no handle is available!");
 				} else {
-					Input::joysticks.emplace(event.jdevice.which, joystick);
+					Input::joysticks[event.jdevice.which] = joystick;
 					printlog("Added joystick '%s' with device index (%d)", SDL_JoystickName(joystick), event.jdevice.which);
 					printlog(" NumAxes: %d", SDL_JoystickNumAxes(joystick));
 					printlog(" NumButtons: %d", SDL_JoystickNumButtons(joystick));
@@ -3689,6 +3694,10 @@ void handleEvents(void)
 							SDL_JoystickClose(curr);
 							index = pair.first;
 							printlog("Removed joystick with device index (%d), instance id (%d)", index, event.jdevice.which);
+							Input::joysticks.erase(index);
+							for ( int c = 0; c < 4; ++c ) {
+								Input::inputs[c].refresh();
+							}
 							break;
 						}
 					}
