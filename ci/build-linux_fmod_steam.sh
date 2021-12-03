@@ -76,7 +76,7 @@ if [ $RESULT -ne 0 ]; then
   exit $RESULT
 fi
 
-make -j
+make
 RESULT=$?
 if [ $RESULT -ne 0 ]; then
   echo "Compilation failed. Aborting."
