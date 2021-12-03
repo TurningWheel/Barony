@@ -42,6 +42,7 @@ void initClass(const int player)
 		//TODO: Dedicated gameStartStuff() function. Seriously.
 		//(same for deathStuff() and/or gameEndStuff().
 		players[player]->inventoryUI.selectSlot(0, 0);
+		players[player]->inventoryUI.selectSpell(0, 0);
 		hotbar_t.clear();
 		players[player]->paperDoll.clear();
 	}
@@ -2630,18 +2631,12 @@ void initShapeshiftHotbar(int player)
 
 					if ( item->y >= 0 )
 					{
-						int x = 0;
+						int y = 0;
 						bool notfree = false;
 						bool foundaspot = false;
-						const bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= players[player]->inventoryUI.getSizeX() * 3);
-						int numRows = players[player]->inventoryUI.getSizeY();
-						if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-						{
-							numRows = 4 + ((list_Size(&players[player]->magic.spellList) - (players[player]->inventoryUI.getSizeX() * 3)) / players[player]->inventoryUI.getSizeX());
-						}
 						while ( true )
 						{
-							for ( int y = 0; y < numRows; y++ )
+							for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; x++ )
 							{
 								for ( node_t* node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
 								{
@@ -2675,7 +2670,7 @@ void initShapeshiftHotbar(int player)
 							{
 								break;
 							}
-							x++;
+							y++;
 						}
 					}
 					else

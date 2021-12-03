@@ -201,7 +201,7 @@ inline void drawChestSlots(const int player)
 							}
 							else
 							{
-								warpMouseToSelectedInventorySlot(player);
+								players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 							}
 						}
 					}

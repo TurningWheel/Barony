@@ -4,6 +4,7 @@
 
 #include "../main.hpp"
 #include "Font.hpp"
+#include "Text.hpp"
 
 class Frame;
 
@@ -76,6 +77,9 @@ public:
 
 	//! gets longest line of field, measured by actual text width
 	std::string getLongestLine();
+
+	//! calls Text::get, passing in getText(), getFont(), getTextColor() getOutlineColor() as parameters
+	Text* getTextObject() const;
 
 	//! gets the number of lines occupied by text in the field
 	//! @return number of lines of text

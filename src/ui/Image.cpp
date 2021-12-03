@@ -156,6 +156,51 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 	glColor4f(1.f, 1.f, 1.f, 1.f);
 }
 
+void Image::drawSurface(SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color)
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
+	glLoadIdentity();
+	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// for the use of a whole image
+	SDL_Rect secondsrc;
+	if ( src == nullptr ) {
+		secondsrc.x = 0;
+		secondsrc.y = 0;
+		secondsrc.w = surf->w;
+		secondsrc.h = surf->h;
+		src = &secondsrc;
+	}
+
+	// consume color
+	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
+	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
+	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
+	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
+	glColor4f(r, g, b, a);
+
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.x, viewport.h - dest.y);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
+	glEnd();
+
+	// unbind texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glColor4f(1.f, 1.f, 1.f, 1.f);
+}
+
 static std::unordered_map<std::string, Image*> hashed_images;
 static const int IMAGE_BUDGET = 1000;
 

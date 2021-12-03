@@ -8,7 +8,7 @@ void doFrames();
 void newIngameHud();
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
 void createInventoryTooltipFrame(const int player);
-bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy);
+bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, view_t& view, real_t offsetyaw);

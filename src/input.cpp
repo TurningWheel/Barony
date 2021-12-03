@@ -100,6 +100,10 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot10", "0");
 		inputs[c].bind("MenuMouseWheelUp", "MouseWheelUp");
 		inputs[c].bind("MenuMouseWheelDown", "MouseWheelDown");
+
+		inputs[c].bind("Attack", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str());
+		inputs[c].bind("Cast", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str());
+		inputs[c].bind("Defend", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str());
 	}
 #ifndef NINTENDO
 	inputs[0].bind("MenuUp", "Up");
@@ -401,6 +405,7 @@ std::string Input::getGlyphPathForInput(binding_t binding) const
 	}
 	else if ( binding.type == binding_t::bindtype_t::CONTROLLER_AXIS )
 	{
+#ifdef NINTENDO
 		switch ( binding.padAxis )
 		{
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
@@ -411,9 +416,32 @@ std::string Input::getGlyphPathForInput(binding_t binding) const
 				return rootPath + "G_Switch_LStick00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
 				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+				return rootPath + "G_Switch_ZL00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+				return rootPath + "G_Switch_ZR00.png";
 			default:
 				return "";
 		}
+#else
+		switch ( binding.padAxis )
+		{
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+				return rootPath + "G_Switch_LStick00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+				return rootPath + "G_Switch_ZL00.png";
+			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+				return rootPath + "G_Switch_ZR00.png";
+			default:
+				return "";
+		}
+#endif
 	}
 	else if ( binding.type == binding_t::bindtype_t::KEYBOARD )
 	{

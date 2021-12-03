@@ -315,7 +315,7 @@ public:
 	{
 		std::mt19937 StatEntrySeed;
 	public:
-		char name[128] = "";
+		char name[128];
 		int type = NOTHING;
 		sex_t sex = sex_t::MALE;
 		Uint32 appearance = 0;
@@ -381,6 +381,7 @@ public:
 			StatEntrySeed(rand())
 		{
 			readFromStats(myStats);
+			strcpy(name, "");
 		}
 		StatEntry() :
 			StatEntrySeed(rand())
@@ -389,6 +390,7 @@ public:
 			{
 				PROFICIENCIES[i] = 0;
 			}
+			strcpy(name, "");
 		};
 
 		std::string getFollowerVariant()

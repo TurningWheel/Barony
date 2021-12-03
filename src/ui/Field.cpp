@@ -637,3 +637,8 @@ SDL_Rect Field::getAbsoluteSize() const
 	}
 	return _size;
 }
+
+Text* Field::getTextObject() const
+{
+	return Text::get(getText(), getFont(), getTextColor(), getOutlineColor());
+}

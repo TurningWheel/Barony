@@ -224,7 +224,7 @@ std::chrono::duration<long long, std::ratio<1, 60>> TimerExperiments::dt = std::
 TimerExperiments::EntityStates TimerExperiments::cameraPreviousState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
-bool TimerExperiments::bUseTimerInterpolation = false;
+bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = true;
 real_t TimerExperiments::lerpFactor = 30.0;
@@ -232,7 +232,7 @@ void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
 	std::chrono::duration<double> dt)
 {
-	state.velocity += state.acceleration * dt / std::chrono::seconds{ 1 };
+	//state.velocity += state.acceleration * dt / std::chrono::seconds{ 1 };
 	state.position += state.velocity * dt / std::chrono::seconds{ 1 };
 };
 
@@ -2211,25 +2211,19 @@ void gameLogic(void)
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
 				auto& playerInventory = players[player]->inventoryUI;
 
-				bool tooManySpells = (list_Size(&players[player]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
 				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
 					backpack_sizey[player] = playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY();
 				}
 
-				if ( tooManySpells && players[player]->gui_mode == GUI_MODE_INVENTORY && players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-				{
-					playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
-						+ ((list_Size(&players[player]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
-				}
-				else if ( backpack_sizey[player] == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
+				if ( backpack_sizey[player] == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 				{
 					playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 				}
 				else
 				{
-					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
 					{
 						// we should rearrange our spells.
 						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
@@ -2857,7 +2851,6 @@ void gameLogic(void)
 
 			auto& playerInventory = players[clientnum]->inventoryUI;
 			const int inventorySizeX = playerInventory.getSizeX();
-			bool tooManySpells = (list_Size(&players[clientnum]->magic.spellList) >= inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY);
 			int backpack_sizey = playerInventory.DEFAULT_INVENTORY_SIZEY;
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
@@ -2865,18 +2858,13 @@ void gameLogic(void)
 				backpack_sizey += playerInventory.getPlayerBackpackBonusSizeY();
 			}
 
-			if ( tooManySpells && players[clientnum]->gui_mode == GUI_MODE_INVENTORY && players[clientnum]->inventory_mode == INVENTORY_MODE_SPELL )
-			{
-				playerInventory.setSizeY((playerInventory.DEFAULT_INVENTORY_SIZEY + 1)
-					+ ((list_Size(&players[clientnum]->magic.spellList) - (inventorySizeX * playerInventory.DEFAULT_INVENTORY_SIZEY)) / inventorySizeX));
-			}
-			else if ( backpack_sizey == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
+			if ( backpack_sizey == playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY() )
 			{
 				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY());
 			}
 			else
 			{
-				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY && !tooManySpells )
+				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -3629,9 +3617,14 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
-						inputs.removeControllerWithDeviceID(controller.getID());
-						printlog("(Device %d removed as game controller, instance id: %d.)\n", controller.getID(), instanceID);
+						int id = controller.getID();
+						inputs.removeControllerWithDeviceID(id);
+						printlog("(Device %d removed as game controller, instance id: %d.)\n", id, instanceID);
 						controller.close();
+						Input::gameControllers.erase(id);
+						for ( int c = 0; c < 4; ++c ) {
+							Input::inputs[c].refresh();
+						}
 					}
 				}
 				break;
@@ -3642,7 +3635,7 @@ void handleEvents(void)
 				if (!joystick) {
 					printlog("A joystick was plugged in, but no handle is available!");
 				} else {
-					Input::joysticks.emplace(event.jdevice.which, joystick);
+					Input::joysticks[event.jdevice.which] = joystick;
 					printlog("Added joystick '%s' with device index (%d)", SDL_JoystickName(joystick), event.jdevice.which);
 					printlog(" NumAxes: %d", SDL_JoystickNumAxes(joystick));
 					printlog(" NumButtons: %d", SDL_JoystickNumButtons(joystick));
@@ -3701,6 +3694,10 @@ void handleEvents(void)
 							SDL_JoystickClose(curr);
 							index = pair.first;
 							printlog("Removed joystick with device index (%d), instance id (%d)", index, event.jdevice.which);
+							Input::joysticks.erase(index);
+							for ( int c = 0; c < 4; ++c ) {
+								Input::inputs[c].refresh();
+							}
 							break;
 						}
 					}
@@ -4133,13 +4130,11 @@ void ingameHud()
 			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
-				players[player]->inventory_mode = INVENTORY_MODE_SPELL;
 				if ( players[player]->shootmode )
 				{
-					players[player]->shootmode = false;
-					players[player]->characterSheet.attributespage = 0;
-					//proficienciesPage = 0;
+					players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 				}
+				players[player]->inventoryUI.cycleInventoryTab();
 			}
 		}
 
@@ -4555,11 +4550,11 @@ void ingameHud()
 	{
 		players[player]->messageZone.processChatbox();
 		players[player]->hud.processHUD();
-		players[player]->characterSheet.processCharacterSheet();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
@@ -4585,7 +4580,6 @@ void ingameHud()
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
 				//updateCharacterSheet(player);
-				//updatePlayerInventory(player);
 				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
@@ -4600,7 +4594,6 @@ void ingameHud()
 			else if ( players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				updateCharacterSheet(player);
-				//updatePlayerInventory(player);
 				updateShopWindow(player);
 			}
 		}
@@ -4763,6 +4756,17 @@ void ingameHud()
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 						}
 					}
+					// debug for controllers
+					auto cursor = Image::get("images/system/cursor_hand.png");
+					if ( keystatus[SDL_SCANCODE_J] )
+					{
+						cursor = Image::get("images/system/cursor.png");
+					}
+					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
+					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+					pos.w = cursor->getWidth();
+					pos.h = cursor->getHeight();
+					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 				}
 				else
 				{
@@ -4881,6 +4885,20 @@ void ingameHud()
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+			}
+			else
+			{
+				// debug for controllers
+				auto cursor = Image::get("images/system/cursor_hand.png");
+				if ( keystatus[SDL_SCANCODE_J] )
+				{
+					cursor = Image::get("images/system/cursor.png");
+				}
+				pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
+				pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+				pos.w = cursor->getWidth();
+				pos.h = cursor->getHeight();
+				cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 			}
 		}
 		else if ( !nohud )
@@ -5490,6 +5508,7 @@ int main(int argc, char** argv)
 		printlog("running main loop.\n");
 		while (mainloop)
 		{
+			Frame::numFindFrameCalls = 0;
 			// record the time at the start of this cycle
 			lastGameTickCount = SDL_GetPerformanceCounter();
 			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
@@ -5878,6 +5897,14 @@ int main(int argc, char** argv)
 
 				if ( TimerExperiments::bUseTimerInterpolation )
 				{
+					if ( !(!gamePaused || (multiplayer && !client_disconnected[0])) )
+					{
+						// game paused, dont't process any velocities for camera
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							TimerExperiments::cameraCurrentState[c].resetMovement();
+						}
+					}
 					TimerExperiments::updateClocks();
 					//std::string timerOutput = TimerExperiments::render(TimerExperiments::cameraRenderState[0].yaw);
 					//cameras[0].x = players[0]->entity->x / 16.0;//TimerExperiments::cameraRenderState.x.position;
@@ -6237,6 +6264,8 @@ int main(int argc, char** argv)
 					printTextFormatted(font8x8_bmp, 8, 200 + 100, DebugStats.debugEventOutput);
 				}
 			}
+
+			printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
 			UIToastNotificationManager.drawNotifications(movie, false);
 

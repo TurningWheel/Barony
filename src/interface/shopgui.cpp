@@ -271,7 +271,7 @@ inline void checkBuyItem(const int player)
 					{
 						//Go back to inventory.
 						selectedShopSlot[player] = -1;
-						warpMouseToSelectedInventorySlot(player);
+						players[player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 					}
 					else
 					{

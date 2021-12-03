@@ -190,6 +190,7 @@ extern view_t camera_charsheet;
 extern real_t camera_charsheet_offsetyaw;
 
 void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -222,7 +223,6 @@ int saveConfig(char const * const filename);
 void defaultConfig();
 void updateChestInventory(const int player);
 void updateAppraisalItemBox(const int player);
-void updatePlayerInventory(const int player);
 void updateShopWindow(const int player);
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(const int player, double x, double y);
@@ -269,8 +269,6 @@ extern int selectedChestSlot[MAXPLAYERS];
 void selectChestSlot(const int player, const int slot);
 int numItemsInChest(const int player);
 void warpMouseToSelectedChestSlot(const int player);
-
-void warpMouseToSelectedInventorySlot(const int player);
 
 //Magic GUI definitions.
 extern SDL_Surface* magicspellList_bmp;

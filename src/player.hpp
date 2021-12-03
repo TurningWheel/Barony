@@ -297,12 +297,6 @@ public:
 	bool handleShopMovement(const int player);
 
 	/*
-	 * Uses dpad to move the cursor through the item context menu and select entries.
-	 * Returns true if moved.
-	 */
-	bool handleItemContextMenu(const int player, const Item& item);
-
-	/*
 	* Uses dpad to move the cursor through the item context menu and select entries.
 	* Returns true if moved.
 	*/
@@ -646,6 +640,8 @@ public:
 	const int camera_midy() const { return camera_y1() + camera_height() / 2; }
 	const bool isLocalPlayer() const;
 	const bool isLocalPlayerAlive() const;
+	const bool bUseCompactGUIWidth() const;
+	const bool bUseCompactGUIHeight() const;
 
 	class GUI_t
 	{
@@ -668,7 +664,8 @@ public:
 			MODULE_CHARACTERSHEET,
 			MODULE_SKILLS_LIST,
 			MODULE_BOOK_VIEW,
-			MODULE_HOTBAR
+			MODULE_HOTBAR,
+			MODULE_SPELLS
 		};
 		GUIModules activeModule = MODULE_NONE;
 		void activateModule(GUIModules module);
@@ -695,13 +692,35 @@ public:
 
 		int selectedSlotX = 0;
 		int selectedSlotY = 0;
+
+		int selectedSpellX = 0;
+		int selectedSpellY = 0;
 	public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
 		Frame* selectedItemCursorFrame = nullptr;
+		Frame* spellFrame = nullptr;
 		std::unordered_map<int, Frame*> slotFrames;
+		std::unordered_map<int, Frame*> spellSlotFrames;
+		bool bCompactView = false;
+		real_t slideOutPercent = 0.0;
+		static int slideOutWidth;
+		bool bFirstTimeSnapCursor = false;
+		bool isInteractable = false;
+		void openInventory();
+		void closeInventory();
+
+		enum PanelJustify_t
+		{
+			PANEL_JUSTIFY_LEFT,
+			PANEL_JUSTIFY_RIGHT
+		};
+		PanelJustify_t inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
+		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
+		void setCompactView(bool bCompact);
+		void resizeAndPositionInventoryElements();
 
 		struct Cursor_t
 		{
@@ -713,6 +732,8 @@ public:
 			int animateStartY = 0;
 			Uint32 lastUpdateTick = 0;
 			const int cursorToSlotOffset = 7;
+			Player::GUI_t::GUIModules queuedModule = Player::GUI_t::GUIModules::MODULE_NONE;
+			Frame* queuedFrameToWarpTo = nullptr;
 		};
 		Cursor_t cursor;
 
@@ -722,6 +743,33 @@ public:
 			real_t animateY = 0.0;
 		};
 		SelectedItemAnimate_t selectedItemAnimate;
+
+		struct SpellPanel_t
+		{
+			Player& player;
+			PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+			real_t animx = 0.0;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = true;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+			const int kNumSpellsToDisplayVertical = 6;
+			int getNumSpellsToDisplayVertical() const;
+			void openSpellPanel();
+			void closeSpellPanel();
+			void updateSpellPanel();
+			void scrollToSlot(int x, int y, bool instantly);
+			bool isSlotVisible(int x, int y) const;
+			bool isItemVisible(Item* item) const;
+			static int heightOffsetWhenNotCompact;
+			SpellPanel_t(Player& p) :
+				player(p) {}
+		};
+		SpellPanel_t spellPanel;
 
 		struct ItemTooltipDisplay_t
 		{
@@ -762,9 +810,12 @@ public:
 
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
+		static const int MAX_SPELLS_X = 4;
+		static const int MAX_SPELLS_Y = 20;
 		Inventory_t(Player& p) : 
 			player(p), 
 			appraisal(p), 
+			spellPanel(p),
 			DEFAULT_INVENTORY_SIZEX(12),
 			DEFAULT_INVENTORY_SIZEY(3)
 		{
@@ -781,14 +832,19 @@ public:
 		void selectSlot(const int x, const int y) { selectedSlotX = x; selectedSlotY = y; }
 		const int getSelectedSlotX() const { return selectedSlotX; }
 		const int getSelectedSlotY() const { return selectedSlotY; }
+		void selectSpell(const int x, const int y) { selectedSpellX = x; selectedSpellY = y; }
+		const int getSelectedSpellX() const { return selectedSpellX; }
+		const int getSelectedSpellY() const { return selectedSpellY; }
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
-		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags) const;
+		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags);
+		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
 		void updateInventoryItemTooltip();
 		void updateSelectedItemAnimation();
 		void updateItemContextMenu();
+		void cycleInventoryTab();
 		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
 		void resetInventory()
 		{
@@ -824,6 +880,8 @@ public:
 		}
 		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		Frame* getInventorySlotFrame(int x, int y) const;
+		Frame* getSpellSlotFrame(int x, int y) const;
+		Frame* getItemSlotFrame(Item* item, int x, int y) const;
 
 		enum PaperDollRows : int
 		{
@@ -1034,9 +1092,9 @@ public:
 					int valueCustomWidthOffset = 0;
 					bool bAllowAutoResizeValue = false;
 					bool bAllowRealtimeUpdate = false;
-					real_t marquee = 0.0;
-					Uint32 marqueeTicks = 0;
-					bool marqueeCompleted = false;
+					real_t marquee[MAXPLAYERS] = { 0.0 };
+					Uint32 marqueeTicks[MAXPLAYERS] = { 0 };
+					bool marqueeCompleted[MAXPLAYERS] = { false };
 					int effectUpdatedAtSkillLevel = -1;
 				};
 				std::vector<SkillEffect_t> effects;
@@ -1079,6 +1137,8 @@ public:
 		Frame* mpFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
+		Frame* actionPromptsFrame = nullptr;
+		Frame* uiNavFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
 		Frame* cursorFrame = nullptr;
@@ -1154,6 +1214,13 @@ public:
 		Bar_t MPBar;
 		Bar_t enemyBar;
 
+		enum CompactLayoutModes : int {
+			COMPACT_LAYOUT_INVENTORY,
+			COMPACT_LAYOUT_CHARSHEET
+		};
+		CompactLayoutModes compactLayoutMode = COMPACT_LAYOUT_CHARSHEET;
+		bool bShowUINavigation = false;
+
 		HUD_t(Player& p) : player(p)
 		{};
 		~HUD_t() {};
@@ -1180,7 +1247,7 @@ public:
 		};
 		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
 		void drawActionIcon(SDL_Rect& pos, int skill) const;
-		const int getActionIconForPlayer(ActionPrompts prompt) const;
+		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
 		int XP_FRAME_WIDTH = 650;
 		int XP_FRAME_START_Y = 44;
@@ -1196,11 +1263,19 @@ public:
 		const int ENEMYBAR_BAR_WIDTH = 556;
 		const int ENEMYBAR_FRAME_START_Y = 182;
 		const int ENEMYBAR_FRAME_HEIGHT = 44;
+		static int actionPromptOffsetX;
+		static int actionPromptOffsetY;
+		static int actionPromptBackingSize;
+		static int actionPromptIconSize;
+		static int actionPromptIconOpacity;
+		static int actionPromptIconBackingOpacity;
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
-		void updateFrameTooltip(Item* item, const int x, const int y);
+		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
 		void updateCursor();
+		void updateActionPrompts();
+		void updateUINavigation();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;
@@ -1430,6 +1505,7 @@ public:
 		std::array<std::array<hotbar_slot_t, NUM_HOTBAR_SLOTS>, NUM_HOTBAR_ALTERNATES> hotbar_alternate;
 		Player& player;
 	public:
+		std::array<Frame*, NUM_HOTBAR_SLOTS> hotbarSlotFrames;
 		int current_hotbar = 0;
 		bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
 		int swapHotbarOnShapeshift = 0;
@@ -1471,13 +1547,20 @@ public:
 		int faceButtonTopYPosition = yres;
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
+		int oldSlotFrameTrackSlot = -1;
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
 		const int getSlotSize() const { return 44; }
+		const int getHotbarStartY1() const { return -106; }
+		const int getHotbarStartY2() const { return -96; }
 
 		Hotbar_t(Player& p) : player(p)
 		{
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				hotbarSlotFrames[i] = nullptr;
+			}
 			clear();
 		};
 		~Hotbar_t() {};

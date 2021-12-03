@@ -3419,6 +3419,21 @@ void consoleCommand(char const * const command_str)
 			}
 			return;
 		}
+		else if ( !strncmp(command_str, "/allspells3", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			{
+				spell_t* spell = *it;
+				bool learned = addSpell(spell->ID, clientnum, true);
+			}
+			return;
+		}
 		else if ( !strncmp(command_str, "/gimmexp", 8) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -3535,6 +3550,21 @@ void consoleCommand(char const * const command_str)
 		{
 			TimerExperiments::bDebug = !TimerExperiments::bDebug;
 			messagePlayer(clientnum, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
+		}
+		else if ( !strncmp(command_str, "/framesearchdebug", 17) )
+		{
+			Frame::findFrameDefaultSearchType = 
+				Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST 
+				? Frame::FRAME_SEARCH_BREADTH_FIRST
+				: Frame::FRAME_SEARCH_DEPTH_FIRST;
+			if ( Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST )
+			{
+				messagePlayer(clientnum, "Set Frame::findFrameDefaultSearchType to depth first");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Set Frame::findFrameDefaultSearchType to breadth first");
+			}
 		}
 		else
 		{

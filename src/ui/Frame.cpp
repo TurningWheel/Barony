@@ -11,6 +11,7 @@
 #include "Field.hpp"
 #include "Slider.hpp"
 #include "Text.hpp"
+#include <queue>
 
 const Sint32 Frame::sliderSize = 15;
 
@@ -26,6 +27,8 @@ static unsigned int gui_fbo_depth = 0;
 
 // root of all widgets
 Frame* gui = nullptr;
+
+Frame::FrameSearchType Frame::findFrameDefaultSearchType = Frame::FRAME_SEARCH_BREADTH_FIRST;
 
 void Frame::listener_t::onDeleted() {
 	if (!entry) {
@@ -1335,17 +1338,73 @@ bool Frame::removeEntry(const char* name, bool resizeFrame) {
 	return false;
 }
 
-Frame* Frame::findFrame(const char* name) {
-	for (auto frame : frames) {
-		if (frame->toBeDeleted) {
-			continue;
+int Frame::numFindFrameCalls = 0;
+
+Frame* Frame::findFrame(const char* name, const FrameSearchType frameSearchType) {
+
+	if ( frameSearchType == FRAME_SEARCH_DEPTH_FIRST )
+	{
+		++numFindFrameCalls;
+		int localNumberOfCalls = 0;
+		for (auto frame : frames) {
+			if (frame->toBeDeleted) {
+				continue;
+			}
+			if (strcmp(frame->getName(), name) == 0) {
+				return frame;
+			} else {
+				Frame* subFrame = frame->findFrame(name);
+				if (subFrame) {
+					return subFrame;
+				}
+			}
 		}
-		if (strcmp(frame->getName(), name) == 0) {
-			return frame;
-		} else {
-			Frame* subFrame = frame->findFrame(name);
-			if (subFrame) {
-				return subFrame;
+	}
+	else if ( frameSearchType == FRAME_SEARCH_BREADTH_FIRST )
+	{
+		int localNumberOfCalls = 0;
+		std::queue<Frame*> q;
+		for ( auto frame : frames )
+		{
+			if ( frame->toBeDeleted ) 
+			{
+				continue;
+			}
+			q.push(frame);
+		}
+		q.push(nullptr);
+
+		int currentDepth = 0;
+
+		while ( !q.empty() )
+		{
+			auto subFrame = q.front();
+			q.pop();
+			++numFindFrameCalls;
+			++localNumberOfCalls;
+			if ( subFrame == nullptr )
+			{
+				++currentDepth;
+			}
+			else
+			{
+				if ( strcmp(subFrame->getName(), name) == 0 )
+				{
+					if ( localNumberOfCalls > 1 )
+					{
+						//printlog("findFrame(): [%s]: searching for '%s' - misses: %d", getName(), name, localNumberOfCalls);
+					}
+					return subFrame;
+				}
+				for ( auto frame : subFrame->frames )
+				{
+					if ( frame->toBeDeleted )
+					{
+						continue;
+					}
+					q.push(frame);
+				}
+				q.push(nullptr);
 			}
 		}
 	}
@@ -1478,8 +1537,8 @@ SDL_Rect Frame::getAbsoluteSize() const
 	auto _parent = this->parent;
 	while ( _parent ) {
 		auto pframe = static_cast<Frame*>(_parent);
-		_size.x += std::max(0, pframe->size.x);
-		_size.y += std::max(0, pframe->size.y);
+		_size.x += pframe->size.x - pframe->actualSize.x;
+		_size.y += pframe->size.y - pframe->actualSize.y;
 		_parent = pframe->parent;
 	}
 	return _size;
@@ -1697,6 +1756,241 @@ void createTestUI() {
 		);
 
 		y += 210;
+	}
+}
+
+// sample function - would need to cache the blitted images somewhere for real-time use.
+void drawImageOutline(const Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, const SDL_Rect viewport, const Uint32& color)
+{
+	SDL_Surface* scaledImg = SDL_CreateRGBSurface(0, scaledDest.w, scaledDest.h, 32,
+		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	SDL_Surface* srcSurf = const_cast<SDL_Surface*>(actualImage->getSurf());
+	SDL_Rect destScaledRect{ 0, 0, scaledDest.w, scaledDest.h };
+	SDL_SetSurfaceAlphaMod(srcSurf, 255);
+	// blit a scaled version of the image to draw an outline around
+	SDL_BlitScaled(srcSurf, nullptr, scaledImg, &destScaledRect);
+
+	// outline has 1px border around original image.
+	SDL_Surface* outlineSurface = SDL_CreateRGBSurface(0, scaledDest.w + 2, scaledDest.h + 2, 32,
+		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	TempTexture* outlineTexture = new TempTexture();
+
+	Uint8 alpha = 255;
+	/*if ( ticks % 50 > 25 )
+	{
+		alpha = (25 - ((ticks % 50) - 25)) * 10;
+	}
+	else
+	{
+		alpha = ticks % 50 * 10;
+	}
+	alpha *= .5;*/
+	Uint32 outlineColor = makeColor(0, 192, 255, alpha);
+
+	SDL_LockSurface(outlineSurface);
+
+	std::map<int, std::pair<int, int>> visitedPixels; // if we blitted an outline onto this pixel
+	for ( int loopx = 0; loopx < outlineSurface->w; loopx++ )
+	{
+		for ( int loopy = 0; loopy < outlineSurface->h; loopy++ )
+		{
+			// loopx/loopy is looking at the larger outline surface
+
+			int x = loopx - 1; // x is looking at the original image surface, offset by the outline border 1px
+			int y = loopy - 1; // y is looking at the original image surface, offset by the outline border 1px
+
+			Uint32 color = outlineColor;
+			Uint32 pixLeft = 0, pixRight = 0, pixUp = 0, pixDown = 0;
+			Uint32 pixCurrent = 0;
+			int neighbours = 0;
+
+			if ( x >= 0 && x < scaledImg->w
+				&& y >= 0 && y < scaledImg->h )
+			{
+				pixCurrent = getPixel(scaledImg, x, y);
+			}
+
+			if ( y >= 0 && y < scaledImg->h )
+			{
+				if ( x - 1 >= 0 && x - 1 < scaledImg->w )
+				{
+					pixLeft = getPixel(scaledImg, x - 1, y);
+					if ( pixLeft != 0 )
+					{
+						Uint8 r, g, b, a;
+						SDL_GetRGBA(pixLeft, scaledImg->format, &r, &g, &b, &a);
+						if ( a > 0 )
+						{
+							++neighbours;
+						}
+					}
+				}
+				if ( x + 1 < scaledImg->w )
+				{
+					pixRight = getPixel(scaledImg, x + 1, y);
+					if ( pixRight != 0 )
+					{
+						Uint8 r, g, b, a;
+						SDL_GetRGBA(pixRight, scaledImg->format, &r, &g, &b, &a);
+						if ( a > 0 )
+						{
+							++neighbours;
+						}
+					}
+				}
+			}
+
+			if ( x >= 0 && x < scaledImg->w )
+			{
+				if ( y - 1 >= 0 && y - 1 < scaledImg->h )
+				{
+					pixUp = getPixel(scaledImg, x, y - 1);
+					if ( pixUp != 0 )
+					{
+						Uint8 r, g, b, a;
+						SDL_GetRGBA(pixUp, scaledImg->format, &r, &g, &b, &a);
+						if ( a > 0 )
+						{
+							++neighbours;
+						}
+					}
+				}
+				if ( y + 1 < scaledImg->h )
+				{
+					pixDown = getPixel(scaledImg, x, y + 1);
+					if ( pixDown != 0 )
+					{
+						Uint8 r, g, b, a;
+						SDL_GetRGBA(pixDown, scaledImg->format, &r, &g, &b, &a);
+						if ( a > 0 )
+						{
+							++neighbours;
+						}
+					}
+				}
+			}
+			if ( neighbours > 0 && neighbours < 4 && pixCurrent == 0 )
+			{
+				// outline is drawn on current pixel if non-empty neighbouring pixel(s) found in source image.
+				putPixel(outlineSurface, loopx, loopy, outlineColor);
+				int key = loopx + loopy * outlineSurface->h;
+				visitedPixels[key] = std::make_pair(loopx, loopy); // mark as visited for thickening the outline later.
+			}
+			//if ( loopx == 0 || loopy == 0 || loopx == outlineSurface->w - 1 || loopy == outlineSurface->h - 1 )
+			//{
+			//		draw a border around the outline surface
+			//		putPixel(sprite, loopx, loopy, makeColor(0, 255, 255, 255));
+			//}
+		}
+	}
+
+	bool thickenBorder = true;
+	for ( auto& pixel : visitedPixels )
+	{
+		if ( !thickenBorder ) { break; }
+
+		// now trace the new outline pixels, and add 1px to neighbouring empty pixels
+		int x = pixel.second.first;
+		int y = pixel.second.second;
+		Uint32 color = outlineColor;
+		Uint32 pixLeft = 0, pixRight = 0, pixUp = 0, pixDown = 0;
+		Uint32 pixCurrent = 0;
+		int neighbours = 0;
+
+		if ( x >= 0 && x < outlineSurface->w
+			&& y >= 0 && y < outlineSurface->h )
+		{
+			pixCurrent = getPixel(outlineSurface, x, y);
+		}
+
+		if ( y >= 0 && y < outlineSurface->h )
+		{
+			if ( x - 1 >= 0 && x - 1 < outlineSurface->w )
+			{
+				int key = (x - 1) + y * outlineSurface->h;
+				bool visited = visitedPixels.find(key) != visitedPixels.end();
+				if ( !visited )
+				{
+					pixLeft = getPixel(outlineSurface, x - 1, y);
+					if ( pixLeft == 0 )
+					{
+						putPixel(outlineSurface, x - 1, y, color);
+					}
+				}
+			}
+			if ( x + 1 < outlineSurface->w )
+			{
+				int key = (x + 1) + y * outlineSurface->h;
+				bool visited = visitedPixels.find(key) != visitedPixels.end();
+				if ( !visited )
+				{
+					pixRight = getPixel(outlineSurface, x + 1, y);
+					if ( pixRight == 0 )
+					{
+						putPixel(outlineSurface, x + 1, y, color);
+					}
+				}
+			}
+		}
+
+		if ( x >= 0 && x < outlineSurface->w )
+		{
+			if ( y - 1 >= 0 && y - 1 < outlineSurface->h )
+			{
+				int key = x + (y - 1) * outlineSurface->h;
+				bool visited = visitedPixels.find(key) != visitedPixels.end();
+				if ( !visited )
+				{
+					pixUp = getPixel(outlineSurface, x, y - 1);
+					if ( pixUp == 0 )
+					{
+						putPixel(outlineSurface, x, y - 1, color);
+					}
+				}
+			}
+			if ( y + 1 < outlineSurface->h )
+			{
+				int key = x + (y + 1) * outlineSurface->h;
+				bool visited = visitedPixels.find(key) != visitedPixels.end();
+				if ( !visited )
+				{
+					pixDown = getPixel(outlineSurface, x, y + 1);
+					if ( pixDown == 0 )
+					{
+						putPixel(outlineSurface, x, y + 1, color);
+					}
+				}
+			}
+		}
+	}
+	SDL_UnlockSurface(outlineSurface);
+
+	outlineTexture->load(outlineSurface, false, false);
+	outlineTexture->bind();
+
+	SDL_Rect newDest = scaledDest;
+	newDest.x -= 1; // offset by 1px due to 2px border addition
+	newDest.y -= 1; // offset by 1px due to 2px border addition
+	newDest.w = outlineSurface->w;
+	newDest.h = outlineSurface->h;
+	SDL_Rect newSrc = src;
+	newSrc.w = outlineSurface->w;
+	newSrc.h = outlineSurface->h;
+
+	Image::drawSurface(outlineSurface, &newSrc, newDest, viewport, color);
+
+	if ( outlineTexture ) {
+		delete outlineTexture;
+		outlineTexture = nullptr;
+	}
+	if ( outlineSurface ) {
+		SDL_FreeSurface(outlineSurface);
+		outlineSurface = nullptr;
+	}
+	if ( scaledImg )
+	{
+		SDL_FreeSurface(scaledImg);
+		scaledImg = nullptr;
 	}
 }
 

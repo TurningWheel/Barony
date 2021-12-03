@@ -927,15 +927,16 @@ void drawStatus(int player)
 		SDL_Rect skillPos{0, 0, iconSize, iconSize };
 		skillPos.x = hotbar_t.hotbarBox.x - 3.5 * iconSize;
 		skillPos.y = players[player]->camera_y2() - 106 - iconSize - 16;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND));
+		std::string promptString;
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_OFFHAND);
 
 		skillPos.x = hotbar_t.hotbarBox.x - 2.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND));
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAINHAND);
 
 		skillPos.x = hotbar_t.hotbarBox.x + hotbar_t.hotbarBox.w + 0.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC));
+		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAGIC);
 	}
 
@@ -2349,8 +2350,6 @@ void drawStatusNew(const int player)
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t.slots();
 
-	hotbar_t.updateHotbar();
-
 	int gui_mode = players[player]->gui_mode;
 	bool shootmode = players[player]->shootmode;
 
@@ -2640,26 +2639,6 @@ void drawStatusNew(const int player)
 		drawImageScaled(minotaur_bmp, nullptr, &pos);
 	}
 
-	// draw action prompts.
-	if ( players[player]->hud.bShowActionPrompts )
-	{
-		int skill = (ticks / 100) % 16;
-		int iconSize = 48;
-		SDL_Rect skillPos{ 0, 0, iconSize, iconSize };
-		skillPos.x = hotbar_t.hotbarBox.x - 3.5 * iconSize;
-		skillPos.y = players[player]->camera_y2() - 106 - iconSize - 16;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_OFFHAND));
-		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_OFFHAND);
-
-		skillPos.x = hotbar_t.hotbarBox.x - 2.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAINHAND));
-		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAINHAND);
-
-		skillPos.x = hotbar_t.hotbarBox.x + hotbar_t.hotbarBox.w + 0.5 * iconSize;
-		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC));
-		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAGIC);
-	}
-
 	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
@@ -2703,6 +2682,20 @@ void drawStatusNew(const int player)
 		{
 			hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(num);
 			pos = hotbarSlotFrame->getSize();
+			if ( inputs.getUIInteraction(player)->selectedItem )
+			{
+				if ( hotbar_t.oldSlotFrameTrackSlot == num )
+				{
+					if ( auto oldSelectedItemFrame = hotbar_t.hotbarFrame->findFrame("hotbar old selected item") )
+					{
+						oldSelectedItemFrame->setSize(hotbarSlotFrame->getSize());
+					}
+				}
+			}
+			else
+			{
+				hotbar_t.oldSlotFrameTrackSlot = -1;
+			}
 		}
 
 		//drawImageScaledColor(hotbar_img, NULL, &pos, color);
@@ -2835,6 +2828,7 @@ void drawStatusNew(const int player)
 									if ( Frame* hotbarFrame = hotbar_t.getHotbarSlotFrame(num) )
 									{
 										oldSelectedItemFrame->setSize(hotbarFrame->getSize());
+										hotbar_t.oldSlotFrameTrackSlot = num;
 										oldSelectedItemFrame->setDisabled(false);
 										if ( auto oldImg = oldSelectedItemFrame->findImage("hotbar old selected item") )
 										{
@@ -3130,7 +3124,11 @@ void drawStatusNew(const int player)
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
-				bool drawTooltipOnSlot = !shootmode && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouse();
+				bool drawTooltipOnSlot = !shootmode 
+					&& !hotbarSlotFrame->isDisabled() 
+					&& players[player]->hotbar.current_hotbar == num
+					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+					&& hotbarSlotFrame->capturesMouse();
 				if ( !drawTooltipOnSlot )
 				{
 					if ( drawHotBarTooltipOnCycle && players[player]->hotbar.current_hotbar == num )
@@ -3177,252 +3175,19 @@ void drawStatusNew(const int player)
 						}
 					}
 
-					if ( itemCategory(item) == SPELL_CAT )
-					{
-						spell_t* spell = getSpellFromItem(player, item);
-						if ( drawHotBarTooltipOnCycle )
-						{
-							drawSpellTooltip(player, spell, item, &src);
-						}
-						else
-						{
-							drawSpellTooltip(player, spell, item, nullptr);
-						}
-					}
-					else if ( hotbar_t.hotbarFrame && players[player]->inventoryUI.tooltipFrame )
+					if ( hotbar_t.hotbarFrame && players[player]->inventoryUI.tooltipFrame )
 					{
 						src.x = hotbarSlotFrame->getSize().x + hotbarSlotFrame->getSize().w / 2;
 						src.y = hotbarSlotFrame->getSize().y - 16;
 						src.x += players[player]->camera_virtualx1();
 						src.y += players[player]->camera_virtualy1();
-						players[player]->hud.updateFrameTooltip(item, src.x, src.y);
+						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->inventoryUI.PANEL_JUSTIFY_LEFT);
 						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;
 						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
 					}
-					else
-					{
-						src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
-						src.h = TTF12_HEIGHT * 4 + 8;
-						char spellEffectText[256] = "";
-						if ( item->identified )
-						{
-							bool learnedSpellbook = false;
-							if ( itemCategory(item) == SPELLBOOK )
-							{
-								learnedSpellbook = playerLearnedSpellbook(player, item);
-								if ( !learnedSpellbook && stats[player] && players[player] && players[player]->entity )
-								{
-									// spellbook tooltip shows if you have the magic requirement as well (for goblins)
-									int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-									spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-									if ( spell && skillLVL >= spell->difficulty )
-									{
-										learnedSpellbook = true;
-									}
-								}
-							}
 
-							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == THROWN
-								|| itemTypeIsQuiver(item->type) )
-							{
-								src.h += TTF12_HEIGHT;
-							}
-							else if ( itemCategory(item) == SCROLL && item->identified )
-							{
-								src.h += TTF12_HEIGHT;
-								src.w = std::max((2 + longestline(language[3862]) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
-							}
-							else if ( itemCategory(item) == SPELLBOOK && learnedSpellbook )
-							{
-								int height = 1;
-								char effectType[32] = "";
-								int spellID = getSpellIDFromSpellbook(item->type);
-								int damage = drawSpellTooltip(player, getSpellFromID(spellID), item, nullptr);
-								real_t dummy = 0.f;
-								getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
-								int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
-								if ( width > src.w )
-								{
-									src.w = width;
-								}
-								src.h += height * TTF12_HEIGHT;
-							}
-							else if ( item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT
-								|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
-								|| (item->type == ENCHANTED_FEATHER && item->identified) )
-							{
-								src.w += 7 * TTF12_WIDTH;
-							}
-						}
-
-						int furthestX = players[player]->camera_x2();
-						if ( players[player]->characterSheet.proficienciesPage == 0 )
-						{
-							if ( src.y < players[player]->characterSheet.skillsSheetBox.y + players[player]->characterSheet.skillsSheetBox.h )
-							{
-								furthestX = players[player]->camera_x2() - players[player]->characterSheet.skillsSheetBox.w;
-							}
-						}
-						else
-						{
-							if ( src.y < players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h )
-							{
-								furthestX = players[player]->camera_x2() - players[player]->characterSheet.partySheetBox.w;
-							}
-						}
-
-						if ( drawHotBarTooltipOnCycle && players[player]->hotbar.useHotbarFaceMenu )
-						{
-							// draw centred.
-							src.x -= src.w / 2;
-							src.y -= src.h;
-						}
-
-						if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
-						{
-							src.x -= (src.w + 32);
-						}
-						if ( src.y + src.h + 16 > y2 ) // overflow bottom of screen
-						{
-							src.y -= (src.y + src.h + 16 - y2);
-						}
-
-						if ( drawHotBarTooltipOnCycle )
-						{
-							drawTooltip(&src);
-						}
-						else
-						{
-							drawTooltip(&src);
-						}
-
-						Uint32 color = 0xFFFFFFFF;
-						if ( !item->identified )
-						{
-							color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-							ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
-						}
-						else
-						{
-							if ( item->beatitude < 0 )
-							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
-							}
-							else if ( item->beatitude == 0 )
-							{
-								color = 0xFFFFFFFF;
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
-							}
-							else
-							{
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
-							}
-						}
-						if ( item->beatitude == 0 || !item->identified )
-						{
-							color = 0xFFFFFFFF;
-						}
-
-						if ( item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT
-							|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
-						{
-							int health = 100;
-							if ( !item->tinkeringBotIsMaxHealth() )
-							{
-								health = 25 * (item->appearance % 10);
-								if ( health == 0 && item->status != BROKEN )
-								{
-									health = 5;
-								}
-							}
-							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), health);
-						}
-						else if ( item->type == ENCHANTED_FEATHER && item->identified )
-						{
-							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
-						}
-						else
-						{
-							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
-						}
-						int itemWeight = item->getWeight();
-						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
-						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
-						if ( strcmp(spellEffectText, "") )
-						{
-							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
-						}
-
-						if ( item->identified && stats[player] )
-						{
-							if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN
-								|| itemTypeIsQuiver(item->type) )
-							{
-								Monster tmpRace = stats[player]->type;
-								if ( stats[player]->type == TROLL
-									|| stats[player]->type == RAT
-									|| stats[player]->type == SPIDER
-									|| stats[player]->type == CREATURE_IMP )
-								{
-									// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
-									stats[player]->type = HUMAN;
-								}
-
-								if ( item->weaponGetAttack(stats[player]) >= 0 )
-								{
-									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-								}
-								else
-								{
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								}
-								if ( stats[player]->type != tmpRace )
-								{
-									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
-								}
-
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
-								stats[player]->type = tmpRace;
-							}
-							else if ( itemCategory(item) == ARMOR )
-							{
-								Monster tmpRace = stats[player]->type;
-								if ( stats[player]->type == TROLL
-									|| stats[player]->type == RAT
-									|| stats[player]->type == SPIDER
-									|| stats[player]->type == CREATURE_IMP )
-								{
-									// these monsters have 0 bonus from armor, but want the tooltip to say the normal amount.
-									stats[player]->type = HUMAN;
-								}
-
-								if ( item->armorGetAC(stats[player]) >= 0 )
-								{
-									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-								}
-								else
-								{
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								}
-								if ( stats[player]->type != tmpRace )
-								{
-									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
-								}
-
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
-								stats[player]->type = tmpRace;
-							}
-							else if ( itemCategory(item) == SCROLL )
-							{
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
-							}
-						}
-					}
 					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
 					{
 						Uint32 swapItem = 0;
