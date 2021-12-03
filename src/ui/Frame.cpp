@@ -11,6 +11,7 @@
 #include "Field.hpp"
 #include "Slider.hpp"
 #include "Text.hpp"
+#include <queue>
 
 const Sint32 Frame::sliderSize = 15;
 

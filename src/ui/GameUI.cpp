@@ -5653,7 +5653,7 @@ void createPlayerSpellList(const int player)
 		slider->setMaxValue(100);
 		slider->setValue(0);
 		SDL_Rect sliderPos{ basePos.w - 38, 8, 30, 234 };
-		slider->setRailSize(SDL_Rect{ sliderPos });
+		slider->setRailSize(sliderPos);
 		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
 		//slider->setCallback(callback);
@@ -9445,7 +9445,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setMaxValue(100);
 	slider->setValue(0);
 	SDL_Rect sliderPos{ descPos.w - 34, 4, 30, descPos.h - 8 };
-	slider->setRailSize(SDL_Rect{ sliderPos });
+	slider->setRailSize(sliderPos);
 	slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
 	slider->setOrientation(Slider::SLIDER_VERTICAL);
 	//slider->setCallback(callback);
