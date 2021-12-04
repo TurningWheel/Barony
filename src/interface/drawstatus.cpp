@@ -3181,7 +3181,7 @@ void drawStatusNew(const int player)
 						src.y = hotbarSlotFrame->getSize().y - 16;
 						src.x += players[player]->camera_virtualx1();
 						src.y += players[player]->camera_virtualy1();
-						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->inventoryUI.PANEL_JUSTIFY_LEFT);
+						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->PANEL_JUSTIFY_LEFT);
 						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;

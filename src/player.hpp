@@ -643,12 +643,62 @@ public:
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
 
+	enum PanelJustify_t
+	{
+		PANEL_JUSTIFY_LEFT,
+		PANEL_JUSTIFY_RIGHT
+	};
+
+	struct GUIDropdown_t {
+		Player& player;
+		int dropDownX = 0;
+		int dropDownY = 0;
+		int dropDownOptionSelected = -1;
+		bool bOpen = false;
+		std::string currentName = "";
+		Frame* dropdownFrame = nullptr;
+		bool dropDownToggleClick = false;
+
+		struct DropdownOption_t {
+			std::string text = "";
+			std::string keyboardGlyph = "";
+			std::string controllerGlyph = "";
+			std::string action = "";
+			DropdownOption_t(std::string _text, std::string _keyboardGlyph, std::string _controllerGlyph, std::string _action)
+			{
+				text = _text;
+				action = _action;
+				keyboardGlyph = _keyboardGlyph;
+				controllerGlyph = _controllerGlyph;
+			}
+		};
+		struct DropDown_t
+		{
+			std::string title = "Interact";
+			std::string internalName = "";
+			bool alignRight = true;
+			std::vector<DropdownOption_t> options;
+		};
+
+		void open(const std::string name);
+		void close();
+		void create(const std::string name);
+		bool set(const std::string name);
+		void process();
+		bool getDropDownAlignRight(const std::string& name);
+		void activateSelection(const std::string& name, int option);
+		static std::map<std::string, DropDown_t> allDropDowns;
+		GUIDropdown_t(Player& p) :
+			player(p) {}
+	};
+
 	class GUI_t
 	{
 		Player& player;
 	public:
 		GUI_t(Player& p) :
-			player(p)
+			player(p),
+			dropdownMenu(p)
 		{};
 		~GUI_t() {};
 		enum GUIModules
@@ -674,6 +724,7 @@ public:
 		bool bActiveModuleHasNoCursor();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+		GUIDropdown_t dropdownMenu;
 	} GUI;
 
 	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
@@ -712,11 +763,6 @@ public:
 		void openInventory();
 		void closeInventory();
 
-		enum PanelJustify_t
-		{
-			PANEL_JUSTIFY_LEFT,
-			PANEL_JUSTIFY_RIGHT
-		};
 		PanelJustify_t inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
 		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
 		void setCompactView(bool bCompact);
@@ -977,6 +1023,8 @@ public:
 		SDL_Rect partySheetBox;
 		SDL_Rect characterSheetBox;
 		SDL_Rect statsSheetBox;
+
+		Player::PanelJustify_t panelJustify = PANEL_JUSTIFY_RIGHT;
 
 		void setDefaultSkillsSheetBox();
 		void setDefaultPartySheetBox();

@@ -3534,7 +3534,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		//auto inventoryBgFrame = frameInventory->findFrame("inventory base");
 		//const int tooltipPosX = frameInventory->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
 		SDL_Rect newPos { x, y, tooltipDisplayedSettings.tooltipWidth, tooltipDisplayedSettings.tooltipHeight - heightDiff };
-		if ( justify == Player::Inventory_t::PANEL_JUSTIFY_RIGHT )
+		if ( justify == Player::PANEL_JUSTIFY_RIGHT )
 		{
 			newPos.x -= newPos.w;
 		}
