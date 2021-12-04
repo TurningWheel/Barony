@@ -289,7 +289,7 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 		assert(0 && "Trying to render > 64kb of ttf text");
 		return nullptr;
 	}
-	snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x",
+	snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x%c",
 		str, Text::fontBreak,
 		font, Text::fontBreak,
 		textColor, Text::fontBreak,

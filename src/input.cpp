@@ -45,6 +45,8 @@ void Input::defaultBindings() {
 		inputs[c].bind("MenuSelect", (std::string("Pad") + std::to_string(c) + std::string("ButtonBack")).c_str());
 		inputs[c].bind("MenuPageLeft", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str());
 		inputs[c].bind("MenuPageRight", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str());
+		inputs[c].bind("MenuPageLeftAlt", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str());
+		inputs[c].bind("MenuPageRightAlt", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str());
 		inputs[c].bind("AltMenuUp", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY-")).c_str());
 		inputs[c].bind("AltMenuLeft", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX-")).c_str());
 		inputs[c].bind("AltMenuRight", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX+")).c_str());
@@ -704,7 +706,7 @@ void Input::bind(const char* binding, const char* input) {
 			return;
 		}
 		Uint32 index = strtol((const char*)(input + 5), nullptr, 10);
-		int result = std::min(std::max(0U, index), 4U);
+		int result = std::min(index, 4U);
 		(*b).second.mouseButton = result;
 		return;
 	} else {

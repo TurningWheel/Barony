@@ -1517,7 +1517,7 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 			const char* lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name" );
 			if ( lobbyName )
 			{
-				snprintf( currentLobbyName, 31, lobbyName );
+				snprintf( currentLobbyName, 31, "%s", lobbyName );
 			}
 
 			// get the server flags
@@ -1825,7 +1825,7 @@ void steam_ConnectToLobby()
 #endif
 
 	// parse out the connect
-	char pchLobbyID[1024];
+	char pchLobbyID[1024] = "";
 
 	// look for +connect_lobby command
 	const char* pchConnectLobbyParam = "+connect_lobby";
@@ -1837,7 +1837,7 @@ void steam_ConnectToLobby()
 	}
 
 	// join lobby
-	if (  pchLobbyID )
+	if (  pchLobbyID[0] )
 	{
 		//c_SteamMatchmaking_JoinLobbyPCH( pchLobbyID, &steam_OnLobbyEntered );
 		cpp_SteamMatchmaking_JoinLobbyPCH( pchLobbyID);
@@ -2046,7 +2046,7 @@ void CSteamLeaderboards::ClearUploadData()
 	LastUploadResult.b_ScoreChanged = false;
 	LastUploadResult.b_ScoreUploadComplete = false;
 	LastUploadResult.globalRankNew = 0;
-	LastUploadResult.globalRankPrev;
+	LastUploadResult.globalRankPrev = 0;
 	LastUploadResult.scoreUploaded = 0;
 }
 

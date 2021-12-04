@@ -2663,7 +2663,7 @@ int main(int argc, char** argv)
 			if ( subwindow )
 			{
 				drawWindowFancy(subx1, suby1, subx2, suby2);
-				if ( subtext != NULL )
+				if ( subtext[0] != NULL )
 				{
 					printText(font8x8_bmp, subx1 + 8, suby1 + 8, subtext);
 				}

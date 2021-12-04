@@ -157,7 +157,7 @@ void actDeathCam(Entity* my)
 			my->pitch = -PI / 2;
 		}
 
-		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY < 0.0001)
+		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY) < 0.0001
 			&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM
 			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks + TICKS_PER_SECOND * 3) )
 		{
