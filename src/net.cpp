@@ -5520,7 +5520,18 @@ void serverHandlePacket()
 		int amount = SDLNet_Read32(&net_packet->data[5]);
 		if ( players[player] && players[player]->entity )
 		{
+			if ( stats[clientnum]->GOLD < amount )
+			{
+				amount = stats[player]->GOLD;
+			}
 			stats[player]->GOLD -= amount;
+			stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
+
+
+			if ( amount == 0 )
+			{
+				return;
+			}
 			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
 			//Drop gold.
 			int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);

@@ -656,8 +656,10 @@ public:
 		int dropDownOptionSelected = -1;
 		bool bOpen = false;
 		std::string currentName = "";
+		Frame* dropdownBlockClickFrame = nullptr;
 		Frame* dropdownFrame = nullptr;
 		bool dropDownToggleClick = false;
+		int dropdownLinkToModule = 0;
 
 		struct DropdownOption_t {
 			std::string text = "";
@@ -677,6 +679,8 @@ public:
 			std::string title = "Interact";
 			std::string internalName = "";
 			bool alignRight = true;
+			int module = 0;
+			int defaultOption = 0;
 			std::vector<DropdownOption_t> options;
 		};
 
@@ -725,6 +729,8 @@ public:
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 		GUIDropdown_t dropdownMenu;
+		void closeDropdowns();
+		bool isDropdownActive();
 	} GUI;
 
 	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
@@ -1034,6 +1040,7 @@ public:
 		int proficienciesPage = 0;
 		int attributespage = 0;
 		bool showGameTimerAlways = false;
+		bool isInteractable = false;
 
 		static std::map<std::string, std::pair<std::string, std::string>> mapDisplayNamesDescriptions;
 		static std::map<std::string, std::string> hoverTextStrings;

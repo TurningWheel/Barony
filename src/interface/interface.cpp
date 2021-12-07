@@ -1763,8 +1763,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
-	inputs.getUIInteraction(playernum)->itemMenuOpen = false;
-	inputs.getUIInteraction(playernum)->itemMenuItem = 0;
+	GUI.closeDropdowns();
 
 	inventory_mode = whichInventoryMode;
 
@@ -1861,8 +1860,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	{
 		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
 		inputs.getUIInteraction(playernum)->toggleclick = false;
-		inputs.getUIInteraction(playernum)->itemMenuOpen = false;
-		inputs.getUIInteraction(playernum)->itemMenuItem = 0;
+		GUI.closeDropdowns();
 		shootmode = true;
 	}
 }

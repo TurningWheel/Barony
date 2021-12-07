@@ -871,6 +871,11 @@ void Player::HUD_t::updateUINavigation()
 	}
 }
 
+std::string actionPromptBackingIconPath00 = "";
+std::string actionPromptBackingIconPath20 = "";
+std::string actionPromptBackingIconPath60 = "";
+std::string actionPromptBackingIconPath100 = "";
+
 void createActionPrompts(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -906,7 +911,7 @@ void createActionPrompts(const int player)
 	auto mainHand = actionPromptFrame->addFrame("action mainhand");
 	mainHand->setSize(SDL_Rect{ 400, 400, maxWidth, promptHeight });
 	mainHand->addImage(iconBackingPos,
-		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	mainHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
 	mainHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
@@ -919,7 +924,7 @@ void createActionPrompts(const int player)
 	auto offHand = actionPromptFrame->addFrame("action offhand");
 	offHand->setSize(SDL_Rect{ 440, 400, maxWidth, promptHeight });
 	offHand->addImage(iconBackingPos,
-		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	offHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
 	offHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
@@ -932,7 +937,7 @@ void createActionPrompts(const int player)
 	auto magic = actionPromptFrame->addFrame("action magic");
 	magic->setSize(SDL_Rect{ 480, 400, maxWidth, promptHeight });
 	magic->addImage(iconBackingPos,
-		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	magic->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
 	magic->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
@@ -1097,6 +1102,22 @@ void Player::HUD_t::updateActionPrompts()
 						}
 						break;
 					}
+				}
+				if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_LEGENDARY )
+				{
+					imgBacking->path = actionPromptBackingIconPath100;
+				}
+				else if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_EXPERT )
+				{
+					imgBacking->path = actionPromptBackingIconPath60;
+				}
+				else if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_BASIC )
+				{
+					imgBacking->path = actionPromptBackingIconPath20;
+				}
+				else
+				{
+					imgBacking->path = actionPromptBackingIconPath00;
 				}
 			}
 			if ( skillImg == "" )
@@ -2215,6 +2236,30 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 	}
 	else
 	{
+		if ( dropdown.options[option].action == "gold_drop_10" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 10);
+			consoleCommand(dropCommand);
+		}
+		else if ( dropdown.options[option].action == "gold_drop_100" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 100);
+			consoleCommand(dropCommand);
+		}
+		else if ( dropdown.options[option].action == "gold_drop_1000" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 1000);
+			consoleCommand(dropCommand);
+		}
+		else if ( dropdown.options[option].action == "gold_drop_all" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", std::max(0, stats[player.playernum]->GOLD));
+			consoleCommand(dropCommand);
+		}
 		messagePlayer(player.playernum, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
 			dropdown.options[option].action.c_str(), name.c_str(), option);
 	}
@@ -2225,12 +2270,13 @@ bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
 	bool invert = false;
 	if ( name == "drop_gold" )
 	{
-		if ( player.characterSheet.panelJustify == Player::PANEL_JUSTIFY_LEFT )
+		if ( player.characterSheet.panelJustify == Player::PANEL_JUSTIFY_RIGHT 
+			&& player.bUseCompactGUIHeight() )
 		{
 			invert = true;
 		}
 	}
-	return allDropDowns[name].alignRight;
+	return (invert ? !allDropDowns[name].alignRight : allDropDowns[name].alignRight);
 }
 
 void Player::CharacterSheet_t::processCharacterSheet()
@@ -2278,6 +2324,15 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	else
 	{
 		panelJustify = Player::PANEL_JUSTIFY_RIGHT;
+	}
+
+	if ( player.inventoryUI.slideOutPercent <= .0001 )
+	{
+		isInteractable = true;
+	}
+	else
+	{
+		isInteractable = false;
 	}
 
 	// resize elements for splitscreen
@@ -2423,13 +2478,13 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		}
 	}
 
+	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	if ( hideAndExit )
 	{
 		sheetFrame->setDisabled(true);
 		return;
 	}
 
-	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	player.GUI.handleCharacterSheetMovement();
 
 	updateGameTimer();
@@ -2458,6 +2513,13 @@ bool Player::GUIDropdown_t::set(const std::string name)
 
 void Player::GUIDropdown_t::process()
 {
+	if ( dropdownBlockClickFrame )
+	{
+		dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
+			players[player.playernum]->camera_virtualWidth(),
+			players[player.playernum]->camera_virtualHeight() });
+	}
 	if ( !dropdownFrame ) { return; }
 	
 	if ( !bOpen )
@@ -2475,7 +2537,8 @@ void Player::GUIDropdown_t::process()
 
 	auto highlightImage = dropdownFrame->findImage("interact selected highlight");
 	highlightImage->disabled = true;
-	highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
+	//highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
+	highlightImage->color = makeColor(255, 255, 255, 255);
 
 	size_t index = 0;
 	unsigned int maxWidth = 0;
@@ -2483,7 +2546,7 @@ void Player::GUIDropdown_t::process()
 	{
 		interactText->setColor(hudColors.itemContextMenuHeadingText);
 		if ( auto textGet = Text::get(interactText->getText(), interactText->getFont(),
-			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+			interactText->getTextColor(), interactText->getOutlineColor()) )
 		{
 			maxWidth = textGet->getWidth();
 		}
@@ -2492,7 +2555,16 @@ void Player::GUIDropdown_t::process()
 	const int textPaddingX = 8;
 
 	auto& dropDown = allDropDowns[currentName];
-	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
+	if ( dropDown.module != Player::GUI_t::MODULE_NONE )
+	{
+		if ( dropDown.module != player.GUI.activeModule )
+		{
+			close();
+			return;
+		}
+	}
+
+	std::vector<std::tuple<Frame::image_t*, Field*, Frame::image_t*>> optionFrames;
 	index = 1;
 	for ( auto& option : dropDown.options )
 	{
@@ -2500,13 +2572,18 @@ void Player::GUIDropdown_t::process()
 		snprintf(glyphname, sizeof(glyphname), "glyph %d", index);
 		char optionname[32] = "";
 		snprintf(optionname, sizeof(optionname), "interact option %d", index);
+		char backingname[32] = "";
+		snprintf(backingname, sizeof(backingname), "backing %d", index);
 
 		auto img = dropdownFrame->findImage(glyphname);
 		auto txt = dropdownFrame->findField(optionname);
-		optionFrames.push_back(std::make_pair(img, txt));
+		auto backingImg = dropdownFrame->findImage(backingname);
+		optionFrames.push_back(std::make_tuple(img, txt, backingImg));
 		txt->setColor(hudColors.itemContextMenuOptionText);
+		//txt->setColor(makeColor(148, 82, 3, 255));
 		txt->setDisabled(false);
 		img->disabled = true;
+		backingImg->disabled = true;
 
 		if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 		{
@@ -2521,9 +2598,9 @@ void Player::GUIDropdown_t::process()
 
 		txt->setText(option.text.c_str());
 		if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
-			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+			txt->getTextColor(), txt->getOutlineColor()) )
 		{
-			maxWidth = std::max(textGet->getWidth(), maxWidth);
+			maxWidth = std::max(textGet->getWidth() + 40, maxWidth);
 
 			SDL_Rect size = txt->getSize();
 			size.w = textGet->getWidth();
@@ -2537,6 +2614,9 @@ void Player::GUIDropdown_t::process()
 				size.x = img->pos.x + img->pos.w + textPaddingX;
 				txt->setHJustify(Field::justify_t::LEFT);
 			}
+			backingImg->pos.x = size.x - 4;
+			backingImg->pos.y = size.y + 2;
+			backingImg->pos.w = size.w + 8;
 			txt->setSize(size);
 		}
 
@@ -2550,16 +2630,20 @@ void Player::GUIDropdown_t::process()
 
 	index = 0;
 	bool alignRight = getDropDownAlignRight(currentName);
-	for ( auto& optionPair : optionFrames )
+	for ( auto& optionGlyphTextBacking : optionFrames )
 	{
-		auto img = optionPair.first;
-		auto txt = optionPair.second;
+		auto img = std::get<0>(optionGlyphTextBacking);
+		auto txt = std::get<1>(optionGlyphTextBacking);
+		auto backingImg = std::get<2>(optionGlyphTextBacking);
 
 		if ( txt->getHJustify() == Field::justify_t::CENTER || true )
 		{
 			SDL_Rect size = txt->getSize();
 			size.w = maxWidth;
 			txt->setSize(size);
+			backingImg->pos.x = size.x - 4;
+			backingImg->pos.y = size.y + 2;
+			backingImg->pos.w = size.w + 8;
 		}
 
 		auto ml = dropdownFrame->findImage("interact middle left");
@@ -2579,7 +2663,7 @@ void Player::GUIDropdown_t::process()
 	int textStartX = textPaddingX;
 	if ( optionFrames.size() > 0 )
 	{
-		auto img = optionFrames[0].first;
+		auto img = std::get<0>(optionFrames[0]);
 		textStartX += (img->disabled ? 0 : img->pos.x + img->pos.w);
 	}
 	const int frameWidth = maxWidth + textStartX + textPaddingX;
@@ -2653,12 +2737,13 @@ void Player::GUIDropdown_t::process()
 
 	if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 	{
-		auto txt = optionFrames[dropDownOptionSelected].second;
+		auto txt = std::get<1>(optionFrames[dropDownOptionSelected]);
+		//txt->setColor(makeColor(218, 163, 41, 255));
 		txt->setColor(hudColors.itemContextMenuOptionSelectedText);
 		SDL_Rect size = txt->getSize();
 		size.x -= 4;
 		size.w += 2 * 4;
-		size.h += 2;
+		//size.h += 2;
 		highlightImage->pos = size;
 		highlightImage->disabled = false;
 	}
@@ -2686,9 +2771,41 @@ void Player::GUIDropdown_t::close()
 		dropdownFrame->removeSelf();
 		dropdownFrame = nullptr;
 	}
+	if ( dropdownBlockClickFrame )
+	{
+		dropdownBlockClickFrame->removeSelf();
+		dropdownBlockClickFrame = nullptr;
+	}
 	dropDownOptionSelected = 0;
 	bOpen = false;
+	dropDownToggleClick = false;
 	currentName = "";
+}
+
+
+void Player::GUI_t::closeDropdowns()
+{
+	if ( dropdownMenu.bOpen )
+	{
+		dropdownMenu.close();
+	}
+	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+	{
+		inputs.getUIInteraction(player.playernum)->itemMenuOpen = false;
+		player.inventoryUI.updateItemContextMenu();
+	}
+}
+bool Player::GUI_t::isDropdownActive()
+{
+	if ( dropdownMenu.bOpen )
+	{
+		return true;
+	}
+	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+	{
+		return true;
+	}
+	return false;
 }
 
 void Player::GUIDropdown_t::open(const std::string name)
@@ -2706,8 +2823,6 @@ void Player::GUIDropdown_t::open(const std::string name)
 	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
 	itemMenuOpen = false;
 
-
-	//itemMenuOpen = true;
 	dropDownX = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + (getDropDownAlignRight(name) ? 8 : -8);
 	dropDownY = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	if ( auto interactMenuTop = dropdownFrame->findImage("interact top background") )
@@ -2716,11 +2831,19 @@ void Player::GUIDropdown_t::open(const std::string name)
 		// mouse will be situated halfway in first menu option
 		dropDownY -= (interactMenuTop->pos.h + 10 + 2);
 	}
+	dropDownOptionSelected = 0;
+	if ( allDropDowns[name].defaultOption > 0 && allDropDowns[name].options.size() > allDropDowns[name].defaultOption )
+	{
+		if ( auto txt = dropdownFrame->findField("interact option 1") )
+		{
+			dropDownY -= txt->getSize().h;
+			dropDownOptionSelected = allDropDowns[name].defaultOption;
+		}
+	}
 	if ( auto highlightImage = dropdownFrame->findImage("interact selected highlight") )
 	{
 		highlightImage->disabled = true;
 	}
-	dropDownOptionSelected = 0;
 
 	//Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 	dropDownToggleClick = false;
@@ -2739,8 +2862,22 @@ void Player::GUIDropdown_t::create(const std::string name)
 		dropdownFrame->removeSelf();
 		dropdownFrame = nullptr;
 	}
+	if ( dropdownBlockClickFrame )
+	{
+		dropdownBlockClickFrame->removeSelf();
+		dropdownBlockClickFrame = nullptr;
+	}
 
 	auto& dropDown = allDropDowns[name];
+
+	char dropdownBlockClickName[64] = "";
+	snprintf(dropdownBlockClickName, sizeof(dropdownBlockClickName), "player dropdown block click %d", player);
+	dropdownBlockClickFrame = gui->addFrame(dropdownBlockClickName);
+	dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight()});
+	dropdownBlockClickFrame->setOwner(player.playernum);
 
 	char dropdownName[64] = "";
 	snprintf(dropdownName, sizeof(dropdownName), "player dropdown %d", player);
@@ -2755,28 +2892,40 @@ void Player::GUIDropdown_t::create(const std::string name)
 	const int optionHeight = 20;
 
 	dropdownFrame->addImage(SDL_Rect{ 12, 0, 0, 34 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_T01.png", "interact top background");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_T02.png", "interact top background");
 	dropdownFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_TL01.png", "interact top left");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_TL02.png", "interact top left");
 	dropdownFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_TR01.png", "interact top right");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_TR02.png", "interact top right");
 
 	dropdownFrame->addImage(SDL_Rect{ 4, 34, 0, 76 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_C01.png", "interact middle background");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_C02.png", "interact middle background");
 	dropdownFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_L01.png", "interact middle left");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_L02.png", "interact middle left");
 	dropdownFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_R01.png", "interact middle right");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_R02.png", "interact middle right");
 
 	dropdownFrame->addImage(SDL_Rect{ 12, 96, 0, 10 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_B01.png", "interact bottom background");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_B02.png", "interact bottom background");
 	dropdownFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_BL01.png", "interact bottom left");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_BL02.png", "interact bottom left");
 	dropdownFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_BR01.png", "interact bottom right");
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_BR02.png", "interact bottom right");
+
+	const int textBackingSize = 24;
+	for ( int i = 1; i <= dropDown.options.size(); ++i )
+	{
+		char backingname[32] = "";
+		snprintf(backingname, sizeof(backingname), "backing %d", i);
+		Frame::image_t* backingImg = dropdownFrame->addImage(
+			SDL_Rect{ 0, 0, 0, textBackingSize },
+			0xFFFFFFFF, "images/ui/Inventory/tooltips/HoverItemMenu_NonSelectBack02.png", backingname);
+	}
 
 	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
-		hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack02.png", "interact selected highlight");
+	/*dropdownFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");*/
 
 	const char* interactFont = "fonts/pixel_maz.ttf#32#2";
 
@@ -3017,7 +3166,7 @@ void Player::CharacterSheet_t::updateGameTimer()
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
 
-	if ( selectedElement == SHEET_TIMER )
+	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() )
 	{
 		updateCharacterSheetTooltip(SHEET_TIMER, sheetFrame->findFrame("game timer")->getSize());
 	}
@@ -3288,7 +3437,9 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	auto logButton = sheetFrame->findFrame("log map buttons")->findButton("log button");
 	auto mapButton = sheetFrame->findFrame("log map buttons")->findButton("map button");
 	auto skillsButton = sheetFrame->findFrame("skills button frame")->findButton("skills button");
-	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.GUI.isDropdownActive()
+		&& isInteractable )
 	{
 		if ( skillsButton->isHighlighted() )
 		{
@@ -3332,7 +3483,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	{
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+			if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+				&& !player.GUI.isDropdownActive() )
 			{
 				// no moused over objects, deactivate the cursor.
 				player.GUI.activateModule(Player::GUI_t::MODULE_NONE);
@@ -3342,9 +3494,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	//messagePlayer(0, "%d", player.GUI.activeModule);
 	// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
 
-	//auto characterPos = characterInfoFrame->getSize();
-	//characterPos.x = player.camera_virtualWidth() - characterPos.w * 2;
-	//characterInfoFrame->setSize(characterPos);
+	bool enableTooltips = !player.GUI.isDropdownActive();
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -3504,7 +3654,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			if ( mapDisplayNamesDescriptions.find(map.name) != mapDisplayNamesDescriptions.end() )
 			{
 				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
-				if ( selectedElement == SHEET_DUNGEON_FLOOR )
+				if ( selectedElement == SHEET_DUNGEON_FLOOR && enableTooltips )
 				{
 					updateCharacterSheetTooltip(selectedElement, floorFrame->getSize());
 				}
@@ -3521,12 +3671,15 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		gold->setText(buf);
 		if ( selectedElement == SHEET_GOLD )
 		{
-			updateCharacterSheetTooltip(selectedElement, characterInfoFrame->getSize());
-
 			if ( Input::inputs[player.playernum].binary("MenuRightClick") 
-				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+				&& !player.GUI.isDropdownActive() )
 			{
 				player.GUI.dropdownMenu.open("drop_gold");
+			}
+			if ( enableTooltips )
+			{
+				updateCharacterSheetTooltip(selectedElement, characterInfoFrame->getSize());
 			}
 		}
 	}
@@ -5891,6 +6044,22 @@ void loadHUDSettingsJSON()
 					{
 						Player::HUD_t::actionPromptIconBackingOpacity = d["action_prompts"]["icon_backing_opacity"].GetInt();
 					}
+					if ( d["action_prompts"].HasMember("prompt_img_00") )
+					{
+						actionPromptBackingIconPath00 = d["action_prompts"]["prompt_img_00"].GetString();
+					}
+					if ( d["action_prompts"].HasMember("prompt_img_20") )
+					{
+						actionPromptBackingIconPath20 = d["action_prompts"]["prompt_img_20"].GetString();
+					}
+					if ( d["action_prompts"].HasMember("prompt_img_60") )
+					{
+						actionPromptBackingIconPath60 = d["action_prompts"]["prompt_img_60"].GetString();
+					}
+					if ( d["action_prompts"].HasMember("prompt_img_100") )
+					{
+						actionPromptBackingIconPath100 = d["action_prompts"]["prompt_img_100"].GetString();
+					}
 				}
 				if ( d.HasMember("enemy_hp_bars") )
 				{
@@ -6050,6 +6219,26 @@ void loadHUDSettingsJSON()
 						{
 							dropdown.alignRight = itr->value["align_right"].GetBool();
 						}
+						if ( itr->value.HasMember("gui_module") )
+						{
+							std::string moduleName = itr->value["gui_module"].GetString();
+							if ( moduleName == "character_sheet" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_CHARACTERSHEET;
+							}
+							else
+							{
+								dropdown.module = Player::GUI_t::MODULE_NONE;
+							}
+						}
+						if ( itr->value.HasMember("default_option") )
+						{
+							dropdown.defaultOption = itr->value["default_option"].GetInt();
+						}
+						else
+						{
+							dropdown.defaultOption = 0;
+						}
 						for ( rapidjson::Value::ConstValueIterator options_itr = itr->value["options"].Begin();
 							options_itr != itr->value["options"].End(); ++options_itr )
 						{
@@ -6073,7 +6262,7 @@ void loadHUDSettingsJSON()
 							{
 								action = (*options_itr)["action"].GetString();
 							}
-							dropdown.options.push_back(Player::GUIDropdown_t::DropdownOption_t(text, controller_glyph, keyboard_glyph, action));
+							dropdown.options.push_back(Player::GUIDropdown_t::DropdownOption_t(text, keyboard_glyph, controller_glyph, action));
 						}
 					}
 				}
@@ -7497,12 +7686,11 @@ void Player::HUD_t::updateCursor()
 		int offset = ((ticks - cursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			//if ( inputs.getUIInteraction(player.playernum)->selectedItem
-			//	|| inputs.getUIInteraction(player.playernum)->itemMenuOpen )
-			//{
-			//	// animate cursor
-			//}
-			//else
+			if ( player.GUI.dropdownMenu.bOpen )
+			{
+				// animate cursor
+			}
+			else
 			{
 				offset = smallOffset; // don't animate while mouse normal hovering
 			}

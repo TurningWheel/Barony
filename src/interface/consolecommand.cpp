@@ -2080,9 +2080,9 @@ void consoleCommand(char const * const command_str)
 
 		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 	}
-	else if ( !strncmp(command_str, "/dropgold", 9) )
+	else if ( !strncmp(command_str, "/dropgold ", 9) )
 	{
-		int amount = 100;
+		int amount = atoi(&command_str[9]);
 		if ( !stats[clientnum] )
 		{
 			return;
