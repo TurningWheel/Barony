@@ -15,6 +15,7 @@ if (NOT STEAMWORKS_INCLUDE_DIR OR NOT STEAMWORKS_LIBRARIES)
 		/usr/local/lib64
 		$ENV{STEAMWORKSROOT}/sdk/redistributable_bin/linux64 #I don't like this. TODO: Make it determine 64/32 bit automatically.
 		$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin/linux64
+		${STEAMWORKS_ROOT}
 		$ENV{STEAMWORKS_DIR}/sdk/redistributable_bin/linux64
 		#$ENV{STEAMWORKSROOT}/sdk/redistributable_bin/linux32
 		#$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin/linux32
@@ -25,6 +26,7 @@ if (NOT STEAMWORKS_INCLUDE_DIR OR NOT STEAMWORKS_LIBRARIES)
 		/usr/local/include
 		$ENV{STEAMWORKSROOT}/sdk/public/
 		$ENV{STEAMWORKS_ROOT}/sdk/public/
+		${STEAMWORKS_ROOT}/include/
 		$ENV{STEAMWORKS_DIR}/sdk/public/
 		DOC "Include path for Steamworks"
 	)
@@ -34,6 +36,7 @@ if (NOT STEAMWORKS_INCLUDE_DIR OR NOT STEAMWORKS_LIBRARIES)
 			FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api
 				PATHS
 				$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin
+				${STEAMWORKS_ROOT}/lib/
 				DOC "Steamworks library name"
 			)
 			MESSAGE("32 bit steam")
@@ -41,6 +44,7 @@ if (NOT STEAMWORKS_INCLUDE_DIR OR NOT STEAMWORKS_LIBRARIES)
 			FIND_LIBRARY(STEAMWORKS_LIBRARY NAMES steam_api64
 				PATHS
 				$ENV{STEAMWORKS_ROOT}/sdk/redistributable_bin/win64
+				${STEAMWORKS_ROOT}/lib/
 				DOC "Steamworks library name"
 			)
 			MESSAGE("64 bit steam")

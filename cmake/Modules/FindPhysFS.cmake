@@ -19,6 +19,7 @@
 find_path(PHYSFS_INCLUDE_DIR physfs.h
   HINTS
     ENV PHYSFSDIR
+	${PHYSFSDIR}
   PATH_SUFFIXES include/physfs include
   PATHS
   ~/Library/Frameworks
@@ -33,6 +34,7 @@ find_library(PHYSFS_LIBRARY
   NAMES physfs
   HINTS
     ENV PHYSFSDIR
+	${PHYSFSDIR}
   PATH_SUFFIXES lib
   PATHS
   ~/Library/Frameworks
