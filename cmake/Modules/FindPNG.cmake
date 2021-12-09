@@ -12,16 +12,40 @@
 INCLUDE(FindZLIB)
 
 IF(ZLIB_FOUND)
-  FIND_PATH(PNG_PNG_INCLUDE_DIR png.h
-  /usr/local/include/libpng             # OpenBSD
-  )
+
+  find_path(PNG_INCLUDE_DIR zlib.h
+	HINTS
+		ENV PNG_DIR
+		${PNG_DIR}
+	PATH_SUFFIXES include
+	PATHS
+	~/Library/Frameworks
+	/Library/Frameworks
+	/sw # Fink
+	/opt/local # DarwinPorts
+	/opt/csw # Blastwave
+	/opt
+	)
 
   SET(PNG_NAMES ${PNG_NAMES} png libpng libpng16)
-  FIND_LIBRARY(PNG_LIBRARY NAMES ${PNG_NAMES} )
+  find_library(PNG_LIBRARY
+	NAMES ${PNG_NAMES}
+	HINTS
+		ENV PNG_DIR
+		${PNG_DIR}
+	PATH_SUFFIXES lib
+	PATHS
+	~/Library/Frameworks
+	/Library/Frameworks
+	/sw
+	/opt/local
+	/opt/csw
+	/opt
+  )
 
-  IF (PNG_LIBRARY AND PNG_PNG_INCLUDE_DIR)
+  IF (PNG_LIBRARY AND PNG_INCLUDE_DIR)
       # png.h includes zlib.h. Sigh.
-      SET(PNG_INCLUDE_DIR ${PNG_PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} )
+      SET(PNG_INCLUDE_DIR ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} )
       SET(PNG_LIBRARIES ${PNG_LIBRARY} ${ZLIB_LIBRARY})
 
       IF (CYGWIN)
@@ -32,13 +56,13 @@ IF(ZLIB_FOUND)
         ENDIF(BUILD_SHARED_LIBS)
       ENDIF (CYGWIN)
 
-  ENDIF (PNG_LIBRARY AND PNG_PNG_INCLUDE_DIR)
+  ENDIF (PNG_LIBRARY AND PNG_INCLUDE_DIR)
 
 ENDIF(ZLIB_FOUND)
 
 # handle the QUIETLY and REQUIRED arguments and set PNG_FOUND to TRUE if 
 # all listed variables are TRUE
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(PNG DEFAULT_MSG PNG_LIBRARY PNG_PNG_INCLUDE_DIR)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(PNG DEFAULT_MSG PNG_LIBRARY PNG_INCLUDE_DIR)
 
-MARK_AS_ADVANCED(PNG_PNG_INCLUDE_DIR PNG_LIBRARY )
+MARK_AS_ADVANCED(PNG_INCLUDE_DIR PNG_LIBRARY )
