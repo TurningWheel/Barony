@@ -3706,7 +3706,7 @@ void clientHandlePacket()
 		gameplayCustomManager.readFromFile();
 
 		int checkMapHash = -1;
-		physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+		int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
 		if ( checkMapHash == 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
@@ -3745,6 +3745,8 @@ void clientHandlePacket()
 
 		printlog("Done.\n");
 
+		Player::Minimap_t::mapDetails.clear();
+
 		if ( !secretlevel )
 		{
 			messagePlayer(clientnum, language[710], currentlevel);
@@ -3753,37 +3755,53 @@ void clientHandlePacket()
 		{
 			messagePlayer(clientnum, language[711], map.name);
 		}
-		if ( !secretlevel )
+		if ( !secretlevel && result )
 		{
 			switch ( currentlevel )
 			{
 				case 2:
 					messagePlayer(clientnum, language[712]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[712]));
 					break;
 				case 3:
 					messagePlayer(clientnum, language[713]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[713]));
 					break;
 				case 7:
 					messagePlayer(clientnum, language[714]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[714]));
 					break;
 				case 8:
 					messagePlayer(clientnum, language[715]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[715]));
 					break;
 				case 11:
 					messagePlayer(clientnum, language[716]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[716]));
 					break;
 				case 13:
 					messagePlayer(clientnum, language[717]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[717]));
 					break;
 				case 16:
 					messagePlayer(clientnum, language[718]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[718]));
 					break;
 				case 18:
 					messagePlayer(clientnum, language[719]);
+					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[719]));
 					break;
 				default:
 					break;
 			}
+		}
+		if ( MFLAG_DISABLETELEPORT )
+		{
+			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_teleport", language[2382]));
+		}
+		if ( MFLAG_DISABLEOPENING )
+		{
+			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_opening", language[2382]));
 		}
 		if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 		{
@@ -3792,10 +3810,16 @@ void clientHandlePacket()
 		if ( MFLAG_DISABLELEVITATION )
 		{
 			messagePlayer(clientnum, language[2383]);
+			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", language[2383]));
 		}
 		if ( MFLAG_DISABLEDIGGING )
 		{
 			messagePlayer(clientnum, language[2450]);
+			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", language[2450]));
+		}
+		if ( MFLAG_DISABLEHUNGER )
+		{
+			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 		}
 		if ( !strncmp(map.name, "Mages Guild", 11) )
 		{
@@ -5518,39 +5542,36 @@ void serverHandlePacket()
 	{
 		int player = net_packet->data[4];
 		int amount = SDLNet_Read32(&net_packet->data[5]);
+
+		if ( stats[player]->GOLD < 0 )
+		{
+			stats[player]->GOLD = 0;
+		}
+		if ( stats[player]->GOLD < amount )
+		{
+			amount = stats[player]->GOLD;
+		}
+		stats[player]->GOLD -= amount;
+		stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
+		if ( amount == 0 )
+		{
+			return;
+		}
 		if ( players[player] && players[player]->entity )
 		{
-			if ( stats[clientnum]->GOLD < amount )
-			{
-				amount = stats[player]->GOLD;
-			}
-			stats[player]->GOLD -= amount;
-			stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
-
-
-			if ( amount == 0 )
-			{
-				return;
-			}
-			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
 			//Drop gold.
-			int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
-			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-			{
-				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
-				entity->sizex = 4;
-				entity->sizey = 4;
-				entity->x = players[player]->entity->x;
-				entity->y = players[player]->entity->y;
-				entity->z = 6;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[PASSABLE] = true;
-				entity->flags[UPDATENEEDED] = true;
-				entity->behavior = &actGoldBag;
-				entity->goldAmount = amount; // amount
-			}
-
+			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+			entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->x = players[player]->entity->x;
+			entity->y = players[player]->entity->y;
+			entity->z = 6;
+			entity->yaw = (rand() % 360) * PI / 180.0;
+			entity->flags[PASSABLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->behavior = &actGoldBag;
+			entity->goldAmount = amount; // amount
 		}
 		return;
 	}

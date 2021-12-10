@@ -1709,7 +1709,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	worldUI(*this),
 	hotbar(*this),
 	bookGUI(*this),
-	paperDoll(*this)
+	paperDoll(*this),
+	minimap(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -3486,6 +3487,8 @@ const bool Player::bUseCompactGUIHeight() const
 	}
 	return false;
 }
+
+std::vector<std::pair<std::string, std::string>> Player::Minimap_t::mapDetails;
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 {

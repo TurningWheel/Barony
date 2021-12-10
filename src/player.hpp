@@ -660,7 +660,7 @@ public:
 		Frame* dropdownFrame = nullptr;
 		bool dropDownToggleClick = false;
 		int dropdownLinkToModule = 0;
-
+		bool bClosedThisTick = false;
 		struct DropdownOption_t {
 			std::string text = "";
 			std::string keyboardGlyph = "";
@@ -1683,6 +1683,16 @@ public:
 		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void updateCursor();
 	} hotbar;
+
+	class Minimap_t
+	{
+		Player& player;
+	public:
+		static std::vector<std::pair<std::string, std::string>> mapDetails;
+		Minimap_t(Player& p) : player(p)
+		{};
+		~Minimap_t() {};
+	} minimap;
 };
 
 extern Player* players[MAXPLAYERS];
