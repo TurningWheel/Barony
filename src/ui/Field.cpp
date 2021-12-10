@@ -104,6 +104,46 @@ char* Field::tokenize(char* str, const char* const delimiters) {
 	}
 }
 
+bool bWordHighlightMapAreSame(std::map<int, Uint32>& textMap, std::map<int, Uint32>& fieldMap, int currentLine)
+{
+	std::vector<int> fieldKeys;
+	for ( auto& keyValue : fieldMap )
+	{
+		// get the keys applicable to the current line first (within 0-9999)
+		if ( (keyValue.first - currentLine * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE) >= 0 
+			&& (keyValue.first < (currentLine + 1) * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE) )
+		{
+			const int wordIndex = keyValue.first - currentLine * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+			fieldKeys.push_back(wordIndex);
+		}
+	}
+	if ( textMap.size() != fieldKeys.size() ) // simple size check, if not the same then can reject early.
+	{
+		return false;
+	}
+
+	for ( auto& keyValue : fieldMap )
+	{
+		// again check the key is applicable to the current line first (within 0-9999)
+		if ( (keyValue.first - currentLine * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE) >= 0 
+			&& (keyValue.first < (currentLine + 1) * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE) )
+		{
+			const int wordIndex = keyValue.first - currentLine * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+			if ( textMap.find(wordIndex) == textMap.end() )
+			{
+				// key not found, mismatched maps
+				return false;
+			}
+			else if ( textMap[wordIndex] != keyValue.second )
+			{
+				// key found, but stored a different color, mismatched maps.
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if ( invisible || isDisabled() ) {
 		return;
@@ -146,6 +186,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	memcpy(buf, text ? text : "\0", textlen + 1);
 
 	int yoff = 0;
+	int currentLine = 0;
 	char* nexttoken;
 	char* token = buf;
 	do {
@@ -153,6 +194,44 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 		Text* text = Text::get(token, font.c_str(), textColor, outlineColor);
 		assert(text);
+
+		if ( getWordsToHighlight().size() > 0 )
+		{
+			// Field() has words to highlight, check if the pulled Text() object has a copy of the data.
+			if ( !bWordHighlightMapAreSame(text->getWordsToHighlight(), getWordsToHighlight(), currentLine) )
+			{
+				text->clearWordsToHighlight();
+				// unrender the Text() object, forcing it to rebuild next draw call
+				bool unrender = false;
+				for ( auto& keyValue : getWordsToHighlight() )
+				{
+					int wordIndex = keyValue.first;
+					Uint32 color = keyValue.second;
+					// Field() stores the whole sentence structure, every newline it adds 10000
+					// check the key is within 0-9999 of our current line.
+					if ( (wordIndex - currentLine * TEXT_HIGHLIGHT_WORDS_PER_LINE) >= 0 
+						&& (wordIndex < (currentLine + 1) * TEXT_HIGHLIGHT_WORDS_PER_LINE) )
+					{
+						// To handle tokenizing here, pass the mod % 10000 of the word index, since the
+						// text object is always 1 line. 10000 = line 1, word 0, 20005 = line 2, word 5 etc.
+						text->addWordToHighlight(wordIndex % TEXT_HIGHLIGHT_WORDS_PER_LINE, color);
+						unrender = true;
+					}
+				}
+				if ( unrender )
+				{
+					text->setRendered(false);
+				}
+			}
+		}
+		else
+		{
+			if ( text->getWordsToHighlight().size() > 0 )
+			{
+				text->clearWordsToHighlight();
+				text->setRendered(false);
+			}
+		}
 
 		// get the size of the rendered text
 		int textSizeW = text->getWidth();
@@ -219,6 +298,8 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			SDL_Rect cursorSize{scaledDest.x + scaledDest.w - 2, scaledDest.y, 2, scaledDest.h};
 			white->drawColor(nullptr, cursorSize, viewport, color);
 		}
+
+		++currentLine;
 	} while ((token = nexttoken) != NULL);
 
 	free(buf);

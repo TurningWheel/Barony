@@ -15,6 +15,7 @@ See LICENSE for details.
 #include "draw.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "ui/Field.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -3109,7 +3110,7 @@ void ItemTooltips_t::stripOutHighlightBracketText(std::string& str, std::string&
 			{
 				foundBracket = true;
 				bracketText += *it;
-				*it = ' ';
+				// don't edit original string ---- *it = ' ';
 				it = next_it;
 			}
 		}
@@ -3121,14 +3122,14 @@ void ItemTooltips_t::stripOutHighlightBracketText(std::string& str, std::string&
 				bracketText += *it;
 				if ( *it == ']' )
 				{
-					*it = ' ';
+					// don't edit original string ---- *it = ' ';
 					break;
 				}
-				*it = ' ';
+				// don't edit original string ---- *it = ' ';
 				it = std::next(it);
 			}
 		}
-		else
+		else if ( it != str.end() && *it != '\n' )
 		{
 			bracketText += ' ';
 		}
@@ -3136,6 +3137,96 @@ void ItemTooltips_t::stripOutHighlightBracketText(std::string& str, std::string&
 		{
 			bracketText += '\n';
 		}
+	}
+}
+
+bool charIsWordSeparator(char c)
+{
+	if ( c == ' ' || c == '\n' || c == '\r' || c == '\0' )
+	{
+		return true;
+	}
+	return false;
+}
+
+void ItemTooltips_t::getWordIndexesItemDetails(void* field, std::string& str, std::string& highlightValues, std::string& positiveValues, std::string& negativeValues,
+	std::map<int, Uint32>& highlightIndexes, std::map<int, Uint32>& positiveIndexes, std::map<int, Uint32>& negativeIndexes, ItemTooltip_t& tooltip)
+{
+	positiveIndexes.clear();
+	negativeIndexes.clear();
+	highlightIndexes.clear();
+	((Field*)field)->clearWordsToHighlight();
+	int wordIndex = 0;
+	bool prevCharWasWordSeparator = false;
+	int numLines = 0;
+	for ( size_t c = 0; c < str.size(); ++c )
+	{
+		if ( str[c] == '\n' )
+		{
+			wordIndex = -1;
+			++numLines;
+			prevCharWasWordSeparator = true;
+			continue;
+		}
+
+		if ( prevCharWasWordSeparator && !charIsWordSeparator(str[c]) )
+		{
+			++wordIndex;
+			prevCharWasWordSeparator = false;
+			if ( !(c + 1 < str.size() && charIsWordSeparator(str[c+1])) )
+			{
+				continue;
+			}
+		}
+
+		if ( charIsWordSeparator(str[c]) )
+		{
+			prevCharWasWordSeparator = true;
+		}
+		else
+		{
+			prevCharWasWordSeparator = false;
+			if ( c < positiveValues.size() )
+			{
+				if ( positiveValues[c] == str[c] )
+				{
+					positiveIndexes[wordIndex + numLines * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE] = 0;
+				}
+			}
+			if ( c < negativeValues.size() )
+			{
+				if ( negativeValues[c] == str[c] )
+				{
+					negativeIndexes[wordIndex + numLines * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE] = 0;
+				}
+			}
+			if ( c < highlightValues.size() )
+			{
+				if ( highlightValues[c] == str[c] )
+				{
+					highlightIndexes[wordIndex + numLines * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE] = 0;
+				}
+			}
+		}
+	}
+
+	for ( auto& p : positiveIndexes )
+	{
+		Uint32 color = tooltip.positiveTextColor;
+		((Field*)field)->addWordToHighlight(p.first, color);
+		//messagePlayer(0, "Positives: %d", p.first);
+	}
+	for ( auto& n : negativeIndexes )
+	{
+		Uint32 color = tooltip.negativeTextColor;
+		((Field*)field)->addWordToHighlight(n.first, color);
+		//messagePlayer(0, "Negatives: %d", n.first);
+	}
+	for ( auto& h : highlightIndexes )
+	{
+		Uint32 color = tooltip.statusEffectTextColor;
+		((Field*)field)->addWordToHighlight(h.first, color);
+		//messagePlayer(0, "Highlights: %d", h.first);
 	}
 }
 
@@ -3171,6 +3262,11 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 			bool addSpace = false;
 			while ( *it != '\0' && *it != ' ' && *it != '\n' )
 			{
+				if ( *it == '*' )
+				{
+					// replace with bullet symbol
+					*it = '\x1E';
+				}
 				if ( sign > 0 )
 				{
 					positiveValues += *it;
@@ -3181,7 +3277,7 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 					negativeValues += *it;
 					positiveValues += ' ';
 				}
-				*it = ' ';
+				// don't edit original string ---- *it = ' ';
 				it = std::next(it);
 				addSpace = true;
 
@@ -3207,12 +3303,12 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 					addSpace = false;
 					positiveValues += ' ';
 					negativeValues += "(?)";
-					*it = ' ';
+					// don't edit original string ---- *it = ' ';
 					for ( size_t i = 0; i < strlen("(?)") - 1; ++i )
 					{
 						positiveValues += ' ';
 						it = std::next(it);
-						*it = ' ';
+						// don't edit original string ---- *it = ' ';
 					}
 				}
 			}
@@ -3221,41 +3317,50 @@ void ItemTooltips_t::stripOutPositiveNegativeItemDetails(std::string& str, std::
 				// look for matching brace.
 				while ( it != str.end() && *it != ']' && *it != ' ' && *it != '\0' && *it != ' ' && *it != '\n' )
 				{
+					if ( *it == '*' )
+					{
+						// replace with bullet symbol
+						*it = '\x1E';
+					}
 					positiveValues += ' ';
 					negativeValues += ' ';
 					it = std::next(it);
+				}
+				if ( it != str.end() && (*it == '\0' || *it == '\n') )
+				{
+					addSpace = false;
 				}
 			}
 			else if ( *it == '^' )
 			{
 				// cursed line
 				it = str.erase(it); // skip the '^'
-				//it = std::next(it); 
 				while ( it != str.end() && *it != '\0' && *it != '\n' )
 				{
+					if ( *it == '*' )
+					{
+						// replace with bullet symbol
+						*it = '\x1E';
+					}
 					positiveValues += ' ';
 					negativeValues += *it;
-					*it = ' ';
+					// don't edit original string ---- *it = ' ';
 					it = std::next(it);
 				}
-			}
-			/*else if ( *it == adjectives["beatitude_status"]["cursed"][0] )
-			{
-				if ( str.find(adjectives["beatitude_status"]["cursed"], 
-					std::distance(str.begin(), it)) == std::distance(str.begin(), it) )
+				if ( it != str.end() && (*it == '\0' || *it == '\n') )
 				{
 					addSpace = false;
-					positiveValues += ' ';
-					negativeValues += adjectives["beatitude_status"]["cursed"];
-					*it = ' ';
-					for ( int i = 0; i < adjectives["beatitude_status"]["cursed"].size() - 1; ++i )
-					{
-						positiveValues += ' ';
-						it = std::next(it);
-						*it = ' ';
-					}
 				}
-			}*/
+			}
+			else if ( *it == '*' )
+			{
+				// replace with bullet symbol
+				*it = '\x1E';
+			}
+			else if ( *it == '\0' || *it == '\n' )
+			{
+				addSpace = false;
+			}
 
 			if ( addSpace )
 			{

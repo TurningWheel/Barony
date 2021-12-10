@@ -2754,6 +2754,8 @@ public:
 	void formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag);
 	void stripOutPositiveNegativeItemDetails(std::string& str, std::string& positiveValues, std::string& negativeValues);
 	void stripOutHighlightBracketText(std::string& str, std::string& bracketText);
+	void getWordIndexesItemDetails(void* field, std::string& str, std::string& highlightValues, std::string& positiveValues, std::string& negativeValues,
+		std::map<int, Uint32>& highlightIndexes, std::map<int, Uint32>& positiveIndexes, std::map<int, Uint32>& negativeIndexes, ItemTooltip_t& tooltip);
 };
 extern ItemTooltips_t ItemTooltips;
 
