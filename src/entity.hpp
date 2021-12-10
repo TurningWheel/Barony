@@ -772,8 +772,6 @@ public:
 	int getManaRegenInterval(Stat& myStats); 
 	// calc time required for a hp regen tick, uses equipped gear as modifiers.
 	int getHealthRegenInterval(Stat& myStats);
-	// get mana regen from stats and proficiencies only.
-	int getBaseManaRegen(Stat& myStats);
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType = 0);
 	bool setArrowProjectileProperties(int weaponType);
@@ -962,6 +960,9 @@ list_t* checkTileForEntity(int x, int y); //Don't forget to free the list return
  * The list parameter is a pointer to the list all the items found will be appended to.
  */
 void getItemsOnTile(int x, int y, list_t** list);
+
+// get mana regen from stats and proficiencies only.
+int getBaseManaRegen(Entity* my, Stat& myStats);
 
 //--- Entity act* functions ---
 void actMonster(Entity* my);

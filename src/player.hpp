@@ -1041,6 +1041,9 @@ public:
 		int attributespage = 0;
 		bool showGameTimerAlways = false;
 		bool isInteractable = false;
+		int tooltipOpacitySetpoint = 100;
+		real_t tooltipOpacityAnimate = 1.0;
+		Uint32 tooltipDeselectedTick = 0;
 
 		static std::map<std::string, std::pair<std::string, std::string>> mapDisplayNamesDescriptions;
 		static std::map<std::string, std::string> hoverTextStrings;
@@ -1402,6 +1405,12 @@ public:
 		void handlePlayerCameraUpdate(bool useRefreshRateDelta);
 		void handlePlayerCameraBobbing(bool useRefreshRateDelta);
 		void handlePlayerMovement(bool useRefreshRateDelta);
+		real_t getMaximumSpeed();
+		real_t getWeightRatio(int weight, Sint32 STR);
+		int getCharacterWeight();
+		int getCharacterModifiedWeight();
+		real_t getSpeedFactor(real_t weightratio, Sint32 DEX);
+		real_t getCurrentMovementSpeed();
 		void handlePlayerCameraPosition(bool useRefreshRateDelta);
 		void reset();
 	} movement;

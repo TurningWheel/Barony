@@ -16054,7 +16054,7 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 
 int Entity::getManaRegenInterval(Stat& myStats)
 {
-	int regenTime = getBaseManaRegen(myStats);
+	int regenTime = getBaseManaRegen(this, myStats);
 	int manaring = 0;
 	bool shapeshifted = false;
 	if ( behavior == &actPlayer && myStats.type != HUMAN )
@@ -16307,11 +16307,11 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	return HEAL_TIME;
 }
 
-int Entity::getBaseManaRegen(Stat& myStats)
+int getBaseManaRegen(Entity* my, Stat& myStats)
 {
 	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
 	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
-	int statMultiplier = std::max(getINT(), 0); // get intelligence
+	int statMultiplier = std::max(statGetINT(&myStats, my), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
 		return MAGIC_REGEN_TIME;
