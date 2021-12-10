@@ -9,7 +9,6 @@ class Text {
 private:
 	Text() = default;
 	Text(const char* _name);
-	Text(const char* _name, std::map<int, Uint32> _wordsToHighlight);
 	Text(const Text&) = delete;
 	Text(Text&&) = delete;
 	~Text();

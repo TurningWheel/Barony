@@ -30,13 +30,6 @@ const GLuint Text::indices[6]{
 	0, 2, 3
 };
 
-Text::Text(const char* _name, std::map<int, Uint32> _wordsToHighlight)
-{
-	wordsToHighlight = _wordsToHighlight;
-	name = _name;
-	render();
-}
-
 Text::Text(const char* _name) {
 	name = _name;
 	render();
