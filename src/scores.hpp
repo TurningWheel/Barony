@@ -292,6 +292,17 @@ bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex)
 bool anySaveFileExists(bool singleplayer);
 bool anySaveFileExists();
 
+struct SaveGameInfo {
+    std::string player_name;
+    std::string player_class;
+    int dungeon_lvl;
+    int player_lvl;
+    int player_num;
+    std::string timestamp;
+    int multiplayer_type;
+};
+
+SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 char* getSaveGameName(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSaveGameType(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSaveGameClientnum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);

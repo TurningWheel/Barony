@@ -2400,6 +2400,16 @@ void actPlayer(Entity* my)
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
+		    if (PLAYER_ALIVETIME == 300)
+		    {
+		        // take a screenshot to be associated with the current save game
+                auto str = std::string(multiplayer == SINGLE ? "savegame" : "savegame_multiplayer")
+                    + std::to_string(savegameCurrentFileIndex);
+	            char screenshot_path[256];
+	            snprintf(screenshot_path, sizeof(screenshot_path),
+	                "%s/savegames/%s_screenshot.png", outputdir, str.c_str());
+		        takeScreenshot(screenshot_path);
+		    }
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{

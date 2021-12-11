@@ -2891,6 +2891,224 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 
 /*-------------------------------------------------------------------------------
 
+	getSaveGameInfo
+
+	Fill a struct with info about a savegame slot
+
+-------------------------------------------------------------------------------*/
+
+SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
+{
+	char name[128];
+	File* fp;
+	int c;
+
+	int level, class_;
+	int mul, plnum, dungeonlevel;
+	int playerRace, playerAppearance;
+
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
+
+	// open file
+	if ( (fp = FileIO::open(path, "rb")) == NULL )
+	{
+		printlog("error: failed to check name in '%s'!\n", path);
+		return SaveGameInfo();
+	}
+
+	// read from file
+	char checkstr[64];
+	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
+	{
+		printlog("error: '%s' is corrupt!\n", path);
+		FileIO::close(fp);
+		return SaveGameInfo();
+	}
+	fp->read(checkstr, sizeof(char), strlen(VERSION));
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("getSaveGameName: '%s' version number %d", savefile, versionNumber);
+	if ( versionNumber == -1 )
+	{
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", path);
+		FileIO::close(fp);
+		return SaveGameInfo();
+	}
+
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->read(&mul, sizeof(Uint32), 1);
+	fp->read(&plnum, sizeof(Uint32), 1);
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->read(&dungeonlevel, sizeof(Uint32), 1);
+	dungeonlevel = dungeonlevel & 0xFF;
+	fp->seek(sizeof(bool), File::SeekMode::ADD);
+	if ( versionNumber >= 310 )
+	{
+		fp->seek(sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, File::SeekMode::ADD);
+	}
+	if ( versionNumber >= 335 )
+	{
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
+	}
+	fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+	fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+	int numspells = 0;
+	fp->read(&numspells, sizeof(Uint32), 1);
+	for ( c = 0; c < numspells; c++ )
+	{
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	}
+
+	int monsters = NUMMONSTERS;
+	if ( versionNumber < 325 )
+	{
+		monsters = 33;
+	}
+
+	// skip through other player data until you get to the correct player
+	for ( c = 0; c < plnum; c++ )
+	{
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Monster), File::SeekMode::ADD);
+		fp->seek(sizeof(sex_t), File::SeekMode::ADD);
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+		fp->seek(sizeof(char) * 32, File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		if ( versionNumber >= 323 )
+		{
+			fp->seek(sizeof(Sint32)*NUMPROFICIENCIES, File::SeekMode::ADD);
+		}
+		else
+		{
+			fp->seek(sizeof(Sint32)*14, File::SeekMode::ADD);
+		}
+
+		if ( versionNumber <= 323 )
+		{
+			fp->seek(sizeof(bool)*32, File::SeekMode::ADD);
+			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD);
+		}
+		else
+		{
+			fp->seek(sizeof(bool)*NUMEFFECTS, File::SeekMode::ADD);
+			fp->seek(sizeof(Sint32)*NUMEFFECTS, File::SeekMode::ADD);
+		}
+
+		if ( versionNumber >= 323 )
+		{
+			fp->seek(sizeof(Sint32) * 32, File::SeekMode::ADD); // stat flags
+		}
+
+		if ( plnum == 0 )
+		{
+			// server needs to skip past its inventory
+			int numitems = 0;
+			fp->read(&numitems, sizeof(Uint32), 1);
+
+			int i;
+			for ( i = 0; i < numitems; i++ )
+			{
+				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
+				fp->seek(sizeof(Status), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+				fp->seek(sizeof(bool), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+			}
+			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
+		}
+		else
+		{
+			// client needs to skip the dummy byte
+			fp->seek(sizeof(Status), File::SeekMode::ADD);
+		}
+	}
+
+	fp->read(&class_, sizeof(Uint32), 1);
+	for ( c = 0; c < monsters; c++ )
+	{
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+	}
+	fp->seek(sizeof(Monster) + sizeof(sex_t), File::SeekMode::ADD);
+	Uint32 raceAndAppearance = 0;
+	fp->read(&raceAndAppearance, sizeof(Uint32), 1);
+	playerAppearance = raceAndAppearance & 0xFF;
+	playerRace = (raceAndAppearance & 0xFF00) >> 8;
+	fp->read(&name, sizeof(char), 32);
+	name[32] = 0;
+	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD);
+	fp->read(&level, sizeof(Sint32), 1);
+
+	// assemble string
+	char timestamp[128] = "";
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		}
+	}
+#endif // WINDOWS
+
+	int plnumTemp = plnum;
+	if ( plnumTemp >= MAXPLAYERS )
+	{
+		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
+	}
+	stats[plnumTemp]->playerRace = playerRace;
+
+    SaveGameInfo saveGameInfo = {
+        name,
+        playerClassLangEntry(class_, plnumTemp),
+        dungeonlevel,
+        level,
+        plnum,
+        timestamp,
+        mul,
+    };
+
+	// close file
+	FileIO::close(fp);
+	return saveGameInfo;
+}
+
+/*-------------------------------------------------------------------------------
+
 	getSaveGameName
 
 	Gets the name of the character in the saved game

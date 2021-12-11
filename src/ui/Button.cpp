@@ -175,6 +175,9 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 					y = yoff - border + std::max(size.h - fullH, 0);
 				}
 
+				x += textOffset.x;
+				y += textOffset.y;
+
 				yoff += _font->height(false);
 
 				SDL_Rect pos = _size;

@@ -2069,8 +2069,10 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 		} else {
 			src.x = std::max(0.f, (_size.x - pos.x) * ((float)actualImage->getWidth() / image->pos.w));
 			src.y = std::max(0.f, (_size.y - pos.y) * ((float)actualImage->getHeight() / image->pos.h));
-			src.w = ((float)dest.w / pos.w) * actualImage->getWidth();
-			src.h = ((float)dest.h / pos.h) * actualImage->getHeight();
+			src.w = ((float)dest.w / pos.w) * (image->section.w ? image->section.w : actualImage->getWidth());
+			src.h = ((float)dest.h / pos.h) * (image->section.h ? image->section.h : actualImage->getHeight());
+			src.x += image->section.x;
+			src.y += image->section.y;
 		}
 
 		if ( getOpacity() < 100.0 )

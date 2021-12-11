@@ -44,8 +44,8 @@ namespace MainMenu {
 
 	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
-	static const char* smallfont_outline = "fonts/pixel_maz.ttf#32#2";
-	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#0";
+	static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
+	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 	static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
 
@@ -4898,7 +4898,17 @@ namespace MainMenu {
 
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
-			stats[index]->playerRace = rand() % 9;
+			if (enabledDLCPack1 && enabledDLCPack2) {
+			    stats[index]->playerRace = rand() % 9;
+			} else if (enabledDLCPack1) {
+			    stats[index]->playerRace = rand() % 5;
+			} else if (enabledDLCPack2) {
+			    stats[index]->playerRace = rand() % 5;
+			    if (stats[index]->playerRace > 0) {
+			        stats[index]->playerRace += 4;
+			    }
+			} else {
+			}
 			auto race_button = card->findButton("race");
 			if (race_button) {
 				switch (stats[index]->playerRace) {
@@ -5640,27 +5650,94 @@ namespace MainMenu {
 	}
 
 	static int populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
-	    subwindow.clear();
+		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
+		subwindow.setSize(SDL_Rect{90, 82, 898, 294});
+		subwindow.setColor(0);
+		subwindow.setBorder(0);
 	    int saveGameCount = 0;
         if (!anySaveFileExists(singleplayer)) {
             auto none_exists = subwindow.addField("none_exists", 256);
+            none_exists->setSize(subwindow.getActualSize());
             none_exists->setFont(bigfont_outline);
             none_exists->setText("No compatible save files found.");
             none_exists->setJustify(Field::justify_t::CENTER);
         } else {
 		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
-                if (saveGameExists(true, i)) {
-                    auto str = std::string("savegame") + std::to_string(i);
+                if (saveGameExists(singleplayer, i)) {
+                    auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(i);
                     auto savegame_book = subwindow.addButton(str.c_str());
                     savegame_book->setSize(SDL_Rect{saveGameCount * 220 + (898 - 220) / 2, 0, 220, 280});
                     savegame_book->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
 		            savegame_book->setColor(makeColor(255, 255, 255, 255));
 		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
+		            savegame_book->setFont(smallfont_outline);
+		            savegame_book->setTextColor(makeColor(255, 182, 73, 255));
+		            savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
+
+		            auto saveGameInfo = getSaveGameInfo(singleplayer, i);
+
+                    // extract savegame info
+                    const std::string& player_name = saveGameInfo.player_name;
+                    const std::string& class_name = saveGameInfo.player_class;
+                    char* class_name_c = const_cast<char*>(class_name.c_str());
+                    class_name_c[0] = (char)toupper((int)class_name[0]);
+                    int dungeon_lvl = saveGameInfo.dungeon_lvl;
+                    int player_lvl = saveGameInfo.player_lvl;
+
+                    // create shortened player name
+                    char shortened_name[20] = { '\0' };
+                    int len = (int)player_name.size();
+                    strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+                    if (len > 16) {
+                        strcat(shortened_name, "...");
+                    }
+
+                    // format book label string
+		            char text[1024];
+		            snprintf(text, sizeof(text), "%s\n%s LVL %d\nDungeon LVL %d",
+		                shortened_name, class_name.c_str(), player_lvl, dungeon_lvl);
+		            savegame_book->setText(text);
+
+                    // offset text
+                    SDL_Rect offset;
+                    offset.x = 34;
+                    offset.y = 184;
+		            savegame_book->setTextOffset(offset);
+		            savegame_book->setJustify(Button::justify_t::LEFT);
+
+		            // add savegame screenshot
+		            char screenshot_path[256];
+		            snprintf(screenshot_path, sizeof(screenshot_path),
+		                "%s/savegames/%s_screenshot.png", outputdir, str.c_str());
+                    if (dataPathExists(screenshot_path, false)) {
+		                auto screenshot = subwindow.addImage(
+		                    SDL_Rect{saveGameCount * 220 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                    0xffffffff,
+		                    screenshot_path,
+		                    (str + "_screenshot").c_str()
+		                );
+		                screenshot->ontop = true;
+		                Image* image = Image::get(screenshot_path); assert(image);
+		                screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
+		                screenshot->section.w = image->getHeight();
+		            }
+
+		            // add book overlay
+		            auto overlay = subwindow.addImage(
+		                SDL_Rect{saveGameCount * 220 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                0xffffffff,
+		                "images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
+		                (str + "_overlay").c_str()
+		            );
+		            overlay->ontop = true;
+
                     ++saveGameCount;
                 }
 		    }
         }
-		subwindow.setActualSize(SDL_Rect{0, 0, 898 + 220 * (saveGameCount - 1), 294});
+        if (saveGameCount > 0) {
+		    subwindow.setActualSize(SDL_Rect{0, 0, 898 + 220 * (saveGameCount - 1), 294});
+        }
         return saveGameCount;
 	}
 
@@ -5712,10 +5789,6 @@ namespace MainMenu {
 		banner_title->setJustify(Field::justify_t::CENTER);
 
 		auto subwindow = window->addFrame("subwindow");
-		subwindow->setActualSize(SDL_Rect{0, 0, 898, 294});
-		subwindow->setSize(SDL_Rect{90, 82, 898, 294});
-		subwindow->setColor(0);
-		subwindow->setBorder(0);
 		(void)populateContinueSubwindow(*subwindow, continueSingleplayer);
 
 		auto gradient = window->addImage(
@@ -5727,7 +5800,7 @@ namespace MainMenu {
 		gradient->ontop = true;
 
 		auto singleplayer = window->addButton("singleplayer");
-		singleplayer->setText("Singleplayer");
+		singleplayer->setText("Local Games");
 		singleplayer->setFont(smallfont_outline);
 		singleplayer->setSize(SDL_Rect{226, 36, 156, 36});
 		singleplayer->setColor(makeColor(255, 255, 255, 255));
@@ -5754,10 +5827,19 @@ namespace MainMenu {
             auto multiplayer = window->findButton("multiplayer");
 		    multiplayer->setTextColor(makeColor(127, 127, 127, 255));
 		    multiplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png");
+            Frame* subwindow = window->findFrame("subwindow");
+            subwindow->removeSelf();
+            subwindow = window->addFrame("subwindow");
+		    (void)populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    auto slider = window->findSlider("slider");
+		    const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+		    slider->setMinValue(0.f);
+		    slider->setValue(0.f);
+		    slider->setMaxValue(sliderMaxSize);
 		    });
 
 		auto multiplayer = window->addButton("multiplayer");
-		multiplayer->setText("Multiplayer");
+		multiplayer->setText("Online + LAN");
 		multiplayer->setFont(smallfont_outline);
 		multiplayer->setSize(SDL_Rect{702, 36, 144, 36});
 		multiplayer->setColor(makeColor(255, 255, 255, 255));
@@ -5784,6 +5866,15 @@ namespace MainMenu {
             auto singleplayer = window->findButton("singleplayer");
 		    singleplayer->setTextColor(makeColor(127, 127, 127, 255));
 		    singleplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
+            Frame* subwindow = window->findFrame("subwindow");
+            subwindow->removeSelf();
+            subwindow = window->addFrame("subwindow");
+		    (void)populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    auto slider = window->findSlider("slider");
+		    const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+		    slider->setMinValue(0.f);
+		    slider->setValue(0.f);
+		    slider->setMaxValue(sliderMaxSize);
 		    });
 
 		auto delete_button = window->addButton("delete");
@@ -5812,17 +5903,20 @@ namespace MainMenu {
 		enter_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		enter_button->addWidgetAction("MenuPageRight", "multiplayer");
 
+		const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+
 		auto slider = window->addSlider("slider");
 		slider->setHandleSize(SDL_Rect{0, 0, 98, 16});
 		slider->setHandleImage("images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderBar_00.png");
 		slider->setRailSize(SDL_Rect{129, 374, 820, 16});
 		slider->setRailImage("__empty");
 		slider->setMinValue(0.f);
-		slider->setValue(50.f);
-		slider->setMaxValue(100.f);
+		slider->setValue(0.f);
+		slider->setMaxValue(sliderMaxSize);
 		slider->setTickCallback([](Widget& widget){
 		    auto slider = static_cast<Slider*>(&widget);
 		    auto frame = static_cast<Frame*>(slider->getParent());
+		    auto subwindow = frame->findFrame("subwindow");
 		    auto slider_left = frame->findImage("slider_left");
 		    auto slider_right = frame->findImage("slider_right");
 		    if (slider->isActivated()) {
@@ -5834,8 +5928,15 @@ namespace MainMenu {
 		        slider_left->disabled = true;
 		        slider_right->disabled = true;
 		    }
+		    auto size = subwindow->getActualSize();
+		    slider->setValue(size.x);
 		});
 		slider->setCallback([](Slider& slider){
+		    auto frame = static_cast<Frame*>(slider.getParent());
+		    auto subwindow = frame->findFrame("subwindow");
+		    auto size = subwindow->getActualSize();
+		    size.x = slider.getValue();
+		    subwindow->setActualSize(size);
 		    });
 
 		auto slider_left = window->addImage(
@@ -6588,6 +6689,12 @@ namespace MainMenu {
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 					setupSplitscreen();
+		            for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                        if (!saveGameExists(multiplayer == SINGLE, i)) {
+                            savegameCurrentFileIndex = i;
+                            break;
+                        }
+                    }
 					doNewGame(false);
 					destroyMainMenu();
 				}

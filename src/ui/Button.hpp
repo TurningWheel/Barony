@@ -93,6 +93,7 @@ public:
 	const char*					getBackground() const { return background.c_str(); }
 	const char*					getBackgroundHighlighted() const { return backgroundHighlighted.c_str(); }
 	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
+	SDL_Rect                    getTextOffset() const { return textOffset; }
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }
@@ -114,6 +115,7 @@ public:
 	void	setJustify(const int _justify) { hjustify = vjustify = static_cast<justify_t>(_justify); }
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
+	void    setTextOffset(const SDL_Rect& offset) { textOffset = offset; }
 
 private:
 	void (*callback)(Button&) = nullptr;			//!< native callback for clicking
@@ -134,4 +136,5 @@ private:
 	style_t style = STYLE_NORMAL;					//!< button style
 	justify_t hjustify = CENTER;					//!< horizontal text justification
 	justify_t vjustify = CENTER;					//!< vertical text justification
+	SDL_Rect textOffset{0, 0, 0, 0};                //!< offset used by label test
 };
