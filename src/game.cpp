@@ -4581,6 +4581,7 @@ void ingameHud()
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
+		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();

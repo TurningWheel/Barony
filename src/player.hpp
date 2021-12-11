@@ -756,6 +756,7 @@ public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
+		Frame* interactBlockClickFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
 		Frame* selectedItemCursorFrame = nullptr;
 		Frame* spellFrame = nullptr;
@@ -893,6 +894,7 @@ public:
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
+		void updateItemContextMenuClickFrame();
 		void updateInventoryItemTooltip();
 		void updateSelectedItemAnimation();
 		void updateItemContextMenu();

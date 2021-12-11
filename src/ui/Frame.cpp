@@ -1126,6 +1126,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	if (rectContainsPoint(_size, omousex, omousey) && !hollow) {
+		//messagePlayer(0, "%d: %s", getOwner(), getName());
 		if (clickable && usable) {
 			if (mousestatus[SDL_BUTTON_LEFT]) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;

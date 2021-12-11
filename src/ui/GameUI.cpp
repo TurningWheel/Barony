@@ -2765,10 +2765,15 @@ void Player::GUIDropdown_t::process()
 		dropdownFrame->setDisabled(false);
 	}
 
-	auto highlightImage = dropdownFrame->findImage("interact selected highlight");
-	highlightImage->disabled = true;
-	//highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
-	highlightImage->color = makeColor(255, 255, 255, 255);
+	auto highlightImageMid = dropdownFrame->findImage("interact selected highlight mid");
+	highlightImageMid->disabled = true;
+	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageLeft = dropdownFrame->findImage("interact selected highlight left");
+	highlightImageLeft->disabled = true;
+	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageRight = dropdownFrame->findImage("interact selected highlight right");
+	highlightImageRight->disabled = true;
+	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
 
 	size_t index = 0;
 	unsigned int maxWidth = 0;
@@ -2802,18 +2807,14 @@ void Player::GUIDropdown_t::process()
 		snprintf(glyphname, sizeof(glyphname), "glyph %d", index);
 		char optionname[32] = "";
 		snprintf(optionname, sizeof(optionname), "interact option %d", index);
-		char backingname[32] = "";
-		snprintf(backingname, sizeof(backingname), "backing %d", index);
 
 		auto img = dropdownFrame->findImage(glyphname);
 		auto txt = dropdownFrame->findField(optionname);
-		auto backingImg = dropdownFrame->findImage(backingname);
-		optionFrames.push_back(std::make_tuple(img, txt, backingImg));
+		optionFrames.push_back(std::make_tuple(img, txt, nullptr));
 		txt->setColor(hudColors.itemContextMenuOptionText);
 		//txt->setColor(makeColor(148, 82, 3, 255));
 		txt->setDisabled(false);
 		img->disabled = true;
-		backingImg->disabled = true;
 
 		if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 		{
@@ -2844,9 +2845,6 @@ void Player::GUIDropdown_t::process()
 				size.x = img->pos.x + img->pos.w + textPaddingX;
 				txt->setHJustify(Field::justify_t::LEFT);
 			}
-			backingImg->pos.x = size.x - 4;
-			backingImg->pos.y = size.y + 2;
-			backingImg->pos.w = size.w + 8;
 			txt->setSize(size);
 		}
 
@@ -2864,16 +2862,12 @@ void Player::GUIDropdown_t::process()
 	{
 		auto img = std::get<0>(optionGlyphTextBacking);
 		auto txt = std::get<1>(optionGlyphTextBacking);
-		auto backingImg = std::get<2>(optionGlyphTextBacking);
 
 		if ( txt->getHJustify() == Field::justify_t::CENTER || true )
 		{
 			SDL_Rect size = txt->getSize();
 			size.w = maxWidth;
 			txt->setSize(size);
-			backingImg->pos.x = size.x - 4;
-			backingImg->pos.y = size.y + 2;
-			backingImg->pos.w = size.w + 8;
 		}
 
 		auto ml = dropdownFrame->findImage("interact middle left");
@@ -2915,7 +2909,7 @@ void Player::GUIDropdown_t::process()
 		frameSize.w = tr->pos.x + tr->pos.w;
 	}
 	{
-		const int middleOffsetY = 4;
+		const int middleOffsetY = 13;
 		auto ml = dropdownFrame->findImage("interact middle left");
 		ml->pos.h = maxHeight - interimHeight - middleOffsetY;
 		auto mmid = dropdownFrame->findImage("interact middle background");
@@ -2968,14 +2962,23 @@ void Player::GUIDropdown_t::process()
 	if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 	{
 		auto txt = std::get<1>(optionFrames[dropDownOptionSelected]);
-		//txt->setColor(makeColor(218, 163, 41, 255));
 		txt->setColor(hudColors.itemContextMenuOptionSelectedText);
 		SDL_Rect size = txt->getSize();
 		size.x -= 4;
 		size.w += 2 * 4;
-		//size.h += 2;
-		highlightImage->pos = size;
-		highlightImage->disabled = false;
+		size.y += 3;
+		highlightImageMid->pos = size;
+		highlightImageMid->pos.x += highlightImageLeft->pos.w;
+		highlightImageMid->pos.w -= 2 * highlightImageLeft->pos.w;
+		highlightImageMid->pos.h = highlightImageLeft->pos.h;
+		highlightImageMid->disabled = false;
+
+		highlightImageLeft->pos.x = highlightImageMid->pos.x - highlightImageLeft->pos.w;
+		highlightImageLeft->pos.y = highlightImageMid->pos.y;
+		highlightImageLeft->disabled = false;
+		highlightImageRight->pos.x = highlightImageMid->pos.x + highlightImageMid->pos.w;
+		highlightImageRight->disabled = false;
+		highlightImageRight->pos.y = highlightImageMid->pos.y;
 	}
 
 	bool activate = false;
@@ -3074,9 +3077,17 @@ void Player::GUIDropdown_t::open(const std::string name)
 			dropDownOptionSelected = allDropDowns[name].defaultOption;
 		}
 	}
-	if ( auto highlightImage = dropdownFrame->findImage("interact selected highlight") )
+	if ( auto highlightImageMid = dropdownFrame->findImage("interact selected highlight mid") )
 	{
-		highlightImage->disabled = true;
+		highlightImageMid->disabled = true;
+	}
+	if ( auto highlightImageLeft = dropdownFrame->findImage("interact selected highlight left") )
+	{
+		highlightImageLeft->disabled = true;
+	}
+	if ( auto highlightImageRight = dropdownFrame->findImage("interact selected highlight right") )
+	{
+		highlightImageRight->disabled = true;
 	}
 
 	//Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
@@ -3124,41 +3135,36 @@ void Player::GUIDropdown_t::create(const std::string name)
 	const int topBackgroundHeight = 30;
 	const int optionHeight = 20;
 
-	dropdownFrame->addImage(SDL_Rect{ 12, 0, 0, 34 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_T02.png", "interact top background");
-	dropdownFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_TL02.png", "interact top left");
-	dropdownFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_TR02.png", "interact top right");
+	dropdownFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
+	dropdownFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
+	dropdownFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
 
-	dropdownFrame->addImage(SDL_Rect{ 12, 34, 0, 76 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_C02.png", "interact middle background");
-	dropdownFrame->addImage(SDL_Rect{ 0, 34, 12, 76 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_L02.png", "interact middle left");
-	dropdownFrame->addImage(SDL_Rect{ 0, 34, 12, 76 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_R02.png", "interact middle right");
+	dropdownFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
+	auto ml = dropdownFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
+	ml->tiled = true;
+	auto mr = dropdownFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
+	mr->tiled = true;
 
-	dropdownFrame->addImage(SDL_Rect{ 12, 96, 0, 10 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_B02.png", "interact bottom background");
-	dropdownFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_BL02.png", "interact bottom left");
-	dropdownFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_BR02.png", "interact bottom right");
+	dropdownFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
+	dropdownFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
+	dropdownFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
 
-	const int textBackingSize = 24;
-	for ( int i = 1; i <= dropDown.options.size(); ++i )
-	{
-		char backingname[32] = "";
-		snprintf(backingname, sizeof(backingname), "backing %d", i);
-		Frame::image_t* backingImg = dropdownFrame->addImage(
-			SDL_Rect{ 0, 0, 0, textBackingSize },
-			0xFFFFFFFF, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack03.png", backingname);
-	}
-
-	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
-		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack03.png", "interact selected highlight");
-	/*dropdownFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
-		hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");*/
+	auto selectmid = dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 22 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
+	selectmid->tiled = true;
+	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
+	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
 
 	const char* interactFont = "fonts/pixel_maz.ttf#32#2";
 
@@ -3171,7 +3177,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 	interactText->setColor(hudColors.itemContextMenuHeadingText);
 
 	const int interactOptionStartX = 4;
-	const int interactOptionStartY = 32;
+	const int interactOptionStartY = 33;
 	const int glyphSize = 20;
 	const int textWidth = 80;
 	const int textHeight = glyphSize + 8;
@@ -3200,7 +3206,11 @@ void Player::GUIDropdown_t::create(const std::string name)
 		}
 
 		const int textAlignX = interactGlyph->pos.x + interactGlyph->pos.w + 6;
-		int textAlignY = interactGlyph->pos.y - 4;
+		int textAlignY = interactGlyph->pos.y - 10;
+		if ( i == 1 )
+		{
+			textAlignY = interactGlyph->pos.y - 8;
+		}
 
 		char optionname[32] = "";
 		snprintf(optionname, sizeof(optionname), "interact option %d", i);
@@ -6169,29 +6179,37 @@ void createInventoryTooltipFrame(const int player)
 		const int topBackgroundHeight = 30;
 		const int optionHeight = 20;
 
-		interactFrame->addImage(SDL_Rect{ 12, 0, 0, 34 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_T02.png", "interact top background");
-		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL02.png", "interact top left");
-		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR02.png", "interact top right");
+		interactFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
 
-		interactFrame->addImage(SDL_Rect{ 12, 34, 0, 76 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_C02.png", "interact middle background");
-		interactFrame->addImage(SDL_Rect{ 0, 34, 12, 76 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_L02.png", "interact middle left");
-		interactFrame->addImage(SDL_Rect{ 0, 34, 12, 76 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_R02.png", "interact middle right");
+		interactFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
+		auto ml = interactFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
+		ml->tiled = true;
+		auto mr = interactFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
+		mr->tiled = true;
 
-		interactFrame->addImage(SDL_Rect{ 12, 96, 0, 10 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_B02.png", "interact bottom background");
-		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL02.png", "interact bottom left");
-		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR02.png", "interact bottom right");
+		interactFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
 
-		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 76 },
-			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack03.png", "interact selected highlight");
+		auto selectmid = interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 22 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
+		selectmid->tiled = true;
+		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
+		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
+
 
 		const char* interactFont = "fonts/pixel_maz.ttf#32#2";
 
@@ -6204,7 +6222,7 @@ void createInventoryTooltipFrame(const int player)
 		interactText->setColor(hudColors.itemContextMenuHeadingText);
 
 		const int interactOptionStartX = 4;
-		const int interactOptionStartY = 36;
+		const int interactOptionStartY = 33;
 		const int glyphSize = 20;
 
 		auto interactGlyph1 = interactFrame->addImage(
@@ -6235,7 +6253,7 @@ void createInventoryTooltipFrame(const int player)
 				glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 2");
 
-		textAlignY = interactGlyph2->pos.y - 8;
+		textAlignY = interactGlyph2->pos.y - 10;
 		interactText = interactFrame->addField("interact option 2", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -6253,7 +6271,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 3");
 
-		textAlignY = interactGlyph3->pos.y - 8;
+		textAlignY = interactGlyph3->pos.y - 10;
 		interactText = interactFrame->addField("interact option 3", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -6271,7 +6289,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 4");
 
-		textAlignY = interactGlyph4->pos.y - 8;
+		textAlignY = interactGlyph4->pos.y - 10;
 		interactText = interactFrame->addField("interact option 4", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -6289,7 +6307,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 5");
 
-		textAlignY = interactGlyph5->pos.y - 8;
+		textAlignY = interactGlyph5->pos.y - 10;
 		interactText = interactFrame->addField("interact option 5", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -7565,6 +7583,7 @@ void createPlayerInventory(const int player)
 		const auto backPackSlotsFrame = frame->addFrame("backpack slots");
 		backPackSlotsFrame->setSize(backpackSlotsPos);
 		const int backpackBaseSlotOffsetY = 8;
+		int lowestY = 0;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, backpackBaseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 
@@ -7586,11 +7605,14 @@ void createPlayerInventory(const int player)
 				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
+				lowestY = std::max(slotPos.y + slotPos.h, lowestY);
 				//slotFrame->setDisabled(true);
 
 				createPlayerInventorySlotFrameElements(slotFrame);
 			}
 		}
+		backpackSlotsPos.h = lowestY;
+		backPackSlotsFrame->setSize(backpackSlotsPos);
 	}
 
 	{
@@ -7814,9 +7836,20 @@ void Player::Inventory_t::updateItemContextMenu()
 		return;
 	}
 
+	auto highlightImageMid = interactFrame->findImage("interact selected highlight mid");
+	highlightImageMid->disabled = true;
+	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageLeft = interactFrame->findImage("interact selected highlight left");
+	highlightImageLeft->disabled = true;
+	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageRight = interactFrame->findImage("interact selected highlight right");
+	highlightImageRight->disabled = true;
+	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
+
 	if ( !item || !itemMenuOpen )
 	{
 		itemMenuOpen = false;
+		itemMenuSelected = 0;
 		interactFrame->setDisabled(true);
 		return;
 	}
@@ -7856,10 +7889,6 @@ void Player::Inventory_t::updateItemContextMenu()
 		optionFrames.push_back(std::make_pair(glyph5, option5));
 	}
 
-	auto highlightImage = interactFrame->findImage("interact selected highlight");
-	highlightImage->disabled = true;
-	highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
-	
 	size_t index = 0;
 	unsigned int maxWidth = 0;
 	if ( auto interactText = interactFrame->findField("interact text") )
@@ -7939,36 +7968,47 @@ void Player::Inventory_t::updateItemContextMenu()
 		++index;
 	}
 
+	//maxWidth += 16; -- edit this to add extra left/right padding
+
 	const int rightClickProtectBuffer = (right_click_protect ? 0 : 10);
 
-	index = 0;
-	for ( auto& optionPair : optionFrames )
+	bool alignRight = true;
+	if ( bCompactView )
 	{
-		auto& img = optionPair.first;
-		auto& txt = optionPair.second;
-
-		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		if ( player.paperDoll.isItemOnDoll(*item) )
 		{
-			SDL_Rect size = txt->getSize();
-			size.w = maxWidth;
-			txt->setSize(size);
-		}
-
-		if ( index < options.size() )
-		{
-			auto ml = interactFrame->findImage("interact middle left");
-			SDL_Rect absoluteSize = txt->getAbsoluteSize();
-			absoluteSize.x -= (4 + ml->pos.w) + rightClickProtectBuffer;
-			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
-			absoluteSize.y += 4;
-			absoluteSize.h -= 4;
-			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
-				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			if ( paperDollPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
 			{
-				itemMenuSelected = index;
+				alignRight = false;
+			}
+			else
+			{
+				alignRight = true;
 			}
 		}
-		++index;
+		else if ( itemCategory(item) == SPELL_CAT )
+		{
+			if ( spellPanel.panelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				alignRight = false;
+			}
+			else
+			{
+				alignRight = true;
+			}
+		}
+		else
+		{
+			// normal inventory items
+			if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				alignRight = false;
+			}
+			else
+			{
+				alignRight = true;
+			}
+		}
 	}
 
 	const int textStartX = (glyph1->disabled ? 0 : glyph1->pos.x + glyph1->pos.w) + textPaddingX;
@@ -7991,7 +8031,7 @@ void Player::Inventory_t::updateItemContextMenu()
 		frameSize.w = tr->pos.x + tr->pos.w;
 	}
 	{
-		const int middleOffsetY = 4;
+		const int middleOffsetY = 13;
 		auto ml = interactFrame->findImage("interact middle left");
 		ml->pos.h = maxHeight - interimHeight - middleOffsetY;
 		auto mmid = interactFrame->findImage("interact middle background");
@@ -8025,12 +8065,56 @@ void Player::Inventory_t::updateItemContextMenu()
 		interactText->setSize(size);
 	}
 
+	if ( !alignRight )
+	{
+		frameSize.x -= frameSize.w;
+	}
+
+	int mouseDetectionOffsetY = 0;
+	if ( (frameSize.y + frameSize.h) > player.camera_virtualy2() )
+	{
+		int yoffset = (frameSize.y + frameSize.h) - player.camera_virtualy2();
+		frameSize.y -= yoffset;
+		mouseDetectionOffsetY = yoffset;
+	}
 	interactFrame->setSize(frameSize);
+
+	index = 0;
+	for ( auto& optionPair : optionFrames )
+	{
+		auto& img = optionPair.first;
+		auto& txt = optionPair.second;
+
+		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		{
+			SDL_Rect size = txt->getSize();
+			size.w = maxWidth;
+			txt->setSize(size);
+		}
+
+		if ( index < options.size() )
+		{
+			auto ml = interactFrame->findImage("interact middle left");
+			SDL_Rect absoluteSize = txt->getAbsoluteSize();
+			absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
+			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+			absoluteSize.y += 4;
+			absoluteSize.h -= 4;
+			absoluteSize.y += mouseDetectionOffsetY;
+			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			{
+				itemMenuSelected = index;
+			}
+		}
+		++index;
+	}
 
 	SDL_Rect absoluteSize = interactFrame->getAbsoluteSize();
 	// right click protect uses exact border, else there is 10 px buffer
-	absoluteSize.x -= rightClickProtectBuffer;
+	absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
 	absoluteSize.w += rightClickProtectBuffer;
+	absoluteSize.y += mouseDetectionOffsetY;
 	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
 		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
 	{
@@ -8044,9 +8128,19 @@ void Player::Inventory_t::updateItemContextMenu()
 		SDL_Rect size = txt->getSize();
 		size.x -= 4;
 		size.w += 2 * 4;
-		size.h += 2;
-		highlightImage->pos = size;
-		highlightImage->disabled = false;
+		size.y += 3;
+		highlightImageMid->pos = size;
+		highlightImageMid->pos.x += highlightImageLeft->pos.w;
+		highlightImageMid->pos.w -= 2 * highlightImageLeft->pos.w;
+		highlightImageMid->pos.h = highlightImageLeft->pos.h;
+		highlightImageMid->disabled = false;
+
+		highlightImageLeft->pos.x = highlightImageMid->pos.x - highlightImageLeft->pos.w;
+		highlightImageLeft->pos.y = highlightImageMid->pos.y;
+		highlightImageLeft->disabled = false;
+		highlightImageRight->pos.x = highlightImageMid->pos.x + highlightImageMid->pos.w;
+		highlightImageRight->disabled = false;
+		highlightImageRight->pos.y = highlightImageMid->pos.y;
 	}
 
 	bool activateSelection = false;
@@ -8063,6 +8157,7 @@ void Player::Inventory_t::updateItemContextMenu()
 		//Close the menu.
 		itemMenuOpen = false;
 		itemMenuItem = 0;
+		interactFrame->setDisabled(true);
 	}
 }
 
@@ -8466,6 +8561,44 @@ Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
 	playerINT = 0;
 	playerPER = 0;
 	playerCHR = 0;
+}
+
+void Player::Inventory_t::updateItemContextMenuClickFrame()
+{
+	if ( !interactBlockClickFrame )
+	{
+		char interactBlockClickName[64] = "";
+		snprintf(interactBlockClickName, sizeof(interactBlockClickName), "player inventory dropdown block click %d", player);
+		if ( interactBlockClickFrame = gui->addFrame(interactBlockClickName) )
+		{
+			interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
+				player.camera_virtualy1(),
+				player.camera_virtualWidth(),
+				player.camera_virtualHeight() });
+			interactBlockClickFrame->setOwner(player.playernum);
+			interactBlockClickFrame->setDisabled(true);
+			interactBlockClickFrame->setHollow(true);
+		}
+	}
+
+	interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
+		player.camera_virtualy1(),
+		player.camera_virtualWidth(),
+		player.camera_virtualHeight() });
+
+	if ( interactFrame )
+	{
+		if ( interactFrame->isDisabled() )
+		{
+			interactBlockClickFrame->setDisabled(true);
+			interactBlockClickFrame->setHollow(true);
+		}
+		else
+		{
+			interactBlockClickFrame->setDisabled(false);
+			interactBlockClickFrame->setHollow(false);
+		}
+	}
 }
 
 void Player::Inventory_t::updateCursor()

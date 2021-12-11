@@ -3789,8 +3789,10 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	auto inventoryBaseImagesFrame = frame->findFrame("inventory base");
 	auto invSlotsFrame = frame->findFrame("inventory slots");
 	auto dollSlotsFrame = frame->findFrame("paperdoll slots");
+	auto backpackSlotsFrame = frame->findFrame("backpack slots");
 	SDL_Rect invSlotsPos = invSlotsFrame->getSize();
 	SDL_Rect dollSlotsPos = dollSlotsFrame->getSize();
+	SDL_Rect backpackSlotsPos = backpackSlotsFrame->getSize();
 
 	auto defaultInvImg = inventoryBaseImagesFrame->findImage("inventory base img");
 	if ( auto img = Image::get(defaultInvImg->path.c_str()) )
@@ -3862,6 +3864,9 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		dollSlotsPos.y = 0;
 		dollSlotsPos.w = defaultInvImg->pos.w;
 		dollSlotsPos.h = 202;
+
+		backpackSlotsPos.x = invSlotsPos.x;
+		backpackSlotsPos.y = invSlotsPos.y + invSlotsPos.h;
 	}
 	else
 	{
@@ -3877,6 +3882,8 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 			: inventoryBaseImagesFrame->getSize().w - dollSlotsPos.w;
 		dollSlotsPos.y = 8;
 
+		backpackSlotsPos.x = invSlotsPos.x;
+		backpackSlotsPos.y = invSlotsPos.y + invSlotsPos.h;
 	}
 
 	if ( bCompactView 
@@ -3907,12 +3914,14 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	}
 	invSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	backpackSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	compactInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	defaultInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 
 	invSlotsFrame->setSize(invSlotsPos);
 	dollSlotsFrame->setSize(dollSlotsPos);
+	backpackSlotsFrame->setSize(backpackSlotsPos);
 
 	auto characterPreview = frame->findFrame("inventory character preview");
 	auto characterPreviewPos = characterPreview->getSize();
@@ -4830,6 +4839,51 @@ void Player::Inventory_t::updateInventory()
 							// mouse will be situated halfway in first menu option
 							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
 						}
+						itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
+
+						bool alignRight = true;
+						if ( bCompactView )
+						{
+							if ( players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								if ( paperDollPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									alignRight = false;
+								}
+								else
+								{
+									alignRight = true;
+								}
+							}
+							else if ( itemCategory(item) == SPELL_CAT )
+							{
+								if ( spellPanel.panelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									alignRight = false;
+								}
+								else
+								{
+									alignRight = true;
+								}
+							}
+							else
+							{
+								// normal inventory items
+								if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									alignRight = false;
+								}
+								else
+								{
+									alignRight = true;
+								}
+							}
+						}
+						if ( !alignRight )
+						{
+							itemMenuX -= 16;
+						}
+
 						if ( auto highlightImage = interactFrame->findImage("interact selected highlight") )
 						{
 							highlightImage->disabled = true;
