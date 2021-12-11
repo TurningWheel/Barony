@@ -6036,5 +6036,6 @@ Cast#
 4082 Throw#
 4083 Zap#
 4084 Dig#
+4085 You can not drop gold here.#
 
 4099 end#
