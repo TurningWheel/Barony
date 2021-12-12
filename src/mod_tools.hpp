@@ -2808,3 +2808,15 @@ public:
 	std::map<Uint32, Statue_t> allStatues;
 };
 extern StatueManager_t StatueManager;
+
+class DebugTimers_t
+{
+	std::map<std::string, std::vector<std::pair<std::string, std::chrono::high_resolution_clock::time_point>>> timepoints;
+public:
+	void addTimePoint(std::string key, std::string desc = "") { timepoints[key].push_back(std::make_pair(desc, std::chrono::high_resolution_clock::now())); }
+	void printTimepoints(std::string key, int& posy);
+	void clearTimepoints(std::string key) { timepoints[key].clear(); }
+	void clearAllTimepoints() { timepoints.clear(); }
+	void printAllTimepoints();
+};
+extern DebugTimers_t DebugTimers;

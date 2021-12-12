@@ -26,6 +26,7 @@ ItemTooltips_t ItemTooltips;
 IRCHandler_t IRCHandler;
 #endif // !NINTENDO
 StatueManager_t StatueManager;
+DebugTimers_t DebugTimers;
 
 const std::vector<std::string> MonsterStatCustomManager::itemStatusStrings =
 {
@@ -3573,4 +3574,38 @@ void StatueManager_t::readStatueFromFile(int index)
 
 		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 	}
+}
+
+void DebugTimers_t::printAllTimepoints()
+{
+	int posy = 100;
+	for ( auto& keyValue : timepoints )
+	{
+		printTimepoints(keyValue.first, posy);
+		posy += 16;
+	}
+}
+
+void DebugTimers_t::printTimepoints(std::string key, int& posy)
+{
+	auto& points = timepoints[key];
+	if ( points.empty() ) { return; }
+	int starty = posy;
+	int index = 0;
+	std::string output = "";
+	auto previousPoint = points[0];
+	for ( auto& point : points )
+	{
+		double timediff = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(point.second - previousPoint.second).count();
+		char outputBuf[1024] = "";
+		snprintf(outputBuf, sizeof(outputBuf), "[%d]['%s'] %4.5fms\n", index, point.first.c_str(), timediff);
+		output += outputBuf;
+		posy += 8;
+		if ( index > 0 )
+		{
+			previousPoint = point;
+		}
+		++index;
+	}
+	printTextFormatted(font8x8_bmp, 8, starty, "%s:\n%s", key.c_str(), output.c_str());
 }
