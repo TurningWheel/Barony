@@ -2457,6 +2457,17 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				1 };
 			headerBg->disabled = false;
 		}
+		else
+		{
+			auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
+			headerBg->disabled = true;
+			auto tooltipMin = frameMain->findImage("inventory mouse tooltip min");
+			tooltipMin->disabled = true;
+			auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
+			tooltipMax->disabled = true;
+			auto headerMax = frameMain->findImage("inventory mouse tooltip header max");
+			headerMax->disabled = true;
+		}
 	
 		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 0, textx + 3 * padx, imgTopBackground->pos.h});
 		txtHeader->setVJustify(Field::justify_t::CENTER);
