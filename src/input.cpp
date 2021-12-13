@@ -102,6 +102,7 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot10", "0");
 		inputs[c].bind("MenuMouseWheelUp", "MouseWheelUp");
 		inputs[c].bind("MenuMouseWheelDown", "MouseWheelDown");
+		inputs[c].bind("MenuRightClick", "Mouse3");
 
 		inputs[c].bind("Attack", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str());
 		inputs[c].bind("Cast", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str());
