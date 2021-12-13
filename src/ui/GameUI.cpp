@@ -11110,6 +11110,22 @@ real_t Player::SkillSheet_t::windowHeightScaleX = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleY = 0.0;
 bool Player::SkillSheet_t::generateFollowerTableForSkillsheet = false;
 
+struct SkillSheetFrames_t
+{
+	Frame* skillsFrame = nullptr;
+	Frame* entryFrameLeft = nullptr;
+	Frame* entryFrameRight = nullptr;
+	Frame* skillDescFrame = nullptr;
+	Frame* skillBgImgsFrame = nullptr;
+	Frame* scrollAreaOuterFrame = nullptr;
+	Frame* scrollArea = nullptr;
+	Frame* entryFrames[NUMPROFICIENCIES] = { nullptr };
+	Frame* effectFrames[10] = { nullptr };
+	Frame* legendFrame = nullptr;
+	bool legendTextRequiresReflow = true;
+};
+SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
+
 void Player::SkillSheet_t::createSkillSheet()
 {
 	if ( skillFrame )
@@ -11139,6 +11155,8 @@ void Player::SkillSheet_t::createSkillSheet()
 	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 
 	Frame* skillBackground = frame->addFrame("skills frame");
+	skillBackground->setHollow(true);
+	skillSheetEntryFrames[player.playernum].skillsFrame = skillBackground;
 	const int width = 684;
 	const int height = 404;
 	skillBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height });
@@ -11146,7 +11164,11 @@ void Player::SkillSheet_t::createSkillSheet()
 		"images/ui/SkillSheet/UI_Skills_Window_02.png", "skills img");*/
 
 	Frame* allSkillEntriesLeft = skillBackground->addFrame("skill entries frame left");
+	allSkillEntriesLeft->setHollow(true);
 	Frame* allSkillEntriesRight = skillBackground->addFrame("skill entries frame right");
+	allSkillEntriesRight->setHollow(true);
+	skillSheetEntryFrames[player.playernum].entryFrameLeft = allSkillEntriesLeft;
+	skillSheetEntryFrames[player.playernum].entryFrameRight = allSkillEntriesRight;
 	//allSkillEntries->setSize(SDL_Rect{ 0, 0, skillBackground->getSize().w, skillBackground->getSize().h });
 
 	SDL_Rect allSkillEntriesPosLeft{ 0, 0, 182, skillBackground->getSize().h };
@@ -11160,6 +11182,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Window_Right_03.png", "bg wing right");
 
 	auto skillBackgroundImagesFrame = skillBackground->addFrame("skills bg images");
+	skillBackgroundImagesFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].skillBgImgsFrame = skillBackgroundImagesFrame;
 	skillBackgroundImagesFrame->setSize(SDL_Rect{ 0, 0, skillBackground->getSize().w, skillBackground->getSize().h });
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
@@ -11202,6 +11226,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		char skillname[32];
 		snprintf(skillname, sizeof(skillname), "skill %d", i);
 		Frame* entry = allSkillEntriesRight->addFrame(skillname);
+		entry->setHollow(true);
+		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
 		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
 		SDL_Rect imgBgPos{ skillEntryPos.w - 36, 0, 36, 36 };
@@ -11251,6 +11277,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		char skillname[32];
 		snprintf(skillname, sizeof(skillname), "skill %d", i);
 		Frame* entry = allSkillEntriesLeft->addFrame(skillname);
+		entry->setHollow(true);
+		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
 		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
 		SDL_Rect imgBgPos{ 0, 0, 36, 36 };
@@ -11304,6 +11332,8 @@ void Player::SkillSheet_t::createSkillSheet()
 	SDL_Rect descPos{ 0, 54, 320, 324 };
 	descPos.x = skillBackground->getSize().w / 2 - descPos.w / 2;
 	auto skillDescriptionFrame = skillBackground->addFrame("skill desc frame");
+	skillDescriptionFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].skillDescFrame = skillDescriptionFrame;
 	skillDescriptionFrame->setSize(descPos);
 
 	/*auto debugRect = skillDescriptionFrame->addImage(SDL_Rect{ 0, 0, descPos.w, descPos.h }, 0xFFFFFFFF,
@@ -11330,8 +11360,12 @@ void Player::SkillSheet_t::createSkillSheet()
 	actualFont->sizeText("_", nullptr, &fontHeight);
 
 	auto scrollAreaOuterFrame = skillDescriptionFrame->addFrame("scroll area outer frame");
+	scrollAreaOuterFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].scrollAreaOuterFrame = scrollAreaOuterFrame;
 	scrollAreaOuterFrame->setSize(SDL_Rect{ 16, 4, sliderPos.x - 4 - 16, descPos.h - 8 });
 	auto scrollAreaFrame = scrollAreaOuterFrame->addFrame("skill scroll area");
+	scrollAreaFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].scrollArea = scrollAreaFrame;
 	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 1000 });
 
 	SDL_Rect txtPos{ 0, 0, scrollAreaFrame->getSize().w, scrollAreaFrame->getSize().h };
@@ -11381,6 +11415,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		skillDescriptionTxt->setOntop(true);
 
 		auto skillDescriptionBgFrame = scrollAreaFrame->addFrame("skill desc bg frame");
+		skillDescriptionBgFrame->setHollow(true);
 		{
 			//Uint32 color = makeColor(22, 24, 29, 255);
 			Uint32 color = makeColor(255, 255, 255, 128);
@@ -11424,6 +11459,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		{
 			snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", i);
 			auto effectFrame = scrollAreaFrame->addFrame(effectFrameName);
+			effectFrame->setHollow(true);
+			skillSheetEntryFrames[player.playernum].effectFrames[i] = effectFrame;
 			effectFrame->setSize(SDL_Rect{ txtPos.x, txtPos.y - 2, txtPos.w, fontHeight + 8 });
 			effectFrame->addImage(
 				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 }, 
@@ -11434,6 +11471,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			int valueX =  effectFrame->getSize().w - effectXOffset;
 
 			auto valBgImgFrame = effectFrame->addFrame("effect val bg frame");
+			valBgImgFrame->setHollow(true);
 			valBgImgFrame->setSize(SDL_Rect{ valueX - effectBackgroundXOffset, 0, effectBackgroundWidth, effectFrame->getSize().h - 4});
 			{
 				Uint32 color = makeColor(51, 33, 26, 255);
@@ -11463,6 +11501,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			}
 
 			auto effectTxtFrame = effectFrame->addFrame("effect txt frame");
+			effectTxtFrame->setHollow(true);
 			effectTxtFrame->setSize(SDL_Rect{ 0, 0, effectFrame->getSize().w - effectXOffset - effectBackgroundXOffset, effectFrame->getSize().h - 4 });
 			auto effectTxt = effectTxtFrame->addField("effect txt", 1024);
 			effectTxt->setFont(descFont);
@@ -11472,6 +11511,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			effectTxt->setColor(makeColor(201, 162, 100, 255));
 
 			auto effectValFrame = effectFrame->addFrame("effect val frame");
+			effectValFrame->setHollow(true);
 			effectValFrame->setSize(SDL_Rect{ valueX, 0, effectXOffset, effectFrame->getSize().h - 4 });
 			auto effectVal = effectValFrame->addField("effect val", 1024);
 			effectVal->setFont(descFont);
@@ -11497,6 +11537,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		legendDivTxt->setHJustify(Field::justify_t::CENTER);
 
 		auto legendFrame = scrollAreaFrame->addFrame("legend frame");
+		legendFrame->setHollow(true);
+		skillSheetEntryFrames[player.playernum].legendFrame = legendFrame;
 		SDL_Rect legendPos{ 0, txtPos.y, txtPos.w, 100 };
 		legendFrame->setSize(legendPos);
 		auto tl = legendFrame->addImage(SDL_Rect{ 0, 0, 18, 18 }, 0xFFFFFFFF, 
@@ -12757,16 +12799,16 @@ void Player::SkillSheet_t::processSkillSheet()
 		skillSlideDirection = 0;
 	}
 
-	auto innerFrame = skillFrame->findFrame("skills frame");
+	auto innerFrame = skillSheetEntryFrames[player.playernum].skillsFrame;
 	SDL_Rect sheetSize = innerFrame->getSize();
-	Frame* allSkillEntriesLeft = innerFrame->findFrame("skill entries frame left");
-	Frame* allSkillEntriesRight = innerFrame->findFrame("skill entries frame right");
+	Frame* allSkillEntriesLeft = skillSheetEntryFrames[player.playernum].entryFrameLeft;
+	Frame* allSkillEntriesRight = skillSheetEntryFrames[player.playernum].entryFrameRight;
 	auto leftWingImg = allSkillEntriesLeft->findImage("bg wing left");
 	auto rightWingImg = allSkillEntriesRight->findImage("bg wing right");
-	auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
-	auto bgImgFrame = innerFrame->findFrame("skills bg images");
-	auto scrollAreaOuterFrame = skillDescriptionFrame->findFrame("scroll area outer frame");
-	auto scrollArea = scrollAreaOuterFrame->findFrame("skill scroll area");
+	auto skillDescriptionFrame = skillSheetEntryFrames[player.playernum].skillDescFrame;
+	auto bgImgFrame = skillSheetEntryFrames[player.playernum].skillBgImgsFrame;
+	auto scrollAreaOuterFrame = skillSheetEntryFrames[player.playernum].scrollAreaOuterFrame;
+	auto scrollArea = skillSheetEntryFrames[player.playernum].scrollArea;
 	SDL_Rect scrollOuterFramePos = scrollAreaOuterFrame->getSize();
 	SDL_Rect scrollAreaPos = scrollArea->getSize();
 
@@ -13030,7 +13072,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					entryResizePos.y = skillEntryStartY;
 				}
 			}
-			auto entry = allSkillEntries->findFrame(skillname);
+			auto entry = skillSheetEntryFrames[player.playernum].entryFrames[i];
 
 			if ( i >= skillSheetData.skillEntries.size() )
 			{
@@ -13304,7 +13346,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				char effectFrameName[64] = "";
 				snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", eff);
-				auto effectFrame = scrollArea->findFrame(effectFrameName);
+				auto effectFrame = skillSheetEntryFrames[player.playernum].effectFrames[eff];
 				if ( !effectFrame ) { continue; }
 
 				effectFrame->setDisabled(true);
@@ -13571,7 +13613,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				legendBackerImg->disabled = false;
 			}
 
-			auto legendFrame = scrollArea->findFrame("legend frame");
+			auto legendFrame = skillSheetEntryFrames[player.playernum].legendFrame;
 			SDL_Rect legendPos = legendFrame->getSize();
 			legendPos.y = lowestY;
 			legendPos.w = scrollArea->getSize().w;
@@ -13588,7 +13630,10 @@ void Player::SkillSheet_t::processSkillSheet()
 			SDL_Rect legendTextPos = legendText->getSize();
 			legendTextPos.w = tm->pos.w;
 			legendText->setSize(legendTextPos);
-			legendText->reflowTextToFit(0);
+			if ( skillSheetEntryFrames[player.playernum].legendTextRequiresReflow )
+			{
+				legendText->reflowTextToFit(0);
+			}
 			legendTextPos.h = legendText->getNumTextLines() * actualFont->height(true);
 			legendTextPos.y = tm->pos.y + tm->pos.h / 2;
 			legendText->setSize(legendTextPos);
