@@ -11507,6 +11507,7 @@ void doEndgame() {
 	clientnum = 0;
 	introstage = 1;
 	intro = true;
+	splitscreen = false;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{

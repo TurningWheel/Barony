@@ -6600,6 +6600,7 @@ namespace MainMenu {
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
+        main_menu_frame->setOwner(ingame ? clientnum : 0);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -6802,6 +6803,7 @@ namespace MainMenu {
 
 	void createDummyMainMenu() {
 		main_menu_frame = gui->addFrame("main_menu");
+        main_menu_frame->setOwner(clientnum);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setHollow(true);

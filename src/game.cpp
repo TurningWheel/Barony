@@ -5812,17 +5812,14 @@ int main(int argc, char** argv)
 						if ( !movie )
 						{
 							// only draw 1 cursor in the main menu
-							for ( int i = 0; i < 1; ++i )
+							if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
 							{
-								if ( inputs.getVirtualMouse(i)->draw_cursor )
-								{
-									auto cursor = Image::get("images/system/cursor_hand.png");
-									pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
-									pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
-									pos.w = cursor->getWidth();
-									pos.h = cursor->getHeight();
-									cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
-								}
+								auto cursor = Image::get("images/system/cursor_hand.png");
+								pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
+								pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+								pos.w = cursor->getWidth();
+								pos.h = cursor->getHeight();
+								cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 							}
 						}
 #endif
@@ -6215,13 +6212,13 @@ int main(int argc, char** argv)
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !players[i]->isLocalPlayer() )
+					if ( !players[i]->isLocalPlayer() && !gamePaused )
 					{
 						continue;
 					}
-					if (((subwindow && !players[i]->shootmode) || gamePaused))
+					if ((subwindow && !players[i]->shootmode) || (gamePaused && i == clientnum))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == clientnum || !gamePaused) )
+						if (inputs.getVirtualMouse(i)->draw_cursor || (gamePaused && i == clientnum))
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
@@ -6231,8 +6228,7 @@ int main(int argc, char** argv)
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
-
-					if ( !players[i]->shootmode )
+					if ( !gamePaused && !players[i]->shootmode )
 					{
 						if ( *inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
 						{
