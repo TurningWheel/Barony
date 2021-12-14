@@ -3115,7 +3115,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 	auto& dropDown = allDropDowns[name];
 
 	char dropdownBlockClickName[64] = "";
-	snprintf(dropdownBlockClickName, sizeof(dropdownBlockClickName), "player dropdown block click %d", player);
+	snprintf(dropdownBlockClickName, sizeof(dropdownBlockClickName), "player dropdown block click %d", player.playernum);
 	dropdownBlockClickFrame = gui->addFrame(dropdownBlockClickName);
 	dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),
@@ -3124,7 +3124,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 	dropdownBlockClickFrame->setOwner(player.playernum);
 
 	char dropdownName[64] = "";
-	snprintf(dropdownName, sizeof(dropdownName), "player dropdown %d", player);
+	snprintf(dropdownName, sizeof(dropdownName), "player dropdown %d", player.playernum);
 	dropdownFrame = gui->addFrame(dropdownName);
 	const int interactWidth = 106;
 	dropdownFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
@@ -8569,7 +8569,7 @@ void Player::Inventory_t::updateItemContextMenuClickFrame()
 	if ( !interactBlockClickFrame )
 	{
 		char interactBlockClickName[64] = "";
-		snprintf(interactBlockClickName, sizeof(interactBlockClickName), "player inventory dropdown block click %d", player);
+		snprintf(interactBlockClickName, sizeof(interactBlockClickName), "player inventory dropdown block click %d", player.playernum);
 		if ( interactBlockClickFrame = gui->addFrame(interactBlockClickName) )
 		{
 			interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
