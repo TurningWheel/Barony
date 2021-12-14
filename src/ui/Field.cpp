@@ -104,7 +104,7 @@ char* Field::tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-bool bWordHighlightMapAreSame(std::map<int, Uint32>& textMap, std::map<int, Uint32>& fieldMap, int currentLine)
+static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const std::map<int, Uint32>& fieldMap, int currentLine)
 {
 	std::vector<int> fieldKeys;
 	for ( auto& keyValue : fieldMap )
@@ -129,12 +129,13 @@ bool bWordHighlightMapAreSame(std::map<int, Uint32>& textMap, std::map<int, Uint
 			&& (keyValue.first < (currentLine + 1) * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE) )
 		{
 			const int wordIndex = keyValue.first - currentLine * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
-			if ( textMap.find(wordIndex) == textMap.end() )
+			auto find = textMap.find(wordIndex);
+			if ( find == textMap.end() )
 			{
 				// key not found, mismatched maps
 				return false;
 			}
-			else if ( textMap[wordIndex] != keyValue.second )
+			else if ( (*find).second != keyValue.second )
 			{
 				// key found, but stored a different color, mismatched maps.
 				return false;

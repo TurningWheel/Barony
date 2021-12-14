@@ -3319,7 +3319,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			std::map<int, Uint32> positiveWordIndexes;
 			std::map<int, Uint32> negativeWordIndexes;
 			std::map<int, Uint32> highlightWordIndexes;
-			ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, std::string(""), detailsPositiveText, detailsNegativeText,
+			std::string empty;
+			ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, empty, detailsPositiveText, detailsNegativeText,
 				highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
 			txtDescription->setText(detailsTextString.c_str());
 

@@ -55,6 +55,15 @@ size_t getNumTextLines(std::string& str)
 }
 
 void Text::render() {
+	if ( surf ) {
+		SDL_FreeSurface(surf);
+		surf = nullptr;
+	}
+	if ( texid ) {
+		glDeleteTextures(1, &texid);
+		texid = 0;
+	}
+
 	std::string strToRender;
 	std::string fontName = Font::defaultFont;
 	Uint32 textColor = makeColor(255, 255, 255, 255);
@@ -246,23 +255,11 @@ void Text::render() {
 	num_text_lines = countNumTextLines();
 }
 
-void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) {
+void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) const {
 	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) {
-	if ( !rendered )
-	{
-		if ( surf ) {
-			SDL_FreeSurface(surf);
-			surf = nullptr;
-		}
-		if ( texid ) {
-			glDeleteTextures(1, &texid);
-			texid = 0;
-		}
-		render();
-	}
+void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
 	assert(rendered && surf);
 
 	glDisable(GL_DEPTH_TEST);

@@ -2404,7 +2404,7 @@ void handleMainMenu(bool mode)
 				drawWindowFancy(subx1 + 4, suby1 + 44 + 10 * TTF12_HEIGHT,
 					subx2 - 4, suby2 - 4);
 			}
-			if ( subtext[0] != NULL )
+			if ( subtext && subtext[0] != '\0' )
 			{
 				if ( strncmp(subtext, language[740], 12) )
 				{

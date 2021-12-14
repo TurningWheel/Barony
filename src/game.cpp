@@ -6187,7 +6187,7 @@ int main(int argc, char** argv)
 						if ( subwindow )
 						{
 							drawWindowFancy(subx1, suby1, subx2, suby2);
-							if ( subtext[0] != NULL )
+							if ( subtext && subtext[0] != '\0')
 							{
 								if ( strncmp(subtext, language[1133], 12) )
 								{
