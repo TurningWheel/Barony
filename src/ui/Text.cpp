@@ -178,6 +178,57 @@ void Text::render() {
 	if ( surf )
 	{
 		SDL_LockSurface(surf);
+
+		/*Uint32 fillColor1 = makeColor(0, 255, 0, 255);
+		Uint32 fillColor2 = makeColor(255, 0, 0, 255);
+		wordsToHighlight[2] = fillColor1;
+		wordsToHighlight[4] = fillColor2;*/
+		if ( !wordsToHighlight.empty() )
+		{
+			int currentWord = 0;
+			bool checkForEmptyRow = true;
+			bool currentWordHasColor = (wordsToHighlight.find(0) != wordsToHighlight.end());
+			for ( int x = 0; x < surf->w; x++ )
+			{
+				bool isEmptyRow = true && checkForEmptyRow;
+				bool foundTextColorThisRow = false;
+				bool doFillRow = false;
+				for ( int y = 0; y < surf->h; y++ )
+				{
+					Uint32 pix = getPixel(surf, x, y);
+					Uint8 r, g, b, a;
+					SDL_GetRGBA(pix, surf->format, &r, &g, &b, &a);
+					if ( r == colorText.r && g == colorText.g && b == colorText.b && a == colorText.a )
+					{
+						if ( !doFillRow )
+						{
+							checkForEmptyRow = true;
+							doFillRow = true;
+							--y;
+							continue;
+						}
+						else if ( doFillRow )
+						{
+							if ( currentWordHasColor )
+							{
+								putPixel(surf, x, y, wordsToHighlight[currentWord]);
+							}
+						}
+					}
+					if ( a != 0 )
+					{
+						isEmptyRow = false;
+					}
+				}
+				if ( isEmptyRow )
+				{
+					checkForEmptyRow = false;
+					++currentWord;
+					currentWordHasColor = (wordsToHighlight.find(currentWord) != wordsToHighlight.end());
+				}
+			}
+		}
+
 		glBindTexture(GL_TEXTURE_2D, texid);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -195,11 +246,23 @@ void Text::render() {
 	num_text_lines = countNumTextLines();
 }
 
-void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) const {
+void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) {
 	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
+void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) {
+	if ( !rendered )
+	{
+		if ( surf ) {
+			SDL_FreeSurface(surf);
+			surf = nullptr;
+		}
+		if ( texid ) {
+			glDeleteTextures(1, &texid);
+			texid = 0;
+		}
+		render();
+	}
 	assert(rendered && surf);
 
 	glDisable(GL_DEPTH_TEST);
@@ -289,7 +352,7 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 		assert(0 && "Trying to render > 64kb of ttf text");
 		return nullptr;
 	}
-	snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x",
+	snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x%c",
 		str, Text::fontBreak,
 		font, Text::fontBreak,
 		textColor, Text::fontBreak,

@@ -658,7 +658,7 @@ char* Item::description() const
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					snprintf(tempstr, 1024, language[3653 + status]);
+					snprintf(tempstr, 1024, "%s", language[3653 + status]);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
@@ -805,7 +805,7 @@ char* Item::description() const
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3763]);
+					snprintf(tempstr, 1024, "%s", language[3763]);
 				}
 				else
 				{
@@ -882,7 +882,7 @@ char* Item::description() const
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
-					snprintf(tempstr, 1024, language[3763]);
+					snprintf(tempstr, 1024, "%s", language[3763]);
 				}
 				else
 				{
@@ -4132,7 +4132,7 @@ int Item::buyValue(const int player) const
 	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
 
 	// charisma bonus
-	value /= 1.f + stats[player]->CHR / 20.f;
+	value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
 
 	// result
 	value = std::max(1, value);
@@ -4187,7 +4187,7 @@ int Item::sellValue(const int player) const
 	value *= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
 
 	// charisma bonus
-	value *= 1.f + stats[player]->CHR / 20.f;
+	value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
 
 	// result
 	value = std::max(1, value);

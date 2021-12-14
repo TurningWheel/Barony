@@ -157,7 +157,7 @@ void actDeathCam(Entity* my)
 			my->pitch = -PI / 2;
 		}
 
-		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY < 0.0001)
+		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY) < 0.0001
 			&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM
 			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks + TICKS_PER_SECOND * 3) )
 		{
@@ -961,6 +961,90 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 	}
 }
 
+real_t Player::PlayerMovement_t::getMaximumSpeed()
+{
+	real_t maxSpeed = 18.0;
+	if ( gameplayCustomManager.inUse() )
+	{
+		maxSpeed = gameplayCustomManager.playerSpeedMax;
+	}
+	return maxSpeed;
+}
+
+int Player::PlayerMovement_t::getCharacterWeight()
+{
+	int weight = 0.0;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != NULL )
+		{
+			if ( item->type >= 0 && item->type < NUMITEMS )
+			{
+				weight += item->getWeight();
+			}
+		}
+	}
+	weight += stats[player.playernum]->GOLD / 100;
+	if ( gameplayCustomManager.inUse() )
+	{
+		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
+	}
+	return weight;
+}
+
+int Player::PlayerMovement_t::getCharacterModifiedWeight()
+{
+	int weight = getCharacterWeight();
+	if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	{
+		weight = weight * 0.5;
+	}
+	return weight;
+}
+
+real_t Player::PlayerMovement_t::getWeightRatio(int weight, Sint32 STR)
+{
+	real_t weightratio = (1000 + STR * 100 - weight) / (double)(1000 + STR * 100);
+	weightratio = fmin(fmax(0, weightratio), 1);
+	return weightratio;
+}
+
+real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
+{
+	real_t slowSpeedPenalty = 0.0;
+	real_t maxSpeed = getMaximumSpeed();
+	if ( !stats[player.playernum]->EFFECTS[EFF_FAST] && stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	{
+		DEX = std::min(DEX - 3, -2);
+		slowSpeedPenalty = 2.0;
+	}
+	real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, maxSpeed);
+	if ( DEX <= 5 )
+	{
+		speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
+	}
+	else if ( DEX <= 15 )
+	{
+		speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
+	}
+
+	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
+	{
+		speedFactor = std::min(speedFactor, 5.0);
+	}
+	return speedFactor;
+}
+
+real_t Player::PlayerMovement_t::getCurrentMovementSpeed()
+{
+	if ( players[player.playernum] && players[player.playernum]->entity )
+	{
+		return sqrt(pow(players[player.playernum]->entity->vel_x, 2) + pow(players[player.playernum]->entity->vel_y, 2));
+	}
+	return 0.0;
+}
+
 void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 {
 	if ( !players[player.playernum]->entity )
@@ -977,30 +1061,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	}
 
 	// calculate weight
-	double weightratio = 0.0;
-	int weight = 0;
-	for ( node_t* node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
-	{
-		Item* item = (Item*)node->element;
-		if ( item != NULL )
-		{
-			if ( item->type >= 0 && item->type < NUMITEMS )
-			{
-				weight += item->getWeight();
-			}
-		}
-	}
-	weight += stats[PLAYER_NUM]->GOLD / 100;
-	if ( gameplayCustomManager.inUse() )
-	{
-		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
-	}
-	if ( stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && !stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
-	{
-		weight = weight * 0.5;
-	}
-	weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
-	weightratio = fmin(fmax(0, weightratio), 1);
+	int weight = getCharacterModifiedWeight();
+	real_t weightratio = getWeightRatio(weight, statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
 
 	// calculate movement forces
 
@@ -1084,29 +1146,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			}
 		}
 
-		int DEX = my->getDEX();
-		real_t slowSpeedPenalty = 0.0;
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
-		{
-			DEX = std::min(DEX - 3, -2);
-			slowSpeedPenalty = 2.0;
-		}
-
-		double maxSpeed = 18.0;
-		if ( gameplayCustomManager.inUse() )
-		{
-			maxSpeed = gameplayCustomManager.playerSpeedMax;
-		}
-
-		real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, maxSpeed);
-		if ( DEX <= 5 )
-		{
-			speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
-		}
-		else if ( DEX <= 15 )
-		{
-			speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
-		}
+		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
 		/*if ( ticks % 50 == 0 )
 		{
 		messagePlayer(0, "%f", speedFactor);
@@ -1119,7 +1159,6 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 		else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
 		{
-			speedFactor = std::min(speedFactor, 5.0);
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
@@ -1132,7 +1171,6 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 		if ( fabs(my->playerStrafeVelocity) > 0.1 )
 		{
-			//speedFactor = std::min(speedFactor, 5.0);
 			PLAYER_VELX += my->playerStrafeVelocity * cos(my->playerStrafeDir) * refreshRateDelta;
 			PLAYER_VELY += my->playerStrafeVelocity * sin(my->playerStrafeDir) * refreshRateDelta;
 			my->playerStrafeVelocity *= pow(0.95, refreshRateDelta);
@@ -1156,7 +1194,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	//if ( keystatus[SDL_SCANCODE_G] )
 	//{
 	//	//messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	//	//messagePlayer(0, "Vel: %5.5f", sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+	//	//messagePlayer(0, "Vel: %5.5f", getCurrentMovementSpeed());
 	//}
 
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.

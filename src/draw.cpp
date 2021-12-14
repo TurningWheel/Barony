@@ -2548,7 +2548,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		SDL_FreeSurface(textSurf);
 		// load the text outline surface as a GL texture
 		allsurfaces[imgref] = surf;
-		allsurfaces[imgref]->userdata = (void*)imgref;
+		allsurfaces[imgref]->userdata = (void*)((long int)imgref);
 		glLoadTexture(allsurfaces[imgref], imgref);
 		imgref++;
 		// store the surface in the text surface cache

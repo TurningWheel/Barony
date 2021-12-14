@@ -871,6 +871,11 @@ void Player::HUD_t::updateUINavigation()
 	}
 }
 
+std::string actionPromptBackingIconPath00 = "";
+std::string actionPromptBackingIconPath20 = "";
+std::string actionPromptBackingIconPath60 = "";
+std::string actionPromptBackingIconPath100 = "";
+
 void createActionPrompts(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -906,7 +911,7 @@ void createActionPrompts(const int player)
 	auto mainHand = actionPromptFrame->addFrame("action mainhand");
 	mainHand->setSize(SDL_Rect{ 400, 400, maxWidth, promptHeight });
 	mainHand->addImage(iconBackingPos,
-		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	mainHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
 	mainHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
@@ -919,7 +924,7 @@ void createActionPrompts(const int player)
 	auto offHand = actionPromptFrame->addFrame("action offhand");
 	offHand->setSize(SDL_Rect{ 440, 400, maxWidth, promptHeight });
 	offHand->addImage(iconBackingPos,
-		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	offHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
 	offHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
@@ -932,7 +937,7 @@ void createActionPrompts(const int player)
 	auto magic = actionPromptFrame->addFrame("action magic");
 	magic->setSize(SDL_Rect{ 480, 400, maxWidth, promptHeight });
 	magic->addImage(iconBackingPos,
-		iconBackingColor, "#*images/ui/HUD/HUD_ActionPromptBacking02.png", "action img backing");
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	magic->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
 	magic->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
@@ -1098,6 +1103,22 @@ void Player::HUD_t::updateActionPrompts()
 						break;
 					}
 				}
+				if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_LEGENDARY )
+				{
+					imgBacking->path = actionPromptBackingIconPath100;
+				}
+				else if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_EXPERT )
+				{
+					imgBacking->path = actionPromptBackingIconPath60;
+				}
+				else if ( stats[player.playernum]->PROFICIENCIES[skillForPrompt] >= SKILL_LEVEL_BASIC )
+				{
+					imgBacking->path = actionPromptBackingIconPath20;
+				}
+				else
+				{
+					imgBacking->path = actionPromptBackingIconPath00;
+				}
 			}
 			if ( skillImg == "" )
 			{
@@ -1207,6 +1228,7 @@ void Player::MessageZone_t::createChatbox()
 			Frame::virtualScreenY });
 		chatFrame = chatMainFrame;
 		Frame* messages = chatMainFrame->addFrame("message box");
+		messages->setHollow(true);
 		messages->setSize(SDL_Rect{ 224, 16, 
 			players[player.playernum]->camera_virtualWidth() / 2,
 			players[player.playernum]->camera_virtualHeight() });
@@ -1483,68 +1505,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			characterSheetTitleText->setText("CHARACTER SHEET");
 			characterSheetTitleText->setVJustify(Field::justify_t::CENTER);
 			characterSheetTitleText->setHJustify(Field::justify_t::CENTER);
-		}
-
-		{
-			auto tooltipFrame = sheetFrame->addFrame("sheet tooltip");
-			tooltipFrame->setSize(SDL_Rect{ leftAlignX - 200, 0, 200, 200 });
-			Uint32 color = makeColor(255, 255, 255, 255);
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
-			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
-			imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
-			imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
-			auto txt = tooltipFrame->addField("tooltip text", 1024);
-			const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
-			txt->setFont(tooltipFont);
-			txt->setColor(makeColor(188, 154, 114, 255));
-			auto glyph1 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 1");
-			glyph1->disabled = true;
-			auto glyph2 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 2");
-			glyph2->disabled = true;
-			auto glyph3 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 3");
-			glyph3->disabled = true;
-			auto glyph4 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 4");
-			glyph4->disabled = true;
-
-			auto txtEntry = tooltipFrame->addField("txt 1", 1024);
-			txtEntry->setFont(tooltipFont);
-			txtEntry->setDisabled(true);
-			txtEntry->setVJustify(Field::justify_t::CENTER);
-			txtEntry->setColor(makeColor(188, 154, 114, 255));
-
-			txtEntry = tooltipFrame->addField("txt 2", 1024);
-			txtEntry->setFont(tooltipFont);
-			txtEntry->setDisabled(true);
-			txtEntry->setVJustify(Field::justify_t::CENTER);
-			txtEntry->setColor(makeColor(188, 154, 114, 255));
-
-			txtEntry = tooltipFrame->addField("txt 3", 1024);
-			txtEntry->setFont(tooltipFont);
-			txtEntry->setDisabled(true);
-			txtEntry->setVJustify(Field::justify_t::CENTER);
-			txtEntry->setColor(makeColor(188, 154, 114, 255));
-
-			txtEntry = tooltipFrame->addField("txt 4", 1024);
-			txtEntry->setFont(tooltipFont);
-			txtEntry->setDisabled(true);
-			txtEntry->setVJustify(Field::justify_t::CENTER);
-			txtEntry->setColor(makeColor(188, 154, 114, 255));
 		}
 
 		// log / map buttons
@@ -1855,9 +1815,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01B_BotA.png", "stats bg img");
 
 			Frame* statsInnerFrame = statsFrame->addFrame("stats inner frame");
-			statsInnerFrame->setSize(SDL_Rect{ 20, 0, statsFrame->getSize().w, statsFrame->getSize().h });
+			statsInnerFrame->setSize(SDL_Rect{ 0, 0, statsFrame->getSize().w, statsFrame->getSize().h });
 
-			SDL_Rect iconPos{ 0, 8, 24, 24 };
+			SDL_Rect iconPos{ 20, 8, 24, 24 };
 			const int headingLeftX = iconPos.x + iconPos.w + 10;
 			const int baseStatLeftX = headingLeftX + 32;
 			const int modifiedStatLeftX = baseStatLeftX + 64;
@@ -1881,7 +1841,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setFont(statFont);
 				textPos.x = baseStatLeftX;
 				textStat->setSize(textPos);
-				textStat->setText("-1");
+				textStat->setText("0");
 				textStat->setColor(statTextColor);
 				auto textStatModified = statsInnerFrame->addField("str text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
@@ -1889,8 +1849,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setFont(statFont);
 				textPos.x = modifiedStatLeftX;
 				textStatModified->setSize(textPos);
-				textStatModified->setText("342");
+				textStatModified->setText("");
 				textStatModified->setColor(statTextColor);
+
+				auto statButton = statsInnerFrame->addButton("str button");
+				statButton->setSize(SDL_Rect{ 12, iconPos.y + 2, statsFrame->getSize().w - 34, iconPos.h - 2 });
+				statButton->setColor(makeColor(0, 0, 0, 0));
+				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				statButton->setHideGlyphs(true);
 			}
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
@@ -1910,7 +1876,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setFont(statFont);
 				textPos.x = baseStatLeftX;
 				textStat->setSize(textPos);
-				textStat->setText("1");
+				textStat->setText("0");
 				textStat->setColor(statTextColor);
 				auto textStatModified = statsInnerFrame->addField("dex text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
@@ -1920,6 +1886,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setSize(textPos);
 				textStatModified->setText("2");
 				textStatModified->setColor(statTextColor);
+
+				auto statButton = statsInnerFrame->addButton("dex button");
+				statButton->setSize(SDL_Rect{ 12, iconPos.y + 2, statsFrame->getSize().w - 34, iconPos.h - 2 });
+				statButton->setColor(makeColor(0, 0, 0, 0));
+				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				statButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -1947,8 +1919,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setFont(statFont);
 				textPos.x = modifiedStatLeftX;
 				textStatModified->setSize(textPos);
-				textStatModified->setText("-2");
+				textStatModified->setText("");
 				textStatModified->setColor(statTextColor);
+
+				auto statButton = statsInnerFrame->addButton("con button");
+				statButton->setSize(SDL_Rect{ 12, iconPos.y + 2, statsFrame->getSize().w - 34, iconPos.h - 2 });
+				statButton->setColor(makeColor(0, 0, 0, 0));
+				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				statButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -1968,7 +1946,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setFont(statFont);
 				textPos.x = baseStatLeftX;
 				textStat->setSize(textPos);
-				textStat->setText("3");
+				textStat->setText("0");
 				textStat->setColor(statTextColor);
 				auto textStatModified = statsInnerFrame->addField("int text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
@@ -1978,6 +1956,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setSize(textPos);
 				textStatModified->setText("");
 				textStatModified->setColor(statTextColor);
+
+				auto statButton = statsInnerFrame->addButton("int button");
+				statButton->setSize(SDL_Rect{ 12, iconPos.y + 2, statsFrame->getSize().w - 34, iconPos.h - 2 });
+				statButton->setColor(makeColor(0, 0, 0, 0));
+				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				statButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -1997,7 +1981,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setFont(statFont);
 				textPos.x = baseStatLeftX;
 				textStat->setSize(textPos);
-				textStat->setText("-400");
+				textStat->setText("0");
 				textStat->setColor(statTextColor);
 				auto textStatModified = statsInnerFrame->addField("per text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
@@ -2005,8 +1989,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setFont(statFont);
 				textPos.x = modifiedStatLeftX;
 				textStatModified->setSize(textPos);
-				textStatModified->setText("-299");
+				textStatModified->setText("");
 				textStatModified->setColor(statTextColor);
+
+				auto statButton = statsInnerFrame->addButton("per button");
+				statButton->setSize(SDL_Rect{ 12, iconPos.y + 2, statsFrame->getSize().w - 34, iconPos.h - 2 });
+				statButton->setColor(makeColor(0, 0, 0, 0));
+				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				statButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2026,7 +2016,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setFont(statFont);
 				textPos.x = baseStatLeftX;
 				textStat->setSize(textPos);
-				textStat->setText("2");
+				textStat->setText("0");
 				textStat->setColor(statTextColor);
 				auto textStatModified = statsInnerFrame->addField("chr text modified", 32);
 				textStatModified->setVJustify(Field::justify_t::CENTER);
@@ -2036,6 +2026,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStatModified->setSize(textPos);
 				textStatModified->setText("");
 				textStatModified->setColor(statTextColor);
+
+				auto statButton = statsInnerFrame->addButton("chr button");
+				statButton->setSize(SDL_Rect{ 12, iconPos.y + 2, statsFrame->getSize().w - 34, iconPos.h - 2 });
+				statButton->setColor(makeColor(0, 0, 0, 0));
+				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				statButton->setHideGlyphs(true);
 			}
 		}
 
@@ -2203,7 +2199,212 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setColor(statTextColor);
 			}
 		}
+
+		{
+		auto tooltipFrame = sheetFrame->addFrame("sheet tooltip");
+		tooltipFrame->setSize(SDL_Rect{ leftAlignX - 200, 0, 200, 200 });
+		tooltipFrame->setHollow(true);
+		tooltipFrame->setInheritParentFrameOpacity(false);
+		tooltipFrame->setDisabled(true);
+		Uint32 color = makeColor(255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
+		auto txt = tooltipFrame->addField("tooltip text", 1024);
+		const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		txt->setFont(tooltipFont);
+		txt->setColor(makeColor(188, 154, 114, 255));
+		auto glyph1 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 1");
+		glyph1->disabled = true;
+		auto glyph2 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 2");
+		glyph2->disabled = true;
+		auto glyph3 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 3");
+		glyph3->disabled = true;
+		auto glyph4 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 4");
+		glyph4->disabled = true;
+
+		auto txtEntry = tooltipFrame->addField("txt 1", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 2", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 3", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 4", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 5", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 6", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 7", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 8", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 9", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 10", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		txtEntry = tooltipFrame->addField("txt 11", 1024);
+		txtEntry->setFont(tooltipFont);
+		txtEntry->setDisabled(true);
+		txtEntry->setVJustify(Field::justify_t::CENTER);
+		txtEntry->setColor(makeColor(188, 154, 114, 255));
+		txtEntry->setOntop(true);
+
+		auto div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			"images/system/white.png", "tooltip divider 1");
+		div->disabled = true;
+
+
+		for ( int i = 1; i <= 5; ++i )
+		{
+			char backingFrameName[64] = "";
+			snprintf(backingFrameName, sizeof(backingFrameName), "txt value backing frame %d", i);
+			auto txtValueBackingFrame = tooltipFrame->addFrame(backingFrameName);
+			txtValueBackingFrame->setSize(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, tooltipFrame->getSize().h });
+			txtValueBackingFrame->setDisabled(true);
+			Uint32 color = makeColor(51, 33, 26, 255);
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+			imageSetWidthHeight9x9(txtValueBackingFrame, skillsheetEffectBackgroundImages);
+		}
+		}
 	}
+}
+
+void Player::GUIDropdown_t::activateSelection(const std::string& name, const int option)
+{
+	auto& dropdown = allDropDowns[name];
+	if ( dropdown.options[option].action == "no_action" )
+	{
+		messagePlayer(player.playernum, "[Dropdowns]: Warning, no action for %s : option %d", name.c_str(), option);
+	}
+	else
+	{
+		if ( dropdown.options[option].action == "gold_drop_10" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 10);
+			consoleCommand(dropCommand);
+		}
+		else if ( dropdown.options[option].action == "gold_drop_100" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 100);
+			consoleCommand(dropCommand);
+		}
+		else if ( dropdown.options[option].action == "gold_drop_1000" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 1000);
+			consoleCommand(dropCommand);
+		}
+		else if ( dropdown.options[option].action == "gold_drop_all" )
+		{
+			char dropCommand[32] = "";
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", std::max(0, stats[player.playernum]->GOLD));
+			consoleCommand(dropCommand);
+		}
+		messagePlayer(player.playernum, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
+			dropdown.options[option].action.c_str(), name.c_str(), option);
+	}
+}
+
+bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
+{
+	bool invert = false;
+	if ( name == "drop_gold" )
+	{
+		if ( player.characterSheet.panelJustify == Player::PANEL_JUSTIFY_RIGHT 
+			&& player.bUseCompactGUIHeight() )
+		{
+			invert = true;
+		}
+	}
+	return (invert ? !allDropDowns[name].alignRight : allDropDowns[name].alignRight);
 }
 
 void Player::CharacterSheet_t::processCharacterSheet()
@@ -2242,12 +2443,33 @@ void Player::CharacterSheet_t::processCharacterSheet()
 
 	sheetFrame->setDisabled(false);
 
+	if ( bCompactView )
+	{
+		// justify opposite of inventory
+		panelJustify = (player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT) 
+			? Player::PANEL_JUSTIFY_RIGHT : Player::PANEL_JUSTIFY_LEFT;
+	}
+	else
+	{
+		panelJustify = Player::PANEL_JUSTIFY_RIGHT;
+	}
+
+	if ( player.inventoryUI.slideOutPercent <= .0001 )
+	{
+		isInteractable = true;
+	}
+	else
+	{
+		isInteractable = false;
+	}
+
 	// resize elements for splitscreen
 	{
 		auto characterInfoFrame = sheetFrame->findFrame("character info");
 		const int bgWidth = 208;
 		const int leftAlignX = sheetFrame->getSize().w - bgWidth + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
-		const int compactAlignX = -player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+		int compactAlignX1 = -player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+		int compactAlignX2 = sheetFrame->getSize().w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
 		auto compactImgBg = sheetFrame->findImage("character info compact img");
 		Frame* dungeonFloorFrame = sheetFrame->findFrame("dungeon floor frame");
 		Frame* buttonFrame = sheetFrame->findFrame("log map buttons");
@@ -2264,11 +2486,11 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			sheetDisplayType = CHARSHEET_DISPLAY_COMPACT;
 
 			compactImgBg->disabled = false;
-			compactImgBg->pos.x = compactAlignX;
+			compactImgBg->pos.x = (panelJustify == PANEL_JUSTIFY_RIGHT ? compactAlignX1 : compactAlignX2 - compactImgBg->pos.w);
 			compactImgBg->pos.y = 0;
 
 			SDL_Rect pos = characterInfoFrame->getSize();
-			pos.x = compactAlignX;
+			pos.x = (panelJustify == PANEL_JUSTIFY_RIGHT ? compactAlignX1 : compactAlignX2 - pos.w);
 			pos.y = compactImgBg->pos.y + 60;
 			characterInfoFrame->setSize(pos);
 
@@ -2278,10 +2500,10 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			dungeonFloorFrame->setSize(dungeonFloorFramePos);
 
 			SDL_Rect buttonFramePos = buttonFrame->getSize();
-			buttonFramePos.x = compactAlignX + 8;
-			buttonFramePos.y = compactImgBg->pos.y + compactImgBg->pos.h + 1;
 			buttonFramePos.w = 198;
 			buttonFramePos.h = 40;
+			buttonFramePos.x = (panelJustify == PANEL_JUSTIFY_RIGHT ? compactAlignX1 + 8 : compactAlignX2 - buttonFramePos.w - 8);
+			buttonFramePos.y = compactImgBg->pos.y + compactImgBg->pos.h + 1;
 			buttonFrame->setSize(buttonFramePos);
 			{
 				SDL_Rect buttonPos{ 0, 1, 98, 38 };
@@ -2312,12 +2534,12 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			fullscreenBg->setDisabled(true);
 
 			auto statsPos = statsFrame->getSize();
-			statsPos.x = sheetFrame->getSize().w - statsPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+			statsPos.x = (panelJustify == PANEL_JUSTIFY_RIGHT ? compactAlignX2 - statsPos.w : compactAlignX1);
 			statsPos.y = 0;
 			statsFrame->setSize(statsPos);
 
 			auto attributesPos = attributesFrame->getSize();
-			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+			attributesPos.x = (panelJustify == PANEL_JUSTIFY_RIGHT ? compactAlignX2 - attributesPos.w : compactAlignX1);
 			attributesPos.y = statsPos.y + statsPos.h - 4; // 4 pixels above bottom edge of stats pane
 			attributesFrame->setSize(attributesPos);
 		}
@@ -2384,19 +2606,627 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		}
 	}
 
+	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	if ( hideAndExit )
 	{
 		sheetFrame->setDisabled(true);
 		return;
 	}
 
-	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	player.GUI.handleCharacterSheetMovement();
+
+	{
+		auto characterInfoFrame = sheetFrame->findFrame("character info");
+		assert(characterInfoFrame);
+		auto characterInnerFrame = characterInfoFrame->findFrame("character info inner frame");
+		assert(characterInnerFrame);
+		auto statsFrame = sheetFrame->findFrame("stats");
+		assert(statsFrame);
+		auto statsInnerFrame = statsFrame->findFrame("stats inner frame");
+		assert(statsInnerFrame);
+		SheetElements targetElement = SHEET_ENUM_END;
+		auto logButton = sheetFrame->findFrame("log map buttons")->findButton("log button");
+		auto mapButton = sheetFrame->findFrame("log map buttons")->findButton("map button");
+		auto skillsButton = sheetFrame->findFrame("skills button frame")->findButton("skills button");
+		Button* strButton = statsInnerFrame->findButton("str button");
+		Button* dexButton = statsInnerFrame->findButton("dex button");
+		Button* conButton = statsInnerFrame->findButton("con button");
+		Button* intButton = statsInnerFrame->findButton("int button");
+		Button* perButton = statsInnerFrame->findButton("per button");
+		Button* chrButton = statsInnerFrame->findButton("chr button");
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor
+			&& (!player.GUI.isDropdownActive())
+			&& isInteractable )
+		{
+			if ( skillsButton->isHighlighted() )
+			{
+				targetElement = SHEET_SKILL_LIST;
+			}
+			else if ( logButton->isHighlighted() )
+			{
+				targetElement = SHEET_OPEN_LOG;
+			}
+			else if ( mapButton->isHighlighted() )
+			{
+				targetElement = SHEET_OPEN_MAP;
+			}
+			else if ( sheetFrame->findFrame("game timer")->findButton("timer selector")->isHighlighted() )
+			{
+				targetElement = SHEET_TIMER;
+			}
+			else if ( sheetFrame->findFrame("dungeon floor frame")->findButton("dungeon floor selector")->isHighlighted() )
+			{
+				targetElement = SHEET_DUNGEON_FLOOR;
+			}
+			else if ( characterInnerFrame->findButton("character class selector")->isHighlighted() )
+			{
+				targetElement = SHEET_CHAR_CLASS;
+			}
+			else if ( characterInnerFrame->findButton("character race selector")->isHighlighted() )
+			{
+				targetElement = SHEET_CHAR_RACE_SEX;
+			}
+			else if ( characterInnerFrame->findButton("character gold selector")->isHighlighted() )
+			{
+				targetElement = SHEET_GOLD;
+			}
+			else if ( strButton->isHighlighted() )
+			{
+				targetElement = SHEET_STR;
+			}
+			else if ( dexButton->isHighlighted() )
+			{
+				targetElement = SHEET_DEX;
+			}
+			else if ( conButton->isHighlighted() )
+			{
+				targetElement = SHEET_CON;
+			}
+			else if ( intButton->isHighlighted() )
+			{
+				targetElement = SHEET_INT;
+			}
+			else if ( perButton->isHighlighted() )
+			{
+				targetElement = SHEET_PER;
+			}
+			else if ( chrButton->isHighlighted() )
+			{
+				targetElement = SHEET_CHR;
+			}
+		}
+		if ( targetElement != SHEET_ENUM_END )
+		{
+			player.GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+			selectElement(targetElement, true, true);
+		}
+		else
+		{
+			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick )
+				{
+					// no moused over objects, deactivate the cursor.
+					player.GUI.activateModule(Player::GUI_t::MODULE_NONE);
+				}
+			}
+		}
+		//messagePlayer(0, "%d", player.GUI.activeModule);
+		// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
+	}
 
 	updateGameTimer();
 	updateStats();
 	updateAttributes();
 	updateCharacterInfo();
+}
+
+std::map<std::string, Player::GUIDropdown_t::DropDown_t> Player::GUIDropdown_t::allDropDowns;
+
+bool Player::GUIDropdown_t::set(const std::string name)
+{
+	if ( allDropDowns.find(name) == allDropDowns.end() )
+	{
+		printlog("[Dropdown]: Could not find dropdown name %s", name.c_str());
+		return false;
+	}
+
+	if ( currentName != name )
+	{
+		create(name);
+	}
+	currentName = name;
+	return true;
+}
+
+void Player::GUIDropdown_t::process()
+{
+	bClosedThisTick = false;
+	if ( dropdownBlockClickFrame )
+	{
+		dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
+			players[player.playernum]->camera_virtualWidth(),
+			players[player.playernum]->camera_virtualHeight() });
+	}
+	if ( !dropdownFrame ) { return; }
+	
+	if ( !bOpen )
+	{
+		dropdownFrame->setDisabled(true);
+		dropDownOptionSelected = -1;
+		dropDownX = 0;
+		dropDownY = 0;
+		return;
+	}
+	else
+	{
+		dropdownFrame->setDisabled(false);
+	}
+
+	auto highlightImageMid = dropdownFrame->findImage("interact selected highlight mid");
+	highlightImageMid->disabled = true;
+	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageLeft = dropdownFrame->findImage("interact selected highlight left");
+	highlightImageLeft->disabled = true;
+	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageRight = dropdownFrame->findImage("interact selected highlight right");
+	highlightImageRight->disabled = true;
+	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
+
+	size_t index = 0;
+	unsigned int maxWidth = 0;
+	if ( auto interactText = dropdownFrame->findField("interact text") )
+	{
+		interactText->setColor(hudColors.itemContextMenuHeadingText);
+		if ( auto textGet = Text::get(interactText->getText(), interactText->getFont(),
+			interactText->getTextColor(), interactText->getOutlineColor()) )
+		{
+			maxWidth = textGet->getWidth();
+		}
+	}
+	int maxHeight = 0;
+	const int textPaddingX = 8;
+
+	auto& dropDown = allDropDowns[currentName];
+	if ( dropDown.module != Player::GUI_t::MODULE_NONE )
+	{
+		if ( dropDown.module != player.GUI.activeModule )
+		{
+			close();
+			return;
+		}
+	}
+
+	std::vector<std::tuple<Frame::image_t*, Field*, Frame::image_t*>> optionFrames;
+	index = 1;
+	for ( auto& option : dropDown.options )
+	{
+		char glyphname[32] = "";
+		snprintf(glyphname, sizeof(glyphname), "glyph %d", index);
+		char optionname[32] = "";
+		snprintf(optionname, sizeof(optionname), "interact option %d", index);
+
+		auto img = dropdownFrame->findImage(glyphname);
+		auto txt = dropdownFrame->findField(optionname);
+		optionFrames.push_back(std::make_tuple(img, txt, nullptr));
+		txt->setColor(hudColors.itemContextMenuOptionText);
+		//txt->setColor(makeColor(148, 82, 3, 255));
+		txt->setDisabled(false);
+		img->disabled = true;
+
+		if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		{
+			img->path = Input::inputs[player.playernum].getGlyphPathForInput(option.controllerGlyph.c_str());
+			img->disabled = false;
+		}
+		else if ( option.keyboardGlyph != "" && inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			img->path = Input::inputs[player.playernum].getGlyphPathForInput(option.keyboardGlyph.c_str());
+			img->disabled = false;
+		}
+
+		txt->setText(option.text.c_str());
+		if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor()) )
+		{
+			maxWidth = std::max(textGet->getWidth() + 40, maxWidth);
+
+			SDL_Rect size = txt->getSize();
+			size.w = textGet->getWidth();
+			if ( img->disabled )
+			{
+				size.x = textPaddingX;
+				txt->setHJustify(Field::justify_t::CENTER);
+			}
+			else
+			{
+				size.x = img->pos.x + img->pos.w + textPaddingX;
+				txt->setHJustify(Field::justify_t::LEFT);
+			}
+			txt->setSize(size);
+		}
+
+		maxHeight = std::max(std::max(txt->getSize().y + txt->getSize().h, img->pos.y + img->pos.h), maxHeight);
+		++index;
+	}
+
+	const int rightClickProtectBuffer = (right_click_protect ? 0 : 10);
+	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+
+	index = 0;
+	bool alignRight = getDropDownAlignRight(currentName);
+	for ( auto& optionGlyphTextBacking : optionFrames )
+	{
+		auto img = std::get<0>(optionGlyphTextBacking);
+		auto txt = std::get<1>(optionGlyphTextBacking);
+
+		if ( txt->getHJustify() == Field::justify_t::CENTER || true )
+		{
+			SDL_Rect size = txt->getSize();
+			size.w = maxWidth;
+			txt->setSize(size);
+		}
+
+		auto ml = dropdownFrame->findImage("interact middle left");
+		SDL_Rect absoluteSize = txt->getAbsoluteSize();
+		absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
+		absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+		absoluteSize.y += 4;
+		absoluteSize.h -= 4;
+		if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+			&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+		{
+			dropDownOptionSelected = index;
+		}
+		++index;
+	}
+
+	int textStartX = textPaddingX;
+	if ( optionFrames.size() > 0 )
+	{
+		auto img = std::get<0>(optionFrames[0]);
+		textStartX += (img->disabled ? 0 : img->pos.x + img->pos.w);
+	}
+	const int frameWidth = maxWidth + textStartX + textPaddingX;
+
+	SDL_Rect frameSize = dropdownFrame->getSize();
+	frameSize.x = dropDownX;
+	frameSize.y = dropDownY;
+
+	// position the frame elements
+	int interimHeight = 0;
+	{
+		auto tl = dropdownFrame->findImage("interact top left");
+		auto tmid = dropdownFrame->findImage("interact top background");
+		tmid->pos.w = frameWidth - tl->pos.w * 2;
+		auto tr = dropdownFrame->findImage("interact top right");
+		tr->pos.x = tmid->pos.x + tmid->pos.w;
+
+		interimHeight = tmid->pos.y + tmid->pos.h;
+		frameSize.w = tr->pos.x + tr->pos.w;
+	}
+	{
+		const int middleOffsetY = 13;
+		auto ml = dropdownFrame->findImage("interact middle left");
+		ml->pos.h = maxHeight - interimHeight - middleOffsetY;
+		auto mmid = dropdownFrame->findImage("interact middle background");
+		mmid->pos.h = ml->pos.h;
+		mmid->pos.w = frameWidth - (ml->pos.w) * 2;
+		mmid->color = hudColors.itemContextMenuOptionImg;
+		auto mr = dropdownFrame->findImage("interact middle right");
+		mr->pos.h = ml->pos.h;
+		mr->pos.x = mmid->pos.x + mmid->pos.w;
+
+		interimHeight = mmid->pos.y + mmid->pos.h;
+	}
+	{
+		auto bl = dropdownFrame->findImage("interact bottom left");
+		bl->pos.y = interimHeight;
+		auto bmid = dropdownFrame->findImage("interact bottom background");
+		bmid->pos.y = interimHeight;
+		bmid->pos.w = frameWidth - bl->pos.w * 2;
+		auto br = dropdownFrame->findImage("interact bottom right");
+		br->pos.y = interimHeight;
+		br->pos.x = bmid->pos.x + bmid->pos.w;
+
+		frameSize.h = br->pos.y + br->pos.h;
+	}
+
+	if ( auto interactText = dropdownFrame->findField("interact text") )
+	{
+		SDL_Rect size = interactText->getSize();
+		size.x = 0;
+		size.w = frameSize.w;
+		interactText->setSize(size);
+	}
+
+	if ( !alignRight )
+	{
+		frameSize.x -= frameSize.w;
+	}
+	dropdownFrame->setSize(frameSize);
+
+	SDL_Rect absoluteSize = dropdownFrame->getAbsoluteSize();
+	// right click protect uses exact border, else there is 10 px buffer
+	absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
+	absoluteSize.w += rightClickProtectBuffer;
+	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
+	{
+		dropDownOptionSelected = -1;
+	}
+
+	if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
+	{
+		auto txt = std::get<1>(optionFrames[dropDownOptionSelected]);
+		txt->setColor(hudColors.itemContextMenuOptionSelectedText);
+		SDL_Rect size = txt->getSize();
+		size.x -= 4;
+		size.w += 2 * 4;
+		size.y += 3;
+		highlightImageMid->pos = size;
+		highlightImageMid->pos.x += highlightImageLeft->pos.w;
+		highlightImageMid->pos.w -= 2 * highlightImageLeft->pos.w;
+		highlightImageMid->pos.h = highlightImageLeft->pos.h;
+		highlightImageMid->disabled = false;
+
+		highlightImageLeft->pos.x = highlightImageMid->pos.x - highlightImageLeft->pos.w;
+		highlightImageLeft->pos.y = highlightImageMid->pos.y;
+		highlightImageLeft->disabled = false;
+		highlightImageRight->pos.x = highlightImageMid->pos.x + highlightImageMid->pos.w;
+		highlightImageRight->disabled = false;
+		highlightImageRight->pos.y = highlightImageMid->pos.y;
+	}
+
+	bool activate = false;
+	if ( !Input::inputs[player.playernum].binary("MenuRightClick") && !dropDownToggleClick )
+	{
+		activate = true;
+	}
+	if ( activate )
+	{
+		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
+		{
+			activateSelection(currentName, dropDownOptionSelected);
+		}
+		//Close the menu.
+		close();
+	}
+}
+
+void Player::GUIDropdown_t::close()
+{
+	if ( dropdownFrame )
+	{
+		dropdownFrame->setHollow(true);
+		dropdownFrame->removeSelf();
+		dropdownFrame = nullptr;
+	}
+	if ( dropdownBlockClickFrame )
+	{
+		dropdownBlockClickFrame->setHollow(true);
+		dropdownBlockClickFrame->removeSelf();
+		dropdownBlockClickFrame = nullptr;
+	}
+	dropDownOptionSelected = 0;
+	bOpen = false;
+	dropDownToggleClick = false;
+	currentName = "";
+	bClosedThisTick = true;
+}
+
+
+void Player::GUI_t::closeDropdowns()
+{
+	if ( dropdownMenu.bOpen )
+	{
+		dropdownMenu.close();
+	}
+	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+	{
+		inputs.getUIInteraction(player.playernum)->itemMenuOpen = false;
+		player.inventoryUI.updateItemContextMenu();
+	}
+}
+bool Player::GUI_t::isDropdownActive()
+{
+	if ( dropdownMenu.bOpen )
+	{
+		return true;
+	}
+	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
+	{
+		return true;
+	}
+	return false;
+}
+
+void Player::GUIDropdown_t::open(const std::string name)
+{
+	set(name);
+	assert(dropdownFrame);
+	if ( bOpen )
+	{
+		return;
+	}
+
+	bOpen = true;
+	bClosedThisTick = false;
+
+	// clear inventory item context menu stuff
+	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
+	itemMenuOpen = false;
+
+	dropDownX = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + (getDropDownAlignRight(name) ? 8 : -8);
+	dropDownY = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	if ( auto interactMenuTop = dropdownFrame->findImage("interact top background") )
+	{
+		// 10px is slot half height, minus the top interact text height
+		// mouse will be situated halfway in first menu option
+		dropDownY -= (interactMenuTop->pos.h + 10 + 2);
+	}
+	dropDownOptionSelected = 0;
+	if ( allDropDowns[name].defaultOption > 0 && allDropDowns[name].options.size() > allDropDowns[name].defaultOption )
+	{
+		if ( auto txt = dropdownFrame->findField("interact option 1") )
+		{
+			dropDownY -= txt->getSize().h;
+			dropDownOptionSelected = allDropDowns[name].defaultOption;
+		}
+	}
+	if ( auto highlightImageMid = dropdownFrame->findImage("interact selected highlight mid") )
+	{
+		highlightImageMid->disabled = true;
+	}
+	if ( auto highlightImageLeft = dropdownFrame->findImage("interact selected highlight left") )
+	{
+		highlightImageLeft->disabled = true;
+	}
+	if ( auto highlightImageRight = dropdownFrame->findImage("interact selected highlight right") )
+	{
+		highlightImageRight->disabled = true;
+	}
+
+	//Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
+	dropDownToggleClick = false;
+
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		player.hud.cursor.lastUpdateTick = ticks;
+	}
+}
+
+void Player::GUIDropdown_t::create(const std::string name)
+{
+	if ( dropdownFrame )
+	{
+		dropdownFrame->removeSelf();
+		dropdownFrame = nullptr;
+	}
+	if ( dropdownBlockClickFrame )
+	{
+		dropdownBlockClickFrame->removeSelf();
+		dropdownBlockClickFrame = nullptr;
+	}
+
+	auto& dropDown = allDropDowns[name];
+
+	char dropdownBlockClickName[64] = "";
+	snprintf(dropdownBlockClickName, sizeof(dropdownBlockClickName), "player dropdown block click %d", player);
+	dropdownBlockClickFrame = gui->addFrame(dropdownBlockClickName);
+	dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight()});
+	dropdownBlockClickFrame->setOwner(player.playernum);
+
+	char dropdownName[64] = "";
+	snprintf(dropdownName, sizeof(dropdownName), "player dropdown %d", player);
+	dropdownFrame = gui->addFrame(dropdownName);
+	const int interactWidth = 106;
+	dropdownFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
+	dropdownFrame->setDisabled(true);
+	dropdownFrame->setInheritParentFrameOpacity(false);
+
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+	const int topBackgroundHeight = 30;
+	const int optionHeight = 20;
+
+	dropdownFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
+	dropdownFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
+	dropdownFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
+
+	dropdownFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
+	auto ml = dropdownFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
+	ml->tiled = true;
+	auto mr = dropdownFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
+	mr->tiled = true;
+
+	dropdownFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
+	dropdownFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
+	dropdownFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+		color, "images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
+
+	auto selectmid = dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 22 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
+	selectmid->tiled = true;
+	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
+	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
+
+	const char* interactFont = "fonts/pixel_maz.ttf#32#2";
+
+	auto interactText = dropdownFrame->addField("interact text", 32);
+	interactText->setText(dropDown.title.c_str());
+	interactText->setSize(SDL_Rect{ 0, 2, 0, topBackgroundHeight });
+	interactText->setFont(interactFont);
+	interactText->setHJustify(Field::justify_t::CENTER);
+	interactText->setVJustify(Field::justify_t::CENTER);
+	interactText->setColor(hudColors.itemContextMenuHeadingText);
+
+	const int interactOptionStartX = 4;
+	const int interactOptionStartY = 33;
+	const int glyphSize = 20;
+	const int textWidth = 80;
+	const int textHeight = glyphSize + 8;
+
+	Uint32 textColor = hudColors.itemContextMenuOptionText;
+	SDL_Rect prevGlyphPos;
+
+	for ( int i = 1; i <= dropDown.options.size(); ++i )
+	{
+		char glyphname[32] = "";
+		snprintf(glyphname, sizeof(glyphname), "glyph %d", i);
+		Frame::image_t* interactGlyph = nullptr;
+		if ( i == 1 )
+		{
+			interactGlyph = dropdownFrame->addImage(
+				SDL_Rect{ interactOptionStartX + 4, interactOptionStartY + 4, glyphSize, glyphSize },
+				0xFFFFFFFF, "", glyphname);
+		}
+		else if ( i > 1 )
+		{
+			interactGlyph = dropdownFrame->addImage(
+				SDL_Rect{ interactOptionStartX + 4,
+				prevGlyphPos.y + prevGlyphPos.h + 4,
+				glyphSize, glyphSize },
+				0xFFFFFFFF, "", glyphname);
+		}
+
+		const int textAlignX = interactGlyph->pos.x + interactGlyph->pos.w + 6;
+		int textAlignY = interactGlyph->pos.y - 10;
+		if ( i == 1 )
+		{
+			textAlignY = interactGlyph->pos.y - 8;
+		}
+
+		char optionname[32] = "";
+		snprintf(optionname, sizeof(optionname), "interact option %d", i);
+		interactText = dropdownFrame->addField(optionname, 32);
+		interactText->setText("");
+		interactText->setSize(SDL_Rect{
+			textAlignX,
+			textAlignY,
+			textWidth, textHeight });
+		interactText->setFont(interactFont);
+		interactText->setHJustify(Field::justify_t::LEFT);
+		interactText->setVJustify(Field::justify_t::CENTER);
+		interactText->setColor(textColor);
+
+		prevGlyphPos = interactGlyph->pos;
+	}
 }
 
 void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMouse, bool moveCursor)
@@ -2465,37 +3295,55 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		case SHEET_STR:
 			if ( elementFrame = sheetFrame->findFrame("stats") )
 			{
-				elementField = elementFrame->findField("str text stat");
+				if ( elementFrame = elementFrame->findFrame("stats inner frame") )
+				{
+					elementButton = elementFrame->findButton("str button");
+				}
 			}
 			break;
 		case SHEET_DEX:
 			if ( elementFrame = sheetFrame->findFrame("stats") )
 			{
-				elementField = elementFrame->findField("dex text stat");
+				if ( elementFrame = elementFrame->findFrame("stats inner frame") )
+				{
+					elementButton = elementFrame->findButton("dex button");
+				}
 			}
 			break;
 		case SHEET_CON:
 			if ( elementFrame = sheetFrame->findFrame("stats") )
 			{
-				elementField = elementFrame->findField("con text stat");
+				if ( elementFrame = elementFrame->findFrame("stats inner frame") )
+				{
+					elementButton = elementFrame->findButton("con button");
+				}
 			}
 			break;
 		case SHEET_INT:
 			if ( elementFrame = sheetFrame->findFrame("stats") )
 			{
-				elementField = elementFrame->findField("int text stat");
+				if ( elementFrame = elementFrame->findFrame("stats inner frame") )
+				{
+					elementButton = elementFrame->findButton("int button");
+				}
 			}
 			break;
 		case SHEET_PER:
 			if ( elementFrame = sheetFrame->findFrame("stats") )
 			{
-				elementField = elementFrame->findField("per text stat");
+				if ( elementFrame = elementFrame->findFrame("stats inner frame") )
+				{
+					elementButton = elementFrame->findButton("per button");
+				}
 			}
 			break;
 		case SHEET_CHR:
 			if ( elementFrame = sheetFrame->findFrame("stats") )
 			{
-				elementField = elementFrame->findField("chr text stat");
+				if ( elementFrame = elementFrame->findFrame("stats inner frame") )
+				{
+					elementButton = elementFrame->findButton("chr button");
+				}
 			}
 			break;
 		case SHEET_ATK:
@@ -2579,7 +3427,7 @@ void Player::CharacterSheet_t::updateGameTimer()
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
 
-	if ( selectedElement == SHEET_TIMER )
+	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() )
 	{
 		updateCharacterSheetTooltip(SHEET_TIMER, sheetFrame->findFrame("game timer")->getSize());
 	}
@@ -2601,50 +3449,863 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		return;
 	}
 	auto tooltipFrame = sheetFrame->findFrame("sheet tooltip");
+	if ( tooltipFrame->isDisabled() )
+	{
+		tooltipOpacitySetpoint = 0;
+		tooltipOpacityAnimate = 1.0;
+	}
+	
+	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipOpacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipOpacitySetpoint == 0 )
+		{
+			if ( ticks - tooltipDeselectedTick > 5 )
+			{
+				real_t factor = 10.0;
+				real_t setpointDiff = fpsScale * std::max(.05, (tooltipOpacityAnimate)) / (factor);
+				tooltipOpacityAnimate -= setpointDiff;
+				tooltipOpacityAnimate = std::max(0.0, tooltipOpacityAnimate);
+			}
+		}
+		else
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipOpacityAnimate)) / (1);
+			tooltipOpacityAnimate += setpointDiff;
+			tooltipOpacityAnimate = std::min(1.0, tooltipOpacityAnimate);
+		}
+		tooltipFrame->setOpacity(tooltipOpacityAnimate * 100);
+	}
+
 	if ( element == SHEET_ENUM_END || element == SHEET_UNSELECTED
 		|| player.GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET )
 	{
-		tooltipFrame->setDisabled(true);
+		//tooltipFrame->setDisabled(true);
 		return;
 	}
+
+	tooltipOpacitySetpoint = 0;
+	tooltipOpacityAnimate = 1.0;
 	tooltipFrame->setDisabled(false);
+	tooltipFrame->setOpacity(100.0);
+	tooltipDeselectedTick = ticks;
 
 	auto txt = tooltipFrame->findField("tooltip text");
 
-	Uint32 defaultColor = makeColor(188, 154, 114, 255);
-	for ( int i = 1; i < 5; ++i )
+	Uint32 defaultColor = hudColors.characterSheetNeutral;
+	for ( int i = 1; i <= 11; ++i )
 	{
 		char glyphName[32] = "";
 		snprintf(glyphName, sizeof(glyphName), "glyph %d", i);
+		if ( auto glyph = tooltipFrame->findImage(glyphName) )
+		{
+			glyph->disabled = true;
+		}
 		char entryName[32] = "";
 		snprintf(entryName, sizeof(entryName), "txt %d", i);
-		auto glyph = tooltipFrame->findImage(glyphName); assert(glyph);
-		glyph->disabled = true;
 		auto entry = tooltipFrame->findField(entryName); assert(entry);
 		entry->setDisabled(true);
+		entry->setHJustify(Frame::justify_t::LEFT);
+		entry->setVJustify(Field::justify_t::CENTER);
 		entry->setColor(defaultColor);
 	}
+	auto div = tooltipFrame->findImage("tooltip divider 1");
+	div->disabled = true;
 
-	if ( element == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
+	for ( int i = 1; i <= 5; ++i )
+	{
+		char backingFrameName[64] = "";
+		snprintf(backingFrameName, sizeof(backingFrameName), "txt value backing frame %d", i);
+		auto txtValueBackingFrame = tooltipFrame->findFrame(backingFrameName);
+		txtValueBackingFrame->setDisabled(true);
+	}
+
+	if ( !(element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR) )
+	{
+		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipTopLeft->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png";
+		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipTop->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png";
+		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipTopRight->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png";
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+	}
+
+	if ( element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR )
+	{
+		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipTopLeft->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipTop->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipTopRight->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+
+		int maxWidth = 260;
+		if ( getHoverTextString("stat_max_tooltip_width") != defaultString )
+		{
+			maxWidth = std::max(0, std::stoi(getHoverTextString("stat_max_tooltip_width")));
+		}
+		int minWidth = 0;
+		if ( getHoverTextString("stat_min_tooltip_width") != defaultString )
+		{
+			minWidth = std::max(0, std::stoi(getHoverTextString("stat_min_tooltip_width")));
+		}
+		const int padx = 16;
+		const int pady1 = 8;
+		const int pady2 = 4;
+		const int padxMid = 4;
+		const int padyMid = 8;
+		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+
+		std::string titleText = "";
+		std::string descText = "";
+		int value = 0;
+		switch ( element )
+		{
+			case SHEET_STR:
+				titleText = getHoverTextString("stat_str_title");
+				descText = getHoverTextString("stat_str_desc");
+				break;
+			case SHEET_DEX:
+				titleText = getHoverTextString("stat_dex_title");
+				descText = getHoverTextString("stat_dex_desc");
+				break;
+			case SHEET_CON:
+				titleText = getHoverTextString("stat_con_title");
+				descText = getHoverTextString("stat_con_desc");
+				break;
+			case SHEET_INT:
+				titleText = getHoverTextString("stat_int_title");
+				descText = getHoverTextString("stat_int_desc");
+				break;
+			case SHEET_PER:
+				titleText = getHoverTextString("stat_per_title");
+				descText = getHoverTextString("stat_per_desc");
+				break;
+			case SHEET_CHR:
+				titleText = getHoverTextString("stat_chr_title");
+				descText = getHoverTextString("stat_chr_desc");
+				break;
+			default:
+				break;
+		}
+
+		txt->setText(titleText.c_str());
+		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
+		txt->setSize(txtPos);
+		txt->reflowTextToFit(0);
+		txt->setColor(makeColor(67, 195, 157, 255));
+		Font* actualFont = Font::get(txt->getFont());
+		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+		txtPos.h = txtHeight + 4;
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		txtPos.w = txtGet->getWidth();
+		txtPos.w = std::max(minWidth - padx * 2, txtPos.w);
+		txt->setSize(txtPos);
+
+		tooltipPos.w = (txtPos.w + padx * 2);
+
+		unsigned int longestValue = 0;
+		std::map<int, std::pair<Field*, SDL_Rect>> valueSizes;
+
+		int currentHeight = txtPos.y + (actualFont->height(true) * 1) + 2;
+		const int extraTextHeightForLowerCharacters = 4;
+		{
+			currentHeight += padyMid;
+			auto entry = tooltipFrame->findField("txt 1"); assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+			snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_base_amount").c_str());
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			auto glyphBacking = tooltipFrame->findImage("glyph 1");
+			glyphBacking->disabled = false;
+			glyphBacking->path = getHoverTextString("icon_backing_path");
+			glyphBacking->pos.x = padx + padxMid + 4;
+			glyphBacking->pos.y = currentHeight + 6;
+			glyphBacking->pos.w = 44;
+			glyphBacking->pos.h = 44;
+
+			auto glyphIcon = tooltipFrame->findImage("glyph 2");
+			glyphIcon->disabled = false;
+			glyphIcon->path = "";
+			switch ( element )
+			{
+				case SHEET_STR:
+					glyphIcon->path = getHoverTextString("icon_str_path");
+					break;
+				case SHEET_DEX:
+					glyphIcon->path = getHoverTextString("icon_dex_path");
+					break;
+				case SHEET_CON:
+					glyphIcon->path = getHoverTextString("icon_con_path");
+					break;
+				case SHEET_INT:
+					glyphIcon->path = getHoverTextString("icon_int_path");
+					break;
+				case SHEET_PER:
+					glyphIcon->path = getHoverTextString("icon_per_path");
+					break;
+				case SHEET_CHR:
+					glyphIcon->path = getHoverTextString("icon_chr_path");
+					break;
+				default:
+					break;
+			}
+			glyphIcon->pos.w = 24;
+			glyphIcon->pos.h = 24;
+			glyphIcon->pos.x = glyphBacking->pos.x + glyphBacking->pos.w / 2 - glyphIcon->pos.w / 2;
+			glyphIcon->pos.y = glyphBacking->pos.y + glyphBacking->pos.h / 2 - glyphIcon->pos.h / 2;
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx / 2 + glyphBacking->pos.x + glyphBacking->pos.w;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = tooltipFrame->findField("txt 2"); assert(entry);
+			entryValue->setDisabled(false);
+			int value = 0;
+			char valueBuf[128] = "";
+			switch ( element )
+			{
+				case SHEET_STR:
+					value = stats[player.playernum]->STR;
+					snprintf(valueBuf, sizeof(valueBuf), "%d STR", value);
+					break;
+				case SHEET_DEX:
+					value = stats[player.playernum]->DEX;
+					snprintf(valueBuf, sizeof(valueBuf), "%d DEX", value);
+					break;
+				case SHEET_CON:
+					value = stats[player.playernum]->CON;
+					snprintf(valueBuf, sizeof(valueBuf), "%d CON", value);
+					break;
+				case SHEET_INT:
+					value = stats[player.playernum]->INT;
+					snprintf(valueBuf, sizeof(valueBuf), "%d INT", value);
+					break;
+				case SHEET_PER:
+					value = stats[player.playernum]->PER;
+					snprintf(valueBuf, sizeof(valueBuf), "%d PER", value);
+					break;
+				case SHEET_CHR:
+					value = stats[player.playernum]->CHR;
+					snprintf(valueBuf, sizeof(valueBuf), "%d CHR", value);
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			entryValue->setText(valueBuf);
+			SDL_Rect entryValuePos = entry->getSize();
+			entryValue->setSize(entryValuePos);
+			entryValue->setHJustify(Frame::justify_t::RIGHT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			/*auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 1");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[1] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);*/
+		}
+		{
+			currentHeight += 0;// padyMid / 2;
+			auto entry = tooltipFrame->findField("txt 3"); assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+			snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_modified_amount").c_str());
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			auto glyphBacking = tooltipFrame->findImage("glyph 1");
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx / 2 + glyphBacking->pos.x + glyphBacking->pos.w;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = tooltipFrame->findField("txt 4"); assert(entry);
+			entryValue->setDisabled(false);
+			char valueBuf[128] = "";
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_STR:
+					value = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
+					value -= stats[player.playernum]->STR;
+					snprintf(valueBuf, sizeof(valueBuf), "%+d STR", value);
+					break;
+				case SHEET_DEX:
+					value = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+					value -= stats[player.playernum]->DEX;
+					snprintf(valueBuf, sizeof(valueBuf), "%+d DEX", value);
+					break;
+				case SHEET_CON:
+					value = statGetCON(stats[player.playernum], players[player.playernum]->entity);
+					value -= stats[player.playernum]->CON;
+					snprintf(valueBuf, sizeof(valueBuf), "%+d CON", value);
+					break;
+				case SHEET_INT:
+					value = statGetINT(stats[player.playernum], players[player.playernum]->entity);
+					value -= stats[player.playernum]->INT;
+					snprintf(valueBuf, sizeof(valueBuf), "%+d INT", value);
+					break;
+				case SHEET_PER:
+					value = statGetPER(stats[player.playernum], players[player.playernum]->entity);
+					value -= stats[player.playernum]->PER;
+					snprintf(valueBuf, sizeof(valueBuf), "%+d PER", value);
+					break;
+				case SHEET_CHR:
+					value = statGetCHR(stats[player.playernum], players[player.playernum]->entity);
+					value -= stats[player.playernum]->CHR;
+					snprintf(valueBuf, sizeof(valueBuf), "%+d CHR", value);
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			SDL_Rect entryValuePos = entry->getSize();
+			entryValue->setSize(entryValuePos);
+			entryValue->setHJustify(Frame::justify_t::RIGHT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			/*auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 2");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[2] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);*/
+		}
+		{
+			// stat extra number display
+			currentHeight += padyMid;
+			auto entry = tooltipFrame->findField("txt 5"); assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+			if ( element == SHEET_STR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_str_atk_bonus").c_str());
+			}
+			else if ( element == SHEET_DEX )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_dex_ranged_atk_bonus").c_str());
+			}
+			else if ( element == SHEET_CON )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_con_ac_bonus").c_str());
+			}
+			else if ( element == SHEET_PER )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_per_pierce_bonus").c_str());
+			}
+			else if ( element == SHEET_INT )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_pwr_bonus").c_str());
+			}
+			else if ( element == SHEET_CHR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_chr_buying_bonus").c_str());
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = tooltipFrame->findField("txt 6"); assert(entry);
+			entryValue->setDisabled(false);
+			char valueBuf[128] = "";
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_STR:
+				{
+					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), STR);
+				}
+					break;
+				case SHEET_DEX:
+				{
+					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), DEX);
+				}
+					break;
+				case SHEET_CON:
+				{
+					Sint32 CON = statGetCON(stats[player.playernum], players[player.playernum]->entity);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_ac_value_format").c_str(), CON);
+				}
+					break;
+				case SHEET_INT:
+				{
+					real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum]) * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
+				}
+					break;
+				case SHEET_PER:
+				{
+					real_t val = std::min(std::max(statGetPER(stats[player.playernum], players[player.playernum]->entity) / 2, 0), 50);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pierce_value_format").c_str(), val);
+				}
+					break;
+				case SHEET_CHR:
+				{
+					real_t val = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+					real_t normalVal = val;
+					normalVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
+					normalVal = std::max(1.0, normalVal);
+
+					int stat = stats[player.playernum]->CHR;
+					stats[player.playernum]->CHR = 0;
+					stats[player.playernum]->CHR -= statGetCHR(stats[player.playernum], players[player.playernum]->entity);
+					real_t zeroVal = val;
+					zeroVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
+					zeroVal = std::max(1.0, zeroVal);
+					stats[player.playernum]->CHR = stat;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_buying_value_format").c_str(), (zeroVal - normalVal) * 100.0);
+				}
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 3");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[3] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+		}
+		if ( element == SHEET_STR || element == SHEET_DEX || element == SHEET_INT || element == SHEET_PER || element == SHEET_CHR )
+		{
+			// stat extra number display
+			currentHeight += padyMid;
+			auto entry = tooltipFrame->findField("txt 7"); assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+
+			if ( element == SHEET_STR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_str_movement_bonus").c_str());
+			}
+			else if ( element == SHEET_DEX )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_dex_thrown_atk_bonus").c_str());
+			}
+			else if ( element == SHEET_INT )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_mp_regen_bonus").c_str());
+			}
+			else if ( element == SHEET_PER )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_per_light_bonus").c_str());
+			}
+			else if ( element == SHEET_CHR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_chr_selling_bonus").c_str());
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = tooltipFrame->findField("txt 8"); assert(entry);
+			entryValue->setDisabled(false);
+			char valueBuf[128] = "";
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_STR:
+				{
+					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+					real_t weightratio1 = player.movement.getWeightRatio(player.movement.getCharacterWeight(), 0);
+					real_t weightratio2 = player.movement.getWeightRatio(player.movement.getCharacterWeight(), STR);
+					real_t speedFactor1 = player.movement.getSpeedFactor(weightratio1, DEX);
+					real_t speedFactor2 = player.movement.getSpeedFactor(weightratio2, DEX);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), speedFactor2 - speedFactor1);
+				}
+					break;
+				case SHEET_DEX:
+				{
+					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), DEX / 4);
+				}
+					break;
+				case SHEET_CON:
+					break;
+				case SHEET_INT:
+				{
+					real_t val = 0.0;
+					int stat = stats[player.playernum]->INT;
+					real_t normalValue = getBaseManaRegen(players[player.playernum]->entity, *(stats[player.playernum])) / (TICKS_PER_SECOND * 1.f);
+					stats[player.playernum]->INT = 0;
+					stats[player.playernum]->INT -= statGetINT(stats[player.playernum], players[player.playernum]->entity);
+					real_t zeroValue = getBaseManaRegen(players[player.playernum]->entity, *(stats[player.playernum])) / (TICKS_PER_SECOND * 1.f);
+					stats[player.playernum]->INT = stat;
+
+					val = (100 * zeroValue / normalValue) - 100;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_mp_regen_value_format").c_str(), val);
+				}
+					break;
+				case SHEET_PER:
+				{
+					Sint32 PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
+					int lightBonus = PER / 3;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), lightBonus);
+				}
+					break;
+				case SHEET_CHR:
+				{
+					real_t val = (50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+					real_t normalVal = val;
+					normalVal *= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
+					normalVal = std::min(1.0, normalVal);
+
+					int stat = stats[player.playernum]->CHR;
+					stats[player.playernum]->CHR = 0;
+					stats[player.playernum]->CHR -= statGetCHR(stats[player.playernum], players[player.playernum]->entity);
+					real_t zeroVal = val;
+					zeroVal *= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
+					zeroVal = std::min(1.0, zeroVal);
+					stats[player.playernum]->CHR = stat;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_selling_value_format").c_str(), (normalVal - zeroVal) * 100.0);
+				}
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 4");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[4] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+		}
+		if ( element == SHEET_PER || element == SHEET_DEX )
+		{
+			// stat extra number display
+			currentHeight += padyMid;
+			auto entry = tooltipFrame->findField("txt 9"); assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+			if ( element == SHEET_DEX )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_dex_movement_bonus").c_str());
+			}
+			else if ( element == SHEET_PER )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_per_sneaking_bonus").c_str());
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = tooltipFrame->findField("txt 10"); assert(entry);
+			entryValue->setDisabled(false);
+			char valueBuf[128] = "";
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_STR:
+					break;
+				case SHEET_DEX:
+				{
+					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
+					real_t weightratio = player.movement.getWeightRatio(player.movement.getCharacterWeight(), STR);
+					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
+					real_t speedFactor1 = player.movement.getSpeedFactor(weightratio, 0);
+					real_t speedFactor2 = player.movement.getSpeedFactor(weightratio, DEX);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), speedFactor2 - speedFactor1);
+				}
+					break;
+				case SHEET_CON:
+					break;
+				case SHEET_INT:
+					break;
+				case SHEET_PER:
+				{
+					int sneakingBonus = (2 + (stats[player.playernum]->PROFICIENCIES[PRO_STEALTH] / 40));
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), sneakingBonus);
+				}
+				break;
+				case SHEET_CHR:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 5");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[5] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+		}
+
+		for ( int index = 1; index <= 5; ++index )
+		{
+			char backingFrameName[64] = "";
+			snprintf(backingFrameName, sizeof(backingFrameName), "txt value backing frame %d", index);
+			auto txtValueBackingFrame = tooltipFrame->findFrame(backingFrameName);
+			if ( txtValueBackingFrame->isDisabled() )
+			{
+				continue;
+			}
+
+			SDL_Rect valuePos = valueSizes[index].second;
+			Field* entryValue = valueSizes[index].first;
+			SDL_Rect entryValuePos = entryValue->getSize();
+			entryValuePos.x = entryValuePos.x + entryValuePos.w;
+			entryValuePos.w = (int)longestValue;
+			entryValuePos.x -= entryValuePos.w;
+			entryValuePos.x -= 8;
+			entryValue->setSize(entryValuePos);
+
+			valuePos.w = (int)longestValue + 16;
+			valuePos.x -= (valuePos.w);
+			valuePos.y -= 3;
+			valuePos.h += 4;
+
+			txtValueBackingFrame->setSize(valuePos);
+
+			imageResizeToContainer9x9(txtValueBackingFrame, SDL_Rect{ 0, 0, valuePos.w, valuePos.h }, skillsheetEffectBackgroundImages);
+		}
+
+		{
+			currentHeight += padyMid;
+
+			div->pos.x = padx;
+			div->pos.y = currentHeight;
+			div->pos.w = txtPos.w;
+			div->disabled = false;
+
+			currentHeight += padyMid;
+
+			auto entry = tooltipFrame->findField("txt 11"); assert(entry);
+			entry->setDisabled(false);
+			char buf[512] = "";
+
+			std::string descTextFormatted = "\x1E ";
+			for ( auto s : descText )
+			{
+				descTextFormatted += s;
+				if ( s == '\n' )
+				{
+					descTextFormatted += "\x1E ";
+				}
+			}
+
+			snprintf(buf, sizeof(buf), "%s", descTextFormatted.c_str());
+			entry->setText(buf);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w;
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(makeColor(224, 224, 224, 255));
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+
+			currentHeight += padyMid / 4;
+			tooltipPos.h = pady1 + currentHeight + pady2;
+		}
+
+		tooltipPos.h = pady1 + currentHeight + pady2;
+		tooltipPos.x = pos.x - tooltipPos.w;
+		tooltipPos.y = pos.y;
+
+		tooltipFrame->setSize(tooltipPos);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			skillsheetEffectBackgroundImages);
+	}
+	else if ( element == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
 	{
 		const int maxWidth = 260;
 		const int padx = 16;
 		const int pady1 = 8;
-		const int pady2 = 8;
+		const int pady2 = 4;
+		const int padxMid = 4;
+		const int padyMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 		
-		txt->setText(mapDisplayNamesDescriptions[map.name].second.c_str());
+		std::string descriptionText = mapDisplayNamesDescriptions[map.name].second.c_str();
+		std::string mapDetailsText = "";
+		auto mapDetails = Player::Minimap_t::mapDetails;
+		for ( auto& detail : mapDetails )
+		{
+			if ( mapDetailsText != "" )
+			{
+				mapDetailsText += '\n';
+			}
+			mapDetailsText += "\x1E ";
+			mapDetailsText += detail.second;
+		}
+
+		txt->setText(descriptionText.c_str());
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
 		txt->reflowTextToFit(0);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
-		txtPos.h = txtHeight;
-		txt->setSize(txtPos);
+		txtPos.h = txtHeight + 4;
 		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
 			txt->getTextColor(), txt->getOutlineColor());
+		txtPos.w = txtGet->getWidth();
+		txt->setSize(txtPos);
+
 		tooltipPos.w = txtGet->getWidth() + padx * 2;
-		tooltipPos.h = pady1 + txtPos.h + pady2;
+
+		int currentHeight = txtPos.y + txtPos.h - 4;
+
+		if ( Player::Minimap_t::mapDetails.size() > 0 )
+		{
+			currentHeight += padyMid;
+			auto entry = tooltipFrame->findField("txt 1"); assert(entry);
+			entry->setDisabled(false);
+			entry->setText(mapDetailsText.c_str());
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (2 * (padx + padxMid));
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines();
+			entry->setSize(entryPos);
+			entry->setColor(makeColor(255, 0, 255, 255));
+			currentHeight = std::max(entryPos.y + entryPos.h, 0);
+		}
+
+		if ( Player::Minimap_t::mapDetails.size() > 0 )
+		{
+			tooltipPos.h = pady1 + currentHeight + pady2;
+		}
+		else
+		{
+			tooltipPos.h = pady1 + txtPos.h + pady2;
+		}
 		tooltipPos.x = pos.x - tooltipPos.w;
 		tooltipPos.y = pos.y;
 
@@ -2661,7 +4322,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padyMid = 4;
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
-		if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+		if ( !usingMouse )
 		{
 			txt->setText(getHoverTextString("gold_controller").c_str());
 		}
@@ -2674,12 +4336,25 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		txt->reflowTextToFit(0);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
-		txtPos.h = txtHeight + padyMid;
+		if ( !usingMouse )
+		{
+			txtPos.h = txtHeight + padyMid;
+		}
+		else
+		{
+			txtPos.h = txtHeight;
+		}
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		txtPos.w = txtGet->getWidth();
 		txt->setSize(txtPos);
+		
+		tooltipPos.w = txtPos.w + padx * 2;
 
 		int currentHeight = txtPos.y + txtPos.h;
 		for ( int i = 1; i < 5; ++i )
 		{
+			if ( usingMouse ) { break; }
 			currentHeight += padyMid;
 			char glyphName[32] = "";
 			snprintf(glyphName, sizeof(glyphName), "glyph %d", i);
@@ -2730,10 +4405,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight = std::max(entryPos.y + entryPos.h, glyph->pos.y + glyph->pos.h);
 		}
 
-		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
-			txt->getTextColor(), txt->getOutlineColor());
-		tooltipPos.w = txtGet->getWidth() + padx * 2;
-		tooltipPos.h = pady1 + currentHeight + pady2;
+		if ( usingMouse )
+		{
+			tooltipPos.h = pady1 + txtPos.h + pady2;
+		}
+		else
+		{
+			tooltipPos.h = pady1 + currentHeight + pady2;
+		}
 		tooltipPos.x = pos.x - tooltipPos.w;
 		tooltipPos.y = pos.y;
 
@@ -2818,7 +4497,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + padyMid;
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		txtPos.w = txtGet->getWidth();
 		txt->setSize(txtPos);
+
 		
 		entry1Pos.y += txtPos.h;
 		entry2Pos.y += txtPos.h;
@@ -2826,8 +4509,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipFrame->findField("txt 2")->setSize(entry2Pos);
 		currentHeight = std::max(currentHeight, entry1Pos.y + entry1Pos.h);
 
-		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
-			txt->getTextColor(), txt->getOutlineColor());
 		tooltipPos.w = txtPos.w + padx * 2;
 		tooltipPos.h = pady1 + currentHeight + pady2;
 		tooltipPos.x = pos.x - tooltipPos.w;
@@ -2846,67 +4527,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	auto characterInnerFrame = characterInfoFrame->findFrame("character info inner frame");
 	assert(characterInnerFrame);
 
-	SheetElements targetElement = SHEET_ENUM_END;
-	auto logButton = sheetFrame->findFrame("log map buttons")->findButton("log button");
-	auto mapButton = sheetFrame->findFrame("log map buttons")->findButton("map button");
-	auto skillsButton = sheetFrame->findFrame("skills button frame")->findButton("skills button");
-	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
-	{
-		if ( skillsButton->isHighlighted() )
-		{
-			targetElement = SHEET_SKILL_LIST;
-		}
-		else if ( logButton->isHighlighted() )
-		{
-			targetElement = SHEET_OPEN_LOG;
-		}
-		else if ( mapButton->isHighlighted() )
-		{
-			targetElement = SHEET_OPEN_MAP;
-		}
-		else if ( sheetFrame->findFrame("game timer")->findButton("timer selector")->isHighlighted() )
-		{
-			targetElement = SHEET_TIMER;
-		}
-		else if ( sheetFrame->findFrame("dungeon floor frame")->findButton("dungeon floor selector")->isHighlighted() )
-		{
-			targetElement = SHEET_DUNGEON_FLOOR;
-		}
-		else if ( characterInnerFrame->findButton("character class selector")->isHighlighted() )
-		{
-			targetElement = SHEET_CHAR_CLASS;
-		}
-		else if ( characterInnerFrame->findButton("character race selector")->isHighlighted() )
-		{
-			targetElement = SHEET_CHAR_RACE_SEX;
-		}
-		else if ( characterInnerFrame->findButton("character gold selector")->isHighlighted() )
-		{
-			targetElement = SHEET_GOLD;
-		}
-	}
-	if ( targetElement != SHEET_ENUM_END )
-	{
-		player.GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-		selectElement(targetElement, true, true);
-	}
-	else
-	{
-		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
-		{
-			if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
-			{
-				// no moused over objects, deactivate the cursor.
-				player.GUI.activateModule(Player::GUI_t::MODULE_NONE);
-			}
-		}
-	}
-	//messagePlayer(0, "%d", player.GUI.activeModule);
-	// players[player.playernum]->GUI.warpControllerToModule(false); - use this for controller input
-
-	//auto characterPos = characterInfoFrame->getSize();
-	//characterPos.x = player.camera_virtualWidth() - characterPos.w * 2;
-	//characterInfoFrame->setSize(characterPos);
+	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -3066,7 +4687,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			if ( mapDisplayNamesDescriptions.find(map.name) != mapDisplayNamesDescriptions.end() )
 			{
 				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
-				if ( selectedElement == SHEET_DUNGEON_FLOOR )
+				if ( selectedElement == SHEET_DUNGEON_FLOOR && enableTooltips )
 				{
 					updateCharacterSheetTooltip(selectedElement, floorFrame->getSize());
 				}
@@ -3083,13 +4704,28 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		gold->setText(buf);
 		if ( selectedElement == SHEET_GOLD )
 		{
-			updateCharacterSheetTooltip(selectedElement, characterInfoFrame->getSize());
+			if ( Input::inputs[player.playernum].binary("MenuRightClick") 
+				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+				&& !player.GUI.isDropdownActive() )
+			{
+				player.GUI.dropdownMenu.open("drop_gold");
+			}
+			if ( enableTooltips )
+			{
+				SDL_Rect tooltipPos = characterInfoFrame->getSize();
+				tooltipPos.y += gold->getSize().y;
+				updateCharacterSheetTooltip(selectedElement, tooltipPos);
+			}
 		}
 	}
 }
 
 void Player::CharacterSheet_t::updateStats()
 {
+	auto characterInfoFrame = sheetFrame->findFrame("character info");
+	assert(characterInfoFrame);
+	auto characterInnerFrame = characterInfoFrame->findFrame("character info inner frame");
+	assert(characterInnerFrame);
 	auto statsFrame = sheetFrame->findFrame("stats");
 	assert(statsFrame);
 
@@ -3100,8 +4736,8 @@ void Player::CharacterSheet_t::updateStats()
 	auto statsInnerFrame = statsFrame->findFrame("stats inner frame");
 	assert(statsInnerFrame);
 
-	const int rightAlignPosX = 20;
-	const int leftAlignPosX = 30;
+	const int rightAlignPosX = 0;
+	const int leftAlignPosX = 10;
 	auto statsInnerPos = statsInnerFrame->getSize();
 	statsInnerPos.x = rightAlignPosX;
 	if ( keystatus[SDL_SCANCODE_I] )
@@ -3110,8 +4746,16 @@ void Player::CharacterSheet_t::updateStats()
 	}
 	statsInnerFrame->setSize(statsInnerPos);
 
-	char buf[32] = "";
+	Button* strButton = statsInnerFrame->findButton("str button");
+	Button* dexButton = statsInnerFrame->findButton("dex button");
+	Button* conButton = statsInnerFrame->findButton("con button");
+	Button* intButton = statsInnerFrame->findButton("int button");
+	Button* perButton = statsInnerFrame->findButton("per button");
+	Button* chrButton = statsInnerFrame->findButton("chr button");
 
+	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+
+	char buf[32] = "";
 	if ( auto field = statsInnerFrame->findField("str text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->STR);
@@ -3135,6 +4779,12 @@ void Player::CharacterSheet_t::updateStats()
 				modifiedField->setColor(hudColors.characterSheetRed);
 				modifiedField->setDisabled(false);
 			}
+		}
+		if ( selectedElement == SHEET_STR && enableTooltips )
+		{
+			SDL_Rect tooltipPos = statsFrame->getSize();
+			tooltipPos.y += statsInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
 		}
 	}
 	if ( auto field = statsInnerFrame->findField("dex text stat") )
@@ -3161,6 +4811,12 @@ void Player::CharacterSheet_t::updateStats()
 				modifiedField->setDisabled(false);
 			}
 		}
+		if ( selectedElement == SHEET_DEX && enableTooltips )
+		{
+			SDL_Rect tooltipPos = statsFrame->getSize();
+			tooltipPos.y += statsInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 	if ( auto field = statsInnerFrame->findField("con text stat") )
 	{
@@ -3185,6 +4841,12 @@ void Player::CharacterSheet_t::updateStats()
 				modifiedField->setColor(hudColors.characterSheetRed);
 				modifiedField->setDisabled(false);
 			}
+		}
+		if ( selectedElement == SHEET_CON && enableTooltips )
+		{
+			SDL_Rect tooltipPos = statsFrame->getSize();
+			tooltipPos.y += statsInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
 		}
 	}
 	if ( auto field = statsInnerFrame->findField("int text stat") )
@@ -3211,6 +4873,12 @@ void Player::CharacterSheet_t::updateStats()
 				modifiedField->setDisabled(false);
 			}
 		}
+		if ( selectedElement == SHEET_INT && enableTooltips )
+		{
+			SDL_Rect tooltipPos = statsFrame->getSize();
+			tooltipPos.y += statsInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 	if ( auto field = statsInnerFrame->findField("per text stat") )
 	{
@@ -3236,6 +4904,12 @@ void Player::CharacterSheet_t::updateStats()
 				modifiedField->setDisabled(false);
 			}
 		}
+		if ( selectedElement == SHEET_PER && enableTooltips )
+		{
+			SDL_Rect tooltipPos = statsFrame->getSize();
+			tooltipPos.y += statsInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 	if ( auto field = statsInnerFrame->findField("chr text stat") )
 	{
@@ -3260,6 +4934,12 @@ void Player::CharacterSheet_t::updateStats()
 				modifiedField->setColor(hudColors.characterSheetRed);
 				modifiedField->setDisabled(false);
 			}
+		}
+		if ( selectedElement == SHEET_CHR && enableTooltips )
+		{
+			SDL_Rect tooltipPos = statsFrame->getSize();
+			tooltipPos.y += statsInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
 		}
 	}
 }
@@ -3413,7 +5093,7 @@ void Player::CharacterSheet_t::updateAttributes()
 				{
 					field->setColor(hudColors.characterSheetRed);
 				}
-				else if ( regen < static_cast<real_t>(players[player.playernum]->entity->getBaseManaRegen(*stats[player.playernum])) / TICKS_PER_SECOND )
+				else if ( regen < static_cast<real_t>(getBaseManaRegen(players[player.playernum]->entity, *stats[player.playernum])) / TICKS_PER_SECOND )
 				{
 					field->setColor(hudColors.characterSheetGreen);
 				}
@@ -3429,7 +5109,7 @@ void Player::CharacterSheet_t::updateAttributes()
 					field->setColor(hudColors.characterSheetRed);
 				}
 			}
-			else if ( regen < static_cast<real_t>(players[player.playernum]->entity->getBaseManaRegen(*stats[player.playernum])) / TICKS_PER_SECOND )
+			else if ( regen < static_cast<real_t>(getBaseManaRegen(players[player.playernum]->entity, *stats[player.playernum])) / TICKS_PER_SECOND )
 			{
 				field->setColor(hudColors.characterSheetGreen);
 			}
@@ -4186,6 +5866,7 @@ void createInventoryTooltipFrame(const int player)
 		players[player]->inventoryUI.tooltipFrame = gui->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipFrame->setHollow(true);
 		tooltipFrame->setDisabled(true);
 		tooltipFrame->setInheritParentFrameOpacity(false);
 	}
@@ -4218,10 +5899,10 @@ void createInventoryTooltipFrame(const int player)
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
 		color, "images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
 
-	const std::string headerFont = "fonts/pixelmix.ttf#14#2";
-	const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
-	//const std::string headerFont = "fonts/pixelmix.ttf#16#2";
-	//const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#1";
+	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
+	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
+	const std::string headerFont = "fonts/pixelmix.ttf#16#2";
+	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
@@ -4257,6 +5938,7 @@ void createInventoryTooltipFrame(const int player)
 
 	if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
 	{
+		attrFrame->setHollow(true);
 		attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
@@ -4275,7 +5957,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
 		tooltipTextField->setText("Nothing");
@@ -4283,7 +5965,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
 		tooltipTextField->setText("Nothing");
@@ -4291,7 +5973,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
 		tooltipTextField->setText("Nothing");
@@ -4299,7 +5981,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
 		tooltipTextField->setText("Nothing");
@@ -4307,7 +5989,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setColor(0xFFFFFFFF);
 
 		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
 			0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip secondary image");
@@ -4317,7 +5999,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
 		tooltipTextField->setText("Nothing");
@@ -4325,7 +6007,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
 		tooltipTextField->setText("Nothing");
@@ -4333,7 +6015,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
 		tooltipTextField->setText("Nothing");
@@ -4341,7 +6023,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
 			0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip third image");
@@ -4351,7 +6033,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
 		tooltipTextField->setText("Nothing");
@@ -4359,7 +6041,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
 		tooltipTextField->setText("Nothing");
@@ -4367,7 +6049,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
 		tooltipTextField->setText("Nothing");
@@ -4375,7 +6057,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
 		tooltipTextField->setText("Nothing");
@@ -4387,6 +6069,7 @@ void createInventoryTooltipFrame(const int player)
 	}
 	if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
 	{
+		descFrame->setHollow(true);
 		descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		descFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
@@ -4399,8 +6082,9 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+		//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		//tooltipTextField->setColor(0xFFFFFFFF);
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
 
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
 		tooltipTextField->setText("Nothing");
@@ -4409,7 +6093,8 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setColor(0xFFFFFFFF);
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
 
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
 		tooltipTextField->setText("Nothing");
@@ -4417,10 +6102,12 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
+		tooltipTextField->setColor(0xFFFFFFFF);
+		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
 	}
 	if ( auto valueFrame = tooltipFrame->addFrame("inventory mouse tooltip value frame") )
 	{
+		valueFrame->setHollow(true);
 		valueFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
@@ -4467,6 +6154,7 @@ void createInventoryTooltipFrame(const int player)
 	}
 	if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
 	{
+		promptFrame->setHollow(true);
 		promptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		tooltipTextField = promptFrame->addField("inventory mouse tooltip prompt", 1024);
@@ -4491,50 +6179,37 @@ void createInventoryTooltipFrame(const int player)
 		const int topBackgroundHeight = 30;
 		const int optionHeight = 20;
 
-		interactFrame->addImage(SDL_Rect{ 12, 0, 0, 34 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_T01.png", "interact top background");
-		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL01.png", "interact top left");
-		interactFrame->addImage(SDL_Rect{ 0, 0, 12, 34 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR01.png", "interact top right");
+		interactFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
+		interactFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
 
-		interactFrame->addImage(SDL_Rect{ 4, 34, 0, 76 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_C01.png", "interact middle background");
-		interactFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_L01.png", "interact middle left");
-		interactFrame->addImage(SDL_Rect{ 0, 34, 4, 76 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_R01.png", "interact middle right");
+		interactFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
+		auto ml = interactFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
+		ml->tiled = true;
+		auto mr = interactFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
+		mr->tiled = true;
 
-		interactFrame->addImage(SDL_Rect{ 12, 96, 0, 10 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_B01.png", "interact bottom background");
-		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL01.png", "interact bottom left");
-		interactFrame->addImage(SDL_Rect{ 0, 96, 12, 10 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR01.png", "interact bottom right");
+		interactFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
+		interactFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
+			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
 
-		/*interactFrame->addImage(SDL_Rect{ 16, 0, interactWidth, topBackgroundHeight },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_T00.png", "interact top background");
-		interactFrame->addImage(SDL_Rect{ 0, 0, 16, topBackgroundHeight },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL00.png", "interact top left");
-		interactFrame->addImage(SDL_Rect{ interactWidth + 16, 0, 16, topBackgroundHeight },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR00.png", "interact top right");
+		auto selectmid = interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 22 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
+		selectmid->tiled = true;
+		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
+		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
+			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
 
-		interactFrame->addImage(SDL_Rect{ 0, topBackgroundHeight, 6, 76 },
-			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
-		interactFrame->addImage(SDL_Rect{ interactWidth + 6, topBackgroundHeight, 6, 76 },
-			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
-		interactFrame->addImage(SDL_Rect{ 4, topBackgroundHeight, interactWidth + 2, 76 },
-			hudColors.itemContextMenuOptionImg, "images/system/white.png", "interact middle background");
-
-		interactFrame->addImage(SDL_Rect{ 4, 96, interactWidth + 4, 4 },
-			color, "images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
-		interactFrame->addImage(SDL_Rect{ 0, 96, 4, 4 },
-			color, "images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
-		interactFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 96, 4, 4 },
-			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");*/
-
-		interactFrame->addImage(SDL_Rect{ 6, optionHeight, interactWidth, 76 },
-			hudColors.itemContextMenuOptionSelectedImg, "images/system/whitecurve.png", "interact selected highlight");
 
 		const char* interactFont = "fonts/pixel_maz.ttf#32#2";
 
@@ -4547,7 +6222,7 @@ void createInventoryTooltipFrame(const int player)
 		interactText->setColor(hudColors.itemContextMenuHeadingText);
 
 		const int interactOptionStartX = 4;
-		const int interactOptionStartY = 36;
+		const int interactOptionStartY = 33;
 		const int glyphSize = 20;
 
 		auto interactGlyph1 = interactFrame->addImage(
@@ -4578,7 +6253,7 @@ void createInventoryTooltipFrame(const int player)
 				glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 2");
 
-		textAlignY = interactGlyph2->pos.y - 8;
+		textAlignY = interactGlyph2->pos.y - 10;
 		interactText = interactFrame->addField("interact option 2", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -4596,7 +6271,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 3");
 
-		textAlignY = interactGlyph3->pos.y - 8;
+		textAlignY = interactGlyph3->pos.y - 10;
 		interactText = interactFrame->addField("interact option 3", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -4614,7 +6289,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 4");
 
-		textAlignY = interactGlyph4->pos.y - 8;
+		textAlignY = interactGlyph4->pos.y - 10;
 		interactText = interactFrame->addField("interact option 4", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -4632,7 +6307,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSize, glyphSize },
 			0xFFFFFFFF, "", "glyph 5");
 
-		textAlignY = interactGlyph5->pos.y - 8;
+		textAlignY = interactGlyph5->pos.y - 10;
 		interactText = interactFrame->addField("interact option 5", 32);
 		interactText->setText("");
 		interactText->setSize(SDL_Rect{
@@ -5468,6 +7143,22 @@ void loadHUDSettingsJSON()
 					{
 						Player::HUD_t::actionPromptIconBackingOpacity = d["action_prompts"]["icon_backing_opacity"].GetInt();
 					}
+					if ( d["action_prompts"].HasMember("prompt_img_00") )
+					{
+						actionPromptBackingIconPath00 = d["action_prompts"]["prompt_img_00"].GetString();
+					}
+					if ( d["action_prompts"].HasMember("prompt_img_20") )
+					{
+						actionPromptBackingIconPath20 = d["action_prompts"]["prompt_img_20"].GetString();
+					}
+					if ( d["action_prompts"].HasMember("prompt_img_60") )
+					{
+						actionPromptBackingIconPath60 = d["action_prompts"]["prompt_img_60"].GetString();
+					}
+					if ( d["action_prompts"].HasMember("prompt_img_100") )
+					{
+						actionPromptBackingIconPath100 = d["action_prompts"]["prompt_img_100"].GetString();
+					}
 				}
 				if ( d.HasMember("enemy_hp_bars") )
 				{
@@ -5605,6 +7296,73 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_negative_text"]["g"].GetInt(),
 							d["colors"]["charsheet_negative_text"]["b"].GetInt(),
 							d["colors"]["charsheet_negative_text"]["a"].GetInt());
+					}
+				}
+				if ( d.HasMember("dropdowns") )
+				{
+					Player::GUIDropdown_t::allDropDowns.clear();
+					for ( rapidjson::Value::ConstMemberIterator itr = d["dropdowns"].MemberBegin();
+						itr != d["dropdowns"].MemberEnd(); ++itr )
+					{
+						auto& dropdown = Player::GUIDropdown_t::allDropDowns[itr->name.GetString()];
+						dropdown.internalName = itr->name.GetString();
+						if ( itr->value.HasMember("title") )
+						{
+							dropdown.title = itr->value["title"].GetString();
+						}
+						else
+						{
+							dropdown.title = language[4040]; // "interact"
+						}
+						if ( itr->value.HasMember("align_right") )
+						{
+							dropdown.alignRight = itr->value["align_right"].GetBool();
+						}
+						if ( itr->value.HasMember("gui_module") )
+						{
+							std::string moduleName = itr->value["gui_module"].GetString();
+							if ( moduleName == "character_sheet" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_CHARACTERSHEET;
+							}
+							else
+							{
+								dropdown.module = Player::GUI_t::MODULE_NONE;
+							}
+						}
+						if ( itr->value.HasMember("default_option") )
+						{
+							dropdown.defaultOption = itr->value["default_option"].GetInt();
+						}
+						else
+						{
+							dropdown.defaultOption = 0;
+						}
+						for ( rapidjson::Value::ConstValueIterator options_itr = itr->value["options"].Begin();
+							options_itr != itr->value["options"].End(); ++options_itr )
+						{
+							std::string text = "";
+							std::string controller_glyph = "";
+							std::string keyboard_glyph = "";
+							std::string action = "no_action";
+							if ( options_itr->HasMember("text") )
+							{
+								text = (*options_itr)["text"].GetString();
+							}
+							if ( options_itr->HasMember("controller_glyph") )
+							{
+								controller_glyph = (*options_itr)["controller_glyph"].GetString();
+							}
+							if ( options_itr->HasMember("keyboard_glyph") )
+							{
+								keyboard_glyph = (*options_itr)["keyboard_glyph"].GetString();
+							}
+							if ( options_itr->HasMember("action") )
+							{
+								action = (*options_itr)["action"].GetString();
+							}
+							dropdown.options.push_back(Player::GUIDropdown_t::DropdownOption_t(text, keyboard_glyph, controller_glyph, action));
+						}
 					}
 				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
@@ -5825,6 +7583,7 @@ void createPlayerInventory(const int player)
 		const auto backPackSlotsFrame = frame->addFrame("backpack slots");
 		backPackSlotsFrame->setSize(backpackSlotsPos);
 		const int backpackBaseSlotOffsetY = 8;
+		int lowestY = 0;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, backpackBaseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 
@@ -5846,11 +7605,14 @@ void createPlayerInventory(const int player)
 				players[player]->inventoryUI.slotFrames[x + y * 100] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
+				lowestY = std::max(slotPos.y + slotPos.h, lowestY);
 				//slotFrame->setDisabled(true);
 
 				createPlayerInventorySlotFrameElements(slotFrame);
 			}
 		}
+		backpackSlotsPos.h = lowestY;
+		backPackSlotsFrame->setSize(backpackSlotsPos);
 	}
 
 	{
@@ -6074,9 +7836,20 @@ void Player::Inventory_t::updateItemContextMenu()
 		return;
 	}
 
+	auto highlightImageMid = interactFrame->findImage("interact selected highlight mid");
+	highlightImageMid->disabled = true;
+	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageLeft = interactFrame->findImage("interact selected highlight left");
+	highlightImageLeft->disabled = true;
+	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageRight = interactFrame->findImage("interact selected highlight right");
+	highlightImageRight->disabled = true;
+	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
+
 	if ( !item || !itemMenuOpen )
 	{
 		itemMenuOpen = false;
+		itemMenuSelected = 0;
 		interactFrame->setDisabled(true);
 		return;
 	}
@@ -6116,10 +7889,6 @@ void Player::Inventory_t::updateItemContextMenu()
 		optionFrames.push_back(std::make_pair(glyph5, option5));
 	}
 
-	auto highlightImage = interactFrame->findImage("interact selected highlight");
-	highlightImage->disabled = true;
-	highlightImage->color = hudColors.itemContextMenuOptionSelectedImg;
-	
 	size_t index = 0;
 	unsigned int maxWidth = 0;
 	if ( auto interactText = interactFrame->findField("interact text") )
@@ -6199,43 +7968,52 @@ void Player::Inventory_t::updateItemContextMenu()
 		++index;
 	}
 
+	//maxWidth += 16; -- edit this to add extra left/right padding
+
 	const int rightClickProtectBuffer = (right_click_protect ? 0 : 10);
 
-	index = 0;
-	for ( auto& optionPair : optionFrames )
+	bool alignRight = true;
+	if ( bCompactView )
 	{
-		auto& img = optionPair.first;
-		auto& txt = optionPair.second;
-
-		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		if ( player.paperDoll.isItemOnDoll(*item) )
 		{
-			SDL_Rect size = txt->getSize();
-			size.w = maxWidth;
-			txt->setSize(size);
-		}
-
-		if ( index < options.size() )
-		{
-			auto ml = interactFrame->findImage("interact middle left");
-			SDL_Rect absoluteSize = txt->getAbsoluteSize();
-			absoluteSize.x -= (4 + ml->pos.w) + rightClickProtectBuffer;
-			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
-			absoluteSize.y += 4;
-			absoluteSize.h -= 4;
-			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
-				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			if ( paperDollPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
 			{
-				itemMenuSelected = index;
+				alignRight = false;
+			}
+			else
+			{
+				alignRight = true;
 			}
 		}
-		++index;
+		else if ( itemCategory(item) == SPELL_CAT )
+		{
+			if ( spellPanel.panelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				alignRight = false;
+			}
+			else
+			{
+				alignRight = true;
+			}
+		}
+		else
+		{
+			// normal inventory items
+			if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				alignRight = false;
+			}
+			else
+			{
+				alignRight = true;
+			}
+		}
 	}
 
 	const int textStartX = (glyph1->disabled ? 0 : glyph1->pos.x + glyph1->pos.w) + textPaddingX;
 	const int frameWidth = maxWidth + textStartX + textPaddingX;
 
-	const int posX = inputs.getMouse(player.playernum, Inputs::MouseInputs::X) * (real_t)Frame::virtualScreenX / xres;
-	const int posY = inputs.getMouse(player.playernum, Inputs::MouseInputs::Y) * (real_t)Frame::virtualScreenY / yres;
 	SDL_Rect frameSize = interactFrame->getSize();
 	frameSize.x = itemMenuX;
 	frameSize.y = itemMenuY;
@@ -6253,7 +8031,7 @@ void Player::Inventory_t::updateItemContextMenu()
 		frameSize.w = tr->pos.x + tr->pos.w;
 	}
 	{
-		const int middleOffsetY = 4;
+		const int middleOffsetY = 13;
 		auto ml = interactFrame->findImage("interact middle left");
 		ml->pos.h = maxHeight - interimHeight - middleOffsetY;
 		auto mmid = interactFrame->findImage("interact middle background");
@@ -6287,12 +8065,56 @@ void Player::Inventory_t::updateItemContextMenu()
 		interactText->setSize(size);
 	}
 
+	if ( !alignRight )
+	{
+		frameSize.x -= frameSize.w;
+	}
+
+	int mouseDetectionOffsetY = 0;
+	if ( (frameSize.y + frameSize.h) > player.camera_virtualy2() )
+	{
+		int yoffset = (frameSize.y + frameSize.h) - player.camera_virtualy2();
+		frameSize.y -= yoffset;
+		mouseDetectionOffsetY = yoffset;
+	}
 	interactFrame->setSize(frameSize);
+
+	index = 0;
+	for ( auto& optionPair : optionFrames )
+	{
+		auto& img = optionPair.first;
+		auto& txt = optionPair.second;
+
+		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		{
+			SDL_Rect size = txt->getSize();
+			size.w = maxWidth;
+			txt->setSize(size);
+		}
+
+		if ( index < options.size() )
+		{
+			auto ml = interactFrame->findImage("interact middle left");
+			SDL_Rect absoluteSize = txt->getAbsoluteSize();
+			absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
+			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+			absoluteSize.y += 4;
+			absoluteSize.h -= 4;
+			absoluteSize.y += mouseDetectionOffsetY;
+			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			{
+				itemMenuSelected = index;
+			}
+		}
+		++index;
+	}
 
 	SDL_Rect absoluteSize = interactFrame->getAbsoluteSize();
 	// right click protect uses exact border, else there is 10 px buffer
-	absoluteSize.x -= rightClickProtectBuffer;
+	absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
 	absoluteSize.w += rightClickProtectBuffer;
+	absoluteSize.y += mouseDetectionOffsetY;
 	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
 		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
 	{
@@ -6306,9 +8128,19 @@ void Player::Inventory_t::updateItemContextMenu()
 		SDL_Rect size = txt->getSize();
 		size.x -= 4;
 		size.w += 2 * 4;
-		size.h += 2;
-		highlightImage->pos = size;
-		highlightImage->disabled = false;
+		size.y += 3;
+		highlightImageMid->pos = size;
+		highlightImageMid->pos.x += highlightImageLeft->pos.w;
+		highlightImageMid->pos.w -= 2 * highlightImageLeft->pos.w;
+		highlightImageMid->pos.h = highlightImageLeft->pos.h;
+		highlightImageMid->disabled = false;
+
+		highlightImageLeft->pos.x = highlightImageMid->pos.x - highlightImageLeft->pos.w;
+		highlightImageLeft->pos.y = highlightImageMid->pos.y;
+		highlightImageLeft->disabled = false;
+		highlightImageRight->pos.x = highlightImageMid->pos.x + highlightImageMid->pos.w;
+		highlightImageRight->disabled = false;
+		highlightImageRight->pos.y = highlightImageMid->pos.y;
 	}
 
 	bool activateSelection = false;
@@ -6325,6 +8157,7 @@ void Player::Inventory_t::updateItemContextMenu()
 		//Close the menu.
 		itemMenuOpen = false;
 		itemMenuItem = 0;
+		interactFrame->setDisabled(true);
 	}
 }
 
@@ -6730,6 +8563,44 @@ Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
 	playerCHR = 0;
 }
 
+void Player::Inventory_t::updateItemContextMenuClickFrame()
+{
+	if ( !interactBlockClickFrame )
+	{
+		char interactBlockClickName[64] = "";
+		snprintf(interactBlockClickName, sizeof(interactBlockClickName), "player inventory dropdown block click %d", player);
+		if ( interactBlockClickFrame = gui->addFrame(interactBlockClickName) )
+		{
+			interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
+				player.camera_virtualy1(),
+				player.camera_virtualWidth(),
+				player.camera_virtualHeight() });
+			interactBlockClickFrame->setOwner(player.playernum);
+			interactBlockClickFrame->setDisabled(true);
+			interactBlockClickFrame->setHollow(true);
+		}
+	}
+
+	interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
+		player.camera_virtualy1(),
+		player.camera_virtualWidth(),
+		player.camera_virtualHeight() });
+
+	if ( interactFrame )
+	{
+		if ( interactFrame->isDisabled() )
+		{
+			interactBlockClickFrame->setDisabled(true);
+			interactBlockClickFrame->setHollow(true);
+		}
+		else
+		{
+			interactBlockClickFrame->setDisabled(false);
+			interactBlockClickFrame->setHollow(false);
+		}
+	}
+}
+
 void Player::Inventory_t::updateCursor()
 {
 	if ( !frame )
@@ -7029,12 +8900,11 @@ void Player::HUD_t::updateCursor()
 		int offset = ((ticks - cursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			//if ( inputs.getUIInteraction(player.playernum)->selectedItem
-			//	|| inputs.getUIInteraction(player.playernum)->itemMenuOpen )
-			//{
-			//	// animate cursor
-			//}
-			//else
+			if ( player.GUI.dropdownMenu.bOpen )
+			{
+				// animate cursor
+			}
+			else
 			{
 				offset = smallOffset; // don't animate while mouse normal hovering
 			}
@@ -9240,6 +11110,22 @@ real_t Player::SkillSheet_t::windowHeightScaleX = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleY = 0.0;
 bool Player::SkillSheet_t::generateFollowerTableForSkillsheet = false;
 
+struct SkillSheetFrames_t
+{
+	Frame* skillsFrame = nullptr;
+	Frame* entryFrameLeft = nullptr;
+	Frame* entryFrameRight = nullptr;
+	Frame* skillDescFrame = nullptr;
+	Frame* skillBgImgsFrame = nullptr;
+	Frame* scrollAreaOuterFrame = nullptr;
+	Frame* scrollArea = nullptr;
+	Frame* entryFrames[NUMPROFICIENCIES] = { nullptr };
+	Frame* effectFrames[10] = { nullptr };
+	Frame* legendFrame = nullptr;
+	bool legendTextRequiresReflow = true;
+};
+SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
+
 void Player::SkillSheet_t::createSkillSheet()
 {
 	if ( skillFrame )
@@ -9269,6 +11155,8 @@ void Player::SkillSheet_t::createSkillSheet()
 	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 
 	Frame* skillBackground = frame->addFrame("skills frame");
+	skillBackground->setHollow(true);
+	skillSheetEntryFrames[player.playernum].skillsFrame = skillBackground;
 	const int width = 684;
 	const int height = 404;
 	skillBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height });
@@ -9276,7 +11164,11 @@ void Player::SkillSheet_t::createSkillSheet()
 		"images/ui/SkillSheet/UI_Skills_Window_02.png", "skills img");*/
 
 	Frame* allSkillEntriesLeft = skillBackground->addFrame("skill entries frame left");
+	allSkillEntriesLeft->setHollow(true);
 	Frame* allSkillEntriesRight = skillBackground->addFrame("skill entries frame right");
+	allSkillEntriesRight->setHollow(true);
+	skillSheetEntryFrames[player.playernum].entryFrameLeft = allSkillEntriesLeft;
+	skillSheetEntryFrames[player.playernum].entryFrameRight = allSkillEntriesRight;
 	//allSkillEntries->setSize(SDL_Rect{ 0, 0, skillBackground->getSize().w, skillBackground->getSize().h });
 
 	SDL_Rect allSkillEntriesPosLeft{ 0, 0, 182, skillBackground->getSize().h };
@@ -9290,6 +11182,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Window_Right_03.png", "bg wing right");
 
 	auto skillBackgroundImagesFrame = skillBackground->addFrame("skills bg images");
+	skillBackgroundImagesFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].skillBgImgsFrame = skillBackgroundImagesFrame;
 	skillBackgroundImagesFrame->setSize(SDL_Rect{ 0, 0, skillBackground->getSize().w, skillBackground->getSize().h });
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
@@ -9332,6 +11226,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		char skillname[32];
 		snprintf(skillname, sizeof(skillname), "skill %d", i);
 		Frame* entry = allSkillEntriesRight->addFrame(skillname);
+		entry->setHollow(true);
+		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
 		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
 		SDL_Rect imgBgPos{ skillEntryPos.w - 36, 0, 36, 36 };
@@ -9381,6 +11277,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		char skillname[32];
 		snprintf(skillname, sizeof(skillname), "skill %d", i);
 		Frame* entry = allSkillEntriesLeft->addFrame(skillname);
+		entry->setHollow(true);
+		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
 		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
 		SDL_Rect imgBgPos{ 0, 0, 36, 36 };
@@ -9434,6 +11332,8 @@ void Player::SkillSheet_t::createSkillSheet()
 	SDL_Rect descPos{ 0, 54, 320, 324 };
 	descPos.x = skillBackground->getSize().w / 2 - descPos.w / 2;
 	auto skillDescriptionFrame = skillBackground->addFrame("skill desc frame");
+	skillDescriptionFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].skillDescFrame = skillDescriptionFrame;
 	skillDescriptionFrame->setSize(descPos);
 
 	/*auto debugRect = skillDescriptionFrame->addImage(SDL_Rect{ 0, 0, descPos.w, descPos.h }, 0xFFFFFFFF,
@@ -9460,8 +11360,12 @@ void Player::SkillSheet_t::createSkillSheet()
 	actualFont->sizeText("_", nullptr, &fontHeight);
 
 	auto scrollAreaOuterFrame = skillDescriptionFrame->addFrame("scroll area outer frame");
+	scrollAreaOuterFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].scrollAreaOuterFrame = scrollAreaOuterFrame;
 	scrollAreaOuterFrame->setSize(SDL_Rect{ 16, 4, sliderPos.x - 4 - 16, descPos.h - 8 });
 	auto scrollAreaFrame = scrollAreaOuterFrame->addFrame("skill scroll area");
+	scrollAreaFrame->setHollow(true);
+	skillSheetEntryFrames[player.playernum].scrollArea = scrollAreaFrame;
 	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 1000 });
 
 	SDL_Rect txtPos{ 0, 0, scrollAreaFrame->getSize().w, scrollAreaFrame->getSize().h };
@@ -9511,6 +11415,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		skillDescriptionTxt->setOntop(true);
 
 		auto skillDescriptionBgFrame = scrollAreaFrame->addFrame("skill desc bg frame");
+		skillDescriptionBgFrame->setHollow(true);
 		{
 			//Uint32 color = makeColor(22, 24, 29, 255);
 			Uint32 color = makeColor(255, 255, 255, 128);
@@ -9554,6 +11459,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		{
 			snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", i);
 			auto effectFrame = scrollAreaFrame->addFrame(effectFrameName);
+			effectFrame->setHollow(true);
+			skillSheetEntryFrames[player.playernum].effectFrames[i] = effectFrame;
 			effectFrame->setSize(SDL_Rect{ txtPos.x, txtPos.y - 2, txtPos.w, fontHeight + 8 });
 			effectFrame->addImage(
 				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 }, 
@@ -9564,6 +11471,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			int valueX =  effectFrame->getSize().w - effectXOffset;
 
 			auto valBgImgFrame = effectFrame->addFrame("effect val bg frame");
+			valBgImgFrame->setHollow(true);
 			valBgImgFrame->setSize(SDL_Rect{ valueX - effectBackgroundXOffset, 0, effectBackgroundWidth, effectFrame->getSize().h - 4});
 			{
 				Uint32 color = makeColor(51, 33, 26, 255);
@@ -9593,6 +11501,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			}
 
 			auto effectTxtFrame = effectFrame->addFrame("effect txt frame");
+			effectTxtFrame->setHollow(true);
 			effectTxtFrame->setSize(SDL_Rect{ 0, 0, effectFrame->getSize().w - effectXOffset - effectBackgroundXOffset, effectFrame->getSize().h - 4 });
 			auto effectTxt = effectTxtFrame->addField("effect txt", 1024);
 			effectTxt->setFont(descFont);
@@ -9602,6 +11511,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			effectTxt->setColor(makeColor(201, 162, 100, 255));
 
 			auto effectValFrame = effectFrame->addFrame("effect val frame");
+			effectValFrame->setHollow(true);
 			effectValFrame->setSize(SDL_Rect{ valueX, 0, effectXOffset, effectFrame->getSize().h - 4 });
 			auto effectVal = effectValFrame->addField("effect val", 1024);
 			effectVal->setFont(descFont);
@@ -9627,6 +11537,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		legendDivTxt->setHJustify(Field::justify_t::CENTER);
 
 		auto legendFrame = scrollAreaFrame->addFrame("legend frame");
+		legendFrame->setHollow(true);
+		skillSheetEntryFrames[player.playernum].legendFrame = legendFrame;
 		SDL_Rect legendPos{ 0, txtPos.y, txtPos.w, 100 };
 		legendFrame->setSize(legendPos);
 		auto tl = legendFrame->addImage(SDL_Rect{ 0, 0, 18, 18 }, 0xFFFFFFFF, 
@@ -10362,12 +12274,16 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		if ( tag == "TRADING_BUY_PRICE" )
 		{
 			val = 1 / ((50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f); // buy value
-			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+			val /= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
+			val = std::max(1.0, val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val * 100.0);
 		}
 		else if ( tag == "TRADING_SELL_PRICE" )
 		{
 			val = (50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f; // sell value
-			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+			val *= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
+			val = std::min(1.0, val);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val * 100.0);
 		}
 		return buf;
 	}
@@ -10625,11 +12541,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			else
 			{
-				val = 0.0;
-				if ( player )
-				{
-					val = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				}
+				val = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 				snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 			}
 		}
@@ -10646,49 +12558,40 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else
 			{
 				val = 0.0;
-				if ( player )
-				{
-					int skill = stats[playernum]->PROFICIENCIES[proficiency];
-					int multiplier = (skill / 20) + 1;
-					val = multiplier;
-					//real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-					//stats[playernum]->PROFICIENCIES[proficiency] = 0;
-					//real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-					//stats[playernum]->PROFICIENCIES[proficiency] = skill;
-					//
-					//val = (100 * zeroValue / normalValue) - 100;
-				}
+				int skill = stats[playernum]->PROFICIENCIES[proficiency];
+				int multiplier = (skill / 20) + 1;
+				val = multiplier;
+				//real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				//stats[playernum]->PROFICIENCIES[proficiency] = 0;
+				//real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+				//stats[playernum]->PROFICIENCIES[proficiency] = skill;
+				//
+				//val = (100 * zeroValue / normalValue) - 100;
 				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 			}
 		}
 		else if ( tag == "CASTING_MP_REGEN_SKILL_BONUS" )
 		{
 			val = 0.0;
-			if ( player )
-			{
-				int skill = stats[playernum]->PROFICIENCIES[proficiency];
-				real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				stats[playernum]->PROFICIENCIES[proficiency] = 0;
-				real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				stats[playernum]->PROFICIENCIES[proficiency] = skill;
+			int skill = stats[playernum]->PROFICIENCIES[proficiency];
+			real_t normalValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+			stats[playernum]->PROFICIENCIES[proficiency] = 0;
+			real_t zeroValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+			stats[playernum]->PROFICIENCIES[proficiency] = skill;
 				
-				val = (100 * zeroValue / normalValue) - 100;
-			}
+			val = (100 * zeroValue / normalValue) - 100;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "CASTING_MP_REGEN_BONUS_INT" )
 		{
 			val = 0.0;
-			if ( player )
-			{
-				int stat = stats[playernum]->INT;
-				real_t normalValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				stats[playernum]->INT = 0;
-				real_t zeroValue = player->getBaseManaRegen(*(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
-				stats[playernum]->INT = stat;
+			int stat = stats[playernum]->INT;
+			real_t normalValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+			stats[playernum]->INT = 0;
+			real_t zeroValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
+			stats[playernum]->INT = stat;
 
-				val = (100 * zeroValue / normalValue) - 100;
-			}
+			val = (100 * zeroValue / normalValue) - 100;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "CASTING_BEGINNER" )
@@ -10896,16 +12799,16 @@ void Player::SkillSheet_t::processSkillSheet()
 		skillSlideDirection = 0;
 	}
 
-	auto innerFrame = skillFrame->findFrame("skills frame");
+	auto innerFrame = skillSheetEntryFrames[player.playernum].skillsFrame;
 	SDL_Rect sheetSize = innerFrame->getSize();
-	Frame* allSkillEntriesLeft = innerFrame->findFrame("skill entries frame left");
-	Frame* allSkillEntriesRight = innerFrame->findFrame("skill entries frame right");
+	Frame* allSkillEntriesLeft = skillSheetEntryFrames[player.playernum].entryFrameLeft;
+	Frame* allSkillEntriesRight = skillSheetEntryFrames[player.playernum].entryFrameRight;
 	auto leftWingImg = allSkillEntriesLeft->findImage("bg wing left");
 	auto rightWingImg = allSkillEntriesRight->findImage("bg wing right");
-	auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
-	auto bgImgFrame = innerFrame->findFrame("skills bg images");
-	auto scrollAreaOuterFrame = skillDescriptionFrame->findFrame("scroll area outer frame");
-	auto scrollArea = scrollAreaOuterFrame->findFrame("skill scroll area");
+	auto skillDescriptionFrame = skillSheetEntryFrames[player.playernum].skillDescFrame;
+	auto bgImgFrame = skillSheetEntryFrames[player.playernum].skillBgImgsFrame;
+	auto scrollAreaOuterFrame = skillSheetEntryFrames[player.playernum].scrollAreaOuterFrame;
+	auto scrollArea = skillSheetEntryFrames[player.playernum].scrollArea;
 	SDL_Rect scrollOuterFramePos = scrollAreaOuterFrame->getSize();
 	SDL_Rect scrollAreaPos = scrollArea->getSize();
 
@@ -11169,7 +13072,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					entryResizePos.y = skillEntryStartY;
 				}
 			}
-			auto entry = allSkillEntries->findFrame(skillname);
+			auto entry = skillSheetEntryFrames[player.playernum].entryFrames[i];
 
 			if ( i >= skillSheetData.skillEntries.size() )
 			{
@@ -11443,7 +13346,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				char effectFrameName[64] = "";
 				snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", eff);
-				auto effectFrame = scrollArea->findFrame(effectFrameName);
+				auto effectFrame = skillSheetEntryFrames[player.playernum].effectFrames[eff];
 				if ( !effectFrame ) { continue; }
 
 				effectFrame->setDisabled(true);
@@ -11710,7 +13613,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				legendBackerImg->disabled = false;
 			}
 
-			auto legendFrame = scrollArea->findFrame("legend frame");
+			auto legendFrame = skillSheetEntryFrames[player.playernum].legendFrame;
 			SDL_Rect legendPos = legendFrame->getSize();
 			legendPos.y = lowestY;
 			legendPos.w = scrollArea->getSize().w;
@@ -11727,7 +13630,10 @@ void Player::SkillSheet_t::processSkillSheet()
 			SDL_Rect legendTextPos = legendText->getSize();
 			legendTextPos.w = tm->pos.w;
 			legendText->setSize(legendTextPos);
-			legendText->reflowTextToFit(0);
+			if ( skillSheetEntryFrames[player.playernum].legendTextRequiresReflow )
+			{
+				legendText->reflowTextToFit(0);
+			}
 			legendTextPos.h = legendText->getNumTextLines() * actualFont->height(true);
 			legendTextPos.y = tm->pos.y + tm->pos.h / 2;
 			legendText->setSize(legendTextPos);
@@ -12047,7 +13953,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		scrollInertia = 0.0;
 	}
 	auto spellFramePos = spellFrame->getSize();
-	if ( player.inventoryUI.inventoryPanelJustify == Player::Inventory_t::PANEL_JUSTIFY_LEFT )
+	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
 		spellFramePos.x = -spellFramePos.w + animx * spellFramePos.w;
 		if ( player.bUseCompactGUIWidth() )

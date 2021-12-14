@@ -1813,6 +1813,8 @@ void gameLogic(void)
 						}
 					}
 
+					Player::Minimap_t::mapDetails.clear();
+
 					if ( !secretlevel )
 					{
 						messageLocalPlayers(language[710], currentlevel);
@@ -1827,31 +1829,47 @@ void gameLogic(void)
 						{
 							case 2:
 								messageLocalPlayers(language[712]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[712]));
 								break;
 							case 3:
 								messageLocalPlayers(language[713]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[713]));
 								break;
 							case 7:
 								messageLocalPlayers(language[714]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[714]));
 								break;
 							case 8:
 								messageLocalPlayers(language[715]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[715]));
 								break;
 							case 11:
 								messageLocalPlayers(language[716]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[716]));
 								break;
 							case 13:
 								messageLocalPlayers(language[717]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[717]));
 								break;
 							case 16:
 								messageLocalPlayers(language[718]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[718]));
 								break;
 							case 18:
 								messageLocalPlayers(language[719]);
+								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[719]));
 								break;
 							default:
 								break;
 						}
+					}
+					if ( MFLAG_DISABLETELEPORT )
+					{
+						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_teleport", language[2382]));
+					}
+					if ( MFLAG_DISABLEOPENING )
+					{
+						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_opening", language[2382]));
 					}
 					if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 					{
@@ -1860,10 +1878,16 @@ void gameLogic(void)
 					if ( MFLAG_DISABLELEVITATION )
 					{
 						messageLocalPlayers(language[2383]);
+						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", language[2383]));
 					}
 					if ( MFLAG_DISABLEDIGGING )
 					{
 						messageLocalPlayers(language[2450]);
+						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", language[2450]));
+					}
+					if ( MFLAG_DISABLEHUNGER )
+					{
+						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 					}
 					loadnextlevel = false;
 					loading = false;
@@ -4554,8 +4578,10 @@ void ingameHud()
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
+		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
@@ -6176,7 +6202,7 @@ int main(int argc, char** argv)
 						if ( subwindow )
 						{
 							drawWindowFancy(subx1, suby1, subx2, suby2);
-							if ( subtext != NULL )
+							if ( subtext[0] != NULL )
 							{
 								if ( strncmp(subtext, language[1133], 12) )
 								{
@@ -6264,6 +6290,9 @@ int main(int argc, char** argv)
 					printTextFormatted(font8x8_bmp, 8, 200 + 100, DebugStats.debugEventOutput);
 				}
 			}
+
+			DebugTimers.printAllTimepoints();
+			DebugTimers.clearAllTimepoints();
 
 			printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 

@@ -2080,47 +2080,52 @@ void consoleCommand(char const * const command_str)
 
 		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 	}
-	else if ( !strncmp(command_str, "/dropgold", 9) )
+	else if ( !strncmp(command_str, "/dropgold ", 9) )
 	{
-		int amount = 100;
+		int amount = atoi(&command_str[9]);
 		if ( !stats[clientnum] )
 		{
 			return;
 		}
-		else if ( stats[clientnum]->HP <= 0 )
+		else if ( stats[clientnum]->HP <= 0 || !players[clientnum] || !players[clientnum]->entity )
 		{
 			return;
 		}
-		if ( stats[clientnum]->GOLD - amount < 0 )
+		if ( stats[clientnum]->GOLD < 0 )
 		{
-			amount = stats[clientnum]->GOLD;
+			stats[clientnum]->GOLD = 0;
 		}
-		if ( amount == 0 )
-		{
-			messagePlayer(clientnum, language[2593]);
-			return;
-		}
-		stats[clientnum]->GOLD -= amount;
-		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
 
-		if ( multiplayer == CLIENT )
+		//Drop gold.
+		int x = std::min<int>(std::max(0, (int)(players[clientnum]->entity->x / 16)), map.width - 1);
+		int y = std::min<int>(std::max(0, (int)(players[clientnum]->entity->y / 16)), map.height - 1);
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
 		{
-			//Tell the server we dropped some gold.
-			strcpy((char*)net_packet->data, "DGLD");
-			net_packet->data[4] = clientnum;
-			SDLNet_Write32(amount, &net_packet->data[5]);
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 9;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-		}
-		else
-		{
-			//Drop gold.
-			int x = std::min<int>(std::max(0, (int)(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0, (int)(players[clientnum]->entity->y / 16)), map.height - 1);
-			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			if ( stats[clientnum]->GOLD - amount < 0 )
 			{
+				amount = stats[clientnum]->GOLD;
+			}
+			if ( amount == 0 )
+			{
+				messagePlayer(clientnum, language[2593]);
+				return;
+			}
+			stats[clientnum]->GOLD -= amount;
+			stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+			if ( multiplayer == CLIENT )
+			{
+				//Tell the server we dropped some gold.
+				strcpy((char*)net_packet->data, "DGLD");
+				net_packet->data[4] = clientnum;
+				SDLNet_Write32(amount, &net_packet->data[5]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
 				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -2133,10 +2138,12 @@ void consoleCommand(char const * const command_str)
 				entity->behavior = &actGoldBag;
 				entity->goldAmount = amount; // amount
 			}
-			playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
+			messagePlayer(clientnum, language[2594], amount);
 		}
-
-		messagePlayer(clientnum, language[2594], amount);
+		else
+		{
+			messagePlayer(clientnum, language[4085]); // invalid location to drop gold
+		}
 	}
 	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{

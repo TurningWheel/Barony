@@ -436,6 +436,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			case justify_t::LEFT: pos.x = _size.x + border + listOffset.x - scroll.x; break;
 			case justify_t::CENTER: pos.x = _size.x + (_size.w - textSizeW) / 2 + listOffset.x - scroll.x; break;
 			case justify_t::RIGHT: pos.x = _size.x + _size.w - textSizeW - border + listOffset.x - scroll.x; break;
+			default: break;
 			}
 			pos.y = _size.y + border + listOffset.y + i * entrySize - scroll.y;
 			pos.w = textSizeW;
@@ -1125,6 +1126,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	if (rectContainsPoint(_size, omousex, omousey) && !hollow) {
+		//messagePlayer(0, "%d: %s", getOwner(), getName());
 		if (clickable && usable) {
 			if (mousestatus[SDL_BUTTON_LEFT]) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;

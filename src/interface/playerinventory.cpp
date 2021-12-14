@@ -2457,6 +2457,17 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				1 };
 			headerBg->disabled = false;
 		}
+		else
+		{
+			auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
+			headerBg->disabled = true;
+			auto tooltipMin = frameMain->findImage("inventory mouse tooltip min");
+			tooltipMin->disabled = true;
+			auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
+			tooltipMax->disabled = true;
+			auto headerMax = frameMain->findImage("inventory mouse tooltip header max");
+			headerMax->disabled = true;
+		}
 	
 		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 0, textx + 3 * padx, imgTopBackground->pos.h});
 		txtHeader->setVJustify(Field::justify_t::CENTER);
@@ -2623,6 +2634,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					}
 				}
 
+				std::map<int, Uint32> positiveWordIndexes;
+				std::map<int, Uint32> negativeWordIndexes;
+				std::map<int, Uint32> highlightWordIndexes;
+
 				if ( index == 0 )
 				{
 					imgPrimaryIcon->disabled = false;
@@ -2642,17 +2657,20 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					std::string positiveText = "";
 					std::string negativeText = "";
 					ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+					ItemTooltips.getWordIndexesItemDetails(txtPrimaryValue, iconText, bracketText, positiveText, negativeText,
+						highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
 
 					txtPrimaryValue->setText(iconText.c_str());
-					txtPrimaryValue->setColor(icon.textColor);
-					txtPrimaryValueHighlight->setText(bracketText.c_str());
-					txtPrimaryValueHighlight->setColor(itemTooltip.statusEffectTextColor);
+					txtPrimaryValue->setTextColor(icon.textColor);
 
-					txtPrimaryValuePositive->setText(positiveText.c_str());
-					txtPrimaryValuePositive->setColor(itemTooltip.positiveTextColor);
+					//txtPrimaryValueHighlight->setText(bracketText.c_str());
+					txtPrimaryValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
 
-					txtPrimaryValueNegative->setText(negativeText.c_str());
-					txtPrimaryValueNegative->setColor(itemTooltip.negativeTextColor);
+					//txtPrimaryValuePositive->setText(positiveText.c_str());
+					txtPrimaryValuePositive->setTextColor(itemTooltip.positiveTextColor);
+
+					//txtPrimaryValueNegative->setText(negativeText.c_str());
+					txtPrimaryValueNegative->setTextColor(itemTooltip.negativeTextColor);
 				}
 				else if ( index == 1 )
 				{
@@ -2667,17 +2685,19 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					std::string positiveText = "";
 					std::string negativeText = "";
 					ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+					ItemTooltips.getWordIndexesItemDetails(txtSecondaryValue, iconText, bracketText, positiveText, negativeText,
+						highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
 
 					txtSecondaryValue->setText(iconText.c_str());
-					txtSecondaryValue->setColor(icon.textColor);
-					txtSecondaryValueHighlight->setText(bracketText.c_str());
-					txtSecondaryValueHighlight->setColor(itemTooltip.statusEffectTextColor);
+					txtSecondaryValue->setTextColor(icon.textColor);
+					//txtSecondaryValueHighlight->setText(bracketText.c_str());
+					txtSecondaryValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
 
-					txtSecondaryValuePositive->setText(positiveText.c_str());
-					txtSecondaryValuePositive->setColor(itemTooltip.positiveTextColor);
+					//txtSecondaryValuePositive->setText(positiveText.c_str());
+					txtSecondaryValuePositive->setTextColor(itemTooltip.positiveTextColor);
 
-					txtSecondaryValueNegative->setText(negativeText.c_str());
-					txtSecondaryValueNegative->setColor(itemTooltip.negativeTextColor);
+					//txtSecondaryValueNegative->setText(negativeText.c_str());
+					txtSecondaryValueNegative->setTextColor(itemTooltip.negativeTextColor);
 				}
 				else if ( index == 2 )
 				{
@@ -2692,17 +2712,19 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					std::string positiveText = "";
 					std::string negativeText = "";
 					ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+					ItemTooltips.getWordIndexesItemDetails(txtThirdValue, iconText, bracketText, positiveText, negativeText,
+						highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
 
 					txtThirdValue->setText(iconText.c_str());
-					txtThirdValue->setColor(icon.textColor);
-					txtThirdValueHighlight->setText(bracketText.c_str());
-					txtThirdValueHighlight->setColor(itemTooltip.statusEffectTextColor);
+					txtThirdValue->setTextColor(icon.textColor);
+					//txtThirdValueHighlight->setText(bracketText.c_str());
+					txtThirdValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
 
-					txtThirdValuePositive->setText(positiveText.c_str());
-					txtThirdValuePositive->setColor(itemTooltip.positiveTextColor);
+					//txtThirdValuePositive->setText(positiveText.c_str());
+					txtThirdValuePositive->setTextColor(itemTooltip.positiveTextColor);
 
-					txtThirdValueNegative->setText(negativeText.c_str());
-					txtThirdValueNegative->setColor(itemTooltip.negativeTextColor);
+					//txtThirdValueNegative->setText(negativeText.c_str());
+					txtThirdValueNegative->setTextColor(itemTooltip.negativeTextColor);
 				}
 				else
 				{
@@ -2743,7 +2765,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		if ( itemTooltip.detailsText.size() > 0 )
 		{
 			frameDesc->setDisabled(false);
-			txtDescription->setColor(itemTooltip.detailsTextColor);
+			txtDescription->setTextColor(itemTooltip.detailsTextColor);
 			int index = 0;
 
 			for ( auto& tag : itemTooltip.detailsTextInsertOrder )
@@ -3077,10 +3099,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 
 		const int imgToTextOffset = 0;
-		txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
+		txtPrimaryValue->setDisabled(true);
 		txtPrimaryValueHighlight->setDisabled(txtPrimaryValue->isDisabled());
 		txtPrimaryValuePositive->setDisabled(txtPrimaryValue->isDisabled());
 		txtPrimaryValueNegative->setDisabled(txtPrimaryValue->isDisabled());
+		txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
 
 		auto txtSlotName = frameAttr->findField("inventory mouse tooltip primary value slot name");
 		txtSlotName->setDisabled(true);
@@ -3124,14 +3147,17 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			txtPrimaryValueNegative->setSize(txtPrimaryValue->getSize());
 		}
 	
-		txtSecondaryValue->setDisabled(imgSecondaryIcon->disabled);
+		txtSecondaryValue->setDisabled(true);
 		txtSecondaryValueHighlight->setDisabled(txtSecondaryValue->isDisabled());
 		txtSecondaryValuePositive->setDisabled(txtSecondaryValue->isDisabled());
 		txtSecondaryValueNegative->setDisabled(txtSecondaryValue->isDisabled());
-		txtThirdValue->setDisabled(imgThirdIcon->disabled);
+		txtSecondaryValue->setDisabled(imgSecondaryIcon->disabled);
+
+		txtThirdValue->setDisabled(true);
 		txtThirdValueHighlight->setDisabled(txtThirdValue->isDisabled());
 		txtThirdValuePositive->setDisabled(txtThirdValue->isDisabled());
 		txtThirdValueNegative->setDisabled(txtThirdValue->isDisabled());
+		txtThirdValue->setDisabled(imgThirdIcon->disabled);
 		if ( !imgSecondaryIcon->disabled )
 		{
 			imgSecondaryIcon->pos.x = iconPadx;
@@ -3272,15 +3298,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 
 			int charHeight = 13;
 			Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight);
-			//messagePlayer(0, "%d", charHeight);
-
-			/*auto textGet = Text::get(txtDescription->getText(), txtDescription->getFont(),
-				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
-			if ( textGet )
-			{
-				auto tmp = textGet->getWidth();
-				auto tmp2 = textGet->getNumTextLines() * Font::get(txtHeader->getFont())->height();
-			}*/
 		
 			txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
 
@@ -3298,12 +3315,21 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 
 			detailsTextString = txtDescription->getText();
 			ItemTooltips.stripOutPositiveNegativeItemDetails(detailsTextString, detailsPositiveText, detailsNegativeText);
+
+			std::map<int, Uint32> positiveWordIndexes;
+			std::map<int, Uint32> negativeWordIndexes;
+			std::map<int, Uint32> highlightWordIndexes;
+			ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, std::string(""), detailsPositiveText, detailsNegativeText,
+				highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
 			txtDescription->setText(detailsTextString.c_str());
 
-			txtDescriptionPositive->setText(detailsPositiveText.c_str());
-			txtDescriptionPositive->setColor(itemTooltip.positiveTextColor);
-			txtDescriptionNegative->setText(detailsNegativeText.c_str());
-			txtDescriptionNegative->setColor(itemTooltip.negativeTextColor);
+			//txtDescriptionPositive->setText(detailsPositiveText.c_str());
+			//txtDescriptionPositive->setTextColor(itemTooltip.positiveTextColor);
+			//txtDescriptionNegative->setText(detailsNegativeText.c_str());
+			//txtDescriptionNegative->setTextColor(itemTooltip.negativeTextColor);
+
+			txtDescriptionPositive->setDisabled(true);
+			txtDescriptionNegative->setDisabled(true);
 
 			frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady * 3;
 
@@ -3534,7 +3560,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		//auto inventoryBgFrame = frameInventory->findFrame("inventory base");
 		//const int tooltipPosX = frameInventory->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
 		SDL_Rect newPos { x, y, tooltipDisplayedSettings.tooltipWidth, tooltipDisplayedSettings.tooltipHeight - heightDiff };
-		if ( justify == Player::Inventory_t::PANEL_JUSTIFY_RIGHT )
+		if ( justify == Player::PANEL_JUSTIFY_RIGHT )
 		{
 			newPos.x -= newPos.w;
 		}
@@ -3774,8 +3800,10 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	auto inventoryBaseImagesFrame = frame->findFrame("inventory base");
 	auto invSlotsFrame = frame->findFrame("inventory slots");
 	auto dollSlotsFrame = frame->findFrame("paperdoll slots");
+	auto backpackSlotsFrame = frame->findFrame("backpack slots");
 	SDL_Rect invSlotsPos = invSlotsFrame->getSize();
 	SDL_Rect dollSlotsPos = dollSlotsFrame->getSize();
+	SDL_Rect backpackSlotsPos = backpackSlotsFrame->getSize();
 
 	auto defaultInvImg = inventoryBaseImagesFrame->findImage("inventory base img");
 	if ( auto img = Image::get(defaultInvImg->path.c_str()) )
@@ -3847,6 +3875,9 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		dollSlotsPos.y = 0;
 		dollSlotsPos.w = defaultInvImg->pos.w;
 		dollSlotsPos.h = 202;
+
+		backpackSlotsPos.x = invSlotsPos.x;
+		backpackSlotsPos.y = invSlotsPos.y + invSlotsPos.h;
 	}
 	else
 	{
@@ -3862,6 +3893,8 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 			: inventoryBaseImagesFrame->getSize().w - dollSlotsPos.w;
 		dollSlotsPos.y = 8;
 
+		backpackSlotsPos.x = invSlotsPos.x;
+		backpackSlotsPos.y = invSlotsPos.y + invSlotsPos.h;
 	}
 
 	if ( bCompactView 
@@ -3892,12 +3925,14 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	}
 	invSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	backpackSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	compactInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	defaultInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 
 	invSlotsFrame->setSize(invSlotsPos);
 	dollSlotsFrame->setSize(dollSlotsPos);
+	backpackSlotsFrame->setSize(backpackSlotsPos);
 
 	auto characterPreview = frame->findFrame("inventory character preview");
 	auto characterPreviewPos = characterPreview->getSize();
@@ -4815,6 +4850,51 @@ void Player::Inventory_t::updateInventory()
 							// mouse will be situated halfway in first menu option
 							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
 						}
+						itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
+
+						bool alignRight = true;
+						if ( bCompactView )
+						{
+							if ( players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								if ( paperDollPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									alignRight = false;
+								}
+								else
+								{
+									alignRight = true;
+								}
+							}
+							else if ( itemCategory(item) == SPELL_CAT )
+							{
+								if ( spellPanel.panelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									alignRight = false;
+								}
+								else
+								{
+									alignRight = true;
+								}
+							}
+							else
+							{
+								// normal inventory items
+								if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									alignRight = false;
+								}
+								else
+								{
+									alignRight = true;
+								}
+							}
+						}
+						if ( !alignRight )
+						{
+							itemMenuX -= 16;
+						}
+
 						if ( auto highlightImage = interactFrame->findImage("interact selected highlight") )
 						{
 							highlightImage->disabled = true;

@@ -1911,7 +1911,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 									{
 										color = uint32ColorRed(*mainsurface);
 									}
-									else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND )
+									else if ( regen < static_cast<real_t>(getBaseManaRegen(tmp, *tmpStat)) / TICKS_PER_SECOND )
 									{
 										color = uint32ColorGreen(*mainsurface);
 									}
@@ -1927,7 +1927,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 										color = uint32ColorRed(*mainsurface);
 									}
 								}
-								else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
+								else if ( regen < static_cast<real_t>(getBaseManaRegen(tmp, *tmpStat)) / TICKS_PER_SECOND)
 								{
 									color = uint32ColorGreen(*mainsurface);
 								}

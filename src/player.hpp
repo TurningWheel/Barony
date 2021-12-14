@@ -643,12 +643,66 @@ public:
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
 
+	enum PanelJustify_t
+	{
+		PANEL_JUSTIFY_LEFT,
+		PANEL_JUSTIFY_RIGHT
+	};
+
+	struct GUIDropdown_t {
+		Player& player;
+		int dropDownX = 0;
+		int dropDownY = 0;
+		int dropDownOptionSelected = -1;
+		bool bOpen = false;
+		std::string currentName = "";
+		Frame* dropdownBlockClickFrame = nullptr;
+		Frame* dropdownFrame = nullptr;
+		bool dropDownToggleClick = false;
+		int dropdownLinkToModule = 0;
+		bool bClosedThisTick = false;
+		struct DropdownOption_t {
+			std::string text = "";
+			std::string keyboardGlyph = "";
+			std::string controllerGlyph = "";
+			std::string action = "";
+			DropdownOption_t(std::string _text, std::string _keyboardGlyph, std::string _controllerGlyph, std::string _action)
+			{
+				text = _text;
+				action = _action;
+				keyboardGlyph = _keyboardGlyph;
+				controllerGlyph = _controllerGlyph;
+			}
+		};
+		struct DropDown_t
+		{
+			std::string title = "Interact";
+			std::string internalName = "";
+			bool alignRight = true;
+			int module = 0;
+			int defaultOption = 0;
+			std::vector<DropdownOption_t> options;
+		};
+
+		void open(const std::string name);
+		void close();
+		void create(const std::string name);
+		bool set(const std::string name);
+		void process();
+		bool getDropDownAlignRight(const std::string& name);
+		void activateSelection(const std::string& name, int option);
+		static std::map<std::string, DropDown_t> allDropDowns;
+		GUIDropdown_t(Player& p) :
+			player(p) {}
+	};
+
 	class GUI_t
 	{
 		Player& player;
 	public:
 		GUI_t(Player& p) :
-			player(p)
+			player(p),
+			dropdownMenu(p)
 		{};
 		~GUI_t() {};
 		enum GUIModules
@@ -674,6 +728,9 @@ public:
 		bool bActiveModuleHasNoCursor();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+		GUIDropdown_t dropdownMenu;
+		void closeDropdowns();
+		bool isDropdownActive();
 	} GUI;
 
 	//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
@@ -699,6 +756,7 @@ public:
 		Frame* frame = nullptr;
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
+		Frame* interactBlockClickFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
 		Frame* selectedItemCursorFrame = nullptr;
 		Frame* spellFrame = nullptr;
@@ -712,11 +770,6 @@ public:
 		void openInventory();
 		void closeInventory();
 
-		enum PanelJustify_t
-		{
-			PANEL_JUSTIFY_LEFT,
-			PANEL_JUSTIFY_RIGHT
-		};
 		PanelJustify_t inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
 		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
 		void setCompactView(bool bCompact);
@@ -841,6 +894,7 @@ public:
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
+		void updateItemContextMenuClickFrame();
 		void updateInventoryItemTooltip();
 		void updateSelectedItemAnimation();
 		void updateItemContextMenu();
@@ -978,6 +1032,8 @@ public:
 		SDL_Rect characterSheetBox;
 		SDL_Rect statsSheetBox;
 
+		Player::PanelJustify_t panelJustify = PANEL_JUSTIFY_RIGHT;
+
 		void setDefaultSkillsSheetBox();
 		void setDefaultPartySheetBox();
 		void setDefaultCharacterSheetBox();
@@ -986,6 +1042,10 @@ public:
 		int proficienciesPage = 0;
 		int attributespage = 0;
 		bool showGameTimerAlways = false;
+		bool isInteractable = false;
+		int tooltipOpacitySetpoint = 100;
+		real_t tooltipOpacityAnimate = 1.0;
+		Uint32 tooltipDeselectedTick = 0;
 
 		static std::map<std::string, std::pair<std::string, std::string>> mapDisplayNamesDescriptions;
 		static std::map<std::string, std::string> hoverTextStrings;
@@ -1347,6 +1407,12 @@ public:
 		void handlePlayerCameraUpdate(bool useRefreshRateDelta);
 		void handlePlayerCameraBobbing(bool useRefreshRateDelta);
 		void handlePlayerMovement(bool useRefreshRateDelta);
+		real_t getMaximumSpeed();
+		real_t getWeightRatio(int weight, Sint32 STR);
+		int getCharacterWeight();
+		int getCharacterModifiedWeight();
+		real_t getSpeedFactor(real_t weightratio, Sint32 DEX);
+		real_t getCurrentMovementSpeed();
 		void handlePlayerCameraPosition(bool useRefreshRateDelta);
 		void reset();
 	} movement;
@@ -1628,6 +1694,16 @@ public:
 		void updateSelectedSlotAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void updateCursor();
 	} hotbar;
+
+	class Minimap_t
+	{
+		Player& player;
+	public:
+		static std::vector<std::pair<std::string, std::string>> mapDetails;
+		Minimap_t(Player& p) : player(p)
+		{};
+		~Minimap_t() {};
+	} minimap;
 };
 
 extern Player* players[MAXPLAYERS];
