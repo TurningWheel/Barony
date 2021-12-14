@@ -5237,9 +5237,8 @@ namespace MainMenu {
 				}
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-				view_t view;
 				auto angle = (330.0 + 20.0 * widget.getOwner()) * PI / 180.0;
-				drawCharacterPreview(widget.getOwner(), pos, 80, view, angle);
+				drawCharacterPreview(widget.getOwner(), pos, 80, angle);
 				});
 		}
 

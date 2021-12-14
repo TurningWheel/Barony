@@ -5982,7 +5982,7 @@ int main(int argc, char** argv)
 						}
 					}
 
-					if (playercount >= 1) 
+					if (playercount >= 1)
 					{
 						//int maximum = splitscreen ? MAXPLAYERS : 1;
 						for (int c = 0; c < MAXPLAYERS; ++c)
@@ -5995,21 +5995,7 @@ int main(int argc, char** argv)
 							{
 								continue;
 							}
-							auto& camera = cameras[c];
-							if ( !splitscreen )
-							{
-								camera.winx = 0;
-								camera.winy = 0;
-								camera.winw = xres;
-								camera.winh = yres;
-							}
-							else
-							{
-								camera.winx = players[c]->camera().winx;
-								camera.winy = players[c]->camera().winy;
-								camera.winw = players[c]->camera().winw;
-								camera.winh = players[c]->camera().winh;
-							}
+							auto& camera = players[c]->camera();
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
 								camera.ang += cosspin * drunkextend;

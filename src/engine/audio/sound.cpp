@@ -61,12 +61,6 @@ void sound_update()
 	bool playing = false;
 
 	auto& camera = cameras[clientnum];
-#ifndef EDITOR
-	if ( splitscreen )
-	{
-		camera = cameras[0];
-	}
-#endif
 
 	position.x = -camera.y;
 	position.y = -camera.z / 32;
