@@ -56,9 +56,26 @@
 #include <execinfo.h>
 #include <sys/stat.h>
 
+static SDL_bool SDL_MouseModeBeforeSignal = SDL_FALSE;
+static int SDL_MouseShowBeforeSignal = SDL_ENABLE;
+
+static void stop_sigaction(int signal, siginfo_t* si, void* arg)
+{
+    SDL_MouseModeBeforeSignal = SDL_GetRelativeMouseMode();
+    SDL_MouseShowBeforeSignal = SDL_ShowCursor(SDL_QUERY);
+	SDL_SetRelativeMouseMode(SDL_FALSE);
+	SDL_ShowCursor(SDL_ENABLE);
+}
+
+static void continue_sigaction(int signal, siginfo_t* si, void* arg)
+{
+	SDL_SetRelativeMouseMode(SDL_MouseModeBeforeSignal);
+	SDL_ShowCursor(SDL_MouseShowBeforeSignal);
+}
+
 const unsigned STACK_SIZE = 10;
 
-void segfault_sigaction(int signal, siginfo_t* si, void* arg)
+static void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
 	printf("Caught segfault at address %p\n", si->si_addr);
 
@@ -4051,7 +4068,7 @@ void pauseGame(int mode, int ignoreplayer)
 		gamePaused = false;
 		if ( !SDL_GetRelativeMouseMode() && capture_mouse )
 		{
-			SDL_SetRelativeMouseMode(SDL_TRUE);
+			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
 		return; // doesn't disable the game in multiplayer anymore
 		if ( multiplayer == SERVER )
@@ -4541,7 +4558,7 @@ void ingameHud()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					SDL_SetRelativeMouseMode(SDL_TRUE);
+					SDL_SetRelativeMouseMode(EnableMouseCapture);
 				}
 			}
 
@@ -5242,15 +5259,25 @@ int main(int argc, char** argv)
 #endif // NINTENDO
 
 #ifdef LINUX
-	//Catch segfault stuff.
 	struct sigaction sa;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = segfault_sigaction;
 	sa.sa_flags = SA_SIGINFO;
-
 	sigaction(SIGSEGV, &sa, NULL);
+
+	memset(&sa, 0, sizeof(struct sigaction));
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = stop_sigaction;
+	sa.sa_flags = SA_SIGINFO;
+	sigaction(SIGSTOP, &sa, NULL);
+
+	memset(&sa, 0, sizeof(struct sigaction));
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = continue_sigaction;
+	sa.sa_flags = SA_SIGINFO;
+	sigaction(SIGCONT, &sa, NULL);
 
 	(void)chdir(BASE_DATA_DIR); // fixes a lot of headaches...
 #endif

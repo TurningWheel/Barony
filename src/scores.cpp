@@ -1314,7 +1314,8 @@ int saveGame(int saveIndex)
 		}
 		else
 		{
-			fp->write(&multiplayer, sizeof(Uint32), 1);
+		    Uint32 mul = splitscreen ? SPLITSCREEN : multiplayer;
+			fp->write(&mul, sizeof(Uint32), 1);
 		}
 	}
 	Uint32 hash = 0;
@@ -1365,27 +1366,55 @@ int saveGame(int saveIndex)
 	}
 	fp->write(&svFlags, sizeof(Uint32), 1);
 
-	// write hotbar items
-	for ( auto& hotbarSlot : players[clientnum]->hotbar.slots() )
-	{
-		int index = list_Size(&stats[clientnum]->inventory);
-		Item* item = uidToItem(hotbarSlot.item);
-		if ( item )
-		{
-			index = list_Index(item->node);
-		}
-		fp->write(&index, sizeof(Uint32), 1);
-	}
+    if (splitscreen)
+    {
+	    for ( player = 0; player < MAXPLAYERS; player++ )
+	    {
+	        // write hotbar items
+	        for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+	        {
+		        int index = list_Size(&stats[player]->inventory);
+		        Item* item = uidToItem(hotbarSlot.item);
+		        if ( item )
+		        {
+			        index = list_Index(item->node);
+		        }
+		        fp->write(&index, sizeof(Uint32), 1);
+	        }
 
-	// write spells
-	Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
-	fp->write(&numspells, sizeof(Uint32), 1);
-	for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
-	{
-		spell_t* spell = (spell_t*)node->element;
-		fp->write(&spell->ID, sizeof(Uint32), 1);
-	}
+	        // write spells
+	        Uint32 numspells = list_Size(&players[player]->magic.spellList);
+	        fp->write(&numspells, sizeof(Uint32), 1);
+	        for ( node = players[player]->magic.spellList.first; node != NULL; node = node->next )
+	        {
+		        spell_t* spell = (spell_t*)node->element;
+		        fp->write(&spell->ID, sizeof(Uint32), 1);
+	        }
+	    }
+    }
+    else
+    {
+	    // write hotbar items
+	    for ( auto& hotbarSlot : players[clientnum]->hotbar.slots() )
+	    {
+		    int index = list_Size(&stats[clientnum]->inventory);
+		    Item* item = uidToItem(hotbarSlot.item);
+		    if ( item )
+		    {
+			    index = list_Index(item->node);
+		    }
+		    fp->write(&index, sizeof(Uint32), 1);
+	    }
 
+	    // write spells
+	    Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
+	    fp->write(&numspells, sizeof(Uint32), 1);
+	    for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
+	    {
+		    spell_t* spell = (spell_t*)node->element;
+		    fp->write(&spell->ID, sizeof(Uint32), 1);
+	    }
+    }
 
 	// player data
 	for ( player = 0; player < MAXPLAYERS; player++ )
@@ -1431,7 +1460,7 @@ int saveGame(int saveIndex)
 		}
 
 		// inventory
-		if ( player == clientnum )
+		if ( player == clientnum || splitscreen )
 		{
 			c = list_Size(&stats[player]->inventory);
 			fp->write(&c, sizeof(Uint32), 1);
@@ -2088,28 +2117,74 @@ int loadGame(int player, int saveIndex)
 		printlog("[SESSION]: Using savegame server flags");
 	}
 
-	// read hotbar item offsets
-	Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
-	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
-	{
-		fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
-	}
+    // load hotbar and spells list
+    Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
+    if (mul == SPLITSCREEN)
+    {
+        for (int c = 0; c < MAXPLAYERS; ++c)
+        {
+            if (c == player)
+            {
+	            // read hotbar item offsets
+	            for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	            {
+		            fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
+	            }
 
-	// read spells
-	list_FreeAll(&players[player]->magic.spellList);
-	Uint32 numspells = 0;
-	fp->read(&numspells, sizeof(Uint32), 1);
-	for ( c = 0; c < numspells; c++ )
-	{
-		int spellnum = 0;
-		fp->read(&spellnum, sizeof(Uint32), 1);
-		spell_t* spell = copySpell(getSpellFromID(spellnum));
+	            // read spells
+	            list_FreeAll(&players[c]->magic.spellList);
+	            Uint32 numspells = 0;
+	            fp->read(&numspells, sizeof(Uint32), 1);
+	            for ( int s = 0; s < numspells; ++s )
+	            {
+		            int spellnum = 0;
+		            fp->read(&spellnum, sizeof(Uint32), 1);
+		            spell_t* spell = copySpell(getSpellFromID(spellnum));
 
-		node = list_AddNodeLast(&players[player]->magic.spellList);
-		node->element = spell;
-		node->deconstructor = &spellDeconstructor;
-		node->size = sizeof(spell);
-	}
+		            node = list_AddNodeLast(&players[c]->magic.spellList);
+		            node->element = spell;
+		            node->deconstructor = &spellDeconstructor;
+		            node->size = sizeof(spell);
+	            }
+            }
+            else
+            {
+	            fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+                fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+                int numspells = 0;
+                fp->read(&numspells, sizeof(Uint32), 1);
+                for ( c = 0; c < numspells; c++ )
+                {
+	                fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+                }
+            }
+        }
+    }
+    else
+    {
+	    // read hotbar item offsets
+	    for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	    {
+		    fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
+	    }
+
+	    // read spells
+	    list_FreeAll(&players[player]->magic.spellList);
+	    Uint32 numspells = 0;
+	    fp->read(&numspells, sizeof(Uint32), 1);
+	    for ( c = 0; c < numspells; c++ )
+	    {
+		    int spellnum = 0;
+		    fp->read(&spellnum, sizeof(Uint32), 1);
+		    spell_t* spell = copySpell(getSpellFromID(spellnum));
+
+		    node = list_AddNodeLast(&players[player]->magic.spellList);
+		    node->element = spell;
+		    node->deconstructor = &spellDeconstructor;
+		    node->size = sizeof(spell);
+	    }
+    }
 
 	int monsters = NUMMONSTERS;
 	if ( versionNumber < 325 )
@@ -2166,34 +2241,28 @@ int loadGame(int player, int saveIndex)
 			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD); // stat flags
 		}
 
-		if ( clientnum == 0 && c != 0 )
-		{
-			// server needs to skip past other players' equipment
+        if ( multiplayer == SINGLE )
+        {
+			int numitems = 0;
+			fp->read(&numitems, sizeof(Uint32), 1);
 			int i;
-			for ( i = 0; i < 10; i++ )
+			for ( i = 0; i < numitems; i++ )
 			{
-				int itemtype = NUMITEMS;
-				fp->read(&itemtype, sizeof(ItemType), 1);
-				if ( itemtype < NUMITEMS )
-				{
-					fp->seek(sizeof(Status), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-					fp->seek(sizeof(bool), File::SeekMode::ADD);
-				}
-			}
-		}
-		else
-		{
-			if ( clientnum != 0 )
-			{
-				// client needs to skip the dummy byte
+				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 				fp->seek(sizeof(Status), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+				fp->seek(sizeof(bool), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 			}
-			else
-			{
-				// server needs to skip past its inventory
+			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
+        }
+		else if ( multiplayer == SERVER )
+		{
+		    if ( c == 0 ) {
+				// server needs to skip past its own inventory
 				int numitems = 0;
 				fp->read(&numitems, sizeof(Uint32), 1);
 
@@ -2210,7 +2279,29 @@ int loadGame(int player, int saveIndex)
 					fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 				}
 				fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
+		    } else {
+			    // server needs to skip past other players' equipment
+			    // (this is stored differently)
+			    int i;
+			    for ( i = 0; i < 10; i++ )
+			    {
+				    int itemtype = NUMITEMS;
+				    fp->read(&itemtype, sizeof(ItemType), 1);
+				    if ( itemtype < NUMITEMS )
+				    {
+					    fp->seek(sizeof(Status), File::SeekMode::ADD);
+					    fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+					    fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+					    fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+					    fp->seek(sizeof(bool), File::SeekMode::ADD);
+				    }
+			    }
 			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			// client needs only to skip the dummy byte
+			fp->seek(sizeof(Status), File::SeekMode::ADD);
 		}
 	}
 
@@ -2288,7 +2379,7 @@ int loadGame(int player, int saveIndex)
 		}
 	}
 
-	if ( player == clientnum )
+	if ( players[c]->isLocalPlayer() )
 	{
 		// inventory
 		int numitems = 0;
@@ -2955,15 +3046,19 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	{
 		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
 	}
-	fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
 
-	int numspells = 0;
-	fp->read(&numspells, sizeof(Uint32), 1);
-	for ( c = 0; c < numspells; c++ )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	}
+    for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
+    {
+	    fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+        fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+        int numspells = 0;
+        fp->read(&numspells, sizeof(Uint32), 1);
+        for ( c = 0; c < numspells; c++ )
+        {
+	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+        }
+    }
 
 	int monsters = NUMMONSTERS;
 	if ( versionNumber < 325 )
@@ -3177,15 +3272,19 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	{
 		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
 	}
-	fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
 
-	int numspells = 0;
-	fp->read(&numspells, sizeof(Uint32), 1);
-	for ( c = 0; c < numspells; c++ )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	}
+    for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
+    {
+	    fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+        fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+        int numspells = 0;
+        fp->read(&numspells, sizeof(Uint32), 1);
+        for ( c = 0; c < numspells; c++ )
+        {
+	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+        }
+    }
 
 	int monsters = NUMMONSTERS;
 	if ( versionNumber < 325 )

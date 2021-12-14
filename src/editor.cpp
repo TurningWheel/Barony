@@ -19,7 +19,9 @@
 #include "files.hpp"
 #include "init.hpp"
 #include <sys/stat.h>
+#ifndef EDITOR
 #define EDITOR
+#endif
 
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>

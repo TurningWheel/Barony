@@ -51,6 +51,9 @@ bool gamepad_righty_invert = false;
 bool gamepad_menux_invert = false;
 bool gamepad_menuy_invert = false;
 
+const int Player::Inventory_t::MAX_SPELLS_X = 4;
+const int Player::Inventory_t::MAX_SPELLS_Y = 20;
+
 
 std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
 Inputs inputs;
@@ -3703,7 +3706,7 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
 		}
 		else if ( flags & SET_RELATIVE_MOUSE )
 		{
-			SDL_SetRelativeMouseMode(SDL_TRUE);
+			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
 		SDL_WarpMouseInWindow(screen, x, y); // this pushes to the SDL event queue
 		

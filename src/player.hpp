@@ -863,8 +863,8 @@ public:
 
 		int DEFAULT_INVENTORY_SIZEX = 12;
 		int DEFAULT_INVENTORY_SIZEY = 3;
-		static const int MAX_SPELLS_X = 4;
-		static const int MAX_SPELLS_Y = 20;
+		static const int MAX_SPELLS_X;
+		static const int MAX_SPELLS_Y;
 		Inventory_t(Player& p) : 
 			player(p), 
 			appraisal(p), 

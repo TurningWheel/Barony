@@ -154,14 +154,14 @@ endif()
 # Set platform-dependent compiler & linker flags
 if( NOT WIN32 )
   if(PANDORA)
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall ")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin -fsingle-precision-constant")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin -fsingle-precision-constant")
   else()
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pedantic -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing")
-	#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover -Wreturn-type -Werror=return-type")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pedantic -Wall -pg")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pedantic -pg -ffast-math -funroll-loops -fstrict-aliasing")
+	#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover -Wreturn-type -Werror=return-type")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pedantic -pg")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -pedantic ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -fstrict-aliasing")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -pedantic ${OPTIMIZATION_LEVEL}")
   endif()
@@ -207,7 +207,7 @@ if( NOT WIN32 )
 	endif()
 else( NOT WIN32 )
 	# These look like mingw to me?
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pg ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -malign-double -fstrict-aliasing -mwindows")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -malign-double -fstrict-aliasing -mwindows")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OPTIMIZATION_LEVEL} -ffast-math -funroll-loops -malign-double -fstrict-aliasing -mwindows")
 	# We should be using Visual Studio flags...or better yet, providing an option to select which you'd prefer.
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
@@ -347,11 +347,11 @@ message("***************************")
 message("Debug flags: ")
 message("${CMAKE_C_FLAGS_DEBUG}")
 message("${CMAKE_CXX_FLAGS_DEBUG}")
-#-g -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing
+#-g -pg -ffast-math -funroll-loops -fstrict-aliasing
 message("Release flags: ")
 message("${CMAKE_C_FLAGS_RELEASE}")
 message("${CMAKE_CXX_FLAGS_RELEASE}")
-#-O3 -DNDEBUG -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing
+#-O3 -DNDEBUG -pg -ffast-math -funroll-loops -fstrict-aliasing
 message("***************************")
 
 
