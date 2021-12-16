@@ -188,7 +188,8 @@ namespace MainMenu {
 
 	enum class LobbyType {
 		LobbyLocal,
-		LobbyHosted,
+		LobbyLAN,
+		LobbyOnline,
 		LobbyJoined
 	};
 
@@ -199,6 +200,7 @@ namespace MainMenu {
 	void createCharacterCard(int index);
 	void createStartButton(int index);
 	void createInviteButton(int index);
+	void createWaitingStone(int index);
 
 	void createLobby(LobbyType);
 	void createLobbyBrowser();

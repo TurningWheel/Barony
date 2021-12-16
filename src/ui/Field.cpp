@@ -221,7 +221,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 				}
 				if ( unrender )
 				{
-					text->setRendered(false);
+					text->render();
 				}
 			}
 		}
@@ -230,7 +230,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			if ( text->getWordsToHighlight().size() > 0 )
 			{
 				text->clearWordsToHighlight();
-				text->setRendered(false);
+				text->render();
 			}
 		}
 

@@ -122,11 +122,6 @@ void Text::render() {
 	SDL_GetRGBA(outlineColor, mainsurface->format,
 		&colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
 
-	if (surf) {
-		SDL_FreeSurface(surf);
-		surf = nullptr;
-	}
-
 	int outlineSize = font->getOutline();
 	if ( outlineSize > 0 ) {
 		TTF_SetFontOutline(ttf, outlineSize);
@@ -143,9 +138,7 @@ void Text::render() {
 		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
 	}
 	assert(surf);
-	if ( texid == 0 ) {
-		glGenTextures(1, &texid);
-	}
+
 
 	width = surf->w;
 	height = surf->h;
@@ -238,6 +231,7 @@ void Text::render() {
 			}
 		}
 
+	    glGenTextures(1, &texid);
 		glBindTexture(GL_TEXTURE_2D, texid);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -245,11 +239,6 @@ void Text::render() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 		SDL_UnlockSurface(surf);
-		rendered = true;
-	}
-	else
-	{
-		rendered = false;
 	}
 
 	num_text_lines = countNumTextLines();
@@ -260,7 +249,7 @@ void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport
 }
 
 void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-	assert(rendered && surf);
+	assert(surf);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);

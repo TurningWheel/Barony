@@ -6305,7 +6305,7 @@ int main(int argc, char** argv)
 			DebugTimers.printAllTimepoints();
 			DebugTimers.clearAllTimepoints();
 
-			printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
+			//printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
 			UIToastNotificationManager.drawNotifications(movie, false);
 

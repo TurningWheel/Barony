@@ -16,10 +16,6 @@ private:
 	Text& operator=(const Text&) = delete;
 	Text& operator=(Text&&) = delete;
 
-	//! renders the text using its pre-specified parameters.
-	//! this should usually not be called by the user.
-	void render();
-
 public:
 	//! special char marks font to be used
 	static const char fontBreak = '\b';
@@ -55,6 +51,11 @@ public:
 	//! dump engine's text cache
 	static void dumpCache();
 
+	//! renders the text using its pre-specified parameters.
+	//! you usually won't need to call this yourself,
+	//! but if for some reason the text object has changed,
+	//! you can call this function again to re-render it.
+	void render();
 
 	//! add a key value pair to the highlighted word map
 	//! @param word the word 'index' in the sentence (first word is 0)
@@ -66,9 +67,6 @@ public:
 
 	//! reset the highlighted word map
 	void clearWordsToHighlight() { wordsToHighlight.clear(); }
-
-	//! can modify the 'rendered' state to force the texture to regenerate when using highlighting.
-	void setRendered(bool _rendered) { rendered = _rendered; }
 private:
 	std::string name;
 	GLuint texid = 0;
@@ -89,7 +87,6 @@ private:
 
 	int width = 0;
 	int height = 0;
-	bool rendered = false;
 	int num_text_lines = 0;
 	
 	// words with index matching the key (first word == 0) will be drawn with the value color

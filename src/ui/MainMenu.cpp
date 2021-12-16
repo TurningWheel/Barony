@@ -4676,7 +4676,14 @@ namespace MainMenu {
 			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
 			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
 			}
-		} else {
+		} else if (currentLobbyType == LobbyType::LobbyLAN) {
+			switch (index) {
+			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(0);}); break;
+			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(1);}); break;
+			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(2);}); break;
+			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(3);}); break;
+			}
+		} else if (currentLobbyType == LobbyType::LobbyOnline) {
 			switch (index) {
 			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(0);}); break;
 			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(1);}); break;
@@ -5118,8 +5125,8 @@ namespace MainMenu {
 		invite->setText("Press Start");
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		invite->setVJustify(Field::justify_t::TOP);
-		invite->setHJustify(Field::justify_t::CENTER);
+		invite->setVJustify(Button::justify_t::TOP);
+		invite->setHJustify(Button::justify_t::CENTER);
 		invite->setBorder(0);
 		invite->setColor(0);
 		invite->setBorderColor(0);
@@ -5169,14 +5176,51 @@ namespace MainMenu {
 		invite->setText("Press to Invite");
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		invite->setVJustify(Field::justify_t::TOP);
-		invite->setHJustify(Field::justify_t::CENTER);
+		invite->setVJustify(Button::justify_t::TOP);
+		invite->setHJustify(Button::justify_t::CENTER);
 		invite->setBorder(0);
 		invite->setColor(0);
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
 		invite->setCallback([](Button&){buttonInviteFriends(NULL);});
 		invite->select();
+	}
+
+	void createWaitingStone(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
+			"backdrop"
+		);
+
+		auto banner = card->addField("banner", 64);
+		banner->setText("OPEN");
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto text = card->addField("text", 128);
+		text->setText("Waiting for\nplayer to join");
+		text->setFont(smallfont_outline);
+		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		text->setVJustify(Field::justify_t::TOP);
+		text->setHJustify(Field::justify_t::CENTER);
 	}
 
 	void createLobby(LobbyType type) {
@@ -5281,7 +5325,11 @@ namespace MainMenu {
 			createStartButton(1);
 			createStartButton(2);
 			createStartButton(3);
-		} else if (type == LobbyType::LobbyHosted) {
+		} else if (type == LobbyType::LobbyLAN) {
+			createWaitingStone(1);
+			createWaitingStone(2);
+			createWaitingStone(3);
+		} else if (type == LobbyType::LobbyOnline) {
 			createInviteButton(1);
 			createInviteButton(2);
 			createInviteButton(3);
@@ -5577,23 +5625,75 @@ namespace MainMenu {
 		// create "Local or Network" window
 		auto window = dimmer->addFrame("local_or_network_window");
 		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 436) / 2,
-			(Frame::virtualScreenY - 240) / 2,
-			436,
-			240});
-		window->setActualSize(SDL_Rect{0, 0, 436, 240});
+			(Frame::virtualScreenX - 436) / 2 - 38,
+			(Frame::virtualScreenY - 494) / 2,
+			496,
+			494});
+		window->setActualSize(SDL_Rect{0, 0, 496, 494});
 		window->setColor(0);
 		window->setBorder(0);
+		window->setTickCallback([](Widget& widget){
+		    auto window = static_cast<Frame*>(&widget); assert(window);
+		    auto tooltip = window->findField("tooltip"); assert(tooltip);
+		    auto local_button = window->findButton("local"); assert(local_button);
+		    auto local_image = window->findImage("local_image"); assert(local_image);
+		    if (local_button->isSelected()) {
+		        tooltip->setText("Play singleplayer or with 2-4\nplayers in splitscreen multiplayer");
+                local_image->path =
+#ifdef NINTENDO
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00.png";
+#else
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00_NoNX.png";
+#endif
+		    } else {
+                local_image->path =
+#ifdef NINTENDO
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png";
+#else
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png";
+#endif
+		    }
+		    auto host_lan_button = window->findButton("host_lan"); assert(host_lan_button);
+		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
+		    if (host_lan_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
+                host_lan_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00.png";
+		    } else {
+                host_lan_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png";
+		    }
+		    auto host_online_button = window->findButton("host_online"); assert(host_online_button);
+		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
+		    if (host_online_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover the internet");
+                host_online_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00.png";
+		    } else {
+                host_online_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png";
+		    }
+		    auto join_button = window->findButton("join"); assert(join_button);
+		    auto join_image = window->findImage("join_image"); assert(join_image);
+		    if (join_button->isSelected()) {
+		        tooltip->setText("Join a multiplayer game");
+                join_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00.png";
+		    } else {
+                join_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png";
+		    }
+		    });
 
 		auto background = window->addImage(
 			window->getActualSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Window_00.png",
+			"images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Window_00.png",
 			"background"
 		);
 
 		auto banner_title = window->addField("banner", 32);
-		banner_title->setSize(SDL_Rect{142, 24, 152, 18});
+		banner_title->setSize(SDL_Rect{180, 24, 152, 18});
 		banner_title->setText("NEW ADVENTURER");
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
@@ -5605,48 +5705,98 @@ namespace MainMenu {
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			createPlayWindow();
-			});
-
-		auto join_button = window->addButton("join");
-		join_button->setSize(SDL_Rect{220, 134, 164, 62});
-		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_button->setColor(makeColor(255, 255, 255, 255));
-		join_button->setText("Join Network\nParty");
-		join_button->setFont(smallfont_outline);
-		join_button->setWidgetSearchParent(window->getName());
-		join_button->setWidgetBack("back_button");
-		join_button->setWidgetUp("local");
-		join_button->setWidgetLeft("host");
-		join_button->setCallback(openLobbyBrowser);
-
-		auto host_button = window->addButton("host");
-		host_button->setSize(SDL_Rect{52, 134, 164, 62});
-		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_button->setColor(makeColor(255, 255, 255, 255));
-		host_button->setText("Host Network\nParty");
-		host_button->setFont(smallfont_outline);
-		host_button->setWidgetSearchParent(window->getName());
-		host_button->setWidgetBack("back_button");
-		host_button->setWidgetUp("local");
-		host_button->setWidgetRight("join");
-		host_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyHosted);});
+			}, SDL_Rect{42, 4, 0, 0});
 
 		auto local_button = window->addButton("local");
-		local_button->setSize(SDL_Rect{134, 68, 168, 62});
-		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_01.png");
+		local_button->setSize(SDL_Rect{96, 72, 164, 62});
+		local_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
 		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		local_button->setColor(makeColor(255, 255, 255, 255));
 		local_button->setText("Local Adventure");
 		local_button->setFont(smallfont_outline);
 		local_button->setWidgetSearchParent(window->getName());
 		local_button->setWidgetBack("back_button");
-		local_button->setWidgetDown("host");
-		local_button->setWidgetRight("back");
+		local_button->setWidgetDown("host_lan");
 		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
 
 		local_button->select();
+
+		(void)window->addImage(
+		    SDL_Rect{278, 76, 104, 52},
+		    0xffffffff,
+#ifdef NINTENDO
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png",
+#else
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png",
+#endif
+		    "local_image"
+		);
+
+		auto host_lan_button = window->addButton("host_lan");
+		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
+		host_lan_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_lan_button->setColor(makeColor(255, 255, 255, 255));
+		host_lan_button->setText("Host LAN Party");
+		host_lan_button->setFont(smallfont_outline);
+		host_lan_button->setWidgetSearchParent(window->getName());
+		host_lan_button->setWidgetBack("back_button");
+		host_lan_button->setWidgetUp("local");
+		host_lan_button->setWidgetDown("host_online");
+		host_lan_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLAN);});
+
+		(void)window->addImage(
+		    SDL_Rect{270, 170, 126, 50},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png",
+		    "host_lan_image"
+		);
+
+		auto host_online_button = window->addButton("host_online");
+		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
+		host_online_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_online_button->setColor(makeColor(255, 255, 255, 255));
+		host_online_button->setText("Host Online Party");
+		host_online_button->setFont(smallfont_outline);
+		host_online_button->setWidgetSearchParent(window->getName());
+		host_online_button->setWidgetBack("back_button");
+		host_online_button->setWidgetUp("host_lan");
+		host_online_button->setWidgetDown("join");
+		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+
+		(void)window->addImage(
+		    SDL_Rect{270, 234, 126, 50},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png",
+		    "host_online_image"
+		);
+
+		auto join_button = window->addButton("join");
+		join_button->setSize(SDL_Rect{96, 326, 164, 62});
+		join_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		join_button->setColor(makeColor(255, 255, 255, 255));
+		join_button->setText("Lobby Browser");
+		join_button->setFont(smallfont_outline);
+		join_button->setWidgetSearchParent(window->getName());
+		join_button->setWidgetBack("back_button");
+		join_button->setWidgetUp("host_online");
+		join_button->setCallback(openLobbyBrowser);
+
+		(void)window->addImage(
+		    SDL_Rect{270, 324, 120, 68},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png",
+		    "join_image"
+		);
+
+		auto tooltip = window->addField("tooltip", 1024);
+		tooltip->setSize(SDL_Rect{106, 398, 300, 48});
+		tooltip->setFont(smallfont_no_outline);
+		tooltip->setColor(makeColor(91, 76, 50, 255));
+		tooltip->setJustify(Field::justify_t::CENTER);
+		tooltip->setText("Help text goes here.");
 	}
 
 	static int populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
