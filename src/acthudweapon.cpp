@@ -331,6 +331,8 @@ void actHudWeapon(Entity* my)
 
 	Player::HUD_t& playerHud = players[HUDWEAPON_PLAYERNUM]->hud;
 
+	Input& input = Input::inputs[HUDWEAPON_PLAYERNUM];
+
 	Entity* entity;
 	Entity* parent = playerHud.arm;
 
@@ -682,24 +684,22 @@ void actHudWeapon(Entity* my)
 
 	bool swingweapon = false;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity
-		&& (*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK)))
+		&& input.binaryToggle("Attack")
 		&& shootmode 
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()
-		&& !(*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_DEFEND]) && stats[HUDWEAPON_PLAYERNUM]->defending || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_DEFEND) && stats[HUDWEAPON_PLAYERNUM]->defending))
+		&& !(input.binaryToggle("Block") && stats[HUDWEAPON_PLAYERNUM]->defending)
 		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
 	{
 		swingweapon = true;
 	}
-	else if ( (*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK))) &&
-		(*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_DEFEND]) && stats[HUDWEAPON_PLAYERNUM]->defending || (shootmode && inputs.bControllerInputPressed(HUDWEAPON_PLAYERNUM, INJOY_GAME_DEFEND) && stats[HUDWEAPON_PLAYERNUM]->defending)) )
+	else if (shootmode && input.binaryToggle("Attack") && input.binaryToggle("Block") && stats[HUDWEAPON_PLAYERNUM]->defending)
 	{
 		if ( stats[HUDWEAPON_PLAYERNUM]->shield && stats[HUDWEAPON_PLAYERNUM]->shield->type == TOOL_TINKERING_KIT )
 		{
 			if ( !GenericGUI[HUDWEAPON_PLAYERNUM].isGUIOpen() )
 			{
-				*inputPressedForPlayer(HUDWEAPON_PLAYERNUM, impulses[IN_ATTACK]) = 0;
-				inputs.controllerClearInput(HUDWEAPON_PLAYERNUM, INJOY_GAME_ATTACK);
+			    input.consumeBinaryToggle("Attack");
 				GenericGUI[HUDWEAPON_PLAYERNUM].openGUI(GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
 				swapWeaponGimpTimer = 20;
 				return;
@@ -3011,6 +3011,8 @@ void actHudShield(Entity* my)
 {
 	my->flags[UNCLICKABLE] = true;
 
+	Input& input = Input::inputs[HUDSHIELD_PLAYERNUM];
+
 	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
 	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
@@ -3192,11 +3194,12 @@ void actHudShield(Entity* my)
 
 	bool defending = false;
 	bool sneaking = false;
-	if (!command && !swimming)
+    const bool shootmode = players[HUDSHIELD_PLAYERNUM]->shootmode;
+	if (!command && !swimming && shootmode)
 	{
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
-			&& (*inputPressedForPlayer(HUDSHIELD_PLAYERNUM, impulses[IN_DEFEND]) 
-				|| (players[HUDSHIELD_PLAYERNUM]->shootmode && inputs.bControllerInputPressed(HUDSHIELD_PLAYERNUM, INJOY_GAME_DEFEND)))
+			&& input.binaryToggle("Block")
+			&& shootmode
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
 			&& !gamePaused 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active
@@ -3825,21 +3828,6 @@ void actHudAdditional(Entity* my)
 
 	bool defending = false;
 	bool sneaking = false;
-	/*if ( !command )
-	{
-		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity
-			&& (*inputPressedForPlayer(HUDSHIELD_PLAYERNUM, impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND])))
-			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile()
-			&& !gamePaused
-			&& !cast_animation.active )
-		{
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (hudweapon->skill[0] % 3 == 0) )
-			{
-				defending = true;
-			}
-			sneaking = true;
-		}
-	}*/
 
 	// shield switching animation
 	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )

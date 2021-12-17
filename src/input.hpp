@@ -14,13 +14,7 @@ class GameController;
 //! collect the input data from the physical devices, and provide it back to you for any purpose.
 class Input {
 public:
-	Input()
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			inputs[i].player = i;
-		}
-	}
+	Input() = default;
 	Input(const Input&) = delete;
 	Input(Input&&) = delete;
 	~Input() = default;
@@ -92,6 +86,9 @@ public:
 		//! checks type is a gamepad-adjacent input (i.e not keyboard or mouse)
 		bool isBindingUsingGamepad() const { return (type != KEYBOARD && type != MOUSE_BUTTON && type != INVALID); }
 	};
+
+	//! useful way to get direct access to bindings
+	auto& getBindings() const { return bindings; }
 
 	//! gets the analog value of a particular input binding
 	//! @param binding the binding to query

@@ -204,4 +204,9 @@ namespace MainMenu {
 
 	void createLobby(LobbyType);
 	void createLobbyBrowser();
+
+	// special events:
+
+	void disconnectedFromServer();
+	void receivedInvite();
 }

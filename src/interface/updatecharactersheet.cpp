@@ -315,15 +315,9 @@ void updateCharacterSheet(const int player)
 	{
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
-		if ( *inputPressedForPlayer(player, impulses[IN_USE]) )
+		if ( Input::inputs[player].consumeBinaryToggle("Use") )
 		{
 			dropGold = true;
-			*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
-		}
-		else if ( inputs.bControllerInputPressed(player, INJOY_GAME_USE) )
-		{
-			dropGold = true;
-			inputs.controllerClearInput(player, INJOY_GAME_USE);
 		}
 	}
 
@@ -1514,7 +1508,7 @@ void drawPartySheet(const int player)
 						}
 
 						if ( stats[player] && stats[player]->HP > 0 && !players[player]->shootmode
-							&& (inputs.bMouseLeft(player) || (*inputPressedForPlayer(player, impulses[IN_USE]) || inputs.bControllerInputPressed(player, INJOY_GAME_USE))) )
+							&& (inputs.bMouseLeft(player) || Input::inputs[player].consumeBinaryToggle("Use")) )
 						{
 							bool inBounds = mouseInBounds(player, monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
 								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
@@ -1533,7 +1527,7 @@ void drawPartySheet(const int player)
 										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
 									}
 								}
-								else if ( (*inputPressedForPlayer(player, impulses[IN_USE]) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
+								else if ( Input::inputs[player].binary("Use") )
 								{
 									followerMenu.followerToCommand = follower;
 									followerMenu.recentEntity = follower;

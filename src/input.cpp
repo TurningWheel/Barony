@@ -25,6 +25,10 @@ bool Input::mouseButtons[8] = { false };
 std::string Input::lastInputOfAnyKind;
 
 void Input::defaultBindings() {
+	for (int i = 0; i < MAXPLAYERS; ++i) {
+		inputs[i].player = i;
+	}
+
 	// these bindings should probably not be accessible to the player to change.
 	inputs[0].bind("MenuTab", "Tab");
 	for (int c = 0; c < MAXPLAYERS; ++c) {

@@ -354,13 +354,38 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	static Bindings old_bindings;
+
 	inline void Bindings::save() {
-		// TODO record these bindings to Input::inputs
+		for (int c = 0; c < 4; ++c) {
+		    Input& input = Input::inputs[c];
+		    if (devices[c] == 0) {
+			    for (auto& binding : kb_mouse_bindings[c]) {
+			        input.bind(binding.first.c_str(), binding.second.c_str());
+			    }
+			}
+		    if (devices[c] >= 1 && devices[c] <= 4) {
+		        std::string prefix;
+		        prefix.append("Pad");
+		        prefix.append(std::to_string(devices[c] - 1));
+			    for (auto& binding : gamepad_bindings[c]) {
+			        input.bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			    }
+			}
+		    if (devices[c] >= 5 && devices[c] <= 8) {
+		        std::string prefix;
+		        prefix.append("Joy");
+		        prefix.append(std::to_string(devices[c] - 5));
+			    for (auto& binding : joystick_bindings[c]) {
+			        input.bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			    }
+			}
+		}
+		old_bindings = *this;
 	}
 
 	inline Bindings Bindings::load() {
-		// TODO populate our variables with the values of some globally-accessed ones
-		return Bindings::reset();
+		return old_bindings;
 	}
 
 	inline Bindings Bindings::reset() {
@@ -970,11 +995,16 @@ namespace MainMenu {
 	}
 
 	bool settingsLoad() {
-		return FileHelper::readObject((std::string(outputdir) + "/config/config.json").c_str(), allSettings);
+		bool result = FileHelper::readObject((std::string(outputdir) + "/config/config.json").c_str(), allSettings);
+		if (result) {
+		    old_bindings = allSettings.bindings;
+		}
+		return result;
 	}
 
 	void settingsReset() {
 		allSettings = AllSettings::reset();
+		old_bindings = allSettings.bindings;
 	}
 
 	static void settingsCustomizeInventorySorting(Button&);
@@ -7071,5 +7101,13 @@ namespace MainMenu {
 	void closeMainMenu() {
 		destroyMainMenu();
 		gamePaused = false;
+	}
+
+	void disconnectedFromServer() {
+	    assert(0 && "Disconnected from server. Need a window here!");
+	}
+
+	void receiveInvite() {
+	    assert(0 && "Received an invite. Behavior goes here!");
 	}
 }

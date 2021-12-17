@@ -674,83 +674,7 @@ void freeInterfaceResources()
 
 void defaultImpulses()
 {
-#ifdef PANDORA
-	impulses[IN_FORWARD] = 82;
-	impulses[IN_LEFT] = 80;
-	impulses[IN_BACK] = 81;
-	impulses[IN_RIGHT] = 79;
-#else
-	impulses[IN_FORWARD] = 26;
-	impulses[IN_LEFT] = 4;
-	impulses[IN_BACK] = 22;
-	impulses[IN_RIGHT] = 7;
-#endif
-	impulses[IN_TURNL] = 80;
-	impulses[IN_TURNR] = 79;
-	impulses[IN_UP] = 82;
-	impulses[IN_DOWN] = 81;
-	impulses[IN_CHAT] = 40;
-	impulses[IN_COMMAND] = 56;
-	impulses[IN_STATUS] = 43;
-#ifdef PANDORA
-	impulses[IN_SPELL_LIST] = 75;
-	impulses[IN_CAST_SPELL] = 77;
-	impulses[IN_DEFEND] = 78;
-#else
-	impulses[IN_SPELL_LIST] = 16;
-	impulses[IN_CAST_SPELL] = 9;
-	impulses[IN_DEFEND] = 44;
-#endif
-	impulses[IN_ATTACK] = 283;
-	impulses[IN_USE] = 285;
-	impulses[IN_AUTOSORT] = 21;
-	impulses[IN_MINIMAPSCALE] = 27;
-	impulses[IN_TOGGLECHATLOG] = 15;
-	impulses[IN_FOLLOWERMENU] = 6;
-	impulses[IN_FOLLOWERMENU_LASTCMD] = 20;
-	impulses[IN_FOLLOWERMENU_CYCLENEXT] = 8;
-	impulses[IN_HOTBAR_SCROLL_LEFT] = 286;
-	impulses[IN_HOTBAR_SCROLL_RIGHT] = 287;
-	impulses[IN_HOTBAR_SCROLL_SELECT] = 284;
-
-	joyimpulses[INJOY_STATUS] = 307;
-	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
-	joyimpulses[INJOY_GAME_CAST_SPELL] = 311;
-	joyimpulses[INJOY_GAME_DEFEND] = 299;
-	joyimpulses[INJOY_GAME_ATTACK] = 300;
-	joyimpulses[INJOY_GAME_USE] = 301;
-	joyimpulses[INJOY_PAUSE_MENU] = 305;
-	joyimpulses[INJOY_MENU_LEFT_CLICK] = 303;
-	joyimpulses[INJOY_DPAD_LEFT] = 314;
-	joyimpulses[INJOY_DPAD_RIGHT] = 315;
-	joyimpulses[INJOY_DPAD_UP] = 312;
-	joyimpulses[INJOY_DPAD_DOWN] = 313;
-	joyimpulses[INJOY_MENU_NEXT] = 301;
-	joyimpulses[INJOY_GAME_HOTBAR_NEXT] = 315;
-	joyimpulses[INJOY_GAME_HOTBAR_PREV] = 314;
-	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 310;
-	joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = 304;
-	joyimpulses[INJOY_MENU_CANCEL] = 302;
-	joyimpulses[INJOY_MENU_USE] = 301;
-	joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = 304;
-	joyimpulses[INJOY_MENU_REFRESH_LOBBY] = 304;
-	joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = 304;
-	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
-	joyimpulses[INJOY_MENU_DROP_ITEM] = 302;
-	joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT] = 310;
-	joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT] = 311;
-	joyimpulses[INJOY_MENU_BOOK_NEXT] = 311;
-	joyimpulses[INJOY_MENU_BOOK_PREV] = 310;
-	joyimpulses[INJOY_MENU_SETTINGS_NEXT] = 311;
-	joyimpulses[INJOY_MENU_SETTINGS_PREV] = 310;
-	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
-	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
-	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
-	joyimpulses[INJOY_GAME_TOGGLECHATLOG] = SCANCODE_UNASSIGNED_BINDING;
-	joyimpulses[INJOY_GAME_MINIMAPSCALE] = SCANCODE_UNASSIGNED_BINDING;
-	joyimpulses[INJOY_GAME_FOLLOWERMENU] = SCANCODE_UNASSIGNED_BINDING;
-	joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD] = SCANCODE_UNASSIGNED_BINDING;
-	joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE] = SCANCODE_UNASSIGNED_BINDING;
+    // deprecated
 }
 
 void defaultConfig()
@@ -968,8 +892,6 @@ void saveCommand(char* content)
 
 int loadConfig(char* filename)
 {
-	defaultImpulses(); //So that a config file that's missing impulses can get all them.
-
 	char str[1024];
 	File* fp;
 	bool mallocd = false;
@@ -1007,33 +929,6 @@ int loadConfig(char* filename)
 	{
 		free(filename);
 	}
-
-	if ( impulses[IN_FOLLOWERMENU_CYCLENEXT] == impulses[IN_TURNR]
-		&& impulses[IN_TURNR] == 8 )
-	{
-		// reset to default arrow key to avoid overlapping keybinds on first launch.
-		// due to legacy keybind, now we have useful things to assign to q,e,z,c
-		impulses[IN_TURNR] = 79;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
-	}
-	if ( impulses[IN_FOLLOWERMENU] == impulses[IN_UP]
-		&& impulses[IN_UP] == 6 )
-	{
-		// reset to default arrow key to avoid overlapping keybinds on first launch.
-		// due to legacy keybind, now we have useful things to assign to q,e,z,c
-		impulses[IN_UP] = 82;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_UP: %d (Right arrow key)\n", impulses[IN_UP]);
-	}
-	if ( impulses[IN_FOLLOWERMENU_LASTCMD] == impulses[IN_TURNL]
-		&& impulses[IN_TURNL] == 20 )
-	{
-		// reset to default arrow key to avoid overlapping keybinds on first launch.
-		// due to legacy keybind, now we have useful things to assign to q,e,z,c
-		impulses[IN_TURNL] = 80;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNL: %d (Right arrow key)\n", impulses[IN_TURNL]);
-	}
-
-	MainMenu::settingsLoad();
 
 	return 0;
 }
@@ -1132,14 +1027,14 @@ int saveConfig(char const * const _filename)
 	fp->printf("/sfxambientvolume %d\n", sfxAmbientVolume);
 	fp->printf("/sfxenvironmentvolume %d\n", sfxEnvironmentVolume);
 	fp->printf("/musvolume %d\n", musvolume);
-	for (c = 0; c < NUMIMPULSES; c++)
+	/*for (c = 0; c < NUMIMPULSES; c++)
 	{
 		fp->printf("/bind %d IN_%s\n", impulses[c], impulsenames[c]);
 	}
 	for (c = 0; c < NUM_JOY_IMPULSES; c++)
 	{
 		fp->printf("/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
-	}
+	}*/
 	fp->printf("/mousespeed %d\n", (int)(mousespeed));
 	if ( reversemouse )
 	{
@@ -1957,6 +1852,8 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
 	Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
+	Input& input = Input::inputs[gui_player];
+
 	if ( followerToCommand )
 	{
 		if ( players[gui_player] && players[gui_player]->entity
@@ -1975,7 +1872,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity )
 		{
-			if ( (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1 )
+			if ( input.binaryToggle("Command NPC") && optionPrevious != -1 )
 			{
 				if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
 				{
@@ -2028,17 +1925,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 		// process commands if option selected on the wheel.
-		if ( (!(*inputPressedForPlayer(gui_player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE)) && !inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU) && !menuToggleClick && !holdWheel)
-			|| ((*inputPressedForPlayer(gui_player, impulses[IN_USE]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_USE) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU)) && menuToggleClick)
-			|| (!(*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU])) && holdWheel && !menuToggleClick)
-			|| ((*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD)) && optionPrevious != -1)
+		if ( (!input.binaryToggle("Use") && !input.binaryToggle("Show NPC Commands") && !menuToggleClick && !holdWheel)
+			|| ((input.binaryToggle("Use") || input.binaryToggle("Show NPC Commands")) && menuToggleClick)
+			|| (!input.binaryToggle("Show NPC Commands") && holdWheel && !menuToggleClick)
+			|| (input.binaryToggle("Command NPC") && optionPrevious != -1)
 			)
 		{
 			if ( menuToggleClick )
 			{
-				*inputPressedForPlayer(gui_player, impulses[IN_USE]) = 0;
-				inputs.controllerClearInput(gui_player, INJOY_GAME_USE);
-				inputs.controllerClearInput(gui_player, INJOY_GAME_FOLLOWERMENU);
+			    input.consumeBinaryToggle("Use");
+			    input.consumeBinaryToggle("Show NPC Commands");
 				menuToggleClick = false;
 				if ( optionSelected == -1 )
 				{
@@ -2047,7 +1943,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 
 			bool usingLastCmd = false;
-			if ( *inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
+			if ( input.binaryToggle("Command NPC") )
 			{
 				usingLastCmd = true;
 			}
@@ -2077,15 +1973,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
-			if ( *inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) || inputs.bControllerInputPressed(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD) )
+			if ( input.consumeBinaryToggle("Command NPC") )
 			{
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
 					initfollowerMenuGUICursor(false);
 				}
-				*inputPressedForPlayer(gui_player, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
-				inputs.controllerClearInput(gui_player, INJOY_GAME_FOLLOWERMENU_LASTCMD);
 			}
 
 			if ( optionSelected != -1 )
