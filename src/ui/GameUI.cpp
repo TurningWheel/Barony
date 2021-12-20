@@ -2043,11 +2043,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01B_BotB.png", "attributes bg img");
 
 			Frame* attributesInnerFrame = attributesFrame->addFrame("attributes inner frame");
-			attributesInnerFrame->setSize(SDL_Rect{ 20, 0, attributesFrame->getSize().w, attributesFrame->getSize().h });
+			attributesInnerFrame->setSize(SDL_Rect{ 0, 0, attributesFrame->getSize().w, attributesFrame->getSize().h });
 
-			SDL_Rect iconPos{ 0, 8, 24, 24 };
+			SDL_Rect iconPos{ 20, 8, 24, 24 };
 			const int headingLeftX = iconPos.x + iconPos.w + 10;
-			const int baseStatLeftX = headingLeftX + 44;
+			const int baseStatLeftX = headingLeftX + 32;
 			SDL_Rect textPos{ headingLeftX, iconPos.y, 80, iconPos.h };
 			Uint32 statTextColor = hudColors.characterSheetNeutral;
 
@@ -2070,6 +2070,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("14");
 				textStat->setColor(statTextColor);
+
+				auto attributeButton = attributesInnerFrame->addButton("atk button");
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				attributeButton->setColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHideGlyphs(true);
 			}
 
 			const int rowSpacing = 4;
@@ -2092,6 +2098,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("3");
 				textStat->setColor(statTextColor);
+
+				auto attributeButton = attributesInnerFrame->addButton("ac button");
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				attributeButton->setColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2113,6 +2125,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("115%");
 				textStat->setColor(statTextColor);
+
+				auto attributeButton = attributesInnerFrame->addButton("pow button");
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				attributeButton->setColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2134,6 +2152,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("100%");
 				textStat->setColor(statTextColor);
+
+				auto attributeButton = attributesInnerFrame->addButton("res button");
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				attributeButton->setColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2176,6 +2200,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textRegenMP->setSize(hpmpTextPos);
 				textRegenMP->setText("0.1");
 				textRegenMP->setColor(statTextColor);
+
+				auto attributeButton = attributesInnerFrame->addButton("rgn button");
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				attributeButton->setColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHideGlyphs(true);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2197,6 +2227,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textStat->setSize(textPos);
 				textStat->setText("120");
 				textStat->setColor(statTextColor);
+
+				auto attributeButton = attributesInnerFrame->addButton("wgt button");
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				attributeButton->setColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton->setHideGlyphs(true);
 			}
 		}
 
@@ -2624,6 +2660,10 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		assert(statsFrame);
 		auto statsInnerFrame = statsFrame->findFrame("stats inner frame");
 		assert(statsInnerFrame);
+		auto attributesFrame = sheetFrame->findFrame("attributes");
+		assert(attributesFrame);
+		auto attributesInnerFrame = attributesFrame->findFrame("attributes inner frame");
+		assert(attributesInnerFrame);
 		SheetElements targetElement = SHEET_ENUM_END;
 		auto logButton = sheetFrame->findFrame("log map buttons")->findButton("log button");
 		auto mapButton = sheetFrame->findFrame("log map buttons")->findButton("map button");
@@ -2634,6 +2674,12 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		Button* intButton = statsInnerFrame->findButton("int button");
 		Button* perButton = statsInnerFrame->findButton("per button");
 		Button* chrButton = statsInnerFrame->findButton("chr button");
+		Button* atkButton = attributesInnerFrame->findButton("atk button");
+		Button* acButton = attributesInnerFrame->findButton("ac button");
+		Button* powButton = attributesInnerFrame->findButton("pow button");
+		Button* resButton = attributesInnerFrame->findButton("res button");
+		Button* rgnButton = attributesInnerFrame->findButton("rgn button");
+		Button* wgtButton = attributesInnerFrame->findButton("wgt button");
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor
 			&& (!player.GUI.isDropdownActive())
 			&& isInteractable )
@@ -2693,6 +2739,30 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			else if ( chrButton->isHighlighted() )
 			{
 				targetElement = SHEET_CHR;
+			}
+			else if ( atkButton->isHighlighted() )
+			{
+				targetElement = SHEET_ATK;
+			}
+			else if ( acButton->isHighlighted() )
+			{
+				targetElement = SHEET_AC;
+			}
+			else if ( powButton->isHighlighted() )
+			{
+				targetElement = SHEET_POW;
+			}
+			else if ( resButton->isHighlighted() )
+			{
+				targetElement = SHEET_RES;
+			}
+			else if ( rgnButton->isHighlighted() )
+			{
+				targetElement = SHEET_RGN;
+			}
+			else if ( wgtButton->isHighlighted() )
+			{
+				targetElement = SHEET_WGT;
 			}
 		}
 		if ( targetElement != SHEET_ENUM_END )
@@ -3349,37 +3419,55 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		case SHEET_ATK:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
-				elementField = elementFrame->findField("atk text stat");
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("atk button");
+				}
 			}
 			break;
 		case SHEET_AC:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
-				elementField = elementFrame->findField("ac text stat");
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("ac button");
+				}
 			}
 			break;
 		case SHEET_POW:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
-				elementField = elementFrame->findField("atk text stat");
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("pow button");
+				}
 			}
 			break;
 		case SHEET_RES:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
-				elementField = elementFrame->findField("res text stat");
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("res button");
+				}
 			}
 			break;
 		case SHEET_RGN:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
-				elementField = elementFrame->findField("regen text title");
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("rgn button");
+				}
 			}
 			break;
 		case SHEET_WGT:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
-				elementField = elementFrame->findField("weight text stat");
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("wgt button");
+				}
 			}
 			break;
 		default:
@@ -4956,8 +5044,8 @@ void Player::CharacterSheet_t::updateAttributes()
 	auto attributesInnerFrame = attributesFrame->findFrame("attributes inner frame");
 	assert(attributesInnerFrame);
 
-	const int rightAlignPosX = 20;
-	const int leftAlignPosX = 30;
+	const int rightAlignPosX = 0;
+	const int leftAlignPosX = 10;
 	auto attributesInnerPos = attributesInnerFrame->getSize();
 	attributesInnerPos.x = rightAlignPosX;
 	/*if ( keystatus[SDL_SCANCODE_I] )
@@ -4965,6 +5053,8 @@ void Player::CharacterSheet_t::updateAttributes()
 		attributesInnerPos.x = leftAlignPosX;
 	}*/
 	attributesInnerFrame->setSize(attributesInnerPos);
+
+	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
 
 	char buf[32] = "";
 
@@ -4974,6 +5064,13 @@ void Player::CharacterSheet_t::updateAttributes()
 		snprintf(buf, sizeof(buf), "%d", displayAttackPower(player.playernum, dummy));
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
+
+		if ( selectedElement == SHEET_ATK && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 
 	if ( auto field = attributesInnerFrame->findField("ac text stat") )
@@ -4981,6 +5078,13 @@ void Player::CharacterSheet_t::updateAttributes()
 		snprintf(buf, sizeof(buf), "%d", AC(stats[player.playernum]));
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
+
+		if ( selectedElement == SHEET_AC && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 
 	if ( auto field = attributesInnerFrame->findField("pwr text stat") )
@@ -4989,6 +5093,13 @@ void Player::CharacterSheet_t::updateAttributes()
 		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
+
+		if ( selectedElement == SHEET_POW && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 
 	if ( auto field = attributesInnerFrame->findField("res text stat") )
@@ -5004,6 +5115,13 @@ void Player::CharacterSheet_t::updateAttributes()
 		if ( resistance > 0.01 )
 		{
 			field->setColor(hudColors.characterSheetGreen);
+		}
+
+		if ( selectedElement == SHEET_RES && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
 		}
 	}
 
@@ -5126,7 +5244,15 @@ void Player::CharacterSheet_t::updateAttributes()
 		}
 		snprintf(buf, sizeof(buf), "%.f%%", regen * 100.0);
 		field->setText(buf);
+
+		if ( selectedElement == SHEET_RGN && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
+
 
 	if ( auto field = attributesInnerFrame->findField("weight text stat") )
 	{
@@ -5143,6 +5269,13 @@ void Player::CharacterSheet_t::updateAttributes()
 		snprintf(buf, sizeof(buf), "%d", weight);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
+
+		if ( selectedElement == SHEET_WGT && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 }
 
