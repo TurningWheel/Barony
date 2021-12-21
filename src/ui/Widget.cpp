@@ -322,7 +322,15 @@ void Widget::drawPost(const SDL_Rect size, const std::vector<const Widget*>& sel
 	int y = size.y + size.h + buttonsOffset.y;
 	auto& actions = selectedWidget->getWidgetActions();
 	auto action = actions.begin();
-	if (selectedWidget == this) {
+	if ((action = actions.find("MenuConfirm")) != actions.end()) {
+		if (action->second == name) {
+			auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
+			int w = image->getWidth();
+			int h = image->getHeight();
+			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			x -= w;
+		}
+	} else if (selectedWidget == this) {
 		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
 		int w = image->getWidth();
 		int h = image->getHeight();

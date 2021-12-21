@@ -27,6 +27,7 @@ namespace MainMenu {
 	bool arachnophobia_filter = false;
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
+	bool cursor_delete_mode = false;
 
 	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
@@ -73,10 +74,11 @@ namespace MainMenu {
 		playSound(494, 48);
 	}
 
-	static inline void soundSlider() {
-#ifdef NINTENDO
-		playSound(497, 48);
-#endif
+	static inline void soundSlider(bool deafen_unless_gamepad = false) {
+	    if (inputs.getVirtualMouse(clientnum)->draw_cursor && deafen_unless_gamepad) {
+	        return;
+	    }
+	    playSound(497, 48);
 	}
 
 	static inline void soundWarning() {
@@ -85,6 +87,10 @@ namespace MainMenu {
 
 	static inline void soundError() {
 		playSound(498, 48);
+	}
+
+	static inline void soundDeleteSave() {
+		playSound(153, 48);
 	}
 
 /******************************************************************************/
@@ -261,6 +267,120 @@ namespace MainMenu {
 			});*/
 
 		return back_button;
+	}
+
+	static void binaryPrompt(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&)
+	) {
+		if (main_menu_frame->findFrame("binary_prompt")) {
+			return;
+		}
+
+		soundActivate();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto frame = dimmer->addFrame("binary_prompt");
+		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		frame->setColor(0);
+		frame->setBorder(0);
+		frame->addImage(
+			frame->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			"background"
+		);
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = frame->addButton("okay");
+		okay->setSize(SDL_Rect{58, 78, 130, 52});
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->setCallback(okay_callback);
+		okay->select();
+
+		auto cancel = frame->addButton("cancel");
+		cancel->setSize(SDL_Rect{196, 78, 108, 52});
+		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback(cancel_callback);
+	}
+
+	static void monoPrompt(
+		const char* window_text,
+		const char* okay_text,
+		void (*okay_callback)(Button&)
+	) {
+		if (main_menu_frame->findFrame("mono_prompt")) {
+			return;
+		}
+
+		soundActivate();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto frame = dimmer->addFrame("mono_prompt");
+		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		frame->setColor(0);
+		frame->setBorder(0);
+		frame->addImage(
+			frame->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			"background"
+		);
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = frame->addButton("okay");
+		okay->setSize(SDL_Rect{(frame->getActualSize().w - 108) / 2, 78, 108, 52});
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetBack("okay");
+		okay->setCallback(okay_callback);
+		okay->select();
 	}
 
 /******************************************************************************/
@@ -1235,17 +1355,17 @@ namespace MainMenu {
 
 		// inventory sort sliders
 		void (*sort_slider_callbacks[11])(Slider&) = {
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortArmor = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortBooks = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortTools = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortThrown = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortGems = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortPotions = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortStaves = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortFood = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortArmor = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortBooks = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortTools = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortThrown = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortGems = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortPotions = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortStaves = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortFood = slider.getValue(); },
 			//[](Slider& slider){ allSettings.inventory_sorting.sortEquipped = slider.getValue(); }, // Hey, we don't have enough room for this
 		};
 		const int num_sliders = sizeof(sort_slider_callbacks) / sizeof(sort_slider_callbacks[0]);
@@ -2742,14 +2862,14 @@ namespace MainMenu {
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
-			allSettings.gamma, 50, 200, true, [](Slider& slider){soundSlider(); allSettings.gamma = slider.getValue();});
+			allSettings.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.gamma = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
-			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(); allSettings.fov = slider.getValue();});
+			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
 			"Control the frame-rate limit of the game window.",
-			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(); allSettings.fps = slider.getValue();});
+			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
 #endif
 
 #ifndef NINTENDO
@@ -2797,19 +2917,19 @@ namespace MainMenu {
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
-			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.master_volume = slider.getValue();});
+			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
-			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.gameplay_volume = slider.getValue();});
+			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
-			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.ambient_volume = slider.getValue();});
+			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
-			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.environment_volume = slider.getValue();});
+			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
-			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.music_volume = slider.getValue();});
+			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
@@ -2871,7 +2991,7 @@ namespace MainMenu {
 			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 			"Control the speed by which mouse movement affects camera movement.",
-			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(); allSettings.mouse_sensitivity = slider.getValue();});
+			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
 			"Reverse mouse up and down movement for controlling the orientation of the player.",
 			allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
@@ -2894,10 +3014,10 @@ namespace MainMenu {
 #endif
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
@@ -5829,12 +5949,157 @@ namespace MainMenu {
 		tooltip->setText("Help text goes here.");
 	}
 
-	static int populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
+	static Button* savegame_selected = nullptr;
+	static bool continueSingleplayer = false;
+	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer);
+
+	static void deleteSavePrompt(bool singleplayer, int save_index) {
+	    static bool delete_singleplayer;
+	    static int delete_save_index;
+	    delete_singleplayer = singleplayer;
+	    delete_save_index = save_index;
+
+        // extract savegame info
+        auto saveGameInfo = getSaveGameInfo(singleplayer, save_index);
+        const std::string& player_name = saveGameInfo.player_name;
+
+        // create shortened player name
+        char shortened_name[20] = { '\0' };
+        int len = (int)player_name.size();
+        strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+        if (len > 16) {
+            strcat(shortened_name, "...");
+        }
+
+	    // window text
+	    char window_text[1024];
+	    snprintf(window_text, sizeof(window_text),
+	        "Are you sure you want to delete\nthe save game \"%s\"?", shortened_name);
+
+	    binaryPrompt(
+	        window_text, "Yes", "No",
+	        [](Button& button) { // Yes button
+			    soundActivate();
+			    soundDeleteSave();
+
+                // delete save game
+                (void)deleteSaveGame(delete_singleplayer ? SINGLE : SERVER, delete_save_index);
+
+                // find frame elements
+			    assert(main_menu_frame);
+		        auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+		        auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+
+                // repopulate save game window & select a new button
+			    savegame_selected = nullptr;
+	            Button* first_savegame = populateContinueSubwindow(*subwindow, delete_singleplayer);
+	            if (first_savegame) {
+	                first_savegame->select();
+	            } else {
+	                if (delete_singleplayer) {
+                        auto singleplayer = window->findButton("singleplayer");
+                        singleplayer->select();
+	                } else {
+                        auto multiplayer = window->findButton("multiplayer");
+                        multiplayer->select();
+	                }
+	            }
+
+                // remove prompt
+			    auto prompt = main_menu_frame->findFrame("binary_prompt");
+			    if (prompt) {
+				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				    dimmer->removeSelf();
+			    }
+	        },
+	        [](Button& button) { // No button
+			    soundCancel();
+			    if (savegame_selected) {
+			        savegame_selected->select();
+			    } else {
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+	                if (delete_singleplayer) {
+                        auto singleplayer = window->findButton("singleplayer");
+                        singleplayer->select();
+	                } else {
+                        auto multiplayer = window->findButton("multiplayer");
+                        multiplayer->select();
+	                }
+			    }
+			    assert(main_menu_frame);
+			    auto prompt = main_menu_frame->findFrame("binary_prompt");
+			    if (prompt) {
+				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				    dimmer->removeSelf();
+			    }
+	        }
+	    );
+	}
+
+	static void loadSavePrompt(bool singleplayer, int save_index) {
+	    static bool load_singleplayer;
+	    static int load_save_index;
+	    load_singleplayer = singleplayer;
+	    load_save_index = save_index;
+
+        // extract savegame info
+        auto saveGameInfo = getSaveGameInfo(singleplayer, save_index);
+        const std::string& player_name = saveGameInfo.player_name;
+
+        // create shortened player name
+        char shortened_name[20] = { '\0' };
+        int len = (int)player_name.size();
+        strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+        if (len > 16) {
+            strcat(shortened_name, "...");
+        }
+
+	    // window text
+	    char window_text[1024];
+	    snprintf(window_text, sizeof(window_text),
+	        "Are you sure you want to load\nthe save game \"%s\"?", shortened_name);
+
+	    binaryPrompt(
+	        window_text, "Yes", "No",
+	        [](Button& button) { // Yes button
+                soundActivate();
+                destroyMainMenu();
+                savegameCurrentFileIndex = load_save_index;
+                loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
+                beginFade(MainMenu::FadeDestination::GameStart);
+	        },
+	        [](Button& button) { // No button
+			    soundCancel();
+			    if (savegame_selected) {
+			        savegame_selected->select();
+			    } else {
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+	                if (load_singleplayer) {
+                        auto singleplayer = window->findButton("singleplayer");
+                        singleplayer->select();
+	                } else {
+                        auto multiplayer = window->findButton("multiplayer");
+                        multiplayer->select();
+	                }
+			    }
+			    assert(main_menu_frame);
+			    auto prompt = main_menu_frame->findFrame("binary_prompt");
+			    if (prompt) {
+				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				    dimmer->removeSelf();
+			    }
+	        }
+	    );
+	}
+
+	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
 		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
 		subwindow.setSize(SDL_Rect{90, 82, 898, 294});
 		subwindow.setColor(0);
 		subwindow.setBorder(0);
-	    int saveGameCount = 0;
+	    Button* first_savegame = nullptr;
         if (!anySaveFileExists(singleplayer)) {
             auto none_exists = subwindow.addField("none_exists", 256);
             none_exists->setSize(subwindow.getActualSize());
@@ -5842,17 +6107,80 @@ namespace MainMenu {
             none_exists->setText("No compatible save files found.");
             none_exists->setJustify(Field::justify_t::CENTER);
         } else {
+            int saveGameCount = 0;
 		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
                 if (saveGameExists(singleplayer, i)) {
                     auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(i);
                     auto savegame_book = subwindow.addButton(str.c_str());
-                    savegame_book->setSize(SDL_Rect{saveGameCount * 220 + (898 - 220) / 2, 0, 220, 280});
+                    savegame_book->setSize(SDL_Rect{saveGameCount * 256 + (898 - 220) / 2, 0, 220, 280});
                     savegame_book->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
 		            savegame_book->setColor(makeColor(255, 255, 255, 255));
 		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
 		            savegame_book->setFont(smallfont_outline);
 		            savegame_book->setTextColor(makeColor(255, 182, 73, 255));
 		            savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
+		            savegame_book->setTickCallback([](Widget& widget){
+	                    auto button = static_cast<Button*>(&widget);
+	                    auto frame = static_cast<Frame*>(widget.getParent());
+
+		                Input& input = Input::inputs[widget.getOwner()];
+		                bool scrolled = false;
+		                scrolled |= input.binary("MenuScrollDown");
+		                scrolled |= input.binary("MenuScrollUp");
+		                scrolled |= input.binary("MenuScrollLeft");
+		                scrolled |= input.binary("MenuScrollRight");
+		                scrolled |= input.binary("MenuMouseWheelUp");
+		                scrolled |= input.binary("MenuMouseWheelDown");
+		                if (scrolled) {
+		                    savegame_selected = nullptr;
+		                } else if (widget.isSelected() && !inputs.getVirtualMouse(clientnum)->draw_cursor) {
+		                    savegame_selected = button;
+		                }
+
+		                if (savegame_selected == &widget) {
+		                    auto frame_pos = frame->getActualSize();
+		                    auto button_size = button->getSize();
+		                    int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
+		                    if (diff > 0) {
+		                        frame_pos.x += std::max(1, diff / 8);
+		                    } else if (diff < 0) {
+		                        frame_pos.x += std::min(-1, diff / 8);
+		                    }
+		                    frame->setActualSize(frame_pos);
+		                }
+		                });
+		            savegame_book->setCallback([](Button& button){
+		                if (savegame_selected != &button) {
+		                    soundCheckmark();
+		                    savegame_selected = &button;
+		                    return;
+		                } else {
+		                    soundActivate();
+		                    int save_index = -1;
+	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	                        size_t name_len = strlen(name);
+                            save_index = (int)strtol(button.getName() + name_len, nullptr, 10);
+                            if (cursor_delete_mode) {
+                                deleteSavePrompt(continueSingleplayer, save_index);
+                            } else {
+                                loadSavePrompt(continueSingleplayer, save_index);
+                            }
+		                }
+		                });
+		            if (i > 0) {
+		                int prev;
+		                for (prev = i - 1; prev >= 0 && !saveGameExists(singleplayer, prev); --prev);
+                        auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(prev);
+                        savegame_book->setWidgetLeft(str.c_str());
+		            }
+		            if (i < SAVE_GAMES_MAX - 1) {
+		                int next;
+		                for (next = i + 1; next < SAVE_GAMES_MAX && !saveGameExists(singleplayer, next); ++next);
+                        auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
+                        savegame_book->setWidgetRight(str.c_str());
+		            }
+
+		            first_savegame = first_savegame ? first_savegame : savegame_book;
 
 		            auto saveGameInfo = getSaveGameInfo(singleplayer, i);
 
@@ -5891,7 +6219,7 @@ namespace MainMenu {
 		                "%s/savegames/%s_screenshot.png", outputdir, str.c_str());
                     if (dataPathExists(screenshot_path, false)) {
 		                auto screenshot = subwindow.addImage(
-		                    SDL_Rect{saveGameCount * 220 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                    SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
 		                    0xffffffff,
 		                    screenshot_path,
 		                    (str + "_screenshot").c_str()
@@ -5904,30 +6232,23 @@ namespace MainMenu {
 
 		            // add book overlay
 		            auto overlay = subwindow.addImage(
-		                SDL_Rect{saveGameCount * 220 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
 		                0xffffffff,
 		                "images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
 		                (str + "_overlay").c_str()
 		            );
 		            overlay->ontop = true;
 
-                    ++saveGameCount;
+		            ++saveGameCount;
                 }
 		    }
+		    subwindow.setActualSize(SDL_Rect{0, 0, 898 + 256 * (saveGameCount - 1), 294});
         }
-        if (saveGameCount > 0) {
-		    subwindow.setActualSize(SDL_Rect{0, 0, 898 + 220 * (saveGameCount - 1), 294});
-        }
-        return saveGameCount;
+        return first_savegame;
 	}
 
 	void playContinue(Button& button) {
-	    static bool continueSingleplayer;
-        if (anySaveFileExists(true)) {
-            continueSingleplayer = true;
-        } else {
-            continueSingleplayer = false;
-        }
+        continueSingleplayer = ~(!anySaveFileExists(true) && anySaveFileExists(false));
 
 		// remove "Play Game" window
 		auto frame = static_cast<Frame*>(button.getParent());
@@ -5940,7 +6261,7 @@ namespace MainMenu {
 		dimmer->setColor(makeColor(0, 0, 0, 63));
 		dimmer->setBorder(0);
 
-		// create "Local or Network" window
+		// create Continue window
 		auto window = dimmer->addFrame("continue_window");
 		window->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 1080) / 2,
@@ -5969,7 +6290,10 @@ namespace MainMenu {
 		banner_title->setJustify(Field::justify_t::CENTER);
 
 		auto subwindow = window->addFrame("subwindow");
-		(void)populateContinueSubwindow(*subwindow, continueSingleplayer);
+		auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		if (first_savegame) {
+		    first_savegame->select();
+		}
 
 		auto gradient = window->addImage(
 		    subwindow->getSize(),
@@ -5982,7 +6306,7 @@ namespace MainMenu {
 		auto singleplayer = window->addButton("singleplayer");
 		singleplayer->setText("Local Games");
 		singleplayer->setFont(smallfont_outline);
-		singleplayer->setSize(SDL_Rect{226, 36, 156, 36});
+		singleplayer->setSize(SDL_Rect{226, 38, 156, 36});
 		singleplayer->setColor(makeColor(255, 255, 255, 255));
 		singleplayer->setHighlightColor(makeColor(255, 255, 255, 255));
 		singleplayer->setTextColor(
@@ -5994,9 +6318,10 @@ namespace MainMenu {
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png" :
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
 		singleplayer->setButtonsOffset(SDL_Rect{-singleplayer->getSize().w, -singleplayer->getSize().h/2, 0, 0});
+		singleplayer->setWidgetRight("multiplayer");
 		singleplayer->setWidgetBack("back");
 		singleplayer->addWidgetAction("MenuAlt2", "delete");
-		//singleplayer->addWidgetAction("MenuConfirm", "enter");
+		singleplayer->addWidgetAction("MenuConfirm", "enter");
 		singleplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		singleplayer->addWidgetAction("MenuPageRight", "multiplayer");
 		singleplayer->setCallback([](Button& button){
@@ -6010,18 +6335,25 @@ namespace MainMenu {
             Frame* subwindow = window->findFrame("subwindow");
             subwindow->removeSelf();
             subwindow = window->addFrame("subwindow");
-		    (void)populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    if (first_savegame) {
+		        first_savegame->select();
+		    }
 		    auto slider = window->findSlider("slider");
-		    const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
-		    slider->setMinValue(0.f);
-		    slider->setValue(0.f);
-		    slider->setMaxValue(sliderMaxSize);
+		    if (slider) {
+		        const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+		        slider->setMinValue(0.f);
+		        slider->setValue(0.f);
+		        slider->setMaxValue(sliderMaxSize);
+	        }
+		    cursor_delete_mode = false;
+			savegame_selected = nullptr;
 		    });
 
 		auto multiplayer = window->addButton("multiplayer");
 		multiplayer->setText("Online + LAN");
 		multiplayer->setFont(smallfont_outline);
-		multiplayer->setSize(SDL_Rect{702, 36, 144, 36});
+		multiplayer->setSize(SDL_Rect{702, 38, 144, 36});
 		multiplayer->setColor(makeColor(255, 255, 255, 255));
 		multiplayer->setHighlightColor(makeColor(255, 255, 255, 255));
 		multiplayer->setTextColor(
@@ -6033,9 +6365,10 @@ namespace MainMenu {
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png" :
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
 		multiplayer->setButtonsOffset(SDL_Rect{0, -singleplayer->getSize().h/2, 0, 0});
+		multiplayer->setWidgetLeft("singleplayer");
 		multiplayer->setWidgetBack("back");
 		multiplayer->addWidgetAction("MenuAlt2", "delete");
-		//multiplayer->addWidgetAction("MenuConfirm", "enter");
+		multiplayer->addWidgetAction("MenuConfirm", "enter");
 		multiplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		multiplayer->addWidgetAction("MenuPageRight", "multiplayer");
 		multiplayer->setCallback([](Button& button){
@@ -6049,12 +6382,19 @@ namespace MainMenu {
             Frame* subwindow = window->findFrame("subwindow");
             subwindow->removeSelf();
             subwindow = window->addFrame("subwindow");
-		    (void)populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    if (first_savegame) {
+		        first_savegame->select();
+		    }
 		    auto slider = window->findSlider("slider");
-		    const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
-		    slider->setMinValue(0.f);
-		    slider->setValue(0.f);
-		    slider->setMaxValue(sliderMaxSize);
+		    if (slider) {
+		        const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+		        slider->setMinValue(0.f);
+		        slider->setValue(0.f);
+		        slider->setMaxValue(sliderMaxSize);
+		    }
+		    cursor_delete_mode = false;
+			savegame_selected = nullptr;
 		    });
 
 		auto delete_button = window->addButton("delete");
@@ -6066,9 +6406,49 @@ namespace MainMenu {
 		delete_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
 		delete_button->setWidgetBack("back");
 		delete_button->addWidgetAction("MenuAlt2", "delete");
-		//delete_button->addWidgetAction("MenuConfirm", "enter");
+		delete_button->addWidgetAction("MenuConfirm", "enter");
 		delete_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		delete_button->addWidgetAction("MenuPageRight", "multiplayer");
+		delete_button->setCallback([](Button& button){
+	        int save_index = -1;
+	        if (savegame_selected) {
+	            const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	            size_t name_len = strlen(name);
+	            if (strncmp(savegame_selected->getName(), name, name_len) == 0) {
+                    save_index = (int)strtol(savegame_selected->getName() + name_len, nullptr, 10);
+	            }
+	        }
+	        if (save_index >= 0) {
+	            deleteSavePrompt(continueSingleplayer, save_index);
+	        } else {
+	            monoPrompt(
+	                "Select a savegame to delete first.",
+	                "Okay",
+	                [](Button& button){
+			            soundCancel();
+			            if (savegame_selected) {
+			                savegame_selected->select();
+			            } else {
+			                assert(main_menu_frame);
+		                    auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+	                        if (continueSingleplayer) {
+                                auto singleplayer = window->findButton("singleplayer");
+                                singleplayer->select();
+	                        } else {
+                                auto multiplayer = window->findButton("multiplayer");
+                                multiplayer->select();
+	                        }
+			            }
+			            assert(main_menu_frame);
+			            auto prompt = main_menu_frame->findFrame("mono_prompt");
+			            if (prompt) {
+				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				            dimmer->removeSelf();
+			            }
+	                }
+	            );
+	        }
+		    });
 
 		auto enter_button = window->addButton("enter");
 		enter_button->setText("Enter Dungeon");
@@ -6079,65 +6459,112 @@ namespace MainMenu {
 		enter_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
 		enter_button->setWidgetBack("back");
 		enter_button->addWidgetAction("MenuAlt2", "delete");
-		//enter_button->addWidgetAction("MenuConfirm", "enter");
+		enter_button->addWidgetAction("MenuConfirm", "enter");
 		enter_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		enter_button->addWidgetAction("MenuPageRight", "multiplayer");
+		enter_button->setCallback([](Button& button){
+	        int save_index = -1;
+	        if (savegame_selected) {
+	            const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	            size_t name_len = strlen(name);
+	            if (strncmp(savegame_selected->getName(), name, name_len) == 0) {
+                    save_index = (int)strtol(savegame_selected->getName() + name_len, nullptr, 10);
+	            }
+	        }
+	        if (save_index >= 0) {
+	            loadSavePrompt(continueSingleplayer, save_index);
+	        } else {
+                monoPrompt(
+                    "Select a savegame to load first.",
+                    "Okay",
+                    [](Button& button){
+		                soundCancel();
+		                if (savegame_selected) {
+		                    savegame_selected->select();
+		                } else {
+			                assert(main_menu_frame);
+		                    auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+                            if (continueSingleplayer) {
+                                auto singleplayer = window->findButton("singleplayer");
+                                singleplayer->select();
+                            } else {
+                                auto multiplayer = window->findButton("multiplayer");
+                                multiplayer->select();
+                            }
+		                }
+		                assert(main_menu_frame);
+		                auto prompt = main_menu_frame->findFrame("mono_prompt");
+		                if (prompt) {
+			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                dimmer->removeSelf();
+		                }
+                    }
+                );
+	        }
+		    });
 
 		const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
 
-		auto slider = window->addSlider("slider");
-		slider->setHandleSize(SDL_Rect{0, 0, 98, 16});
-		slider->setHandleImage("images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderBar_00.png");
-		slider->setRailSize(SDL_Rect{129, 374, 820, 16});
-		slider->setRailImage("__empty");
-		slider->setMinValue(0.f);
-		slider->setValue(0.f);
-		slider->setMaxValue(sliderMaxSize);
-		slider->setTickCallback([](Widget& widget){
-		    auto slider = static_cast<Slider*>(&widget);
-		    auto frame = static_cast<Frame*>(slider->getParent());
-		    auto subwindow = frame->findFrame("subwindow");
-		    auto slider_left = frame->findImage("slider_left");
-		    auto slider_right = frame->findImage("slider_right");
-		    if (slider->isActivated()) {
-		        slider_left->pos.x = slider->getHandleSize().x - 20;
-		        slider_right->pos.x = slider->getHandleSize().x + slider->getHandleSize().w;
-		        slider_left->disabled = false;
-		        slider_right->disabled = false;
-		    } else {
-		        slider_left->disabled = true;
-		        slider_right->disabled = true;
-		    }
-		    auto size = subwindow->getActualSize();
-		    slider->setValue(size.x);
-		});
-		slider->setCallback([](Slider& slider){
-		    auto frame = static_cast<Frame*>(slider.getParent());
-		    auto subwindow = frame->findFrame("subwindow");
-		    auto size = subwindow->getActualSize();
-		    size.x = slider.getValue();
-		    subwindow->setActualSize(size);
+        Slider* slider = nullptr;
+		//slider = window->addSlider("slider");
+		if (slider) {
+		    slider->setHandleSize(SDL_Rect{0, 0, 98, 16});
+		    slider->setHandleImage("images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderBar_00.png");
+		    slider->setRailSize(SDL_Rect{129, 374, 820, 16});
+		    slider->setRailImage("__empty");
+		    slider->setMinValue(0.f);
+		    slider->setValue(0.f);
+		    slider->setMaxValue(sliderMaxSize);
+		    slider->setTickCallback([](Widget& widget){
+		        auto slider = static_cast<Slider*>(&widget);
+		        auto frame = static_cast<Frame*>(slider->getParent());
+		        auto subwindow = frame->findFrame("subwindow");
+		        auto size = subwindow->getActualSize();
+		        slider->setValue(size.x);
+
+		        /*auto slider_left = frame->findImage("slider_left");
+		        auto slider_right = frame->findImage("slider_right");
+	            slider_left->pos.x = slider->getHandleSize().x - 20;
+	            slider_right->pos.x = slider->getHandleSize().x + slider->getHandleSize().w;
+		        if (slider->isActivated()) {
+		            slider_left->disabled = false;
+		            slider_right->disabled = false;
+		        } else {
+		            slider_left->disabled = true;
+		            slider_right->disabled = true;
+		        }*/
 		    });
+		    slider->setCallback([](Slider& slider){
+		        auto frame = static_cast<Frame*>(slider.getParent());
+		        auto subwindow = frame->findFrame("subwindow");
+		        auto size = subwindow->getActualSize();
+		        size.x = slider.getValue();
+		        subwindow->setActualSize(size);
+		        savegame_selected = nullptr;
+		        });
 
-		auto slider_left = window->addImage(
-		    SDL_Rect{0, 354, 20, 30},
-		    0xffffffff,
-		    "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderL_00.png",
-		    "slider_left"
-		);
-		slider_left->ontop = true;
-		slider_left->disabled = true;
+		    auto slider_left = window->addImage(
+		        SDL_Rect{0, 354, 20, 30},
+		        0xffffffff,
+		        "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderL_00.png",
+		        "slider_left"
+		    );
+		    slider_left->ontop = true;
+		    slider_left->disabled = true;
 
-		auto slider_right = window->addImage(
-		    SDL_Rect{0, 354, 20, 30},
-		    0xffffffff,
-		    "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderR_00.png",
-		    "slider_right"
-		);
-		slider_right->ontop = true;
-		slider_right->disabled = true;
+		    auto slider_right = window->addImage(
+		        SDL_Rect{0, 354, 20, 30},
+		        0xffffffff,
+		        "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderR_00.png",
+		        "slider_right"
+		    );
+		    slider_right->ontop = true;
+		    slider_right->disabled = true;
+	    }
 
 		(void)createBackWidget(window, [](Button& button){
+			cursor_delete_mode = false;
+			savegame_selected = nullptr;
 			soundCancel();
 			auto frame = static_cast<Frame*>(button.getParent());
 			frame = static_cast<Frame*>(frame->getParent());
@@ -6548,73 +6975,8 @@ namespace MainMenu {
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 	}
 
-	void quitConfirmWindow(
-		const char* window_text,
-		const char* okay_text,
-		const char* cancel_text,
-		void (*okay_callback)(Button&),
-		void (*cancel_callback)(Button&)
-	) {
-		if (main_menu_frame->findFrame("quit_confirm")) {
-			return;
-		}
-
-		soundActivate();
-
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(makeColor(0, 0, 0, 63));
-		dimmer->setBorder(0);
-
-		auto frame = dimmer->addFrame("quit_confirm");
-		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
-		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
-		frame->setColor(0);
-		frame->setBorder(0);
-		frame->addImage(
-			frame->getActualSize(),
-			0xffffffff,
-			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
-			"background"
-		);
-
-		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 28, 304, 46});
-		text->setFont(smallfont_no_outline);
-		text->setText(window_text);
-		text->setJustify(Field::justify_t::CENTER);
-
-		auto okay = frame->addButton("okay");
-		okay->setSize(SDL_Rect{58, 78, 130, 52});
-		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
-		okay->setColor(makeColor(255, 255, 255, 255));
-		okay->setHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setTextColor(makeColor(255, 255, 255, 255));
-		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setFont(smallfont_outline);
-		okay->setText(okay_text);
-		okay->setWidgetRight("cancel");
-		okay->setWidgetBack("cancel");
-		okay->select();
-		okay->setCallback(okay_callback);
-
-		auto cancel = frame->addButton("cancel");
-		cancel->setSize(SDL_Rect{196, 78, 108, 52});
-		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		cancel->setColor(makeColor(255, 255, 255, 255));
-		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setTextColor(makeColor(255, 255, 255, 255));
-		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setFont(smallfont_outline);
-		cancel->setText(cancel_text);
-		cancel->setWidgetLeft("okay");
-		cancel->setWidgetBack("cancel");
-		cancel->setCallback(cancel_callback);
-	}
-
 	void mainEndLife(Button& button) {
-		quitConfirmWindow(
+		binaryPrompt(
 			"Are you sure you want to die?\nThere is no return from this.", // window text
 			"End Life", // okay text
 			"Cancel", // cancel text
@@ -6629,7 +6991,7 @@ namespace MainMenu {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("END LIFE"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6638,7 +7000,7 @@ namespace MainMenu {
 	}
 
 	void mainRestartGame(Button& button) {
-		quitConfirmWindow(
+		binaryPrompt(
 			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
 			"Restart", // okay text
 			"Cancel", // cancel text
@@ -6658,7 +7020,7 @@ namespace MainMenu {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6667,7 +7029,7 @@ namespace MainMenu {
 	}
 
 	void mainQuitToMainMenu(Button& button) {
-		quitConfirmWindow(
+		binaryPrompt(
 			"All progress before the current\ndungeon level will be saved.", // window text
 			"Quit to Menu", // okay text
 			"Cancel", // cancel text
@@ -6684,7 +7046,7 @@ namespace MainMenu {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6715,7 +7077,7 @@ namespace MainMenu {
 			quit_motd = rand() % num_quit_messages;
 		}
 
-		quitConfirmWindow(
+		binaryPrompt(
 			quit_messages[quit_motd][0], // window text
 			quit_messages[quit_motd][1], // okay text
 			quit_messages[quit_motd][2], // cancel text
@@ -6733,7 +7095,7 @@ namespace MainMenu {
 				}
 				assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -7086,6 +7448,7 @@ namespace MainMenu {
 			main_menu_frame->removeSelf();
 			main_menu_frame = nullptr;
 		}
+		cursor_delete_mode = false;
 	}
 
 	void createDummyMainMenu() {

@@ -5755,6 +5755,16 @@ int main(int argc, char** argv)
 								pos.w = cursor->getWidth();
 								pos.h = cursor->getHeight();
 								cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+
+								if (MainMenu::cursor_delete_mode)
+								{
+								    auto icon = Image::get("images/system/Broken.png");
+								    pos.x = pos.x + pos.w;
+								    pos.y = pos.y + pos.h;
+								    pos.w = icon->getWidth() * 2;
+								    pos.h = icon->getHeight() * 2;
+								    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+								}
 							}
 						}
 #endif
