@@ -5992,9 +5992,12 @@ namespace MainMenu {
 
                 // repopulate save game window & select a new button
 			    savegame_selected = nullptr;
+                subwindow->removeSelf();
+                subwindow = window->addFrame("subwindow");
 	            Button* first_savegame = populateContinueSubwindow(*subwindow, delete_singleplayer);
 	            if (first_savegame) {
 	                first_savegame->select();
+		            savegame_selected = first_savegame;
 	            } else {
 	                if (delete_singleplayer) {
                         auto singleplayer = window->findButton("singleplayer");
@@ -6214,18 +6217,16 @@ namespace MainMenu {
 		            savegame_book->setJustify(Button::justify_t::LEFT);
 
 		            // add savegame screenshot
-		            char screenshot_path[256];
-		            snprintf(screenshot_path, sizeof(screenshot_path),
-		                "%s/savegames/%s_screenshot.png", outputdir, str.c_str());
-                    if (dataPathExists(screenshot_path, false)) {
+		            auto screenshot_path = setSaveGameFileName(singleplayer, SaveFileType::SCREENSHOT, i);
+                    if (dataPathExists(screenshot_path.c_str(), false)) {
 		                auto screenshot = subwindow.addImage(
 		                    SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
 		                    0xffffffff,
-		                    screenshot_path,
+		                    screenshot_path.c_str(),
 		                    (str + "_screenshot").c_str()
 		                );
 		                screenshot->ontop = true;
-		                Image* image = Image::get(screenshot_path); assert(image);
+		                Image* image = Image::get(screenshot_path.c_str()); assert(image);
 		                screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 		                screenshot->section.w = image->getHeight();
 		            }
@@ -6295,6 +6296,7 @@ namespace MainMenu {
 		auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
 		if (first_savegame) {
 		    first_savegame->select();
+		    savegame_selected = first_savegame;
 		}
 
 		auto gradient = window->addImage(
@@ -6340,6 +6342,7 @@ namespace MainMenu {
 		    auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
 		    if (first_savegame) {
 		        first_savegame->select();
+		        savegame_selected = first_savegame;
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -6387,6 +6390,7 @@ namespace MainMenu {
 		    auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
 		    if (first_savegame) {
 		        first_savegame->select();
+		        savegame_selected = first_savegame;
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -7240,12 +7244,14 @@ namespace MainMenu {
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 					setupSplitscreen();
-		            for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
-                        if (!saveGameExists(multiplayer == SINGLE, i)) {
-                            savegameCurrentFileIndex = i;
-                            break;
+					if (!loadingsavegame) {
+		                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                            if (!saveGameExists(multiplayer == SINGLE, i)) {
+                                savegameCurrentFileIndex = i;
+                                break;
+                            }
                         }
-                    }
+					}
 					doNewGame(false);
 					destroyMainMenu();
 				}

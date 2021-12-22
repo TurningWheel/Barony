@@ -68,10 +68,14 @@ GameController::GameController()
 
 GameController::~GameController()
 {
-	if ( sdl_device )
+    // this crashes because the array containing these controllers
+    // doesn't get purged until program exit, after SDL has deinited.
+    // When SDL closes, all devices are safely closed anyway, so
+    // maybe this is redundant?
+	/*if ( sdl_device )
 	{
 		close();
-	}
+	}*/
 }
 
 void GameController::close()

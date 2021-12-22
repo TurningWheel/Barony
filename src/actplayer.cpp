@@ -2371,12 +2371,8 @@ void actPlayer(Entity* my)
 		    if (PLAYER_ALIVETIME == 300)
 		    {
 		        // take a screenshot to be associated with the current save game
-                auto str = std::string(multiplayer == SINGLE ? "savegame" : "savegame_multiplayer")
-                    + std::to_string(savegameCurrentFileIndex);
-	            char screenshot_path[256];
-	            snprintf(screenshot_path, sizeof(screenshot_path),
-	                "%s/savegames/%s_screenshot.png", outputdir, str.c_str());
-		        takeScreenshot(screenshot_path);
+	            auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
+		        takeScreenshot(screenshot_path.c_str());
 		    }
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )

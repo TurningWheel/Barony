@@ -1280,11 +1280,11 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -1749,11 +1749,11 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -2015,11 +2015,11 @@ int loadGame(int player, int saveIndex)
 	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -2379,7 +2379,7 @@ int loadGame(int player, int saveIndex)
 		}
 	}
 
-	if ( players[c]->isLocalPlayer() )
+	if ( players[player]->isLocalPlayer() )
 	{
 		// inventory
 		int numitems = 0;
@@ -2656,11 +2656,11 @@ list_t* loadGameFollowers(int saveIndex)
 	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -2882,56 +2882,35 @@ int deleteSaveGame(int gametype, int saveIndex)
 {
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	if ( gametype == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	completePath(path, savefile, outputdir);
+	int result = 0;
 
-	if (access(path, F_OK) != -1)
-	{
-		printlog("deleting savegame in '%s'...\n", path);
-		int result = remove(path);
-		if (result)
-		{
-			printlog("warning: failed to delete savegame in '%s'!\n", path);
+    for (int c = 0; c < static_cast<int>(SaveFileType::SIZE_OF_TYPE); ++c)
+    {
+	    if ( gametype == SINGLE )
+	    {
+		    strncpy(savefile, setSaveGameFileName(true, static_cast<SaveFileType>(c), saveIndex).c_str(), PATH_MAX - 1);
+	    }
+	    else
+	    {
+		    strncpy(savefile, setSaveGameFileName(false, static_cast<SaveFileType>(c), saveIndex).c_str(), PATH_MAX - 1);
+	    }
+	    completePath(path, savefile, outputdir);
+	    if (access(path, F_OK) != -1)
+	    {
+		    printlog("deleting savegame in '%s'...\n", path);
+		    int r = remove(path);
+		    if (r)
+		    {
+		        result |= r;
+			    printlog("warning: failed to delete savegame in '%s'!\n", path);
 #ifdef _MSC_VER
-			printlog(strerror(errno));
+			    printlog(strerror(errno));
 #endif
-		}
+		    }
+	    }
 	}
 
-	if ( gametype == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
-	}
-	completePath(path, savefile, outputdir);
-
-	if (access(path, F_OK) != -1)
-	{
-		printlog("deleting savegame in '%s'...\n", path);
-		int result = remove(path);
-		if (result)
-		{
-			printlog("warning: failed to delete savegame in '%s'!\n", path);
-#ifdef _MSC_VER
-			printlog(strerror(errno));
-#endif
-		}
-		return result;
-	}
-	else
-	{
-		return 0;
-	}
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2946,7 +2925,7 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 {
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	if ( access(path, F_OK ) == -1 )
@@ -3000,7 +2979,7 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3223,7 +3202,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3449,7 +3428,7 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 	Uint32 gameKey;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3498,7 +3477,7 @@ int getSaveGameVersionNum(bool singleplayer, int saveIndex)
 	File* fp;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3543,7 +3522,7 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 	int mul;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3594,7 +3573,7 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 	int clientnum;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3646,7 +3625,7 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 	Uint32 seed;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -4093,7 +4072,7 @@ void updateGameplayStatisticsInMainLoop()
 	}
 }
 
-std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex)
+std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIndex)
 {
 	std::string filename = "savegames/savegame" + std::to_string(saveIndex);
 
@@ -4107,7 +4086,7 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 	//#define SAVEGAMEFILE_MODDED_MULTIPLAYER "savegame_modded_multiplayer.dat"
 	//#define SAVEGAMEFILE2_MODDED_MULTIPLAYER "savegame2_modded_multiplayer.dat"
 
-	if ( !followersFile )
+	if ( type == SaveFileType::MAIN )
 	{
 		if ( singleplayer )
 		{
@@ -4132,7 +4111,7 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 			}
 		}
 	}
-	else
+	else if ( type == SaveFileType::FOLLOWERS )
 	{
 		if ( singleplayer )
 		{
@@ -4156,6 +4135,33 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 				filename.append("_mp_npcs_modded.dat");
 			}
 		}
+	}
+	else if ( type == SaveFileType::SCREENSHOT )
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				filename.append("_screenshot.png");
+			}
+			else
+			{
+				filename.append("_screenshot_modded.png");
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				filename.append("_mp_screenshot.png");
+			}
+			else
+			{
+				filename.append("_mp_screenshot_modded.png");
+			}
+		}
+		filename.insert(0, "/");
+		filename.insert(0, outputdir);
 	}
 	return filename;
 }

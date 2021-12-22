@@ -275,6 +275,13 @@ extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
 extern bool achievementRangedMode[MAXPLAYERS];
 
+enum SaveFileType {
+    MAIN,
+    FOLLOWERS,
+    SCREENSHOT,
+    SIZE_OF_TYPE
+};
+
 score_t* scoreConstructor();
 void scoreDeconstructor(void* data);
 int saveScore();
@@ -283,7 +290,7 @@ void loadScore(int score);
 void saveAllScores(const std::string& scoresfilename);
 void loadAllScores(const std::string& scoresfilename);
 extern int savegameCurrentFileIndex;
-std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex = savegameCurrentFileIndex);
+std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIndex = savegameCurrentFileIndex);
 int saveGame(int saveIndex = savegameCurrentFileIndex);
 int loadGame(int player, int saveIndex = savegameCurrentFileIndex);
 list_t* loadGameFollowers(int saveIndex = savegameCurrentFileIndex);

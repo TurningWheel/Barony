@@ -51,6 +51,7 @@
 #include "ui/Text.hpp"
 #include "ui/Font.hpp"
 #include "ui/MainMenu.hpp"
+#include "ui/Image.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -10690,13 +10691,13 @@ void doNewGame(bool makeHighscore) {
 		// reset class loadout
 		if ( !loadingsavegame )
 		{
-			stats[0]->clearStats();
-			initClass(0);
+			stats[clientnum]->clearStats();
+			initClass(clientnum);
 			mapseed = 0;
 		}
 		else
 		{
-			loadGame(0);
+			loadGame(clientnum);
 		}
 
 		// hack to fix these things from breaking everything...
@@ -11508,6 +11509,10 @@ void doEndgame() {
 	introstage = 1;
 	intro = true;
 	splitscreen = false;
+
+    // this is done so that save game screenshots get reloaded after the game
+    // is done.
+	Image::dumpCache();
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -14974,7 +14979,7 @@ void reloadSavegamesList(bool showWindow)
 			struct tm *tm = nullptr;
 			char path[PATH_MAX] = "";
 			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
+			strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, fileNumber).c_str(), PATH_MAX - 1);
 			completePath(path, savefile, outputdir);
 #ifdef WINDOWS
 			struct _stat result;
@@ -15010,7 +15015,7 @@ void reloadSavegamesList(bool showWindow)
 			struct tm *tm = nullptr;
 			char path[PATH_MAX] = "";
 			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(false, false, fileNumber).c_str(), PATH_MAX - 1);
+			strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, fileNumber).c_str(), PATH_MAX - 1);
 			completePath(path, savefile, outputdir);
 #ifdef WINDOWS
 			struct _stat result;
