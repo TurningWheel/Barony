@@ -74,17 +74,16 @@ void actDeathCam(Entity* my)
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
 
-	real_t mousex_relative = mousexrel;
-	real_t mousey_relative = mouseyrel;
-
-	mousex_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_XREL);
-	mousey_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_YREL);
-
-	real_t mouse_speed = mousespeed;
-	if ( inputs.getVirtualMouse(DEATHCAM_PLAYERNUM)->lastMovementFromController )
-	{
-		mouse_speed = 32.0;
+	real_t mousex_relative = 0.f;
+	real_t mousey_relative = 0.f;
+	Input& input = Input::inputs[DEATHCAM_PLAYERNUM];
+	const char* binding = input.binding("Move Forward");
+	if (strncmp(binding, "Pad", 3) && strncmp(binding, "Joy", 3)) {
+	    mousex_relative = mousexrel;
+	    mousey_relative = mouseyrel;
 	}
+	mousex_relative += (input.analog("Turn Right") - input.analog("Turn Left")) * gamepad_rightx_sensitivity;
+	mousey_relative += (input.analog("Look Down") - input.analog("Look Up")) * gamepad_righty_sensitivity;
 
 	if ( DEATHCAM_TIME == 1 )
 	{
@@ -121,12 +120,12 @@ void actDeathCam(Entity* my)
 	{
 		if ( smoothmouse )
 		{
-			DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+			DEATHCAM_ROTX += mousex_relative * .006 * (mousespeed / 128.f);
 			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
 		}
 		else
 		{
-			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
 		}
 		my->yaw += DEATHCAM_ROTX;
 		if ( my->yaw >= PI * 2 )
@@ -140,12 +139,12 @@ void actDeathCam(Entity* my)
 
 		if ( smoothmouse )
 		{
-			DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+			DEATHCAM_ROTY += mousey_relative * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
 		}
 		else
 		{
-			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 		}
 		my->pitch -= DEATHCAM_ROTY;
 		if ( my->pitch > PI / 2 )
@@ -238,20 +237,15 @@ void actDeathCam(Entity* my)
 	{
 		// do nothing if still alive
 	}
-	else if ((*inputPressedForPlayer(DEATHCAM_PLAYERNUM, impulses[IN_ATTACK]) || (shootmode && inputs.bControllerInputPressed(DEATHCAM_PLAYERNUM, INJOY_GAME_ATTACK))) && shootmode)
+	else if (input.consumeBinaryToggle("Attack") && shootmode)
 	{
-		*inputPressedForPlayer(DEATHCAM_PLAYERNUM, impulses[IN_ATTACK]) = 0;
-		if ( shootmode )
-		{
-			inputs.controllerClearInput(DEATHCAM_PLAYERNUM, INJOY_GAME_ATTACK);
-		}
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
 		{
 			DEATHCAM_PLAYERTARGET = 0;
 		}
 		int c = 0;
-		while (!players[DEATHCAM_PLAYERTARGET] || !players[DEATHCAM_PLAYERTARGET]->entity)   //TODO: PLAYERSWAP VERIFY. I'm not sure if the loop's condition should look like this. I think it should be fine...
+		while (!players[DEATHCAM_PLAYERTARGET] || !players[DEATHCAM_PLAYERTARGET]->entity)
 		{
 			if (c > MAXPLAYERS)
 			{
@@ -510,17 +504,16 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	Entity* my = players[player.playernum]->entity;
 	int playernum = player.playernum;
 
-	real_t mousex_relative = mousexrel;
-	real_t mousey_relative = mouseyrel;
-
-	mousex_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_XREL);
-	mousey_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_YREL);
-
-	real_t mouse_speed = mousespeed;
-	if ( inputs.getVirtualMouse(PLAYER_NUM)->lastMovementFromController )
-	{
-		mouse_speed = 32.0;
+	real_t mousex_relative = 0.f;
+	real_t mousey_relative = 0.f;
+	Input& input = Input::inputs[playernum];
+	const char* binding = input.binding("Move Forward");
+	if (strncmp(binding, "Pad", 3) && strncmp(binding, "Joy", 3)) {
+	    mousex_relative = mousexrel;
+	    mousey_relative = mouseyrel;
 	}
+	mousex_relative += (input.analog("Turn Right") - input.analog("Turn Left")) * gamepad_rightx_sensitivity;
+	mousey_relative += (input.analog("Look Down") - input.analog("Look Up")) * gamepad_righty_sensitivity;
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -529,9 +522,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	if ( players[playernum]->shootmode && !command )
 	{
-		if ( inputs.bControllerInputPressed(playernum, INJOY_MENU_CHEST_GRAB_ALL) )
+		if ( input.consumeBinaryToggle("Quick Turn") )
 		{
-			inputs.controllerClearInput(playernum, INJOY_MENU_CHEST_GRAB_ALL);
 			startQuickTurn();
 		}
 	}
@@ -543,16 +535,16 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 		{
 			if ( noclip )
 			{
-				my->z -= (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL])) * .25 * refreshRateDelta;
+				my->z -= (input.analog("Turn Right") - input.analog("Turn Left")) * .25 * refreshRateDelta;
 			}
 			else
 			{
-				my->yaw += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL])) * .05 * refreshRateDelta;
+				my->yaw += (input.analog("Turn Right") - input.analog("Turn Left")) * .05 * refreshRateDelta;
 			}
 		}
 		else
 		{
-			my->yaw += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNL]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_TURNR])) * .05 * refreshRateDelta;
+			my->yaw += (input.analog("Turn Left") - input.analog("Turn Right")) * .05 * refreshRateDelta;
 		}
 	}
 	bool shootmode = players[PLAYER_NUM]->shootmode;
@@ -569,7 +561,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+					PLAYER_ROTX += mousex_relative * .006 * (mousespeed / 128.f);
 				}
 				if ( !disablemouserotationlimit )
 				{
@@ -583,11 +575,11 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				{
 					if ( disablemouserotationlimit )
 					{
-						PLAYER_ROTX = mousex_relative * .01f * (mouse_speed / 128.f);
+						PLAYER_ROTX = mousex_relative * .01f * (mousespeed / 128.f);
 					}
 					else
 					{
-						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 				}
 				else
@@ -602,7 +594,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTX -= mousex_relative * .006f * (mouse_speed / 128.f);
+					PLAYER_ROTX -= mousex_relative * .006f * (mousespeed / 128.f);
 				}
 				if ( !disablemouserotationlimit )
 				{
@@ -616,11 +608,11 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				{
 					if ( disablemouserotationlimit )
 					{
-						PLAYER_ROTX = -mousex_relative * .01f * (mouse_speed / 128.f);
+						PLAYER_ROTX = -mousex_relative * .01f * (mousespeed / 128.f);
 					}
 					else
 					{
-						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 				}
 				else
@@ -655,11 +647,11 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
-			my->pitch += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_DOWN]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_UP])) * .05 * refreshRateDelta;
+			my->pitch += (input.analog("Look Down") - input.analog("Look Up")) * .05 * refreshRateDelta;
 		}
 		else
 		{
-			my->pitch += (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_UP]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_DOWN])) * .05 * refreshRateDelta;
+			my->pitch += (input.analog("Look Up") - input.analog("Look Down")) * .05 * refreshRateDelta;
 		}
 	}
 	if ( shootmode && !gamePaused )
@@ -670,7 +662,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+					PLAYER_ROTY += mousey_relative * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
 				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
@@ -680,7 +672,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				if ( my->isMobile() )
 				{
 					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
-						mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+						mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 				}
 				else
 				{
@@ -694,7 +686,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			{
 				if ( my->isMobile() )
 				{
-					PLAYER_ROTY -= mousey_relative * .006f * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+					PLAYER_ROTY -= mousey_relative * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 				}
 				PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
 				PLAYER_ROTY *= pow(0.5, refreshRateDelta);
@@ -704,7 +696,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 				if ( my->isMobile() )
 				{
 					PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, 
-						mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+						mousey_relative * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 				}
 				else
 				{
@@ -797,6 +789,8 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 	Entity* my = players[player.playernum]->entity;
 	int playernum = player.playernum;
 
+	Input& input = Input::inputs[playernum];
+
 	bool swimming = isPlayerSwimming();
 
 	double refreshRateDelta = 1.0;
@@ -819,13 +813,9 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( ((*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD])
-				|| *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))
-				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]))
-				|| (inputs.hasController(PLAYER_NUM) 
-					&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-						|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())))
-			&& !command && !swimming )
+		else if (((input.binary("Move Forward") || input.binary("Move Backward"))
+				|| (input.analog("Move Left") - input.analog("Move Right")))
+			    && !command && !swimming )
 		{
 			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
 			{
@@ -857,14 +847,14 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 			PLAYER_BOBMODE = 0;
 		}
 
-		if ( !command && !swimming && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT])) )
+		if ( !command && !swimming && (input.analog("Move Left") - input.analog("Move Right")) )
 		{
-			if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) && !(*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK])))
-				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))) )
+			if ((input.binary("Move Right") && !input.binary("Move Backward")) ||
+			    (input.binary("Move Left") && input.binary("Move Backward")))
 			{
 				PLAYER_SIDEBOB += 0.01 * refreshRateDelta;
 				real_t angle = PI / 32;
-				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
+				if ( input.binary("Move Backward") )
 				{
 					angle = PI / 64;
 				}
@@ -873,12 +863,12 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 					PLAYER_SIDEBOB = angle;
 				}
 			}
-			else if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && !(*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK])))
-				|| (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]))) )
+			else if ((input.binary("Move Left") && !input.binary("Move Backward")) ||
+				(input.binary("Move Right") && input.binary("Move Backward")))
 			{
 				PLAYER_SIDEBOB -= 0.01 * refreshRateDelta;
 				real_t angle = -PI / 32;
-				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
+				if ( input.binary("Move Backward") )
 				{
 					angle = -PI / 64;
 				}
@@ -1054,6 +1044,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	Entity* my = players[player.playernum]->entity;
 
+	Input& input = Input::inputs[player.playernum];
+
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
 	{
@@ -1103,45 +1095,21 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 			{
 				//Normal controls.
-				x_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]));
-				y_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) - (double)* inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) * backpedalMultiplier);
-				if ( noclip )
-				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] )
-					{
-						x_force = x_force * 0.5;
-						y_force = y_force * 0.5;
-					}
-				}
+				x_force = input.analog("Move Right") - input.analog("Move Left");
+				y_force = input.analog("Move Forward") - input.analog("Move Backward") * backpedalMultiplier;
 			}
 			else
 			{
 				//Confused controls.
-				x_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) - *inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]));
-				y_force = (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) - (double)* inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) * backpedalMultiplier);
+				x_force = input.analog("Move Left") - input.analog("Move Right");
+				y_force = input.analog("Move Backward") - input.analog("Move Forward") * backpedalMultiplier;
 			}
-
-			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_LEFT]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_RIGHT]) )
+			if ( noclip )
 			{
-				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement();
-
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				if ( keystatus[SDL_SCANCODE_LSHIFT] )
 				{
-					x_force *= -1;
-				}
-			}
-			if ( inputs.hasController(PLAYER_NUM) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FORWARD]) && !*inputPressedForPlayer(PLAYER_NUM, impulses[IN_BACK]) )
-			{
-				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement();
-
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-				{
-					y_force *= -1;
-				}
-
-				if ( y_force < 0 )
-				{
-					y_force *= backpedalMultiplier;    //Move backwards more slowly.
+					x_force = x_force * 0.5;
+					y_force = y_force * 0.5;
 				}
 			}
 		}
@@ -2400,6 +2368,12 @@ void actPlayer(Entity* my)
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
+		    if (PLAYER_ALIVETIME == 300)
+		    {
+		        // take a screenshot to be associated with the current save game
+	            auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
+		        takeScreenshot(screenshot_path.c_str());
+		    }
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{
@@ -4156,6 +4130,8 @@ void actPlayer(Entity* my)
 				}
 			}
 
+			Input& input = Input::inputs[PLAYER_NUM];
+
 			if ( followerMenu.followerToCommand == nullptr && followerMenu.selectMoveTo == false )
 			{
 				bool clickedOnGUI = false;
@@ -4172,12 +4148,12 @@ void actPlayer(Entity* my)
 				}
 
 				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
-				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+				if ( !clickedOnGUI )
 				{
 					if ( clickType == ENTITY_CLICK_USE )
 					{
 						// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-						if ( (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE])) || (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+						if (input.binary("Use"))
 						{
 							++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
 						}
@@ -4188,16 +4164,13 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity[PLAYER_NUM] = NULL;
 
-				if ( !command && (*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) || inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_USE)) )
+				if ( !command )
 				{
-					if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
+					if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo && input.consumeBinaryToggle("Use") )
 					{
 						if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 						{
 							// we're selecting a point for the ally to move to.
-							*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
-							inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
-
 							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
 							if ( map.height > 64 || map.width > 64 )
 							{
@@ -4265,8 +4238,6 @@ void actPlayer(Entity* my)
 						{
 							// we're selecting a target for the ally.
 							Entity* target = entityClicked(nullptr, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_FOLLOWER_INTERACT);
-							*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
-							inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
 							if ( target )
 							{
 								Entity* parent = uidToEntity(target->skill[2]);
@@ -4321,35 +4292,27 @@ void actPlayer(Entity* my)
 
 			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
-				if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU]) 
-					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) 
-						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+				if ( input.binaryToggle("Show NPC Commands") && players[PLAYER_NUM]->shootmode )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
+						input.consumeBinaryToggle("Show NPC Commands");
 					}
 					else
 					{
 						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
-						followerMenu.holdWheel = true;
-						if ( inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
-						{
-							followerMenu.holdWheel = false;
-						}
+						followerMenu.holdWheel = strncmp(input.binding("Show NPC Commands"), "Pad", 3);
 					}
 				}
-				else if ( *inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) 
-					|| (inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD) 
-						&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+				else if ( input.binaryToggle("Command NPC") && players[PLAYER_NUM]->shootmode )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
-						*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
-						inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD);
+					    input.consumeBinaryToggle("Command NPC");
 					}
 					else if ( followerMenu.optionPrevious != -1 )
 					{
@@ -4357,8 +4320,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						*inputPressedForPlayer(PLAYER_NUM, impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
-						inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU_LASTCMD);
+					    input.consumeBinaryToggle("Command NPC");
 					}
 				}
 			}
@@ -4400,8 +4362,7 @@ void actPlayer(Entity* my)
 				}
 				if ( selectedEntity[PLAYER_NUM] )
 				{
-					*inputPressedForPlayer(PLAYER_NUM, impulses[IN_USE]) = 0;
-					inputs.controllerClearInput(PLAYER_NUM, INJOY_GAME_USE);
+				    input.consumeBinaryToggle("Use");
 					bool foundTinkeringKit = false;
 					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{

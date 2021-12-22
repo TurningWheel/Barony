@@ -241,7 +241,7 @@ int initApp(char const * const title, int fullscreen)
 	// hide cursor for game
 	if ( game )
 	{
-		SDL_ShowCursor(SDL_FALSE);
+		SDL_ShowCursor(EnableMouseCapture == SDL_FALSE ? SDL_ENABLE : SDL_DISABLE);
 	}
 	SDL_StopTextInput();
 

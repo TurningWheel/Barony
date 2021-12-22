@@ -33,10 +33,11 @@ void clickDescription(int player, Entity* entity)
 	Item* item;
 	Uint32 uidnum;
 
+	Input& input = Input::inputs[player];
+
 	if ( entity == NULL )
 	{
-		if ( !(*inputPressedForPlayer(player, impulses[IN_ATTACK]) || inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK)) 
-			|| players[player]->shootmode )
+		if ( !input.binaryToggle("Attack") || players[player]->shootmode )
 		{
 			return;
 		}
@@ -200,8 +201,7 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 
-		*inputPressedForPlayer(player, impulses[IN_ATTACK]) = 0;
-		inputs.controllerClearInput(player, INJOY_MENU_LEFT_CLICK);
+		input.consumeBinaryToggle("Attack");
 
 		if ( softwaremode )
 		{

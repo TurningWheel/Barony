@@ -210,10 +210,19 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
+	int mouseowner = intro ? 0 : owner;
+
+#ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+#else
+	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+#endif
 
 #if !defined(NINTENDO) && !defined(EDITOR)
 	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {

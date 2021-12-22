@@ -52,6 +52,7 @@ public:
 		std::string path;
 		Uint32 color;
 		SDL_Rect pos;
+		SDL_Rect section{0, 0, 0, 0};
 		bool tiled = false;
 		bool disabled = false;
 		bool ontop = false;

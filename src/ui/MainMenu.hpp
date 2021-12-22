@@ -12,6 +12,7 @@ namespace MainMenu {
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
+	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)
 
 	enum class FadeDestination : Uint8 {
 		None = 0,
@@ -188,7 +189,8 @@ namespace MainMenu {
 
 	enum class LobbyType {
 		LobbyLocal,
-		LobbyHosted,
+		LobbyLAN,
+		LobbyOnline,
 		LobbyJoined
 	};
 
@@ -199,7 +201,13 @@ namespace MainMenu {
 	void createCharacterCard(int index);
 	void createStartButton(int index);
 	void createInviteButton(int index);
+	void createWaitingStone(int index);
 
 	void createLobby(LobbyType);
 	void createLobbyBrowser();
+
+	// special events:
+
+	void disconnectedFromServer();
+	void receivedInvite();
 }

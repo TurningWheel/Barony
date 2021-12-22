@@ -174,6 +174,7 @@ extern bool autoLimbReload;
 
 extern FILE* logfile;
 static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
+extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
 
 class Item;
 //enum Item;
@@ -629,6 +630,7 @@ extern int minotaurlevel;
 #define DIRECTSERVER 3
 #define DIRECTCLIENT 4
 #define SERVERCROSSPLAY 5
+#define SPLITSCREEN 6
 
 // language stuff
 #define NUMLANGENTRIES 4100

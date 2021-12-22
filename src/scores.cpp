@@ -1280,11 +1280,11 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -1314,7 +1314,8 @@ int saveGame(int saveIndex)
 		}
 		else
 		{
-			fp->write(&multiplayer, sizeof(Uint32), 1);
+		    Uint32 mul = splitscreen ? SPLITSCREEN : multiplayer;
+			fp->write(&mul, sizeof(Uint32), 1);
 		}
 	}
 	Uint32 hash = 0;
@@ -1365,27 +1366,55 @@ int saveGame(int saveIndex)
 	}
 	fp->write(&svFlags, sizeof(Uint32), 1);
 
-	// write hotbar items
-	for ( auto& hotbarSlot : players[clientnum]->hotbar.slots() )
-	{
-		int index = list_Size(&stats[clientnum]->inventory);
-		Item* item = uidToItem(hotbarSlot.item);
-		if ( item )
-		{
-			index = list_Index(item->node);
-		}
-		fp->write(&index, sizeof(Uint32), 1);
-	}
+    if (splitscreen)
+    {
+	    for ( player = 0; player < MAXPLAYERS; player++ )
+	    {
+	        // write hotbar items
+	        for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+	        {
+		        int index = list_Size(&stats[player]->inventory);
+		        Item* item = uidToItem(hotbarSlot.item);
+		        if ( item )
+		        {
+			        index = list_Index(item->node);
+		        }
+		        fp->write(&index, sizeof(Uint32), 1);
+	        }
 
-	// write spells
-	Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
-	fp->write(&numspells, sizeof(Uint32), 1);
-	for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
-	{
-		spell_t* spell = (spell_t*)node->element;
-		fp->write(&spell->ID, sizeof(Uint32), 1);
-	}
+	        // write spells
+	        Uint32 numspells = list_Size(&players[player]->magic.spellList);
+	        fp->write(&numspells, sizeof(Uint32), 1);
+	        for ( node = players[player]->magic.spellList.first; node != NULL; node = node->next )
+	        {
+		        spell_t* spell = (spell_t*)node->element;
+		        fp->write(&spell->ID, sizeof(Uint32), 1);
+	        }
+	    }
+    }
+    else
+    {
+	    // write hotbar items
+	    for ( auto& hotbarSlot : players[clientnum]->hotbar.slots() )
+	    {
+		    int index = list_Size(&stats[clientnum]->inventory);
+		    Item* item = uidToItem(hotbarSlot.item);
+		    if ( item )
+		    {
+			    index = list_Index(item->node);
+		    }
+		    fp->write(&index, sizeof(Uint32), 1);
+	    }
 
+	    // write spells
+	    Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
+	    fp->write(&numspells, sizeof(Uint32), 1);
+	    for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
+	    {
+		    spell_t* spell = (spell_t*)node->element;
+		    fp->write(&spell->ID, sizeof(Uint32), 1);
+	    }
+    }
 
 	// player data
 	for ( player = 0; player < MAXPLAYERS; player++ )
@@ -1431,7 +1460,7 @@ int saveGame(int saveIndex)
 		}
 
 		// inventory
-		if ( player == clientnum )
+		if ( player == clientnum || splitscreen )
 		{
 			c = list_Size(&stats[player]->inventory);
 			fp->write(&c, sizeof(Uint32), 1);
@@ -1720,11 +1749,11 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -1986,11 +2015,11 @@ int loadGame(int player, int saveIndex)
 	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -2088,28 +2117,74 @@ int loadGame(int player, int saveIndex)
 		printlog("[SESSION]: Using savegame server flags");
 	}
 
-	// read hotbar item offsets
-	Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
-	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
-	{
-		fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
-	}
+    // load hotbar and spells list
+    Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
+    if (mul == SPLITSCREEN)
+    {
+        for (int c = 0; c < MAXPLAYERS; ++c)
+        {
+            if (c == player)
+            {
+	            // read hotbar item offsets
+	            for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	            {
+		            fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
+	            }
 
-	// read spells
-	list_FreeAll(&players[player]->magic.spellList);
-	Uint32 numspells = 0;
-	fp->read(&numspells, sizeof(Uint32), 1);
-	for ( c = 0; c < numspells; c++ )
-	{
-		int spellnum = 0;
-		fp->read(&spellnum, sizeof(Uint32), 1);
-		spell_t* spell = copySpell(getSpellFromID(spellnum));
+	            // read spells
+	            list_FreeAll(&players[c]->magic.spellList);
+	            Uint32 numspells = 0;
+	            fp->read(&numspells, sizeof(Uint32), 1);
+	            for ( int s = 0; s < numspells; ++s )
+	            {
+		            int spellnum = 0;
+		            fp->read(&spellnum, sizeof(Uint32), 1);
+		            spell_t* spell = copySpell(getSpellFromID(spellnum));
 
-		node = list_AddNodeLast(&players[player]->magic.spellList);
-		node->element = spell;
-		node->deconstructor = &spellDeconstructor;
-		node->size = sizeof(spell);
-	}
+		            node = list_AddNodeLast(&players[c]->magic.spellList);
+		            node->element = spell;
+		            node->deconstructor = &spellDeconstructor;
+		            node->size = sizeof(spell);
+	            }
+            }
+            else
+            {
+	            fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+                fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+                int numspells = 0;
+                fp->read(&numspells, sizeof(Uint32), 1);
+                for ( c = 0; c < numspells; c++ )
+                {
+	                fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+                }
+            }
+        }
+    }
+    else
+    {
+	    // read hotbar item offsets
+	    for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	    {
+		    fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
+	    }
+
+	    // read spells
+	    list_FreeAll(&players[player]->magic.spellList);
+	    Uint32 numspells = 0;
+	    fp->read(&numspells, sizeof(Uint32), 1);
+	    for ( c = 0; c < numspells; c++ )
+	    {
+		    int spellnum = 0;
+		    fp->read(&spellnum, sizeof(Uint32), 1);
+		    spell_t* spell = copySpell(getSpellFromID(spellnum));
+
+		    node = list_AddNodeLast(&players[player]->magic.spellList);
+		    node->element = spell;
+		    node->deconstructor = &spellDeconstructor;
+		    node->size = sizeof(spell);
+	    }
+    }
 
 	int monsters = NUMMONSTERS;
 	if ( versionNumber < 325 )
@@ -2166,34 +2241,28 @@ int loadGame(int player, int saveIndex)
 			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD); // stat flags
 		}
 
-		if ( clientnum == 0 && c != 0 )
-		{
-			// server needs to skip past other players' equipment
+        if ( multiplayer == SINGLE )
+        {
+			int numitems = 0;
+			fp->read(&numitems, sizeof(Uint32), 1);
 			int i;
-			for ( i = 0; i < 10; i++ )
+			for ( i = 0; i < numitems; i++ )
 			{
-				int itemtype = NUMITEMS;
-				fp->read(&itemtype, sizeof(ItemType), 1);
-				if ( itemtype < NUMITEMS )
-				{
-					fp->seek(sizeof(Status), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-					fp->seek(sizeof(bool), File::SeekMode::ADD);
-				}
-			}
-		}
-		else
-		{
-			if ( clientnum != 0 )
-			{
-				// client needs to skip the dummy byte
+				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 				fp->seek(sizeof(Status), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+				fp->seek(sizeof(bool), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 			}
-			else
-			{
-				// server needs to skip past its inventory
+			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
+        }
+		else if ( multiplayer == SERVER )
+		{
+		    if ( c == 0 ) {
+				// server needs to skip past its own inventory
 				int numitems = 0;
 				fp->read(&numitems, sizeof(Uint32), 1);
 
@@ -2210,7 +2279,29 @@ int loadGame(int player, int saveIndex)
 					fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 				}
 				fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
+		    } else {
+			    // server needs to skip past other players' equipment
+			    // (this is stored differently)
+			    int i;
+			    for ( i = 0; i < 10; i++ )
+			    {
+				    int itemtype = NUMITEMS;
+				    fp->read(&itemtype, sizeof(ItemType), 1);
+				    if ( itemtype < NUMITEMS )
+				    {
+					    fp->seek(sizeof(Status), File::SeekMode::ADD);
+					    fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+					    fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+					    fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+					    fp->seek(sizeof(bool), File::SeekMode::ADD);
+				    }
+			    }
 			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			// client needs only to skip the dummy byte
+			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 		}
 	}
 
@@ -2288,7 +2379,7 @@ int loadGame(int player, int saveIndex)
 		}
 	}
 
-	if ( player == clientnum )
+	if ( players[player]->isLocalPlayer() )
 	{
 		// inventory
 		int numitems = 0;
@@ -2565,11 +2656,11 @@ list_t* loadGameFollowers(int saveIndex)
 	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(true, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
+		strncpy(savefile, setSaveGameFileName(false, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	completePath(path, savefile, outputdir);
 
@@ -2791,56 +2882,35 @@ int deleteSaveGame(int gametype, int saveIndex)
 {
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	if ( gametype == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	completePath(path, savefile, outputdir);
+	int result = 0;
 
-	if (access(path, F_OK) != -1)
-	{
-		printlog("deleting savegame in '%s'...\n", path);
-		int result = remove(path);
-		if (result)
-		{
-			printlog("warning: failed to delete savegame in '%s'!\n", path);
+    for (int c = 0; c < static_cast<int>(SaveFileType::SIZE_OF_TYPE); ++c)
+    {
+	    if ( gametype == SINGLE )
+	    {
+		    strncpy(savefile, setSaveGameFileName(true, static_cast<SaveFileType>(c), saveIndex).c_str(), PATH_MAX - 1);
+	    }
+	    else
+	    {
+		    strncpy(savefile, setSaveGameFileName(false, static_cast<SaveFileType>(c), saveIndex).c_str(), PATH_MAX - 1);
+	    }
+	    completePath(path, savefile, outputdir);
+	    if (access(path, F_OK) != -1)
+	    {
+		    printlog("deleting savegame in '%s'...\n", path);
+		    int r = remove(path);
+		    if (r)
+		    {
+		        result |= r;
+			    printlog("warning: failed to delete savegame in '%s'!\n", path);
 #ifdef _MSC_VER
-			printlog(strerror(errno));
+			    printlog(strerror(errno));
 #endif
-		}
+		    }
+	    }
 	}
 
-	if ( gametype == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
-	}
-	completePath(path, savefile, outputdir);
-
-	if (access(path, F_OK) != -1)
-	{
-		printlog("deleting savegame in '%s'...\n", path);
-		int result = remove(path);
-		if (result)
-		{
-			printlog("warning: failed to delete savegame in '%s'!\n", path);
-#ifdef _MSC_VER
-			printlog(strerror(errno));
-#endif
-		}
-		return result;
-	}
-	else
-	{
-		return 0;
-	}
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2855,7 +2925,7 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 {
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	if ( access(path, F_OK ) == -1 )
@@ -2891,13 +2961,13 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 
 /*-------------------------------------------------------------------------------
 
-	getSaveGameName
+	getSaveGameInfo
 
-	Gets the name of the character in the saved game
+	Fill a struct with info about a savegame slot
 
 -------------------------------------------------------------------------------*/
 
-char* getSaveGameName(bool singleplayer, int saveIndex)
+SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 {
 	char name[128];
 	File* fp;
@@ -2907,18 +2977,16 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	int mul, plnum, dungeonlevel;
 	int playerRace, playerAppearance;
 
-	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
 	if ( (fp = FileIO::open(path, "rb")) == NULL )
 	{
 		printlog("error: failed to check name in '%s'!\n", path);
-		free(tempstr);
-		return NULL;
+		return SaveGameInfo();
 	}
 
 	// read from file
@@ -2928,8 +2996,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	{
 		printlog("error: '%s' is corrupt!\n", path);
 		FileIO::close(fp);
-		free(tempstr);
-		return NULL;
+		return SaveGameInfo();
 	}
 	fp->read(checkstr, sizeof(char), strlen(VERSION));
 	int versionNumber = getSavegameVersion(checkstr);
@@ -2939,8 +3006,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", path);
 		FileIO::close(fp);
-		free(tempstr);
-		return nullptr;
+		return SaveGameInfo();
 	}
 
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
@@ -2959,15 +3025,19 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	{
 		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
 	}
-	fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
 
-	int numspells = 0;
-	fp->read(&numspells, sizeof(Uint32), 1);
-	for ( c = 0; c < numspells; c++ )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	}
+    for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
+    {
+	    fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+        fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+        int numspells = 0;
+        fp->read(&numspells, sizeof(Uint32), 1);
+        for ( c = 0; c < numspells; c++ )
+        {
+	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+        }
+    }
 
 	int monsters = NUMMONSTERS;
 	if ( versionNumber < 325 )
@@ -3046,7 +3116,233 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		else
 		{
 			// client needs to skip the dummy byte
-			fp->seek(sizeof(Status), File::SeekMode::ADD);
+			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
+		}
+	}
+
+	fp->read(&class_, sizeof(Uint32), 1);
+	for ( c = 0; c < monsters; c++ )
+	{
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+	}
+	fp->seek(sizeof(Monster) + sizeof(sex_t), File::SeekMode::ADD);
+	Uint32 raceAndAppearance = 0;
+	fp->read(&raceAndAppearance, sizeof(Uint32), 1);
+	playerAppearance = raceAndAppearance & 0xFF;
+	playerRace = (raceAndAppearance & 0xFF00) >> 8;
+	fp->read(&name, sizeof(char), 32);
+	name[32] = 0;
+	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD);
+	fp->read(&level, sizeof(Sint32), 1);
+
+	// assemble string
+	char timestamp[128] = "";
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		}
+	}
+#endif // WINDOWS
+
+	int plnumTemp = plnum;
+	if ( plnumTemp >= MAXPLAYERS )
+	{
+		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
+	}
+	stats[plnumTemp]->playerRace = playerRace;
+
+    SaveGameInfo saveGameInfo = {
+        name,
+        playerClassLangEntry(class_, plnumTemp),
+        dungeonlevel,
+        level,
+        plnum,
+        timestamp,
+        mul,
+    };
+
+	// close file
+	FileIO::close(fp);
+	return saveGameInfo;
+}
+
+/*-------------------------------------------------------------------------------
+
+	getSaveGameName
+
+	Gets the name of the character in the saved game
+
+-------------------------------------------------------------------------------*/
+
+char* getSaveGameName(bool singleplayer, int saveIndex)
+{
+	char name[128];
+	File* fp;
+	int c;
+
+	int level, class_;
+	int mul, plnum, dungeonlevel;
+	int playerRace, playerAppearance;
+
+	char* tempstr = (char*) calloc(1024, sizeof(char));
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
+
+	// open file
+	if ( (fp = FileIO::open(path, "rb")) == NULL )
+	{
+		printlog("error: failed to check name in '%s'!\n", path);
+		free(tempstr);
+		return NULL;
+	}
+
+	// read from file
+	char checkstr[64];
+	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
+	{
+		printlog("error: '%s' is corrupt!\n", path);
+		FileIO::close(fp);
+		free(tempstr);
+		return NULL;
+	}
+	fp->read(checkstr, sizeof(char), strlen(VERSION));
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("getSaveGameName: '%s' version number %d", savefile, versionNumber);
+	if ( versionNumber == -1 )
+	{
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", path);
+		FileIO::close(fp);
+		free(tempstr);
+		return nullptr;
+	}
+
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->read(&mul, sizeof(Uint32), 1);
+	fp->read(&plnum, sizeof(Uint32), 1);
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->read(&dungeonlevel, sizeof(Uint32), 1);
+	dungeonlevel = dungeonlevel & 0xFF;
+	fp->seek(sizeof(bool), File::SeekMode::ADD);
+	if ( versionNumber >= 310 )
+	{
+		fp->seek(sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, File::SeekMode::ADD);
+	}
+	if ( versionNumber >= 335 )
+	{
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
+	}
+
+    for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
+    {
+	    fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
+        fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+
+        int numspells = 0;
+        fp->read(&numspells, sizeof(Uint32), 1);
+        for ( c = 0; c < numspells; c++ )
+        {
+	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+        }
+    }
+
+	int monsters = NUMMONSTERS;
+	if ( versionNumber < 325 )
+	{
+		monsters = 33;
+	}
+
+	// skip through other player data until you get to the correct player
+	for ( c = 0; c < plnum; c++ )
+	{
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Monster), File::SeekMode::ADD);
+		fp->seek(sizeof(sex_t), File::SeekMode::ADD);
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+		fp->seek(sizeof(char) * 32, File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		if ( versionNumber >= 323 )
+		{
+			fp->seek(sizeof(Sint32)*NUMPROFICIENCIES, File::SeekMode::ADD);
+		}
+		else
+		{
+			fp->seek(sizeof(Sint32)*14, File::SeekMode::ADD);
+		}
+
+		if ( versionNumber <= 323 )
+		{
+			fp->seek(sizeof(bool)*32, File::SeekMode::ADD);
+			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD);
+		}
+		else
+		{
+			fp->seek(sizeof(bool)*NUMEFFECTS, File::SeekMode::ADD);
+			fp->seek(sizeof(Sint32)*NUMEFFECTS, File::SeekMode::ADD);
+		}
+
+		if ( versionNumber >= 323 )
+		{
+			fp->seek(sizeof(Sint32) * 32, File::SeekMode::ADD); // stat flags
+		}
+
+		if ( plnum == 0 )
+		{
+			// server needs to skip past its inventory
+			int numitems = 0;
+			fp->read(&numitems, sizeof(Uint32), 1);
+
+			int i;
+			for ( i = 0; i < numitems; i++ )
+			{
+				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
+				fp->seek(sizeof(Status), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+				fp->seek(sizeof(bool), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+			}
+			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
+		}
+		else
+		{
+			// client needs to skip the dummy byte
+			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 		}
 	}
 
@@ -3132,7 +3428,7 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 	Uint32 gameKey;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3181,7 +3477,7 @@ int getSaveGameVersionNum(bool singleplayer, int saveIndex)
 	File* fp;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3226,7 +3522,7 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 	int mul;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3277,7 +3573,7 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 	int clientnum;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3329,7 +3625,7 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 	Uint32 seed;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
 	completePath(path, savefile, outputdir);
 
 	// open file
@@ -3776,7 +4072,7 @@ void updateGameplayStatisticsInMainLoop()
 	}
 }
 
-std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex)
+std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIndex)
 {
 	std::string filename = "savegames/savegame" + std::to_string(saveIndex);
 
@@ -3790,7 +4086,7 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 	//#define SAVEGAMEFILE_MODDED_MULTIPLAYER "savegame_modded_multiplayer.dat"
 	//#define SAVEGAMEFILE2_MODDED_MULTIPLAYER "savegame2_modded_multiplayer.dat"
 
-	if ( !followersFile )
+	if ( type == SaveFileType::MAIN )
 	{
 		if ( singleplayer )
 		{
@@ -3815,7 +4111,7 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 			}
 		}
 	}
-	else
+	else if ( type == SaveFileType::FOLLOWERS )
 	{
 		if ( singleplayer )
 		{
@@ -3840,7 +4136,46 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveI
 			}
 		}
 	}
+	else if ( type == SaveFileType::SCREENSHOT )
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				filename.append("_screenshot.png");
+			}
+			else
+			{
+				filename.append("_screenshot_modded.png");
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				filename.append("_mp_screenshot.png");
+			}
+			else
+			{
+				filename.append("_mp_screenshot_modded.png");
+			}
+		}
+		filename.insert(0, "/");
+		filename.insert(0, outputdir);
+	}
 	return filename;
+}
+
+bool anySaveFileExists(bool singleplayer)
+{
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(singleplayer, fileNumber) )
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool anySaveFileExists()

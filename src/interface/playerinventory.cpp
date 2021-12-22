@@ -3319,7 +3319,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			std::map<int, Uint32> positiveWordIndexes;
 			std::map<int, Uint32> negativeWordIndexes;
 			std::map<int, Uint32> highlightWordIndexes;
-			ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, std::string(""), detailsPositiveText, detailsNegativeText,
+			std::string empty;
+			ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, empty, detailsPositiveText, detailsNegativeText,
 				highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
 			txtDescription->setText(detailsTextString.c_str());
 
@@ -4201,11 +4202,9 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
-	if ( !command
-		&& (*inputPressedForPlayer(player, impulses[IN_AUTOSORT])
-			|| (inputs.bControllerInputPressed(player, INJOY_MENU_CHEST_GRAB_ALL) && !openedChest[player])
-			)
-		)
+	Input& input = Input::inputs[player];
+
+	if (!command && input.consumeBinaryToggle("Autosort Inventory"))
 	{
 		autosortInventory(player);
 		//quickStackItems();
@@ -4588,7 +4587,7 @@ void Player::Inventory_t::updateInventory()
 		src.h = TTF12_HEIGHT + 8;
 		src.w = longestline(language[2960]) * TTF12_WIDTH + 8;
 		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], getInputName(impulses[IN_AUTOSORT]));
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], "DEPRECATED");
 		if ( inputs.bMouseLeft(player) )
 		{
 			inputs.mouseClearLeft(player);
