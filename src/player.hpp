@@ -1398,6 +1398,7 @@ public:
 		~PlayerMovement_t() {};
 		
 		int monsterEmoteGimpTimer = 0;
+		int selectedEntityGimpTimer = 0;
 		bool insectoidLevitating = false;
 
 		bool handleQuickTurn(bool useRefreshRateDelta);

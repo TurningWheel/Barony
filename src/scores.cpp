@@ -2301,7 +2301,7 @@ int loadGame(int player, int saveIndex)
 		else if ( multiplayer == CLIENT )
 		{
 			// client needs only to skip the dummy byte
-			fp->seek(sizeof(Status), File::SeekMode::ADD);
+			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 		}
 	}
 
@@ -3137,7 +3137,7 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 		else
 		{
 			// client needs to skip the dummy byte
-			fp->seek(sizeof(Status), File::SeekMode::ADD);
+			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 		}
 	}
 
@@ -3363,7 +3363,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		else
 		{
 			// client needs to skip the dummy byte
-			fp->seek(sizeof(Status), File::SeekMode::ADD);
+			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 		}
 	}
 

@@ -1771,6 +1771,7 @@ void Player::PlayerMovement_t::reset()
 	quickTurnStartTicks = 0;
 	bDoingQuickTurn = false;
 	monsterEmoteGimpTimer = 0;
+	selectedEntityGimpTimer = 0;
 	insectoidLevitating = false;
 }
 

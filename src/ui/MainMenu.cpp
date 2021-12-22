@@ -5056,7 +5056,7 @@ namespace MainMenu {
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
-			    stats[index]->playerRace = rand() % 9;
+			    stats[index]->playerRace = rand() % NUMPLAYABLERACES;
 			} else if (enabledDLCPack1) {
 			    stats[index]->playerRace = rand() % 5;
 			} else if (enabledDLCPack2) {
@@ -6250,6 +6250,8 @@ namespace MainMenu {
 	void playContinue(Button& button) {
         continueSingleplayer = ~(!anySaveFileExists(true) && anySaveFileExists(false));
 
+        savegame_selected = nullptr;
+
 		// remove "Play Game" window
 		auto frame = static_cast<Frame*>(button.getParent());
 		frame = static_cast<Frame*>(frame->getParent());
@@ -7129,6 +7131,13 @@ namespace MainMenu {
 				players[c]->bSplitscreen = false;
 				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
 			}
+		}
+		if (clientnum == -1) {
+		    // TODO loading a splitscreen game?
+		    clientnum = 0;
+		    players[0]->bSplitscreen = false;
+		    client_disconnected[0] = false;
+		    playercount = 1;
 		}
 		splitscreen = playercount > 1;
 

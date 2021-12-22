@@ -4123,45 +4123,50 @@ void ingameHud()
 			{
 				allowCasting = true;
 			}
-			else if (!command && (input.binaryToggle("Cast Spell") || (shootmode && hasSpellbook && input.binaryToggle("Block"))))
+			else if (!command && shootmode)
 			{
-				allowCasting = true;
-				if ((strcmp(input.binding("Cast Spell"), "Mouse3") == 0 || strcmp(input.binding("Block"), "Mouse3") == 0)
-					&& players[player]->gui_mode >= GUI_MODE_INVENTORY
-					&& (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player)))
-				{
-					allowCasting = false;
-				}
+			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")))
+			    {
+				    allowCasting = true;
+				    if (tryHotbarQuickCast == false) {
+				        if ((strcmp(input.binding("Cast Spell"), "Mouse3") == 0 || strcmp(input.binding("Block"), "Mouse3") == 0)
+					        && players[player]->gui_mode >= GUI_MODE_INVENTORY
+					        && (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player)))
+				        {
+					        allowCasting = false;
+				        }
+				    }
 
-				if ( input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
-				{
-					if ( players[player]->entity->effectShapeshift != NOTHING )
-					{
-						if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
-						{
-							// imp allowed to cast via spellbook.
-						}
-						else
-						{
-							allowCasting = false;
-						}
-					}
+				    if ( input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
+				    {
+					    if ( players[player]->entity->effectShapeshift != NOTHING )
+					    {
+						    if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
+						    {
+							    // imp allowed to cast via spellbook.
+						    }
+						    else
+						    {
+							    allowCasting = false;
+						    }
+					    }
 
-					if ( input.binaryToggle("Block")
-						&& strcmp(input.binding("Block"), "Mouse3") == 0
-						&& inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
-					{
-						allowCasting = false;
-					}
-					else
-					{
-						if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
-						{
-							messagePlayer(player, language[3863]); // prevent casting of spell.
-							input.consumeBinaryToggle("Block");
-							allowCasting = false;
-						}
-					}
+					    if ( input.binaryToggle("Block")
+						    && strcmp(input.binding("Block"), "Mouse3") == 0
+						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
+					    {
+						    allowCasting = false;
+					    }
+					    else
+					    {
+						    if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
+						    {
+							    messagePlayer(player, language[3863]); // prevent casting of spell.
+							    input.consumeBinaryToggle("Block");
+							    allowCasting = false;
+						    }
+					    }
+				    }
 				}
 			}
 
@@ -4268,6 +4273,8 @@ void ingameHud()
 
 		input.consumeBinaryToggle("Chat");
 		input.consumeBinaryToggle("Console Command");
+		keystatus[SDL_SCANCODE_RETURN] = 0;
+		Input::keys[SDL_SCANCODE_RETURN] = 0;
 
 		SDL_StartTextInput();
 
@@ -4280,7 +4287,7 @@ void ingameHud()
 			}
 		}
 	}
-	if ( command )
+	else if ( command )
 	{
 		int commandPlayer = clientnum;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -4303,11 +4310,14 @@ void ingameHud()
 		{
 			keystatus[SDL_SCANCODE_ESCAPE] = 0;
 			chosen_command = NULL;
-			command = 0;
+			command = false;
 		}
 		if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
 		{
-			keystatus[SDL_SCANCODE_RETURN] = 0;
+		    input.consumeBinaryToggle("Chat");
+		    input.consumeBinaryToggle("Console Command");
+		    keystatus[SDL_SCANCODE_RETURN] = 0;
+		    Input::keys[SDL_SCANCODE_RETURN] = 0;
 			command = false;
 
 			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
@@ -6238,6 +6248,25 @@ int main(int argc, char** argv)
 					else if ( multiplayer == SERVER )
 					{
 						serverHandleMessages(fpsLimit);
+					}
+				}
+			}
+
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+			    Input& input = Input::inputs[i];
+
+				// selectedEntityGimpTimer will only allow the game to process a right click entity click 1-2 times
+				// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
+				if ( !input.binaryToggle("Use") )
+				{
+					players[i]->movement.selectedEntityGimpTimer = 0;
+				}
+				else
+				{
+					if ( players[i]->movement.selectedEntityGimpTimer >= 2 )
+					{
+					    input.consumeBinaryToggle("Use");
 					}
 				}
 			}

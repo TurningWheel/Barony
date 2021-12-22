@@ -3198,7 +3198,6 @@ void actHudShield(Entity* my)
 	if (!command && !swimming && shootmode)
 	{
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
-			&& input.binaryToggle("Block")
 			&& shootmode
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
 			&& !gamePaused 
@@ -3206,11 +3205,17 @@ void actHudShield(Entity* my)
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )
 		{
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
+			if (input.binaryToggle("Block"))
 			{
-				defending = true;
+			    if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
+			    {
+				    defending = true;
+			    }
 			}
-			sneaking = true;
+			if (input.binaryToggle("Sneak"))
+			{
+			    sneaking = true;
+			}
 		}
 	}
 

@@ -2171,7 +2171,7 @@ void consoleCommand(char const * const command_str)
 		}
 		else if ( !strncmp(command_str, "/hidestatusbar", 14) )
 		{
-			hide_statusbar = !hide_statusbar;
+			//hide_statusbar = !hide_statusbar;
 		}
 		else if ( !strncmp(command_str, "/hideplayertags", 15) )
 		{

@@ -813,8 +813,8 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ((input.binary("Move Forward") || input.binary("Move Backward"))
-				|| (input.analog("Move Left") - input.analog("Move Right"))
+		else if (((input.binary("Move Forward") || input.binary("Move Backward"))
+				|| (input.analog("Move Left") - input.analog("Move Right")))
 			    && !command && !swimming )
 		{
 			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
@@ -4152,12 +4152,15 @@ void actPlayer(Entity* my)
 				}
 
 				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
-				if ( selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+				if ( !clickedOnGUI )
 				{
 					if ( clickType == ENTITY_CLICK_USE )
 					{
 						// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-						input.consumeBinaryToggle("Use");
+						if (input.binary("Use"))
+						{
+							++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+						}
 					}
 				}
 			}
@@ -4293,12 +4296,13 @@ void actPlayer(Entity* my)
 
 			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
-				if ( input.consumeBinaryToggle("Show NPC Commands") && players[PLAYER_NUM]->shootmode )
+				if ( input.binaryToggle("Show NPC Commands") && players[PLAYER_NUM]->shootmode )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
+						input.consumeBinaryToggle("Show NPC Commands");
 					}
 					else
 					{
@@ -4306,16 +4310,21 @@ void actPlayer(Entity* my)
 						followerMenu.holdWheel = strncmp(input.binding("Show NPC Commands"), "Pad", 3);
 					}
 				}
-				else if ( input.consumeBinaryToggle("Command NPC") && players[PLAYER_NUM]->shootmode )
+				else if ( input.binaryToggle("Command NPC") && players[PLAYER_NUM]->shootmode )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
 					{
 						// your ally is angry at you!
+					    input.consumeBinaryToggle("Command NPC");
 					}
 					else if ( followerMenu.optionPrevious != -1 )
 					{
 						followerMenu.followerToCommand = followerMenu.recentEntity;
+					}
+					else
+					{
+					    input.consumeBinaryToggle("Command NPC");
 					}
 				}
 			}
@@ -4357,6 +4366,7 @@ void actPlayer(Entity* my)
 				}
 				if ( selectedEntity[PLAYER_NUM] )
 				{
+				    input.consumeBinaryToggle("Use");
 					bool foundTinkeringKit = false;
 					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{
