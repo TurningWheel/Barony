@@ -8,6 +8,8 @@
 #include "../input.hpp"
 #include "../engine/audio/sound.hpp"
 
+#include <queue>
+
 Widget::~Widget() {
 	if (parent) {
 		for (auto node = parent->widgets.begin(); node != parent->widgets.end(); ++node) {
@@ -156,36 +158,92 @@ const Widget* Widget::findHead() const {
 	}
 }
 
-Widget* Widget::findWidget(const char* name, bool recursive) {
-	for (auto widget : widgets) {
-		if (widget->owner != owner) {
-			continue;
-		}
-		if (widget->name == name) {
-			return widget;
-		} else if (recursive) {
-			auto result = widget->findWidget(name, recursive);
-			if (result) {
-				return result;
+Widget* Widget::findWidget(const char* name, bool recursive, Widget::SearchType searchType) {
+    if (searchType == Widget::SearchType::DEPTH_FIRST) {
+	    for (auto widget : widgets) {
+			if (widget->toBeDeleted) {
+				continue;
 			}
-		}
+		    if (widget->owner != owner) {
+			    continue;
+		    }
+		    if (widget->name == name) {
+			    return widget;
+		    }
+		    if (recursive) {
+			    auto result = widget->findWidget(name, recursive);
+			    if (result) {
+				    return result;
+			    }
+		    }
+	    }
+	} else if (searchType == Widget::SearchType::BREADTH_FIRST) {
+		std::queue<Widget*> q;
+		auto widget = this;
+		do {
+			for (auto w : widget->widgets) {
+				if (w->toBeDeleted) {
+					continue;
+				}
+		        if (w->owner != owner) {
+			        continue;
+		        }
+				if (w->name == name) {
+				    return w;
+				}
+				if (recursive) {
+				    q.push(w);
+				}
+			}
+			if (!q.empty()) {
+			    widget = q.front();
+			    q.pop();
+			} else {
+			    break;
+			}
+		} while (1);
 	}
 	return nullptr;
 }
 
-const Widget* Widget::findWidget(const char* name, bool recursive) const {
-	for (auto widget : widgets) {
-		if (widget->owner != owner) {
-			continue;
-		}
-		if (widget->name == name) {
-			return widget;
-		} else if (recursive) {
-			auto result = widget->findWidget(name, recursive);
-			if (result) {
-				return result;
+const Widget* Widget::findWidget(const char* name, bool recursive, Widget::SearchType searchType) const {
+    if (searchType == Widget::SearchType::DEPTH_FIRST) {
+	    for (auto widget : widgets) {
+			if (widget->toBeDeleted) {
+				continue;
 			}
-		}
+		    if (widget->name == name) {
+			    return widget;
+		    }
+		    if (recursive) {
+			    auto result = widget->findWidget(name, recursive);
+			    if (result) {
+				    return result;
+			    }
+		    }
+	    }
+	} else if (searchType == Widget::SearchType::BREADTH_FIRST) {
+		std::queue<Widget*> q;
+		auto widget = this;
+		do {
+			for (auto w : widget->widgets) {
+			    if (w->toBeDeleted) {
+				    continue;
+			    }
+				if (w->name == name) {
+				    return w;
+				}
+				if (recursive) {
+				    q.push(w);
+				}
+			}
+			if (!q.empty()) {
+			    widget = q.front();
+			    q.pop();
+			} else {
+			    break;
+			}
+		} while (1);
 	}
 	return nullptr;
 }
@@ -250,15 +308,20 @@ void Widget::adoptWidget(Widget& widget) {
 	widgets.push_back(&widget);
 }
 
-void Widget::drawPost(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const {
+void Widget::drawPost(const SDL_Rect size,
+    const std::vector<const Widget*>& selectedWidgets,
+    const std::vector<const Widget*>& searchParents) const {
 	if (hideGlyphs) {
 		return;
 	}
 
 	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 	const Widget* selectedWidget = nullptr;
-	for (auto widget : selectedWidgets) {
+	const Widget* searchParent = nullptr;
+	for (int c = 0; c < selectedWidgets.size(); ++c) {
+	    auto widget = selectedWidgets[c];
 		if (widget->owner == owner) {
+		    searchParent = searchParents[c];
 			selectedWidget = widget;
 			break;
 		}
@@ -266,7 +329,6 @@ void Widget::drawPost(const SDL_Rect size, const std::vector<const Widget*>& sel
 	if (!selectedWidget) {
 		return;
 	} else {
-		auto searchParent = selectedWidget->findSearchRoot();
 		if (searchParent && !isChildOf(*searchParent)) {
 			return;
 		}

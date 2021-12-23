@@ -121,7 +121,9 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	}
 }
 
-void Slider::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+void Slider::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
+    const std::vector<const Widget*>& selectedWidgets,
+    const std::vector<const Widget*>& searchParents) const {
 	if (invisible) {
 		return;
 	}
@@ -143,7 +145,7 @@ void Slider::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<co
 	if (_handleSize.w <= 0 || _handleSize.h <= 0) {
 		return;
 	}
-	Widget::drawPost(_handleSize, selectedWidgets);
+	Widget::drawPost(_handleSize, selectedWidgets, searchParents);
 }
 
 void Slider::updateHandlePosition() {

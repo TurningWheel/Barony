@@ -288,7 +288,9 @@ next:
 	}
 }
 
-void Button::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+void Button::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
+    const std::vector<const Widget*>& selectedWidgets,
+    const std::vector<const Widget*>& searchParents) const {
 	if (invisible) {
 		return;
 	}
@@ -299,7 +301,7 @@ void Button::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<co
 	if (_size.w <= 0 || _size.h <= 0) {
 		return;
 	}
-	Widget::drawPost(_size, selectedWidgets);
+	Widget::drawPost(_size, selectedWidgets, searchParents);
 }
 
 Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
