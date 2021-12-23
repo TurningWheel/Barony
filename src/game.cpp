@@ -5733,7 +5733,6 @@ int main(int argc, char** argv)
 							menucam.winw = xres;
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
-							raycast(&menucam, REALCOLORS);
 							glDrawWorld(&menucam, REALCOLORS);
 							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
@@ -6034,7 +6033,7 @@ int main(int argc, char** argv)
 										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 									}
 								}
-								raycast(&camera, REALCOLORS);
+								raycast(&camera, minimap);
 								glDrawWorld(&camera, REALCOLORS);
 
 								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -6050,7 +6049,7 @@ int main(int argc, char** argv)
 											camera.x = players[i]->entity->x / 16.0;
 											camera.y = players[i]->entity->y / 16.0;
 											camera.ang = players[i]->entity->yaw;
-											raycast(&camera, REALCOLORS, false);
+											raycast(&camera, minimap);
 											camera.x = x;
 											camera.y = y;
 											camera.ang = ang;
@@ -6060,7 +6059,6 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								raycast(&camera, REALCOLORS);
 								glDrawWorld(&camera, REALCOLORS);
 							}
 

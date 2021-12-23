@@ -615,7 +615,6 @@ extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern Sint32* lightmapSmoothed;
-extern bool* vismap;
 extern Entity** clickmap;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;

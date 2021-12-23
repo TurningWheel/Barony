@@ -548,11 +548,6 @@ void buttonNewConfirm(button_t* my)
 			}
 		}
 	}
-	if ( vismap != NULL )
-	{
-		free(vismap);
-	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
 	if ( lightmap != NULL )
 	{
 		free(lightmap);
@@ -1458,11 +1453,6 @@ void buttonAttributesConfirm(button_t* my)
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
-	if ( vismap != NULL )
-	{
-		free(vismap);
-	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
 	if ( lightmap != NULL )
 	{
 		free(lightmap);

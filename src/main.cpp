@@ -359,7 +359,6 @@ real_t vidgamma = 1.0f;
 real_t* zbuffer = nullptr;
 Sint32* lightmap = nullptr;
 Sint32* lightmapSmoothed = nullptr;
-bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;
 bool showStatusEffectIcons = true;
