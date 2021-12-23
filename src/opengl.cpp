@@ -1791,6 +1791,14 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 real_t getLightAt(int x, int y)
 {
+    static bool early_return = false;
+    if (keystatus[SDL_SCANCODE_L] && !command) {
+        keystatus[SDL_SCANCODE_L] = 0;
+        early_return = (early_return==false);
+    }
+    if (early_return)
+	    return 1.f;
+
 	real_t l = 0;
 	int u, v;
 

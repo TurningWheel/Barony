@@ -74,16 +74,19 @@ void actDeathCam(Entity* my)
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
 
+    bool mouseControl = false;
 	real_t mousex_relative = 0.f;
 	real_t mousey_relative = 0.f;
 	Input& input = Input::inputs[DEATHCAM_PLAYERNUM];
 	const char* binding = input.binding("Move Forward");
 	if (strncmp(binding, "Pad", 3) && strncmp(binding, "Joy", 3)) {
+	    mouseControl = true;
 	    mousex_relative = mousexrel;
 	    mousey_relative = mouseyrel;
+	} else {
+	    mousex_relative += (input.analog("Turn Right") - input.analog("Turn Left")) * gamepad_rightx_sensitivity;
+	    mousey_relative += (input.analog("Look Down") - input.analog("Look Up")) * gamepad_righty_sensitivity;
 	}
-	mousex_relative += (input.analog("Turn Right") - input.analog("Turn Left")) * gamepad_rightx_sensitivity;
-	mousey_relative += (input.analog("Look Down") - input.analog("Look Up")) * gamepad_righty_sensitivity;
 
 	if ( DEATHCAM_TIME == 1 )
 	{
@@ -504,16 +507,19 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	Entity* my = players[player.playernum]->entity;
 	int playernum = player.playernum;
 
+    bool mouseControl = false;
 	real_t mousex_relative = 0.f;
 	real_t mousey_relative = 0.f;
 	Input& input = Input::inputs[playernum];
 	const char* binding = input.binding("Move Forward");
 	if (strncmp(binding, "Pad", 3) && strncmp(binding, "Joy", 3)) {
+	    mouseControl = true;
 	    mousex_relative = mousexrel;
 	    mousey_relative = mouseyrel;
+	} else {
+	    mousex_relative += (input.analog("Turn Right") - input.analog("Turn Left")) * gamepad_rightx_sensitivity;
+	    mousey_relative += (input.analog("Look Down") - input.analog("Look Up")) * gamepad_righty_sensitivity;
 	}
-	mousex_relative += (input.analog("Turn Right") - input.analog("Turn Left")) * gamepad_rightx_sensitivity;
-	mousey_relative += (input.analog("Look Down") - input.analog("Look Up")) * gamepad_righty_sensitivity;
 
 	double refreshRateDelta = 1.0;
 	if ( useRefreshRateDelta && fps > 0.0 )
@@ -529,7 +535,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// rotate
-	if ( !command && my->isMobile() )
+	if ( !command && my->isMobile() && mouseControl )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{

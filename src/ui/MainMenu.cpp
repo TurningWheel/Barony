@@ -198,13 +198,15 @@ namespace MainMenu {
 				auto customize = "images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png";
 				auto dropdown = "images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
+				// TODO more sensible ways to identify these button types...
+				auto boolean_button_text = "Off          On";
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), binding) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), dropdown) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
-				} else {
+				} else if (strcmp(button->getText(), boolean_button_text) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
 				}
 			}

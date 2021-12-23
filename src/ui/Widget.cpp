@@ -10,6 +10,8 @@
 
 #include <queue>
 
+static Widget* _selectedWidgets[MAXPLAYERS] = { nullptr };
+
 Widget::~Widget() {
 	if (parent) {
 		for (auto node = parent->widgets.begin(); node != parent->widgets.end(); ++node) {
@@ -19,6 +21,7 @@ Widget::~Widget() {
 			}
 		}
 	}
+	deselect();
 }
 
 void Widget::select() {
@@ -30,10 +33,18 @@ void Widget::select() {
 		Frame* f = static_cast<Frame*>(head);
 		f->deselect(); // this deselects everything in the gui
 	}
+	if (owner >= 0 && owner < MAXPLAYERS) {
+	    _selectedWidgets[owner] = this;
+	}
 	selected = true;
 }
 
 void Widget::deselect() {
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (_selectedWidgets[c] == this) {
+            _selectedWidgets[c] = nullptr;
+        }
+    }
 	selected = false;
 }
 
@@ -249,36 +260,30 @@ const Widget* Widget::findWidget(const char* name, bool recursive, Widget::Searc
 }
 
 void Widget::findSelectedWidgets(std::vector<Widget*>& outResult) {
-	if (selected) {
-		outResult.push_back(this);
-	}
-	for (auto widget : widgets) {
-		widget->findSelectedWidgets(outResult);
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+	    if (_selectedWidgets[c] && _selectedWidgets[c]->isChildOf(*this)) {
+	        outResult.push_back(_selectedWidgets[c]);
+	    }
 	}
 }
 
 void Widget::findSelectedWidgets(std::vector<const Widget*>& outResult) const {
-	if (selected) {
-		outResult.push_back(this);
-	}
-	for (auto widget : widgets) {
-		widget->findSelectedWidgets(outResult);
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+	    if (_selectedWidgets[c] && _selectedWidgets[c]->isChildOf(*this)) {
+	        outResult.push_back(_selectedWidgets[c]);
+	    }
 	}
 }
 
 Widget* Widget::findSelectedWidget(int owner) {
-	if (selected && owner == this->owner) {
-		return this;
-	} else {
-		std::vector<Widget*> selectedWidgets;
-		findSelectedWidgets(selectedWidgets);
-		for (auto widget : selectedWidgets) {
-			if (widget->owner == owner) {
-				return widget;
-			}
-		}
-	}
-	return nullptr;
+    std::vector<Widget*> selectedWidgets;
+    findSelectedWidgets(selectedWidgets);
+    for (auto widget : selectedWidgets) {
+        if (widget->owner == owner) {
+            return widget;
+        }
+    }
+    return nullptr;
 }
 
 bool Widget::isChildOf(const Widget& widget) const {

@@ -49,7 +49,6 @@ public:
 
     void	setName(const char* _name) { name = _name; }
     void	setPressed(bool _pressed) { reallyPressed = pressed = _pressed; }
-    void    setSelected(bool _selected) { selected = _selected; }
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }

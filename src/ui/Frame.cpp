@@ -1195,6 +1195,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 }
 
 void Frame::postprocess() {
+    //return; // Why is this function slow as balls
 	Widget::process();
 
 	// TODO: which player owns the mouse

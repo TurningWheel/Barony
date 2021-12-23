@@ -1417,6 +1417,15 @@ void drawEntities3D(view_t* camera, int mode)
 	Entity* entity;
 	long x, y;
 
+	static bool draw_ents = true;
+	if (keystatus[SDL_SCANCODE_P] && !command) {
+	    keystatus[SDL_SCANCODE_P] = 0;
+	    draw_ents = (draw_ents==false);
+	}
+	if (!draw_ents) {
+	    return;
+	}
+
 	if ( map.entities->first == nullptr )
 	{
 		return;
