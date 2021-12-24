@@ -4701,6 +4701,7 @@ Sint32 Entity::getThrownAttack()
 		else if ( itemCategory(entitystats->weapon) == POTION )
 		{
 			int skillLVL = entitystats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			attack += entitystats->weapon->weaponGetAttack(entitystats);
 			/*int dex = getDEX() / 4;
 			attack += dex;*/
 			attack *= potionDamageSkillMultipliers[std::min(skillLVL, 5)];
