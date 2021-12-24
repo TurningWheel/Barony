@@ -3470,9 +3470,7 @@ void drawStatusNew(const int player)
 				}
 			}
 
-			players[player]->hotbar.faceMenuButtonHeld = pressed;
-
-			if ( pressed != Player::Hotbar_t::GROUP_NONE
+			if ( players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE
 				&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
 			{
 				spell_t* spell = getSpellFromItem(player, item);
@@ -3481,6 +3479,8 @@ void drawStatusNew(const int player)
 					players[player]->hotbar.faceMenuQuickCast = true;
 				}
 			}
+
+			players[player]->hotbar.faceMenuButtonHeld = pressed;
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.
