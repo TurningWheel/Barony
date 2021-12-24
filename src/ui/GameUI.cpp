@@ -72,6 +72,8 @@ struct CustomColors_t
 	Uint32 characterSheetNeutral = 0xFFFFFFFF;
 	Uint32 characterSheetGreen = 0xFFFFFFFF;
 	Uint32 characterSheetRed = 0xFFFFFFFF;
+	Uint32 characterSheetFaintText = 0xFFFFFFFF;
+	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
 } hudColors;
 EnemyBarSettings_t enemyBarSettings;
 
@@ -1472,12 +1474,20 @@ void Player::CharacterSheet_t::loadCharacterSheetJSON()
 	}
 }
 
+const int NUM_CHARSHEET_TOOLTIP_BACKING_FRAMES = 9;
+const int NUM_CHARSHEET_TOOLTIP_TEXT_FIELDS = 16;
+std::map<int, Field*> characterSheetTooltipTextFields[MAXPLAYERS];
+std::map<int, Frame*> characterSheetTooltipTextBackingFrames[MAXPLAYERS];
+
 void Player::CharacterSheet_t::createCharacterSheet()
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player sheet %d", player.playernum);
 	if ( !gui->findFrame(name) )
 	{
+		characterSheetTooltipTextFields[player.playernum].clear();
+		characterSheetTooltipTextBackingFrames[player.playernum].clear();
+
 		Frame* sheetFrame = gui->addFrame(name);
 		sheetFrame->setHollow(true);
 		sheetFrame->setBorder(0);
@@ -2264,9 +2274,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
 		auto txt = tooltipFrame->addField("tooltip text", 1024);
+		auto txtRightAlignHint = tooltipFrame->addField("tooltip text right align hint", 128);
 		const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		txt->setFont(tooltipFont);
 		txt->setColor(makeColor(188, 154, 114, 255));
+		txtRightAlignHint->setFont(tooltipFont);
+		txtRightAlignHint->setColor(hudColors.characterSheetFaintText);
 		auto glyph1 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 1");
 		glyph1->disabled = true;
 		auto glyph2 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 2");
@@ -2276,90 +2289,31 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		auto glyph4 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 4");
 		glyph4->disabled = true;
 
-		auto txtEntry = tooltipFrame->addField("txt 1", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
+		for ( int i = 1; i <= NUM_CHARSHEET_TOOLTIP_TEXT_FIELDS; ++i )
+		{
+			char txtEntryFieldName[64] = "";
+			snprintf(txtEntryFieldName, sizeof(txtEntryFieldName), "txt %d", i);
+			auto txtEntry = tooltipFrame->addField(txtEntryFieldName, 1024);
+			txtEntry->setFont(tooltipFont);
+			txtEntry->setDisabled(true);
+			txtEntry->setVJustify(Field::justify_t::CENTER);
+			txtEntry->setColor(makeColor(188, 154, 114, 255));
+			txtEntry->setOntop(true);
 
-		txtEntry = tooltipFrame->addField("txt 2", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 3", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 4", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 5", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 6", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 7", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 8", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 9", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 10", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
-
-		txtEntry = tooltipFrame->addField("txt 11", 1024);
-		txtEntry->setFont(tooltipFont);
-		txtEntry->setDisabled(true);
-		txtEntry->setVJustify(Field::justify_t::CENTER);
-		txtEntry->setColor(makeColor(188, 154, 114, 255));
-		txtEntry->setOntop(true);
+			characterSheetTooltipTextFields[player.playernum][i] = txtEntry;
+		}
 
 		auto div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
 			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
 			"images/system/white.png", "tooltip divider 1");
 		div->disabled = true;
+		div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			"images/system/white.png", "tooltip divider 2");
+		div->disabled = true;
 
 
-		for ( int i = 1; i <= 5; ++i )
+		for ( int i = 1; i <= NUM_CHARSHEET_TOOLTIP_BACKING_FRAMES; ++i )
 		{
 			char backingFrameName[64] = "";
 			snprintf(backingFrameName, sizeof(backingFrameName), "txt value backing frame %d", i);
@@ -2386,6 +2340,8 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 				color, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 			imageSetWidthHeight9x9(txtValueBackingFrame, skillsheetEffectBackgroundImages);
+
+			characterSheetTooltipTextBackingFrames[player.playernum][i] = txtValueBackingFrame;
 		}
 		}
 	}
@@ -3530,6 +3486,336 @@ std::string& Player::CharacterSheet_t::getHoverTextString(std::string key)
 	return defaultString;
 }
 
+bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo, int lineNumber, char titleBuf[128], char valueBuf[128])
+{
+	std::string skillName = "-";
+	Sint32 skillLVL = 0;
+	for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+	{
+		if ( skill.skillId == attackHoverTextInfo.proficiency )
+		{
+			skillName = skill.name;
+			skillLVL = stats[playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency];
+			break;
+		}
+	}
+
+	if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
+					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+					skillName.c_str(), skillLVL);
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(), 
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.mainAttributeBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.weaponBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_MELEE_DAMAGE);
+				return true;
+			case 6:
+				return false;
+			default:
+				return false;
+		}
+	}
+	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_UNARMED )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
+					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+					skillName.c_str(), skillLVL);
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.mainAttributeBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_items_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.equipmentAndEffectBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.proficiencyBonus);
+				return true;
+			case 6:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_unarmed_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_PLAYER_UNARMED_DAMAGE);
+				return true;
+			default:
+				return false;
+		}
+	}
+	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_PICKAXE )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
+					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_noskill").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.mainAttributeBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.weaponBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_MELEE_DAMAGE);
+				return true;
+			default:
+				return false;
+		}
+	}
+	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RANGED )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
+					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+					skillName.c_str(), skillLVL);
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.mainAttributeBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.weaponBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_items_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.equipmentAndEffectBonus);
+				return true;
+			case 6:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_ranged_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_RANGED_DAMAGE);
+				return true;
+			default:
+				return false;
+		}
+	}
+	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN
+		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+					skillName.c_str(), skillLVL);
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, "");
+				snprintf(valueBuf, 128, "");
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.mainAttributeBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.weaponBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.proficiencyBonus);
+				return true;
+			case 6:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_fully_charged").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					3);
+				return true;
+			case 7:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_THROWN_DAMAGE);
+				return true;
+			default:
+				return false;
+		}
+	}
+	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_POTION )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
+					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+					skillName.c_str(), skillLVL);
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.weaponBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.proficiencyBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_THROWN_DAMAGE);
+				return true;
+			default:
+				return false;
+		}
+	}
+	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_WHIP )
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_nobonus_format").c_str(),
+					attackHoverTextInfo.totalAttack);
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+					skillName.c_str(), skillLVL);
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
+					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
+				return true;
+			case 3:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_whip").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.mainAttributeBonus);
+				return true;
+			case 4:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					attackHoverTextInfo.weaponBonus);
+				return true;
+			case 5:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
+				snprintf(valueBuf, 128,
+					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+					BASE_MELEE_DAMAGE);
+				return true;
+			default:
+				return false;
+		}
+	}
+	else
+	{
+		switch ( lineNumber )
+		{
+			case 1:
+				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, 128, "-");
+				return true;
+			case 2:
+				snprintf(titleBuf, 128, "");
+				snprintf(valueBuf, 128, "");
+				return true;
+			default:
+				return false;
+		}
+	}
+	return false;
+}
+
 void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos)
 {
 	if ( !sheetFrame )
@@ -3578,10 +3864,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	tooltipFrame->setOpacity(100.0);
 	tooltipDeselectedTick = ticks;
 
-	auto txt = tooltipFrame->findField("tooltip text");
-
 	Uint32 defaultColor = hudColors.characterSheetNeutral;
-	for ( int i = 1; i <= 11; ++i )
+	auto txt = tooltipFrame->findField("tooltip text");
+	txt->setColor(defaultColor);
+	auto txtRightAlignHint = tooltipFrame->findField("tooltip text right align hint");
+	txtRightAlignHint->setColor(hudColors.characterSheetFaintText);
+	txtRightAlignHint->setDisabled(true);
+
+	for ( int i = 1; i <= NUM_CHARSHEET_TOOLTIP_TEXT_FIELDS; ++i )
 	{
 		char glyphName[32] = "";
 		snprintf(glyphName, sizeof(glyphName), "glyph %d", i);
@@ -3589,9 +3879,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			glyph->disabled = true;
 		}
-		char entryName[32] = "";
-		snprintf(entryName, sizeof(entryName), "txt %d", i);
-		auto entry = tooltipFrame->findField(entryName); assert(entry);
+
+		auto entry = characterSheetTooltipTextFields[player.playernum][i]; assert(entry);
 		entry->setDisabled(true);
 		entry->setHJustify(Frame::justify_t::LEFT);
 		entry->setVJustify(Field::justify_t::CENTER);
@@ -3599,12 +3888,12 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	}
 	auto div = tooltipFrame->findImage("tooltip divider 1");
 	div->disabled = true;
+	auto div2 = tooltipFrame->findImage("tooltip divider 2");
+	div2->disabled = true;
 
-	for ( int i = 1; i <= 5; ++i )
+	for ( int i = 1; i <= NUM_CHARSHEET_TOOLTIP_BACKING_FRAMES; ++i )
 	{
-		char backingFrameName[64] = "";
-		snprintf(backingFrameName, sizeof(backingFrameName), "txt value backing frame %d", i);
-		auto txtValueBackingFrame = tooltipFrame->findFrame(backingFrameName);
+		auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][i];
 		txtValueBackingFrame->setDisabled(true);
 	}
 
@@ -3702,7 +3991,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int extraTextHeightForLowerCharacters = 4;
 		{
 			currentHeight += padyMid;
-			auto entry = tooltipFrame->findField("txt 1"); assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][1]; assert(entry);
 			entry->setDisabled(false);
 			char buf[128] = "";
 			snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_base_amount").c_str());
@@ -3760,7 +4049,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 			tooltipPos.h = pady1 + currentHeight + pady2;
 
-			auto entryValue = tooltipFrame->findField("txt 2"); assert(entry);
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][2]; assert(entry);
 			entryValue->setDisabled(false);
 			int value = 0;
 			char valueBuf[128] = "";
@@ -3816,7 +4105,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 		{
 			currentHeight += 0;// padyMid / 2;
-			auto entry = tooltipFrame->findField("txt 3"); assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][3]; assert(entry);
 			entry->setDisabled(false);
 			char buf[128] = "";
 			snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_modified_amount").c_str());
@@ -3837,7 +4126,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 			tooltipPos.h = pady1 + currentHeight + pady2;
 
-			auto entryValue = tooltipFrame->findField("txt 4"); assert(entry);
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][4]; assert(entry);
 			entryValue->setDisabled(false);
 			char valueBuf[128] = "";
 			int value = 0;
@@ -3904,7 +4193,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			// stat extra number display
 			currentHeight += padyMid;
-			auto entry = tooltipFrame->findField("txt 5"); assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][5]; assert(entry);
 			entry->setDisabled(false);
 			char buf[128] = "";
 			if ( element == SHEET_STR )
@@ -3946,7 +4235,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 			tooltipPos.h = pady1 + currentHeight + pady2;
 
-			auto entryValue = tooltipFrame->findField("txt 6"); assert(entry);
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][6]; assert(entry);
 			entryValue->setDisabled(false);
 			char valueBuf[128] = "";
 			int value = 0;
@@ -4017,7 +4306,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 3");
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][3];
 			SDL_Rect backingFramePos = entryValue->getSize();
 			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
 				entryValue->getTextColor(), entryValue->getOutlineColor());
@@ -4031,7 +4320,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			// stat extra number display
 			currentHeight += padyMid;
-			auto entry = tooltipFrame->findField("txt 7"); assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][7]; assert(entry);
 			entry->setDisabled(false);
 			char buf[128] = "";
 
@@ -4070,7 +4359,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 			tooltipPos.h = pady1 + currentHeight + pady2;
 
-			auto entryValue = tooltipFrame->findField("txt 8"); assert(entry);
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][8]; assert(entry);
 			entryValue->setDisabled(false);
 			char valueBuf[128] = "";
 			int value = 0;
@@ -4151,7 +4440,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 4");
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][4];
 			SDL_Rect backingFramePos = entryValue->getSize();
 			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
 				entryValue->getTextColor(), entryValue->getOutlineColor());
@@ -4165,7 +4454,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			// stat extra number display
 			currentHeight += padyMid;
-			auto entry = tooltipFrame->findField("txt 9"); assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][9]; assert(entry);
 			entry->setDisabled(false);
 			char buf[128] = "";
 			if ( element == SHEET_DEX )
@@ -4191,7 +4480,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 			tooltipPos.h = pady1 + currentHeight + pady2;
 
-			auto entryValue = tooltipFrame->findField("txt 10"); assert(entry);
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][10]; assert(entry);
 			entryValue->setDisabled(false);
 			char valueBuf[128] = "";
 			int value = 0;
@@ -4238,7 +4527,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 5");
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][5];
 			SDL_Rect backingFramePos = entryValue->getSize();
 			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
 				entryValue->getTextColor(), entryValue->getOutlineColor());
@@ -4249,11 +4538,9 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			txtValueBackingFrame->setDisabled(false);
 		}
 
-		for ( int index = 1; index <= 5; ++index )
+		for ( int index = 1; index <= NUM_CHARSHEET_TOOLTIP_BACKING_FRAMES; ++index )
 		{
-			char backingFrameName[64] = "";
-			snprintf(backingFrameName, sizeof(backingFrameName), "txt value backing frame %d", index);
-			auto txtValueBackingFrame = tooltipFrame->findFrame(backingFrameName);
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][index];
 			if ( txtValueBackingFrame->isDisabled() )
 			{
 				continue;
@@ -4288,7 +4575,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 			currentHeight += padyMid;
 
-			auto entry = tooltipFrame->findField("txt 11"); assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][11]; assert(entry);
 			entry->setDisabled(false);
 			char buf[512] = "";
 
@@ -4325,6 +4612,1009 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			skillsheetEffectBackgroundImages);
+	}
+	else if ( element >= Player::CharacterSheet_t::SHEET_ATK && element <= Player::CharacterSheet_t::SHEET_WGT )
+	{
+		AttackHoverText_t attackHoverTextInfo;
+		Sint32 attackPower = displayAttackPower(player.playernum, attackHoverTextInfo);
+
+		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipTopLeft->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipTop->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipTopRight->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+
+		int maxWidth = 260;
+		if ( getHoverTextString("attributes_max_tooltip_width") != defaultString )
+		{
+			maxWidth = std::max(0, std::stoi(getHoverTextString("attributes_max_tooltip_width")));
+		}
+		int minWidth = 0;
+		if ( getHoverTextString("attributes_min_tooltip_width") != defaultString )
+		{
+			minWidth = std::max(0, std::stoi(getHoverTextString("attributes_min_tooltip_width")));
+		}
+		const int padx = 16;
+		const int pady1 = 8;
+		const int pady2 = 4;
+		const int padxMid = 4;
+		const int padyMid = 8;
+		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+
+		std::string titleText = "";
+		std::string descText = "";
+		int value = 0;
+		switch ( element )
+		{
+			case SHEET_ATK:
+			{
+				char descBuf[256];
+				std::string skillName = "-";
+				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+				{
+					if ( skill.skillId == attackHoverTextInfo.proficiency )
+					{
+						skillName = skill.name;
+						break;
+					}
+				}
+				titleText = getHoverTextString("attributes_atk_title");
+				txtRightAlignHint->setText("");
+				txtRightAlignHint->setDisabled(false);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_UNARMED )
+				{
+					txtRightAlignHint->setText(getHoverTextString("attributes_atk_title_unarmed").c_str());
+				}
+				else if ( stats[player.playernum]->weapon )
+				{
+					Item* item = stats[player.playernum]->weapon;
+					if ( item->type >= WOODEN_SHIELD && item->type < NUMITEMS )
+					{
+						char itemNameBuf[128];
+						if ( itemCategory(item) == MAGICSTAFF )
+						{
+							snprintf(itemNameBuf, sizeof(itemNameBuf), "%s (%+d)", item->getName(), item->beatitude);
+							std::string itemNameStr = itemNameBuf;
+							capitalizeString(itemNameStr);
+							txtRightAlignHint->setText(itemNameStr.c_str());
+						}
+						else
+						{
+							snprintf(itemNameBuf, sizeof(itemNameBuf), "%s %s (%+d)", 
+								ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+							txtRightAlignHint->setText(itemNameBuf);
+						}
+					}
+				}
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_WHIP )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_melee_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_UNARMED )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_unarmed_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RANGED )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_ranged_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_thrown_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_gem_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_POTION )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_potion_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_PICKAXE )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_pickaxe_desc").c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MAGICSTAFF )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_magicstaff_desc").c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_TOOL )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_tool_desc").c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_TOOL_TRAP )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_tinker_tool_desc").c_str());
+					descText = descBuf;
+				}
+				else
+				{
+					descText = "";
+				}
+			}
+				break;
+			case SHEET_AC:
+				titleText = getHoverTextString("attributes_ac_title");
+				descText = getHoverTextString("attributes_ac_desc");
+				break;
+			case SHEET_POW:
+				titleText = getHoverTextString("attributes_atk_title");
+				descText = getHoverTextString("attributes_pwr_desc");
+				break;
+			case SHEET_RES:
+				titleText = getHoverTextString("attributes_atk_title");
+				descText = getHoverTextString("attributes_res_desc");
+				break;
+			case SHEET_RGN:
+				titleText = getHoverTextString("attributes_atk_title");
+				descText = getHoverTextString("attributes_rgn_desc");
+				break;
+			case SHEET_WGT:
+				titleText = getHoverTextString("attributes_atk_title");
+				descText = getHoverTextString("attributes_wgt_desc");
+				break;
+			default:
+				break;
+		}
+
+		txt->setText(titleText.c_str());
+		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
+		txt->setSize(txtPos);
+		txt->reflowTextToFit(0);
+		txt->setColor(makeColor(67, 195, 157, 255));
+		Font* actualFont = Font::get(txt->getFont());
+		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+		txtPos.h = txtHeight + 4;
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		txtPos.w = txtGet->getWidth();
+		txtPos.w = std::max(minWidth - padx * 2, txtPos.w);
+		txt->setSize(txtPos);
+
+		txtRightAlignHint->setSize(txtPos);
+		txtRightAlignHint->setHJustify(Field::justify_t::RIGHT);
+
+		tooltipPos.w = (txtPos.w + padx * 2);
+
+		unsigned int longestValue = 0;
+		std::map<int, std::pair<Field*, SDL_Rect>> valueSizes;
+
+		int currentHeight = txtPos.y + (actualFont->height(true) * 1) + 2;
+		const int extraTextHeightForLowerCharacters = 4;
+		int currentTextFieldIndex = 1;
+		int currentTextBackingFrameIndex = 1;
+
+		char buf[128] = "";
+		char valueBuf[128] = "";
+
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 1, buf, valueBuf) )
+		{
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			auto glyphBacking = tooltipFrame->findImage("glyph 1");
+			glyphBacking->disabled = false;
+			glyphBacking->path = getHoverTextString("icon_backing_path");
+			glyphBacking->pos.x = padx + padxMid + 4;
+			glyphBacking->pos.y = currentHeight + 6;
+			glyphBacking->pos.w = 44;
+			glyphBacking->pos.h = 44;
+
+			auto glyphIcon = tooltipFrame->findImage("glyph 2");
+			glyphIcon->disabled = false;
+			glyphIcon->path = "";
+			switch ( element )
+			{
+				case SHEET_ATK:
+					if ( attackHoverTextInfo.proficiency == -1 )
+					{
+						glyphIcon->path = getHoverTextString("icon_atk_path");
+					}
+					else if (attackHoverTextInfo.proficiency >= 0 && attackHoverTextInfo.proficiency < NUMPROFICIENCIES )
+					{
+						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						{
+							if ( skill.skillId == attackHoverTextInfo.proficiency )
+							{
+								if ( skillCapstoneUnlocked(player.playernum, attackHoverTextInfo.proficiency) )
+								{
+									glyphIcon->path = skill.skillIconPathLegend;
+								}
+								else
+								{
+									glyphIcon->path = skill.skillIconPath;
+								}
+								break;
+							}
+						}
+						if ( stats[player.playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency] >= SKILL_LEVEL_LEGENDARY )
+						{
+							glyphBacking->path = actionPromptBackingIconPath100;
+						}
+						else if ( stats[player.playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency] >= SKILL_LEVEL_EXPERT )
+						{
+							glyphBacking->path = actionPromptBackingIconPath60;
+						}
+						else if ( stats[player.playernum]->PROFICIENCIES[attackHoverTextInfo.proficiency] >= SKILL_LEVEL_BASIC )
+						{
+							glyphBacking->path = actionPromptBackingIconPath20;
+						}
+						else
+						{
+							glyphBacking->path = actionPromptBackingIconPath00;
+						}
+					}
+					break;
+				case SHEET_AC:
+					glyphIcon->path = getHoverTextString("icon_ac_path");
+					break;
+				case SHEET_POW:
+					glyphIcon->path = getHoverTextString("icon_pwr_path");
+					break;
+				case SHEET_RES:
+					glyphIcon->path = getHoverTextString("icon_res_path");
+					break;
+				case SHEET_RGN:
+					glyphIcon->path = getHoverTextString("icon_rgn_path");
+					break;
+				case SHEET_WGT:
+					glyphIcon->path = getHoverTextString("icon_wgt_path");
+					break;
+				default:
+					break;
+			}
+			glyphIcon->pos.w = 24;
+			glyphIcon->pos.h = 24;
+			glyphIcon->pos.x = glyphBacking->pos.x + glyphBacking->pos.w / 2 - glyphIcon->pos.w / 2;
+			glyphIcon->pos.y = glyphBacking->pos.y + glyphBacking->pos.h / 2 - glyphIcon->pos.h / 2;
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx / 2 + glyphBacking->pos.x + glyphBacking->pos.w;
+			entryPos.y = currentHeight;
+			if ( element == SHEET_ATK )
+			{
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_PICKAXE )
+				{
+					// fewer lines, add offset to centre the lines with the glyph
+					entryPos.y += 8;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_DEFAULT
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_TOOL
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_TOOL_TRAP
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MAGICSTAFF )
+				{
+					entryPos.y += 16;
+				}
+			}
+			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			entryValue->setText(valueBuf);
+			SDL_Rect entryValuePos = entry->getSize();
+			entryValue->setSize(entryValuePos);
+			entryValue->setHJustify(Frame::justify_t::RIGHT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			/*auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 1");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[1] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);*/
+			++currentTextBackingFrameIndex;
+		}
+
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 2, buf, valueBuf) )
+		{
+			currentHeight += 0;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			auto glyphBacking = tooltipFrame->findImage("glyph 1");
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx / 2 + glyphBacking->pos.x + glyphBacking->pos.w;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+
+			if ( strcmp(buf, "") )
+			{
+				// don't modify height if this is an empty line
+				currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			}
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			SDL_Rect entryValuePos = entry->getSize();
+			entryValue->setSize(entryValuePos);
+			entryValue->setHJustify(Frame::justify_t::RIGHT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			/*auto txtValueBackingFrame = tooltipFrame->findFrame("txt value backing frame 2");
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[2] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);*/
+			++currentTextBackingFrameIndex;
+		}
+		bool hasEntryInfoLines = false;
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 3, buf, valueBuf) )
+		{
+			// extra number display - line 3
+			hasEntryInfoLines = true;
+			if ( element == SHEET_ATK )
+			{
+				// add a divider
+				div2->pos.x = padx;
+				div2->pos.y = currentHeight + 2 + actualFont->height(true);
+				div2->pos.w = txtPos.w;
+				div2->disabled = false;
+
+				auto entryTotalHeading = characterSheetTooltipTextFields[player.playernum][16]; assert(entryTotalHeading);
+				entryTotalHeading->setDisabled(false);
+				entryTotalHeading->setText(getHoverTextString("attributes_atk_total_sum_header").c_str());
+				entryTotalHeading->setColor(hudColors.characterSheetOffWhiteText);
+				entryTotalHeading->setHJustify(Field::justify_t::RIGHT);
+				SDL_Rect entryPos = entryTotalHeading->getSize();
+				entryPos.x = padx + padxMid;
+				entryPos.y = currentHeight + 1;
+				entryPos.w = txtPos.w - (padxMid * 2);
+				entryPos.h = actualFont->height(true);
+				entryTotalHeading->setSize(entryPos);
+
+				currentHeight += actualFont->height(true) + 2; // extra gap here for 'total' text.
+			}
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+			++currentTextBackingFrameIndex;
+		}
+
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 4, buf, valueBuf) )
+		{
+			// extra number display - line 4
+			hasEntryInfoLines = true;
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[4] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+			++currentTextBackingFrameIndex;
+		}
+
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf) )
+		{
+			// extra number display - line 5
+			hasEntryInfoLines = true;
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+			++currentTextBackingFrameIndex;
+		}
+
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 6, buf, valueBuf) )
+		{
+			// extra number display - line 6
+			hasEntryInfoLines = true;
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+			++currentTextBackingFrameIndex;
+		}
+
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 7, buf, valueBuf) )
+		{
+			// extra number display - line 7
+			hasEntryInfoLines = true;
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entry->setDisabled(false);
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
+			++currentTextFieldIndex;
+			entryValue->setDisabled(false);
+			int value = 0;
+			switch ( element )
+			{
+				case SHEET_ATK:
+					break;
+				case SHEET_AC:
+					break;
+				case SHEET_POW:
+					break;
+				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+					break;
+				case SHEET_WGT:
+					break;
+				default:
+					break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+			++currentTextBackingFrameIndex;
+		}
+
+		for ( int index = 1; index <= NUM_CHARSHEET_TOOLTIP_BACKING_FRAMES; ++index )
+		{
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][index];
+			if ( txtValueBackingFrame->isDisabled() )
+			{
+				continue;
+			}
+
+			if ( valueSizes.find(index) == valueSizes.end() )
+			{
+				continue;
+			}
+
+			SDL_Rect valuePos = valueSizes[index].second;
+			Field* entryValue = valueSizes[index].first;
+			SDL_Rect entryValuePos = entryValue->getSize();
+			entryValuePos.x = entryValuePos.x + entryValuePos.w;
+			entryValuePos.w = (int)longestValue;
+			entryValuePos.x -= entryValuePos.w;
+			entryValuePos.x -= 8;
+			entryValue->setSize(entryValuePos);
+
+			valuePos.w = (int)longestValue + 16;
+			valuePos.x -= (valuePos.w);
+			valuePos.y -= 3;
+			valuePos.h += 4;
+
+			txtValueBackingFrame->setSize(valuePos);
+
+			imageResizeToContainer9x9(txtValueBackingFrame, SDL_Rect{ 0, 0, valuePos.w, valuePos.h }, skillsheetEffectBackgroundImages);
+		}
+
+		if ( !hasEntryInfoLines )
+		{
+			currentHeight += padyMid * 2;
+		}
+
+		{
+			currentHeight += padyMid;
+
+			div->pos.x = padx;
+			div->pos.y = currentHeight;
+			div->pos.w = txtPos.w;
+			div->disabled = false;
+
+			currentHeight += padyMid;
+
+			auto entry = characterSheetTooltipTextFields[player.playernum][15]; assert(entry);
+			entry->setDisabled(false);
+			char buf[512] = "";
+
+			std::string descTextFormatted = "\x1E ";
+			for ( auto s : descText )
+			{
+				descTextFormatted += s;
+				if ( s == '\n' )
+				{
+					descTextFormatted += "\x1E ";
+				}
+			}
+
+			snprintf(buf, sizeof(buf), "%s", descTextFormatted.c_str());
+			entry->setText(buf);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w;
+			entry->setSize(entryPos);
+			entry->reflowTextToFit(0);
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(makeColor(224, 224, 224, 255));
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+
+			currentHeight += padyMid / 4;
+			tooltipPos.h = pady1 + currentHeight + pady2;
+		}
+
+		tooltipPos.h = pady1 + currentHeight + pady2;
+		tooltipPos.x = pos.x - tooltipPos.w;
+		tooltipPos.y = pos.y;
+		tooltipFrame->setSize(tooltipPos);
+		if ( tooltipPos.y + tooltipPos.h > sheetFrame->getSize().h )
+		{
+			// keep on-screen
+			tooltipPos.y -= ((tooltipPos.y + tooltipPos.h) - sheetFrame->getSize().h);
+			tooltipFrame->setSize(tooltipPos);
+		}
 		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
 			skillsheetEffectBackgroundImages);
 	}
@@ -5060,8 +6350,19 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("atk text stat") )
 	{
-		Sint32 dummy[6];
-		snprintf(buf, sizeof(buf), "%d", displayAttackPower(player.playernum, dummy));
+		AttackHoverText_t atkHoverText;
+		Sint32 displayedATK = displayAttackPower(player.playernum, atkHoverText);
+		if ( atkHoverText.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MAGICSTAFF
+			|| atkHoverText.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_TOOL
+			|| atkHoverText.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_TOOL_TRAP
+			|| atkHoverText.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_DEFAULT )
+		{
+			snprintf(buf, sizeof(buf), "-");
+		}
+		else
+		{
+			snprintf(buf, sizeof(buf), "%d", displayedATK);
+		}
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 
@@ -7429,6 +8730,22 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_negative_text"]["g"].GetInt(),
 							d["colors"]["charsheet_negative_text"]["b"].GetInt(),
 							d["colors"]["charsheet_negative_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_faint_text") )
+					{
+						hudColors.characterSheetFaintText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_faint_text"]["r"].GetInt(),
+							d["colors"]["charsheet_faint_text"]["g"].GetInt(),
+							d["colors"]["charsheet_faint_text"]["b"].GetInt(),
+							d["colors"]["charsheet_faint_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_off_white_text") )
+					{
+						hudColors.characterSheetOffWhiteText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_off_white_text"]["r"].GetInt(),
+							d["colors"]["charsheet_off_white_text"]["g"].GetInt(),
+							d["colors"]["charsheet_off_white_text"]["b"].GetInt(),
+							d["colors"]["charsheet_off_white_text"]["a"].GetInt());
 					}
 				}
 				if ( d.HasMember("dropdowns") )
