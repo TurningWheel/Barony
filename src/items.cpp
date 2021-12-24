@@ -3420,6 +3420,7 @@ bool Item::doesPotionHarmAlliesOnThrown() const
 		case POTION_SPEED:
 		case POTION_INVISIBILITY:
 		case POTION_LEVITATION:
+		case POTION_POLYMORPH:
 			return false;
 		default:
 			break;
