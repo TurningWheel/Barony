@@ -16,11 +16,11 @@
 bool initSoundEngine()
 {
 #ifdef USE_FMOD
-	printlog("initializing FMOD...\n");
+	printlog("[FMOD]: initializing FMOD...\n");
 	fmod_result = FMOD::System_Create(&fmod_system);
 	if (FMODErrorCheck())
 	{
-		printlog("Failed to create FMOD. DISABLING AUDIO.\n");
+		printlog("[FMOD]: Failed to create FMOD. DISABLING AUDIO.\n");
 		no_sound = true;
 		return false;
 	}
@@ -30,7 +30,7 @@ bool initSoundEngine()
 		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, fmod_extraDriverData);
 		if (FMODErrorCheck())
 		{
-			printlog("Failed to initialize FMOD. DISABLING AUDIO.\n");
+			printlog("[FMOD]: Failed to initialize FMOD. DISABLING AUDIO.\n");
 			no_sound = true;
 			return false;
 		}
@@ -61,27 +61,27 @@ bool initSoundEngine()
 		fmod_result = fmod_system->createChannelGroup(nullptr, &sound_group);
 		if (FMODErrorCheck())
 		{
-			printlog("Failed to create sound channel group. DISABLING AUDIO.\n");
+			printlog("[FMOD]: Failed to create sound channel group. DISABLING AUDIO.\n");
 			no_sound = true;
 			return false;
 		}
 		fmod_result = fmod_system->createChannelGroup(nullptr, &soundAmbient_group);
 		if ( FMODErrorCheck() )
 		{
-			printlog("Failed to create sound ambient channel group.\n");
+			printlog("F[FMOD]: ailed to create sound ambient channel group.\n");
 			no_sound = true;
 		}
 		fmod_result = fmod_system->createChannelGroup(nullptr, &soundEnvironment_group);
 		if ( FMODErrorCheck() )
 		{
-			printlog("Failed to create sound environment channel group.\n");
+			printlog("[FMOD]: Failed to create sound environment channel group.\n");
 			no_sound = true;
 		}
 		
 		fmod_result = fmod_system->createChannelGroup(nullptr, &music_group);
 		if (FMODErrorCheck())
 		{
-			printlog("Failed to create music channel group. DISABLING AUDIO.\n");
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
 			no_sound = true;
 			return false;
 		}
