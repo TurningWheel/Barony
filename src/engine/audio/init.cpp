@@ -35,6 +35,29 @@ bool initSoundEngine()
 			return false;
 		}
 
+		int numDrivers = 0;
+		fmod_system->getNumDrivers(&numDrivers);
+		for ( int i = 0; i < numDrivers; ++i )
+		{
+			const int driverNameLen = 1024;
+			char driverName[1024] = "";
+			FMOD_GUID guid;
+			fmod_result = fmod_system->getDriverInfo(i, driverName, driverNameLen, &guid, nullptr, nullptr, nullptr);
+			if ( FMODErrorCheck() )
+			{
+				printlog("[FMOD]: Failed to read audio device index: %d", i);
+			}
+			else
+			{
+				printlog("[FMOD]: Audio device found: %d %s | %08x %04x %04x", i, driverName, guid.Data1, guid.Data2, guid.Data3);
+			}
+			// call fmod_system->setDriver() any time to change the device mid-game - no shutdown/reinit required
+		}
+		// if currentDriver == 0, then we're using the OS 'default' audio driver
+		int currentDriver = 0;
+		fmod_system->getDriver(&currentDriver);
+		printlog("[FMOD]: Current audio device: %d", currentDriver);
+
 		fmod_result = fmod_system->createChannelGroup(nullptr, &sound_group);
 		if (FMODErrorCheck())
 		{
