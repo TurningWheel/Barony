@@ -243,7 +243,7 @@ TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
 bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
-bool TimerExperiments::bDebug = true;
+bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
 void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,

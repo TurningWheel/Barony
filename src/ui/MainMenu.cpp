@@ -70,6 +70,13 @@ namespace MainMenu {
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 
+	enum class LobbyType {
+		LobbyLocal,
+		LobbyLAN,
+		LobbyOnline,
+		LobbyJoined
+	};
+
 	static LobbyType currentLobbyType;
 	static bool playersInLobby[4];
 
@@ -85,6 +92,136 @@ namespace MainMenu {
 	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 	static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
+
+    // Inventory sorting options
+	struct InventorySorting {
+		bool hotbarWeapons = true;
+		bool hotbarArmor = true;
+		bool hotbarAmulets = true;
+		bool hotbarBooks = true;
+		bool hotbarTools = true;
+		bool hotbarThrown = true;
+		bool hotbarGems = false;
+		bool hotbarPotions = true;
+		bool hotbarScrolls = true;
+		bool hotbarStaves = true;
+		bool hotbarFood = true;
+		bool hotbarSpells = true;
+		int sortWeapons = 0;
+		int sortArmor = 0;
+		int sortAmulets = 0;
+		int sortBooks = 0;
+		int sortTools = 0;
+		int sortThrown = 0;
+		int sortGems = 0;
+		int sortPotions = 0;
+		int sortScrolls = 0;
+		int sortStaves = 0;
+		int sortFood = 0;
+		int sortEquipped = 0;
+		inline void save();
+		static inline InventorySorting load();
+		static inline InventorySorting reset();
+		void serialize(FileInterface*);
+	};
+
+    // Binding options
+	struct Bindings {
+		int devices[4];
+		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
+		std::unordered_map<std::string, std::string> gamepad_bindings[4];
+		std::unordered_map<std::string, std::string> joystick_bindings[4];
+		inline void save();
+		static inline Bindings load();
+		static inline Bindings reset();
+		void serialize(FileInterface*);
+	};
+
+    // Minimap options
+	struct Minimap {
+		int map_scale = 100;
+		int icon_scale = 100;
+		int foreground_opacity = 20;
+		int background_opacity = 0;
+		inline void save();
+		static inline Minimap load();
+		static inline Minimap reset();
+		void serialize(FileInterface*);
+	};
+
+    // Message options
+	struct Messages {
+		bool combat = true;
+		bool status = true;
+		bool inventory = true;
+		bool equipment = true;
+		bool world = true;
+		bool chat = true;
+		bool progression = true;
+		bool interaction = true;
+		bool inspection = true;
+		inline void save();
+		static inline Messages load();
+		static inline Messages reset();
+		void serialize(FileInterface*);
+	};
+
+    // All menu options combined
+	struct AllSettings {
+		bool add_items_to_hotbar_enabled;
+		InventorySorting inventory_sorting;
+		bool use_on_release_enabled;
+		Minimap minimap;
+		bool show_messages_enabled;
+		Messages show_messages;
+		bool show_player_nametags_enabled;
+		bool show_hud_enabled;
+		bool show_ip_address_enabled;
+		bool content_control_enabled;
+		bool colorblind_mode_enabled;
+		bool arachnophobia_filter_enabled;
+		bool shaking_enabled;
+		bool bobbing_enabled;
+		bool light_flicker_enabled;
+		int window_mode; // 0 = windowed, 1 = fullscreen, 2 = borderless
+		int resolution_x;
+		int resolution_y;
+		bool vsync_enabled;
+		bool vertical_split_enabled;
+		float gamma;
+		float fov;
+		float fps;
+		float master_volume;
+		float gameplay_volume;
+		float ambient_volume;
+		float environment_volume;
+		float music_volume;
+		bool minimap_pings_enabled;
+		bool player_monster_sounds_enabled;
+		bool out_of_focus_audio_enabled;
+		Bindings bindings;
+		bool numkeys_in_inventory_enabled;
+		float mouse_sensitivity;
+		bool reverse_mouse_enabled;
+		bool smooth_mouse_enabled;
+		bool rotation_speed_limit_enabled;
+		float turn_sensitivity_x;
+		float turn_sensitivity_y;
+		bool classic_mode_enabled;
+		bool hardcore_mode_enabled;
+		bool friendly_fire_enabled;
+		bool keep_inventory_enabled;
+		bool hunger_enabled;
+		bool minotaur_enabled;
+		bool random_traps_enabled;
+		bool extra_life_enabled;
+		bool cheats_enabled;
+		bool skipintro;
+		inline bool save(); // true if video needs restart
+		static inline AllSettings load();
+		static inline AllSettings reset();
+		void serialize(FileInterface*);
+	};
 
 	static inline void soundToggleMenu() {
 		playSound(500, 48);
@@ -128,6 +265,47 @@ namespace MainMenu {
 	static inline void soundDeleteSave() {
 		playSound(153, 48);
 	}
+
+/******************************************************************************/
+
+	static void settingsUI(Button&);
+	static void settingsVideo(Button&);
+	static void settingsAudio(Button&);
+	static void settingsControls(Button&);
+	static void settingsGame(Button&);
+
+	static void recordsAdventureArchives(Button&);
+	static void recordsLeaderboards(Button&);
+	static void recordsDungeonCompendium(Button&);
+	static void recordsStoryIntroduction(Button&);
+	static void recordsCredits(Button&);
+	static void recordsBackToMainMenu(Button&);
+
+	static void playNew(Button&);
+	static void playContinue(Button&);
+
+	static void mainPlayGame(Button&);
+	static void mainPlayModdedGame(Button&);
+	static void mainHallOfRecords(Button&);
+	static void mainSettings(Button&);
+	static void mainEditor(Button&);
+	static void mainClose(Button&);
+	static void mainEndLife(Button&);
+	static void mainRestartGame(Button&);
+	static void mainQuitToMainMenu(Button&);
+	static void mainQuitToDesktop(Button&);
+
+	static void characterCardGameSettingsMenu(int index);
+	static void characterCardLobbySettingsMenu(int index);
+	static void characterCardRaceMenu(int index);
+	static void characterCardClassMenu(int index);
+
+	static void createCharacterCard(int index);
+	static void createStartButton(int index);
+	static void createInviteButton(int index);
+	static void createWaitingStone(int index);
+	static void createLobby(LobbyType);
+	static void createLobbyBrowser();
 
 /******************************************************************************/
 
@@ -2807,7 +2985,7 @@ bind_failed:
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
-	void settingsUI(Button& button) {
+	static void settingsUI(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -2874,7 +3052,7 @@ bind_failed:
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
 	}
 
-	void settingsVideo(Button& button) {
+	static void settingsVideo(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -2990,7 +3168,7 @@ bind_failed:
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
 	}
 
-	void settingsAudio(Button& button) {
+	static void settingsAudio(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -3055,7 +3233,7 @@ bind_failed:
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
 	}
 
-	void settingsControls(Button& button) {
+	static void settingsControls(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -3126,7 +3304,7 @@ bind_failed:
 		settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
 	}
 
-	void settingsGame(Button& button) {
+	static void settingsGame(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -3196,19 +3374,19 @@ bind_failed:
 
 /******************************************************************************/
 
-	void recordsAdventureArchives(Button& button) {
+	static void recordsAdventureArchives(Button& button) {
 		soundActivate();
 	}
 
-	void recordsLeaderboards(Button& button) {
+	static void recordsLeaderboards(Button& button) {
 		soundActivate();
 	}
 
-	void recordsDungeonCompendium(Button& button) {
+	static void recordsDungeonCompendium(Button& button) {
 		soundActivate();
 	}
 
-	void recordsStoryIntroduction(Button& button) {
+	static void recordsStoryIntroduction(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -3217,7 +3395,7 @@ bind_failed:
 		beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 	}
 
-	void recordsCredits(Button& button) {
+	static void recordsCredits(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -3375,7 +3553,7 @@ bind_failed:
 		);
 	}
 
-	void recordsBackToMainMenu(Button& button) {
+	static void recordsBackToMainMenu(Button& button) {
 		soundCancel();
 
 		assert(main_menu_frame);
@@ -3422,6 +3600,9 @@ bind_failed:
 			{"PLAY MODDED GAME", mainPlayModdedGame},
 			{"HALL OF RECORDS", mainHallOfRecords},
 			{"SETTINGS", mainSettings},
+#ifndef NDEBUG
+			{"EDITOR", mainEditor},
+#endif
 			{"QUIT", mainQuitToDesktop}
 		};
 #endif
@@ -3656,7 +3837,7 @@ bind_failed:
 		return card;
 	}
 
-	void characterCardGameSettingsMenu(int index) {
+	static void characterCardGameSettingsMenu(int index) {
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 664);
@@ -3823,7 +4004,7 @@ bind_failed:
 		}*/
 	}
 
-	void characterCardLobbySettingsMenu(int index) {
+	static void characterCardLobbySettingsMenu(int index) {
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 580);
@@ -4184,7 +4365,7 @@ bind_failed:
 		}*/
 	}
 
-	void characterCardRaceMenu(int index) {
+	static void characterCardRaceMenu(int index) {
 		auto card = initCharacterCard(index, 488);
 
 		static void (*back_fn)(int) = [](int index){
@@ -4694,7 +4875,7 @@ bind_failed:
 		}*/
 	}
 
-	void characterCardClassMenu(int index) {
+	static void characterCardClassMenu(int index) {
 		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, 488);
 
@@ -4896,7 +5077,7 @@ bind_failed:
 		}*/
 	}
 
-	void createCharacterCard(int index) {
+	static void createCharacterCard(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5324,7 +5505,7 @@ bind_failed:
 			});
 	}
 
-	void createStartButton(int index) {
+	static void createStartButton(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5376,7 +5557,7 @@ bind_failed:
 		invite->select();
 	}
 
-	void createInviteButton(int index) {
+	static void createInviteButton(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5419,7 +5600,7 @@ bind_failed:
 		invite->select();
 	}
 
-	void createWaitingStone(int index) {
+	static void createWaitingStone(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5456,7 +5637,7 @@ bind_failed:
 		text->setHJustify(Field::justify_t::CENTER);
 	}
 
-	void createLobby(LobbyType type) {
+	static void createLobby(LobbyType type) {
 		destroyMainMenu();
 		createDummyMainMenu();
 
@@ -5569,7 +5750,7 @@ bind_failed:
 		}
 	}
 
-	void createLobbyBrowser() {
+	static void createLobbyBrowser() {
 		// TODO
 	}
 
@@ -5833,7 +6014,7 @@ bind_failed:
 		enter_code->setWidgetLeft("cancel");
 	}
 
-	void playNew(Button& button) {
+	static void playNew(Button& button) {
 		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -6331,7 +6512,7 @@ bind_failed:
         return first_savegame;
 	}
 
-	void playContinue(Button& button) {
+	static void playContinue(Button& button) {
         continueSingleplayer = ~(!anySaveFileExists(true) && anySaveFileExists(false));
 
         savegame_selected = nullptr;
@@ -6665,18 +6846,18 @@ bind_failed:
 
 /******************************************************************************/
 
-	void mainPlayGame(Button& button) {
+	static void mainPlayGame(Button& button) {
 		soundActivate();
 		createPlayWindow();
 	}
 
-	void mainPlayModdedGame(Button& button) {
+	static void mainPlayModdedGame(Button& button) {
 		// TODO add a mod selection menu or something here
 		soundActivate();
 		createPlayWindow();
 	}
 
-	void mainHallOfRecords(Button& button) {
+	static void mainHallOfRecords(Button& button) {
 		soundActivate();
 
 		assert(main_menu_frame);
@@ -6773,7 +6954,7 @@ bind_failed:
 		}
 	}
 
-	void mainSettings(Button& button) {
+	static void mainSettings(Button& button) {
 		//soundActivate(); // not needed, activated tab will do this
 
 		settings_tab_name = "";
@@ -7064,7 +7245,19 @@ bind_failed:
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 	}
 
-	void mainEndLife(Button& button) {
+	static void mainEditor(Button& button) {
+#ifndef NINTENDO
+	    char path[PATH_MAX];
+#ifdef WINDOWS
+	    completePath(path, "editor.exe");
+#else
+	    completePath(path, "editor");
+#endif
+	    system(path);
+#endif
+	}
+
+	static void mainEndLife(Button& button) {
 		binaryPrompt(
 			"Are you sure you want to die?\nThere is no return from this.", // window text
 			"End Life", // okay text
@@ -7088,7 +7281,7 @@ bind_failed:
 			});
 	}
 
-	void mainRestartGame(Button& button) {
+	static void mainRestartGame(Button& button) {
 		binaryPrompt(
 			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
 			"Restart", // okay text
@@ -7117,7 +7310,7 @@ bind_failed:
 			});
 	}
 
-	void mainQuitToMainMenu(Button& button) {
+	static void mainQuitToMainMenu(Button& button) {
 		binaryPrompt(
 			"All progress before the current\ndungeon level will be saved.", // window text
 			"Quit to Menu", // okay text
@@ -7143,7 +7336,7 @@ bind_failed:
 			});
 	}
 
-	void mainQuitToDesktop(Button& button) {
+	static void mainQuitToDesktop(Button& button) {
 		static const char* quit_messages[][3] {
 			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
 			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
@@ -7192,7 +7385,7 @@ bind_failed:
 			});
 	}
 
-	void mainClose(Button& button) {
+	static void mainClose(Button& button) {
 		soundActivate();
 		closeMainMenu();
 	}
