@@ -24,6 +24,7 @@ bool stop = false;
 char datadir[PATH_MAX];
 char outputdir[PATH_MAX];
 SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes problem debugging in Linux
+bool enableDebugKeys = false; // if true, certain special keys can be used for debugging
 
 // language stuff
 char languageCode[32] = { 0 };
@@ -369,7 +370,6 @@ int minimapTransparencyForeground = 0;
 int minimapTransparencyBackground = 0;
 int minimapScale = 4;
 int minimapObjectZoom = 0;
-int minimapScaleQuickToggle = 0;
 
 // audio definitions
 int audio_rate = 22050;

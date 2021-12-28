@@ -1418,7 +1418,7 @@ void drawEntities3D(view_t* camera, int mode)
 	long x, y;
 
 	static bool draw_ents = true;
-	if (keystatus[SDL_SCANCODE_P] && !command) {
+	if (keystatus[SDL_SCANCODE_P] && !command && enableDebugKeys) {
 	    keystatus[SDL_SCANCODE_P] = 0;
 	    draw_ents = (draw_ents==false);
 	}

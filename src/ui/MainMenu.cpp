@@ -29,6 +29,39 @@ namespace MainMenu {
 	float master_volume = 100.f;
 	bool cursor_delete_mode = false;
 
+	// If you want to add new player-visible bindings, ADD THEM HERE:
+	// The first string in a binding is the name of the binding.
+	// The second is the default Keyboard input.
+    // The third is the default Gamepad input.
+    // The fourth is the default Joystick input.
+	static const char* defaultBindings[][4] = {
+		{"Move Forward", "W", "StickLeftY-", ""},
+		{"Move Left", "A", "StickLeftX-", ""},
+		{"Move Backward", "S", "StickLeftY+", ""},
+		{"Move Right", "D", "StickLeftX+", ""},
+		{"Turn Left", "Left", "StickRightX-", ""},
+		{"Turn Right", "Right", "StickRightX+", ""},
+		{"Look Up", "Up", "StickRightY-", ""},
+		{"Look Down", "Down", "StickRightY+", ""},
+		{"Chat", "Return", "", ""},
+		{"Console Command", "/", "", ""},
+		{"Character Status", "Tab", "ButtonSelect", ""},
+		{"Spell List", "M", "", ""},
+		{"Cast Spell", "F", "ButtonRightBumper", ""},
+		{"Block", "Space", "LeftTrigger", ""},
+		{"Sneak", "Left Shift", "LeftBumper", ""},
+		{"Attack", "Mouse1", "RightTrigger", ""},
+		{"Use", "Mouse3", "ButtonA", ""},
+		{"Autosort Inventory", "Y", "", ""},
+		{"Command NPC", "C", "DpadY-", ""},
+		{"Show NPC Commands", "X", "DpadX+", ""},
+		{"Cycle NPCs", "Z", "DpadX-", ""},
+		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", ""},
+		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", ""},
+		{"Hotbar Select", "Mouse2", "ButtonY", ""},
+	};
+	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
+
 	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
@@ -610,52 +643,11 @@ namespace MainMenu {
 		Bindings bindings;
 		for (int c = 0; c < 4; ++c) {
 			bindings.devices[c] = c;
-
-			bindings.kb_mouse_bindings[c].emplace("Move Forward", "W");
-			bindings.kb_mouse_bindings[c].emplace("Move Left", "A");
-			bindings.kb_mouse_bindings[c].emplace("Move Backward", "S");
-			bindings.kb_mouse_bindings[c].emplace("Move Right", "D");
-			bindings.kb_mouse_bindings[c].emplace("Turn Left", "Left");
-			bindings.kb_mouse_bindings[c].emplace("Turn Right", "Right");
-			bindings.kb_mouse_bindings[c].emplace("Look Up", "Up");
-			bindings.kb_mouse_bindings[c].emplace("Look Down", "Down");
-			bindings.kb_mouse_bindings[c].emplace("Chat", "Return");
-			bindings.kb_mouse_bindings[c].emplace("Console Command", "/");
-			bindings.kb_mouse_bindings[c].emplace("Character Status", "Tab");
-			bindings.kb_mouse_bindings[c].emplace("Spell List", "M");
-			bindings.kb_mouse_bindings[c].emplace("Cast Spell", "F");
-			bindings.kb_mouse_bindings[c].emplace("Block", "Space");
-			bindings.kb_mouse_bindings[c].emplace("Sneak", "Shift");
-			bindings.kb_mouse_bindings[c].emplace("Attack", "Mouse1");
-			bindings.kb_mouse_bindings[c].emplace("Use", "Mouse3");
-			bindings.kb_mouse_bindings[c].emplace("Autosort Inventory", "Y");
-			bindings.kb_mouse_bindings[c].emplace("Command NPC", "C");
-			bindings.kb_mouse_bindings[c].emplace("Show NPC Commands", "X");
-			bindings.kb_mouse_bindings[c].emplace("Cycle NPCs", "Z");
-			bindings.kb_mouse_bindings[c].emplace("Hotbar Scroll Left", "[");
-			bindings.kb_mouse_bindings[c].emplace("Hotbar Scroll Right", "]");
-			bindings.kb_mouse_bindings[c].emplace("Hotbar Select", "\\");
-
-			bindings.gamepad_bindings[c].emplace("Move Forward", "StickLeftY-");
-			bindings.gamepad_bindings[c].emplace("Move Left", "StickLeftX-");
-			bindings.gamepad_bindings[c].emplace("Move Backward", "StickLeftY+");
-			bindings.gamepad_bindings[c].emplace("Move Right", "StickLeftX+");
-			bindings.gamepad_bindings[c].emplace("Turn Left", "StickRightX-");
-			bindings.gamepad_bindings[c].emplace("Turn Right", "StickRightX+");
-			bindings.gamepad_bindings[c].emplace("Look Up", "StickRightY-");
-			bindings.gamepad_bindings[c].emplace("Look Down", "StickRightY+");
-			bindings.gamepad_bindings[c].emplace("Character Status", "ButtonSelect");
-			bindings.gamepad_bindings[c].emplace("Cast Spell", "RightBumper");
-			bindings.gamepad_bindings[c].emplace("Block", "LeftTrigger");
-			bindings.gamepad_bindings[c].emplace("Sneak", "LeftTrigger");
-			bindings.gamepad_bindings[c].emplace("Attack", "RightTrigger");
-			bindings.gamepad_bindings[c].emplace("Use", "ButtonA");
-			bindings.gamepad_bindings[c].emplace("Command NPC", "DpadY-");
-			bindings.gamepad_bindings[c].emplace("Show NPC Commands", "DpadX+");
-			bindings.gamepad_bindings[c].emplace("Cycle NPCs", "DpadX-");
-			bindings.gamepad_bindings[c].emplace("Hotbar Scroll Left", "ButtonLeftBumper");
-			bindings.gamepad_bindings[c].emplace("Hotbar Scroll Right", "ButtonRightBumper");
-			bindings.gamepad_bindings[c].emplace("Hotbar Select", "ButtonY");
+            for (int i = 0; i < numBindings; ++i) {
+			    bindings.kb_mouse_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][1]);
+			    bindings.gamepad_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][2]);
+			    bindings.joystick_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][3]);
+			}
 		}
 		return bindings;
 	}
@@ -2449,7 +2441,7 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			allSettings.minimap.icon_scale, 25, 100, true,
+			allSettings.minimap.icon_scale, 25, 200, true,
 			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
@@ -2647,32 +2639,11 @@ namespace MainMenu {
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 		int y = 0;
 
-		static const std::vector<Setting> bindings = {
-			{Setting::Type::Binding, "Move Forward"},
-			{Setting::Type::Binding, "Move Left"},
-			{Setting::Type::Binding, "Move Backward"},
-			{Setting::Type::Binding, "Move Right"},
-			{Setting::Type::Binding, "Turn Left"},
-			{Setting::Type::Binding, "Turn Right"},
-			{Setting::Type::Binding, "Look Up"},
-			{Setting::Type::Binding, "Look Down"},
-			{Setting::Type::Binding, "Chat"},
-			{Setting::Type::Binding, "Console Command"},
-			{Setting::Type::Binding, "Character Status"},
-			{Setting::Type::Binding, "Spell List"},
-			{Setting::Type::Binding, "Cast Spell"},
-			{Setting::Type::Binding, "Block"},
-			{Setting::Type::Binding, "Sneak"},
-			{Setting::Type::Binding, "Attack"},
-			{Setting::Type::Binding, "Use"},
-			{Setting::Type::Binding, "Autosort Inventory"},
-			{Setting::Type::Binding, "Command NPC"},
-			{Setting::Type::Binding, "Show NPC Commands"},
-			{Setting::Type::Binding, "Cycle NPCs"},
-			{Setting::Type::Binding, "Hotbar Scroll Left"},
-			{Setting::Type::Binding, "Hotbar Scroll Right"},
-			{Setting::Type::Binding, "Hotbar Select"},
-		};
+		std::vector<Setting> bindings;
+		bindings.reserve(numBindings);
+		for (int c = 0; c < numBindings; ++c) {
+		    bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		}
 
 		static bool bind_mode;
 		static Button* bound_button = nullptr;
@@ -2756,7 +2727,7 @@ namespace MainMenu {
 						"The next input you activate will be bound to this action.",
 						bound_binding.c_str());
 					tooltip->setText(buf);
-					Input::clearDefaultBindings();
+					Input::inputs[bound_player].setDisabled(true);
 					for (auto button : subwindow->getButtons()) {
 						button->setDisabled(true);
 					}
@@ -2781,7 +2752,6 @@ namespace MainMenu {
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
 						tooltip->setText(buf);
-						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
 						bound_button->setText("[unbound]");
@@ -2802,16 +2772,11 @@ namespace MainMenu {
 						tooltip->setText(buf);
 					}
 					bound_button = nullptr;
-				bind_failed:
-					// fixes a bug where these are not released after being used
-					Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 0;
-					Input::mouseButtons[SDL_BUTTON_WHEELUP] = 0;
+bind_failed:
+                    // fix a bug where this wasn't always cleared...
+                    mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
-				else if (!bound_button &&
-					!Input::mouseButtons[SDL_BUTTON_LEFT] &&
-					!Input::mouseButtons[SDL_BUTTON_WHEELDOWN] &&
-					!Input::mouseButtons[SDL_BUTTON_WHEELUP] &&
-					!Input::keys[SDL_SCANCODE_SPACE]) {
+				else if (!bound_button) {
 					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
 					auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
 					auto discard = bindings->findButton("discard_and_exit"); assert(discard);
@@ -2825,7 +2790,7 @@ namespace MainMenu {
 						button->setDisabled(false);
 					}
 
-					Input::defaultBindings();
+					Input::inputs[bound_player].setDisabled(false);
 					bound_binding = "";
 					bind_mode = false;
 				}

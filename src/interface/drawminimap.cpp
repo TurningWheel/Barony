@@ -146,11 +146,11 @@ void drawMinimap(const int player, SDL_Rect rect)
 	// build a circle mesh
 	static std::vector<std::pair<real_t, real_t>> circle_mesh;
 	if (!circle_mesh.size()) {
-	    circle_mesh.emplace_back((real_t)0.5, (real_t)0.5);
+	    circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
 	    static const int num_circle_vertices = 12;
 	    for (int c = 0; c <= num_circle_vertices; ++c) {
 	        real_t ang = ((PI * 2.0) / num_circle_vertices) * c;
-	        circle_mesh.emplace_back((1.0 + cos(ang)) / 2.0, (1.0 - sin(ang)) / 2.0);
+	        circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
 	    }
 	}
 
@@ -171,15 +171,10 @@ void drawMinimap(const int player, SDL_Rect rect)
             ((color & f.Gmask) >> f.Gshift) / 255.0,
             ((color & f.Bmask) >> f.Bshift) / 255.0,
             ((color & f.Amask) >> f.Ashift) / 255.0);
-        /*glBegin(GL_TRIANGLES);
-        glVertex2f(x, Frame::virtualScreenY - y);
-        glVertex2f(x, Frame::virtualScreenY - (y + unitY));
-        glVertex2f(x + unitX, Frame::virtualScreenY - y);
-        glEnd();*/
         glBegin(GL_TRIANGLE_FAN);
         for (auto& pair : circle_mesh) {
-            const real_t sx = pair.first * unitX;
-            const real_t sy = pair.second * unitY;
+            const real_t sx = pair.first * unitX * (minimapObjectZoom / 100.0);
+            const real_t sy = pair.second * unitY * (minimapObjectZoom / 100.0);
             glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
         }
         glEnd();
@@ -200,7 +195,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
-			            drawCircleMesh(x, y, rect, makeColor(0, 255, 255, 255));
+			            drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(0, 255, 255, 255));
 					}
 				}
 			}
@@ -226,7 +221,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 					warningEffect = true;
 				    int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 				    int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-			        drawCircleMesh(x, y, rect, makeColor(191, 191, 191, 255));
+			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(191, 191, 191, 255));
 				}
 				if ( !warningEffect 
 					&& ((stats[player]->ring && stats[player]->ring->type == RING_WARNING)
@@ -257,7 +252,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 					{
 				        int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 				        int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-			            drawCircleMesh(x, y, rect, makeColor(191, 127, 191, 255));
+			            drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(191, 127, 191, 255));
 						warningEffect = true;
 					}
 				}
@@ -272,7 +267,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 							entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
 				            int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 				            int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-			                drawCircleMesh(x, y, rect, makeColor(191, 127, 191, 255));
+			                drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(191, 127, 191, 255));
 						}
 					}
 				}
@@ -283,7 +278,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( minimap[y][x] == 1 || minimap[y][x] == 2 )
 				{
-			        drawCircleMesh(x, y, rect, makeColor(191, 63, 0, 255));
+			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(191, 63, 0, 255));
 				}
 			}
 			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
@@ -292,7 +287,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( ticks % 40 - ticks % 20 )
 				{
-			        drawCircleMesh(x, y, rect, makeColor(240, 228, 66, 255));
+			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(240, 228, 66, 255));
 				}
 			}
 			else if ( entity->entityShowOnMap > 0 )
@@ -301,7 +296,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( ticks % 40 - ticks % 20 )
 				{
-			        drawCircleMesh(x, y, rect, makeColor(255, 168, 200, 255));
+			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(255, 168, 200, 255));
 				}
 			}
 		}
@@ -366,11 +361,13 @@ void drawMinimap(const int player, SDL_Rect rect)
 					{
 						int radius = 3 + std::min(30, aliveTime);
 						radius = std::min(minimapTotalScale * 6, radius);
-						drawCircle(x - 1, y - 1, std::max(radius + minimapObjectZoom, 0), color, alpha);
+					    // TODO THESE DON'T WORK!!!
+						//drawCircle(x - 1, y - 1, std::max(radius + minimapObjectZoom, 0), color, alpha);
 					}
 					else
 					{
-						drawCircle(x - 1, y - 1, std::max(3 + minimapObjectZoom, 0), color, alpha);
+					    // TODO THESE DON'T WORK!!!
+						//drawCircle(x - 1, y - 1, std::max(3 + minimapObjectZoom, 0), color, alpha);
 					}
 				}
 			}
@@ -510,8 +507,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 	        for (int c = 0; c < num_vertices; ++c) {
 	            const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
 	            const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
-	            const real_t sx = vx * unitX;
-	            const real_t sy = vy * unitY;
+	            const real_t sx = vx * unitX * (minimapObjectZoom / 100.0);
+	            const real_t sy = vy * unitY * (minimapObjectZoom / 100.0);
 	            glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
 	        }
 	        glEnd();

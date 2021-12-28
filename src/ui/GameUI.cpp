@@ -1414,15 +1414,40 @@ static void openMinimap(int player) {
     } else {
         window = gui->addFrame(name.c_str());
         window->setSize(SDL_Rect{
-            players[player]->camera_virtualx1() + (players[player]->camera_virtualWidth() - 400) / 2,
-            players[player]->camera_virtualy1() + (players[player]->camera_virtualHeight() - 400) / 2,
-            400,
-            400,
+            players[player]->camera_virtualx1() + (players[player]->camera_virtualWidth() - minimapScale * 4) / 2,
+            players[player]->camera_virtualy1() + (players[player]->camera_virtualHeight() - minimapScale * 4) / 2,
+            minimapScale * 4,
+            minimapScale * 4,
             });
         window->setColor(0);
         window->setOwner(player);
         window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
             drawMinimap(widget.getOwner(), rect);
+            });
+        window->setTickCallback([](Widget& widget){
+            auto player = widget.getOwner();
+            auto& input = Input::inputs[player];
+            if (input.consumeBinaryToggle("Minimap Scale")) {
+                if (minimapScale > 75) {
+                    minimapScale = 75;
+                }
+                else if (minimapScale > 50) {
+                    minimapScale = 50;
+                }
+                else if (minimapScale > 25) {
+                    minimapScale = 25;
+                }
+                else {
+                    minimapScale = 100;
+                }
+            }
+            auto frame = static_cast<Frame*>(&widget);
+            frame->setSize(SDL_Rect{
+            players[player]->camera_virtualx1() + (players[player]->camera_virtualWidth() - minimapScale * 4) / 2,
+            players[player]->camera_virtualy1() + (players[player]->camera_virtualHeight() - minimapScale * 4) / 2,
+            minimapScale * 4,
+            minimapScale * 4,
+            });
             });
     }
 }

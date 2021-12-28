@@ -175,6 +175,7 @@ extern bool autoLimbReload;
 extern FILE* logfile;
 static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
+extern bool enableDebugKeys; // if true, certain special keys can be used for debugging
 
 class Item;
 //enum Item;
@@ -610,7 +611,6 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern int minimapScaleQuickToggle;
 extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;
