@@ -1109,7 +1109,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				int resistance = 0;
 				if ( hit.entity )
 				{
-					resistance = hit.entity->getMagicResistance();
+					resistance = Entity::getMagicResistance(hit.entity->getStats());
 				}
 				
 				if ( resistance > 0 )

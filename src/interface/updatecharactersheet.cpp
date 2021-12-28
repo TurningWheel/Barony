@@ -953,7 +953,7 @@ void drawSkillsSheet(const int player)
 				case PRO_SPELLCASTING:
 					if ( players[player] && players[player]->entity )
 					{
-						skillDetails[0] = players[player]->entity->getManaRegenInterval(*(stats[player])) / (TICKS_PER_SECOND * 1.f);
+						skillDetails[0] = Entity::getManaRegenInterval(players[player]->entity, *(stats[player]), true) / (TICKS_PER_SECOND * 1.f);
 						if ( isSpellcasterBeginner(player, players[player]->entity) )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
@@ -1871,7 +1871,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 							if ( players[player] && players[player]->entity )
 							{
 								tmp = players[player]->entity;
-								real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+								real_t regen = (static_cast<real_t>(Entity::getManaRegenInterval(tmp, *tmpStat, true)) / TICKS_PER_SECOND);
 								if ( stats[player]->type == AUTOMATON )
 								{
 									if ( stats[player]->HUNGER <= 300 )
@@ -1944,7 +1944,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 							if ( players[player] && players[player]->entity )
 							{
 								tmp = players[player]->entity;
-								real_t regen = (static_cast<real_t>(tmp->getHealthRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+								real_t regen = (static_cast<real_t>(Entity::getHealthRegenInterval(tmp, *tmpStat, true)) / TICKS_PER_SECOND);
 								if ( tmpStat->type == SKELETON )
 								{
 									if ( !(svFlags & SV_FLAG_HUNGER) )
@@ -1996,12 +1996,10 @@ void statsHoverText(const int player, Stat* tmpStat)
 					{
 						if ( i == 3 )
 						{
-							Entity* tmp = nullptr;
 							real_t resistance = 0.f;
 							if ( players[player] && players[player]->entity )
 							{
-								tmp = players[player]->entity;
-								real_t resistance = 100 - 100 / (tmp->getMagicResistance() + 1);
+								real_t resistance = 100 - 100 / (Entity::getMagicResistance(stats[player]) + 1);
 								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], resistance);
 								if ( resistance > 0.f )
 								{
@@ -2046,10 +2044,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 			if ( !stats[player]->weapon || shapeshiftUseMeleeAttack )
 			{
 				// fists
-				if ( entity )
-				{
-					attack += entity->getAttack();
-				}
+				attack += Entity::getAttack(players[player]->entity, stats[player], true);
 				output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_UNARMED; // melee
 				output.totalAttack = attack;
 				output.proficiencyBonus = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
@@ -2103,10 +2098,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					}
 					else if ( stats[player]->weapon && stats[player]->weapon->type == TOOL_WHIP )
 					{
-						if ( entity )
-						{
-							attack += entity->getAttack();
-						}
+						attack += Entity::getAttack(players[player]->entity, stats[player], true);
 						output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_WHIP; // ranged
 						output.totalAttack = attack;
 						output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
@@ -2208,10 +2200,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 				else if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) )
 				{
 					// melee weapon
-					if ( entity )
-					{
-						attack += entity->getAttack();
-					}
+					attack += Entity::getAttack(players[player]->entity, stats[player], true);
 					output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON; // melee
 					output.totalAttack = attack;
 					output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
@@ -2255,10 +2244,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 				}
 				else // tools etc.
 				{
-					if ( entity )
-					{
-						attack += entity->getAttack();
-					}
+					attack += Entity::getAttack(players[player]->entity, stats[player], true);
 					output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_TOOL; // tools
 					if ( stats[player]->weapon->type == TOOL_PICKAXE )
 					{

@@ -1243,7 +1243,8 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 
 	if ( shield )
 	{
-		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) )
+		if ( itemCategory(shield) == SPELLBOOK || itemTypeIsQuiver(shield->type) 
+			|| itemCategory(shield) == TOOL )
 		{
 			return 0;
 		}

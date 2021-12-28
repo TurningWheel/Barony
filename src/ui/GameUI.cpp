@@ -74,8 +74,11 @@ struct CustomColors_t
 	Uint32 characterSheetRed = 0xFFFFFFFF;
 	Uint32 characterSheetFaintText = 0xFFFFFFFF;
 	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
+	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
 } hudColors;
 EnemyBarSettings_t enemyBarSettings;
+
+std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue);
 
 void capitalizeString(std::string& str)
 {
@@ -1466,7 +1469,18 @@ void Player::CharacterSheet_t::loadCharacterSheetJSON()
 					for ( rapidjson::Value::ConstMemberIterator itr = d["hover_text"].MemberBegin();
 						itr != d["hover_text"].MemberEnd(); ++itr )
 					{
-						hoverTextStrings[itr->name.GetString()] = itr->value.GetString();
+						if ( itr->value.IsObject() )
+						{
+							for ( rapidjson::Value::ConstMemberIterator inner_itr = itr->value.MemberBegin();
+								inner_itr != itr->value.MemberEnd(); ++inner_itr )
+							{
+								hoverTextStrings[inner_itr->name.GetString()] = inner_itr->value.GetString();
+							}
+						}
+						else
+						{
+							hoverTextStrings[itr->name.GetString()] = itr->value.GetString();
+						}
 					}
 				}
 			}
@@ -1828,7 +1842,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			statsInnerFrame->setSize(SDL_Rect{ 0, 0, statsFrame->getSize().w, statsFrame->getSize().h });
 
 			SDL_Rect iconPos{ 20, 8, 24, 24 };
-			const int headingLeftX = iconPos.x + iconPos.w + 10;
+			const int headingLeftX = iconPos.x + iconPos.w + 4;
 			const int baseStatLeftX = headingLeftX + 32;
 			const int modifiedStatLeftX = baseStatLeftX + 64;
 			SDL_Rect textPos{ headingLeftX, iconPos.y, 40, iconPos.h };
@@ -2056,8 +2070,8 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			attributesInnerFrame->setSize(SDL_Rect{ 0, 0, attributesFrame->getSize().w, attributesFrame->getSize().h });
 
 			SDL_Rect iconPos{ 20, 8, 24, 24 };
-			const int headingLeftX = iconPos.x + iconPos.w + 10;
-			const int baseStatLeftX = headingLeftX + 32;
+			const int headingLeftX = iconPos.x + iconPos.w + 4;
+			const int baseStatLeftX = headingLeftX + 48;
 			SDL_Rect textPos{ headingLeftX, iconPos.y, 80, iconPos.h };
 			Uint32 statTextColor = hudColors.characterSheetNeutral;
 
@@ -2186,7 +2200,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textDiv->setVJustify(Field::justify_t::CENTER);
 				textDiv->setHJustify(Field::justify_t::CENTER);
 				textDiv->setFont(attributeFont);
-				textPos.x = baseStatLeftX;
+				textPos.x = baseStatLeftX + 0;
 				textDiv->setSize(textPos);
 				textDiv->setText("/");
 				textDiv->setColor(statTextColor);
@@ -2714,7 +2728,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			}
 			else if ( rgnButton->isHighlighted() )
 			{
-				targetElement = SHEET_RGN;
+				targetElement = SHEET_RGN_MP;
 			}
 			else if ( wgtButton->isHighlighted() )
 			{
@@ -3409,6 +3423,7 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			}
 			break;
 		case SHEET_RGN:
+		case SHEET_RGN_MP:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
 				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
@@ -3816,6 +3831,167 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 	return false;
 }
 
+real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32])
+{
+	real_t regen = 0.0;
+	if ( outColor )
+	{
+		*outColor = hudColors.characterSheetNeutral;
+	}
+	if ( myStats.HP > 0 )
+	{
+		regen = (static_cast<real_t>(Entity::getHealthRegenInterval(my,
+			myStats, true)) / TICKS_PER_SECOND);
+		if ( myStats.type == SKELETON )
+		{
+			if ( !(svFlags & SV_FLAG_HUNGER) )
+			{
+				regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
+			}
+		}
+		if ( regen < 0 )
+		{
+			regen = 0.0;
+			if ( !(svFlags & SV_FLAG_HUNGER) )
+			{
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetNeutral;
+				}
+			}
+			else
+			{
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetRed;
+				}
+			}
+		}
+		else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
+		{
+			if ( outColor )
+			{
+				*outColor = hudColors.characterSheetGreen;
+			}
+		}
+	}
+	else
+	{
+		regen = HEAL_TIME / TICKS_PER_SECOND;
+	}
+
+	if ( regen > 0.01 )
+	{
+		real_t nominalRegen = HEAL_TIME / TICKS_PER_SECOND;
+		regen = nominalRegen / regen;
+	}
+	if ( buf )
+	{
+		if ( !(svFlags & SV_FLAG_HUNGER) )
+		{
+			snprintf(buf, 32, "- ");
+		}
+		else
+		{
+			snprintf(buf, 32, "%.f%%", regen * 100.0);
+		}
+	}
+	return regen * 100.0;
+}
+
+real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32])
+{
+	real_t regen = 0.0;
+	if ( /*players[player.playernum]->entity*/ true )
+	{
+		regen = (static_cast<real_t>(Entity::getManaRegenInterval(my, myStats, true)) / TICKS_PER_SECOND);
+		if ( myStats.type == AUTOMATON )
+		{
+			if ( myStats.HUNGER <= 300 )
+			{
+				regen /= 6; // degrade faster
+			}
+			else if ( myStats.HUNGER > 1200 )
+			{
+				if ( myStats.MP / static_cast<real_t>(std::max(1, myStats.MAXMP)) <= 0.5 )
+				{
+					regen /= 4; // increase faster at < 50% mana
+				}
+				else
+				{
+					regen /= 2; // increase less faster at > 50% mana
+				}
+			}
+			else if ( myStats.HUNGER > 300 )
+			{
+				// normal manaRegenInterval 300-1200 hunger.
+			}
+		}
+
+		if ( regen < 0.0 /*stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0*/ )
+		{
+			regen = 0.0;
+		}
+
+		if ( myStats.type == AUTOMATON )
+		{
+			if ( myStats.HUNGER <= 300 )
+			{
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetRed;
+				}
+			}
+			else if ( regen < static_cast<real_t>(getBaseManaRegen(my, myStats)) / TICKS_PER_SECOND )
+			{
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetGreen;
+				}
+			}
+		}
+		else if ( myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+		{
+			if ( !(svFlags & SV_FLAG_HUNGER) )
+			{
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetNeutral;
+				}
+			}
+			else
+			{
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetRed;
+				}
+			}
+		}
+		else if ( regen < static_cast<real_t>(getBaseManaRegen(my, myStats)) / TICKS_PER_SECOND )
+		{
+			if ( outColor )
+			{
+				*outColor = hudColors.characterSheetGreen;
+			}
+		}
+	}
+	else
+	{
+		regen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
+	}
+
+	if ( regen > 0.01 )
+	{
+		real_t nominalRegen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
+		regen = nominalRegen / regen;
+	}
+	if ( buf )
+	{
+		snprintf(buf, 32, "%.f%%", regen * 100.0);
+	}
+	return regen * 100.0;
+}
+
 void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos)
 {
 	if ( !sheetFrame )
@@ -3972,7 +4148,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
 		txt->reflowTextToFit(0);
-		txt->setColor(makeColor(67, 195, 157, 255));
+		txt->setColor(hudColors.characterSheetHeadingText);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + 4;
@@ -4545,6 +4721,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			{
 				continue;
 			}
+			if ( valueSizes.find(index) == valueSizes.end() )
+			{
+				continue;
+			}
 
 			SDL_Rect valuePos = valueSizes[index].second;
 			Field* entryValue = valueSizes[index].first;
@@ -4600,7 +4780,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entry->reflowTextToFit(0);
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
-			entry->setColor(makeColor(224, 224, 224, 255));
+			entry->setColor(hudColors.characterSheetOffWhiteText);
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 
 			currentHeight += padyMid / 4;
@@ -4752,19 +4932,30 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				descText = getHoverTextString("attributes_ac_desc");
 				break;
 			case SHEET_POW:
-				titleText = getHoverTextString("attributes_atk_title");
+				titleText = getHoverTextString("attributes_pwr_title");
 				descText = getHoverTextString("attributes_pwr_desc");
 				break;
 			case SHEET_RES:
-				titleText = getHoverTextString("attributes_atk_title");
+				titleText = getHoverTextString("attributes_res_title");
 				descText = getHoverTextString("attributes_res_desc");
 				break;
 			case SHEET_RGN:
-				titleText = getHoverTextString("attributes_atk_title");
-				descText = getHoverTextString("attributes_rgn_desc");
+				titleText = getHoverTextString("attributes_rgn_hp_title");
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					descText = getHoverTextString("attributes_rgn_hp_desc_no_hunger");
+				}
+				else
+				{
+					descText = getHoverTextString("attributes_rgn_hp_desc");
+				}
+				break;
+			case SHEET_RGN_MP:
+				titleText = getHoverTextString("attributes_rgn_mp_title");
+				descText = getHoverTextString("attributes_rgn_mp_desc");
 				break;
 			case SHEET_WGT:
-				titleText = getHoverTextString("attributes_atk_title");
+				titleText = getHoverTextString("attributes_wgt_title");
 				descText = getHoverTextString("attributes_wgt_desc");
 				break;
 			default:
@@ -4775,7 +4966,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
 		txt->reflowTextToFit(0);
-		txt->setColor(makeColor(67, 195, 157, 255));
+		txt->setColor(hudColors.characterSheetHeadingText);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + 4;
@@ -4801,7 +4992,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		char buf[128] = "";
 		char valueBuf[128] = "";
 
-		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 1, buf, valueBuf) )
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 1, buf, valueBuf)
+			|| element != SHEET_ATK )
 		{
 			currentHeight += padyMid;
 			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
@@ -4812,13 +5004,57 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_ATK:
 					break;
 				case SHEET_AC:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_ac_base").c_str());
+					bool oldDefending = stats[player.playernum]->defending;
+					stats[player.playernum]->defending = false;
+					Sint32 armor = AC(stats[player.playernum]);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_ac_nobonus_format").c_str(), armor);
+					stats[player.playernum]->defending = oldDefending;
+				}
 					break;
 				case SHEET_POW:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_base").c_str());
+					std::string tag = "MAGIC_SPELLPOWER";
+					std::string formatValue = "%d";
+					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
+					Sint32 pwr = 100 + std::stoi(pwrBonus);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_nobonus_format").c_str(), pwr);
+				}
 					break;
 				case SHEET_RES:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_base").c_str());
+					real_t resistance = 100.0 * hit.entity->getDamageTableMultiplier(*stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
+					resistance = 100.0 - resistance;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_nobonus_format").c_str(), (int)resistance);
+				}
 					break;
 				case SHEET_RGN:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_hp_base").c_str());
+					char hpbuf[32] = "";
+					getDisplayedHPRegen(players[player.playernum]->entity, *stats[player.playernum], nullptr, hpbuf);
+					if ( !(svFlags & SV_FLAG_HUNGER) )
+					{
+						snprintf(valueBuf, sizeof(valueBuf), "%s", hpbuf);
+					}
+					else
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_nobonus_format").c_str(), hpbuf);
+					}
+				}
 					break;
+				case SHEET_RGN_MP:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_mp_base").c_str());
+					char mpbuf[32] = "";
+					getDisplayedMPRegen(players[player.playernum]->entity, *stats[player.playernum], nullptr, mpbuf);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_nobonus_format").c_str(), mpbuf);
+				}
+				break;
 				case SHEET_WGT:
 					break;
 				default:
@@ -4882,6 +5118,37 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_AC:
 					glyphIcon->path = getHoverTextString("icon_ac_path");
+					for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == PRO_SHIELD )
+						{
+							if ( skillCapstoneUnlocked(player.playernum, PRO_SHIELD) )
+							{
+								glyphIcon->path = skill.skillIconPathLegend;
+							}
+							else
+							{
+								glyphIcon->path = skill.skillIconPath;
+							}
+							break;
+						}
+					}
+					if ( stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_LEGENDARY )
+					{
+						glyphBacking->path = actionPromptBackingIconPath100;
+					}
+					else if ( stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_EXPERT )
+					{
+						glyphBacking->path = actionPromptBackingIconPath60;
+					}
+					else if ( stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_BASIC )
+					{
+						glyphBacking->path = actionPromptBackingIconPath20;
+					}
+					else
+					{
+						glyphBacking->path = actionPromptBackingIconPath00;
+					}
 					break;
 				case SHEET_POW:
 					glyphIcon->path = getHoverTextString("icon_pwr_path");
@@ -4890,7 +5157,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					glyphIcon->path = getHoverTextString("icon_res_path");
 					break;
 				case SHEET_RGN:
-					glyphIcon->path = getHoverTextString("icon_rgn_path");
+					glyphIcon->path = getHoverTextString("icon_rgn_hp_path");
+					break;
+				case SHEET_RGN_MP:
+					glyphIcon->path = getHoverTextString("icon_rgn_mp_path");
 					break;
 				case SHEET_WGT:
 					glyphIcon->path = getHoverTextString("icon_wgt_path");
@@ -4976,7 +5246,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			++currentTextBackingFrameIndex;
 		}
 
-		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 2, buf, valueBuf) )
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 2, buf, valueBuf)
+			|| element != SHEET_ATK )
 		{
 			currentHeight += 0;
 			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
@@ -4987,13 +5258,59 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_ATK:
 					break;
 				case SHEET_AC:
+				{
+					std::string skillName = "";
+					int skillLVL = 0;
+					for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == PRO_SHIELD )
+						{
+							skillName = skill.name;
+							skillLVL = stats[player.playernum]->PROFICIENCIES[skill.skillId];
+							break;
+						}
+					}
+					snprintf(buf, sizeof(buf), getHoverTextString("attributes_ac_defending").c_str(), skillName.c_str(), skillLVL);
+					std::string tag = "BLOCK_AC_INCREASE";
+					std::string blockBonus = formatSkillSheetEffects(player.playernum, PRO_SHIELD, tag, getHoverTextString("attributes_ac_bonus_format"));
+					snprintf(valueBuf, sizeof(valueBuf), "%s", blockBonus.c_str());
+				}
 					break;
 				case SHEET_POW:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_spellbook").c_str());
+					std::string tag = "MAGIC_SPELLPOWER";
+					std::string formatValue = "%d";
+					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
+					Sint32 pwr = std::stoi(pwrBonus) / 2;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_bonus_format").c_str(), pwr);
+				}
 					break;
 				case SHEET_RES:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_sources").c_str());
+					int sources = Entity::getMagicResistance(stats[player.playernum]);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_sources_format").c_str(), sources);
+				}
 					break;
 				case SHEET_RGN:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_sources").c_str());
+					int sources = Entity::getHealringFromEquipment(players[player.playernum]->entity, *stats[player.playernum], true);
+					sources += Entity::getHealringFromEffects(players[player.playernum]->entity, *stats[player.playernum]);
+					sources = std::min(sources, 3);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_sources_format").c_str(), sources);
+				}
 					break;
+				case SHEET_RGN_MP:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_sources").c_str());
+					int sources = Entity::getManaringFromEquipment(players[player.playernum]->entity, *stats[player.playernum], true);
+					sources += Entity::getManaringFromEffects(players[player.playernum]->entity, *stats[player.playernum]);
+					sources = std::min(sources, 3);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_mp_sources_format").c_str(), sources);
+				}
+				break;
 				case SHEET_WGT:
 					break;
 				default:
@@ -5069,11 +5386,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			++currentTextBackingFrameIndex;
 		}
 		bool hasEntryInfoLines = false;
-		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 3, buf, valueBuf) )
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 3, buf, valueBuf)
+			|| (element != SHEET_ATK && !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))) )
 		{
 			// extra number display - line 3
 			hasEntryInfoLines = true;
-			if ( element == SHEET_ATK )
+			if ( element == SHEET_ATK || element == SHEET_AC || element == SHEET_POW || element == SHEET_RES || element == SHEET_RGN
+				|| element == SHEET_RGN_MP )
 			{
 				// add a divider
 				div2->pos.x = padx;
@@ -5083,14 +5402,37 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 				auto entryTotalHeading = characterSheetTooltipTextFields[player.playernum][16]; assert(entryTotalHeading);
 				entryTotalHeading->setDisabled(false);
-				entryTotalHeading->setText(getHoverTextString("attributes_atk_total_sum_header").c_str());
+				if ( element == SHEET_ATK )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_atk_total_sum_header").c_str());
+				}
+				else if ( element == SHEET_AC )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_ac_base_sum_header").c_str());
+				}
+				else if ( element == SHEET_POW )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_pwr_base_sum_header").c_str());
+				}
+				else if ( element == SHEET_RES )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_res_base_sum_header").c_str());
+				}
+				else if ( element == SHEET_RGN )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_rgn_hp_base_sum_header").c_str());
+				}
+				else if ( element == SHEET_RGN_MP )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_rgn_mp_base_sum_header").c_str());
+				}
 				entryTotalHeading->setColor(hudColors.characterSheetOffWhiteText);
 				entryTotalHeading->setHJustify(Field::justify_t::RIGHT);
 				SDL_Rect entryPos = entryTotalHeading->getSize();
 				entryPos.x = padx + padxMid;
-				entryPos.y = currentHeight + 1;
+				entryPos.y = currentHeight + 1 - (extraTextHeightForLowerCharacters / 2);
 				entryPos.w = txtPos.w - (padxMid * 2);
-				entryPos.h = actualFont->height(true);
+				entryPos.h = actualFont->height(true) + extraTextHeightForLowerCharacters;
 				entryTotalHeading->setSize(entryPos);
 
 				currentHeight += actualFont->height(true) + 2; // extra gap here for 'total' text.
@@ -5099,18 +5441,104 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
 			++currentTextFieldIndex;
 			entry->setDisabled(false);
+			int value = 0;
 			switch ( element )
 			{
 				case SHEET_ATK:
 					break;
 				case SHEET_AC:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_ac_entry_attr_bonus").c_str());
+					Sint32 CON = statGetCON(stats[player.playernum], players[player.playernum]->entity);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_ac_bonus_format").c_str(), CON);
+				}
 					break;
 				case SHEET_POW:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_base_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_bonus_format").c_str(), 100);
+				}
 					break;
 				case SHEET_RES:
+				{
+					Monster type = stats[player.playernum]->type;
+					std::string appearance = "";
+					bool aestheticOnly = false;
+					if ( player.entity )
+					{
+						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
+						{
+							if ( stats[player.playernum]->appearance != 0 )
+							{
+								aestheticOnly = true;
+								appearance = language[4068];
+								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+							}
+						}
+					}
+					std::string race = getMonsterLocalizedName(type).c_str();
+					capitalizeString(race);
+
+					snprintf(buf, sizeof(buf), getHoverTextString("attributes_res_base_value").c_str(), race.c_str());
+					Sint32 baseResist = damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC] * 100;
+					baseResist = 100 - baseResist;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), baseResist);
+				}
 					break;
 				case SHEET_RGN:
+				{
+					Monster type = stats[player.playernum]->type;
+					bool aestheticOnly = false;
+					if ( player.entity )
+					{
+						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
+						{
+							if ( stats[player.playernum]->appearance != 0 )
+							{
+								aestheticOnly = true;
+								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+							}
+						}
+					}
+					std::string race = getMonsterLocalizedName(type).c_str();
+					capitalizeString(race);
+
+					snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
+					real_t regen = 100.0;
+					if ( type == SKELETON )
+					{
+						regen = 25.0;
+					}
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen);
+				}
 					break;
+				case SHEET_RGN_MP:
+				{
+					Monster type = stats[player.playernum]->type;
+					bool aestheticOnly = false;
+					if ( player.entity )
+					{
+						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
+						{
+							if ( stats[player.playernum]->appearance != 0 )
+							{
+								aestheticOnly = true;
+								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+							}
+						}
+					}
+					std::string race = getMonsterLocalizedName(type).c_str();
+					capitalizeString(race);
+
+					snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
+					real_t regen = 100.0;
+					if ( type == SKELETON )
+					{
+						regen = 25.0;
+					}
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen);
+				}
+				break;
 				case SHEET_WGT:
 					break;
 				default:
@@ -5134,7 +5562,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
 			++currentTextFieldIndex;
 			entryValue->setDisabled(false);
-			int value = 0;
 			switch ( element )
 			{
 				case SHEET_ATK:
@@ -5178,7 +5605,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			++currentTextBackingFrameIndex;
 		}
 
-		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 4, buf, valueBuf) )
+		if ( (element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 4, buf, valueBuf))
+			|| (element != SHEET_ATK && !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))) )
 		{
 			// extra number display - line 4
 			hasEntryInfoLines = true;
@@ -5186,18 +5614,100 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
 			++currentTextFieldIndex;
 			entry->setDisabled(false);
+			int value = 0;
 			switch ( element )
 			{
 				case SHEET_ATK:
 					break;
 				case SHEET_AC:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_ac_entry_items_bonus").c_str());
+					Sint32 CON = statGetCON(stats[player.playernum], players[player.playernum]->entity);
+
+					Sint32 oldSkillLVL = stats[player.playernum]->PROFICIENCIES[PRO_SHIELD];
+					bool oldDefending = stats[player.playernum]->defending;
+					stats[player.playernum]->defending = false;
+					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = 0;
+
+					Sint32 armor = AC(stats[player.playernum]);
+					stats[player.playernum]->defending = oldDefending;
+					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = oldSkillLVL;
+
+					Sint32 itemsEffectBonus = armor - CON;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_ac_bonus_format").c_str(), itemsEffectBonus);
+				}
 					break;
 				case SHEET_POW:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus").c_str());
+					std::string tag = "MAGIC_SPELLPOWER";
+					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
+				}
 					break;
 				case SHEET_RES:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_items_bonus").c_str());
+					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+					baseResist = 100 - baseResist;
+					real_t resistance = 100.0 * hit.entity->getDamageTableMultiplier(*stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
+					resistance = (100.0 - resistance);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance - baseResist);
+				}
 					break;
 				case SHEET_RGN:
+				{
+					Monster type = stats[player.playernum]->type;
+					bool aestheticOnly = false;
+					if ( player.entity )
+					{
+						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
+						{
+							if ( stats[player.playernum]->appearance != 0 )
+							{
+								aestheticOnly = true;
+								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+							}
+						}
+					}
+					real_t baseRegen = 100.0;
+					if ( type == SKELETON )
+					{
+						baseRegen = 25.0;
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
+					real_t regen = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen - baseRegen);
+				}
 					break;
+				case SHEET_RGN_MP:
+				{
+					Monster type = stats[player.playernum]->type;
+					bool aestheticOnly = false;
+					if ( player.entity )
+					{
+						if ( player.entity->effectPolymorph == NOTHING && stats[player.playernum]->playerRace > RACE_HUMAN )
+						{
+							if ( stats[player.playernum]->appearance != 0 )
+							{
+								aestheticOnly = true;
+								type = player.entity->getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+							}
+						}
+					}
+					real_t baseRegen = 100.0;
+					if ( type == SKELETON )
+					{
+						baseRegen = 25.0;
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
+					real_t regen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen - baseRegen);
+				}
+				break;
 				case SHEET_WGT:
 					break;
 				default:
@@ -5221,7 +5731,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
 			++currentTextFieldIndex;
 			entryValue->setDisabled(false);
-			int value = 0;
 			switch ( element )
 			{
 				case SHEET_ATK:
@@ -5265,7 +5774,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			++currentTextBackingFrameIndex;
 		}
 
-		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf) )
+		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf)
+			|| (element != SHEET_ATK && element != SHEET_RES && !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))) )
 		{
 			// extra number display - line 5
 			hasEntryInfoLines = true;
@@ -5273,17 +5783,60 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			auto entry = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
 			++currentTextFieldIndex;
 			entry->setDisabled(false);
+			int value = 0;
 			switch ( element )
 			{
 				case SHEET_ATK:
 					break;
 				case SHEET_AC:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_ac_passive_bonus").c_str());
+
+					Sint32 oldSkillLVL = stats[player.playernum]->PROFICIENCIES[PRO_SHIELD];
+					bool oldDefending = stats[player.playernum]->defending;
+					stats[player.playernum]->defending = false;
+
+					Sint32 armor = AC(stats[player.playernum]);
+					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = 0;
+					Sint32 armorNoSkill = AC(stats[player.playernum]);
+					stats[player.playernum]->PROFICIENCIES[PRO_SHIELD] = oldSkillLVL;
+					stats[player.playernum]->defending = oldDefending;
+
+					Sint32 passiveBonus = armor - armorNoSkill;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_ac_bonus_format").c_str(), passiveBonus);
+				}
 					break;
 				case SHEET_POW:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_items_bonus").c_str());
+					// maybe one day add intrinsic spell power buffs. for now, 0
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_bonus_format").c_str(), 0);
+				}
 					break;
 				case SHEET_RES:
 					break;
 				case SHEET_RGN:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_plain_display").c_str());
+					real_t regen = (static_cast<real_t>(Entity::getHealthRegenInterval(player.entity, *stats[player.playernum], true)) / TICKS_PER_SECOND);
+					if ( regen <= 0.0 )
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format_zero").c_str(),
+							(static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
+					}
+					else
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format").c_str(),
+							regen);
+					}
+				}
+					break;
+				case SHEET_RGN_MP:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_plain_display").c_str());
+					real_t regen = (static_cast<real_t>(Entity::getManaRegenInterval(player.entity, *stats[player.playernum], true)) / TICKS_PER_SECOND);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_mp_per_second_format").c_str(), regen);
+				}
 					break;
 				case SHEET_WGT:
 					break;
@@ -5308,7 +5861,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			auto entryValue = characterSheetTooltipTextFields[player.playernum][currentTextFieldIndex]; assert(entry);
 			++currentTextFieldIndex;
 			entryValue->setDisabled(false);
-			int value = 0;
 			switch ( element )
 			{
 				case SHEET_ATK:
@@ -5340,15 +5892,36 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
-			SDL_Rect backingFramePos = entryValue->getSize();
-			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
-				entryValue->getTextColor(), entryValue->getOutlineColor());
-			longestValue = std::max(longestValue, txtValueGet->getWidth());
-			backingFramePos.x = backingFramePos.x + backingFramePos.w;
-			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
-			valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
-			txtValueBackingFrame->setDisabled(false);
+			if ( element == SHEET_RGN || element == SHEET_RGN_MP )
+			{
+				// special rule here to ignore size of this long line
+				auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+				SDL_Rect backingFramePos = entryValue->getSize();
+				auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+					entryValue->getTextColor(), entryValue->getOutlineColor());
+				//longestValue = std::max(longestValue, txtValueGet->getWidth());
+				backingFramePos.x = backingFramePos.x + backingFramePos.w;
+				backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+				//valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
+				txtValueBackingFrame->setDisabled(true);
+
+				backingFramePos.w = (int)txtValueGet->getWidth();
+				backingFramePos.x -= backingFramePos.w;
+				backingFramePos.x -= 8;
+				entryValue->setSize(backingFramePos);
+			}
+			else
+			{
+				auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
+				SDL_Rect backingFramePos = entryValue->getSize();
+				auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+					entryValue->getTextColor(), entryValue->getOutlineColor());
+				longestValue = std::max(longestValue, txtValueGet->getWidth());
+				backingFramePos.x = backingFramePos.x + backingFramePos.w;
+				backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+				valueSizes[currentTextBackingFrameIndex] = std::make_pair(entryValue, backingFramePos);
+				txtValueBackingFrame->setDisabled(false);
+			}
 			++currentTextBackingFrameIndex;
 		}
 
@@ -5560,7 +6133,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 		if ( !hasEntryInfoLines )
 		{
-			currentHeight += padyMid * 2;
+			//currentHeight += padyMid * 2;
 		}
 
 		{
@@ -5598,7 +6171,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entry->reflowTextToFit(0);
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
-			entry->setColor(makeColor(224, 224, 224, 255));
+			if ( element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER) )
+			{
+				entry->setColor(hudColors.itemContextMenuHeadingText);
+			}
+			else
+			{
+				entry->setColor(hudColors.characterSheetOffWhiteText);
+			}
 			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
 
 			currentHeight += padyMid / 4;
@@ -6405,17 +6985,19 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("res text stat") )
 	{
-		real_t resistance = 0.0;
-		if ( players[player.playernum]->entity )
-		{
-			resistance = 100 - 100 / (players[player.playernum]->entity->getMagicResistance() + 1);
-		}
-		snprintf(buf, sizeof(buf), "%.f%%", resistance);
+		real_t resistance = 100.0 * hit.entity->getDamageTableMultiplier(*stats[player.playernum], DAMAGE_TABLE_MAGIC);
+		resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
+		resistance = -(resistance - 100.0);
+		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);
 		field->setText(buf);
 		field->setColor(hudColors.characterSheetNeutral);
 		if ( resistance > 0.01 )
 		{
 			field->setColor(hudColors.characterSheetGreen);
+		}
+		else if ( resistance < -0.01 )
+		{
+			field->setColor(hudColors.characterSheetRed);
 		}
 
 		if ( selectedElement == SHEET_RES && enableTooltips )
@@ -6428,125 +7010,22 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("regen text hp") )
 	{
-		real_t regen = 0.0;
 		field->setColor(hudColors.characterSheetNeutral);
-		if ( players[player.playernum]->entity && stats[player.playernum]->HP > 0 )
-		{
-			regen = (static_cast<real_t>(players[player.playernum]->entity->getHealthRegenInterval(*stats[player.playernum])) / TICKS_PER_SECOND);
-			if ( stats[player.playernum]->type == SKELETON )
-			{
-				if ( !(svFlags & SV_FLAG_HUNGER) )
-				{
-					regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
-				}
-			}
-			if ( regen < 0 )
-			{
-				regen = 0.0;
-				if ( !(svFlags & SV_FLAG_HUNGER) )
-				{
-					field->setColor(hudColors.characterSheetNeutral);
-				}
-				else
-				{
-					field->setColor(hudColors.characterSheetRed);
-				}
-			}
-			else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
-			{
-				field->setColor(hudColors.characterSheetGreen);
-			}
-		}
-		else
-		{
-			regen = HEAL_TIME / TICKS_PER_SECOND;
-		}
-
-		if ( regen > 0.01 )
-		{
-			real_t nominalRegen = HEAL_TIME / TICKS_PER_SECOND;
-			regen = nominalRegen / regen;
-		}
-		snprintf(buf, sizeof(buf), "%.f%%", regen * 100.0);
+		Uint32 color = hudColors.characterSheetNeutral;
+		getDisplayedHPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
 		field->setText(buf);
+		field->setColor(color);
 	}
 
 	if ( auto field = attributesInnerFrame->findField("regen text mp") )
 	{
-		real_t regen = 0.0;
 		field->setColor(hudColors.characterSheetNeutral);
-		if ( players[player.playernum]->entity )
-		{
-			regen = (static_cast<real_t>(players[player.playernum]->entity->getManaRegenInterval(*stats[player.playernum])) / TICKS_PER_SECOND);
-			if ( stats[player.playernum]->type == AUTOMATON )
-			{
-				if ( stats[player.playernum]->HUNGER <= 300 )
-				{
-					regen /= 6; // degrade faster
-				}
-				else if ( stats[player.playernum]->HUNGER > 1200 )
-				{
-					if ( stats[player.playernum]->MP / static_cast<real_t>(std::max(1, stats[player.playernum]->MAXMP)) <= 0.5 )
-					{
-						regen /= 4; // increase faster at < 50% mana
-					}
-					else
-					{
-						regen /= 2; // increase less faster at > 50% mana
-					}
-				}
-				else if ( stats[player.playernum]->HUNGER > 300 )
-				{
-					// normal manaRegenInterval 300-1200 hunger.
-				}
-			}
-
-			if ( regen < 0.0 /*stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0*/ )
-			{
-				regen = 0.0;
-			}
-
-			if ( stats[player.playernum]->type == AUTOMATON )
-			{
-				if ( stats[player.playernum]->HUNGER <= 300 )
-				{
-					field->setColor(hudColors.characterSheetRed);
-				}
-				else if ( regen < static_cast<real_t>(getBaseManaRegen(players[player.playernum]->entity, *stats[player.playernum])) / TICKS_PER_SECOND )
-				{
-					field->setColor(hudColors.characterSheetGreen);
-				}
-			}
-			else if ( stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0 )
-			{
-				if ( !(svFlags & SV_FLAG_HUNGER) )
-				{
-					field->setColor(hudColors.characterSheetNeutral);
-				}
-				else
-				{
-					field->setColor(hudColors.characterSheetRed);
-				}
-			}
-			else if ( regen < static_cast<real_t>(getBaseManaRegen(players[player.playernum]->entity, *stats[player.playernum])) / TICKS_PER_SECOND )
-			{
-				field->setColor(hudColors.characterSheetGreen);
-			}
-		}
-		else
-		{
-			regen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
-		}
-
-		if ( regen > 0.01 )
-		{
-			real_t nominalRegen = MAGIC_REGEN_TIME / TICKS_PER_SECOND;
-			regen = nominalRegen / regen;
-		}
-		snprintf(buf, sizeof(buf), "%.f%%", regen * 100.0);
+		Uint32 color = hudColors.characterSheetNeutral;
+		getDisplayedMPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
 		field->setText(buf);
+		field->setColor(color);
 
-		if ( selectedElement == SHEET_RGN && enableTooltips )
+		if ( selectedElement == SHEET_RGN_MP && enableTooltips )
 		{
 			SDL_Rect tooltipPos = attributesFrame->getSize();
 			tooltipPos.y += attributesInnerFrame->getSize().y;
@@ -8746,6 +9225,14 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_off_white_text"]["g"].GetInt(),
 							d["colors"]["charsheet_off_white_text"]["b"].GetInt(),
 							d["colors"]["charsheet_off_white_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_heading_text") )
+					{
+						hudColors.characterSheetHeadingText = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["charsheet_heading_text"]["r"].GetInt(),
+							d["colors"]["charsheet_heading_text"]["g"].GetInt(),
+							d["colors"]["charsheet_heading_text"]["b"].GetInt(),
+							d["colors"]["charsheet_heading_text"]["a"].GetInt());
 					}
 				}
 				if ( d.HasMember("dropdowns") )
@@ -13230,7 +13717,12 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	{
 		if ( tag == "BLOCK_AC_INCREASE" )
 		{
-			val = 5 + static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 5);
+			val = stats[playernum]->getActiveShieldBonus(false);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "PASSIVE_AC_INCREASE" )
+		{
+			val = stats[playernum]->getPassiveShieldBonus(false);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )

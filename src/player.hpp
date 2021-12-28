@@ -1071,6 +1071,7 @@ public:
 			SHEET_POW,
 			SHEET_RES,
 			SHEET_RGN,
+			SHEET_RGN_MP,
 			SHEET_WGT,
 			SHEET_ENUM_END
 		};
