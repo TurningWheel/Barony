@@ -4588,21 +4588,13 @@ void ingameHud()
 					inputs.getController(player)->getLeftYPercent());
 			}
 		}
-
-		if ( (players[player]->shootmode == false && players[player]->gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
-		{
-			Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-			printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
-		}
 	}
 
 	DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
 	UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
-															   // pointer in inventory screen
+	// pointer in inventory screen
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( !players[player]->isLocalPlayer() )

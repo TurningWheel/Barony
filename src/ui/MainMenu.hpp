@@ -67,10 +67,10 @@ namespace MainMenu {
 	};
 
 	struct Minimap {
-		int map_scale = 2;
-		int icon_scale = 2;
-		int foreground_opacity = 100;
-		int background_opacity = 100;
+		int map_scale = 100;
+		int icon_scale = 100;
+		int foreground_opacity = 20;
+		int background_opacity = 0;
 		inline void save();
 		static inline Minimap load();
 		static inline Minimap reset();
@@ -143,7 +143,7 @@ namespace MainMenu {
 		bool extra_life_enabled;
 		bool cheats_enabled;
 		bool skipintro;
-		inline void save();
+		inline bool save(); // true if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
 		void serialize(FileInterface*);

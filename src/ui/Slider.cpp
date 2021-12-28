@@ -161,6 +161,8 @@ void Slider::updateHandlePosition() {
 Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
 	Widget::process();
 
+	value = std::min(std::max(minValue, value), maxValue);
+
 	updateHandlePosition();
 
 	result_t result;

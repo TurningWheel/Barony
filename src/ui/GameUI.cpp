@@ -1405,6 +1405,28 @@ void Player::MessageZone_t::processChatbox()
 	}*/
 }
 
+static void openMinimap(int player) {
+    std::string name = "minimap";
+    name.append(std::to_string(player));
+    Frame* window = gui->findFrame(name.c_str());
+    if (window) {
+        window->removeSelf();
+    } else {
+        window = gui->addFrame(name.c_str());
+        window->setSize(SDL_Rect{
+            players[player]->camera_virtualx1() + (players[player]->camera_virtualWidth() - 400) / 2,
+            players[player]->camera_virtualy1() + (players[player]->camera_virtualHeight() - 400) / 2,
+            400,
+            400,
+            });
+        window->setColor(0);
+        window->setOwner(player);
+        window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+            drawMinimap(widget.getOwner(), rect);
+            });
+    }
+}
+
 std::map<std::string, std::pair<std::string, std::string>> Player::CharacterSheet_t::mapDisplayNamesDescriptions;
 std::string Player::CharacterSheet_t::defaultString = "";
 std::map<std::string, std::string> Player::CharacterSheet_t::hoverTextStrings;
@@ -1547,7 +1569,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
-				messagePlayer(button.getOwner(), "%d: Map button clicked", button.getOwner());
+				openMinimap(button.getOwner());
 			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
@@ -5490,23 +5512,7 @@ void createIngameHud(int player) {
 }
 
 void newIngameHud() {
-    if (!nohud) {
-        // here is where splitscreen
-        if (!players[clientnum]->hud.hudFrame) {
-            createIngameHud(clientnum);
-        }
-
-        // original minimap already works fine, so just reuse it
-        if (multiplayer == SINGLE) {
-            for (int c = 0; c < MAXPLAYERS; ++c) {
-                if (!client_disconnected[c]) {
-                    drawMinimap(c);
-                }
-            }
-        } else {
-            drawMinimap(0);
-        }
-    }
+    // Deprecated
 }
 
 void createPlayerInventorySlotFrameElements(Frame* slotFrame)

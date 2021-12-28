@@ -37,6 +37,9 @@ namespace MainMenu {
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 
+	static LobbyType currentLobbyType;
+	static bool playersInLobby[4];
+
 	void beginFade(FadeDestination fd) {
 		main_menu_fade_destination = fd;
 		fadeout = true;
@@ -91,6 +94,99 @@ namespace MainMenu {
 
 	static inline void soundDeleteSave() {
 		playSound(153, 48);
+	}
+
+/******************************************************************************/
+
+	static void setupSplitscreen() {
+		if (multiplayer != SINGLE) {
+			splitscreen = false;
+			return;
+		}
+
+	    int playercount = 0;
+        if (intro) {
+		    clientnum = -1;
+		    for (int c = 0; c < 4; ++c) {
+			    if (playersInLobby[c]) {
+				    clientnum = clientnum == -1 ? c : clientnum;
+				    players[c]->bSplitscreen = true;
+				    client_disconnected[c] = false;
+				    ++playercount;
+			    } else {
+				    client_disconnected[c] = true;
+				    players[c]->bSplitscreen = false;
+			    }
+		    }
+		    if (clientnum == -1) {
+		        // TODO loading a splitscreen game?
+		        clientnum = 0;
+		        players[0]->bSplitscreen = false;
+		        client_disconnected[0] = false;
+		        playercount = 1;
+		    }
+		} else {
+		    for (int c = 0; c < 4; ++c) {
+		        if (client_disconnected[c]) {
+				    players[c]->bSplitscreen = false;
+				    players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+		        } else {
+				    players[c]->bSplitscreen = true;
+				    ++playercount;
+		        }
+		    }
+		}
+		splitscreen = playercount > 1;
+
+		int c, playerindex;
+		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
+			if (client_disconnected[c]) {
+				--playerindex;
+				continue;
+			}
+			if (vertical_splitscreen) {
+				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
+			} else {
+				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+
+			if (!splitscreen) {
+				players[c]->camera().winx = 0;
+				players[c]->camera().winy = 0;
+				players[c]->camera().winw = xres;
+				players[c]->camera().winh = yres;
+			} else {
+				if (playercount == 1) {
+					players[c]->camera().winx = 0;
+					players[c]->camera().winy = 0;
+					players[c]->camera().winw = xres;
+					players[c]->camera().winh = yres;
+				} else if (playercount == 2) {
+					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
+						// divide screen vertically
+						players[c]->camera().winx = playerindex * xres / 2;
+						players[c]->camera().winy = 0;
+						players[c]->camera().winw = xres / 2;
+						players[c]->camera().winh = yres;
+					} else {
+						// divide screen horizontally
+						players[c]->camera().winx = 0;
+						players[c]->camera().winy = playerindex * yres / 2;
+						players[c]->camera().winw = xres;
+						players[c]->camera().winh = yres / 2;
+					}
+				} else if (playercount >= 3) {
+					// divide screen into quadrants
+					players[c]->camera().winx = (playerindex % 2) * xres / 2;
+					players[c]->camera().winy = (playerindex / 2) * yres / 2;
+					players[c]->camera().winw = xres / 2;
+					players[c]->camera().winh = yres / 2;
+				}
+			}
+
+			inputs.getVirtualMouse(c)->x = players[c]->camera_x1() + players[c]->camera_width() / 2;
+			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
+		}
 	}
 
 /******************************************************************************/
@@ -672,7 +768,9 @@ namespace MainMenu {
 
 	static AllSettings allSettings;
 
-	inline void AllSettings::save() {
+	inline bool AllSettings::save() {
+	    bool result = false;
+
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -688,23 +786,35 @@ namespace MainMenu {
 		shaking = shaking_enabled;
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
+		bool new_fullscreen, new_borderless;
 		switch (allSettings.window_mode) {
 		case 0:
-			fullscreen = false;
-			borderless = false;
+			new_fullscreen = false;
+			new_borderless = false;
 			break;
 		case 1:
-			fullscreen = true;
-			borderless = false;
+			new_fullscreen = true;
+			new_borderless = false;
 			break;
 		case 2:
-			fullscreen = true;
-			borderless = true;
+			new_fullscreen = true;
+			new_borderless = true;
 			break;
 		default:
 			assert("Unknown video mode" && 0);
 			break;
 		}
+		if (xres != resolution_x ||
+		    yres != resolution_y ||
+		    verticalSync != vsync_enabled ||
+		    vertical_splitscreen != vertical_split_enabled ||
+		    vidgamma != gamma / 100.f ||
+		    new_fullscreen != fullscreen ||
+		    new_borderless != borderless) {
+		    result = true;
+		}
+		fullscreen = new_fullscreen;
+		borderless = new_borderless;
 		xres = resolution_x;
 		yres = resolution_y;
 		verticalSync = vsync_enabled;
@@ -738,6 +848,8 @@ namespace MainMenu {
 		svFlags = extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
 		svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 		::skipintro = skipintro;
+
+		return result;
 	}
 
 	inline AllSettings AllSettings::load() {
@@ -1065,14 +1177,17 @@ namespace MainMenu {
 	};
 
 	void settingsApply() {
-		allSettings.save();
+		bool reset_video = allSettings.save();
 
 		// change video mode
-		if (initialized) {
+		if (initialized && reset_video) {
 			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
 				printlog("critical error! Attempting to abort safely...\n");
 				mainloop = 0;
 			}
+		    if (!intro) {
+		        setupSplitscreen();
+		    }
 		}
 
 		// transmit server flags
@@ -2329,21 +2444,25 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
 			"Scale the map to be larger or smaller.",
-			100, 100, 200, true, nullptr, true);
+			allSettings.minimap.map_scale, 25, 100, true,
+			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			100, 50, 200, true, nullptr, true);
+			allSettings.minimap.icon_scale, 25, 100, true,
+			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
 
 		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
 			"Set the opacity of the minimap's foreground.",
-			100, 0, 100, true, nullptr, true);
+			allSettings.minimap.foreground_opacity, 0, 100, true,
+			[](Slider& slider){ allSettings.minimap.foreground_opacity = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
 			"Set the opacity of the minimap's background.",
-			100, 0, 100, true, nullptr, true);
+			allSettings.minimap.background_opacity, 0, 100, true,
+			[](Slider& slider){ allSettings.minimap.background_opacity = slider.getValue(); }, true);
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Slider, "map_scale"},
@@ -3386,9 +3505,6 @@ namespace MainMenu {
 	}
 
 /******************************************************************************/
-
-	static LobbyType currentLobbyType;
-	static bool playersInLobby[4];
 
 	enum class DLC {
 		Base,
@@ -7117,86 +7233,6 @@ namespace MainMenu {
 	}
 
 /******************************************************************************/
-
-	static void setupSplitscreen() {
-		if (multiplayer != SINGLE) {
-			splitscreen = false;
-			return;
-		}
-
-		clientnum = -1;
-		int playercount = 0;
-		for (int c = 0; c < 4; ++c) {
-			if (playersInLobby[c]) {
-				clientnum = clientnum == -1 ? c : clientnum;
-				players[c]->bSplitscreen = true;
-				client_disconnected[c] = false;
-				++playercount;
-			} else {
-				client_disconnected[c] = true;
-				players[c]->bSplitscreen = false;
-				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-			}
-		}
-		if (clientnum == -1) {
-		    // TODO loading a splitscreen game?
-		    clientnum = 0;
-		    players[0]->bSplitscreen = false;
-		    client_disconnected[0] = false;
-		    playercount = 1;
-		}
-		splitscreen = playercount > 1;
-
-		int c, playerindex;
-		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
-			if (client_disconnected[c]) {
-				--playerindex;
-				continue;
-			}
-			if (vertical_splitscreen) {
-				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
-			} else {
-				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-			}
-
-			if (!splitscreen) {
-				players[c]->camera().winx = 0;
-				players[c]->camera().winy = 0;
-				players[c]->camera().winw = xres;
-				players[c]->camera().winh = yres;
-			} else {
-				if (playercount == 1) {
-					players[c]->camera().winx = 0;
-					players[c]->camera().winy = 0;
-					players[c]->camera().winw = xres;
-					players[c]->camera().winh = yres;
-				} else if (playercount == 2) {
-					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
-						// divide screen vertically
-						players[c]->camera().winx = playerindex * xres / 2;
-						players[c]->camera().winy = 0;
-						players[c]->camera().winw = xres / 2;
-						players[c]->camera().winh = yres;
-					} else {
-						// divide screen horizontally
-						players[c]->camera().winx = 0;
-						players[c]->camera().winy = playerindex * yres / 2;
-						players[c]->camera().winw = xres;
-						players[c]->camera().winh = yres / 2;
-					}
-				} else if (playercount >= 3) {
-					// divide screen into quadrants
-					players[c]->camera().winx = (playerindex % 2) * xres / 2;
-					players[c]->camera().winy = (playerindex / 2) * yres / 2;
-					players[c]->camera().winw = xres / 2;
-					players[c]->camera().winh = yres / 2;
-				}
-			}
-
-			inputs.getVirtualMouse(c)->x = players[c]->camera_x1() + players[c]->camera_width() / 2;
-			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
-		}
-	}
 
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {

@@ -212,7 +212,7 @@ bool loadInterfaceResources();
 void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
-void drawMinimap(const int player);
+void drawMinimap(const int player, SDL_Rect rect);
 void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
