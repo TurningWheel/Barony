@@ -35,15 +35,6 @@ int minimapPingGimpTimer[MAXPLAYERS] = { 0 };
 Uint32 lastMapTick = 0;
 SDL_Rect minimaps[MAXPLAYERS];
 
-Uint32 minimapColorFunc(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-	Uint32 result = 0u;
-	result |= (Uint32)a << 24;
-	result |= (Uint32)b << 16;
-	result |= (Uint32)g <<  8;
-	result |= (Uint32)r;
-	return result;
-}
-
 void drawMinimap(const int player, SDL_Rect rect)
 {
 	if (gameplayCustomManager.inUse()) {
@@ -89,29 +80,37 @@ void drawMinimap(const int player, SDL_Rect rect)
 	for ( int x = xmin; x < xmax; ++x ) {
 		for ( int y = ymin; y < ymax; ++y ) {
 		    Uint32 color;
+		    Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
+		    Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
 			if (x < 0 || y < 0 || x >= map.width || y >= map.height)
 			{
-			    color = minimapColorFunc(0, 0, 0, 255 * ((100 - minimapTransparencyBackground) / 100.f));
+			    // out-of-bounds
+			    color = makeColor(0, 0, 0, backgroundAlpha);
 			}
 			else if ( minimap[y][x] == 0 )
 			{
-				color = minimapColorFunc(0, 0, 0, 255 * ((100 - minimapTransparencyBackground) / 100.f));
+			    // unknown / no floor
+				color = makeColor(0, 0, 0, backgroundAlpha);
 			}
 			else if ( minimap[y][x] == 1 )
 			{
-				color = minimapColorFunc(96, 24, 0, 255 * ((100 - minimapTransparencyForeground) / 100.f));
+			    // walkable space
+				color = makeColor(96, 96, 96, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 2 )
 			{
-				color = minimapColorFunc(192, 64, 0, 255 * ((100 - minimapTransparencyForeground) / 100.f));
+			    // wall
+				color = makeColor(128, 128, 128, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 3 )
 			{
-				color = minimapColorFunc(32, 32, 32, 255 * ((100 - minimapTransparencyForeground) / 100.f));
+			    // mapped but undiscovered walkable ground
+				color = makeColor(32, 32, 32, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 4 )
 			{
-				color = minimapColorFunc(64, 64, 64, 255 * ((100 - minimapTransparencyForeground) / 100.f));
+			    // mapped but undiscovered wall
+				color = makeColor(64, 64, 64, foregroundAlpha);
 			}
 			putPixel(minimapSurface, x - xmin, y - ymin, color);
 		}
@@ -195,7 +194,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
-			            drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(0, 255, 255, 255));
+					    // exit
+			            drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(255, 0, 0, 255));
 					}
 				}
 			}
@@ -272,12 +272,13 @@ void drawMinimap(const int player, SDL_Rect rect)
 					}
 				}
 			}
-			else if ( entity->isBoulderSprite() ) // boulder.vox
+			else if ( entity->isBoulderSprite() )
 			{
 				int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( minimap[y][x] == 1 || minimap[y][x] == 2 )
 				{
+				    // boulder
 			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(191, 63, 0, 255));
 				}
 			}
@@ -287,6 +288,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( ticks % 40 - ticks % 20 )
 				{
+				    // item
 			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, rect, makeColor(240, 228, 66, 255));
 				}
 			}
@@ -321,19 +323,19 @@ void drawMinimap(const int player, SDL_Rect rect)
 			switch ( ping.player )
 			{
 				case 0:
-					color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+					color = makeColor(64, 255, 64, 255); // green
 					break;
 				case 1:
-					color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+					color = makeColor(86, 180, 233, 255); // sky blue
 					break;
 				case 2:
-					color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+					color = makeColor(240, 228, 66, 255); // yellow
 					break;
 				case 3:
-					color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+					color = makeColor(204, 121, 167, 255); // pink
 					break;
 				default:
-					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+					color = makeColor(192, 192, 192, 255); // grey
 					break;
 			}
 
@@ -437,52 +439,48 @@ void drawMinimap(const int player, SDL_Rect rect)
 			if ( foundplayer >= 0 ) {
 				switch ( foundplayer ) {
 					case 0:
-						color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+						color = makeColor(64, 255, 64, 255); // green
 						break;
 					case 1:
-						color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+						color = makeColor(86, 180, 233, 255); // sky blue
 						break;
 					case 2:
-						color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+						color = makeColor(240, 228, 66, 255); // yellow
 						break;
 					case 3:
-						color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+						color = makeColor(204, 121, 167, 255); // pink
 						break;
 					default:
-						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+						color = makeColor(192, 192, 192, 255); // grey
 						break;
 				}
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
-					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+					color = makeColor(192, 192, 192, 255); // grey
 				}
 			} else if ( entity->sprite == 239 ) {
-				if ( !colorblind ) {
-					color = SDL_MapRGB(mainsurface->format, 191, 0, 63);
-				} else {
-					color = SDL_MapRGB(mainsurface->format, 0, 191, 191);
-				}
+				color = makeColor(255, 0, 0, 255);
 			} else {
 				switch ( drawMonsterAlly ) {
 					case 0:
-						color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+						color = makeColor(32, 127, 32, 255); // green
 						break;
 					case 1:
-						color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+						color = makeColor(43, 90, 116, 255); // sky blue
 						break;
 					case 2:
-						color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+						color = makeColor(120, 114, 33, 255); // yellow
 						break;
 					case 3:
-						color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+						color = makeColor(102, 60, 83, 255); // pink
 						break;
 					default:
-						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+						color = makeColor(96, 96, 96, 255); // grey
 						break;
 				}
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
-					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+					color = makeColor(96, 96, 96, 255); // grey
 				}
 			}
 
