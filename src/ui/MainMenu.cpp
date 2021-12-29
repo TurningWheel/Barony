@@ -7528,6 +7528,9 @@ bind_failed:
 				{"PLAY MODDED GAME", mainPlayModdedGame},
 				{"HALL OF RECORDS", mainHallOfRecords},
 				{"SETTINGS", mainSettings},
+#ifndef NDEBUG
+			    {"EDITOR", mainEditor},
+#endif
 				{"QUIT", mainQuitToDesktop},
 				});
 #endif
