@@ -714,7 +714,7 @@ void Player::HUD_t::updateUINavigation()
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE )
 	{
-		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || keystatus[SDL_SCANCODE_Y] )
+		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
 		}
@@ -1405,7 +1405,7 @@ void Player::MessageZone_t::processChatbox()
 	}*/
 }
 
-static void openMinimap(int player) {
+void openMinimap(int player) {
     std::string name = "minimap";
     name.append(std::to_string(player));
     Frame* window = gui->findFrame(name.c_str());
@@ -2473,7 +2473,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	}
 
 	bool bCompactView = false;
-	if ( keystatus[SDL_SCANCODE_U] || player.bUseCompactGUIHeight() )
+	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIHeight() )
 	{
 		bCompactView = true;
 	}
@@ -9180,7 +9180,7 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -10350,7 +10350,7 @@ void Player::HUD_t::updateHPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -10529,7 +10529,7 @@ void Player::HUD_t::updateMPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -10695,7 +10695,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool bCompactView = false;
-	if ( keystatus[SDL_SCANCODE_U] || player.bUseCompactGUIWidth() )
+	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}

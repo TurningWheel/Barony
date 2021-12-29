@@ -56,6 +56,8 @@ namespace MainMenu {
 		{"Command NPC", "C", "DpadY-", ""},
 		{"Show NPC Commands", "X", "DpadX+", ""},
 		{"Cycle NPCs", "Z", "DpadX-", ""},
+		{"Minimap Scale", "=", "", ""},
+		{"Toggle Minimap", "`", "", ""},
 		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", ""},
 		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", ""},
 		{"Hotbar Select", "Mouse2", "ButtonY", ""},

@@ -4075,6 +4075,12 @@ void ingameHud()
 	{
 	    Input& input = Input::inputs[player];
 
+	    // toggle minimap
+		// player not needed to be alive
+        if ( input.consumeBinaryToggle("Toggle Minimap") ) {
+            openMinimap(player);
+        }
+
 		// inventory interface
 		// player not needed to be alive
 		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") )

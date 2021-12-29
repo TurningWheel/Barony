@@ -3780,7 +3780,7 @@ void Player::Inventory_t::setCompactView(bool bCompact)
 				invertJustification = true;
 			}
 		}
-		if ( keystatus[SDL_SCANCODE_T] )
+		if ( keystatus[SDL_SCANCODE_T] && enableDebugKeys )
 		{
 			invertJustification = !invertJustification;
 		}
@@ -4010,7 +4010,7 @@ void Player::Inventory_t::updateInventory()
 	assert(tooltipFrame);
 
 	bool bCompactView = false;
-	if ( keystatus[SDL_SCANCODE_Y] || players[player]->bUseCompactGUIHeight() )
+	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
 	{
 		bCompactView = true;
 	}
