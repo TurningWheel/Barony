@@ -3709,7 +3709,7 @@ bind_failed:
 		result.reserve(num_classes);
 		result.emplace_back("random");
 		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
-			if (isCharacterValidFromDLC(*stats[index], c)) {
+			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER ) {
 				result.emplace_back(classes_in_order[c + 1]);
 			}
 		}
@@ -7401,6 +7401,18 @@ bind_failed:
 			createMainMenu(ingame);
 			assert(main_menu_frame);
 		}
+
+#ifdef STEAMWORKS
+		if ( SteamApps()->BIsDlcInstalled(1010820) )
+		{
+			enabledDLCPack1 = true;
+		}
+		if ( SteamApps()->BIsDlcInstalled(1010821) )
+		{
+			enabledDLCPack2 = true;
+		}
+#else
+#endif // STEAMWORKS
 
 		if (fadeout && fadealpha >= 255) {
 			if (main_menu_fade_destination == FadeDestination::None) {
