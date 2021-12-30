@@ -29,6 +29,43 @@ namespace MainMenu {
 	float master_volume = 100.f;
 	bool cursor_delete_mode = false;
 
+	// If you want to add new player-visible bindings, ADD THEM HERE:
+	// The first string in a binding is the name of the binding.
+	// The second is the default Keyboard input.
+    // The third is the default Gamepad input.
+    // The fourth is the default Joystick input.
+    static const char* emptyBinding = "[unbound]";
+	static const char* defaultBindings[][4] = {
+		{"Move Forward", "W", "StickLeftY-", emptyBinding},
+		{"Move Left", "A", "StickLeftX-", emptyBinding},
+		{"Move Backward", "S", "StickLeftY+", emptyBinding},
+		{"Move Right", "D", "StickLeftX+", emptyBinding},
+		{"Turn Left", "Left", "StickRightX-", emptyBinding},
+		{"Turn Right", "Right", "StickRightX+", emptyBinding},
+		{"Look Up", "Up", "StickRightY-", emptyBinding},
+		{"Look Down", "Down", "StickRightY+", emptyBinding},
+		{"Chat", "Return", emptyBinding, emptyBinding},
+		{"Console Command", "/", emptyBinding, emptyBinding},
+		{"Character Status", "Tab", "ButtonSelect", emptyBinding},
+		{"Spell List", "M", emptyBinding, emptyBinding},
+		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
+		{"Block", "Space", "LeftTrigger", emptyBinding},
+		{"Sneak", "Left Shift", "LeftBumper", emptyBinding},
+		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
+		{"Use", "Mouse3", "ButtonA", emptyBinding},
+		{"Autosort Inventory", "Y", emptyBinding, emptyBinding},
+		{"Command NPC", "C", "DpadY-", emptyBinding},
+		{"Show NPC Commands", "X", "DpadX+", emptyBinding},
+		{"Cycle NPCs", "Z", "DpadX-", emptyBinding},
+		{"Minimap Scale", "=", emptyBinding, emptyBinding},
+		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
+		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", emptyBinding},
+		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", emptyBinding},
+		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
+		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
+	};
+	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
+
 	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
@@ -36,6 +73,16 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
+
+	enum class LobbyType {
+		LobbyLocal,
+		LobbyLAN,
+		LobbyOnline,
+		LobbyJoined
+	};
+
+	static LobbyType currentLobbyType;
+	static bool playersInLobby[4];
 
 	void beginFade(FadeDestination fd) {
 		main_menu_fade_destination = fd;
@@ -49,6 +96,136 @@ namespace MainMenu {
 	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 	static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
+
+    // Inventory sorting options
+	struct InventorySorting {
+		bool hotbarWeapons = true;
+		bool hotbarArmor = true;
+		bool hotbarAmulets = true;
+		bool hotbarBooks = true;
+		bool hotbarTools = true;
+		bool hotbarThrown = true;
+		bool hotbarGems = false;
+		bool hotbarPotions = true;
+		bool hotbarScrolls = true;
+		bool hotbarStaves = true;
+		bool hotbarFood = true;
+		bool hotbarSpells = true;
+		int sortWeapons = 0;
+		int sortArmor = 0;
+		int sortAmulets = 0;
+		int sortBooks = 0;
+		int sortTools = 0;
+		int sortThrown = 0;
+		int sortGems = 0;
+		int sortPotions = 0;
+		int sortScrolls = 0;
+		int sortStaves = 0;
+		int sortFood = 0;
+		int sortEquipped = 0;
+		inline void save();
+		static inline InventorySorting load();
+		static inline InventorySorting reset();
+		void serialize(FileInterface*);
+	};
+
+    // Binding options
+	struct Bindings {
+		int devices[4];
+		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
+		std::unordered_map<std::string, std::string> gamepad_bindings[4];
+		std::unordered_map<std::string, std::string> joystick_bindings[4];
+		inline void save();
+		static inline Bindings load();
+		static inline Bindings reset();
+		void serialize(FileInterface*);
+	};
+
+    // Minimap options
+	struct Minimap {
+		int map_scale = 100;
+		int icon_scale = 100;
+		int foreground_opacity = 20;
+		int background_opacity = 0;
+		inline void save();
+		static inline Minimap load();
+		static inline Minimap reset();
+		void serialize(FileInterface*);
+	};
+
+    // Message options
+	struct Messages {
+		bool combat = true;
+		bool status = true;
+		bool inventory = true;
+		bool equipment = true;
+		bool world = true;
+		bool chat = true;
+		bool progression = true;
+		bool interaction = true;
+		bool inspection = true;
+		inline void save();
+		static inline Messages load();
+		static inline Messages reset();
+		void serialize(FileInterface*);
+	};
+
+    // All menu options combined
+	struct AllSettings {
+		bool add_items_to_hotbar_enabled;
+		InventorySorting inventory_sorting;
+		bool use_on_release_enabled;
+		Minimap minimap;
+		bool show_messages_enabled;
+		Messages show_messages;
+		bool show_player_nametags_enabled;
+		bool show_hud_enabled;
+		bool show_ip_address_enabled;
+		bool content_control_enabled;
+		bool colorblind_mode_enabled;
+		bool arachnophobia_filter_enabled;
+		bool shaking_enabled;
+		bool bobbing_enabled;
+		bool light_flicker_enabled;
+		int window_mode; // 0 = windowed, 1 = fullscreen, 2 = borderless
+		int resolution_x;
+		int resolution_y;
+		bool vsync_enabled;
+		bool vertical_split_enabled;
+		float gamma;
+		float fov;
+		float fps;
+		float master_volume;
+		float gameplay_volume;
+		float ambient_volume;
+		float environment_volume;
+		float music_volume;
+		bool minimap_pings_enabled;
+		bool player_monster_sounds_enabled;
+		bool out_of_focus_audio_enabled;
+		Bindings bindings;
+		bool numkeys_in_inventory_enabled;
+		float mouse_sensitivity;
+		bool reverse_mouse_enabled;
+		bool smooth_mouse_enabled;
+		bool rotation_speed_limit_enabled;
+		float turn_sensitivity_x;
+		float turn_sensitivity_y;
+		bool classic_mode_enabled;
+		bool hardcore_mode_enabled;
+		bool friendly_fire_enabled;
+		bool keep_inventory_enabled;
+		bool hunger_enabled;
+		bool minotaur_enabled;
+		bool random_traps_enabled;
+		bool extra_life_enabled;
+		bool cheats_enabled;
+		bool skipintro;
+		inline bool save(); // true if video needs restart
+		static inline AllSettings load();
+		static inline AllSettings reset();
+		void serialize(FileInterface*);
+	};
 
 	static inline void soundToggleMenu() {
 		playSound(500, 48);
@@ -91,6 +268,140 @@ namespace MainMenu {
 
 	static inline void soundDeleteSave() {
 		playSound(153, 48);
+	}
+
+/******************************************************************************/
+
+	static void settingsUI(Button&);
+	static void settingsVideo(Button&);
+	static void settingsAudio(Button&);
+	static void settingsControls(Button&);
+	static void settingsGame(Button&);
+
+	static void recordsAdventureArchives(Button&);
+	static void recordsLeaderboards(Button&);
+	static void recordsDungeonCompendium(Button&);
+	static void recordsStoryIntroduction(Button&);
+	static void recordsCredits(Button&);
+	static void recordsBackToMainMenu(Button&);
+
+	static void playNew(Button&);
+	static void playContinue(Button&);
+
+	static void mainPlayGame(Button&);
+	static void mainPlayModdedGame(Button&);
+	static void mainHallOfRecords(Button&);
+	static void mainSettings(Button&);
+	static void mainEditor(Button&);
+	static void mainClose(Button&);
+	static void mainEndLife(Button&);
+	static void mainRestartGame(Button&);
+	static void mainQuitToMainMenu(Button&);
+	static void mainQuitToDesktop(Button&);
+
+	static void characterCardGameSettingsMenu(int index);
+	static void characterCardLobbySettingsMenu(int index);
+	static void characterCardRaceMenu(int index);
+	static void characterCardClassMenu(int index);
+
+	static void createCharacterCard(int index);
+	static void createStartButton(int index);
+	static void createInviteButton(int index);
+	static void createWaitingStone(int index);
+	static void createLobby(LobbyType);
+	static void createLobbyBrowser();
+
+/******************************************************************************/
+
+	static void setupSplitscreen() {
+		if (multiplayer != SINGLE) {
+			splitscreen = false;
+			return;
+		}
+
+	    int playercount = 0;
+        if (intro) {
+		    clientnum = -1;
+		    for (int c = 0; c < 4; ++c) {
+			    if (playersInLobby[c]) {
+				    clientnum = clientnum == -1 ? c : clientnum;
+				    players[c]->bSplitscreen = true;
+				    client_disconnected[c] = false;
+				    ++playercount;
+			    } else {
+				    client_disconnected[c] = true;
+				    players[c]->bSplitscreen = false;
+			    }
+		    }
+		    if (clientnum == -1) {
+		        // TODO loading a splitscreen game?
+		        clientnum = 0;
+		        players[0]->bSplitscreen = false;
+		        client_disconnected[0] = false;
+		        playercount = 1;
+		    }
+		} else {
+		    for (int c = 0; c < 4; ++c) {
+		        if (client_disconnected[c]) {
+				    players[c]->bSplitscreen = false;
+				    players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+		        } else {
+				    players[c]->bSplitscreen = true;
+				    ++playercount;
+		        }
+		    }
+		}
+		splitscreen = playercount > 1;
+
+		int c, playerindex;
+		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
+			if (client_disconnected[c]) {
+				--playerindex;
+				continue;
+			}
+			if (vertical_splitscreen) {
+				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
+			} else {
+				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
+			}
+
+			if (!splitscreen) {
+				players[c]->camera().winx = 0;
+				players[c]->camera().winy = 0;
+				players[c]->camera().winw = xres;
+				players[c]->camera().winh = yres;
+			} else {
+				if (playercount == 1) {
+					players[c]->camera().winx = 0;
+					players[c]->camera().winy = 0;
+					players[c]->camera().winw = xres;
+					players[c]->camera().winh = yres;
+				} else if (playercount == 2) {
+					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
+						// divide screen vertically
+						players[c]->camera().winx = playerindex * xres / 2;
+						players[c]->camera().winy = 0;
+						players[c]->camera().winw = xres / 2;
+						players[c]->camera().winh = yres;
+					} else {
+						// divide screen horizontally
+						players[c]->camera().winx = 0;
+						players[c]->camera().winy = playerindex * yres / 2;
+						players[c]->camera().winw = xres;
+						players[c]->camera().winh = yres / 2;
+					}
+				} else if (playercount >= 3) {
+					// divide screen into quadrants
+					players[c]->camera().winx = (playerindex % 2) * xres / 2;
+					players[c]->camera().winy = (playerindex / 2) * yres / 2;
+					players[c]->camera().winw = xres / 2;
+					players[c]->camera().winh = yres / 2;
+				}
+			}
+
+			inputs.getVirtualMouse(c)->x = players[c]->camera_x1() + players[c]->camera_width() / 2;
+			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
+		}
 	}
 
 /******************************************************************************/
@@ -198,13 +509,15 @@ namespace MainMenu {
 				auto customize = "images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png";
 				auto dropdown = "images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
+				// TODO more sensible ways to identify these button types...
+				auto boolean_button_text = "Off          On";
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), binding) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), dropdown) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
-				} else {
+				} else if (strcmp(button->getText(), boolean_button_text) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
 				}
 			}
@@ -512,52 +825,11 @@ namespace MainMenu {
 		Bindings bindings;
 		for (int c = 0; c < 4; ++c) {
 			bindings.devices[c] = c;
-
-			bindings.kb_mouse_bindings[c].emplace("Move Forward", "W");
-			bindings.kb_mouse_bindings[c].emplace("Move Left", "A");
-			bindings.kb_mouse_bindings[c].emplace("Move Backward", "S");
-			bindings.kb_mouse_bindings[c].emplace("Move Right", "D");
-			bindings.kb_mouse_bindings[c].emplace("Turn Left", "Left");
-			bindings.kb_mouse_bindings[c].emplace("Turn Right", "Right");
-			bindings.kb_mouse_bindings[c].emplace("Look Up", "Up");
-			bindings.kb_mouse_bindings[c].emplace("Look Down", "Down");
-			bindings.kb_mouse_bindings[c].emplace("Chat", "Return");
-			bindings.kb_mouse_bindings[c].emplace("Console Command", "/");
-			bindings.kb_mouse_bindings[c].emplace("Character Status", "Tab");
-			bindings.kb_mouse_bindings[c].emplace("Spell List", "M");
-			bindings.kb_mouse_bindings[c].emplace("Cast Spell", "F");
-			bindings.kb_mouse_bindings[c].emplace("Block", "Space");
-			bindings.kb_mouse_bindings[c].emplace("Sneak", "Shift");
-			bindings.kb_mouse_bindings[c].emplace("Attack", "Mouse1");
-			bindings.kb_mouse_bindings[c].emplace("Use", "Mouse3");
-			bindings.kb_mouse_bindings[c].emplace("Autosort Inventory", "Y");
-			bindings.kb_mouse_bindings[c].emplace("Command NPC", "C");
-			bindings.kb_mouse_bindings[c].emplace("Show NPC Commands", "X");
-			bindings.kb_mouse_bindings[c].emplace("Cycle NPCs", "Z");
-			bindings.kb_mouse_bindings[c].emplace("Hotbar Scroll Left", "[");
-			bindings.kb_mouse_bindings[c].emplace("Hotbar Scroll Right", "]");
-			bindings.kb_mouse_bindings[c].emplace("Hotbar Select", "\\");
-
-			bindings.gamepad_bindings[c].emplace("Move Forward", "StickLeftY-");
-			bindings.gamepad_bindings[c].emplace("Move Left", "StickLeftX-");
-			bindings.gamepad_bindings[c].emplace("Move Backward", "StickLeftY+");
-			bindings.gamepad_bindings[c].emplace("Move Right", "StickLeftX+");
-			bindings.gamepad_bindings[c].emplace("Turn Left", "StickRightX-");
-			bindings.gamepad_bindings[c].emplace("Turn Right", "StickRightX+");
-			bindings.gamepad_bindings[c].emplace("Look Up", "StickRightY-");
-			bindings.gamepad_bindings[c].emplace("Look Down", "StickRightY+");
-			bindings.gamepad_bindings[c].emplace("Character Status", "ButtonSelect");
-			bindings.gamepad_bindings[c].emplace("Cast Spell", "RightBumper");
-			bindings.gamepad_bindings[c].emplace("Block", "LeftTrigger");
-			bindings.gamepad_bindings[c].emplace("Sneak", "LeftTrigger");
-			bindings.gamepad_bindings[c].emplace("Attack", "RightTrigger");
-			bindings.gamepad_bindings[c].emplace("Use", "ButtonA");
-			bindings.gamepad_bindings[c].emplace("Command NPC", "DpadY-");
-			bindings.gamepad_bindings[c].emplace("Show NPC Commands", "DpadX+");
-			bindings.gamepad_bindings[c].emplace("Cycle NPCs", "DpadX-");
-			bindings.gamepad_bindings[c].emplace("Hotbar Scroll Left", "ButtonLeftBumper");
-			bindings.gamepad_bindings[c].emplace("Hotbar Scroll Right", "ButtonRightBumper");
-			bindings.gamepad_bindings[c].emplace("Hotbar Select", "ButtonY");
+            for (int i = 0; i < numBindings; ++i) {
+			    bindings.kb_mouse_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][1]);
+			    bindings.gamepad_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][2]);
+			    bindings.joystick_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][3]);
+			}
 		}
 		return bindings;
 	}
@@ -670,7 +942,9 @@ namespace MainMenu {
 
 	static AllSettings allSettings;
 
-	inline void AllSettings::save() {
+	inline bool AllSettings::save() {
+	    bool result = false;
+
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -686,23 +960,35 @@ namespace MainMenu {
 		shaking = shaking_enabled;
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
+		bool new_fullscreen, new_borderless;
 		switch (allSettings.window_mode) {
 		case 0:
-			fullscreen = false;
-			borderless = false;
+			new_fullscreen = false;
+			new_borderless = false;
 			break;
 		case 1:
-			fullscreen = true;
-			borderless = false;
+			new_fullscreen = true;
+			new_borderless = false;
 			break;
 		case 2:
-			fullscreen = true;
-			borderless = true;
+			new_fullscreen = true;
+			new_borderless = true;
 			break;
 		default:
 			assert("Unknown video mode" && 0);
 			break;
 		}
+		if (xres != resolution_x ||
+		    yres != resolution_y ||
+		    verticalSync != vsync_enabled ||
+		    vertical_splitscreen != vertical_split_enabled ||
+		    vidgamma != gamma / 100.f ||
+		    new_fullscreen != fullscreen ||
+		    new_borderless != borderless) {
+		    result = true;
+		}
+		fullscreen = new_fullscreen;
+		borderless = new_borderless;
 		xres = resolution_x;
 		yres = resolution_y;
 		verticalSync = vsync_enabled;
@@ -736,6 +1022,8 @@ namespace MainMenu {
 		svFlags = extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
 		svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 		::skipintro = skipintro;
+
+		return result;
 	}
 
 	inline AllSettings AllSettings::load() {
@@ -1063,14 +1351,17 @@ namespace MainMenu {
 	};
 
 	void settingsApply() {
-		allSettings.save();
+		bool reset_video = allSettings.save();
 
 		// change video mode
-		if (initialized) {
+		if (initialized && reset_video) {
 			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
 				printlog("critical error! Attempting to abort safely...\n");
 				mainloop = 0;
 			}
+		    if (!intro) {
+		        setupSplitscreen();
+		    }
 		}
 
 		// transmit server flags
@@ -1714,7 +2005,7 @@ namespace MainMenu {
 		if (find != bindings.end()) {
 			button->setText(find->second.c_str());
 		} else {
-			button->setText("[unbound]");
+			button->setText(emptyBinding);
 		}
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
@@ -2327,21 +2618,25 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
 			"Scale the map to be larger or smaller.",
-			100, 100, 200, true, nullptr, true);
+			allSettings.minimap.map_scale, 25, 100, true,
+			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			100, 50, 200, true, nullptr, true);
+			allSettings.minimap.icon_scale, 25, 200, true,
+			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
 
 		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
 			"Set the opacity of the minimap's foreground.",
-			100, 0, 100, true, nullptr, true);
+			allSettings.minimap.foreground_opacity, 0, 100, true,
+			[](Slider& slider){ allSettings.minimap.foreground_opacity = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
 			"Set the opacity of the minimap's background.",
-			100, 0, 100, true, nullptr, true);
+			allSettings.minimap.background_opacity, 0, 100, true,
+			[](Slider& slider){ allSettings.minimap.background_opacity = slider.getValue(); }, true);
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Slider, "map_scale"},
@@ -2526,32 +2821,11 @@ namespace MainMenu {
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 		int y = 0;
 
-		static const std::vector<Setting> bindings = {
-			{Setting::Type::Binding, "Move Forward"},
-			{Setting::Type::Binding, "Move Left"},
-			{Setting::Type::Binding, "Move Backward"},
-			{Setting::Type::Binding, "Move Right"},
-			{Setting::Type::Binding, "Turn Left"},
-			{Setting::Type::Binding, "Turn Right"},
-			{Setting::Type::Binding, "Look Up"},
-			{Setting::Type::Binding, "Look Down"},
-			{Setting::Type::Binding, "Chat"},
-			{Setting::Type::Binding, "Console Command"},
-			{Setting::Type::Binding, "Character Status"},
-			{Setting::Type::Binding, "Spell List"},
-			{Setting::Type::Binding, "Cast Spell"},
-			{Setting::Type::Binding, "Block"},
-			{Setting::Type::Binding, "Sneak"},
-			{Setting::Type::Binding, "Attack"},
-			{Setting::Type::Binding, "Use"},
-			{Setting::Type::Binding, "Autosort Inventory"},
-			{Setting::Type::Binding, "Command NPC"},
-			{Setting::Type::Binding, "Show NPC Commands"},
-			{Setting::Type::Binding, "Cycle NPCs"},
-			{Setting::Type::Binding, "Hotbar Scroll Left"},
-			{Setting::Type::Binding, "Hotbar Scroll Right"},
-			{Setting::Type::Binding, "Hotbar Select"},
-		};
+		std::vector<Setting> bindings;
+		bindings.reserve(numBindings);
+		for (int c = 0; c < numBindings; ++c) {
+		    bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		}
 
 		static bool bind_mode;
 		static Button* bound_button = nullptr;
@@ -2635,7 +2909,7 @@ namespace MainMenu {
 						"The next input you activate will be bound to this action.",
 						bound_binding.c_str());
 					tooltip->setText(buf);
-					Input::clearDefaultBindings();
+					Input::inputs[bound_player].setDisabled(true);
 					for (auto button : subwindow->getButtons()) {
 						button->setDisabled(true);
 					}
@@ -2660,10 +2934,9 @@ namespace MainMenu {
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
 						tooltip->setText(buf);
-						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
-						bound_button->setText("[unbound]");
+						bound_button->setText(emptyBinding);
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
 						tooltip->setText(buf);
@@ -2681,16 +2954,11 @@ namespace MainMenu {
 						tooltip->setText(buf);
 					}
 					bound_button = nullptr;
-				bind_failed:
-					// fixes a bug where these are not released after being used
-					Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 0;
-					Input::mouseButtons[SDL_BUTTON_WHEELUP] = 0;
+bind_failed:
+                    // fix a bug where this wasn't always cleared...
+                    mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
-				else if (!bound_button &&
-					!Input::mouseButtons[SDL_BUTTON_LEFT] &&
-					!Input::mouseButtons[SDL_BUTTON_WHEELDOWN] &&
-					!Input::mouseButtons[SDL_BUTTON_WHEELUP] &&
-					!Input::keys[SDL_SCANCODE_SPACE]) {
+				else if (!bound_button) {
 					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
 					auto confirm = bindings->findButton("confirm_and_exit"); assert(confirm);
 					auto discard = bindings->findButton("discard_and_exit"); assert(discard);
@@ -2704,7 +2972,7 @@ namespace MainMenu {
 						button->setDisabled(false);
 					}
 
-					Input::defaultBindings();
+					Input::inputs[bound_player].setDisabled(false);
 					bound_binding = "";
 					bind_mode = false;
 				}
@@ -2721,7 +2989,7 @@ namespace MainMenu {
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
-	void settingsUI(Button& button) {
+	static void settingsUI(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -2788,7 +3056,7 @@ namespace MainMenu {
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
 	}
 
-	void settingsVideo(Button& button) {
+	static void settingsVideo(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -2904,7 +3172,7 @@ namespace MainMenu {
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
 	}
 
-	void settingsAudio(Button& button) {
+	static void settingsAudio(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -2969,7 +3237,7 @@ namespace MainMenu {
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
 	}
 
-	void settingsControls(Button& button) {
+	static void settingsControls(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -3040,7 +3308,7 @@ namespace MainMenu {
 		settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
 	}
 
-	void settingsGame(Button& button) {
+	static void settingsGame(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -3110,19 +3378,19 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	void recordsAdventureArchives(Button& button) {
+	static void recordsAdventureArchives(Button& button) {
 		soundActivate();
 	}
 
-	void recordsLeaderboards(Button& button) {
+	static void recordsLeaderboards(Button& button) {
 		soundActivate();
 	}
 
-	void recordsDungeonCompendium(Button& button) {
+	static void recordsDungeonCompendium(Button& button) {
 		soundActivate();
 	}
 
-	void recordsStoryIntroduction(Button& button) {
+	static void recordsStoryIntroduction(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -3131,7 +3399,7 @@ namespace MainMenu {
 		beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 	}
 
-	void recordsCredits(Button& button) {
+	static void recordsCredits(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -3289,7 +3557,7 @@ namespace MainMenu {
 		);
 	}
 
-	void recordsBackToMainMenu(Button& button) {
+	static void recordsBackToMainMenu(Button& button) {
 		soundCancel();
 
 		assert(main_menu_frame);
@@ -3336,6 +3604,9 @@ namespace MainMenu {
 			{"PLAY MODDED GAME", mainPlayModdedGame},
 			{"HALL OF RECORDS", mainHallOfRecords},
 			{"SETTINGS", mainSettings},
+#ifndef NDEBUG
+			{"EDITOR", mainEditor},
+#endif
 			{"QUIT", mainQuitToDesktop}
 		};
 #endif
@@ -3384,9 +3655,6 @@ namespace MainMenu {
 	}
 
 /******************************************************************************/
-
-	static LobbyType currentLobbyType;
-	static bool playersInLobby[4];
 
 	enum class DLC {
 		Base,
@@ -3573,7 +3841,7 @@ namespace MainMenu {
 		return card;
 	}
 
-	void characterCardGameSettingsMenu(int index) {
+	static void characterCardGameSettingsMenu(int index) {
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 664);
@@ -3740,7 +4008,7 @@ namespace MainMenu {
 		}*/
 	}
 
-	void characterCardLobbySettingsMenu(int index) {
+	static void characterCardLobbySettingsMenu(int index) {
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 580);
@@ -4101,7 +4369,7 @@ namespace MainMenu {
 		}*/
 	}
 
-	void characterCardRaceMenu(int index) {
+	static void characterCardRaceMenu(int index) {
 		auto card = initCharacterCard(index, 488);
 
 		static void (*back_fn)(int) = [](int index){
@@ -4611,7 +4879,7 @@ namespace MainMenu {
 		}*/
 	}
 
-	void characterCardClassMenu(int index) {
+	static void characterCardClassMenu(int index) {
 		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, 488);
 
@@ -4813,7 +5081,7 @@ namespace MainMenu {
 		}*/
 	}
 
-	void createCharacterCard(int index) {
+	static void createCharacterCard(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5241,7 +5509,7 @@ namespace MainMenu {
 			});
 	}
 
-	void createStartButton(int index) {
+	static void createStartButton(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5293,7 +5561,7 @@ namespace MainMenu {
 		invite->select();
 	}
 
-	void createInviteButton(int index) {
+	static void createInviteButton(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5336,7 +5604,7 @@ namespace MainMenu {
 		invite->select();
 	}
 
-	void createWaitingStone(int index) {
+	static void createWaitingStone(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -5373,7 +5641,7 @@ namespace MainMenu {
 		text->setHJustify(Field::justify_t::CENTER);
 	}
 
-	void createLobby(LobbyType type) {
+	static void createLobby(LobbyType type) {
 		destroyMainMenu();
 		createDummyMainMenu();
 
@@ -5486,7 +5754,7 @@ namespace MainMenu {
 		}
 	}
 
-	void createLobbyBrowser() {
+	static void createLobbyBrowser() {
 		// TODO
 	}
 
@@ -5750,7 +6018,7 @@ namespace MainMenu {
 		enter_code->setWidgetLeft("cancel");
 	}
 
-	void playNew(Button& button) {
+	static void playNew(Button& button) {
 		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -6248,7 +6516,7 @@ namespace MainMenu {
         return first_savegame;
 	}
 
-	void playContinue(Button& button) {
+	static void playContinue(Button& button) {
         continueSingleplayer = ~(!anySaveFileExists(true) && anySaveFileExists(false));
 
         savegame_selected = nullptr;
@@ -6582,18 +6850,18 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	void mainPlayGame(Button& button) {
+	static void mainPlayGame(Button& button) {
 		soundActivate();
 		createPlayWindow();
 	}
 
-	void mainPlayModdedGame(Button& button) {
+	static void mainPlayModdedGame(Button& button) {
 		// TODO add a mod selection menu or something here
 		soundActivate();
 		createPlayWindow();
 	}
 
-	void mainHallOfRecords(Button& button) {
+	static void mainHallOfRecords(Button& button) {
 		soundActivate();
 
 		assert(main_menu_frame);
@@ -6690,7 +6958,7 @@ namespace MainMenu {
 		}
 	}
 
-	void mainSettings(Button& button) {
+	static void mainSettings(Button& button) {
 		//soundActivate(); // not needed, activated tab will do this
 
 		settings_tab_name = "";
@@ -6981,7 +7249,19 @@ namespace MainMenu {
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 	}
 
-	void mainEndLife(Button& button) {
+	static void mainEditor(Button& button) {
+#ifndef NINTENDO
+	    char path[PATH_MAX];
+#ifdef WINDOWS
+	    completePath(path, "editor.exe");
+#else
+	    completePath(path, "editor");
+#endif
+	    system(path);
+#endif
+	}
+
+	static void mainEndLife(Button& button) {
 		binaryPrompt(
 			"Are you sure you want to die?\nThere is no return from this.", // window text
 			"End Life", // okay text
@@ -7005,7 +7285,7 @@ namespace MainMenu {
 			});
 	}
 
-	void mainRestartGame(Button& button) {
+	static void mainRestartGame(Button& button) {
 		binaryPrompt(
 			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
 			"Restart", // okay text
@@ -7034,7 +7314,7 @@ namespace MainMenu {
 			});
 	}
 
-	void mainQuitToMainMenu(Button& button) {
+	static void mainQuitToMainMenu(Button& button) {
 		binaryPrompt(
 			"All progress before the current\ndungeon level will be saved.", // window text
 			"Quit to Menu", // okay text
@@ -7060,7 +7340,7 @@ namespace MainMenu {
 			});
 	}
 
-	void mainQuitToDesktop(Button& button) {
+	static void mainQuitToDesktop(Button& button) {
 		static const char* quit_messages[][3] {
 			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
 			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
@@ -7109,92 +7389,12 @@ namespace MainMenu {
 			});
 	}
 
-	void mainClose(Button& button) {
+	static void mainClose(Button& button) {
 		soundActivate();
 		closeMainMenu();
 	}
 
 /******************************************************************************/
-
-	static void setupSplitscreen() {
-		if (multiplayer != SINGLE) {
-			splitscreen = false;
-			return;
-		}
-
-		clientnum = -1;
-		int playercount = 0;
-		for (int c = 0; c < 4; ++c) {
-			if (playersInLobby[c]) {
-				clientnum = clientnum == -1 ? c : clientnum;
-				players[c]->bSplitscreen = true;
-				client_disconnected[c] = false;
-				++playercount;
-			} else {
-				client_disconnected[c] = true;
-				players[c]->bSplitscreen = false;
-				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-			}
-		}
-		if (clientnum == -1) {
-		    // TODO loading a splitscreen game?
-		    clientnum = 0;
-		    players[0]->bSplitscreen = false;
-		    client_disconnected[0] = false;
-		    playercount = 1;
-		}
-		splitscreen = playercount > 1;
-
-		int c, playerindex;
-		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
-			if (client_disconnected[c]) {
-				--playerindex;
-				continue;
-			}
-			if (vertical_splitscreen) {
-				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
-			} else {
-				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-			}
-
-			if (!splitscreen) {
-				players[c]->camera().winx = 0;
-				players[c]->camera().winy = 0;
-				players[c]->camera().winw = xres;
-				players[c]->camera().winh = yres;
-			} else {
-				if (playercount == 1) {
-					players[c]->camera().winx = 0;
-					players[c]->camera().winy = 0;
-					players[c]->camera().winw = xres;
-					players[c]->camera().winh = yres;
-				} else if (playercount == 2) {
-					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
-						// divide screen vertically
-						players[c]->camera().winx = playerindex * xres / 2;
-						players[c]->camera().winy = 0;
-						players[c]->camera().winw = xres / 2;
-						players[c]->camera().winh = yres;
-					} else {
-						// divide screen horizontally
-						players[c]->camera().winx = 0;
-						players[c]->camera().winy = playerindex * yres / 2;
-						players[c]->camera().winw = xres;
-						players[c]->camera().winh = yres / 2;
-					}
-				} else if (playercount >= 3) {
-					// divide screen into quadrants
-					players[c]->camera().winx = (playerindex % 2) * xres / 2;
-					players[c]->camera().winy = (playerindex / 2) * yres / 2;
-					players[c]->camera().winw = xres / 2;
-					players[c]->camera().winh = yres / 2;
-				}
-			}
-
-			inputs.getVirtualMouse(c)->x = players[c]->camera_x1() + players[c]->camera_width() / 2;
-			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
-		}
-	}
 
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
@@ -7330,6 +7530,9 @@ namespace MainMenu {
 				{"PLAY MODDED GAME", mainPlayModdedGame},
 				{"HALL OF RECORDS", mainHallOfRecords},
 				{"SETTINGS", mainSettings},
+#ifndef NDEBUG
+			    {"EDITOR", mainEditor},
+#endif
 				{"QUIT", mainQuitToDesktop},
 				});
 #endif

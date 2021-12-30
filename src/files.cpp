@@ -1253,14 +1253,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 		}
 
-
-		// create a new vismap
-		if (vismap != NULL)
-		{
-			free(vismap);
-		}
-		vismap = (bool*) calloc(destmap->width * destmap->height, sizeof(bool));
-
 		// reset minimap
 		for ( x = 0; x < MINIMAP_MAX_DIMENSION; x++ )
 		{

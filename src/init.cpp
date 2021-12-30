@@ -2100,10 +2100,6 @@ int deinitApp()
 	{
 		free(lightmapSmoothed);
 	}
-	if ( vismap != NULL )
-	{
-		free(vismap);
-	}
 
 	for ( c = 0; c < HASH_SIZE; c++ )
 	{

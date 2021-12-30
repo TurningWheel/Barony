@@ -369,7 +369,9 @@ private:
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
 	//! @param selectedWidgets the currently selected widgets, if any
-	void drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const;
+	void drawPost(SDL_Rect _size, SDL_Rect _actualSize,
+	    const std::vector<const Widget*>& selectedWidgets,
+	    const std::vector<const Widget*>& searchParents) const;
 
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen

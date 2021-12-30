@@ -36,3 +36,5 @@ extern EnemyBarSettings_t enemyBarSettings;
 extern bool newui;
 extern bool bUsePreciseFieldTextReflow;
 extern bool bUseSelectedSlotCycleAnimation;
+
+void openMinimap(int player);

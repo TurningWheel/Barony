@@ -243,7 +243,7 @@ TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
 bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
-bool TimerExperiments::bDebug = true;
+bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
 void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
@@ -4075,6 +4075,12 @@ void ingameHud()
 	{
 	    Input& input = Input::inputs[player];
 
+	    // toggle minimap
+		// player not needed to be alive
+        if ( input.consumeBinaryToggle("Toggle Minimap") ) {
+            openMinimap(player);
+        }
+
 		// inventory interface
 		// player not needed to be alive
 		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") )
@@ -4588,21 +4594,13 @@ void ingameHud()
 					inputs.getController(player)->getLeftYPercent());
 			}
 		}
-
-		if ( (players[player]->shootmode == false && players[player]->gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
-		{
-			Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-			printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
-		}
 	}
 
 	DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
 	UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
-															   // pointer in inventory screen
+	// pointer in inventory screen
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( !players[player]->isLocalPlayer() )
@@ -5738,7 +5736,6 @@ int main(int argc, char** argv)
 							menucam.winw = xres;
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
-							raycast(&menucam, REALCOLORS);
 							glDrawWorld(&menucam, REALCOLORS);
 							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
@@ -6039,7 +6036,7 @@ int main(int argc, char** argv)
 										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 									}
 								}
-								raycast(&camera, REALCOLORS);
+								raycast(&camera, minimap);
 								glDrawWorld(&camera, REALCOLORS);
 
 								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -6055,7 +6052,7 @@ int main(int argc, char** argv)
 											camera.x = players[i]->entity->x / 16.0;
 											camera.y = players[i]->entity->y / 16.0;
 											camera.ang = players[i]->entity->yaw;
-											raycast(&camera, REALCOLORS, false);
+											raycast(&camera, minimap);
 											camera.x = x;
 											camera.y = y;
 											camera.ang = ang;
@@ -6065,7 +6062,6 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								raycast(&camera, REALCOLORS);
 								glDrawWorld(&camera, REALCOLORS);
 							}
 
