@@ -8719,6 +8719,7 @@ void createInventoryTooltipFrame(const int player)
 
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw)
 {
+	view_t view;
 	auto ofov = ::fov;
 	::fov = fov;
 
