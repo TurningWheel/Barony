@@ -551,6 +551,7 @@ public:
 	int entityLightAfterReductions(Stat& myStats, Entity* observer);
 
 	void handleEffects(Stat* myStats);
+	static int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffects);
 	void handleEffectsClient();
 
 	void effectTimes();
