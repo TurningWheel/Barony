@@ -6037,5 +6037,7 @@ Cast#
 4083 Zap#
 4084 Dig#
 4085 You can not drop gold here.#
+4086 View item details#
+4087 Hide item details#
 
 4099 end#
