@@ -1155,6 +1155,8 @@ void Player::HUD_t::updateActionPrompts()
 	}
 }
 
+static Frame* createMinimap(int player);
+
 void Player::HUD_t::processHUD()
 {
 	char name[32];
@@ -1181,6 +1183,10 @@ void Player::HUD_t::processHUD()
 		hudFrame->setDisabled(false);
 	}
 
+    if ( !minimapFrame )
+    {
+        minimapFrame = createMinimap(player.playernum);
+    }
 	if ( !xpFrame )
 	{
 		createXPBar(player.playernum);
@@ -1405,50 +1411,78 @@ void Player::MessageZone_t::processChatbox()
 	}*/
 }
 
-void openMinimap(int player) {
+static Frame* createMinimap(int player) {
     std::string name = "minimap";
     name.append(std::to_string(player));
-    Frame* window = gui->findFrame(name.c_str());
-    if (window) {
-        window->removeSelf();
-    } else {
-        window = gui->addFrame(name.c_str());
-        window->setSize(SDL_Rect{
-            players[player]->camera_virtualx1() + (players[player]->camera_virtualWidth() - minimapScale * 4) / 2,
-            players[player]->camera_virtualy1() + (players[player]->camera_virtualHeight() - minimapScale * 4) / 2,
-            minimapScale * 4,
-            minimapScale * 4,
-            });
-        window->setColor(0);
-        window->setOwner(player);
-        window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
-            drawMinimap(widget.getOwner(), rect);
-            });
-        window->setTickCallback([](Widget& widget){
-            auto player = widget.getOwner();
-            auto& input = Input::inputs[player];
-            if (input.consumeBinaryToggle("Minimap Scale")) {
-                if (minimapScale > 75) {
-                    minimapScale = 75;
-                }
-                else if (minimapScale > 50) {
-                    minimapScale = 50;
-                }
-                else if (minimapScale > 25) {
-                    minimapScale = 25;
-                }
-                else {
-                    minimapScale = 100;
+    auto& minimap = players[player]->minimap;
+    minimap.real_scale = minimapScale;
+    minimap.scale = minimapScale;
+    Frame* parent = players[player]->hud.hudFrame;
+    Frame* window = parent->addFrame(name.c_str());
+    window->setSize(SDL_Rect{0, 0, 0, 0});
+    window->setColor(0);
+    window->setOwner(player);
+
+    window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+        drawMinimap(widget.getOwner(), rect);
+        });
+
+    window->setTickCallback([](Widget& widget){
+        auto player = widget.getOwner();
+        auto& minimap = players[player]->minimap;
+        auto& input = Input::inputs[player];
+        if (input.consumeBinaryToggle("Minimap Scale")) {
+            if (minimap.real_scale > 75) {
+                minimap.real_scale = 75;
+            }
+            else if (minimap.real_scale > 50) {
+                minimap.real_scale = 50;
+            }
+            else if (minimap.real_scale > 25) {
+                minimap.real_scale = 25;
+            }
+            else {
+                minimap.real_scale = 100;
+            }
+        }
+
+        auto& scale_ang = minimap.scale_ang;
+        auto& scale = minimap.scale;
+        if (minimap.big) {
+            if (scale_ang < PI / 2.0) {
+                scale_ang += PI / fpsLimit;
+                if (scale_ang > PI / 2.0) {
+                    scale_ang = PI / 2.0;
                 }
             }
-            auto frame = static_cast<Frame*>(&widget);
-            frame->setSize(SDL_Rect{
-            players[player]->camera_virtualx1() + (players[player]->camera_virtualWidth() - minimapScale * 4) / 2,
-            players[player]->camera_virtualy1() + (players[player]->camera_virtualHeight() - minimapScale * 4) / 2,
-            minimapScale * 4,
-            minimapScale * 4,
-            });
-            });
+        } else {
+            if (scale_ang > 0.0) {
+                scale_ang -= PI / fpsLimit;
+                if (scale_ang < 0.0) {
+                    scale_ang = 0.0;
+                }
+            }
+        }
+        scale = (1.0 - sin(scale_ang)) * 50 + sin(scale_ang) * minimap.real_scale;
+
+        Frame* parent = players[player]->hud.hudFrame;
+
+        int x = (1.0 - sin(scale_ang)) * (parent->getSize().w - scale * 4) +
+            sin(scale_ang) * (parent->getSize().w - scale * 4) / 2;
+        int y = (1.0 - sin(scale_ang)) * (parent->getSize().h - scale * 4) +
+            sin(scale_ang) * (parent->getSize().h - scale * 4) / 2;
+
+        auto frame = static_cast<Frame*>(&widget);
+        frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});
+        });
+
+    return window;
+}
+
+void openMinimap(int player) {
+    Frame* minimap = players[player]->hud.minimapFrame;
+    if (minimap) {
+        players[player]->minimap.big = (players[player]->minimap.big==false);
     }
 }
 
@@ -1594,7 +1628,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
-				openMinimap(button.getOwner());
+			    openMinimap(button.getOwner());
 			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");

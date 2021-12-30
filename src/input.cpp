@@ -113,7 +113,7 @@ void Input::defaultBindings() {
 		inputs[c].bind("Defend", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str());
 	}
 #ifndef NINTENDO
-	inputs[0].bind("MenuUp", "Up");
+	/*inputs[0].bind("MenuUp", "Up");
 	inputs[0].bind("MenuLeft", "Left");
 	inputs[0].bind("MenuRight", "Right");
 	inputs[0].bind("MenuDown", "Down");
@@ -124,7 +124,7 @@ void Input::defaultBindings() {
 	inputs[0].bind("MenuStart", "Return");
 	inputs[0].bind("MenuSelect", "Backspace");
 	inputs[0].bind("MenuPageLeft", "[");
-	inputs[0].bind("MenuPageRight", "]");
+	inputs[0].bind("MenuPageRight", "]");*/
 #endif
 }
 

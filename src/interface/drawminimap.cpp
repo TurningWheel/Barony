@@ -123,13 +123,13 @@ void drawMinimap(const int player, SDL_Rect rect)
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0);
-	glVertex2f(rect.x, rect.y + rect.h);
+	glVertex2f(rect.x, Frame::virtualScreenY - rect.y);
 	glTexCoord2f(0, 1);
-	glVertex2f(rect.x, rect.y);
+	glVertex2f(rect.x, Frame::virtualScreenY - (rect.y + rect.h));
 	glTexCoord2f(1, 1);
-	glVertex2f(rect.x + rect.w, rect.y);
+	glVertex2f(rect.x + rect.w, Frame::virtualScreenY - (rect.y + rect.h));
 	glTexCoord2f(1, 0);
-	glVertex2f(rect.x + rect.w, rect.y + rect.h);
+	glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
 	glEnd();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
