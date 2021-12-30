@@ -27,6 +27,7 @@ namespace MainMenu {
 	bool arachnophobia_filter = false;
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
+	bool cursor_delete_mode = false;
 
 	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
@@ -44,8 +45,8 @@ namespace MainMenu {
 
 	static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
-	static const char* smallfont_outline = "fonts/pixel_maz.ttf#32#2";
-	static const char* smallfont_no_outline = "fonts/pixel_maz.ttf#32#0";
+	static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
+	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 	static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
 	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
 
@@ -73,10 +74,11 @@ namespace MainMenu {
 		playSound(494, 48);
 	}
 
-	static inline void soundSlider() {
-#ifdef NINTENDO
-		playSound(497, 48);
-#endif
+	static inline void soundSlider(bool deafen_unless_gamepad = false) {
+	    if (inputs.getVirtualMouse(clientnum)->draw_cursor && deafen_unless_gamepad) {
+	        return;
+	    }
+	    playSound(497, 48);
 	}
 
 	static inline void soundWarning() {
@@ -85,6 +87,10 @@ namespace MainMenu {
 
 	static inline void soundError() {
 		playSound(498, 48);
+	}
+
+	static inline void soundDeleteSave() {
+		playSound(153, 48);
 	}
 
 /******************************************************************************/
@@ -224,9 +230,9 @@ namespace MainMenu {
 		}
 	}
 
-	static Button* createBackWidget(Frame* parent, void (*callback)(Button&)) {
+	static Button* createBackWidget(Frame* parent, void (*callback)(Button&), SDL_Rect offset = SDL_Rect{4, 4, 0, 0}) {
 		auto back = parent->addFrame("back");
-		back->setSize(SDL_Rect{5, 5, 66, 36});
+		back->setSize(SDL_Rect{offset.x, offset.y, 66, 36});
 		back->setActualSize(SDL_Rect{0, 0, 66, 36});
 		back->setColor(0);
 		back->setBorderColor(0);
@@ -261,6 +267,120 @@ namespace MainMenu {
 			});*/
 
 		return back_button;
+	}
+
+	static void binaryPrompt(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&)
+	) {
+		if (main_menu_frame->findFrame("binary_prompt")) {
+			return;
+		}
+
+		soundActivate();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto frame = dimmer->addFrame("binary_prompt");
+		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		frame->setColor(0);
+		frame->setBorder(0);
+		frame->addImage(
+			frame->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			"background"
+		);
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = frame->addButton("okay");
+		okay->setSize(SDL_Rect{58, 78, 130, 52});
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->setCallback(okay_callback);
+		okay->select();
+
+		auto cancel = frame->addButton("cancel");
+		cancel->setSize(SDL_Rect{196, 78, 108, 52});
+		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback(cancel_callback);
+	}
+
+	static void monoPrompt(
+		const char* window_text,
+		const char* okay_text,
+		void (*okay_callback)(Button&)
+	) {
+		if (main_menu_frame->findFrame("mono_prompt")) {
+			return;
+		}
+
+		soundActivate();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto frame = dimmer->addFrame("mono_prompt");
+		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		frame->setColor(0);
+		frame->setBorder(0);
+		frame->addImage(
+			frame->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			"background"
+		);
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto okay = frame->addButton("okay");
+		okay->setSize(SDL_Rect{(frame->getActualSize().w - 108) / 2, 78, 108, 52});
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetBack("okay");
+		okay->setCallback(okay_callback);
+		okay->select();
 	}
 
 /******************************************************************************/
@@ -354,13 +474,38 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	static Bindings old_bindings;
+
 	inline void Bindings::save() {
-		// TODO record these bindings to Input::inputs
+		for (int c = 0; c < 4; ++c) {
+		    Input& input = Input::inputs[c];
+		    if (devices[c] == 0) {
+			    for (auto& binding : kb_mouse_bindings[c]) {
+			        input.bind(binding.first.c_str(), binding.second.c_str());
+			    }
+			}
+		    if (devices[c] >= 1 && devices[c] <= 4) {
+		        std::string prefix;
+		        prefix.append("Pad");
+		        prefix.append(std::to_string(devices[c] - 1));
+			    for (auto& binding : gamepad_bindings[c]) {
+			        input.bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			    }
+			}
+		    if (devices[c] >= 5 && devices[c] <= 8) {
+		        std::string prefix;
+		        prefix.append("Joy");
+		        prefix.append(std::to_string(devices[c] - 5));
+			    for (auto& binding : joystick_bindings[c]) {
+			        input.bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			    }
+			}
+		}
+		old_bindings = *this;
 	}
 
 	inline Bindings Bindings::load() {
-		// TODO populate our variables with the values of some globally-accessed ones
-		return Bindings::reset();
+		return old_bindings;
 	}
 
 	inline Bindings Bindings::reset() {
@@ -966,15 +1111,20 @@ namespace MainMenu {
 	}
 
 	bool settingsSave() {
-		return FileHelper::writeObject("config/config.json", EFileFormat::Json, allSettings);
+		return FileHelper::writeObject((std::string(outputdir) + "/config/config.json").c_str(), EFileFormat::Json, allSettings);
 	}
 
 	bool settingsLoad() {
-		return FileHelper::readObject("config/config.json", allSettings);
+		bool result = FileHelper::readObject((std::string(outputdir) + "/config/config.json").c_str(), allSettings);
+		if (result) {
+		    old_bindings = allSettings.bindings;
+		}
+		return result;
 	}
 
 	void settingsReset() {
 		allSettings = AllSettings::reset();
+		old_bindings = allSettings.bindings;
 	}
 
 	static void settingsCustomizeInventorySorting(Button&);
@@ -1205,17 +1355,17 @@ namespace MainMenu {
 
 		// inventory sort sliders
 		void (*sort_slider_callbacks[11])(Slider&) = {
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortArmor = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortBooks = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortTools = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortThrown = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortGems = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortPotions = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortStaves = slider.getValue(); },
-			[](Slider& slider){ soundSlider(); allSettings.inventory_sorting.sortFood = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortWeapons = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortArmor = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortAmulets = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortBooks = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortTools = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortThrown = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortGems = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortPotions = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortScrolls = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortStaves = slider.getValue(); },
+			[](Slider& slider){ soundSlider(true); allSettings.inventory_sorting.sortFood = slider.getValue(); },
 			//[](Slider& slider){ allSettings.inventory_sorting.sortEquipped = slider.getValue(); }, // Hey, we don't have enough room for this
 		};
 		const int num_sliders = sizeof(sort_slider_callbacks) / sizeof(sort_slider_callbacks[0]);
@@ -2712,14 +2862,14 @@ namespace MainMenu {
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
-			allSettings.gamma, 50, 200, true, [](Slider& slider){soundSlider(); allSettings.gamma = slider.getValue();});
+			allSettings.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.gamma = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
-			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(); allSettings.fov = slider.getValue();});
+			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
 			"Control the frame-rate limit of the game window.",
-			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(); allSettings.fps = slider.getValue();});
+			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
 #endif
 
 #ifndef NINTENDO
@@ -2767,19 +2917,19 @@ namespace MainMenu {
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
-			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.master_volume = slider.getValue();});
+			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
-			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.gameplay_volume = slider.getValue();});
+			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
-			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.ambient_volume = slider.getValue();});
+			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
-			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.environment_volume = slider.getValue();});
+			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
-			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.music_volume = slider.getValue();});
+			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
@@ -2841,7 +2991,7 @@ namespace MainMenu {
 			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 			"Control the speed by which mouse movement affects camera movement.",
-			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(); allSettings.mouse_sensitivity = slider.getValue();});
+			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
 			"Reverse mouse up and down movement for controlling the orientation of the player.",
 			allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
@@ -2864,10 +3014,10 @@ namespace MainMenu {
 #endif
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
@@ -4676,7 +4826,14 @@ namespace MainMenu {
 			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
 			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
 			}
-		} else {
+		} else if (currentLobbyType == LobbyType::LobbyLAN) {
+			switch (index) {
+			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(0);}); break;
+			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(1);}); break;
+			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(2);}); break;
+			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(3);}); break;
+			}
+		} else if (currentLobbyType == LobbyType::LobbyOnline) {
 			switch (index) {
 			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(0);}); break;
 			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(1);}); break;
@@ -4898,7 +5055,17 @@ namespace MainMenu {
 
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
-			stats[index]->playerRace = rand() % 9;
+			if (enabledDLCPack1 && enabledDLCPack2) {
+			    stats[index]->playerRace = rand() % NUMPLAYABLERACES;
+			} else if (enabledDLCPack1) {
+			    stats[index]->playerRace = rand() % 5;
+			} else if (enabledDLCPack2) {
+			    stats[index]->playerRace = rand() % 5;
+			    if (stats[index]->playerRace > 0) {
+			        stats[index]->playerRace += 4;
+			    }
+			} else {
+			}
 			auto race_button = card->findButton("race");
 			if (race_button) {
 				switch (stats[index]->playerRace) {
@@ -5108,8 +5275,8 @@ namespace MainMenu {
 		invite->setText("Press Start");
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		invite->setVJustify(Field::justify_t::TOP);
-		invite->setHJustify(Field::justify_t::CENTER);
+		invite->setVJustify(Button::justify_t::TOP);
+		invite->setHJustify(Button::justify_t::CENTER);
 		invite->setBorder(0);
 		invite->setColor(0);
 		invite->setBorderColor(0);
@@ -5159,14 +5326,51 @@ namespace MainMenu {
 		invite->setText("Press to Invite");
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		invite->setVJustify(Field::justify_t::TOP);
-		invite->setHJustify(Field::justify_t::CENTER);
+		invite->setVJustify(Button::justify_t::TOP);
+		invite->setHJustify(Button::justify_t::CENTER);
 		invite->setBorder(0);
 		invite->setColor(0);
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
 		invite->setCallback([](Button&){buttonInviteFriends(NULL);});
 		invite->select();
+	}
+
+	void createWaitingStone(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
+			"backdrop"
+		);
+
+		auto banner = card->addField("banner", 64);
+		banner->setText("OPEN");
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto text = card->addField("text", 128);
+		text->setText("Waiting for\nplayer to join");
+		text->setFont(smallfont_outline);
+		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		text->setVJustify(Field::justify_t::TOP);
+		text->setHJustify(Field::justify_t::CENTER);
 	}
 
 	void createLobby(LobbyType type) {
@@ -5237,9 +5441,8 @@ namespace MainMenu {
 				}
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-				view_t view;
 				auto angle = (330.0 + 20.0 * widget.getOwner()) * PI / 180.0;
-				drawCharacterPreview(widget.getOwner(), pos, 80, view, angle);
+				drawCharacterPreview(widget.getOwner(), pos, 80, angle);
 				});
 		}
 
@@ -5272,7 +5475,11 @@ namespace MainMenu {
 			createStartButton(1);
 			createStartButton(2);
 			createStartButton(3);
-		} else if (type == LobbyType::LobbyHosted) {
+		} else if (type == LobbyType::LobbyLAN) {
+			createWaitingStone(1);
+			createWaitingStone(2);
+			createWaitingStone(3);
+		} else if (type == LobbyType::LobbyOnline) {
 			createInviteButton(1);
 			createInviteButton(2);
 			createInviteButton(3);
@@ -5315,7 +5522,7 @@ namespace MainMenu {
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
-		bool continueAvailable = saveGameExists(true) || saveGameExists(false);
+		bool continueAvailable = anySaveFileExists();
 
 		auto hall_of_trials_button = window->addButton("hall_of_trials");
 		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
@@ -5359,9 +5566,9 @@ namespace MainMenu {
 		continue_button->setFont(smallfont_outline);
 		if (continueAvailable) {
 			continue_button->setBackgroundHighlighted("images/ui/Main Menus/Play/UI_PlayMenu_Button_ContinueA00.png");
-			continue_button->setCallback(playContinue);
+			continue_button->setCallback([](Button& button){soundActivate(); playContinue(button);});
 		} else {
-			continue_button->setCallback([](Button&){ soundError(); });
+			continue_button->setCallback([](Button&){soundError();});
 		}
 		continue_button->setWidgetSearchParent(window->getName());
 		continue_button->setWidgetRight("new");
@@ -5568,23 +5775,75 @@ namespace MainMenu {
 		// create "Local or Network" window
 		auto window = dimmer->addFrame("local_or_network_window");
 		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 436) / 2,
-			(Frame::virtualScreenY - 240) / 2,
-			436,
-			240});
-		window->setActualSize(SDL_Rect{0, 0, 436, 240});
+			(Frame::virtualScreenX - 436) / 2 - 38,
+			(Frame::virtualScreenY - 494) / 2,
+			496,
+			494});
+		window->setActualSize(SDL_Rect{0, 0, 496, 494});
 		window->setColor(0);
 		window->setBorder(0);
+		window->setTickCallback([](Widget& widget){
+		    auto window = static_cast<Frame*>(&widget); assert(window);
+		    auto tooltip = window->findField("tooltip"); assert(tooltip);
+		    auto local_button = window->findButton("local"); assert(local_button);
+		    auto local_image = window->findImage("local_image"); assert(local_image);
+		    if (local_button->isSelected()) {
+		        tooltip->setText("Play singleplayer or with 2-4\nplayers in splitscreen multiplayer");
+                local_image->path =
+#ifdef NINTENDO
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00.png";
+#else
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00_NoNX.png";
+#endif
+		    } else {
+                local_image->path =
+#ifdef NINTENDO
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png";
+#else
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png";
+#endif
+		    }
+		    auto host_lan_button = window->findButton("host_lan"); assert(host_lan_button);
+		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
+		    if (host_lan_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
+                host_lan_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00.png";
+		    } else {
+                host_lan_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png";
+		    }
+		    auto host_online_button = window->findButton("host_online"); assert(host_online_button);
+		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
+		    if (host_online_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover the internet");
+                host_online_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00.png";
+		    } else {
+                host_online_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png";
+		    }
+		    auto join_button = window->findButton("join"); assert(join_button);
+		    auto join_image = window->findImage("join_image"); assert(join_image);
+		    if (join_button->isSelected()) {
+		        tooltip->setText("Join a multiplayer game");
+                join_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00.png";
+		    } else {
+                join_image->path =
+		            "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png";
+		    }
+		    });
 
 		auto background = window->addImage(
 			window->getActualSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Window_00.png",
+			"images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Window_00.png",
 			"background"
 		);
 
 		auto banner_title = window->addField("banner", 32);
-		banner_title->setSize(SDL_Rect{142, 24, 152, 18});
+		banner_title->setSize(SDL_Rect{180, 24, 152, 18});
 		banner_title->setText("NEW ADVENTURER");
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
@@ -5596,54 +5855,729 @@ namespace MainMenu {
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			createPlayWindow();
-			});
-
-		auto join_button = window->addButton("join");
-		join_button->setSize(SDL_Rect{220, 134, 164, 62});
-		join_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_button->setColor(makeColor(255, 255, 255, 255));
-		join_button->setText("Join Network\nParty");
-		join_button->setFont(smallfont_outline);
-		join_button->setWidgetSearchParent(window->getName());
-		join_button->setWidgetBack("back_button");
-		join_button->setWidgetUp("local");
-		join_button->setWidgetLeft("host");
-		join_button->setCallback(openLobbyBrowser);
-
-		auto host_button = window->addButton("host");
-		host_button->setSize(SDL_Rect{52, 134, 164, 62});
-		host_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_00.png");
-		host_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_button->setColor(makeColor(255, 255, 255, 255));
-		host_button->setText("Host Network\nParty");
-		host_button->setFont(smallfont_outline);
-		host_button->setWidgetSearchParent(window->getName());
-		host_button->setWidgetBack("back_button");
-		host_button->setWidgetUp("local");
-		host_button->setWidgetRight("join");
-		host_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyHosted);});
+			}, SDL_Rect{42, 4, 0, 0});
 
 		auto local_button = window->addButton("local");
-		local_button->setSize(SDL_Rect{134, 68, 168, 62});
-		local_button->setBackground("images/ui/Main Menus/Play/LocalOrNetwork/UI_LocalorNetwork_Button_01.png");
+		local_button->setSize(SDL_Rect{96, 72, 164, 62});
+		local_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
 		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		local_button->setColor(makeColor(255, 255, 255, 255));
 		local_button->setText("Local Adventure");
 		local_button->setFont(smallfont_outline);
 		local_button->setWidgetSearchParent(window->getName());
 		local_button->setWidgetBack("back_button");
-		local_button->setWidgetDown("host");
-		local_button->setWidgetRight("back");
+		local_button->setWidgetDown("host_lan");
 		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
 
 		local_button->select();
+
+		(void)window->addImage(
+		    SDL_Rect{278, 76, 104, 52},
+		    0xffffffff,
+#ifdef NINTENDO
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png",
+#else
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png",
+#endif
+		    "local_image"
+		);
+
+		auto host_lan_button = window->addButton("host_lan");
+		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
+		host_lan_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_lan_button->setColor(makeColor(255, 255, 255, 255));
+		host_lan_button->setText("Host LAN Party");
+		host_lan_button->setFont(smallfont_outline);
+		host_lan_button->setWidgetSearchParent(window->getName());
+		host_lan_button->setWidgetBack("back_button");
+		host_lan_button->setWidgetUp("local");
+		host_lan_button->setWidgetDown("host_online");
+		host_lan_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLAN);});
+
+		(void)window->addImage(
+		    SDL_Rect{270, 170, 126, 50},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png",
+		    "host_lan_image"
+		);
+
+		auto host_online_button = window->addButton("host_online");
+		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
+		host_online_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_online_button->setColor(makeColor(255, 255, 255, 255));
+		host_online_button->setText("Host Online Party");
+		host_online_button->setFont(smallfont_outline);
+		host_online_button->setWidgetSearchParent(window->getName());
+		host_online_button->setWidgetBack("back_button");
+		host_online_button->setWidgetUp("host_lan");
+		host_online_button->setWidgetDown("join");
+		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+
+		(void)window->addImage(
+		    SDL_Rect{270, 234, 126, 50},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png",
+		    "host_online_image"
+		);
+
+		auto join_button = window->addButton("join");
+		join_button->setSize(SDL_Rect{96, 326, 164, 62});
+		join_button->setBackground("images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		join_button->setColor(makeColor(255, 255, 255, 255));
+		join_button->setText("Lobby Browser");
+		join_button->setFont(smallfont_outline);
+		join_button->setWidgetSearchParent(window->getName());
+		join_button->setWidgetBack("back_button");
+		join_button->setWidgetUp("host_online");
+		join_button->setCallback(openLobbyBrowser);
+
+		(void)window->addImage(
+		    SDL_Rect{270, 324, 120, 68},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png",
+		    "join_image"
+		);
+
+		auto tooltip = window->addField("tooltip", 1024);
+		tooltip->setSize(SDL_Rect{106, 398, 300, 48});
+		tooltip->setFont(smallfont_no_outline);
+		tooltip->setColor(makeColor(91, 76, 50, 255));
+		tooltip->setJustify(Field::justify_t::CENTER);
+		tooltip->setText("Help text goes here.");
+	}
+
+	static Button* savegame_selected = nullptr;
+	static bool continueSingleplayer = false;
+	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer);
+
+	static void deleteSavePrompt(bool singleplayer, int save_index) {
+	    static bool delete_singleplayer;
+	    static int delete_save_index;
+	    delete_singleplayer = singleplayer;
+	    delete_save_index = save_index;
+
+        // extract savegame info
+        auto saveGameInfo = getSaveGameInfo(singleplayer, save_index);
+        const std::string& player_name = saveGameInfo.player_name;
+
+        // create shortened player name
+        char shortened_name[20] = { '\0' };
+        int len = (int)player_name.size();
+        strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+        if (len > 16) {
+            strcat(shortened_name, "...");
+        }
+
+	    // window text
+	    char window_text[1024];
+	    snprintf(window_text, sizeof(window_text),
+	        "Are you sure you want to delete\nthe save game \"%s\"?", shortened_name);
+
+	    binaryPrompt(
+	        window_text, "Yes", "No",
+	        [](Button& button) { // Yes button
+			    soundActivate();
+			    soundDeleteSave();
+
+                // delete save game
+                (void)deleteSaveGame(delete_singleplayer ? SINGLE : SERVER, delete_save_index);
+
+                // find frame elements
+			    assert(main_menu_frame);
+		        auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+		        auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+
+                // repopulate save game window & select a new button
+			    savegame_selected = nullptr;
+                subwindow->removeSelf();
+                subwindow = window->addFrame("subwindow");
+	            Button* first_savegame = populateContinueSubwindow(*subwindow, delete_singleplayer);
+	            if (first_savegame) {
+	                first_savegame->select();
+		            savegame_selected = first_savegame;
+	            } else {
+	                if (delete_singleplayer) {
+                        auto singleplayer = window->findButton("singleplayer");
+                        singleplayer->select();
+	                } else {
+                        auto multiplayer = window->findButton("multiplayer");
+                        multiplayer->select();
+	                }
+	            }
+
+                // remove prompt
+			    auto prompt = main_menu_frame->findFrame("binary_prompt");
+			    if (prompt) {
+				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				    dimmer->removeSelf();
+			    }
+	        },
+	        [](Button& button) { // No button
+			    soundCancel();
+			    if (savegame_selected) {
+			        savegame_selected->select();
+			    } else {
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+	                if (delete_singleplayer) {
+                        auto singleplayer = window->findButton("singleplayer");
+                        singleplayer->select();
+	                } else {
+                        auto multiplayer = window->findButton("multiplayer");
+                        multiplayer->select();
+	                }
+			    }
+			    assert(main_menu_frame);
+			    auto prompt = main_menu_frame->findFrame("binary_prompt");
+			    if (prompt) {
+				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				    dimmer->removeSelf();
+			    }
+	        }
+	    );
+	}
+
+	static void loadSavePrompt(bool singleplayer, int save_index) {
+	    static bool load_singleplayer;
+	    static int load_save_index;
+	    load_singleplayer = singleplayer;
+	    load_save_index = save_index;
+
+        // extract savegame info
+        auto saveGameInfo = getSaveGameInfo(singleplayer, save_index);
+        const std::string& player_name = saveGameInfo.player_name;
+
+        // create shortened player name
+        char shortened_name[20] = { '\0' };
+        int len = (int)player_name.size();
+        strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+        if (len > 16) {
+            strcat(shortened_name, "...");
+        }
+
+	    // window text
+	    char window_text[1024];
+	    snprintf(window_text, sizeof(window_text),
+	        "Are you sure you want to load\nthe save game \"%s\"?", shortened_name);
+
+	    binaryPrompt(
+	        window_text, "Yes", "No",
+	        [](Button& button) { // Yes button
+                soundActivate();
+                destroyMainMenu();
+                savegameCurrentFileIndex = load_save_index;
+                loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
+                beginFade(MainMenu::FadeDestination::GameStart);
+	        },
+	        [](Button& button) { // No button
+			    soundCancel();
+			    if (savegame_selected) {
+			        savegame_selected->select();
+			    } else {
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+	                if (load_singleplayer) {
+                        auto singleplayer = window->findButton("singleplayer");
+                        singleplayer->select();
+	                } else {
+                        auto multiplayer = window->findButton("multiplayer");
+                        multiplayer->select();
+	                }
+			    }
+			    assert(main_menu_frame);
+			    auto prompt = main_menu_frame->findFrame("binary_prompt");
+			    if (prompt) {
+				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				    dimmer->removeSelf();
+			    }
+	        }
+	    );
+	}
+
+	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
+		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
+		subwindow.setSize(SDL_Rect{90, 82, 898, 294});
+		subwindow.setColor(0);
+		subwindow.setBorder(0);
+	    Button* first_savegame = nullptr;
+        if (!anySaveFileExists(singleplayer)) {
+            auto none_exists = subwindow.addField("none_exists", 256);
+            none_exists->setSize(subwindow.getActualSize());
+            none_exists->setFont(bigfont_outline);
+            none_exists->setText("No compatible save files found.");
+            none_exists->setJustify(Field::justify_t::CENTER);
+        } else {
+            int saveGameCount = 0;
+		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                if (saveGameExists(singleplayer, i)) {
+                    auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(i);
+                    auto savegame_book = subwindow.addButton(str.c_str());
+                    savegame_book->setSize(SDL_Rect{saveGameCount * 256 + (898 - 220) / 2, 0, 220, 280});
+                    savegame_book->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
+		            savegame_book->setColor(makeColor(255, 255, 255, 255));
+		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
+		            savegame_book->setFont(smallfont_outline);
+		            savegame_book->setTextColor(makeColor(255, 182, 73, 255));
+		            savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
+		            savegame_book->setTickCallback([](Widget& widget){
+	                    auto button = static_cast<Button*>(&widget);
+	                    auto frame = static_cast<Frame*>(widget.getParent());
+
+		                Input& input = Input::inputs[widget.getOwner()];
+		                bool scrolled = false;
+		                scrolled |= input.binary("MenuScrollDown");
+		                scrolled |= input.binary("MenuScrollUp");
+		                scrolled |= input.binary("MenuScrollLeft");
+		                scrolled |= input.binary("MenuScrollRight");
+		                scrolled |= input.binary("MenuMouseWheelUp");
+		                scrolled |= input.binary("MenuMouseWheelDown");
+		                if (scrolled) {
+		                    savegame_selected = nullptr;
+		                } else if (widget.isSelected() && !inputs.getVirtualMouse(clientnum)->draw_cursor) {
+		                    savegame_selected = button;
+		                }
+
+		                if (savegame_selected == &widget) {
+		                    auto frame_pos = frame->getActualSize();
+		                    auto button_size = button->getSize();
+		                    int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
+		                    if (diff > 0) {
+		                        frame_pos.x += std::max(1, diff / 8);
+		                    } else if (diff < 0) {
+		                        frame_pos.x += std::min(-1, diff / 8);
+		                    }
+		                    frame->setActualSize(frame_pos);
+		                }
+		                });
+		            savegame_book->setCallback([](Button& button){
+		                if (savegame_selected != &button) {
+		                    soundCheckmark();
+		                    savegame_selected = &button;
+		                    return;
+		                } else {
+		                    soundActivate();
+		                    int save_index = -1;
+	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	                        size_t name_len = strlen(name);
+                            save_index = (int)strtol(button.getName() + name_len, nullptr, 10);
+                            if (cursor_delete_mode) {
+                                deleteSavePrompt(continueSingleplayer, save_index);
+                            } else {
+                                loadSavePrompt(continueSingleplayer, save_index);
+                            }
+		                }
+		                });
+		            if (i > 0) {
+		                int prev;
+		                for (prev = i - 1; prev >= 0 && !saveGameExists(singleplayer, prev); --prev);
+                        auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(prev);
+                        savegame_book->setWidgetLeft(str.c_str());
+		            }
+		            if (i < SAVE_GAMES_MAX - 1) {
+		                int next;
+		                for (next = i + 1; next < SAVE_GAMES_MAX && !saveGameExists(singleplayer, next); ++next);
+                        auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
+                        savegame_book->setWidgetRight(str.c_str());
+		            }
+
+		            first_savegame = first_savegame ? first_savegame : savegame_book;
+
+		            auto saveGameInfo = getSaveGameInfo(singleplayer, i);
+
+                    // extract savegame info
+                    const std::string& player_name = saveGameInfo.player_name;
+                    const std::string& class_name = saveGameInfo.player_class;
+                    char* class_name_c = const_cast<char*>(class_name.c_str());
+                    class_name_c[0] = (char)toupper((int)class_name[0]);
+                    int dungeon_lvl = saveGameInfo.dungeon_lvl;
+                    int player_lvl = saveGameInfo.player_lvl;
+
+                    // create shortened player name
+                    char shortened_name[20] = { '\0' };
+                    int len = (int)player_name.size();
+                    strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+                    if (len > 16) {
+                        strcat(shortened_name, "...");
+                    }
+
+                    // format book label string
+		            char text[1024];
+		            snprintf(text, sizeof(text), "%s\n%s LVL %d\nDungeon LVL %d",
+		                shortened_name, class_name.c_str(), player_lvl, dungeon_lvl);
+		            savegame_book->setText(text);
+
+                    // offset text
+                    SDL_Rect offset;
+                    offset.x = 34;
+                    offset.y = 184;
+		            savegame_book->setTextOffset(offset);
+		            savegame_book->setJustify(Button::justify_t::LEFT);
+
+		            // add savegame screenshot
+		            auto screenshot_path = setSaveGameFileName(singleplayer, SaveFileType::SCREENSHOT, i);
+                    if (dataPathExists(screenshot_path.c_str(), false)) {
+		                auto screenshot = subwindow.addImage(
+		                    SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                    0xffffffff,
+		                    screenshot_path.c_str(),
+		                    (str + "_screenshot").c_str()
+		                );
+		                screenshot->ontop = true;
+		                Image* image = Image::get(screenshot_path.c_str()); assert(image);
+		                screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
+		                screenshot->section.w = image->getHeight();
+		            }
+
+		            // add book overlay
+		            auto overlay = subwindow.addImage(
+		                SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                0xffffffff,
+		                "images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
+		                (str + "_overlay").c_str()
+		            );
+		            overlay->ontop = true;
+
+		            ++saveGameCount;
+                }
+		    }
+		    subwindow.setActualSize(SDL_Rect{0, 0, 898 + 256 * (saveGameCount - 1), 294});
+        }
+        return first_savegame;
 	}
 
 	void playContinue(Button& button) {
-		soundActivate();
+        continueSingleplayer = ~(!anySaveFileExists(true) && anySaveFileExists(false));
 
-		// TODO continue menu
+        savegame_selected = nullptr;
+
+		// remove "Play Game" window
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		// create Continue window
+		auto window = dimmer->addFrame("continue_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1080) / 2,
+			(Frame::virtualScreenY - 474) / 2,
+			1080,
+			474});
+		window->setActualSize(SDL_Rect{0, 0, 1080, 474});
+		window->setColor(0);
+		window->setBorder(0);
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/ContinueGame/UI_Cont_Window_00.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 32);
+		banner_title->setSize(SDL_Rect{
+		    (window->getActualSize().w - 256) / 2,
+		    8,
+		    256,
+		    48});
+		banner_title->setText("CONTINUE ADVENTURE");
+		banner_title->setFont(bigfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		auto subwindow = window->addFrame("subwindow");
+		auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		if (first_savegame) {
+		    first_savegame->select();
+		    savegame_selected = first_savegame;
+		}
+
+		auto gradient = window->addImage(
+		    subwindow->getSize(),
+		    0xffffffff,
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Grad_01.png",
+		    "gradient"
+		);
+		gradient->ontop = true;
+
+		auto singleplayer = window->addButton("singleplayer");
+		singleplayer->setText("Local Games");
+		singleplayer->setFont(smallfont_outline);
+		singleplayer->setSize(SDL_Rect{226, 38, 156, 36});
+		singleplayer->setColor(makeColor(255, 255, 255, 255));
+		singleplayer->setHighlightColor(makeColor(255, 255, 255, 255));
+		singleplayer->setTextColor(
+		    continueSingleplayer ?
+		    makeColor(255, 255, 255, 255) :
+		    makeColor(127, 127, 127, 255));
+		singleplayer->setBackground(
+		    continueSingleplayer ?
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png" :
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
+		singleplayer->setButtonsOffset(SDL_Rect{-singleplayer->getSize().w, -singleplayer->getSize().h/2, 0, 0});
+		singleplayer->setWidgetRight("multiplayer");
+		singleplayer->setWidgetBack("back");
+		singleplayer->addWidgetAction("MenuAlt2", "delete");
+		singleplayer->addWidgetAction("MenuConfirm", "enter");
+		singleplayer->addWidgetAction("MenuPageLeft", "singleplayer");
+		singleplayer->addWidgetAction("MenuPageRight", "multiplayer");
+		singleplayer->setCallback([](Button& button){
+		    continueSingleplayer = true;
+            Frame* window = static_cast<Frame*>(button.getParent());
+            button.setTextColor(makeColor(255, 255, 255, 255));
+            button.setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png");
+            auto multiplayer = window->findButton("multiplayer");
+		    multiplayer->setTextColor(makeColor(127, 127, 127, 255));
+		    multiplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png");
+            Frame* subwindow = window->findFrame("subwindow");
+            subwindow->removeSelf();
+            subwindow = window->addFrame("subwindow");
+		    auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    if (first_savegame) {
+		        first_savegame->select();
+		        savegame_selected = first_savegame;
+		    }
+		    auto slider = window->findSlider("slider");
+		    if (slider) {
+		        const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+		        slider->setMinValue(0.f);
+		        slider->setValue(0.f);
+		        slider->setMaxValue(sliderMaxSize);
+	        }
+		    cursor_delete_mode = false;
+			savegame_selected = nullptr;
+		    });
+
+		auto multiplayer = window->addButton("multiplayer");
+		multiplayer->setText("Online + LAN");
+		multiplayer->setFont(smallfont_outline);
+		multiplayer->setSize(SDL_Rect{702, 38, 144, 36});
+		multiplayer->setColor(makeColor(255, 255, 255, 255));
+		multiplayer->setHighlightColor(makeColor(255, 255, 255, 255));
+		multiplayer->setTextColor(
+		    continueSingleplayer ?
+		    makeColor(127, 127, 127, 255) :
+		    makeColor(255, 255, 255, 255));
+		multiplayer->setBackground(
+		    continueSingleplayer ?
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png" :
+		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
+		multiplayer->setButtonsOffset(SDL_Rect{0, -singleplayer->getSize().h/2, 0, 0});
+		multiplayer->setWidgetLeft("singleplayer");
+		multiplayer->setWidgetBack("back");
+		multiplayer->addWidgetAction("MenuAlt2", "delete");
+		multiplayer->addWidgetAction("MenuConfirm", "enter");
+		multiplayer->addWidgetAction("MenuPageLeft", "singleplayer");
+		multiplayer->addWidgetAction("MenuPageRight", "multiplayer");
+		multiplayer->setCallback([](Button& button){
+		    continueSingleplayer = false;
+            Frame* window = static_cast<Frame*>(button.getParent());
+            button.setTextColor(makeColor(255, 255, 255, 255));
+            button.setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
+            auto singleplayer = window->findButton("singleplayer");
+		    singleplayer->setTextColor(makeColor(127, 127, 127, 255));
+		    singleplayer->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
+            Frame* subwindow = window->findFrame("subwindow");
+            subwindow->removeSelf();
+            subwindow = window->addFrame("subwindow");
+		    auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		    if (first_savegame) {
+		        first_savegame->select();
+		        savegame_selected = first_savegame;
+		    }
+		    auto slider = window->findSlider("slider");
+		    if (slider) {
+		        const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+		        slider->setMinValue(0.f);
+		        slider->setValue(0.f);
+		        slider->setMaxValue(sliderMaxSize);
+		    }
+		    cursor_delete_mode = false;
+			savegame_selected = nullptr;
+		    });
+
+		auto delete_button = window->addButton("delete");
+		delete_button->setText("Delete Save");
+		delete_button->setFont(smallfont_outline);
+		delete_button->setSize(SDL_Rect{278, 390, 164, 62});
+		delete_button->setColor(makeColor(255, 255, 255, 255));
+		delete_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		delete_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
+		delete_button->setWidgetBack("back");
+		delete_button->addWidgetAction("MenuAlt2", "delete");
+		delete_button->addWidgetAction("MenuConfirm", "enter");
+		delete_button->addWidgetAction("MenuPageLeft", "singleplayer");
+		delete_button->addWidgetAction("MenuPageRight", "multiplayer");
+		delete_button->setCallback([](Button& button){
+	        int save_index = -1;
+	        if (savegame_selected) {
+	            const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	            size_t name_len = strlen(name);
+	            if (strncmp(savegame_selected->getName(), name, name_len) == 0) {
+                    save_index = (int)strtol(savegame_selected->getName() + name_len, nullptr, 10);
+	            }
+	        }
+	        if (save_index >= 0) {
+	            deleteSavePrompt(continueSingleplayer, save_index);
+	        } else {
+	            monoPrompt(
+	                "Select a savegame to delete first.",
+	                "Okay",
+	                [](Button& button){
+			            soundCancel();
+			            if (savegame_selected) {
+			                savegame_selected->select();
+			            } else {
+			                assert(main_menu_frame);
+		                    auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+	                        if (continueSingleplayer) {
+                                auto singleplayer = window->findButton("singleplayer");
+                                singleplayer->select();
+	                        } else {
+                                auto multiplayer = window->findButton("multiplayer");
+                                multiplayer->select();
+	                        }
+			            }
+			            assert(main_menu_frame);
+			            auto prompt = main_menu_frame->findFrame("mono_prompt");
+			            if (prompt) {
+				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				            dimmer->removeSelf();
+			            }
+	                }
+	            );
+	        }
+		    });
+
+		auto enter_button = window->addButton("enter");
+		enter_button->setText("Enter Dungeon");
+		enter_button->setFont(smallfont_outline);
+		enter_button->setSize(SDL_Rect{642, 390, 164, 62});
+		enter_button->setColor(makeColor(255, 255, 255, 255));
+		enter_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		enter_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
+		enter_button->setWidgetBack("back");
+		enter_button->addWidgetAction("MenuAlt2", "delete");
+		enter_button->addWidgetAction("MenuConfirm", "enter");
+		enter_button->addWidgetAction("MenuPageLeft", "singleplayer");
+		enter_button->addWidgetAction("MenuPageRight", "multiplayer");
+		enter_button->setCallback([](Button& button){
+	        int save_index = -1;
+	        if (savegame_selected) {
+	            const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	            size_t name_len = strlen(name);
+	            if (strncmp(savegame_selected->getName(), name, name_len) == 0) {
+                    save_index = (int)strtol(savegame_selected->getName() + name_len, nullptr, 10);
+	            }
+	        }
+	        if (save_index >= 0) {
+	            loadSavePrompt(continueSingleplayer, save_index);
+	        } else {
+                monoPrompt(
+                    "Select a savegame to load first.",
+                    "Okay",
+                    [](Button& button){
+		                soundCancel();
+		                if (savegame_selected) {
+		                    savegame_selected->select();
+		                } else {
+			                assert(main_menu_frame);
+		                    auto window = main_menu_frame->findFrame("continue_window"); assert(window);
+                            if (continueSingleplayer) {
+                                auto singleplayer = window->findButton("singleplayer");
+                                singleplayer->select();
+                            } else {
+                                auto multiplayer = window->findButton("multiplayer");
+                                multiplayer->select();
+                            }
+		                }
+		                assert(main_menu_frame);
+		                auto prompt = main_menu_frame->findFrame("mono_prompt");
+		                if (prompt) {
+			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                dimmer->removeSelf();
+		                }
+                    }
+                );
+	        }
+		    });
+
+		const float sliderMaxSize = subwindow->getActualSize().w - subwindow->getSize().w;
+
+        Slider* slider = nullptr;
+		//slider = window->addSlider("slider");
+		if (slider) {
+		    slider->setHandleSize(SDL_Rect{0, 0, 98, 16});
+		    slider->setHandleImage("images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderBar_00.png");
+		    slider->setRailSize(SDL_Rect{129, 374, 820, 16});
+		    slider->setRailImage("__empty");
+		    slider->setMinValue(0.f);
+		    slider->setValue(0.f);
+		    slider->setMaxValue(sliderMaxSize);
+		    slider->setTickCallback([](Widget& widget){
+		        auto slider = static_cast<Slider*>(&widget);
+		        auto frame = static_cast<Frame*>(slider->getParent());
+		        auto subwindow = frame->findFrame("subwindow");
+		        auto size = subwindow->getActualSize();
+		        slider->setValue(size.x);
+
+		        /*auto slider_left = frame->findImage("slider_left");
+		        auto slider_right = frame->findImage("slider_right");
+	            slider_left->pos.x = slider->getHandleSize().x - 20;
+	            slider_right->pos.x = slider->getHandleSize().x + slider->getHandleSize().w;
+		        if (slider->isActivated()) {
+		            slider_left->disabled = false;
+		            slider_right->disabled = false;
+		        } else {
+		            slider_left->disabled = true;
+		            slider_right->disabled = true;
+		        }*/
+		    });
+		    slider->setCallback([](Slider& slider){
+		        auto frame = static_cast<Frame*>(slider.getParent());
+		        auto subwindow = frame->findFrame("subwindow");
+		        auto size = subwindow->getActualSize();
+		        size.x = slider.getValue();
+		        subwindow->setActualSize(size);
+		        savegame_selected = nullptr;
+		        });
+
+		    auto slider_left = window->addImage(
+		        SDL_Rect{0, 354, 20, 30},
+		        0xffffffff,
+		        "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderL_00.png",
+		        "slider_left"
+		    );
+		    slider_left->ontop = true;
+		    slider_left->disabled = true;
+
+		    auto slider_right = window->addImage(
+		        SDL_Rect{0, 354, 20, 30},
+		        0xffffffff,
+		        "images/ui/Main Menus/ContinueGame/UI_Cont_LRSliderR_00.png",
+		        "slider_right"
+		    );
+		    slider_right->ontop = true;
+		    slider_right->disabled = true;
+	    }
+
+		(void)createBackWidget(window, [](Button& button){
+			cursor_delete_mode = false;
+			savegame_selected = nullptr;
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			createPlayWindow();
+			}, SDL_Rect{16, 0, 0, 0});
 	}
 
 /******************************************************************************/
@@ -6047,73 +6981,8 @@ namespace MainMenu {
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
 	}
 
-	void quitConfirmWindow(
-		const char* window_text,
-		const char* okay_text,
-		const char* cancel_text,
-		void (*okay_callback)(Button&),
-		void (*cancel_callback)(Button&)
-	) {
-		if (main_menu_frame->findFrame("quit_confirm")) {
-			return;
-		}
-
-		soundActivate();
-
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(makeColor(0, 0, 0, 63));
-		dimmer->setBorder(0);
-
-		auto frame = dimmer->addFrame("quit_confirm");
-		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
-		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
-		frame->setColor(0);
-		frame->setBorder(0);
-		frame->addImage(
-			frame->getActualSize(),
-			0xffffffff,
-			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
-			"background"
-		);
-
-		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 28, 304, 46});
-		text->setFont(smallfont_no_outline);
-		text->setText(window_text);
-		text->setJustify(Field::justify_t::CENTER);
-
-		auto okay = frame->addButton("okay");
-		okay->setSize(SDL_Rect{58, 78, 130, 52});
-		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
-		okay->setColor(makeColor(255, 255, 255, 255));
-		okay->setHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setTextColor(makeColor(255, 255, 255, 255));
-		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setFont(smallfont_outline);
-		okay->setText(okay_text);
-		okay->setWidgetRight("cancel");
-		okay->setWidgetBack("cancel");
-		okay->select();
-		okay->setCallback(okay_callback);
-
-		auto cancel = frame->addButton("cancel");
-		cancel->setSize(SDL_Rect{196, 78, 108, 52});
-		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		cancel->setColor(makeColor(255, 255, 255, 255));
-		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setTextColor(makeColor(255, 255, 255, 255));
-		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setFont(smallfont_outline);
-		cancel->setText(cancel_text);
-		cancel->setWidgetLeft("okay");
-		cancel->setWidgetBack("cancel");
-		cancel->setCallback(cancel_callback);
-	}
-
 	void mainEndLife(Button& button) {
-		quitConfirmWindow(
+		binaryPrompt(
 			"Are you sure you want to die?\nThere is no return from this.", // window text
 			"End Life", // okay text
 			"Cancel", // cancel text
@@ -6128,7 +6997,7 @@ namespace MainMenu {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("END LIFE"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6137,7 +7006,7 @@ namespace MainMenu {
 	}
 
 	void mainRestartGame(Button& button) {
-		quitConfirmWindow(
+		binaryPrompt(
 			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
 			"Restart", // okay text
 			"Cancel", // cancel text
@@ -6157,7 +7026,7 @@ namespace MainMenu {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6166,7 +7035,7 @@ namespace MainMenu {
 	}
 
 	void mainQuitToMainMenu(Button& button) {
-		quitConfirmWindow(
+		binaryPrompt(
 			"All progress before the current\ndungeon level will be saved.", // window text
 			"Quit to Menu", // okay text
 			"Cancel", // cancel text
@@ -6174,6 +7043,7 @@ namespace MainMenu {
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
+				savethisgame = true;
 				beginFade(MainMenu::FadeDestination::RootMainMenu);
 			},
 			[](Button&){ // cancel
@@ -6182,7 +7052,7 @@ namespace MainMenu {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6213,7 +7083,7 @@ namespace MainMenu {
 			quit_motd = rand() % num_quit_messages;
 		}
 
-		quitConfirmWindow(
+		binaryPrompt(
 			quit_messages[quit_motd][0], // window text
 			quit_messages[quit_motd][1], // okay text
 			quit_messages[quit_motd][2], // cancel text
@@ -6231,7 +7101,7 @@ namespace MainMenu {
 				}
 				assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("quit_confirm");
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
 					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
 					dimmer->removeSelf();
@@ -6265,6 +7135,13 @@ namespace MainMenu {
 				players[c]->bSplitscreen = false;
 				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
 			}
+		}
+		if (clientnum == -1) {
+		    // TODO loading a splitscreen game?
+		    clientnum = 0;
+		    players[0]->bSplitscreen = false;
+		    client_disconnected[0] = false;
+		    playercount = 1;
 		}
 		splitscreen = playercount > 1;
 
@@ -6336,8 +7213,10 @@ namespace MainMenu {
 			} else {
 				if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 					destroyMainMenu();
-					victory = 0;
-					doEndgame();
+					if (ingame) {
+					    victory = 0;
+					    doEndgame();
+					}
 					createMainMenu(false);
 				}
 				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
@@ -6365,6 +7244,14 @@ namespace MainMenu {
 					numplayers = 0;
 					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 					setupSplitscreen();
+					if (!loadingsavegame) {
+		                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                            if (!saveGameExists(multiplayer == SINGLE, i)) {
+                                savegameCurrentFileIndex = i;
+                                break;
+                            }
+                        }
+					}
 					doNewGame(false);
 					destroyMainMenu();
 				}
@@ -6377,6 +7264,7 @@ namespace MainMenu {
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
+        main_menu_frame->setOwner(ingame ? clientnum : 0);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -6575,10 +7463,12 @@ namespace MainMenu {
 			main_menu_frame->removeSelf();
 			main_menu_frame = nullptr;
 		}
+		cursor_delete_mode = false;
 	}
 
 	void createDummyMainMenu() {
 		main_menu_frame = gui->addFrame("main_menu");
+        main_menu_frame->setOwner(clientnum);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setHollow(true);
@@ -6589,5 +7479,13 @@ namespace MainMenu {
 	void closeMainMenu() {
 		destroyMainMenu();
 		gamePaused = false;
+	}
+
+	void disconnectedFromServer() {
+	    assert(0 && "Disconnected from server. Need a window here!");
+	}
+
+	void receiveInvite() {
+	    assert(0 && "Received an invite. Behavior goes here!");
 	}
 }

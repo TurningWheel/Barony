@@ -2008,66 +2008,36 @@ void drawStatus(int player)
 
 		bool bumper_moved = false;
 
-		//Gamepad change hotbar selection.
-		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_NEXT)
-			|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
+		Input& input = Input::inputs[player];
+
+		if ( input.consumeBinaryToggle("Hotbar Scroll Right") )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-				{
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-				}
-				else
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_NEXT);
-					bumper_moved = true;
-				}
+				bumper_moved = true;
 				hotbar_t.hotbarTooltipLastGameTick = ticks;
 				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
 			}
 			else
 			{
 				hotbar_t.hotbarTooltipLastGameTick = 0;
-				/*if ( intro || shootmode )
-				{
-					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-					{
-						*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-					}
-				}*/
 			}
 		}
-		if ( inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_PREV) || *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
+		if ( input.consumeBinaryToggle("Hotbar Scroll Left") )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
-				if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
-				{
-					*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-				}
-				else
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_PREV);
-					bumper_moved = true;
-				}
+				bumper_moved = true;
 				hotbar_t.hotbarTooltipLastGameTick = ticks;
 				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar - 1);
 			}
 			else
 			{
 				hotbar_t.hotbarTooltipLastGameTick = 0;
-				/*if ( intro || shootmode )
-				{
-					if ( *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) )
-					{
-						*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-					}
-				}*/
 			}
 		}
 
@@ -2081,8 +2051,7 @@ void drawStatus(int player)
 
 		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE) 
-				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
+			if ( shootmode && input.consumeBinaryToggle("Hotbar Select")
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
@@ -2091,18 +2060,19 @@ void drawStatus(int player)
 				hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
 
 				//Activate a hotbar slot if in-game.
-				*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
-				inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
 				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
-			if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+            // We don't have a hotbar clear binding, but if we need one, feel free to add it
+            // in MainMenu.cpp
+
+			/*if ( !shootmode && inputs.bControllerInputPressed(player, INJOY_MENU_HOTBAR_CLEAR) && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
 				inputs.controllerClearInput(player, INJOY_MENU_HOTBAR_CLEAR);
 
 				hotbar[hotbar_t.current_hotbar].item = 0;
-			}	
+			}*/
 
 			pos.x = initial_position.x + (hotbar_t.current_hotbar * hotbar_t.getSlotSize());
 			pos.y = initial_position.y - hotbar_t.getSlotSize();
@@ -2352,6 +2322,8 @@ void drawStatusNew(const int player)
 
 	int gui_mode = players[player]->gui_mode;
 	bool shootmode = players[player]->shootmode;
+
+	Input& input = Input::inputs[player];
 
 	if ( !hide_statusbar )
 	{
@@ -3579,8 +3551,7 @@ void drawStatusNew(const int player)
 
 		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && (inputs.bControllerInputPressed(player, INJOY_GAME_HOTBAR_ACTIVATE)
-				|| *inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]))
+			if ( shootmode && input.consumeBinaryToggle("Hotbar Select")
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
@@ -3589,24 +3560,22 @@ void drawStatusNew(const int player)
 				hotbar_t.hotbarTooltipLastGameTick = std::max(ticks - TICKS_PER_SECOND, ticks - hotbar_t.hotbarTooltipLastGameTick);
 
 				//Activate a hotbar slot if in-game.
-				*inputPressedForPlayer(player, impulses[IN_HOTBAR_SCROLL_SELECT]) = 0;
-				inputs.controllerClearInput(player, INJOY_GAME_HOTBAR_ACTIVATE);
 				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
-			if ( !shootmode && Input::inputs[player].binaryToggle("HotbarInventoryClearSlot") && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			if ( !shootmode && input.binaryToggle("HotbarInventoryClearSlot") && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
-				Input::inputs[player].consumeBinaryToggle("HotbarInventoryClearSlot");
+				input.consumeBinaryToggle("HotbarInventoryClearSlot");
 				hotbar[hotbar_t.current_hotbar].item = 0;
 			}
 
 			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] 
-				&& Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str())
+				&& input.binaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str())
 				&& mouseInsidePlayerHotbar(player) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str());
+				input.consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str());
 				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 				if ( itemToDrop )
 				{

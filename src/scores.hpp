@@ -275,6 +275,13 @@ extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
 extern bool achievementRangedMode[MAXPLAYERS];
 
+enum SaveFileType {
+    MAIN,
+    FOLLOWERS,
+    SCREENSHOT,
+    SIZE_OF_TYPE
+};
+
 score_t* scoreConstructor();
 void scoreDeconstructor(void* data);
 int saveScore();
@@ -283,14 +290,26 @@ void loadScore(int score);
 void saveAllScores(const std::string& scoresfilename);
 void loadAllScores(const std::string& scoresfilename);
 extern int savegameCurrentFileIndex;
-std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex = savegameCurrentFileIndex);
+std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIndex = savegameCurrentFileIndex);
 int saveGame(int saveIndex = savegameCurrentFileIndex);
 int loadGame(int player, int saveIndex = savegameCurrentFileIndex);
 list_t* loadGameFollowers(int saveIndex = savegameCurrentFileIndex);
 int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
 bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+bool anySaveFileExists(bool singleplayer);
 bool anySaveFileExists();
 
+struct SaveGameInfo {
+    std::string player_name;
+    std::string player_class;
+    int dungeon_lvl;
+    int player_lvl;
+    int player_num;
+    std::string timestamp;
+    int multiplayer_type;
+};
+
+SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 char* getSaveGameName(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSaveGameType(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSaveGameClientnum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
@@ -304,7 +323,7 @@ void updateGameplayStatisticsInMainLoop(); // check for achievement values for g
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
 void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
-static const int SAVE_GAMES_MAX = 10;
+static const int SAVE_GAMES_MAX = 100;
 
 class AchievementObserver
 {

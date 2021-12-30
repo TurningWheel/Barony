@@ -253,7 +253,7 @@ char* readFile(char* filename);
 std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
 File *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
-bool dataPathExists(const char *const);
+bool dataPathExists(const char *const, bool complete = true);
 bool completePath(char *dest, const char * const path, const char *base = datadir);
 void openLogFile();
 std::vector<std::string> getLinesFromDataFile(std::string filename);

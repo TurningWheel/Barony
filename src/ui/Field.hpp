@@ -91,7 +91,7 @@ public:
 	void	addWordToHighlight(int word, Uint32 color) { wordsToHighlight[word] = color; }
 
 	//! gets map for highlighted words
-	std::map<int, Uint32>	getWordsToHighlight() const { return wordsToHighlight; }
+	const std::map<int, Uint32>&	getWordsToHighlight() const { return wordsToHighlight; }
 
 	//! reset the highlighted word map
 	void	clearWordsToHighlight() { wordsToHighlight.clear(); }

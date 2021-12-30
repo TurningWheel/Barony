@@ -63,12 +63,14 @@ void drawMinimap(const int player)
 		}
 	}
 
+	Input& input = Input::inputs[player];
+
 	node_t* node;
 	Uint32 color;
 	int x, y, i;
 	int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
 	// handle toggling scale hotkey.
-	if ( !command && *inputPressedForPlayer(player, impulses[IN_MINIMAPSCALE]) || (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_MINIMAPSCALE)) )
+	if ( !command && input.consumeBinaryToggle("Minimap Scale") )
 	{
 		if ( minimapScaleQuickToggle == 3 )
 		{
@@ -78,8 +80,6 @@ void drawMinimap(const int player)
 		{
 			++minimapScaleQuickToggle;
 		}
-		*inputPressed(impulses[IN_MINIMAPSCALE]) = 0;
-		inputs.controllerClearInput(player, INJOY_GAME_MINIMAPSCALE);
 		playSound(139, 32);
 	}
 

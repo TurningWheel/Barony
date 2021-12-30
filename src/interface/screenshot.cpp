@@ -14,6 +14,7 @@
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../net.hpp"
+#include "../files.hpp"
 #include "interface.hpp"
 
 /*-------------------------------------------------------------------------------
@@ -24,20 +25,26 @@
 
 -------------------------------------------------------------------------------*/
 
-void takeScreenshot()
+void takeScreenshot(const char* output_path)
 {
-	char filename[1024];
+	char filename[PATH_MAX];
 	SDL_Surface* temp, *temp2;
 
-	strcpy( filename, "Screenshot " );
-	time_t timer;
-	char buffer[32];
-	struct tm* tm_info;
-	time(&timer);
-	tm_info = localtime(&timer);
-	strftime( buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info );
-	strcat( filename, buffer );
-	strcat( filename, ".png" );
+    if (output_path) {
+        (void)completePath(filename, output_path, outputdir);
+    } else {
+	    char filename2[PATH_MAX];
+	    strcpy( filename2, "Screenshot " );
+	    time_t timer;
+	    char buffer[32];
+	    struct tm* tm_info;
+	    time(&timer);
+	    tm_info = localtime(&timer);
+	    strftime( buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info );
+	    strcat( filename2, buffer );
+	    strcat( filename2, ".png" );
+        (void)completePath(filename, filename2, outputdir);
+	}
 
 	temp = SDL_CreateRGBSurface(0, xres, yres, 32, 0, 0, 0, 0);
 	SDL_LockSurface(temp);
@@ -49,11 +56,13 @@ void takeScreenshot()
 	SDL_FillRect(temp, NULL, 0);
 	SDL_BlitSurface(temp2, NULL, temp, NULL);
 	SDL_FreeSurface( temp2 );
+	//TODO Nintendo needs to be able to do this!
+	//Otherwise there are no screenshots for save games!
 #ifndef NINTENDO
 	SDL_SavePNG( temp, filename );
 #endif
 	SDL_FreeSurface( temp );
-	if ( !intro )
+	if ( !intro && !output_path )
 	{
 		messagePlayer(clientnum, "%s", filename);
 	}

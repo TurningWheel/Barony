@@ -560,7 +560,7 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t* ca
 	{
 		pauseGame(2, MAXPLAYERS);
 		SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse. (Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
-		SDL_ShowCursor(SDL_TRUE); //(Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
+		SDL_ShowCursor(SDL_ENABLE); //(Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
 	}
 	else
 	{
@@ -569,10 +569,10 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t* ca
 			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) 
 				&& players[i]->shootmode && !gamePaused)
 			{
-				SDL_SetRelativeMouseMode(SDL_TRUE); //Recapture mouse.
+				SDL_SetRelativeMouseMode(EnableMouseCapture); //Recapture mouse.
 			}
 		}
-		SDL_ShowCursor(SDL_FALSE);
+		SDL_ShowCursor(EnableMouseCapture == SDL_FALSE ? SDL_ENABLE : SDL_DISABLE);
 	}
 }
 

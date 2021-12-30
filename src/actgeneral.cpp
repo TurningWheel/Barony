@@ -696,17 +696,13 @@ void actFloorDecoration(Entity* my)
 						impulseStr = impulseStr + output.at(inputTagStrIndex);
 						++inputTagStrIndex;
 					}
-					for ( int i = 0; i < NUMIMPULSES; ++i )
-					{
-						if ( impulseStrings[i].compare(impulseStr) == 0 )
-						{
-							output.erase(output.find(impulseStr), impulseStr.length());
-							std::string inputFormatted = "[";
-							inputFormatted.append(getInputName(impulses[i])).append("]");
-							output.insert(foundInputTag, inputFormatted.c_str());
-							break;
-						}
-					}
+					output.erase(output.find(impulseStr), impulseStr.length());
+					std::string inputFormatted;
+					inputFormatted.append("[");
+					const char* binding = Input::inputs[0].binding(impulseStr.c_str());
+					inputFormatted.append(binding[0] == '\0' ? impulseStr : binding);
+					inputFormatted.append("]");
+					output.insert(foundInputTag, inputFormatted.c_str());
 					foundInputTag = output.find("@in=");
 				}
 
@@ -2447,17 +2443,13 @@ void Entity::actTextSource()
 					impulseStr = impulseStr + output.at(inputTagStrIndex);
 					++inputTagStrIndex;
 				}
-				for ( int i = 0; i < NUMIMPULSES; ++i )
-				{
-					if ( impulseStrings[i].compare(impulseStr) == 0 )
-					{
-						output.erase(output.find(impulseStr), impulseStr.length());
-						std::string inputFormatted = "[";
-						inputFormatted.append(getInputName(impulses[i])).append("]");
-						output.insert(foundInputTag, inputFormatted.c_str());
-						break;
-					}
-				}
+				output.erase(output.find(impulseStr), impulseStr.length());
+				std::string inputFormatted;
+				inputFormatted.append("[");
+				const char* binding = Input::inputs[0].binding(impulseStr.c_str());
+				inputFormatted.append(binding[0] == '\0' ? impulseStr : binding);
+				inputFormatted.append("]");
+				output.insert(foundInputTag, inputFormatted.c_str());
 				foundInputTag = output.find("@in=");
 			}
 

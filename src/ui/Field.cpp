@@ -104,7 +104,7 @@ char* Field::tokenize(char* str, const char* const delimiters) {
 	}
 }
 
-bool bWordHighlightMapAreSame(std::map<int, Uint32>& textMap, std::map<int, Uint32>& fieldMap, int currentLine)
+static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const std::map<int, Uint32>& fieldMap, int currentLine)
 {
 	std::vector<int> fieldKeys;
 	for ( auto& keyValue : fieldMap )
@@ -129,12 +129,13 @@ bool bWordHighlightMapAreSame(std::map<int, Uint32>& textMap, std::map<int, Uint
 			&& (keyValue.first < (currentLine + 1) * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE) )
 		{
 			const int wordIndex = keyValue.first - currentLine * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
-			if ( textMap.find(wordIndex) == textMap.end() )
+			auto find = textMap.find(wordIndex);
+			if ( find == textMap.end() )
 			{
 				// key not found, mismatched maps
 				return false;
 			}
-			else if ( textMap[wordIndex] != keyValue.second )
+			else if ( (*find).second != keyValue.second )
 			{
 				// key found, but stored a different color, mismatched maps.
 				return false;
@@ -220,7 +221,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 				}
 				if ( unrender )
 				{
-					text->setRendered(false);
+					text->render();
 				}
 			}
 		}
@@ -229,7 +230,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			if ( text->getWordsToHighlight().size() > 0 )
 			{
 				text->clearWordsToHighlight();
-				text->setRendered(false);
+				text->render();
 			}
 		}
 
@@ -347,8 +348,15 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		return result;
 	}
 
+	int mouseowner = intro ? 0 : owner;
+
+#ifdef EDITOR
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
+#else
+	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+#endif
 
 	if (activated) {
 		if (inputstr != text) {

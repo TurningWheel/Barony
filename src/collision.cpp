@@ -55,16 +55,18 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
+	Input& input = Input::inputs[player];
+
 	if ( clicktype == ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY )
 	{
-		if ( !clickCheckOverride && !(*inputPressedForPlayer(player, impulses[IN_USE])) && !(inputs.bControllerInputHeld(player, INJOY_GAME_USE)) )
+		if ( !clickCheckOverride && !input.binaryToggle("Use") )
 		{
 			return NULL;
 		}
 	}
 	else
 	{
-		if ( !clickCheckOverride && !(*inputPressedForPlayer(player, impulses[IN_USE])) && !(inputs.bControllerInputPressed(player, INJOY_GAME_USE)) )
+		if ( !clickCheckOverride && !input.binaryToggle("Use") )
 		{
 			return NULL;
 		}
@@ -290,7 +292,6 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			{
 				uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
 			}
-			//messagePlayer(0, "first: %d %d", uidnum, selectedEntityGimpTimer[player]);
 		}
 	}
 	else
@@ -331,7 +332,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			{
 				if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
 				{
-					if ( inputs.bControllerInputHeld(player, INJOY_GAME_USE) || *inputPressedForPlayer(player, impulses[IN_USE]) )
+					if ( input.binaryToggle("Use") )
 					{
 						entity = uidToEntity(tooltip->parent);
 					}
@@ -346,8 +347,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 		if ( !entity )
 		{
 			// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
-			inputs.controllerClearInput(player, INJOY_GAME_USE);
-			*inputPressedForPlayer(player, impulses[IN_USE]) = 0;
+			input.consumeBinaryToggle("Use");
 		}
 	}
 

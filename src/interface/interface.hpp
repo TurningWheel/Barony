@@ -207,7 +207,7 @@ extern int dragoffset_y[MAXPLAYERS];
 extern int buttonclick;
 
 // function prototypes
-void takeScreenshot();
+void takeScreenshot(const char* output_path = nullptr);
 bool loadInterfaceResources();
 void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);

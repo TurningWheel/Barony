@@ -203,8 +203,12 @@ void exitSoundEngine()
 #ifdef USE_FMOD
 	if ( fmod_system )
 	{
+// no idea why this causes the game to hang for me.
+// someone else investigate? -skrathbun
+#ifndef LINUX
 		fmod_system->close();
 		fmod_system->release();
+#endif
 		fmod_system = nullptr;
 	}
 #endif

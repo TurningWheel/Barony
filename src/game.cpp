@@ -56,9 +56,26 @@
 #include <execinfo.h>
 #include <sys/stat.h>
 
+static SDL_bool SDL_MouseModeBeforeSignal = SDL_FALSE;
+static int SDL_MouseShowBeforeSignal = SDL_ENABLE;
+
+static void stop_sigaction(int signal, siginfo_t* si, void* arg)
+{
+    SDL_MouseModeBeforeSignal = SDL_GetRelativeMouseMode();
+    SDL_MouseShowBeforeSignal = SDL_ShowCursor(SDL_QUERY);
+	SDL_SetRelativeMouseMode(SDL_FALSE);
+	SDL_ShowCursor(SDL_ENABLE);
+}
+
+static void continue_sigaction(int signal, siginfo_t* si, void* arg)
+{
+	SDL_SetRelativeMouseMode(SDL_MouseModeBeforeSignal);
+	SDL_ShowCursor(SDL_MouseShowBeforeSignal);
+}
+
 const unsigned STACK_SIZE = 10;
 
-void segfault_sigaction(int signal, siginfo_t* si, void* arg)
+static void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
 	printf("Caught segfault at address %p\n", si->si_addr);
 
@@ -2443,56 +2460,7 @@ void gameLogic(void)
 				{
 					// additional 15 seconds (disconnect time)
 					messageLocalPlayers(language[730]);
-
-					button_t* button;
-					pauseGame(2, 0);
-
-					// close current window
-					buttonCloseSubwindow(NULL);
-					for ( node = button_l.first; node != NULL; node = nextnode )
-					{
-						nextnode = node->next;
-						button = (button_t*)node->element;
-						if ( button->focused )
-						{
-							list_RemoveNode(button->node);
-						}
-					}
-
-					// create new window
-					subwindow = 1;
-					subx1 = xres / 2 - 256;
-					subx2 = xres / 2 + 256;
-					suby1 = yres / 2 - 56;
-					suby2 = yres / 2 + 56;
-					strcpy(subtext, language[731]);
-
-					// close button
-					button = newButton();
-					strcpy(button->label, "x");
-					button->x = subx2 - 20;
-					button->y = suby1;
-					button->sizex = 20;
-					button->sizey = 20;
-					button->action = &buttonCloseAndEndGameConfirm;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_ESCAPE;
-					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-					// okay button
-					button = newButton();
-					strcpy(button->label, language[732]);
-					button->x = subx2 - (subx2 - subx1) / 2 - 28;
-					button->y = suby2 - 28;
-					button->sizex = 56;
-					button->sizey = 20;
-					button->action = &buttonCloseAndEndGameConfirm;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_RETURN;
-					button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
+                    MainMenu::disconnectedFromServer();
 					client_disconnected[0] = true;
 				}
 			}
@@ -3528,16 +3496,6 @@ void handleEvents(void)
 				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: snprintf(buf, sizeof(buf), "Pad%dDpadY+", event.cbutton.which); break;
 				}
 				Input::lastInputOfAnyKind = buf;
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!players[clientnum]->shootmode && players[clientnum]->gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
-				{
-					//Generate a mouse click.
-					//SDL_Event e;
-					//
-					//e.type = SDL_MOUSEBUTTONDOWN;
-					//e.button.button = SDL_BUTTON_LEFT;
-					//e.button.clicks = 1; //Single click.
-					//SDL_PushEvent(&e);
-				}
 				break;
 			}
 			case SDL_CONTROLLERAXISMOTION:
@@ -3566,18 +3524,10 @@ void handleEvents(void)
 				Input::lastInputOfAnyKind = buf;
 				break;
 			}
-			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
-				//joystatus[event.cbutton.button] = 0; // set this button's index to 0
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
-				{
-					//Generate a mouse lift.
-					//SDL_Event e;
-					//
-					//e.type = SDL_MOUSEBUTTONUP;
-					//e.button.button = SDL_BUTTON_LEFT;
-					//SDL_PushEvent(&e);
-				}
-				break;
+			case SDL_CONTROLLERBUTTONUP:
+			{
+			    break;
+			}
 			case SDL_CONTROLLERDEVICEADDED:
 			{
 				const int id = event.cdevice.which;
@@ -3973,10 +3923,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 
 void startMessages()
 {
-	newString(&messages, 0xFFFFFFFF, language[734], stats[clientnum]->name);
-	newString(&messages, 0xFFFFFFFF, language[735], getInputName(impulses[IN_STATUS]));
-	newString(&messages, 0xFFFFFFFF, language[736], getInputName(impulses[IN_USE]));
-	newString(&messages, 0xFFFFFFFF, language[737]);
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -4051,7 +3998,7 @@ void pauseGame(int mode, int ignoreplayer)
 		gamePaused = false;
 		if ( !SDL_GetRelativeMouseMode() && capture_mouse )
 		{
-			SDL_SetRelativeMouseMode(SDL_TRUE);
+			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
 		return; // doesn't disable the game in multiplayer anymore
 		if ( multiplayer == SERVER )
@@ -4126,14 +4073,12 @@ void ingameHud()
 {
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+	    Input& input = Input::inputs[player];
+
 		// inventory interface
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command
-			&& (*inputPressedForPlayer(player, impulses[IN_STATUS]) || inputs.bControllerInputPressed(player, INJOY_STATUS)) )
+		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") )
 		{
-			*inputPressedForPlayer(player, impulses[IN_STATUS]) = 0;
-			inputs.controllerClearInput(player, INJOY_STATUS);
-
 			if ( players[player]->shootmode )
 			{
 				players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
@@ -4146,11 +4091,8 @@ void ingameHud()
 
 		// spell list
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command
-			&& (*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) || inputs.bControllerInputPressed(player, INJOY_SPELL_LIST)) )   //TODO: Move to function in interface or something?
+		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") )   //TODO: Move to function in interface or something?
 		{
-			*inputPressedForPlayer(player, impulses[IN_SPELL_LIST]) = 0;
-			inputs.controllerClearInput(player, INJOY_SPELL_LIST);
 			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
@@ -4166,6 +4108,7 @@ void ingameHud()
 		// player needs to be alive
 		if ( players[player]->isLocalPlayerAlive() )
 		{
+            const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
 			bool tryHotbarQuickCast = players[player]->hotbar.faceMenuQuickCast;
 			bool tryInventoryQuickCast = players[player]->magic.doQuickCastSpell();
@@ -4175,73 +4118,60 @@ void ingameHud()
 			}
 
 			players[player]->hotbar.faceMenuQuickCast = false;
-
 			bool allowCasting = false;
 			if ( tryInventoryQuickCast )
 			{
 				allowCasting = true;
 			}
-			else if (!command &&
-				(*inputPressedForPlayer(player, impulses[IN_CAST_SPELL])
-					|| (players[player]->shootmode
-						&& (inputs.bControllerInputPressed(player, INJOY_GAME_CAST_SPELL) || tryHotbarQuickCast))
-					|| (hasSpellbook && *inputPressedForPlayer(player, impulses[IN_DEFEND]))
-					|| (hasSpellbook && players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
-				)
+			else if (!command && shootmode)
 			{
-				allowCasting = true;
-				if ( *inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) || *inputPressedForPlayer(player, impulses[IN_DEFEND]) )
-				{
-					if ( ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
-						&& players[player]->gui_mode >= GUI_MODE_INVENTORY
-						&& (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player))
-						) )
-					{
-						allowCasting = false;
-					}
-				}
+			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")))
+			    {
+				    allowCasting = true;
+				    if (tryHotbarQuickCast == false) {
+				        if ((strcmp(input.binding("Cast Spell"), "Mouse3") == 0 || strcmp(input.binding("Block"), "Mouse3") == 0)
+					        && players[player]->gui_mode >= GUI_MODE_INVENTORY
+					        && (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player)))
+				        {
+					        allowCasting = false;
+				        }
+				    }
 
-				if ( (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || (inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND))) && hasSpellbook
-					&& players[player] && players[player]->entity )
-				{
-					if ( players[player]->entity->effectShapeshift != NOTHING )
-					{
-						if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
-						{
-							// imp allowed to cast via spellbook.
-						}
-						else
-						{
-							allowCasting = false;
-						}
-					}
+				    if ( input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
+				    {
+					    if ( players[player]->entity->effectShapeshift != NOTHING )
+					    {
+						    if ( players[player]->entity->effectShapeshift == CREATURE_IMP )
+						    {
+							    // imp allowed to cast via spellbook.
+						    }
+						    else
+						    {
+							    allowCasting = false;
+						    }
+					    }
 
-					if ( *inputPressedForPlayer(player, impulses[IN_DEFEND])
-						&& impulses[IN_DEFEND] == 285
-						&& inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
-					{
-						allowCasting = false;
-					}
-					else
-					{
-						if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
-						{
-							messagePlayer(player, language[3863]); // prevent casting of spell.
-							allowCasting = false;
-							*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
-							inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
-						}
-					}
+					    if ( input.binaryToggle("Block")
+						    && strcmp(input.binding("Block"), "Mouse3") == 0
+						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
+					    {
+						    allowCasting = false;
+					    }
+					    else
+					    {
+						    if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
+						    {
+							    messagePlayer(player, language[3863]); // prevent casting of spell.
+							    input.consumeBinaryToggle("Block");
+							    allowCasting = false;
+						    }
+					    }
+				    }
 				}
 			}
 
 			if ( allowCasting )
 			{
-				*inputPressedForPlayer(player, impulses[IN_CAST_SPELL]) = 0;
-				if ( players[player]->shootmode )
-				{
-					inputs.controllerClearInput(player, INJOY_GAME_CAST_SPELL);
-				}
 				if ( players[player] && players[player]->entity )
 				{
 					if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
@@ -4260,8 +4190,7 @@ void ingameHud()
 							{
 								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
 							}
-							else if ( hasSpellbook
-								&& (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+							else if ( hasSpellbook && input.consumeBinaryToggle("Block") )
 							{
 								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 							}
@@ -4281,7 +4210,7 @@ void ingameHud()
 						{
 							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
 						}
-						else if ( hasSpellbook && (*inputPressedForPlayer(player, impulses[IN_DEFEND]) || inputs.bControllerInputPressed(player, INJOY_GAME_DEFEND)) )
+						else if ( hasSpellbook && input.consumeBinaryToggle("Block") )
 						{
 							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 						}
@@ -4291,19 +4220,15 @@ void ingameHud()
 						}
 					}
 				}
-				*inputPressedForPlayer(player, impulses[IN_DEFEND]) = 0;
-				inputs.controllerClearInput(player, INJOY_GAME_DEFEND);
+				input.consumeBinaryToggle("Cast Spell");
+				input.consumeBinaryToggle("Block");
 			}
 		}
 		players[player]->magic.resetQuickCastSpell();
 
-		if ( !command && *inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG])
-			|| (players[player]->shootmode && inputs.bControllerInputPressed(player, INJOY_GAME_TOGGLECHATLOG)) )
+		if ( !command && input.consumeBinaryToggle("Open Log") )
 		{
-			hide_statusbar = !hide_statusbar;
-			*inputPressedForPlayer(player, impulses[IN_TOGGLECHATLOG]) = 0;
-			inputs.controllerClearInput(player, INJOY_GAME_TOGGLECHATLOG);
-			playSound(139, 64);
+			// TODO perhaps this should open the new chat log window.
 		}
 
 		bool worldUIBlocksFollowerCycle = (
@@ -4311,9 +4236,7 @@ void ingameHud()
 				&& players[player]->worldUI.bTooltipInView
 				&& players[player]->worldUI.tooltipsInRange.size() > 1);
 
-		if ( !command && (*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT])
-				|| (inputs.bControllerInputPressed(player, INJOY_GAME_FOLLOWERMENU_CYCLE)) )
-			)
+		if ( !command && input.consumeBinaryToggle("Cycle NPCs") )
 		{
 			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
@@ -4327,20 +4250,18 @@ void ingameHud()
 					// from now on, allies should be displayed all times
 					//players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 				}
-				*inputPressedForPlayer(player, impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
-				inputs.controllerClearInput(player, INJOY_GAME_FOLLOWERMENU_CYCLE);
 			}
 		}
 	}
 
-
 	// commands - uses local clientnum only
-	if ( (*inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND])) && !command )
+	Input& input = Input::inputs[clientnum];
+
+	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command )
 	{
-		*inputPressed(impulses[IN_CHAT]) = 0;
 		cursorflash = ticks;
 		command = true;
-		if ( !(*inputPressed(impulses[IN_COMMAND])) )
+		if ( !input.binaryToggle("Console Command") )
 		{
 			strcpy(command_str, "");
 		}
@@ -4349,7 +4270,12 @@ void ingameHud()
 			strcpy(command_str, "/");
 		}
 		inputstr = command_str;
-		*inputPressed(impulses[IN_COMMAND]) = 0;
+
+		input.consumeBinaryToggle("Chat");
+		input.consumeBinaryToggle("Console Command");
+		keystatus[SDL_SCANCODE_RETURN] = 0;
+		Input::keys[SDL_SCANCODE_RETURN] = 0;
+
 		SDL_StartTextInput();
 
 		// clear follower menu entities.
@@ -4361,7 +4287,7 @@ void ingameHud()
 			}
 		}
 	}
-	if ( command )
+	else if ( command )
 	{
 		int commandPlayer = clientnum;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -4384,11 +4310,14 @@ void ingameHud()
 		{
 			keystatus[SDL_SCANCODE_ESCAPE] = 0;
 			chosen_command = NULL;
-			command = 0;
+			command = false;
 		}
 		if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
 		{
-			keystatus[SDL_SCANCODE_RETURN] = 0;
+		    input.consumeBinaryToggle("Chat");
+		    input.consumeBinaryToggle("Console Command");
+		    keystatus[SDL_SCANCODE_RETURN] = 0;
+		    Input::keys[SDL_SCANCODE_RETURN] = 0;
 			command = false;
 
 			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
@@ -4541,7 +4470,7 @@ void ingameHud()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					SDL_SetRelativeMouseMode(SDL_TRUE);
+					SDL_SetRelativeMouseMode(EnableMouseCapture);
 				}
 			}
 
@@ -4987,6 +4916,8 @@ void ingameHud()
 
 					SDL_Rect glyphsrc{ 0, 0, 0, 0 };
 
+					//TODO @wallofjustice update these "glyph rect" things to use Input::inputs[]
+
 					if ( ticks % 50 < 25 )
 					{
 						int button = joyimpulses[INJOY_GAME_USE] - 301;
@@ -5085,6 +5016,8 @@ void ingameHud()
 
 					SDL_Rect glyphsrc{ 0, 0, 0, 0 };
 
+					//TODO @wallofjustice update these "glyph rect" things to use Input::inputs[]
+
 					if ( ticks % 50 < 25 )
 					{
 						int button = joyimpulses[INJOY_GAME_USE] - 301;
@@ -5148,6 +5081,8 @@ void ingameHud()
 							pos.w = pos.h;
 
 							SDL_Rect glyphsrc{ 0, 0, 0, 0 };
+
+					        //TODO @wallofjustice update these "glyph rect" things to use Input::inputs[]
 
 							if ( ticks % 50 < 25 )
 							{
@@ -5242,15 +5177,27 @@ int main(int argc, char** argv)
 #endif // NINTENDO
 
 #ifdef LINUX
-	//Catch segfault stuff.
 	struct sigaction sa;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = segfault_sigaction;
 	sa.sa_flags = SA_SIGINFO;
-
 	sigaction(SIGSEGV, &sa, NULL);
+
+	memset(&sa, 0, sizeof(struct sigaction));
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = stop_sigaction;
+	sa.sa_flags = SA_SIGINFO;
+	sigaction(SIGSTOP, &sa, NULL);
+
+	memset(&sa, 0, sizeof(struct sigaction));
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = continue_sigaction;
+	sa.sa_flags = SA_SIGINFO;
+	sigaction(SIGCONT, &sa, NULL);
+
+	(void)chdir(BASE_DATA_DIR); // fixes a lot of headaches...
 #endif
 
 #ifndef NINTENDO
@@ -5810,16 +5757,23 @@ int main(int argc, char** argv)
 						if ( !movie )
 						{
 							// only draw 1 cursor in the main menu
-							for ( int i = 0; i < 1; ++i )
+							if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
 							{
-								if ( inputs.getVirtualMouse(i)->draw_cursor )
+								auto cursor = Image::get("images/system/cursor_hand.png");
+								pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
+								pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+								pos.w = cursor->getWidth();
+								pos.h = cursor->getHeight();
+								cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+
+								if (MainMenu::cursor_delete_mode)
 								{
-									auto cursor = Image::get("images/system/cursor_hand.png");
-									pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
-									pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
-									pos.w = cursor->getWidth();
-									pos.h = cursor->getHeight();
-									cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+								    auto icon = Image::get("images/system/Broken.png");
+								    pos.x = pos.x + pos.w;
+								    pos.y = pos.y + pos.h;
+								    pos.w = icon->getWidth() * 2;
+								    pos.h = icon->getHeight() * 2;
+								    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 								}
 							}
 						}
@@ -5980,7 +5934,7 @@ int main(int argc, char** argv)
 						}
 					}
 
-					if (playercount >= 1) 
+					if (playercount >= 1)
 					{
 						//int maximum = splitscreen ? MAXPLAYERS : 1;
 						for (int c = 0; c < MAXPLAYERS; ++c)
@@ -5993,21 +5947,7 @@ int main(int argc, char** argv)
 							{
 								continue;
 							}
-							auto& camera = cameras[c];
-							if ( !splitscreen )
-							{
-								camera.winx = 0;
-								camera.winy = 0;
-								camera.winw = xres;
-								camera.winh = yres;
-							}
-							else
-							{
-								camera.winx = players[c]->camera().winx;
-								camera.winy = players[c]->camera().winy;
-								camera.winw = players[c]->camera().winw;
-								camera.winh = players[c]->camera().winh;
-							}
+							auto& camera = players[c]->camera();
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
 							{
 								camera.ang += cosspin * drunkextend;
@@ -6202,7 +6142,7 @@ int main(int argc, char** argv)
 						if ( subwindow )
 						{
 							drawWindowFancy(subx1, suby1, subx2, suby2);
-							if ( subtext[0] != NULL )
+							if ( subtext && subtext[0] != '\0')
 							{
 								if ( strncmp(subtext, language[1133], 12) )
 								{
@@ -6227,13 +6167,13 @@ int main(int argc, char** argv)
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !players[i]->isLocalPlayer() )
+					if ( !players[i]->isLocalPlayer() && !gamePaused )
 					{
 						continue;
 					}
-					if (((subwindow && !players[i]->shootmode) || gamePaused))
+					if ((subwindow && !players[i]->shootmode) || (gamePaused && i == clientnum))
 					{
-						if ( inputs.getVirtualMouse(i)->draw_cursor && (i == clientnum || !gamePaused) )
+						if (inputs.getVirtualMouse(i)->draw_cursor || (gamePaused && i == clientnum))
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
@@ -6243,20 +6183,7 @@ int main(int argc, char** argv)
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
-
-					if ( !players[i]->shootmode )
-					{
-						if ( *inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_RIGHT]) )
-						{
-							*inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_RIGHT]) = 0;
-						}
-						if ( *inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_LEFT]) )
-						{
-							*inputPressedForPlayer(i, impulses[IN_HOTBAR_SCROLL_LEFT]) = 0;
-						}
-					}
 				}
-
 			}
 
 			// fade in/out effect
@@ -6294,7 +6221,7 @@ int main(int argc, char** argv)
 			DebugTimers.printAllTimepoints();
 			DebugTimers.clearAllTimepoints();
 
-			printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
+			//printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
 			UIToastNotificationManager.drawNotifications(movie, false);
 
@@ -6327,9 +6254,11 @@ int main(int argc, char** argv)
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+			    Input& input = Input::inputs[i];
+
 				// selectedEntityGimpTimer will only allow the game to process a right click entity click 1-2 times
 				// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
-				if ( !(*inputPressedForPlayer(i, impulses[IN_USE])) && !(inputs.bControllerInputPressed(i, INJOY_GAME_USE)) )
+				if ( !input.binaryToggle("Use") )
 				{
 					players[i]->movement.selectedEntityGimpTimer = 0;
 				}
@@ -6337,14 +6266,7 @@ int main(int argc, char** argv)
 				{
 					if ( players[i]->movement.selectedEntityGimpTimer >= 2 )
 					{
-						if ( *inputPressedForPlayer(i, impulses[IN_USE]) )
-						{
-							*inputPressedForPlayer(i, impulses[IN_USE]) = 0;
-						}
-						if ( inputs.bControllerInputPressed(i, INJOY_GAME_USE) )
-						{
-							inputs.controllerClearInput(i, INJOY_GAME_USE);
-						}
+					    input.consumeBinaryToggle("Use");
 					}
 				}
 			}

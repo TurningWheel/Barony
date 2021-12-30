@@ -549,13 +549,17 @@ DIR* openDataDir(const char * const name) {
 }
 
 
-bool dataPathExists(const char * const path) {
+bool dataPathExists(const char * const path, bool complete) {
 #ifdef NINTENDO
 	return true;
 #endif
-	char full_path[PATH_MAX];
-	completePath(full_path, path);
-	return access(full_path, F_OK) != -1;
+    if (complete) {
+	    char full_path[PATH_MAX];
+	    completePath(full_path, path);
+	    return access(full_path, F_OK) != -1;
+    } else {
+        return access(path, F_OK) != -1;
+    }
 }
 
 void openLogFile() {

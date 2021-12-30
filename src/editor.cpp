@@ -19,7 +19,9 @@
 #include "files.hpp"
 #include "init.hpp"
 #include <sys/stat.h>
+#ifndef EDITOR
 #define EDITOR
+#endif
 
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
@@ -2663,7 +2665,7 @@ int main(int argc, char** argv)
 			if ( subwindow )
 			{
 				drawWindowFancy(subx1, suby1, subx2, suby2);
-				if ( subtext[0] != NULL )
+				if ( subtext && subtext[0] != '\0' )
 				{
 					printText(font8x8_bmp, subx1 + 8, suby1 + 8, subtext);
 				}
