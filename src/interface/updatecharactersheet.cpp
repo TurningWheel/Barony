@@ -1508,7 +1508,7 @@ void drawPartySheet(const int player)
 						}
 
 						if ( stats[player] && stats[player]->HP > 0 && !players[player]->shootmode
-							&& (inputs.bMouseLeft(player) || Input::inputs[player].consumeBinaryToggle("Use")) )
+							&& (inputs.bMouseLeft(player) || Input::inputs[player].binaryToggle("Use")) )
 						{
 							bool inBounds = mouseInBounds(player, monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
 								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);

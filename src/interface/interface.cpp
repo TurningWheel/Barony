@@ -1973,13 +1973,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
-			if ( input.consumeBinaryToggle("Command NPC") )
+			if ( input.binaryToggle("Command NPC") )
 			{
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
 					initfollowerMenuGUICursor(false);
 				}
+				input.consumeBinaryToggle("Command NPC");
 			}
 
 			if ( optionSelected != -1 )

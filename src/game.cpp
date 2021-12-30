@@ -6183,6 +6183,10 @@ int main(int argc, char** argv)
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
+
+					// to make sure scroll wheel gets cleared, as it never un-sets itself
+					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Left"); 
+					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Right");
 				}
 			}
 
