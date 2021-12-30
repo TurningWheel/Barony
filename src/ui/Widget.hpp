@@ -49,7 +49,6 @@ public:
 
     void	setName(const char* _name) { name = _name; }
     void	setPressed(bool _pressed) { reallyPressed = pressed = _pressed; }
-    void    setSelected(bool _selected) { selected = _selected; }
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }
@@ -105,12 +104,17 @@ public:
     //! @param widget the widget to adopt
     void adoptWidget(Widget& widget);
 
+    enum class SearchType {
+        DEPTH_FIRST,
+        BREADTH_FIRST
+    };
+
     //! find a widget amongst our children
     //! @param name the name of the widget to find
     //! @param recursive true to search recursively or not
     //! @return the widget found, or nullptr if it was not found
-    Widget* findWidget(const char* name, bool recursive);
-    const Widget* findWidget(const char* name, bool recursive) const;
+    Widget* findWidget(const char* name, bool recursive, SearchType searchType = SearchType::BREADTH_FIRST);
+    const Widget* findWidget(const char* name, bool recursive, SearchType searchType = SearchType::BREADTH_FIRST) const;
 
     //! build a list of all the selected widgets amongst our children
     //! @param outResult a list containing all the selected widgets
@@ -124,6 +128,11 @@ public:
     //! @param owner the player who owns the widget
     //! @return the selected widget or nullptr if it could not be found
     Widget* findSelectedWidget(int owner);
+
+    //! find search parent
+    //! @return the search parent, if any
+    Frame* findSearchRoot();
+    const Frame* findSearchRoot() const;
 
 protected:
     Widget* parent = nullptr;                                       //!< parent widget
@@ -152,8 +161,7 @@ protected:
         widgetMovements;                            //!< widgets to select when input is pressed
     std::string widgetSearchParent;                 //!< widget to search from for actions and movements
 
-    Frame* findSearchRoot();
-    const Frame* findSearchRoot() const;
-
-    void drawPost(const SDL_Rect size, const std::vector<const Widget*>& selectedWidgets) const;
+    void drawPost(const SDL_Rect size,
+        const std::vector<const Widget*>& selectedWidgets,
+        const std::vector<const Widget*>& searchParents) const;
 };

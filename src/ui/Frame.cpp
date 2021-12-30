@@ -217,9 +217,13 @@ void Frame::draw() const {
 	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	auto _actualSize = allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h};
 	std::vector<const Widget*> selectedWidgets;
+	std::vector<const Widget*> searchParents;
 	findSelectedWidgets(selectedWidgets);
+	for (auto widget : selectedWidgets) {
+	    searchParents.push_back(widget->findSearchRoot());
+	}
 	Frame::draw(size, _actualSize, selectedWidgets);
-	Frame::drawPost(size, _actualSize, selectedWidgets);
+	Frame::drawPost(size, _actualSize, selectedWidgets, searchParents);
     framebuffer::unbind();
 
     gui4x_fb.bindForWriting();
@@ -236,7 +240,9 @@ void Frame::draw() const {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void Frame::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+void Frame::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
+    const std::vector<const Widget*>& selectedWidgets,
+    const std::vector<const Widget*>& searchParents) const {
 	if (disabled || invisible)
 		return;
 
@@ -267,19 +273,19 @@ void Frame::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<con
 	}
 
 	for (auto field : fields) {
-		field->drawPost(_size, scroll, selectedWidgets);
+		field->drawPost(_size, scroll, selectedWidgets, searchParents);
 	}
 	for (auto button : buttons) {
-		button->drawPost(_size, scroll, selectedWidgets);
+		button->drawPost(_size, scroll, selectedWidgets, searchParents);
 	}
 	for (auto slider : sliders) {
-		slider->drawPost(_size, scroll, selectedWidgets);
+		slider->drawPost(_size, scroll, selectedWidgets, searchParents);
 	}
 	for ( auto frame : frames ) {
-		frame->drawPost(_size, scroll, selectedWidgets);
+		frame->drawPost(_size, scroll, selectedWidgets, searchParents);
 	}
 
-	Widget::drawPost(_size, selectedWidgets);
+	Widget::drawPost(_size, selectedWidgets, searchParents);
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
@@ -1189,6 +1195,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 }
 
 void Frame::postprocess() {
+    //return; // Why is this function slow as balls
 	Widget::process();
 
 	// TODO: which player owns the mouse

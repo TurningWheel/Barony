@@ -1589,7 +1589,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
 	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
 	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
 	for ( c = 0; c < map.width * map.height; c++ )
@@ -2374,7 +2373,6 @@ int main(int argc, char** argv)
 					entity->x += 8;
 					entity->y += 8;
 				}
-				raycast(&camera, REALCOLORS);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);

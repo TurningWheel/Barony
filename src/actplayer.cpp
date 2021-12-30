@@ -4234,7 +4234,9 @@ void actPlayer(Entity* my)
 							// we're selecting a point for the ally to move to.
 							input.consumeBinaryToggle("Use");
 
-							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+							// TODO use the new minimap code for this in GameUI.cpp
+							// we're selecting a point for the ally to move to.
+							int minimapTotalScale = minimapScale;
 							if ( map.height > 64 || map.width > 64 )
 							{
 								int maxDimension = std::max(map.height, map.width);
@@ -4245,7 +4247,7 @@ void actPlayer(Entity* my)
 									maxDimension -= 32;
 									++numMinimapSizesToReduce;
 								}
-								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
 							}
 							if ( !shootmode && mouseInBounds(PLAYER_NUM, minimaps[PLAYER_NUM].x, minimaps[PLAYER_NUM].x + minimaps[PLAYER_NUM].w,
 								yres - minimaps[PLAYER_NUM].y - minimaps[PLAYER_NUM].h, yres - minimaps[PLAYER_NUM].y) ) // mouse within minimap pixels (each map tile is 4 pixels)

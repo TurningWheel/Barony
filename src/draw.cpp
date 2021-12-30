@@ -1188,7 +1188,7 @@ void drawForeground(long camx, long camy)
 
 	drawClearBuffers
 
-	clears the screen and resets zbuffer and vismap
+	clears the screen and resets zbuffer
 
 -------------------------------------------------------------------------------*/
 
@@ -1203,14 +1203,6 @@ void drawClearBuffers()
 	{
 		memset( clickmap, 0, xres * yres * sizeof(Entity*) );
 	}
-	if ( vismap != NULL )
-	{
-		int c, i = map.width * map.height;
-		for ( c = 0; c < i; c++ )
-		{
-			vismap[c] = false;
-		}
-	}
 
 	// clear the screen
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1222,11 +1214,11 @@ void drawClearBuffers()
 	raycast
 
 	Performs raycasting from the given camera's position through the
-	environment to update minimap and vismap
+	environment to update minimap
 
 -------------------------------------------------------------------------------*/
 
-void raycast(view_t* camera, int mode, bool updateVismap)
+void raycast(view_t* camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 {
 	long posx, posy;
 	real_t fracx, fracy;
@@ -1254,11 +1246,16 @@ void raycast(view_t* camera, int mode, bool updateVismap)
 	rx = cos(camera->ang - wfov / 2.f);
 	ry = sin(camera->ang - wfov / 2.f);
 
-	if ( updateVismap && posx >= 0 && posy >= 0 && posx < map.width && posy < map.height )
-	{
-		vismap[posy + posx * map.height] = true;
-	}
-	for ( sx = 0; sx < camera->winw; sx++ )   // for every column of the screen
+	// originally we cast a ray for every column of pixels in the
+	// camera viewport. now we just shoot out 300 rays to save time.
+	// this makes this function less accurate at distance, but right
+	// now it's good enough!
+	static const int NUMRAYS = 300;
+
+	// TODO replace this with a simple line algorithm that performs
+	// a basic line check from the camera origin through every tile.
+
+	for ( sx = 0; sx < NUMRAYS; sx++ )
 	{
 		inx = posx;
 		iny = posy;
@@ -1330,10 +1327,6 @@ void raycast(view_t* camera, int mode, bool updateVismap)
 
 			if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
 			{
-				if ( updateVismap )
-				{
-					vismap[iny + inx * map.height] = true;
-				}
 				for ( z = 0; z < MAPLAYERS; z++ )
 				{
 					zhit[z] = false;
@@ -1356,14 +1349,15 @@ void raycast(view_t* camera, int mode, bool updateVismap)
 						}
 
 						// update minimap
-						if ( mode == REALCOLORS )
-							if ( d < 16 && z == OBSTACLELAYER )
-								if ( light > 0 )
-								{
-									minimap[iny][inx] = 2;  // wall space
-								}
+						if ( d < 16 && z == OBSTACLELAYER )
+						{
+							if ( light > 0 )
+							{
+								minimap[iny][inx] = 2;  // wall space
+							}
+						}
 					}
-					else if ( z == OBSTACLELAYER && mode == REALCOLORS )
+					else if ( z == OBSTACLELAYER )
 					{
 						// update minimap to show empty region
 						if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
@@ -1389,10 +1383,12 @@ void raycast(view_t* camera, int mode, bool updateVismap)
 				}
 				wallhit = true;
 				for ( z = 0; z < MAPLAYERS; z++ )
+				{
 					if ( zhit[z] == false )
 					{
 						wallhit = false;
 					}
+				}
 				if ( wallhit == true )
 				{
 					break;
@@ -1402,8 +1398,8 @@ void raycast(view_t* camera, int mode, bool updateVismap)
 		while (d < dend);
 
 		// new ray vector for next column
-		rx = cos(camera->ang - wfov / 2.f + (wfov / camera->winw) * sx);
-		ry = sin(camera->ang - wfov / 2.f + (wfov / camera->winw) * sx);
+		rx = cos(camera->ang - wfov / 2.f + (wfov / NUMRAYS) * sx);
+		ry = sin(camera->ang - wfov / 2.f + (wfov / NUMRAYS) * sx);
 	}
 }
 
@@ -1420,6 +1416,15 @@ void drawEntities3D(view_t* camera, int mode)
 	node_t* node;
 	Entity* entity;
 	long x, y;
+
+	static bool draw_ents = true;
+	if (keystatus[SDL_SCANCODE_P] && !command && enableDebugKeys) {
+	    keystatus[SDL_SCANCODE_P] = 0;
+	    draw_ents = (draw_ents==false);
+	}
+	if (!draw_ents) {
+	    return;
+	}
 
 	if ( map.entities->first == nullptr )
 	{
@@ -1459,6 +1464,15 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 
+        if ( !entity->flags[OVERDRAW] )
+        {
+            const real_t rx = entity->x / 16.0;
+            const real_t ry = entity->y / 16.0;
+	        if ( behindCamera(*camera, rx, ry) )
+	        {
+	            continue;
+	        }
+	    }
 		if ( entity->flags[INVISIBLE] )
 		{
 			continue;
@@ -1509,31 +1523,37 @@ void drawEntities3D(view_t* camera, int mode)
 		y = entity->y / 16;
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 		{
-			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
+			if ( entity->flags[SPRITE] == false )
 			{
-				if ( entity->flags[SPRITE] == false )
+				glDrawVoxel(camera, entity, mode);
+			}
+			else
+			{
+				if ( entity->behavior == &actSpriteNametag )
 				{
-					glDrawVoxel(camera, entity, mode);
-				}
-				else
-				{
-					if ( entity->behavior == &actSpriteNametag )
-					{
-						int playersTag = playerEntityMatchesUid(entity->parent);
-						if ( playersTag >= 0 )
-						{
-							real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-								+ pow(camera->y * 16.0 - entity->y, 2));
-							spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-						}
-					}
-					else if ( entity->behavior == &actSpriteWorldTooltip )
+					int playersTag = playerEntityMatchesUid(entity->parent);
+					if ( playersTag >= 0 )
 					{
 						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
 							+ pow(camera->y * 16.0 - entity->y, 2));
 						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 					}
-					else if ( entity->behavior == &actDamageGib )
+				}
+				else if ( entity->behavior == &actSpriteWorldTooltip )
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
+				else if ( entity->behavior == &actDamageGib )
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
+				else
+				{
+					if ( !entity->flags[OVERDRAW] )
 					{
 						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
 							+ pow(camera->y * 16.0 - entity->y, 2));
@@ -1541,16 +1561,7 @@ void drawEntities3D(view_t* camera, int mode)
 					}
 					else
 					{
-						if ( !entity->flags[OVERDRAW] )
-						{
-							real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-								+ pow(camera->y * 16.0 - entity->y, 2));
-							spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-						}
-						else
-						{
-							glDrawSprite(camera, entity, mode);
-						}
+						glDrawSprite(camera, entity, mode);
 					}
 				}
 			}
@@ -2918,4 +2929,28 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 
 Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 	return SDL_MapRGBA(mainsurface->format, r, g, b, a);
+}
+
+bool behindCamera(const view_t& camera, real_t x, real_t y)
+{
+    const real_t dx = x - camera.x;
+    const real_t dy = y - camera.y;
+    const real_t len = sqrt(dx*dx + dy*dy);
+    if (len < 4) {
+        return false;
+    }
+    const real_t alen = 1.0 / len;
+
+    const real_t v0x = cos(camera.ang);
+    const real_t v0y = sin(camera.ang);
+    const real_t v1x = dx * alen;
+    const real_t v1y = dy * alen;
+
+    const real_t dot = v0x * v1x + v0y * v1y;
+
+    const real_t aspect = (real_t)camera.winw / (real_t)camera.winh;
+    const real_t wfov = ((real_t)(fov + 15.0) * aspect) * PI / 180.0;
+    const real_t c = cos(wfov * 0.5);
+
+    return dot < c;
 }

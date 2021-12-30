@@ -37,7 +37,7 @@ void drawLayer(long camx, long camy, int z, map_t* map);
 void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
 void drawClearBuffers();
-void raycast(view_t* camera, int mode, bool updateVismap = true);
+void raycast(view_t* camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION]);
 void drawFloors(view_t* camera);
 void drawSky(SDL_Surface* srfc);
 void drawVoxel(view_t* camera, Entity* entity);
@@ -63,6 +63,7 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor = 0);
 Uint32 getPixel(SDL_Surface* surface, int x, int y);
 void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel);
 Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+bool behindCamera(const view_t& camera, real_t x, real_t y);
 
 class TempTexture {
 public:

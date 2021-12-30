@@ -1725,7 +1725,8 @@ void drawStatus(int player)
 		}
 
 		// minimap pinging.
-		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+		// TODO use the new minimap code for this in GameUI.cpp
+		int minimapTotalScale = minimapScale;
 		if ( map.height > 64 || map.width > 64 )
 		{
 			int maxDimension = std::max(map.height, map.width);
@@ -1736,7 +1737,7 @@ void drawStatus(int player)
 				maxDimension -= 32;
 				++numMinimapSizesToReduce;
 			}
-			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
 		}
 		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w, 
 			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
@@ -3242,7 +3243,7 @@ void drawStatusNew(const int player)
 		}
 
 		// minimap pinging.
-		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+		int minimapTotalScale = minimapScale;
 		if ( map.height > 64 || map.width > 64 )
 		{
 			int maxDimension = std::max(map.height, map.width);
@@ -3253,7 +3254,7 @@ void drawStatusNew(const int player)
 				maxDimension -= 32;
 				++numMinimapSizesToReduce;
 			}
-			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
 		}
 		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w,
 			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)

@@ -311,7 +311,9 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	}
 }
 
-void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
+void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
+    const std::vector<const Widget*>& selectedWidgets,
+    const std::vector<const Widget*>& searchParents) const {
 	if (invisible) {
 		return;
 	}
@@ -323,7 +325,7 @@ void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<con
 	if (rect.w <= 0 || rect.h <= 0) {
 		return;
 	}
-	Widget::drawPost(rect, selectedWidgets);
+	Widget::drawPost(rect, selectedWidgets, searchParents);
 }
 
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {

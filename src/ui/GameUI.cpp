@@ -719,7 +719,7 @@ void Player::HUD_t::updateUINavigation()
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE )
 	{
-		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || keystatus[SDL_SCANCODE_Y] )
+		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
 		}
@@ -1160,6 +1160,8 @@ void Player::HUD_t::updateActionPrompts()
 	}
 }
 
+static Frame* createMinimap(int player);
+
 void Player::HUD_t::processHUD()
 {
 	char name[32];
@@ -1186,6 +1188,10 @@ void Player::HUD_t::processHUD()
 		hudFrame->setDisabled(false);
 	}
 
+    if ( !minimapFrame )
+    {
+        minimapFrame = createMinimap(player.playernum);
+    }
 	if ( !xpFrame )
 	{
 		createXPBar(player.playernum);
@@ -1410,6 +1416,85 @@ void Player::MessageZone_t::processChatbox()
 	}*/
 }
 
+static Frame* createMinimap(int player) {
+    std::string name = "minimap";
+    name.append(std::to_string(player));
+    auto& minimap = players[player]->minimap;
+    minimap.real_scale = minimapScale;
+    minimap.scale = minimapScale;
+    Frame* parent = players[player]->hud.hudFrame;
+    Frame* window = parent->addFrame(name.c_str());
+    window->setSize(SDL_Rect{0, 0, 0, 0});
+    window->setColor(0);
+    window->setOwner(player);
+
+    window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+        drawMinimap(widget.getOwner(), rect);
+        });
+
+    window->setTickCallback([](Widget& widget){
+        auto player = widget.getOwner();
+        auto& minimap = players[player]->minimap;
+        auto& input = Input::inputs[player];
+        if (input.consumeBinaryToggle("Minimap Scale")) {
+            if (minimap.real_scale > 75) {
+                minimap.real_scale = 75;
+            }
+            else if (minimap.real_scale > 50) {
+                minimap.real_scale = 50;
+            }
+            else if (minimap.real_scale > 25) {
+                minimap.real_scale = 25;
+            }
+            else {
+                minimap.real_scale = 100;
+            }
+        }
+
+        auto& scale_ang = minimap.scale_ang;
+        auto& scale = minimap.scale;
+        if (minimap.big) {
+            if (scale_ang < PI / 2.0) {
+                scale_ang += (PI / fpsLimit) * 2.0;
+                if (scale_ang > PI / 2.0) {
+                    scale_ang = PI / 2.0;
+                }
+            }
+        } else {
+            if (scale_ang > 0.0) {
+                scale_ang -= (PI / fpsLimit) * 2.0;
+                if (scale_ang < 0.0) {
+                    scale_ang = 0.0;
+                }
+            }
+        }
+
+        real_t factor0 = 1.0 - sin(scale_ang);
+        real_t factor1 = sin(scale_ang);
+
+        scale = factor0 * 50 + factor1 * minimap.real_scale;
+
+        Frame* parent = players[player]->hud.hudFrame;
+
+        int x = factor0 * (parent->getSize().w - scale * 4) +
+            factor1 * (parent->getSize().w - scale * 4) / 2;
+        int y = factor0 * (parent->getSize().h - scale * 4) +
+            factor1 * (parent->getSize().h - scale * 4) / 2;
+
+        auto frame = static_cast<Frame*>(&widget);
+        frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});
+        });
+
+    return window;
+}
+
+void openMinimap(int player) {
+    Frame* minimap = players[player]->hud.minimapFrame;
+    if (minimap) {
+        players[player]->minimap.big = (players[player]->minimap.big==false);
+    }
+}
+
 std::map<std::string, std::pair<std::string, std::string>> Player::CharacterSheet_t::mapDisplayNamesDescriptions;
 std::string Player::CharacterSheet_t::defaultString = "";
 std::map<std::string, std::string> Player::CharacterSheet_t::hoverTextStrings;
@@ -1571,7 +1656,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
-				messagePlayer(button.getOwner(), "%d: Map button clicked", button.getOwner());
+			    openMinimap(button.getOwner());
 			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
@@ -2432,7 +2517,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	}
 
 	bool bCompactView = false;
-	if ( keystatus[SDL_SCANCODE_U] || player.bUseCompactGUIHeight() )
+	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIHeight() )
 	{
 		bCompactView = true;
 	}
@@ -7766,23 +7851,7 @@ void createIngameHud(int player) {
 }
 
 void newIngameHud() {
-    if (!nohud) {
-        // here is where splitscreen
-        if (!players[clientnum]->hud.hudFrame) {
-            createIngameHud(clientnum);
-        }
-
-        // original minimap already works fine, so just reuse it
-        if (multiplayer == SINGLE) {
-            for (int c = 0; c < MAXPLAYERS; ++c) {
-                if (!client_disconnected[c]) {
-                    drawMinimap(c);
-                }
-            }
-        } else {
-            drawMinimap(0);
-        }
-    }
+    // Deprecated
 }
 
 void createPlayerInventorySlotFrameElements(Frame* slotFrame)
@@ -11449,7 +11518,7 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -12619,7 +12688,7 @@ void Player::HUD_t::updateHPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -12798,7 +12867,7 @@ void Player::HUD_t::updateMPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || keystatus[SDL_SCANCODE_T] )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -12964,7 +13033,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool bCompactView = false;
-	if ( keystatus[SDL_SCANCODE_U] || player.bUseCompactGUIWidth() )
+	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}
