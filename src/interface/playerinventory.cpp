@@ -2215,6 +2215,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		{
 			tooltipType = "tooltip_default";
 		}
+		else if ( !item->identified )
+		{
+			tooltipType = "tooltip_unidentified";
+		}
 		auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
 		int textx = 0;
@@ -2280,7 +2284,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 		else
 		{
-			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			if ( !item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			}
 		}
 		txtHeader->setText(buf);
 		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
@@ -3518,10 +3529,24 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			SDL_Rect framePromptPos = frameValuesPos;
 			framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 			framePromptPos.h = imgBottomBackground->pos.h;
-			totalHeight += framePromptPos.h;
 
-			txtPrompt->setText("View item details");
-			txtPrompt->setSize(SDL_Rect{ 0, 0, framePromptPos.w, framePromptPos.h });
+			if ( !item->identified )
+			{
+				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
+				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
+				imgBottomBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_BR01_NoPrompt.png";
+				txtPrompt->setDisabled(true);
+				totalHeight += 4;
+			}
+			else
+			{
+				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00.png";
+				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01.png";
+				imgBottomBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_BR01.png";
+				totalHeight += framePromptPos.h;
+				txtPrompt->setDisabled(false);
+			}
+			txtPrompt->setSize(SDL_Rect{ 0, 1, framePromptPos.w, framePromptPos.h });
 
 			framePrompt->setSize(framePromptPos);
 		}
@@ -3550,11 +3575,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		framePrompt->setSize(framePromptPos);
 		if ( tooltipDisplayedSettings.expanded )
 		{
-			txtPrompt->setText("Hide item details");
+			txtPrompt->setText(language[4086]); // show item details
 		}
 		else
 		{
-			txtPrompt->setText("View item details");
+			txtPrompt->setText(language[4087]); // view item details
 		}
 
 		// get left anchor for tooltip - if we want moving x tooltips, otherwise currently anchor to right of inventory panel

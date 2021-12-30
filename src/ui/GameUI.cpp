@@ -4825,6 +4825,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		AttackHoverText_t attackHoverTextInfo;
 		Sint32 attackPower = displayAttackPower(player.playernum, attackHoverTextInfo);
 
+#ifndef NDEBUG
 		if ( keystatus[SDL_SCANCODE_V] )
 		{
 			keystatus[SDL_SCANCODE_V] = 0;
@@ -4839,6 +4840,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			stats[player.playernum]->playerRace = RACE_INSECTOID;
 			stats[player.playernum]->appearance = 0;
 		}
+#endif // !NDEBUG
 
 		bool isAutomatonHTRegen = stats[player.playernum]->type == AUTOMATON;
 		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0);
@@ -8436,7 +8438,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
-		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
 	}
 
