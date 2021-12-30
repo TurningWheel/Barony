@@ -3980,9 +3980,11 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 
 	auto backpackFrame = frame->findFrame("inventory backpack");
 	backpackFrame->setDisabled(true);
+	backpackSlotsFrame->setDisabled(true);
 	if ( getSizeY() > DEFAULT_INVENTORY_SIZEY )
 	{
 		backpackFrame->setDisabled(false);
+		backpackSlotsFrame->setDisabled(false);
 	}
 	auto backpackFramePos = backpackFrame->getSize();
 	if ( bCompactView )
@@ -4408,6 +4410,11 @@ void Player::Inventory_t::updateInventory()
 				if ( isSpell 
 					&& (!spellPanel.isSlotVisible(x, y)) )
 				{
+					continue;
+				}
+				if ( !isSpell && y >= DEFAULT_INVENTORY_SIZEY && (getSizeY() <= DEFAULT_INVENTORY_SIZEY) )
+				{
+					// backpack slots but invisible, skip em.
 					continue;
 				}
 				if ( itemCategory(selectedItem) == SPELL_CAT && players[player]->inventory_mode == INVENTORY_MODE_ITEM )
