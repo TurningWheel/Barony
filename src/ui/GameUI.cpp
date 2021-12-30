@@ -1450,27 +1450,31 @@ static Frame* createMinimap(int player) {
         auto& scale = minimap.scale;
         if (minimap.big) {
             if (scale_ang < PI / 2.0) {
-                scale_ang += PI / fpsLimit;
+                scale_ang += (PI / fpsLimit) * 2.0;
                 if (scale_ang > PI / 2.0) {
                     scale_ang = PI / 2.0;
                 }
             }
         } else {
             if (scale_ang > 0.0) {
-                scale_ang -= PI / fpsLimit;
+                scale_ang -= (PI / fpsLimit) * 2.0;
                 if (scale_ang < 0.0) {
                     scale_ang = 0.0;
                 }
             }
         }
-        scale = (1.0 - sin(scale_ang)) * 50 + sin(scale_ang) * minimap.real_scale;
+
+        real_t factor0 = 1.0 - sin(scale_ang);
+        real_t factor1 = sin(scale_ang);
+
+        scale = factor0 * 50 + factor1 * minimap.real_scale;
 
         Frame* parent = players[player]->hud.hudFrame;
 
-        int x = (1.0 - sin(scale_ang)) * (parent->getSize().w - scale * 4) +
-            sin(scale_ang) * (parent->getSize().w - scale * 4) / 2;
-        int y = (1.0 - sin(scale_ang)) * (parent->getSize().h - scale * 4) +
-            sin(scale_ang) * (parent->getSize().h - scale * 4) / 2;
+        int x = factor0 * (parent->getSize().w - scale * 4) +
+            factor1 * (parent->getSize().w - scale * 4) / 2;
+        int y = factor0 * (parent->getSize().h - scale * 4) +
+            factor1 * (parent->getSize().h - scale * 4) / 2;
 
         auto frame = static_cast<Frame*>(&widget);
         frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});

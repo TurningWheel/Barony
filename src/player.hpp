@@ -1463,7 +1463,7 @@ public:
 	class WorldUI_t
 	{
 		Player& player;
-		bool bEnabled = false;
+		bool bEnabled = true;
 		static const int UID_TOOLTIP_ACTIVE = -21;
 		static const int UID_TOOLTIP_DISABLED = -20;
 		enum TooltipView

@@ -34,33 +34,35 @@ namespace MainMenu {
 	// The second is the default Keyboard input.
     // The third is the default Gamepad input.
     // The fourth is the default Joystick input.
+    static const char* emptyBinding = "[unbound]";
 	static const char* defaultBindings[][4] = {
-		{"Move Forward", "W", "StickLeftY-", ""},
-		{"Move Left", "A", "StickLeftX-", ""},
-		{"Move Backward", "S", "StickLeftY+", ""},
-		{"Move Right", "D", "StickLeftX+", ""},
-		{"Turn Left", "Left", "StickRightX-", ""},
-		{"Turn Right", "Right", "StickRightX+", ""},
-		{"Look Up", "Up", "StickRightY-", ""},
-		{"Look Down", "Down", "StickRightY+", ""},
-		{"Chat", "Return", "", ""},
-		{"Console Command", "/", "", ""},
-		{"Character Status", "Tab", "ButtonSelect", ""},
-		{"Spell List", "M", "", ""},
-		{"Cast Spell", "F", "ButtonRightBumper", ""},
-		{"Block", "Space", "LeftTrigger", ""},
-		{"Sneak", "Left Shift", "LeftBumper", ""},
-		{"Attack", "Mouse1", "RightTrigger", ""},
-		{"Use", "Mouse3", "ButtonA", ""},
-		{"Autosort Inventory", "Y", "", ""},
-		{"Command NPC", "C", "DpadY-", ""},
-		{"Show NPC Commands", "X", "DpadX+", ""},
-		{"Cycle NPCs", "Z", "DpadX-", ""},
-		{"Minimap Scale", "=", "", ""},
-		{"Toggle Minimap", "`", "", ""},
-		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", ""},
-		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", ""},
-		{"Hotbar Select", "Mouse2", "ButtonY", ""},
+		{"Move Forward", "W", "StickLeftY-", emptyBinding},
+		{"Move Left", "A", "StickLeftX-", emptyBinding},
+		{"Move Backward", "S", "StickLeftY+", emptyBinding},
+		{"Move Right", "D", "StickLeftX+", emptyBinding},
+		{"Turn Left", "Left", "StickRightX-", emptyBinding},
+		{"Turn Right", "Right", "StickRightX+", emptyBinding},
+		{"Look Up", "Up", "StickRightY-", emptyBinding},
+		{"Look Down", "Down", "StickRightY+", emptyBinding},
+		{"Chat", "Return", emptyBinding, emptyBinding},
+		{"Console Command", "/", emptyBinding, emptyBinding},
+		{"Character Status", "Tab", "ButtonSelect", emptyBinding},
+		{"Spell List", "M", emptyBinding, emptyBinding},
+		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
+		{"Block", "Space", "LeftTrigger", emptyBinding},
+		{"Sneak", "Left Shift", "LeftBumper", emptyBinding},
+		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
+		{"Use", "Mouse3", "ButtonA", emptyBinding},
+		{"Autosort Inventory", "Y", emptyBinding, emptyBinding},
+		{"Command NPC", "C", "DpadY-", emptyBinding},
+		{"Show NPC Commands", "X", "DpadX+", emptyBinding},
+		{"Cycle NPCs", "Z", "DpadX-", emptyBinding},
+		{"Minimap Scale", "=", emptyBinding, emptyBinding},
+		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
+		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", emptyBinding},
+		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", emptyBinding},
+		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
+		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
@@ -2003,7 +2005,7 @@ namespace MainMenu {
 		if (find != bindings.end()) {
 			button->setText(find->second.c_str());
 		} else {
-			button->setText("[unbound]");
+			button->setText(emptyBinding);
 		}
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
@@ -2934,7 +2936,7 @@ namespace MainMenu {
 						tooltip->setText(buf);
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
-						bound_button->setText("[unbound]");
+						bound_button->setText(emptyBinding);
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
 						tooltip->setText(buf);

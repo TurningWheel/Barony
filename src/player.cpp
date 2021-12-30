@@ -2446,7 +2446,7 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK) )
+		if ( Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{
@@ -2456,7 +2456,6 @@ void Player::WorldUI_t::handleTooltips()
 			{
 				players[player]->worldUI.enable();
 			}
-			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK);
 		}
 
 		if ( !players[player]->worldUI.bEnabled )
