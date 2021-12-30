@@ -4711,17 +4711,20 @@ void ingameHud()
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 						}
 					}
+#ifndef NDEBUG
 					// debug for controllers
 					auto cursor = Image::get("images/system/cursor_hand.png");
 					if ( keystatus[SDL_SCANCODE_J] )
 					{
 						cursor = Image::get("images/system/cursor.png");
 					}
+
 					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
 					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
 					pos.w = cursor->getWidth();
 					pos.h = cursor->getHeight();
 					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
+#endif // !NDEBUG
 				}
 				else
 				{
@@ -4843,6 +4846,7 @@ void ingameHud()
 			}
 			else
 			{
+#ifndef NDEBUG
 				// debug for controllers
 				auto cursor = Image::get("images/system/cursor_hand.png");
 				if ( keystatus[SDL_SCANCODE_J] )
@@ -4854,6 +4858,7 @@ void ingameHud()
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
+#endif
 			}
 		}
 		else if ( !nohud )
