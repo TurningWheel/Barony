@@ -2043,7 +2043,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 				output.totalAttack = attack;
 				output.proficiencyBonus = (stats[player]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
 				output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
-				output.equipmentAndEffectBonus = attack - entity->getSTR() - BASE_PLAYER_UNARMED_DAMAGE - output.proficiencyBonus; // bonus from equipment
+				output.equipmentAndEffectBonus = attack - statGetSTR(stats[player], entity) - BASE_PLAYER_UNARMED_DAMAGE - output.proficiencyBonus; // bonus from equipment
 
 				// get damage variances.
 				Sint32 variance = (attack / 2) * (100 - stats[player]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
@@ -2143,7 +2143,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 								stats[player]->DEX = oldDEX;
 
 								stats[player]->PROFICIENCIES[PRO_RANGED] = 0;
-								output.proficiencyBonus = output.totalAttack - entity->getThrownAttack();
+								output.proficiencyBonus = output.totalAttack - (entity ? entity->getThrownAttack() : 0);
 								stats[player]->PROFICIENCIES[PRO_RANGED] = skillLVL;
 							}
 							else
@@ -2156,7 +2156,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 								stats[player]->DEX -= oldDEX;
 								if ( entity )
 								{
-									output.mainAttributeBonus = (output.totalAttack - entity->getThrownAttack());
+									output.mainAttributeBonus = (output.totalAttack - (entity ? entity->getThrownAttack() : 0));
 								}
 								output.proficiencyBonus = skillLVL / 10;
 								stats[player]->DEX = oldDEX;
@@ -2170,7 +2170,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 							// bonus from proficiency
 							Sint32 oldAlchemy = stats[player]->PROFICIENCIES[PRO_ALCHEMY];
 							stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 0;
-							output.proficiencyBonus = output.totalAttack - entity->getThrownAttack();
+							output.proficiencyBonus = output.totalAttack - (entity ? entity->getThrownAttack() : 0);
 							stats[player]->PROFICIENCIES[PRO_ALCHEMY] = oldAlchemy;
 							output.proficiency = PRO_ALCHEMY;
 						}
