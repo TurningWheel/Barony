@@ -610,8 +610,8 @@ void updateAppraisalItemBox(const int player)
 	{
 		if ( !players[player]->shootmode )
 		{
-			pos.x = x + 16;
-			pos.y = y + players[player]->inventoryUI.getSizeY() * players[player]->inventoryUI.getSlotSize() + 16;
+			pos.x = players[player]->camera_x1() + players[player]->camera_width() / 2;
+			pos.y = players[player]->camera_y1() + 16;
 		}
 		else
 		{
@@ -623,6 +623,10 @@ void updateAppraisalItemBox(const int player)
 		getSizeOfText(ttf12, item->getName(), &w2, NULL);
 		w2 += 48;
 		pos.w = std::max(w1, w2) + 8;
+		if ( !players[player]->shootmode )
+		{
+			pos.x -= pos.w / 2;
+		}
 		pos.h = 68;
 		drawTooltip(&pos);
 
@@ -632,8 +636,9 @@ void updateAppraisalItemBox(const int player)
 		ttfPrintText( ttf12, pos.x + 8, pos.y + 8, tempstr );
 		if ( !players[player]->shootmode )
 		{
-			pos.x = x + 24;
-			pos.y = y + players[player]->inventoryUI.getSizeY() * players[player]->inventoryUI.getSlotSize() + 16 + 24;
+			pos.x = players[player]->camera_x1() + players[player]->camera_width() / 2 + 8;
+			pos.x -= pos.w / 2;
+			pos.y = players[player]->camera_y1() + 16 + 24;
 		}
 		else
 		{
