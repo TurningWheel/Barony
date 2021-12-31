@@ -1469,6 +1469,11 @@ int main(int argc, char** argv)
 		printlog( "Failed to get binary path. Program may not work correctly!\n");
 	}
 #endif
+
+#ifdef LINUX
+	(void)chdir(BASE_DATA_DIR); // fixes a lot of headaches...
+#endif
+
 	button_t* button;
 	node_t* node;
 	node_t* nextnode;
@@ -1589,7 +1594,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
 	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
 	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
 	for ( c = 0; c < map.width * map.height; c++ )
@@ -2374,7 +2378,6 @@ int main(int argc, char** argv)
 					entity->x += 8;
 					entity->y += 8;
 				}
-				raycast(&camera, REALCOLORS);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);

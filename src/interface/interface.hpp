@@ -212,7 +212,7 @@ bool loadInterfaceResources();
 void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
-void drawMinimap(const int player);
+void drawMinimap(const int player, SDL_Rect rect);
 void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
@@ -688,8 +688,37 @@ extern SDL_Surface *effect_polymorph_bmp;
 extern SDL_Surface *effect_hungover_bmp;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
-void attackHoverText(const int player, Sint32 input[6]);
-Sint32 displayAttackPower(const int player, Sint32 output[6]);
+struct AttackHoverText_t
+{
+	enum HoverTypes
+	{
+		ATK_HOVER_TYPE_DEFAULT,
+		ATK_HOVER_TYPE_UNARMED,
+		ATK_HOVER_TYPE_RANGED,
+		ATK_HOVER_TYPE_THROWN,
+		ATK_HOVER_TYPE_THROWN_POTION,
+		ATK_HOVER_TYPE_THROWN_GEM,
+		ATK_HOVER_TYPE_MELEE_WEAPON,
+		ATK_HOVER_TYPE_WHIP,
+		ATK_HOVER_TYPE_MAGICSTAFF,
+		ATK_HOVER_TYPE_TOOL,
+		ATK_HOVER_TYPE_PICKAXE,
+		ATK_HOVER_TYPE_TOOL_TRAP
+	};
+	HoverTypes hoverType = ATK_HOVER_TYPE_DEFAULT;
+	Sint32 totalAttack = 0;
+	Sint32 weaponBonus = 0;
+	Sint32 mainAttributeBonus = 0;
+	Sint32 secondaryAttributeBonus = 0;
+	Sint32 proficiencyBonus = 0;
+	real_t proficiencyVariance = 0.0;
+	Sint32 attackMinRange = 0;
+	Sint32 attackMaxRange = 0;
+	Sint32 equipmentAndEffectBonus = 0;
+	int proficiency = -1;
+};
+void attackHoverText(const int player, AttackHoverText_t& output);
+Sint32 displayAttackPower(const int player, AttackHoverText_t& output);
 
 class MinimapPing
 {

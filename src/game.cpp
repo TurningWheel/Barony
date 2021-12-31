@@ -243,7 +243,7 @@ TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
 bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
-bool TimerExperiments::bDebug = true;
+bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
 void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
@@ -3718,81 +3718,15 @@ void handleEvents(void)
 			case SDL_WINDOWEVENT:
 				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
 				{
-#ifdef USE_FMOD
-					if ( music_group )
-					{
-						music_group->setVolume(0.f);
-					}
-					if ( sound_group )
-					{
-						sound_group->setVolume(0.f);
-					}
-					if ( soundAmbient_group )
-					{
-						soundAmbient_group->setVolume(0.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						soundEnvironment_group->setVolume(0.f);
-					}
-#endif // USE_FMOD
-#ifdef USE_OPENAL
-					if ( music_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(music_group, 0.f);
-					}
-					if ( sound_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
-					}
-					if ( soundAmbient_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
-					}
-#endif
+				    setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f);
 				}
 				else if ( event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED )
 				{
-#ifdef USE_FMOD
-					if ( music_group )
-					{
-						music_group->setVolume(musvolume / 128.f);
-					}
-					if ( sound_group )
-					{
-						sound_group->setVolume(sfxvolume / 128.f);
-					}
-					if ( soundAmbient_group )
-					{
-						soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
-					}
-#endif // USE_FMOD
-#ifdef USE_OPENAL
-					if ( music_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-					}
-					if ( sound_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-					}
-					if ( soundAmbient_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-					}
-#endif
+				    setGlobalVolume(MainMenu::master_volume,
+				        musvolume,
+				        sfxvolume,
+				        sfxAmbientVolume,
+				        sfxEnvironmentVolume);
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
@@ -4074,6 +4008,12 @@ void ingameHud()
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 	    Input& input = Input::inputs[player];
+
+	    // toggle minimap
+		// player not needed to be alive
+        if ( input.consumeBinaryToggle("Toggle Minimap") ) {
+            openMinimap(player);
+        }
 
 		// inventory interface
 		// player not needed to be alive
@@ -4588,21 +4528,13 @@ void ingameHud()
 					inputs.getController(player)->getLeftYPercent());
 			}
 		}
-
-		if ( (players[player]->shootmode == false && players[player]->gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
-		{
-			Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-			printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
-		}
 	}
 
 	DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
 	UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
 
-															   // pointer in inventory screen
+	// pointer in inventory screen
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( !players[player]->isLocalPlayer() )
@@ -4711,17 +4643,20 @@ void ingameHud()
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 						}
 					}
+#ifndef NDEBUG
 					// debug for controllers
 					auto cursor = Image::get("images/system/cursor_hand.png");
 					if ( keystatus[SDL_SCANCODE_J] )
 					{
 						cursor = Image::get("images/system/cursor.png");
 					}
+
 					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
 					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
 					pos.w = cursor->getWidth();
 					pos.h = cursor->getHeight();
 					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
+#endif // !NDEBUG
 				}
 				else
 				{
@@ -4843,6 +4778,7 @@ void ingameHud()
 			}
 			else
 			{
+#ifndef NDEBUG
 				// debug for controllers
 				auto cursor = Image::get("images/system/cursor_hand.png");
 				if ( keystatus[SDL_SCANCODE_J] )
@@ -4854,6 +4790,7 @@ void ingameHud()
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
+#endif
 			}
 		}
 		else if ( !nohud )
@@ -5587,7 +5524,7 @@ int main(int argc, char** argv)
 						introstage = 1;
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
-							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
+							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreenNoMusicFade);
 						}
 						else
 						{
@@ -5733,7 +5670,6 @@ int main(int argc, char** argv)
 							menucam.winw = xres;
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
-							raycast(&menucam, REALCOLORS);
 							glDrawWorld(&menucam, REALCOLORS);
 							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
@@ -6034,7 +5970,7 @@ int main(int argc, char** argv)
 										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 									}
 								}
-								raycast(&camera, REALCOLORS);
+								raycast(&camera, minimap);
 								glDrawWorld(&camera, REALCOLORS);
 
 								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -6050,7 +5986,7 @@ int main(int argc, char** argv)
 											camera.x = players[i]->entity->x / 16.0;
 											camera.y = players[i]->entity->y / 16.0;
 											camera.ang = players[i]->entity->yaw;
-											raycast(&camera, REALCOLORS, false);
+											raycast(&camera, minimap);
 											camera.x = x;
 											camera.y = y;
 											camera.ang = ang;
@@ -6060,7 +5996,6 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								raycast(&camera, REALCOLORS);
 								glDrawWorld(&camera, REALCOLORS);
 							}
 
@@ -6183,6 +6118,10 @@ int main(int argc, char** argv)
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
+
+					// to make sure scroll wheel gets cleared, as it never un-sets itself
+					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Left"); 
+					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Right");
 				}
 			}
 

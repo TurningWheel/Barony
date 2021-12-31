@@ -30,6 +30,10 @@
 #endif
 
 #ifdef USE_FMOD
+#elif defined USE_OPENAL
+#endif
+
+#ifdef USE_FMOD
 
 bool FMODErrorCheck()
 {
@@ -44,6 +48,19 @@ bool FMODErrorCheck()
 	}
 
 	return false;
+}
+
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment) {
+    master = std::min(std::max(0.0, master), 1.0);
+    music = std::min(std::max(0.0, music), 1.0);
+    gameplay = std::min(std::max(0.0, gameplay), 1.0);
+    ambient = std::min(std::max(0.0, ambient), 1.0);
+    environment = std::min(std::max(0.0, environment), 1.0);
+
+	music_group->setVolume(master * music);
+	sound_group->setVolume(master * gameplay);
+	soundAmbient_group->setVolume(master * ambient);
+	soundEnvironment_group->setVolume(master * environment);
 }
 
 void sound_update()
@@ -117,105 +134,6 @@ void sound_update()
 					volume = 0.0f;
 				}
 				music_channel2->setVolume(volume);
-			}
-		}
-	}
-
-	if ( soundAmbient_group )
-	{
-		if ( !sfxUseDynamicAmbientVolume )
-		{
-			if ( abs(dynamicAmbientVolume - 1.f) > 0.01 )
-			{
-				dynamicAmbientVolume = 1.f;
-				soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-			}
-		}
-		else
-		{
-			int numChannels = 0;
-			soundAmbient_group->getNumChannels(&numChannels);
-			float totalAudibility = 0.f;
-			for ( int i = 0; i < numChannels; ++i )
-			{
-				FMOD::Channel* c;
-				if ( soundAmbient_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
-				{
-					float audibility = 0.f;
-					c->getAudibility(&audibility);
-					totalAudibility += audibility;
-				}
-			}
-			float audibleDifference = sqrt(totalAudibility) - (sfxAmbientVolume / 128.f);
-			
-			// if audible sound value is > 20% nominal value, then reduce volume. (sound sources are stacking)
-			if ( audibleDifference > (0.2 * sfxAmbientVolume / 128.f) ) 
-			{
-				dynamicAmbientVolume = std::max(0.05, dynamicAmbientVolume - 0.05);
-				soundAmbient_group->setVolume(dynamicAmbientVolume * (sfxAmbientVolume / 128.f));
-				//messagePlayer(0, "Total: %3f - down: %f", sqrt(totalAudibility), dynamicAmbientVolume);
-			}
-			else if ( audibleDifference < (-0.025 * sfxAmbientVolume / 128.f) )
-			{
-				float currentVolume = 1.f;
-				soundAmbient_group->getVolume(&currentVolume);
-
-				// if sound volume > 0 and is less than 97.5% of nominal value, raise volume until normal is achieved.
-				if ( currentVolume > 0.001 && ((sfxAmbientVolume / 128.f) - currentVolume) > 0.01 ) 
-				{
-					dynamicAmbientVolume = std::min(1.0, dynamicAmbientVolume + 0.01);
-					soundAmbient_group->setVolume(dynamicAmbientVolume * (sfxAmbientVolume / 128.f));
-					//messagePlayer(0, "Total: %3f - up: %f", sqrt(totalAudibility), dynamicAmbientVolume);
-				}
-			}
-		}
-	}
-	if ( soundEnvironment_group )
-	{
-		if ( !sfxUseDynamicEnvironmentVolume )
-		{
-			if ( abs(dynamicEnvironmentVolume - 1.f) > 0.01 )
-			{
-				dynamicEnvironmentVolume = 1.f;
-				soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
-			}
-		}
-		else
-		{
-			int numChannels = 0;
-			soundEnvironment_group->getNumChannels(&numChannels);
-			float totalAudibility = 0.f;
-			for ( int i = 0; i < numChannels; ++i )
-			{
-				FMOD::Channel* c;
-				if ( soundEnvironment_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
-				{
-					float audibility = 0.f;
-					c->getAudibility(&audibility);
-					totalAudibility += audibility;
-				}
-			}
-			float audibleDifference = sqrt(totalAudibility) - (sfxEnvironmentVolume / 128.f);
-
-			// if audible sound value is > 20% nominal value, then reduce volume. (sound sources are stacking)
-			if ( audibleDifference > (0.2 * sfxEnvironmentVolume / 128.f) )
-			{
-				dynamicEnvironmentVolume = std::max(0.05, dynamicEnvironmentVolume - 0.05);
-				soundEnvironment_group->setVolume(dynamicEnvironmentVolume * (sfxEnvironmentVolume / 128.f));
-				//messagePlayer(0, "Total: %3f - down: %f", sqrt(totalAudibility), dynamicEnvironmentVolume);
-			}
-			else if ( audibleDifference < (-0.025 * sfxEnvironmentVolume / 128.f) )
-			{
-				float currentVolume = 1.f;
-				soundEnvironment_group->getVolume(&currentVolume);
-
-				// if sound volume > 0 and is less than 97.5% of nominal value, raise volume until normal is achieved.
-				if ( currentVolume > 0.001 && ((sfxEnvironmentVolume / 128.f) - currentVolume) > 0.01 )
-				{
-					dynamicEnvironmentVolume = std::min(1.0, dynamicEnvironmentVolume + 0.01);
-					soundEnvironment_group->setVolume(dynamicEnvironmentVolume * (sfxEnvironmentVolume / 128.f));
-					//messagePlayer(0, "Total: %3f - up: %f", sqrt(totalAudibility), dynamicEnvironmentVolume);
-				}
 			}
 		}
 	}
@@ -625,6 +543,19 @@ static int get_firstfreechannel()
 	private_OPENAL_Channel_Stop(&openal_sounds[i]);
 
 	return i;
+}
+
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment) {
+    master = std::min(std::max(0.0, master), 1.0);
+    music = std::min(std::max(0.0, music), 1.0);
+    gameplay = std::min(std::max(0.0, gameplay), 1.0);
+    ambient = std::min(std::max(0.0, ambient), 1.0);
+    environment = std::min(std::max(0.0, environment), 1.0);
+
+	OPENAL_ChannelGroup_SetVolume(music_group, master * music);
+	OPENAL_ChannelGroup_SetVolume(sound_group, master * gameplay);
+	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, master * ambient);
+	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, master * environment);
 }
 
 void sound_update()

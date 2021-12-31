@@ -2520,6 +2520,123 @@ hunger, level ups, poison, etc.
 
 -------------------------------------------------------------------------------*/
 
+int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffects)
+{
+	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
+	if ( !myStats )
+	{
+		return hungerTickRate;
+	}
+	int hungerring = 0;
+	if ( checkItemsEffects )
+	{
+		if ( myStats->ring != NULL )
+		{
+			if ( myStats->ring->type == RING_SLOWDIGESTION )
+			{
+				if ( myStats->ring->beatitude >= 0 )
+				{
+					hungerring = 1;
+				}
+				else
+				{
+					if ( isPlayer && shouldInvertEquipmentBeatitude(myStats) )
+					{
+						hungerring = 1;
+					}
+					else
+					{
+						hungerring = -1;
+					}
+				}
+			}
+		}
+	}
+
+	int vampiricHunger = 0;
+	if ( checkItemsEffects )
+	{
+		if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
+		{
+			if ( myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+			{
+				vampiricHunger = 2;
+			}
+			else
+			{
+				vampiricHunger = 1;
+			}
+		}
+	}
+
+	if ( !strncmp(map.name, "Sanctum", 7)
+		|| !strncmp(map.name, "Boss", 4)
+		|| !strncmp(map.name, "Hell Boss", 9)
+		|| !strncmp(map.name, "Mages Guild", 11) )
+	{
+		hungerring = 1; // slow down hunger on boss stages.
+		if ( vampiricHunger > 0 )
+		{
+			vampiricHunger *= 8;
+		}
+	}
+
+	if ( vampiricHunger > 0 )
+	{
+		hungerTickRate = 5 * vampiricHunger;
+	}
+	else if ( hungerring > 0 )
+	{
+		hungerTickRate = 120;
+	}
+	else if ( hungerring < 0 )
+	{
+		hungerTickRate = 15;
+	}
+
+	int playerCount = 0;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( !client_disconnected[i] )
+		{
+			++playerCount;
+		}
+	}
+
+	if ( playerCount == 3 )
+	{
+		hungerTickRate *= 1.25;
+	}
+	else if ( playerCount == 4 )
+	{
+		hungerTickRate *= 1.5;
+	}
+	if ( myStats->type == INSECTOID )
+	{
+		hungerTickRate *= 1.5;
+	}
+
+	bool playerAutomaton = (myStats->type == AUTOMATON && isPlayer);
+	if ( playerAutomaton )
+	{
+		// give a little extra hunger duration.
+		if ( playerCount == 3 )
+		{
+			hungerTickRate *= 1.25; // 1.55x (1.25 x 1.25)
+		}
+		else if ( playerCount == 4 )
+		{
+			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
+		}
+
+		if ( myStats->HUNGER > 1000 && hungerTickRate > 30 )
+		{
+			hungerTickRate = 30; // don't slow down during superheated.
+		}
+	}
+	return hungerTickRate;
+}
+
 void Entity::handleEffects(Stat* myStats)
 {
 	int increasestat[3] = { 0, 0, 0 };
@@ -2966,28 +3083,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// hunger
-	int hungerring = 0;
-	if ( myStats->ring != NULL )
-	{
-		if ( myStats->ring->type == RING_SLOWDIGESTION )
-		{
-			if ( myStats->ring->beatitude >= 0 )
-			{
-				hungerring = 1;
-			}
-			else
-			{
-				if ( behavior == &actPlayer && shouldInvertEquipmentBeatitude(myStats) )
-				{
-					hungerring = 1;
-				}
-				else
-				{
-					hungerring = -1;
-				}
-			}
-		}
-	}
+	int hungerTickRate = Entity::getHungerTickRate(myStats, behavior == &actPlayer, true);
 	int vampiricHunger = 0;
 	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
 	{
@@ -3000,55 +3096,6 @@ void Entity::handleEffects(Stat* myStats)
 			vampiricHunger = 1;
 		}
 	}
-
-	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
-	if ( !strncmp(map.name, "Sanctum", 7) 
-		|| !strncmp(map.name, "Boss", 4) 
-		|| !strncmp(map.name, "Hell Boss", 9)
-		|| !strncmp(map.name, "Mages Guild", 11) )
-	{
-		hungerring = 1; // slow down hunger on boss stages.
-		if ( vampiricHunger > 0 )
-		{
-			vampiricHunger *= 8;
-		}
-	}
-
-	if ( vampiricHunger > 0 )
-	{
-		hungerTickRate = 5 * vampiricHunger;
-	}
-	else if ( hungerring > 0 )
-	{
-		hungerTickRate = 120;
-	}
-	else if ( hungerring < 0 )
-	{
-		hungerTickRate = 15;
-	}
-
-	int playerCount = 0;
-	for ( i = 0; i < MAXPLAYERS; ++i )
-	{
-		if ( !client_disconnected[i] )
-		{
-			++playerCount;
-		}
-	}
-
-	if ( playerCount == 3 )
-	{
-		hungerTickRate *= 1.25;
-	}
-	else if ( playerCount == 4 )
-	{
-		hungerTickRate *= 1.5;
-	}
-	if ( myStats->type == INSECTOID )
-	{
-		hungerTickRate *= 1.5;
-	}
-
 	bool processHunger = (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER; // check server flags if hunger is enabled.
 	if ( player >= 0 )
 	{
@@ -3062,21 +3109,6 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( playerAutomaton )
 	{
-		// give a little extra hunger duration.
-		if ( playerCount == 3 )
-		{
-			hungerTickRate *= 1.25; // 1.55x (1.25 x 1.25)
-		}
-		else if ( playerCount == 4 )
-		{
-			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
-		}
-
-		if ( myStats->HUNGER > 1000 && hungerTickRate > 30 )
-		{
-			hungerTickRate = 30; // don't slow down during superheated.
-		}
-
 		if ( ticks % (hungerTickRate / 2) == 0 )
 		{
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
@@ -3414,7 +3446,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	// healing over time
 	int healring = 0;
-	int healthRegenInterval = getHealthRegenInterval(*myStats);
+	int healthRegenInterval = getHealthRegenInterval(this, *myStats, behavior == &actPlayer);
 	if ( healthRegenInterval == -1 && behavior == &actPlayer && myStats->type == SKELETON )
 	{
 		healthRegenInterval = HEAL_TIME * 4;
@@ -3456,7 +3488,7 @@ void Entity::handleEffects(Stat* myStats)
 	// regaining energy over time
 	if ( myStats->type == AUTOMATON && player >= 0 )
 	{
-		int manaRegenInterval = getManaRegenInterval(*myStats);
+		int manaRegenInterval = Entity::getManaRegenInterval(this, *myStats, behavior == &actPlayer);
 		this->char_energize++;
 
 		if ( myStats->HUNGER <= 300 )
@@ -3586,7 +3618,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 	else if ( myStats->MP < myStats->MAXMP )
 	{
-		int manaRegenInterval = getManaRegenInterval(*myStats);
+		int manaRegenInterval = Entity::getManaRegenInterval(this, *myStats, behavior == &actPlayer);
 		// summons don't regen MP. we use this to refund mana to the caster.
 		bool doManaRegen = true;
 		if ( this->behavior == &actMonster && this->monsterAllySummonRank != 0 )
@@ -4573,60 +4605,59 @@ base number
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getAttack()
+Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 {
-	Stat* entitystats;
 	Sint32 attack = 0;
 
-	if ( (entitystats = this->getStats()) == nullptr )
+	if ( !myStats )
 	{
 		return 0;
 	}
 
 	attack = BASE_MELEE_DAMAGE; // base attack strength
-	if ( entitystats->weapon != nullptr )
+	if ( myStats->weapon != nullptr )
 	{
-		attack += entitystats->weapon->weaponGetAttack(entitystats);
+		attack += myStats->weapon->weaponGetAttack(myStats);
 	}
-	else if ( entitystats->weapon == nullptr )
+	else if ( myStats->weapon == nullptr )
 	{
 		// bare handed.
-		if ( behavior == &actPlayer )
+		if ( isPlayer )
 		{
 			attack = BASE_PLAYER_UNARMED_DAMAGE;
-			attack += (entitystats->PROFICIENCIES[PRO_UNARMED] / 20); // 0, 1, 2, 3, 4, 5 damage from total
+			attack += (myStats->PROFICIENCIES[PRO_UNARMED] / 20); // 0, 1, 2, 3, 4, 5 damage from total
 		}
-		if ( entitystats->gloves )
+		if ( myStats->gloves )
 		{
-			int beatitude = entitystats->gloves->beatitude;
-			if ( entitystats->gloves->type == BRASS_KNUCKLES )
+			int beatitude = myStats->gloves->beatitude;
+			if ( myStats->gloves->type == BRASS_KNUCKLES )
 			{
-				attack += 1 + (shouldInvertEquipmentBeatitude(entitystats) ? abs(beatitude) : beatitude);
+				attack += 1 + (shouldInvertEquipmentBeatitude(myStats) ? abs(beatitude) : beatitude);
 			}
-			else if ( entitystats->gloves->type == IRON_KNUCKLES )
+			else if ( myStats->gloves->type == IRON_KNUCKLES )
 			{
-				attack += 2 + (shouldInvertEquipmentBeatitude(entitystats) ? abs(beatitude) : beatitude);
+				attack += 2 + (shouldInvertEquipmentBeatitude(myStats) ? abs(beatitude) : beatitude);
 			}
-			else if ( entitystats->gloves->type == SPIKED_GAUNTLETS )
+			else if ( myStats->gloves->type == SPIKED_GAUNTLETS )
 			{
-				attack += 3 + (shouldInvertEquipmentBeatitude(entitystats) ? abs(beatitude) : beatitude);
+				attack += 3 + (shouldInvertEquipmentBeatitude(myStats) ? abs(beatitude) : beatitude);
 			}
 		}
-		if ( entitystats->ring )
+		if ( myStats->ring )
 		{
-			int beatitude = entitystats->ring->beatitude;
-			attack += 1 + (shouldInvertEquipmentBeatitude(entitystats) ? abs(beatitude) : beatitude);
+			int beatitude = myStats->ring->beatitude;
+			attack += 1 + (shouldInvertEquipmentBeatitude(myStats) ? abs(beatitude) : beatitude);
 		}
 	}
-	if ( entitystats->weapon && entitystats->weapon->type == TOOL_WHIP )
+	if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
 	{
-		int atk = this->getSTR() + this->getDEX();
+		int atk = statGetSTR(myStats, my) + statGetDEX(myStats, my);
 		atk = std::min(atk / 2, atk);
 		attack += atk;
 	}
 	else
 	{
-		attack += this->getSTR();
+		attack += statGetSTR(myStats, my);
 	}
 
 	return attack;
@@ -4701,6 +4732,7 @@ Sint32 Entity::getThrownAttack()
 		else if ( itemCategory(entitystats->weapon) == POTION )
 		{
 			int skillLVL = entitystats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			attack += entitystats->weapon->weaponGetAttack(entitystats);
 			/*int dex = getDEX() / 4;
 			attack += dex;*/
 			attack *= potionDamageSkillMultipliers[std::min(skillLVL, 5)];
@@ -7410,11 +7442,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( weaponskill == PRO_UNARMED )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
 					}
 					else if ( weaponskill == PRO_RANGED )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
 					}
 					else if ( weaponskill >= 0 )
 					{
@@ -7429,11 +7461,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								gugnirProc = true;
 							}
 						}
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - enemyAC) * weaponMultipliers;
+						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - enemyAC) * weaponMultipliers;
 					}
 					else
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
+						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
 					}
 					if ( weaponskill == PRO_AXE )
 					{
@@ -16052,24 +16084,30 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 	return spellbook;
 }
 
-int Entity::getManaRegenInterval(Stat& myStats)
+int Entity::getManaringFromEffects(Entity* my, Stat& myStats)
 {
-	int regenTime = getBaseManaRegen(this, myStats);
 	int manaring = 0;
-	bool shapeshifted = false;
-	if ( behavior == &actPlayer && myStats.type != HUMAN )
+	if ( myStats.EFFECTS[EFF_MP_REGEN] && myStats.type != AUTOMATON )
 	{
-		if ( myStats.type == SKELETON )
-		{
-			manaring = -1; // 0.25x regen speed.
-		}
-		if ( effectShapeshift != NOTHING )
+		manaring += 2;
+	}
+	return manaring;
+}
+
+int Entity::getManaringFromEquipment(Entity* my, Stat& myStats, bool isPlayer)
+{
+	bool shapeshifted = false;
+	if ( isPlayer && myStats.type != HUMAN )
+	{
+		if ( my && my->effectShapeshift != NOTHING )
 		{
 			shapeshifted = true;
 		}
 	}
+
+	int manaring = 0;
 	bool cursedItemIsBuff = false;
-	if ( behavior == &actPlayer )
+	if ( isPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(&myStats);
 	}
@@ -16115,22 +16153,37 @@ int Entity::getManaRegenInterval(Stat& myStats)
 			}
 		}
 	}
+	return manaring;
+}
 
-	if ( manaring >= 2 && ticks % TICKS_PER_SECOND == 0 )
+int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
+{
+	int regenTime = getBaseManaRegen(my, myStats);
+	int manaring = 0;
+	if ( isPlayer && myStats.type != HUMAN )
 	{
-		steamAchievementEntity(this, "BARONY_ACH_ARCANE_LINK");
-	}
-
-	if ( myStats.EFFECTS[EFF_MP_REGEN] && myStats.type != AUTOMATON )
-	{
-		manaring += 2;
-		if ( manaring > 3 )
+		if ( myStats.type == SKELETON )
 		{
-			manaring = 3;
+			manaring = -1; // 0.25x regen speed.
 		}
 	}
 
-	if ( behavior == &actPlayer && myStats.type == AUTOMATON && myStats.HUNGER < 300 )
+	int bonusManaring = 0;
+	bonusManaring += Entity::getManaringFromEquipment(my, myStats, true);
+	bonusManaring += Entity::getManaringFromEffects(my, myStats);
+	manaring += bonusManaring;
+
+	if ( my && bonusManaring >= 2 && ::ticks % TICKS_PER_SECOND == 0 )
+	{
+		steamAchievementEntity(my, "BARONY_ACH_ARCANE_LINK");
+	}
+
+	if ( manaring > 3 )
+	{
+		manaring = 3;
+	}
+
+	if ( isPlayer && myStats.type == AUTOMATON && myStats.HUNGER <= 300 )
 	{
 		float floatRegenTime = (60 * regenTime) / (std::max(myStats.MAXMP, 1));
 		if ( manaring > 0 )
@@ -16146,7 +16199,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 			return floatRegenTime;
 		}
 	}
-	else if ( behavior == &actPlayer && myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+	else if ( isPlayer && myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
 	{
 		if ( !(svFlags & SV_FLAG_HUNGER) )
 		{
@@ -16154,24 +16207,10 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		}
 
 		// how many hunger ticks in seconds from max of 1000.
-		float floatRegenTime = (1000.f * 30 / static_cast<float>(TICKS_PER_SECOND)); 
+		float floatRegenTime = (1000.f * (Entity::getHungerTickRate(&myStats, isPlayer, true)) / static_cast<float>(TICKS_PER_SECOND)); 
 
 		floatRegenTime /= (std::max(myStats.MAXMP, 1)); // time for 1 mana in seconds
 		floatRegenTime *= TICKS_PER_SECOND; // game ticks for 1 mana
-
-		if ( manaring > 0 )
-		{
-			return floatRegenTime * (manaring * 2); // lose 1 MP each 2x base seconds - good!
-		}
-		else if ( manaring < 0 )
-		{
-			return floatRegenTime / (abs(manaring) * 2); // lose 1 MP each 0.5x base seconds - bad!
-		}
-		else if ( manaring == 0 )
-		{
-			return floatRegenTime;
-		}
-
 		return floatRegenTime;
 	}
 
@@ -16190,45 +16229,41 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	return MAGIC_REGEN_TIME;
 }
 
-int Entity::getHealthRegenInterval(Stat& myStats)
+int Entity::getHealringFromEffects(Entity* my, Stat& myStats)
 {
-	if ( !(svFlags & SV_FLAG_HUNGER) )
+	double healring = 0;
+	if ( myStats.EFFECTS[EFF_HP_REGEN] )
 	{
-		return -1;
-	}
-	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
-	{
-		if ( behavior == &actPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+		if ( my && my->monsterAllyGetPlayerLeader() && my->monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats.EFFECTS[EFF_ASLEEP] )
 		{
-			return -1;
+			healring += 1;
+		}
+		else
+		{
+			healring += 2;
 		}
 	}
-	if ( myStats.HP <= 0 )
+	if ( myStats.EFFECTS[EFF_TROLLS_BLOOD] )
 	{
-		return -1;
+		healring += 1;
 	}
+	return (int)healring;
+}
+
+int Entity::getHealringFromEquipment(Entity* my, Stat& myStats, bool isPlayer)
+{
+	double healring = 0;
 	bool cursedItemIsBuff = false;
-	if ( behavior == &actPlayer )
+	if ( isPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(&myStats);
 	}
-	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
-	{
-		return -1;
-	}
-	double healring = 0;
-	if ( behavior == &actPlayer && myStats.type != HUMAN )
-	{
-		if ( myStats.type == SKELETON )
-		{
-			healring = -1; // 0.25x regen speed.
-		}
-	}
+
 	if ( myStats.ring != nullptr )
 	{
 		if ( myStats.ring->type == RING_REGENERATION )
 		{
-			if ( myStats.ring->beatitude >= 0  || cursedItemIsBuff )
+			if ( myStats.ring->beatitude >= 0 || cursedItemIsBuff )
 			{
 				healring++;
 				if ( cursedItemIsBuff )
@@ -16260,31 +16295,53 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 			}
 		}
 	}
+	return healring;
+}
 
-	if ( myStats.EFFECTS[EFF_TROLLS_BLOOD] )
+int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
+{
+	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		healring += 1;
+		return -1;
+	}
+	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
+	{
+		if ( isPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+		{
+			return -1;
+		}
+	}
+	if ( myStats.HP <= 0 )
+	{
+		return -1;
 	}
 
-	if ( healring >= 2 && ticks % TICKS_PER_SECOND == 0 )
+	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
 	{
-		steamAchievementEntity(this, "BARONY_ACH_TROLLS_BLOOD");
+		return -1;
+	}
+	double healring = 0;
+	if ( isPlayer && myStats.type != HUMAN )
+	{
+		if ( myStats.type == SKELETON )
+		{
+			healring = -1; // 0.25x regen speed.
+		}
+	}
+
+	double bonusHealring = 0.0;
+	bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+	bonusHealring += Entity::getHealringFromEffects(my, myStats);
+	healring += bonusHealring;
+
+	if ( my && bonusHealring >= 2.0 && ::ticks % TICKS_PER_SECOND == 0 )
+	{
+		steamAchievementEntity(my, "BARONY_ACH_TROLLS_BLOOD");
 	}
 	
-	if ( myStats.EFFECTS[EFF_HP_REGEN] )
+	if ( healring > 3 )
 	{
-		if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats.EFFECTS[EFF_ASLEEP] )
-		{
-			healring += 1;
-		}
-		else
-		{
-			healring += 2;
-		}
-		if ( healring > 3 )
-		{
-			healring = 3;
-		}
+		healring = 3;
 	}
 
 	if ( !strncmp(map.name, "Mages Guild", 11) && myStats.type == SHOPKEEPER )
@@ -17378,10 +17435,9 @@ void Entity::addToWorldUIList(list_t *list)
 	}
 }
 
-int Entity::getMagicResistance()
+int Entity::getMagicResistance(Stat* myStats)
 {
 	int resistance = 0;
-	Stat* myStats = getStats();
 	if ( myStats )
 	{
 		if ( myStats->shield )

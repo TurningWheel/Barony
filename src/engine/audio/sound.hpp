@@ -104,7 +104,11 @@ FMOD::Channel* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
 FMOD::Channel* playSound(Uint32 snd, int vol);
 FMOD::Channel* playSoundVelocity();
 
+// all parameters should be in ranges of [0.0 - 1.0]
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment);
+
 bool loadMusic();
+void stopMusic();
 void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 
 void handleLevelMusic(); //Manages and updates the level music.

@@ -112,9 +112,9 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 #else
 void GameModeManager_t::Tutorial_t::openGameoverWindow()
 {
-    // deprecated
-    assert(0 && "Make a new gameover window.");
-    return;
+	// deprecated
+	assert(0 && "Make a new gameover window.");
+	return;
 }
 #endif
 
@@ -2142,7 +2142,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			{
 				if ( item.type == RING_REGENERATION )
 				{
-					int healring = std::min(3, std::max(item.beatitude + 1, 1));
+					int healring = std::min(2, std::max(item.beatitude + 1, 1));
 					snprintf(buf, sizeof(buf), str.c_str(), healring,
 						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 				}
@@ -2352,11 +2352,20 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("armor_shield_bonus") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), 
-				stats[player]->getPassiveShieldBonus(false),
-				getItemProficiencyName(PRO_SHIELD).c_str(),
-				stats[player]->getActiveShieldBonus(false),
-				getItemProficiencyName(PRO_SHIELD).c_str());
+			if ( tooltipType.find("tooltip_offhand") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(),
+					stats[player]->getActiveShieldBonus(false),
+					getItemProficiencyName(PRO_SHIELD).c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					stats[player]->getPassiveShieldBonus(false),
+					getItemProficiencyName(PRO_SHIELD).c_str(),
+					stats[player]->getActiveShieldBonus(false),
+					getItemProficiencyName(PRO_SHIELD).c_str());
+			}
 		}
 		else if ( detailTag.compare("on_bless_or_curse") == 0 )
 		{

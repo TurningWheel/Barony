@@ -551,6 +551,7 @@ public:
 	int entityLightAfterReductions(Stat& myStats, Entity* observer);
 
 	void handleEffects(Stat* myStats);
+	static int getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffects);
 	void handleEffectsClient();
 
 	void effectTimes();
@@ -569,7 +570,7 @@ public:
 	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
-	Sint32 getAttack();
+	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();
@@ -769,9 +770,13 @@ public:
 	// check if monster should retreat or stand still when less than given distance
 	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
 	// calc time required for a mana regen tick, uses equipped gear as modifiers.
-	int getManaRegenInterval(Stat& myStats); 
+	static int getManaringFromEquipment(Entity* my, Stat& myStats, bool isPlayer);
+	static int getManaringFromEffects(Entity* my, Stat& myStats);
+	static int getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer);
 	// calc time required for a hp regen tick, uses equipped gear as modifiers.
-	int getHealthRegenInterval(Stat& myStats);
+	static int getHealringFromEquipment(Entity* my, Stat& myStats, bool isPlayer);
+	static int getHealringFromEffects(Entity* my, Stat& myStats);
+	static int getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer);
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType = 0);
 	bool setArrowProjectileProperties(int weaponType);
@@ -905,7 +910,7 @@ public:
 	bool isInteractWithMonster(); // is a monster interacting with me? check interact flags for allied NPCs.
 	void clearMonsterInteract(); // tidy up flags after interaction.
 	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, bool tryRandomSpot = false); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
-	int getMagicResistance(); // returns the value of magic resistance of a monster.
+	static int getMagicResistance(Stat* myStats); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
 	bool isPlayerHeadSprite(); // determines if model of entity is a human head.
 	void setDefaultPlayerModel(int playernum, Monster playerRace, int limbType); // sets correct base color/model of limbs for player characters.

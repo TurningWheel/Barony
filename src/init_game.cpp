@@ -368,11 +368,6 @@ int initGame()
 #endif // !NINTENDO
 #endif
 
-#ifdef USE_FMOD
-		music_group->setVolume(musvolume / 128.f);
-#elif defined USE_OPENAL
-		OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-#endif
 		removedEntities.first = NULL;
 		removedEntities.last = NULL;
 		safePacketsSent.first = NULL;

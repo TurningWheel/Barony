@@ -175,6 +175,7 @@ extern bool autoLimbReload;
 extern FILE* logfile;
 static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
+extern bool enableDebugKeys; // if true, certain special keys can be used for debugging
 
 class Item;
 //enum Item;
@@ -610,12 +611,10 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern int minimapScaleQuickToggle;
 extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern Sint32* lightmapSmoothed;
-extern bool* vismap;
 extern Entity** clickmap;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
@@ -706,9 +705,10 @@ extern Uint32 numtiles;
 extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
-extern int sfxvolume; //Max size is 128.
-extern int sfxAmbientVolume;
-extern int sfxEnvironmentVolume;
+extern real_t musvolume;
+extern real_t sfxvolume;
+extern real_t sfxAmbientVolume;
+extern real_t sfxEnvironmentVolume;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 static const int MINIMAP_MAX_DIMENSION = 512;

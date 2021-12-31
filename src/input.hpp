@@ -29,9 +29,6 @@ public:
 	//! set default bindings for all players
 	static void defaultBindings();
 
-	//! clear default bindings
-	static void clearDefaultBindings();
-
 	//! input mapping
 	struct binding_t {
 		std::string input = "";
@@ -89,6 +86,12 @@ public:
 
 	//! useful way to get direct access to bindings
 	auto& getBindings() const { return bindings; }
+
+	//! disable all bindings temporarily
+	void setDisabled(bool _disabled) { disabled = _disabled; }
+
+	//! get the status of disabled variable
+	auto isDisabled() const { return disabled; }
 
 	//! gets the analog value of a particular input binding
 	//! @param binding the binding to query
@@ -168,6 +171,7 @@ public:
 
 private:
 	std::unordered_map<std::string, binding_t> bindings;
+	bool disabled = false;
 
 	//! converts the given input to a boolean value
 	//! @return the converted value

@@ -1725,7 +1725,8 @@ void drawStatus(int player)
 		}
 
 		// minimap pinging.
-		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+		// TODO use the new minimap code for this in GameUI.cpp
+		int minimapTotalScale = minimapScale;
 		if ( map.height > 64 || map.width > 64 )
 		{
 			int maxDimension = std::max(map.height, map.width);
@@ -1736,7 +1737,7 @@ void drawStatus(int player)
 				maxDimension -= 32;
 				++numMinimapSizesToReduce;
 			}
-			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
 		}
 		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w, 
 			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
@@ -2559,8 +2560,8 @@ void drawStatusNew(const int player)
 	if ( stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = /*xoffset*/ +playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = y2 - 160;
+		pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 43; // was pos.x = 128;
+		pos.y = y2 - 160 + 64 + 2 - 82 + 4;
 		pos.w = 64;
 		pos.h = 64;
 		if ( players[player] && players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
@@ -2577,8 +2578,8 @@ void drawStatusNew(const int player)
 	{
 		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
-			pos.x = /*xoffset*/ +playerStatusBarWidth + 10; // was pos.x = 128;
-			pos.y = y2 - 160;
+			pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 43; // was pos.x = 128;
+			pos.y = y2 - 160 + 64 + 2 - 82 + 4;
 			pos.w = 64;
 			pos.h = 64;
 			if ( stats[player]->HUNGER > 1200 )
@@ -2604,8 +2605,8 @@ void drawStatusNew(const int player)
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
 	{
-		pos.x = /*xoffset*/ +playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = y2 - 160 + 64 + 2;
+		pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 64 + 43 + 64; // was pos.x = 128;
+		pos.y = y2 - 160 + 64 + 2 - 82 + 4;
 		pos.w = 64;
 		pos.h = 64;
 		drawImageScaled(minotaur_bmp, nullptr, &pos);
@@ -3242,7 +3243,7 @@ void drawStatusNew(const int player)
 		}
 
 		// minimap pinging.
-		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+		int minimapTotalScale = minimapScale;
 		if ( map.height > 64 || map.width > 64 )
 		{
 			int maxDimension = std::max(map.height, map.width);
@@ -3253,7 +3254,7 @@ void drawStatusNew(const int player)
 				maxDimension -= 32;
 				++numMinimapSizesToReduce;
 			}
-			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce) + minimapScaleQuickToggle;
+			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
 		}
 		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w,
 			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
@@ -3442,9 +3443,7 @@ void drawStatusNew(const int player)
 				}
 			}
 
-			players[player]->hotbar.faceMenuButtonHeld = pressed;
-
-			if ( pressed != Player::Hotbar_t::GROUP_NONE
+			if ( players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE
 				&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
 			{
 				spell_t* spell = getSpellFromItem(player, item);
@@ -3453,6 +3452,8 @@ void drawStatusNew(const int player)
 					players[player]->hotbar.faceMenuQuickCast = true;
 				}
 			}
+
+			players[player]->hotbar.faceMenuButtonHeld = pressed;
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.

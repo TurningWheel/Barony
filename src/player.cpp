@@ -2446,7 +2446,7 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK) )
+		if ( Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{
@@ -2456,7 +2456,6 @@ void Player::WorldUI_t::handleTooltips()
 			{
 				players[player]->worldUI.enable();
 			}
-			inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK);
 		}
 
 		if ( !players[player]->worldUI.bEnabled )
@@ -3147,6 +3146,12 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 					if ( itemCategory(stats[player.playernum]->weapon) == POTION )
 					{
 						skill = PRO_ALCHEMY;
+						promptString = language[4082];
+					}
+					else if ( itemCategory(stats[player.playernum]->weapon) == THROWN
+						|| itemCategory(stats[player.playernum]->weapon) == GEM )
+					{
+						skill = PRO_RANGED;
 						promptString = language[4082];
 					}
 					else if ( itemCategory(stats[player.playernum]->weapon) == TOOL )

@@ -1071,6 +1071,7 @@ public:
 			SHEET_POW,
 			SHEET_RES,
 			SHEET_RGN,
+			SHEET_RGN_MP,
 			SHEET_WGT,
 			SHEET_ENUM_END
 		};
@@ -1195,6 +1196,7 @@ public:
 		Frame* xpFrame = nullptr;
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
+		Frame* minimapFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
@@ -1462,7 +1464,7 @@ public:
 	class WorldUI_t
 	{
 		Player& player;
-		bool bEnabled = false;
+		bool bEnabled = true;
 		static const int UID_TOOLTIP_ACTIVE = -21;
 		static const int UID_TOOLTIP_DISABLED = -20;
 		enum TooltipView
@@ -1703,6 +1705,11 @@ public:
 		Minimap_t(Player& p) : player(p)
 		{};
 		~Minimap_t() {};
+
+		bool big = false;           // "big" mode (centered)
+		real_t real_scale = 0.0;    // canonical scale
+		real_t scale = 0.0;         // momentary scale
+		real_t scale_ang = 0.0;     // used to interpolate
 	} minimap;
 };
 

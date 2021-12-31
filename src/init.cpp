@@ -137,6 +137,7 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("data");
 			PHYSFS_mkdir("data/custom-monsters");
 			PHYSFS_mkdir("data/statues");
+			PHYSFS_mkdir("config");
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;
@@ -2099,10 +2100,6 @@ int deinitApp()
 	if ( lightmapSmoothed )
 	{
 		free(lightmapSmoothed);
-	}
-	if ( vismap != NULL )
-	{
-		free(vismap);
 	}
 
 	for ( c = 0; c < HASH_SIZE; c++ )
