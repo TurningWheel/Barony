@@ -332,7 +332,16 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			{
 				if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
 				{
-					if ( input.binaryToggle("Use") )
+					bool gamepad = false;
+					auto b = input.getBindings();
+					if ( b.find("Use") != b.end() )
+					{
+						if ( b["Use"].isBindingUsingGamepad() )
+						{
+							gamepad = true;
+						}
+					}
+					if ( (gamepad && input.binaryHeldToggle("Use")) || (!gamepad && input.binaryToggle("Use")) )
 					{
 						entity = uidToEntity(tooltip->parent);
 					}

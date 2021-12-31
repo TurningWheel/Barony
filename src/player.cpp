@@ -3148,6 +3148,12 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 						skill = PRO_ALCHEMY;
 						promptString = language[4082];
 					}
+					else if ( itemCategory(stats[player.playernum]->weapon) == THROWN
+						|| itemCategory(stats[player.playernum]->weapon) == GEM )
+					{
+						skill = PRO_RANGED;
+						promptString = language[4082];
+					}
 					else if ( itemCategory(stats[player.playernum]->weapon) == TOOL )
 					{
 						skill = PRO_LOCKPICKING;

@@ -2693,6 +2693,7 @@ class ItemTooltips_t
 	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
 	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
 
+public:
 	struct ItemTooltip_t
 	{
 		Uint32 headingTextColor = 0;
@@ -2717,7 +2718,6 @@ class ItemTooltips_t
 		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
-public:
 	void readItemsFromFile();
 	void readTooltipsFromFile();
 	std::vector<tmpItem_t> tmpItems;

@@ -707,7 +707,7 @@ void actThrown(Entity* my)
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
-				int damage = (BASE_THROWN_DAMAGE + item->beatitude);
+				int damage = (BASE_THROWN_DAMAGE + item->weaponGetAttack(parentStats));
 				if ( parentStats )
 				{
 					if ( itemCategory(item) == POTION )
@@ -726,7 +726,7 @@ void actThrown(Entity* my)
 							if ( my->thrownProjectileCharge >= 1 )
 							{
 								damage += my->thrownProjectileCharge / 5; //0-3 base +damage
-								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-35% of armor taken into account
+								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-25% of armor taken into account
 								if ( item->type == BOOMERANG )
 								{
 									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
