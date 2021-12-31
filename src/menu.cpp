@@ -11139,16 +11139,6 @@ void doCredits() {
 	creditstage++;
 	if ( creditstage >= 15 )
 	{
-#ifdef MUSIC
-		if ( victory == 3 )
-		{
-			playMusic(intromusic[2], true, false, false);
-		}
-		else
-		{
-			playMusic(intromusic[rand() % 2], true, false, false);
-		}
-#endif
 		introstage = 1;
 		credittime = 0;
 		creditstage = 0;
@@ -11623,16 +11613,6 @@ void doEndgame() {
 	{
 		fadefinished = false;
 		fadeout = false;
-#ifdef MUSIC
-		if ( menuMapType )
-		{
-			playMusic(intromusic[2], true, false, false);
-		}
-		else
-		{
-			playMusic(intromusic[rand() % 2], true, false, false);
-		}
-#endif
 	}
 	else
 	{
@@ -11679,9 +11659,6 @@ void doIntro() {
 	intromoviestage++;
 	if ( intromoviestage >= 9 )
 	{
-#ifdef MUSIC
-		playMusic(intromusic[1], true, false, false);
-#endif
 		introstage = 1;
 		intromovietime = 0;
 		intromoviestage = 0;
@@ -14212,18 +14189,6 @@ void applySettings()
 	minimapPingMute = settings_minimap_ping_mute;
 	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
 	mute_player_monster_sounds = settings_mute_player_monster_sounds;
-
-#ifdef USE_FMOD
-	music_group->setVolume(musvolume / 128.f);
-	sound_group->setVolume(sfxvolume / 128.f);
-	soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-	soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
-#elif defined USE_OPENAL
-	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-#endif
 
 	// set keyboard options
 	for (c = 0; c < NUMIMPULSES; c++)

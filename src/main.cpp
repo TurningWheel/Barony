@@ -376,10 +376,10 @@ int audio_rate = 22050;
 Uint16 audio_format = AUDIO_S16;
 int audio_channels = 2;
 int audio_buffers = 512;
-int sfxvolume = 64;
-int sfxAmbientVolume = 64;
-int sfxEnvironmentVolume = 64;
-int musvolume = 48;
+real_t sfxvolume = 1.0;
+real_t sfxAmbientVolume = 1.0;
+real_t sfxEnvironmentVolume = 1.0;
+real_t musvolume = 1.0;
 
 // fun stuff
 SDL_Surface* title_bmp = nullptr;

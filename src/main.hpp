@@ -705,9 +705,10 @@ extern Uint32 numtiles;
 extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
-extern int sfxvolume; //Max size is 128.
-extern int sfxAmbientVolume;
-extern int sfxEnvironmentVolume;
+extern real_t musvolume;
+extern real_t sfxvolume;
+extern real_t sfxAmbientVolume;
+extern real_t sfxEnvironmentVolume;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 static const int MINIMAP_MAX_DIMENSION = 512;

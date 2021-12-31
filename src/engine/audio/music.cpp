@@ -27,7 +27,6 @@ bool loadMusic()
 	// load music
 #ifdef SOUND
 #ifdef USE_OPENAL
-#define FMOD_ChannelGroup_SetVolume OPENAL_ChannelGroup_SetVolume
 #define fmod_system 0
 #define FMOD_SOFTWARE 0
 #define fmod_system->createStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E)
@@ -35,7 +34,6 @@ bool loadMusic()
 int fmod_result;
 #endif
 
-	music_group->setVolume(musvolume / 128.f);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTRODUCTION, FMOD_DEFAULT, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> FMOD_DEFAULT?
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTERMISSION, FMOD_DEFAULT, nullptr, &intermissionmusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_MINETOWN, FMOD_DEFAULT, nullptr, &minetownmusic);
@@ -172,7 +170,6 @@ int fmod_result;
 		}
 	}
 #ifdef USE_OPENAL
-#undef FMOD_ChannelGroup_SetVolume
 #undef fmod_system
 #undef FMOD_SOFTWARE
 #undef fmod_system->createStream
@@ -182,6 +179,11 @@ int fmod_result;
 #endif
 
 	return true;
+}
+
+void stopMusic()
+{
+    playMusic(nullptr, false, false, false);
 }
 
 void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
@@ -198,7 +200,7 @@ void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
 #endif
 	fadein_increment = default_fadein_increment;
 	fadeout_increment = default_fadeout_increment;
-	if (!fmod_system || !sound)
+	if (!fmod_system)
 	{
 		printlog("Can't play music.\n");
 		return;
@@ -218,7 +220,9 @@ void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
 			music_channel2->stop();
 			music_channel2 = music_channel;
 			music_channel = nullptr;
-			fmod_result = fmod_system->playSound(sound, music_group, true, &music_channel);
+			if (sound) {
+			    fmod_result = fmod_system->playSound(sound, music_group, true, &music_channel);
+			}
 		}
 	}
 	else
@@ -226,7 +230,9 @@ void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
 		music_channel2->stop();
 		music_channel2 = music_channel;
 		music_channel = nullptr;
-		fmod_result = fmod_system->playSound(sound, music_group, true, &music_channel);
+		if (sound) {
+		    fmod_result = fmod_system->playSound(sound, music_group, true, &music_channel);
+		}
 	}
 	//FMOD_Channel_SetChannelGroup(music_channel, music_group);
 	if (crossfade == true)

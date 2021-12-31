@@ -3718,81 +3718,15 @@ void handleEvents(void)
 			case SDL_WINDOWEVENT:
 				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
 				{
-#ifdef USE_FMOD
-					if ( music_group )
-					{
-						music_group->setVolume(0.f);
-					}
-					if ( sound_group )
-					{
-						sound_group->setVolume(0.f);
-					}
-					if ( soundAmbient_group )
-					{
-						soundAmbient_group->setVolume(0.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						soundEnvironment_group->setVolume(0.f);
-					}
-#endif // USE_FMOD
-#ifdef USE_OPENAL
-					if ( music_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(music_group, 0.f);
-					}
-					if ( sound_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
-					}
-					if ( soundAmbient_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, 0.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, 0.f);
-					}
-#endif
+				    setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f);
 				}
 				else if ( event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED )
 				{
-#ifdef USE_FMOD
-					if ( music_group )
-					{
-						music_group->setVolume(musvolume / 128.f);
-					}
-					if ( sound_group )
-					{
-						sound_group->setVolume(sfxvolume / 128.f);
-					}
-					if ( soundAmbient_group )
-					{
-						soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
-					}
-#endif // USE_FMOD
-#ifdef USE_OPENAL
-					if ( music_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-					}
-					if ( sound_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-					}
-					if ( soundAmbient_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-					}
-					if ( soundEnvironment_group )
-					{
-						OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-					}
-#endif
+				    setGlobalVolume(MainMenu::master_volume,
+				        musvolume,
+				        sfxvolume,
+				        sfxAmbientVolume,
+				        sfxEnvironmentVolume);
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
@@ -5585,7 +5519,7 @@ int main(int argc, char** argv)
 						introstage = 1;
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
-							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
+							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreenNoMusicFade);
 						}
 						else
 						{

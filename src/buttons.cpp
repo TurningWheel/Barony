@@ -90,11 +90,11 @@ static void updateMapNames()
 	std::string path;
 	if ( savewindow > 0 )
 	{
-		path = physfs_saveDirectory + "maps/";
+		path = physfs_saveDirectory + "/maps/";
 	}
 	else
 	{
-		path = physfs_openDirectory + "maps/";
+		path = physfs_openDirectory + "/maps/";
 	}
 	if ( (dir = openDataDir(path.c_str())) != NULL )
 	{
@@ -871,7 +871,7 @@ void buttonSave(button_t* my)
 		printlog("saving map file '%s'...\n", filename);
 
 		std::string path = physfs_saveDirectory;
-		path.append("maps/").append(filename);
+		path.append("/maps/").append(filename);
 		if (saveMap(path.c_str()))
 		{
 			strcat(message, "Failed to save ");
