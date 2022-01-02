@@ -900,6 +900,7 @@ public:
 		void updateItemContextMenu();
 		void cycleInventoryTab();
 		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
+		bool moveItemToFreeInventorySlot(Item* item);
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )

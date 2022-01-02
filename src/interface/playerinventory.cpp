@@ -5921,6 +5921,192 @@ void autosortInventory(int player, bool sortPaperDoll)
 	sortInventoryItemsOfType(player, -1, true); // clean up the rest of the items.
 }
 
+bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
+{
+	bool notfree = false;
+	bool is_spell = itemCategory(item) == SPELL_CAT;
+	bool foundaspot = false;
+
+	if ( is_spell )
+	{
+		int x = 0;
+		int y = 0;
+		while ( true )
+		{
+			for ( x = 0; x < Player::Inventory_t::MAX_SPELLS_X; x++ )
+			{
+				for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+				{
+					Item* tempItem = static_cast<Item*>(node->element);
+					if ( tempItem == item )
+					{
+						continue;
+					}
+					if ( tempItem )
+					{
+						if ( tempItem->x == x && tempItem->y == y )
+						{
+							if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+							{
+								notfree = true;  //Both spells. Can't fit in the same slot.
+							}
+							else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+							{
+								notfree = true;  //Both not spells. Can't fit in the same slot.
+							}
+						}
+					}
+				}
+				if ( notfree )
+				{
+					notfree = false;
+					continue;
+				}
+				item->x = x;
+				item->y = y;
+				foundaspot = true;
+				break;
+			}
+			if ( foundaspot )
+			{
+				return true;
+				break;
+			}
+			y++;
+		}
+		return false;
+	}
+	else
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( stats[player.playernum]->cloak
+				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+				&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
+			{
+				setSizeY(DEFAULT_INVENTORY_SIZEY + getPlayerBackpackBonusSizeY());
+			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			if ( !players[player.playernum]->isLocalPlayer() )
+			{
+				return false;
+			}
+			if ( stats[player.playernum]->cloak 
+				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+				&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
+			{
+				setSizeY(DEFAULT_INVENTORY_SIZEY + getPlayerBackpackBonusSizeY());
+			}
+		}
+
+		int x = 0;
+		int y = 0;
+		const int sort_y = std::min(getSizeY(), DEFAULT_INVENTORY_SIZEY);
+		while ( true )
+		{
+			for ( y = 0; y < sort_y; y++ )
+			{
+				for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+				{
+					Item* tempItem = static_cast<Item*>(node->element);
+					if ( tempItem == item )
+					{
+						continue;
+					}
+					if ( tempItem )
+					{
+						if ( tempItem->x == x && tempItem->y == y )
+						{
+							if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+							{
+								notfree = true;  //Both spells. Can't fit in the same slot.
+							}
+							else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+							{
+								notfree = true;  //Both not spells. Can't fit in the same slot.
+							}
+						}
+					}
+				}
+				if ( notfree )
+				{
+					notfree = false;
+					continue;
+				}
+				item->x = x;
+				item->y = y;
+				foundaspot = true;
+				break;
+			}
+			if ( foundaspot )
+			{
+				return true;
+				break;
+			}
+			x++;
+		}
+
+		// backpack sorting, sort into here as last priority.
+		if ( x > getSizeX() - 1 && getSizeY() > DEFAULT_INVENTORY_SIZEY )
+		{
+			x = 0;
+			foundaspot = false;
+			notfree = false;
+			while ( true )
+			{
+				for ( y = DEFAULT_INVENTORY_SIZEY; y < getSizeY(); y++ )
+				{
+					for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+					{
+						Item* tempItem = static_cast<Item*>(node->element);
+						if ( tempItem == item )
+						{
+							continue;
+						}
+						if ( tempItem )
+						{
+							if ( tempItem->x == x && tempItem->y == y )
+							{
+								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+								{
+									notfree = true;  //Both spells. Can't fit in the same slot.
+								}
+								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+								{
+									notfree = true;  //Both not spells. Can't fit in the same slot.
+								}
+							}
+						}
+					}
+					if ( notfree )
+					{
+						notfree = false;
+						continue;
+					}
+					item->x = x;
+					item->y = y;
+					foundaspot = true;
+					break;
+				}
+				if ( foundaspot )
+				{
+					return true;
+					break;
+				}
+				x++;
+			}
+		}
+
+		if ( !foundaspot )
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
 void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 {
 	node_t* node = nullptr;

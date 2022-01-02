@@ -2264,66 +2264,7 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
-					{
-						// we should rearrange our spells.
-						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
-						{
-							int scanx = 0;
-							int scany = 0;
-							bool notfree = false;
-							bool foundaspot = false;
-							Item* item = (Item*)node->element;
-							if ( itemCategory(item) != SPELL_CAT )
-							{
-								continue;
-							}
-							if ( item->appearance >= 1000 )
-							{
-								continue; // shaman spells.
-							}
-							while ( 1 )
-							{
-								for ( scany = 0; scany < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; scany++ )
-								{
-									node_t* node2;
-									for ( node2 = stats[player]->inventory.first; node2 != NULL; node2 = node2->next )
-									{
-										Item* tempItem = (Item*)node2->element;
-										if ( tempItem == item )
-										{
-											continue;
-										}
-										if ( tempItem )
-										{
-											if ( tempItem->x == scanx && tempItem->y == scany )
-											{
-												if ( itemCategory(tempItem) == SPELL_CAT )
-												{
-													notfree = true;  //Both spells. Can't fit in the same slot.
-												}
-											}
-										}
-									}
-									if ( notfree )
-									{
-										notfree = false;
-										continue;
-									}
-									item->x = scanx;
-									item->y = scany;
-									foundaspot = true;
-									break;
-								}
-								if ( foundaspot )
-								{
-									break;
-								}
-								scanx++;
-							}
-						}
-					}
-					players[player]->inventoryUI.setSizeY(players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
+					playerInventory.setSizeY(players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
 				}
 			}
 
@@ -2378,6 +2319,16 @@ void gameLogic(void)
 						if ( item->beatitude >= 10 )
 						{
 							steamAchievement("BARONY_ACH_BLESSED");
+						}
+					}
+
+					if ( item->status == BROKEN && itemCategory(item) != SPELL_CAT
+						&& item->x == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE )
+					{
+						// item was equipped, but needs a new home in the inventory.
+						if ( !players[player]->inventoryUI.moveItemToFreeInventorySlot(item) )
+						{
+							item->x = players[player]->inventoryUI.getSizeX(); // force unequip below
 						}
 					}
 
@@ -2856,65 +2807,6 @@ void gameLogic(void)
 			}
 			else
 			{
-				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
-				{
-					// we should rearrange our spells.
-					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
-					{
-						int scanx = 0;
-						int scany = 0;
-						bool notfree = false;
-						bool foundaspot = false;
-						Item* item = (Item*)node->element;
-						if ( itemCategory(item) != SPELL_CAT )
-						{
-							continue;
-						}
-						if ( item->appearance >= 1000 )
-						{
-							continue; // shaman spells.
-						}
-						while ( 1 )
-						{
-							for ( scany = 0; scany < playerInventory.DEFAULT_INVENTORY_SIZEY; scany++ )
-							{
-								node_t* node2;
-								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
-								{
-									Item* tempItem = (Item*)node2->element;
-									if ( tempItem == item )
-									{
-										continue;
-									}
-									if ( tempItem )
-									{
-										if ( tempItem->x == scanx && tempItem->y == scany )
-										{
-											if ( itemCategory(tempItem) == SPELL_CAT )
-											{
-												notfree = true;  //Both spells. Can't fit in the same slot.
-											}
-										}
-									}
-								}
-								if ( notfree )
-								{
-									notfree = false;
-									continue;
-								}
-								item->x = scanx;
-								item->y = scany;
-								foundaspot = true;
-								break;
-							}
-							if ( foundaspot )
-							{
-								break;
-							}
-							scanx++;
-						}
-					}
-				}
 				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY);
 			}
 
@@ -2956,6 +2848,16 @@ void gameLogic(void)
 				if ( item->type == FOOD_BLOOD && item->count >= 20 )
 				{
 					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+				}
+
+				if ( item->status == BROKEN && itemCategory(item) != SPELL_CAT
+					&& item->x == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE )
+				{
+					// item was equipped, but needs a new home in the inventory.
+					if ( !players[clientnum]->inventoryUI.moveItemToFreeInventorySlot(item) )
+					{
+						item->x = players[clientnum]->inventoryUI.getSizeX(); // force unequip below
+					}
 				}
 
 				// drop any inventory items you don't have room for
