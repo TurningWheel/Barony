@@ -16,8 +16,9 @@ namespace MainMenu {
 		None = 0,
 		RootMainMenu = 1,
 		IntroStoryScreen = 2,
-		HallOfTrials = 3,
-		GameStart = 4,
+		IntroStoryScreenNoMusicFade = 3,
+		HallOfTrials = 4,
+		GameStart = 5,
 	};
 
 	void beginFade(FadeDestination);

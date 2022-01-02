@@ -1469,6 +1469,11 @@ int main(int argc, char** argv)
 		printlog( "Failed to get binary path. Program may not work correctly!\n");
 	}
 #endif
+
+#ifdef LINUX
+	(void)chdir(BASE_DATA_DIR); // fixes a lot of headaches...
+#endif
+
 	button_t* button;
 	node_t* node;
 	node_t* nextnode;

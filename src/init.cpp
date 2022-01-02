@@ -978,12 +978,12 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 						model_cache->read(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces);
 					}
 					FileIO::close(model_cache);
+					return;
 				}
 				else
 				{
 					FileIO::close(model_cache);
 				}
-				return;
 			}
 		}
 	}

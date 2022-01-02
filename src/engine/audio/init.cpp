@@ -138,9 +138,6 @@ int loadSoundResources()
 		}
 	}
 	FileIO::close(fp);
-	sound_group->setVolume(sfxvolume / 128.f);
-	soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-	soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
 	fmod_system->set3DSettings(1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");
@@ -166,9 +163,6 @@ int loadSoundResources()
 		//TODO: set sound volume? Or otherwise handle sound volume.
 	}
 	FileIO::close(fp);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif // defined USE_OPENAL
 

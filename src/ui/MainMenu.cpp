@@ -996,11 +996,11 @@ namespace MainMenu {
 		vidgamma = gamma / 100.f;
 		::fov = fov;
 		fpsLimit = fps;
-		MainMenu::master_volume = master_volume;
-		sfxvolume = (gameplay_volume / 100.f) * 128.f;
-		sfxAmbientVolume = (ambient_volume / 100.f) * 128.f;
-		sfxEnvironmentVolume = (environment_volume / 100.f) * 128.f;
-		musvolume = (music_volume / 100.f) * 128.f;
+		MainMenu::master_volume = (master_volume / 200.f);
+		sfxvolume = (gameplay_volume / 200.f);
+		sfxAmbientVolume = (ambient_volume / 200.f);
+		sfxEnvironmentVolume = (environment_volume / 200.f);
+		musvolume = (music_volume / 200.f);
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
@@ -1051,11 +1051,11 @@ namespace MainMenu {
 		settings.gamma = vidgamma * 100.f;
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
-		settings.master_volume = MainMenu::master_volume;
-		settings.gameplay_volume = (float)sfxvolume / 128.f * 100.f;
-		settings.ambient_volume = (float)sfxAmbientVolume / 128.f * 100.f;
-		settings.environment_volume = (float)sfxEnvironmentVolume / 128.f * 100.f;
-		settings.music_volume = (float)musvolume / 128.f * 100.f;
+		settings.master_volume = MainMenu::master_volume * 200.f;
+		settings.gameplay_volume = (float)sfxvolume * 200.f;
+		settings.ambient_volume = (float)sfxAmbientVolume * 200.f;
+		settings.environment_volume = (float)sfxEnvironmentVolume* 200.f;
+		settings.music_volume = (float)musvolume * 200.f;
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
@@ -1109,7 +1109,7 @@ namespace MainMenu {
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
 		settings.environment_volume = 100.f;
-		settings.music_volume = 100.f;
+		settings.music_volume = 50.f;
 		settings.minimap_pings_enabled = true;
 		settings.player_monster_sounds_enabled = true;
 		settings.out_of_focus_audio_enabled = true;
@@ -1383,17 +1383,7 @@ namespace MainMenu {
 
 		// update volume for sound groups
 		if (initialized) {
-#ifdef USE_FMOD
-			music_group->setVolume(musvolume / 128.f);
-			sound_group->setVolume(sfxvolume / 128.f);
-			soundAmbient_group->setVolume(sfxAmbientVolume / 128.f);
-			soundEnvironment_group->setVolume(sfxEnvironmentVolume / 128.f);
-#elif defined USE_OPENAL
-			OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-			OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-			OPENAL_ChannelGroup_SetVolume(soundAmbient_group, sfxAmbientVolume / 128.f);
-			OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, sfxEnvironmentVolume / 128.f);
-#endif
+		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
 	}
 
@@ -4064,8 +4054,10 @@ bind_failed:
 				if (strcmp(button.getName(), mode) == 0) {
 					continue;
 				}
-				auto other_button = frame->findButton(mode); assert(other_button);
-				other_button->setPressed(false);
+				auto other_button = frame->findButton(mode);
+				if (other_button) {
+				    other_button->setPressed(false);
+				}
 			}
 		};
 
@@ -4439,7 +4431,9 @@ bind_failed:
 					}
 				} else {
 					auto other_button = frame->findButton(race);
-					other_button->setPressed(false);
+					if (other_button) {
+					    other_button->setPressed(false);
+					}
 				}
 			}
 			auto disable_abilities = frame->findButton("disable_abilities");
@@ -7250,14 +7244,18 @@ bind_failed:
 	}
 
 	static void mainEditor(Button& button) {
-#ifndef NINTENDO
+#if defined(WINDOWS)
 	    char path[PATH_MAX];
-#ifdef WINDOWS
 	    completePath(path, "editor.exe");
-#else
-	    completePath(path, "editor");
-#endif
+	    stopMusic();
 	    system(path);
+#elif defined(LINUX)
+	    char path[PATH_MAX];
+	    completePath(path, "editor");
+	    stopMusic();
+	    system(path);
+#else
+        return;
 #endif
 	}
 
@@ -7429,13 +7427,16 @@ bind_failed:
 					    victory = 0;
 					    doEndgame();
 					}
+		            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
 					createMainMenu(false);
 				}
-				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
+				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen
+				    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
 					destroyMainMenu();
 					createDummyMainMenu();
 					createStoryScreen();
-					playMusic(sounds[501], false, true, false);
+					playMusic(sounds[501], false,
+					    main_menu_fade_destination == FadeDestination::IntroStoryScreen, false);
 				}
 				if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
 					destroyMainMenu();

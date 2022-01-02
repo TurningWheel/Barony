@@ -106,7 +106,6 @@ extern int currentlevel;
 extern bool secretlevel;
 extern bool darkmap;
 extern int shaking, bobbing;
-extern int musvolume; //Max size is 128.
 extern SDL_Surface* title_bmp;
 extern SDL_Surface* titleDefault_bmp;
 extern SDL_Surface* logo_bmp;
