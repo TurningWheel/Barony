@@ -5981,7 +5981,8 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 		if ( multiplayer != CLIENT )
 		{
 			if ( stats[player.playernum]->cloak
-				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK 
+				&& stats[player.playernum]->cloak->status != BROKEN
 				&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
 			{
 				setSizeY(DEFAULT_INVENTORY_SIZEY + getPlayerBackpackBonusSizeY());
@@ -5995,6 +5996,7 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 			}
 			if ( stats[player.playernum]->cloak 
 				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+				&& stats[player.playernum]->cloak->status != BROKEN
 				&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
 			{
 				setSizeY(DEFAULT_INVENTORY_SIZEY + getPlayerBackpackBonusSizeY());
@@ -6042,10 +6044,14 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 			}
 			if ( foundaspot )
 			{
-				return true;
 				break;
 			}
 			x++;
+		}
+
+		if ( foundaspot && x < getSizeX() && y < getSizeY() )
+		{
+			return true;
 		}
 
 		// backpack sorting, sort into here as last priority.

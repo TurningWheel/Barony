@@ -2252,7 +2252,7 @@ void gameLogic(void)
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
 				auto& playerInventory = players[player]->inventoryUI;
 
-				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
+				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK && stats[player]->cloak->status != BROKEN
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
 					backpack_sizey[player] = playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY();
@@ -2795,7 +2795,7 @@ void gameLogic(void)
 			auto& playerInventory = players[clientnum]->inventoryUI;
 			const int inventorySizeX = playerInventory.getSizeX();
 			int backpack_sizey = playerInventory.DEFAULT_INVENTORY_SIZEY;
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->status != BROKEN
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
 				backpack_sizey += playerInventory.getPlayerBackpackBonusSizeY();
