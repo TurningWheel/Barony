@@ -2217,7 +2217,7 @@ void consoleCommand(char const * const command_str)
 			}
 
 			int effect = atoi(&command_str[11]);
-			if ( effect >= NUMEFFECTS || effect < 0 )
+			if ( effect >= NUMEFFECTS || effect < 0 || !players[clientnum]->entity )
 			{
 				return;
 			}
