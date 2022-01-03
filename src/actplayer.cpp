@@ -998,9 +998,27 @@ real_t Player::PlayerMovement_t::getMaximumSpeed()
 	return maxSpeed;
 }
 
+int Player::PlayerMovement_t::getCharacterEquippedWeight()
+{
+	int weight = 0;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != NULL && player.paperDoll.isItemOnDoll(*item) )
+		{
+			if ( item->type >= 0 && item->type < NUMITEMS )
+			{
+				weight += item->getWeight();
+			}
+		}
+	}
+	//weight += stats[player.playernum]->GOLD / 100;
+	return weight;
+}
+
 int Player::PlayerMovement_t::getCharacterWeight()
 {
-	int weight = 0.0;
+	int weight = 0;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -1013,16 +1031,21 @@ int Player::PlayerMovement_t::getCharacterWeight()
 		}
 	}
 	weight += stats[player.playernum]->GOLD / 100;
+	return weight;
+}
+
+int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
+{
+	int weight = getCharacterWeight();
+	if ( customWeight )
+	{
+		weight = *customWeight;
+	}
+
 	if ( gameplayCustomManager.inUse() )
 	{
 		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
 	}
-	return weight;
-}
-
-int Player::PlayerMovement_t::getCharacterModifiedWeight()
-{
-	int weight = getCharacterWeight();
 	if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
 	{
 		weight = weight * 0.5;

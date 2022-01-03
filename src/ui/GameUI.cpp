@@ -4657,11 +4657,16 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-					real_t weightratio1 = player.movement.getWeightRatio(player.movement.getCharacterWeight(), 0);
-					real_t weightratio2 = player.movement.getWeightRatio(player.movement.getCharacterWeight(), STR);
+					real_t weightratio1 = player.movement.getWeightRatio(player.movement.getCharacterModifiedWeight(), 0);
+					real_t weightratio2 = player.movement.getWeightRatio(player.movement.getCharacterModifiedWeight(), STR);
 					real_t speedFactor1 = player.movement.getSpeedFactor(weightratio1, DEX);
 					real_t speedFactor2 = player.movement.getSpeedFactor(weightratio2, DEX);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), speedFactor2 - speedFactor1);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t noSTRPercent = 100.0 * speedFactor1 / std::fmax(.01, maxSpeed);
+					real_t currentPercent = 100.0 * speedFactor2 / std::fmax(.01, maxSpeed);
+					real_t displayValue = currentPercent - noSTRPercent;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), displayValue);
 				}
 					break;
 				case SHEET_DEX:
@@ -4777,11 +4782,17 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_DEX:
 				{
 					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
-					real_t weightratio = player.movement.getWeightRatio(player.movement.getCharacterWeight(), STR);
+					real_t weightratio = player.movement.getWeightRatio(player.movement.getCharacterModifiedWeight(), STR);
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
 					real_t speedFactor1 = player.movement.getSpeedFactor(weightratio, 0);
 					real_t speedFactor2 = player.movement.getSpeedFactor(weightratio, DEX);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), speedFactor2 - speedFactor1);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t noDEXPercent = 100.0 * speedFactor1 / std::fmax(.01, maxSpeed);
+					real_t currentPercent = 100.0 * speedFactor2 / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = currentPercent - noDEXPercent;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), displayValue);
 				}
 					break;
 				case SHEET_CON:
@@ -5210,8 +5221,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_nobonus_format").c_str(), mpbuf);
 					}
 				}
-				break;
+					break;
 				case SHEET_WGT:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_base").c_str());
+					int weight = player.movement.getCharacterWeight();
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_nobonus_format").c_str(), weight);
+				}
 					break;
 				default:
 					break;
@@ -5504,8 +5520,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						}
 					}
 				}
-				break;
+					break;
 				case SHEET_WGT:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_movement_speed").c_str());
+					int weight = player.movement.getCharacterModifiedWeight();
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_format").c_str(), 
+						100.0 * currentSpeed / std::fmax(.01, maxSpeed));
+				}
 					break;
 				default:
 					break;
@@ -5586,7 +5612,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			// extra number display - line 3
 			hasEntryInfoLines = true;
 			if ( element == SHEET_ATK || element == SHEET_AC || element == SHEET_POW || element == SHEET_RES || element == SHEET_RGN
-				|| element == SHEET_RGN_MP )
+				|| element == SHEET_RGN_MP || element == SHEET_WGT )
 			{
 				if ( element == SHEET_RGN_MP && isInsectoidENRegen )
 				{
@@ -5635,6 +5661,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						entryTotalHeading->setText(getHoverTextString("attributes_rgn_mp_base_sum_header").c_str());
 					}
+				}
+				else if ( element == SHEET_WGT )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_wgt_base_sum_header").c_str());
 				}
 				entryTotalHeading->setColor(hudColors.characterSheetOffWhiteText);
 				entryTotalHeading->setHJustify(Field::justify_t::RIGHT);
@@ -5801,6 +5831,29 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 				break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					//int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					//int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					//int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					//int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					//real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					//real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					//real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+					//real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_attributes_bonus").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						currentSpeedPercent + (noWeightSpeedPercent - currentSpeedPercent) /*+ (goldSpeedPercent - noWeightSpeedPercent)*/);
+				}
 					break;
 				default:
 					break;
@@ -6028,8 +6081,33 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenItemsEffects);
 					}
 				}
-				break;
+					break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					//real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					//real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = (currentEquippedSpeedPercent - noWeightSpeedPercent);
+					if ( displayValue >= 0.0 )
+					{
+						displayValue = -.000001; // so there is a negative sign
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_equipment_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						displayValue);
+				}
 					break;
 				default:
 					break;
@@ -6214,6 +6292,37 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 					break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+					real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = (currentSpeedPercent - noWeightSpeedPercent)
+						- (currentEquippedSpeedPercent - noWeightSpeedPercent)
+						- (goldSpeedPercent - noWeightSpeedPercent);
+					if ( displayValue >= 0.0 )
+					{
+						displayValue = -.000001; // so there is a negative sign
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_inventory_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						displayValue);
+				}
 					break;
 				default:
 					break;
@@ -6316,7 +6425,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 6, buf, valueBuf)
-			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) )
+			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) || element == SHEET_WGT )
 		{
 			// extra number display - line 6
 			hasEntryInfoLines = true;
@@ -6372,6 +6481,35 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 					break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					//int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					//int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					//real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					//real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+					real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = (goldSpeedPercent - noWeightSpeedPercent);
+					if ( displayValue >= 0.0 )
+					{
+						displayValue = -.000001; // so there is a negative sign
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_gold_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						displayValue);
+				}
 					break;
 				default:
 					break;

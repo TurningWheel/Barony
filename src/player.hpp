@@ -1413,7 +1413,8 @@ public:
 		real_t getMaximumSpeed();
 		real_t getWeightRatio(int weight, Sint32 STR);
 		int getCharacterWeight();
-		int getCharacterModifiedWeight();
+		int getCharacterEquippedWeight();
+		int getCharacterModifiedWeight(int* customWeight = nullptr);
 		real_t getSpeedFactor(real_t weightratio, Sint32 DEX);
 		real_t getCurrentMovementSpeed();
 		void handlePlayerCameraPosition(bool useRefreshRateDelta);
