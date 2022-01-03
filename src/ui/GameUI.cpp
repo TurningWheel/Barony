@@ -16100,14 +16100,14 @@ void Player::SkillSheet_t::processSkillSheet()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				if ( Input::inputs[player.playernum].binaryToggle("MenuMouseWheelDownAlt") )
 				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelDownAlt");
 					scrollInertia = std::min(scrollInertia + .05, .15);
 				}
-				if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				if ( Input::inputs[player.playernum].binaryToggle("MenuMouseWheelUpAlt") )
 				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelUpAlt");
 					scrollInertia = std::max(scrollInertia - .05, -.15);
 				}
 			}

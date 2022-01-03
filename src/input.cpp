@@ -90,10 +90,6 @@ void Input::defaultBindings() {
 
 		inputs[c].bind("InventoryTooltipPromptAppraise", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str());
 
-		inputs[c].bind("HotbarCyclePrev", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str());
-		inputs[c].bind("HotbarCycleNext", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str());
-		inputs[c].bind("HotbarCyclePrevAlt", "MouseWheelUp");
-		inputs[c].bind("HotbarCycleNextAlt", "MouseWheelDown");
 		inputs[c].bind("HotbarSlot1", "1");
 		inputs[c].bind("HotbarSlot2", "2");
 		inputs[c].bind("HotbarSlot3", "3");
@@ -104,8 +100,10 @@ void Input::defaultBindings() {
 		inputs[c].bind("HotbarSlot8", "8");
 		inputs[c].bind("HotbarSlot9", "9");
 		inputs[c].bind("HotbarSlot10", "0");
-		inputs[c].bind("MenuMouseWheelUp", "MouseWheelUp");
-		inputs[c].bind("MenuMouseWheelDown", "MouseWheelDown");
+		inputs[c].bind("MenuMouseWheelUp", "MouseWheelUp"); // consumed automatically by frame.cpp
+		inputs[c].bind("MenuMouseWheelDown", "MouseWheelDown"); // consumed automatically by frame.cpp
+		inputs[c].bind("MenuMouseWheelUpAlt", "MouseWheelUp");
+		inputs[c].bind("MenuMouseWheelDownAlt", "MouseWheelDown");
 		inputs[c].bind("MenuRightClick", "Mouse3");
 
 		inputs[c].bind("Attack", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str());

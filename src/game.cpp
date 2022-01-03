@@ -6024,6 +6024,8 @@ int main(int argc, char** argv)
 					// to make sure scroll wheel gets cleared, as it never un-sets itself
 					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Left"); 
 					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Right");
+					Input::inputs[i].consumeBinaryToggle("MenuMouseWheelUpAlt");
+					Input::inputs[i].consumeBinaryToggle("MenuMouseWheelDownAlt");
 				}
 			}
 

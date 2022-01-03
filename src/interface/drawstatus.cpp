@@ -3475,17 +3475,11 @@ void drawStatusNew(const int player)
 		bool bumper_moved = false;
 
 		//Gamepad change hotbar selection.
-		if ( Input::inputs[player].binaryToggle("HotbarCycleNext")
-			|| Input::inputs[player].binaryToggle("HotbarCycleNextAlt") )
+		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Right") )
 		{
-			std::string inputName = "HotbarCycleNext";
-			if ( Input::inputs[player].binaryToggle("HotbarCycleNextAlt") )
-			{
-				inputName = "HotbarCycleNextAlt";
-			}
-			Input::inputs[player].consumeBinaryToggle(inputName.c_str());
+			Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Right");
 
-			bool gamepadControl = Input::inputs[player].input(inputName.c_str()).isBindingUsingGamepad();
+			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Right").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
 				// no action, gamepads can't scroll when useHotbarFaceMenu
@@ -3512,17 +3506,11 @@ void drawStatusNew(const int player)
 				hotbar_t.hotbarTooltipLastGameTick = 0;
 			}
 		}
-		if ( Input::inputs[player].binaryToggle("HotbarCyclePrev")
-			|| Input::inputs[player].binaryToggle("HotbarCyclePrevAlt") )
+		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Left") )
 		{
-			std::string inputName = "HotbarCyclePrev";
-			if ( Input::inputs[player].binaryToggle("HotbarCyclePrevAlt") )
-			{
-				inputName = "HotbarCyclePrevAlt";
-			}
-			Input::inputs[player].consumeBinaryToggle(inputName.c_str());
+			Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Left");
 
-			bool gamepadControl = Input::inputs[player].input(inputName.c_str()).isBindingUsingGamepad();
+			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Left").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
 				// no action, gamepads can't scroll when useHotbarFaceMenu
@@ -3587,6 +3575,9 @@ void drawStatusNew(const int player)
 
 		if ( item )
 		{
+			hotbar_t.hotbarTooltipLastGameTick = 0; // hide tooltip on activation
+			drawHotBarTooltipOnCycle = false;
+
 			bool badpotion = false;
 			bool learnedSpell = false;
 			if ( itemCategory(item) == POTION )
