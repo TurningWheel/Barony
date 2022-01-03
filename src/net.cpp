@@ -5198,7 +5198,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "EQUI", 4))
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
-		equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25]);
+		equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25], false);
 		return;
 	}
 
@@ -5206,7 +5206,7 @@ void serverHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "EQUS", 4) )
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
-		equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25]);
+		equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25], false);
 		return;
 	}
 
@@ -5218,34 +5218,34 @@ void serverHandlePacket()
 		switch ( net_packet->data[27] )
 		{
 			case EQUIP_ITEM_SLOT_WEAPON:
-				equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_SHIELD:
-				equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_MASK:
-				equipItem(item, &stats[net_packet->data[25]]->mask, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->mask, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_HELM:
-				equipItem(item, &stats[net_packet->data[25]]->helmet, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->helmet, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_GLOVES:
-				equipItem(item, &stats[net_packet->data[25]]->gloves, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->gloves, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_BOOTS:
-				equipItem(item, &stats[net_packet->data[25]]->shoes, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->shoes, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_BREASTPLATE:
-				equipItem(item, &stats[net_packet->data[25]]->breastplate, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->breastplate, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_CLOAK:
-				equipItem(item, &stats[net_packet->data[25]]->cloak, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->cloak, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_AMULET:
-				equipItem(item, &stats[net_packet->data[25]]->amulet, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->amulet, net_packet->data[25], false);
 				break;
 			case EQUIP_ITEM_SLOT_RING:
-				equipItem(item, &stats[net_packet->data[25]]->ring, net_packet->data[25]);
+				equipItem(item, &stats[net_packet->data[25]]->ring, net_packet->data[25], false);
 				break;
 			default:
 				break;

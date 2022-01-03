@@ -40,7 +40,7 @@ SDL_Surface* inventory_mode_item_highlighted_img = NULL;
 SDL_Surface* inventory_mode_spell_img = NULL;
 SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 
-bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
+bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool droppingAndUnequipping)
 {
 	//TODO UI: VERIFY
 	if ( !item )
@@ -61,7 +61,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 		return false;
 	}
 
-	if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+	if ( !droppingAndUnequipping && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	{
 		// no backpack space
 		messagePlayer(player, language[3997], item->getName());
@@ -71,7 +71,14 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 	players[player]->gui_mode = GUI_MODE_INVENTORY;
 	openedChest[player] = nullptr;
 
-	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
+	if ( droppingAndUnequipping )
+	{
+		players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+	}
+	else
+	{
+		players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
+	}
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -1642,7 +1649,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 								int newx = selectedItem->x;
 								int newy = selectedItem->y;
 
-								bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem);
+								bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, false);
 								if ( !unequipped )
 								{
 									// failure to unequip
@@ -1691,7 +1698,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						int newx = selectedItem->x;
 						int newy = selectedItem->y;
 
-						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem);
+						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, false);
 						if ( !unequipped )
 						{
 							// failure to unequip, reset coords
@@ -1911,9 +1918,27 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				{
 					if ( bPaperDollItem )
 					{
-						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem); // unequip item
+						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, true); // unequip item
 						if ( !unequipped )
 						{
+							selectedItem = NULL;
+							toggleclick = false;
+						}
+						else
+						{
+							bool droppedAll = false;
+							while ( selectedItem && selectedItem->count > 1 )
+							{
+								droppedAll = dropItem(selectedItem, player);
+								if ( droppedAll )
+								{
+									selectedItem = nullptr;
+								}
+							}
+							if ( !droppedAll )
+							{
+								dropItem(selectedItem, player);
+							}
 							selectedItem = NULL;
 							toggleclick = false;
 						}
@@ -5316,6 +5341,7 @@ std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
 		case PROMPT_EQUIP:
 		case PROMPT_UNEQUIP:
 		case PROMPT_SPELL_EQUIP:
+		case PROMPT_UNEQUIP_FOR_DROP:
 			return "MenuAlt2";
 		case PROMPT_GRAB:
 			return "MenuAlt1";

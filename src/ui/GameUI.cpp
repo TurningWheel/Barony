@@ -10670,7 +10670,8 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_EQUIP 
 		|| prompt == PROMPT_UNEQUIP
-		|| prompt == PROMPT_SPELL_EQUIP )
+		|| prompt == PROMPT_SPELL_EQUIP
+		|| prompt == PROMPT_UNEQUIP_FOR_DROP )
 	{
 		if ( isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook )
 		{
@@ -10680,17 +10681,32 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		if ( !disableItemUsage )
 		{
 			if ( prompt == PROMPT_EQUIP
-				|| prompt == PROMPT_UNEQUIP )
+				|| prompt == PROMPT_UNEQUIP
+				|| prompt == PROMPT_UNEQUIP_FOR_DROP )
 			{
 				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
 					|| itemCategory(item) == SPELLBOOK )
 				{
-					playerTryEquipItemAndUpdateServer(player, item, true);
+					if ( prompt == PROMPT_UNEQUIP_FOR_DROP )
+					{
+						playerTryEquipItemAndUpdateServer(player, item, false); // don't check inventory space to unequip
+					}
+					else
+					{
+						playerTryEquipItemAndUpdateServer(player, item, true);
+					}
 					return;
 				}
 			}
 
-			useItem(item, player);
+			if ( prompt == PROMPT_UNEQUIP_FOR_DROP )
+			{
+				useItem(item, player, players[player]->entity, true);
+			}
+			else
+			{
+				useItem(item, player);
+			}
 			return;
 		}
 		else
