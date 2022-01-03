@@ -1620,6 +1620,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				for (node = stats[player]->inventory.first; node != NULL;
 				        node = nextnode)
 				{
+					toggleclick = false;
 					nextnode = node->next;
 					Item* tempItem = (Item*) (node->element);
 					if (tempItem == selectedItem)
@@ -1627,7 +1628,6 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						continue;
 					}
 
-					toggleclick = false;
 					if (tempItem->x == selectedItem->x
 					        && tempItem->y == selectedItem->y)
 					{
