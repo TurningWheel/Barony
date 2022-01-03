@@ -6180,7 +6180,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 			bool notfree = false, foundaspot = false;
 
 			bool is_spell = false;
-			int inventory_y = std::min(std::max(players[player]->inventoryUI.getSizeY(), 2), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
+			int inventory_y = std::min(players[player]->inventoryUI.getSizeY(), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
 
 			if ( sortRightToLeft )
 			{
