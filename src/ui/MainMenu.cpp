@@ -1187,29 +1187,64 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static const char* intro_text =
-	u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
-	u8"Its prosperity was unmatched for generations until the evil Baron Herx came\nto power.#"
-	u8"The Baron, in his endless greed, forced the people to dig the hills for gold,\nthough the ground had never given such treasure before.#"
-	u8"Straining under the yoke of their master, the people planned his demise.\nThey tricked him with a promise of gold and sealed him within the mines.#"
-	u8"Free of their cruel master, the people returned to their old way of life.\nBut disasters shortly began to befall the village.#"
-	u8"Monsters and other evils erupted from the ground, transforming the village\ninto a ghost town.#"
-	u8"Many adventurers have descended into the mines to break the Baron's curse,\nbut none have returned.#"
-	u8"The town of Hamlet cries for redemption, and only a hero can save it\nfrom its curse...";
+	// Story text is formatted thus:
+	// carat ^ advances the image index
+	// pound # adds a pause
 
-	static void createStoryScreen() {
+	static void createStoryScreen(const char* file, void (*end_func)()) {
+	    char filename[PATH_MAX];
+	    (void)completePath(filename, file);
+
+        struct Story {
+            int version;
+            std::vector<std::string> text;
+            std::vector<std::string> images;
+
+            void serialize(FileInterface* file) {
+                if (file->isReading()) {
+                    text.clear();
+                    images.clear();
+                }
+                file->property("version", version);
+                file->property("text", text);
+                file->property("images", images);
+            }
+        };
+
+        static Story story;
+        static int story_text_chars;
+        static int story_text_lines;
+		static int story_text_pause;
+		static float story_text_scroll;
+		static float story_text_writer;
+		static bool story_text_end;
+		static int story_image_index;
+		static float story_image_fade;
+		static bool story_image_advanced;
+		static void (*story_end_func)();
+
+		bool read_result = FileHelper::readObject(filename, story);
+		if (!read_result) {
+		    assert(0 && "Story file not found!");
+		    return;
+		}
+		story_text_chars = 0;
+		story_text_lines = 0;
+		story_text_pause = 0;
+		story_text_scroll = 0.f;
+		story_text_writer = 0.f;
+		story_text_end = false;
+		story_image_index = 0;
+		story_image_fade = 0.f;
+		story_image_advanced = false;
+		story_end_func = end_func;
+
 		main_menu_frame->addImage(
 			main_menu_frame->getSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Story/intro1.png",
+			story.images[0].c_str(),
 			"backdrop"
 		);
-
-		static int story_text_pause = 0;
-		static int story_text_section = 0;
-		static float story_text_scroll = 0.f;
-		static float story_text_writer = 0.f;
-		static bool story_text_end = false;
 
 		auto back_button = main_menu_frame->addButton("back");
 		back_button->setHideSelectors(true);
@@ -1224,15 +1259,17 @@ namespace MainMenu {
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
 		back_button->setCallback([](Button&){
-			beginFade(MainMenu::FadeDestination::RootMainMenu);
+			story_end_func();
 			});
 		back_button->setWidgetBack("back");
 		back_button->select();
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
+		static const int text_box_lines = 2;
+
 		auto textbox1 = main_menu_frame->addFrame("story_text_box");
-		textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * 4, Frame::virtualScreenX - 240, font->height() * 3});
+		textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * (text_box_lines + 2), Frame::virtualScreenX - 240, font->height() * (text_box_lines + 1)});
 		textbox1->setActualSize(SDL_Rect{0, 0, textbox1->getSize().w, textbox1->getSize().h});
 		textbox1->setColor(makeColor(0, 0, 0, 127));
 		textbox1->setBorder(0);
@@ -1240,12 +1277,12 @@ namespace MainMenu {
 		auto textbox2 = textbox1->addFrame("story_text_box");
 		textbox2->setScrollBarsEnabled(false);
 		textbox2->setAllowScrollBinds(false);
-		textbox2->setSize(SDL_Rect{0, font->height() / 2, Frame::virtualScreenX - 240, font->height() * 2});
-		textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 16});
+		textbox2->setSize(SDL_Rect{font->height() / 2, font->height() / 2, Frame::virtualScreenX - 240 - font->height(), font->height() * text_box_lines});
+		textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 100});
 		textbox2->setHollow(true);
 		textbox2->setBorder(0);
 
-		auto field = textbox2->addField("text", 1024);
+		auto field = textbox2->addField("text", 1 << 16);
 		field->setFont(bigfont_outline);
 		field->setSize(textbox2->getActualSize());
 		field->setHJustify(Field::justify_t::CENTER);
@@ -1256,16 +1293,23 @@ namespace MainMenu {
 			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
 			auto textbox1 = static_cast<Frame*>(&widget);
 			auto story_font = Font::get(bigfont_outline); assert(story_font);
+			auto backdrop = main_menu_frame->findImage("backdrop"); assert(backdrop);
+			if (backdrop && !story_text_pause) {
+				story_image_fade = std::max(0.f, story_image_fade - inc);
+		        float factor = story_image_fade - story_font->height();
+		        Uint8 c = 255 * (fabs(factor) / story_font->height());
+		        backdrop->color = makeColor(c, c, c, 255);
+		        if (factor <= 0.f && story_image_advanced) {
+		            story_image_advanced = false;
+			        story_image_index = (story_image_index + 1) % story.images.size();
+			        backdrop->path = story.images[story_image_index];
+		        }
+			}
 			if (story_text_scroll > 0.f) {
 				int old_story_text_scroll = (int)story_text_scroll;
 				story_text_scroll -= inc;
 				if (story_text_scroll < 0.f) {
 					story_text_scroll = 0.f;
-				}
-				bool advanced_image = false;
-				if (old_story_text_scroll >= story_font->height() &&
-					story_text_scroll <= story_font->height()) {
-					advanced_image = true;
 				}
 				if ((int)story_text_scroll != old_story_text_scroll) {
 					auto textbox2 = textbox1->findFrame("story_text_box");
@@ -1274,25 +1318,14 @@ namespace MainMenu {
 					++size.y;
 					textbox2->setActualSize(size);
 				}
-				if (story_text_section % 2 == 0) {
-					auto backdrop = main_menu_frame->findImage("backdrop");
-					if (backdrop) {
-						Uint8 c = 255 * (fabs(story_text_scroll - story_font->height()) / story_font->height());
-						backdrop->color = makeColor(c, c, c, 255);
-						if (advanced_image) {
-							char c = backdrop->path[backdrop->path.size() - 5];
-							backdrop->path[backdrop->path.size() - 5] = c + 1;
-						}
-					}
-				}
 			} else {
 				if (story_text_pause > 0) {
 					--story_text_pause;
 					if (story_text_pause == 0) {
 						if (story_text_end == true) {
-							beginFade(MainMenu::FadeDestination::RootMainMenu);
+							story_end_func();
 						} else {
-							story_text_scroll = story_font->height() * 2;
+							story_text_scroll = story_font->height() * text_box_lines;
 						}
 					}
 				} else {
@@ -1303,25 +1336,42 @@ namespace MainMenu {
 						assert(textbox2);
 						auto text = textbox2->findField("text");
 						assert(text);
-						size_t len = strlen(text->getText());
-						if (len < strlen(intro_text)) {
-							char buf[1024] = { '\0' };
-							strcpy(buf, text->getText());
-							char c = intro_text[len];
-							if (c == '#') {
-								++story_text_section;
-								story_text_pause = fpsLimit * 5;
-								c = '\n';
-							} else if (c == ',') {
-								story_text_writer += fpsLimit / 5.f;
-							} else if (c == '.') {
-								story_text_writer += fpsLimit / 2.f;
+						size_t text_index = 0u;
+						char* buf = const_cast<char*>(text->getText());
+						int chars = story_text_chars;
+						size_t len = strlen(buf);
+					    for (;
+					        text_index < story.text.size() && chars >= story.text[text_index].size();
+					        chars -= story.text[text_index].size(), ++text_index);
+						if (text_index < story.text.size()) {
+							char pc = story.text[text_index][std::max(chars - 1, 0)];
+							char c = story.text[text_index][chars];
+							char nc = story.text[text_index][chars + 1];
+							++story_text_chars;
+							if (c == '\n') {
+							    ++story_text_lines;
+							    if (story_text_lines >= text_box_lines) {
+							        story_text_lines = 0;
+								    story_text_pause = fpsLimit * 5;
+							    }
+							    if (nc == '^') {
+							        story_image_advanced = true;
+							        story_image_fade = story_font->height() * 2;
+							    }
+							} else if (c == '^') {
+							    if (pc != '\n') {
+							        story_image_advanced = true;
+							        story_image_fade = story_font->height() * 2;
+							    }
+								return; // skip printing this character
+							} else if (c == '#') {
+								story_text_writer += fpsLimit / 10.f;
+								return; // skip printing this character
 							} else {
 								story_text_writer += fpsLimit / 30.f;
 							}
 							buf[len] = c;
 							buf[len + 1] = '\0';
-							text->setText(buf);
 						} else {
 							story_text_pause = fpsLimit * 5;
 							story_text_end = true;
@@ -3378,6 +3428,11 @@ bind_failed:
 
 	static void recordsDungeonCompendium(Button& button) {
 		soundActivate();
+
+		destroyMainMenu();
+		createDummyMainMenu();
+
+		beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
 	}
 
 	static void recordsStoryIntroduction(Button& button) {
@@ -7434,9 +7489,15 @@ bind_failed:
 				    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
 					destroyMainMenu();
 					createDummyMainMenu();
-					createStoryScreen();
+					createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
 					playMusic(sounds[501], false,
 					    main_menu_fade_destination == FadeDestination::IntroStoryScreen, false);
+				}
+				if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
+					destroyMainMenu();
+					createDummyMainMenu();
+					createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
+					playMusic(intermissionmusic, false, false, false);
 				}
 				if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
 					destroyMainMenu();

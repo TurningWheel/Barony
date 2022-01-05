@@ -819,31 +819,33 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 			|| (input.binary("Move Left") - input.binary("Move Right")) )
 				|| (inputs.hasController(PLAYER_NUM) 
 						&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-							|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement()))
-			&& !command && !swimming )
+							|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())) )
 		{
-			if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
-			{
-				if ( PLAYER_BOBMODE )
-				{
-					PLAYER_BOBMOVE += .0125 * refreshRateDelta;
-				}
-				else
-				{
-					PLAYER_BOBMOVE -= .0125 * refreshRateDelta;
-				}
-			}
-			else
-			{
-				if ( PLAYER_BOBMODE )
-				{
-					PLAYER_BOBMOVE += .025 * refreshRateDelta;
-				}
-				else
-				{
-					PLAYER_BOBMOVE -= .025 * refreshRateDelta;
-				}
-			}
+		    if (!command && !swimming)
+		    {
+			    if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
+			    {
+				    if ( PLAYER_BOBMODE )
+				    {
+					    PLAYER_BOBMOVE += .0125 * refreshRateDelta;
+				    }
+				    else
+				    {
+					    PLAYER_BOBMOVE -= .0125 * refreshRateDelta;
+				    }
+			    }
+			    else
+			    {
+				    if ( PLAYER_BOBMODE )
+				    {
+					    PLAYER_BOBMOVE += .025 * refreshRateDelta;
+				    }
+				    else
+				    {
+					    PLAYER_BOBMOVE -= .025 * refreshRateDelta;
+				    }
+			    }
+		    }
 		}
 		else if ( !swimming )
 		{
