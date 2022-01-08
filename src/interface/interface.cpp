@@ -1505,6 +1505,27 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	if ( activeModule == MODULE_INVENTORY )
 	{
 		auto& inventoryUI = player.inventoryUI;
+		Item* selectedItem = inputs.getUIInteraction(player.playernum)->selectedItem;
+		if ( selectedItem)
+		{
+			// we're holding an item, move to the selected item's slot
+			auto slot = player.paperDoll.getSlotForItem(*selectedItem);
+			if ( slot != Player::PaperDoll_t::PaperDollSlotType::SLOT_MAX )
+			{
+				int x, y;
+				player.paperDoll.getCoordinatesFromSlotType(slot, x, y);
+				inventoryUI.selectSlot(x, y);
+			}
+			else
+			{
+				// not equipped, move to it's inventory area
+				if ( selectedItem->x >= 0 && selectedItem->x < inventoryUI.getSizeX()
+					&& selectedItem->y >= 0 && selectedItem->y < inventoryUI.getSizeY() )
+				{
+					inventoryUI.selectSlot(selectedItem->x, selectedItem->y);
+				}
+			}
+		}
 		if ( inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER))
 			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
 		{
