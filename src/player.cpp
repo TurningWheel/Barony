@@ -320,39 +320,41 @@ void GameController::handleAnalog(int player)
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
 
-			if ( gamePaused )
-			{
-				if ( !mouse->draw_cursor )
-				{
-					mouse->draw_cursor = true;
-				}
+			return;
 
-				if ( inputs.bPlayerUsingKeyboardControl(player) )
-				{
-					//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
-					//mouse->warpMouseInScreen(screen, rightx, righty);
-					// smoother to use virtual mouse than push mouse events
-					if ( gamePaused )
-					{
-						mouse->warpMouseInScreen(screen, rightx, righty);
-					}
-					else
-					{
-						mouse->warpMouseInCamera(cameras[player], rightx, righty);
-					}
-				}
-				else
-				{
-					if ( gamePaused )
-					{
-						mouse->warpMouseInScreen(screen, rightx, righty);
-					}
-					else
-					{
-						mouse->warpMouseInCamera(cameras[player], rightx, righty);
-					}
-				}
-			}
+			//if ( gamePaused )
+			//{
+			//	if ( !mouse->draw_cursor )
+			//	{
+			//		mouse->draw_cursor = true;
+			//	}
+
+			//	if ( inputs.bPlayerUsingKeyboardControl(player) )
+			//	{
+			//		//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+			//		//mouse->warpMouseInScreen(screen, rightx, righty);
+			//		// smoother to use virtual mouse than push mouse events
+			//		if ( gamePaused )
+			//		{
+			//			mouse->warpMouseInScreen(screen, rightx, righty);
+			//		}
+			//		else
+			//		{
+			//			mouse->warpMouseInCamera(cameras[player], rightx, righty);
+			//		}
+			//	}
+			//	else
+			//	{
+			//		if ( gamePaused )
+			//		{
+			//			mouse->warpMouseInScreen(screen, rightx, righty);
+			//		}
+			//		else
+			//		{
+			//			mouse->warpMouseInCamera(cameras[player], rightx, righty);
+			//		}
+			//	}
+			//}
 		}
 	}
 	else
@@ -383,73 +385,7 @@ void GameController::handleAnalog(int player)
 		real_t floatx = 0;
 		real_t floaty = 0;
 
-		if ( false && players[player]->hotbar.useHotbarRadialMenu
-			&& buttonHeldToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-		{
-			real_t floatx = getRightXPercent();
-			real_t floaty = getRightYPercent();
-			const int numoptions = players[player]->hotbar.radialHotbarSlots;
-			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
-			RadialSelection dir = RadialSelection::RADIAL_INVALID;
-			if ( magnitude > 1 )
-			{
-				real_t stickAngle = atan2(floaty, floatx);
-				while ( stickAngle >= (2 * PI + (2 * PI /*- (PI / numoptions)*/)) )
-				{
-					stickAngle -= PI * 2;
-				}
-				while ( stickAngle < (2 * PI /*- (PI / numoptions)*/) )
-				{
-					stickAngle += PI * 2;
-				}
-
-				real_t angleStart = 2 * PI /*- (PI / (2 * numoptions))*/;
-				real_t angleMiddle = angleStart + PI / (2 * numoptions);
-				real_t angleEnd = angleMiddle + PI / (2 * numoptions);
-				for ( int i = 0; i < numoptions * 2; ++i )
-				{
-					if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
-					{
-						dir = static_cast<RadialSelection>(i);
-					}
-					angleStart += 2 * PI / (2 * numoptions);
-					angleMiddle = angleStart + PI / (2 * numoptions);
-					angleEnd = angleMiddle + PI / (2 * numoptions);
-				}
-				RadialSelection oldRadial = radialSelection.padRadialSelection;
-				radialSelection.padRadialSelection = dir;
-				if ( oldRadial != radialSelection.padRadialSelection )
-				{
-					// unconsume the input whenever it's released or pressed again.
-					radialSelection.consumed = false;
-
-					if ( radialSelection.padRadialSelection > RADIAL_CENTERED )
-					{
-						int hotbarSlot = -1;
-						if ( radialSelection.padRadialSelection < numoptions )
-						{
-							hotbarSlot = numoptions - radialSelection.padRadialSelection - 1;
-						}
-						else
-						{
-							hotbarSlot = radialSelection.padRadialSelection - numoptions;
-						}
-						if ( hotbarSlot >= 0 )
-						{
-							players[player]->hotbar.selectHotbarSlot(hotbarSlot);
-						}
-						messagePlayer(0, "%d", hotbarSlot);
-					}
-				}
-			}
-			else
-			{
-				radialSelection.consumed = false;
-			}
-			rightx = 0;
-			righty = 0;
-		}
-		else if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
+		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 		{
 			rightx = getRightXMove();
 			righty = getRightYMove();
@@ -524,36 +460,15 @@ void GameController::handleAnalog(int player)
 				mouse->floatxrel += rightx;
 				mouse->floatyrel += righty;
 
-				if ( !mouse->draw_cursor )
+				/*if ( !mouse->draw_cursor )
 				{
 					mouse->draw_cursor = true;
-				}
+				}*/
 				mouse->moved = true;
 			}
 		}
 
-		if ( players[player]->hotbar.useHotbarRadialMenu
-			&& binaryToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-		{
-			if ( floatx > 0.0001 )
-			{
-				players[player]->hotbar.radialHotbarProgress += 5;
-			}
-			else if ( floatx < -0.0001 )
-			{
-				players[player]->hotbar.radialHotbarProgress -= 5;
-			}
-			players[player]->hotbar.radialHotbarProgress = std::max(0, players[player]->hotbar.radialHotbarProgress);
-			players[player]->hotbar.radialHotbarProgress = std::min(1000, players[player]->hotbar.radialHotbarProgress);
-			int slot = players[player]->hotbar.radialHotbarProgress / 100;
-			int oldSlot = players[player]->hotbar.current_hotbar;
-			players[player]->hotbar.selectHotbarSlot(slot);
-			inputs.getController(player)->radialSelection.consumed = false;
-			if ( oldSlot != slot )
-			{
-			}
-		}
-		else if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
+		if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
@@ -563,10 +478,10 @@ void GameController::handleAnalog(int player)
 			mouse->floatxrel += floatx;
 			mouse->floatyrel += floaty;
 
-			if ( !mouse->draw_cursor )
+			/*if ( !mouse->draw_cursor )
 			{
 				mouse->draw_cursor = true;
-			}
+			}*/
 			mouse->moved = true;
 		}
 	}
@@ -1357,9 +1272,8 @@ void initGameControllers()
 		if (SDL_IsGameController(c) && controller_itr->open(c))
 		{
 			printlog("(Device %d successfully initialized as game controller.)\n", c);
-			inputs.setControllerID(c, controller_itr->getID());
-			Input::gameControllers[controller_itr->getID()] = 
-				const_cast<SDL_GameController*>(controller_itr->getControllerDevice());
+			//inputs.setControllerID(c, controller_itr->getID());
+			Input::gameControllers[controller_itr->getID()] = controller_itr->getControllerDevice();
 			for ( int c = 0; c < 4; ++c ) {
 				Input::inputs[c].refresh();
 			}
@@ -3563,8 +3477,12 @@ void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 
 const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 {
-	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController 
-		|| (players[player]->shootmode && !gamePaused && !intro)) )
+	if ( bPlayerUsingKeyboardControl(player) 
+		&& (!getVirtualMouse(player)->lastMovementFromController 
+		|| (players[player]->shootmode && !gamePaused && !intro)
+		|| gamePaused
+			) 
+		)
 	{
 		// add controller virtual mouse if applicable, only in shootmode
 		// shootmode has no limits on rotation, but !shootmode is inventory
