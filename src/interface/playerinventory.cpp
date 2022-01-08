@@ -2176,6 +2176,26 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	const int imgTopBackgroundDefaultHeight = 28;
 	const int imgTopBackground2XHeight = 42;
 
+	bool doShortTooltip = false;
+	if ( players[player]->shootmode )
+	{
+		doShortTooltip = true;
+		if ( !tooltipDisplayedSettings.displayingShortFormTooltip )
+		{
+			bUpdateDisplayedTooltip = true;
+		}
+		tooltipDisplayedSettings.displayingShortFormTooltip = true;
+	}
+	else
+	{
+		doShortTooltip = false;
+		if ( tooltipDisplayedSettings.displayingShortFormTooltip )
+		{
+			bUpdateDisplayedTooltip = true;
+		}
+		tooltipDisplayedSettings.displayingShortFormTooltip = false;
+	}
+
 	if ( ItemTooltips.itemDebug )
 	{
 		if ( keystatus[SDL_SCANCODE_KP_PLUS] )
@@ -2229,9 +2249,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 	}
 
-	if ( keystatus[SDL_SCANCODE_KP_1] )
+	if ( Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
-		keystatus[SDL_SCANCODE_KP_1] = 0;
 		tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
 	}
 
@@ -2778,7 +2797,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		txtAttributes->setDisabled(true);
 
 		std::string descriptionTextString = "";
-		if ( itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0 )
+		if ( !doShortTooltip && (itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0) )
 		{
 			txtAttributes->setDisabled(false);
 			txtAttributes->setColor(itemTooltip.descriptionTextColor);
@@ -2803,7 +2822,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		frameDesc->setDisabled(true);
 
 		std::string detailsTextString = "";
-		if ( itemTooltip.detailsText.size() > 0 )
+		if ( !doShortTooltip && itemTooltip.detailsText.size() > 0 )
 		{
 			frameDesc->setDisabled(false);
 			txtDescription->setTextColor(itemTooltip.detailsTextColor);
@@ -3560,7 +3579,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 			framePromptPos.h = imgBottomBackground->pos.h;
 
-			if ( !item->identified )
+			if ( !item->identified || doShortTooltip )
 			{
 				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
 				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
@@ -4047,6 +4066,7 @@ void Player::Inventory_t::openInventory()
 		slideOutPercent = 1.0;
 		isInteractable = false;
 	}
+	player.hotbar.hotbarTooltipLastGameTick = 0;
 }
 void Player::Inventory_t::closeInventory()
 {
@@ -4058,6 +4078,10 @@ void Player::Inventory_t::closeInventory()
 	updateItemContextMenu(); // process + close the item context menu
 	bFirstTimeSnapCursor = false;
 	isInteractable = false;
+	itemTooltipDisplay.expanded = false;
+	itemTooltipDisplay.expandSetpoint = 0;
+	itemTooltipDisplay.expandCurrent = 0;
+	itemTooltipDisplay.expandAnimate = 0;
 }
 
 void Player::Inventory_t::updateInventory()

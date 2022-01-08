@@ -205,7 +205,7 @@ public:
 
 	void initBindings();
 	const int getID() { return id; }
-	const SDL_GameController* getControllerDevice() { return sdl_device; }
+	SDL_GameController* getControllerDevice() const { return sdl_device; }
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
 	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
@@ -857,6 +857,7 @@ public:
 
 			bool isItemSameAsCurrent(const int player, Item* newItem);
 			void updateItem(const int player, Item* newItem);
+			bool displayingShortFormTooltip = false;
 			ItemTooltipDisplay_t();
 		};
 		ItemTooltipDisplay_t itemTooltipDisplay;
