@@ -1005,8 +1005,8 @@ void Player::HUD_t::updateActionPrompts()
 		std::string inputName;
 	};
 	std::vector<PromptInfo> allPrompts;
-	allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast" });
-	allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
+	allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+	allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
 	allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
 
 	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
@@ -1139,7 +1139,11 @@ void Player::HUD_t::updateActionPrompts()
 				}
 			}
 			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str());
-			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			if ( !player.shootmode )
+			{
+				glyph->disabled = true;
+			}
+			else if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 			{
 				glyph->disabled = false; // keyboard glyph support TODO
 			}
@@ -13361,6 +13365,10 @@ void Player::Hotbar_t::updateHotbar()
 			if ( controller )
 			{
 				glyph->disabled = slot->isDisabled();
+				if ( !player.shootmode )
+				{
+					glyph->disabled = true;
+				}
 			}
 
 			slot->findField("slot num text")->setDisabled(true); // disable the hotkey prompts per slot
