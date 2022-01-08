@@ -2672,6 +2672,8 @@ void drawStatusNew(const int player)
 		}
 	}
 
+	bool tooltipOpen = false;
+
 	if ( !shootmode || drawHotBarTooltipOnCycle )
 	{
 		//Go back through all of the hotbar slots and draw the tooltips.
@@ -2745,6 +2747,7 @@ void drawStatusNew(const int player)
 						src.y = hotbarSlotFrame->getSize().y - 16;
 						src.x += players[player]->camera_virtualx1();
 						src.y += players[player]->camera_virtualy1();
+						tooltipOpen = true;
 						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->PANEL_JUSTIFY_LEFT);
 						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
@@ -3159,16 +3162,70 @@ void drawStatusNew(const int player)
 			//	hotbar[hotbar_t.current_hotbar].item = 0;
 			//}
 
-			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] 
-				&& input.binaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str())
+			if ( !shootmode && players[player]->inventoryUI.isInteractable && !players[player]->bookGUI.bBookOpen && !openedChest[player]
 				&& mouseInsidePlayerHotbar(player) )
 			{
-				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				input.consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_DROP).c_str());
-				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-				if ( itemToDrop )
+				if ( tooltipOpen
+					&& players[player]->inventoryUI.tooltipPromptFrame 
+					&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled() )
 				{
-					dropItem(itemToDrop, player);
+					item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+					bool bindingPressed = false;
+					for ( auto& option : contextTooltipOptions )
+					{
+						if ( option == ItemContextMenuPrompts::PROMPT_GRAB )
+						{
+							continue;
+						}
+						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
+						{
+							bindingPressed = true;
+
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								// need to unequip
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+								players[player]->paperDoll.updateSlots();
+								if ( players[player]->paperDoll.isItemOnDoll(*item) )
+								{
+									// couldn't unequip, no more actions
+								}
+								else
+								{
+									// successfully unequipped, let's drop it.
+									bool droppedAll = false;
+									while ( item && item->count > 1 )
+									{
+										droppedAll = dropItem(item, player);
+										if ( droppedAll )
+										{
+											item = nullptr;
+										}
+									}
+									if ( !droppedAll )
+									{
+										dropItem(item, player);
+									}
+								}
+							}
+							else
+							{
+								players[player]->inventoryUI.activateItemContextMenuOption(item, option);
+							}
+						}
+					}
+					if ( bindingPressed )
+					{
+						for ( auto& option : contextTooltipOptions )
+						{
+							// clear the other bindings just in case.
+							Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(option).c_str());
+						}
+					}
+					item = nullptr; // we don't need to use this item anymore
+					hotbar_t.hotbarTooltipLastGameTick = 0; // hide tooltip on activation
+					drawHotBarTooltipOnCycle = false;
 				}
 			}
 		}

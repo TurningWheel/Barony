@@ -4848,7 +4848,37 @@ void Player::Inventory_t::updateInventory()
 						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
 						{
 							bindingPressed = true;
-							activateItemContextMenuOption(item, option);
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								// need to unequip
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+								players[player]->paperDoll.updateSlots();
+								if ( players[player]->paperDoll.isItemOnDoll(*item) )
+								{
+									// couldn't unequip, no more actions
+								}
+								else
+								{
+									// successfully unequipped, let's drop it.
+									bool droppedAll = false;
+									while ( item && item->count > 1 )
+									{
+										droppedAll = dropItem(item, player);
+										if ( droppedAll )
+										{
+											item = nullptr;
+										}
+									}
+									if ( !droppedAll )
+									{
+										dropItem(item, player);
+									}
+								}
+							}
+							else
+							{
+								activateItemContextMenuOption(item, option);
+							}
 						}
 					}
 					if ( bindingPressed )
@@ -4884,9 +4914,9 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				// handle clicking
-				if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen )
+				if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen && inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 					{
 						if ( dropItem(item, player) ) // Quick item drop
 						{
@@ -4907,7 +4937,7 @@ void Player::Inventory_t::updateInventory()
 						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 					}
 				}
-				else if ( inputs.bMouseRight(player)
+				else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
 					&& !itemMenuOpen && !selectedItem )
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && selectedChestSlot[player] < 0 ) //TODO: selected shop slot, identify, remove curse?
@@ -4996,7 +5026,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				bool numkey_quick_add = hotbar_numkey_quick_add;
+				bool numkey_quick_add = hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player);
 				if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
 					players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
 				{
