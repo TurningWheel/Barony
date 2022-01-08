@@ -4368,6 +4368,10 @@ void ingameHud()
 		{
 			SDL_StopTextInput();
 		}
+		if ( inputstr == command_str )
+		{
+			inputstr = nullptr;
+		}
 	}
 
 	// other status
@@ -5792,7 +5796,6 @@ int main(int argc, char** argv)
 						}
 						break;
 					}
-					keystatus[SDL_SCANCODE_ESCAPE] = 0;
 				}
 				if ( doPause )
 				{
