@@ -3380,7 +3380,7 @@ void handleEvents(void)
 			{
 				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				char buf[32];
+				char buf[32] = "";
 				switch (event.cbutton.button) {
 				case SDL_CONTROLLER_BUTTON_A: snprintf(buf, sizeof(buf), "Pad%dButtonA", event.cbutton.which); break;
 				case SDL_CONTROLLER_BUTTON_B: snprintf(buf, sizeof(buf), "Pad%dButtonB", event.cbutton.which); break;
@@ -3398,32 +3398,98 @@ void handleEvents(void)
 				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: snprintf(buf, sizeof(buf), "Pad%dDpadY+", event.cbutton.which); break;
 				}
 				Input::lastInputOfAnyKind = buf;
+#ifndef NINTENDO
+				if ( Input::waitingToBindControllerForPlayer >= 0
+					&& event.cbutton.button == SDL_CONTROLLER_BUTTON_A )
+				{
+					const int id = event.cdevice.which;
+					if ( SDL_IsGameController(id) )
+					{
+						for ( auto& controller : game_controllers )
+						{
+							if ( controller.isActive() && controller.getID() == id )
+							{
+								inputs.removeControllerWithDeviceID(id); // clear any other player using this
+								if ( inputs.bPlayerUsingKeyboardControl(Input::waitingToBindControllerForPlayer) )
+								{
+									inputs.setPlayerIDAllowedKeyboard(-1);
+								}
+								inputs.setControllerID(Input::waitingToBindControllerForPlayer, id);
+								printlog("(Device %d added to player %d", id, Input::waitingToBindControllerForPlayer);
+								for ( int c = 0; c < 4; ++c ) {
+									Input::inputs[c].refresh();
+								}
+								Input::waitingToBindControllerForPlayer = -1;
+								break;
+							}
+						}
+					}
+				}
+#endif
 				break;
 			}
 			case SDL_CONTROLLERAXISMOTION:
 			{
-				char buf[32];
+				char buf[32] = "";
+				float rebindingDeadzone = Input::getJoystickRebindingDeadzone() * 32768.f;
 				switch (event.caxis.axis) {
-				case SDL_CONTROLLER_AXIS_LEFTX: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftX-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftX+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_LEFTX: 
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftX-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftX+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_LEFTY: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftY-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftY+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_LEFTY: 
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftY-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftY+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_RIGHTX: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickRightX-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickRightX+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_RIGHTX: 
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightX-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightX+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_RIGHTY: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_RIGHTY:
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger", event.caxis.which); break;
-				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger", event.caxis.which); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: 
+					if ( abs(event.caxis.value) > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dLeftTrigger", event.caxis.which); 
+					}
+					break;
+				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: 
+					if ( abs(event.caxis.value) > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dRightTrigger", event.caxis.which); 
+					}
+					break;
 				}
-				Input::lastInputOfAnyKind = buf;
+				if ( strcmp(buf, "") )
+				{
+					Input::lastInputOfAnyKind = buf;
+				}
 				break;
 			}
 			case SDL_CONTROLLERBUTTONUP:
@@ -3466,8 +3532,8 @@ void handleEvents(void)
 					if ( SDL_IsGameController(id) && controller.open(id) )
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
-						inputs.addControllerIDToNextAvailableInput(id);
-						Input::gameControllers[id]= const_cast<SDL_GameController*>(controller.getControllerDevice());
+						//inputs.addControllerIDToNextAvailableInput(id);
+						Input::gameControllers[id] = controller.getControllerDevice();
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
@@ -3507,6 +3573,11 @@ void handleEvents(void)
 			}
 			case SDL_JOYDEVICEADDED:
 			{
+				if ( SDL_IsGameController(event.jdevice.which) )
+				{
+					// this is supported by the SDL_GameController interface, no need to make a joystick for it
+					break;
+				}
 				SDL_Joystick* joystick = SDL_JoystickOpen(event.jdevice.which);
 				if (!joystick) {
 					printlog("A joystick was plugged in, but no handle is available!");
@@ -3524,41 +3595,62 @@ void handleEvents(void)
 			}
 			case SDL_JOYBUTTONDOWN:
 			{
-				char buf[32];
-				snprintf(buf, sizeof(buf), "Joy%dButton%d", event.jbutton.which, event.jbutton.button);
-				Input::lastInputOfAnyKind = buf;
+				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
+				{
+					char buf[32] = "";
+					snprintf(buf, sizeof(buf), "Joy%dButton%d", event.jbutton.which, event.jbutton.button);
+					Input::lastInputOfAnyKind = buf;
+				}
 				break;
 			}
 			case SDL_JOYAXISMOTION:
 			{
-				char buf[32];
-				if (event.jaxis.value < 0) {
-					snprintf(buf, sizeof(buf), "Joy%dAxis-%d", event.jaxis.which, event.jaxis.axis);
-				} else {
-					snprintf(buf, sizeof(buf), "Joy%dAxis+%d", event.jaxis.which, event.jaxis.axis);
+				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
+				{
+					char buf[32] = "";
+					float rebindingDeadzone = Input::getJoystickRebindingDeadzone() * 32768.f;
+					if ( event.jaxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Joy%dAxis-%d", event.jaxis.which, event.jaxis.axis);
+					}
+					else if ( event.jaxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Joy%dAxis+%d", event.jaxis.which, event.jaxis.axis);
+					}
+					if ( strcmp(buf, "") )
+					{
+						Input::lastInputOfAnyKind = buf;
+					}
 				}
-				Input::lastInputOfAnyKind = buf;
 				break;
 			}
 			case SDL_JOYHATMOTION:
 			{
-				char buf[32];
-				switch (event.jhat.value) {
-				case SDL_HAT_LEFTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftUp", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_UP: snprintf(buf, sizeof(buf), "Joy%dHat%dUp", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_RIGHTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dRightUp", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_RIGHT: snprintf(buf, sizeof(buf), "Joy%dHat%dRight", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_RIGHTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dRightDown", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_DOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dDown", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_LEFTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftDown", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_LEFT: snprintf(buf, sizeof(buf), "Joy%dHat%dLeft", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_CENTERED: snprintf(buf, sizeof(buf), "Joy%dHat%dCentered", event.jhat.which, event.jhat.hat); break;
+				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
+				{
+					char buf[32] = "";
+					switch (event.jhat.value) {
+					case SDL_HAT_LEFTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftUp", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_UP: snprintf(buf, sizeof(buf), "Joy%dHat%dUp", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_RIGHTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dRightUp", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_RIGHT: snprintf(buf, sizeof(buf), "Joy%dHat%dRight", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_RIGHTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dRightDown", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_DOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dDown", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_LEFTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftDown", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_LEFT: snprintf(buf, sizeof(buf), "Joy%dHat%dLeft", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_CENTERED: snprintf(buf, sizeof(buf), "Joy%dHat%dCentered", event.jhat.which, event.jhat.hat); break;
+					}
+					Input::lastInputOfAnyKind = buf;
 				}
-				Input::lastInputOfAnyKind = buf;
 				break;
 			}
 			case SDL_JOYDEVICEREMOVED:
 			{
+				if ( SDL_IsGameController(event.jdevice.which) )
+				{
+					// this is supported by the SDL_GameController interface, no need to make a joystick for it
+					break;
+				}
 				SDL_Joystick* joystick = SDL_JoystickFromInstanceID(event.jdevice.which);
 				if (joystick == nullptr) {
 					printlog("A joystick was removed, but I don't know which one!");
@@ -5396,14 +5488,27 @@ int main(int argc, char** argv)
 							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
 						}
 					}
-					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT)
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL))
+
+					bool skipButtonPressed = false;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
+						if ( Input::inputs[i].consumeBinaryToggle("MenuConfirm") )
+						{
+							skipButtonPressed = true;
+						}
+						if ( Input::inputs[i].consumeBinaryToggle("MenuCancel") )
+						{
+							skipButtonPressed = true;
+						}
+					}
+					if ( Input::keys[SDL_SCANCODE_ESCAPE] )
+					{
+						skipButtonPressed = true;
 						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
-						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
-						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
+					}
+
+					if ( fadefinished || skipButtonPressed )
+					{
 						fadealpha = 255;
 						int menuMapType = 0;
 						switch ( rand() % 4 ) // STEAM VERSION INTRO
@@ -5669,34 +5774,16 @@ int main(int argc, char** argv)
 					{
 						continue;
 					}
-					if ( inputs.bPlayerUsingKeyboardControl(i) )
+					if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
+							|| (inputs.bPlayerUsingKeyboardControl(i) && Input::keys[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
+						&& !command )
 					{
-						if ( (keystatus[SDL_SCANCODE_ESCAPE] && rebindaction == -1) && !command )
-						{
-							keystatus[SDL_SCANCODE_ESCAPE] = 0;
-							if ( !players[i]->shootmode )
-							{
-								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-								players[i]->gui_mode = GUI_MODE_INVENTORY;
-								players[i]->characterSheet.attributespage = 0;
-								//proficienciesPage = 0;
-							}
-							else
-							{
-								doPause = true;
-							}
-							break;
-						}
-					}
-					if ( (inputs.bControllerInputPressed(i, INJOY_PAUSE_MENU) && rebindaction == -1) && !command )
-					{
-						inputs.controllerClearInput(i, INJOY_PAUSE_MENU);
+						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 						if ( !players[i]->shootmode )
 						{
 							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 							players[i]->gui_mode = GUI_MODE_INVENTORY;
 							players[i]->characterSheet.attributespage = 0;
-							//proficienciesPage = 0;
 						}
 						else
 						{
@@ -5704,6 +5791,7 @@ int main(int argc, char** argv)
 						}
 						break;
 					}
+					Input::keys[SDL_SCANCODE_ESCAPE] = 0;
 				}
 				if ( doPause )
 				{
@@ -6010,7 +6098,7 @@ int main(int argc, char** argv)
 					}
 					if ((subwindow && !players[i]->shootmode) || (gamePaused && i == clientnum))
 					{
-						if (inputs.getVirtualMouse(i)->draw_cursor || (gamePaused && i == clientnum))
+						if (inputs.getVirtualMouse(i)->draw_cursor || (inputs.getVirtualMouse(i)->draw_cursor && gamePaused && i == clientnum))
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
@@ -6072,9 +6160,9 @@ int main(int argc, char** argv)
 			GO_SwapBuffers(screen);
 
 			// screenshots
-			if ( keystatus[SDL_SCANCODE_F6] )
+			if ( Input::keys[SDL_SCANCODE_F6] )
 			{
-				keystatus[SDL_SCANCODE_F6] = 0;
+				Input::keys[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
 
