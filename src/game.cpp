@@ -46,6 +46,7 @@
 #include "ui/Field.hpp"
 #include "input.hpp"
 #include "ui/Image.hpp"
+#include "ui/MainMenu.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -4005,13 +4006,13 @@ void ingameHud()
 
 	    // toggle minimap
 		// player not needed to be alive
-        if ( input.consumeBinaryToggle("Toggle Minimap") ) {
+        if ( input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
             openMinimap(player);
         }
 
 		// inventory interface
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") )
+		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") && !gamePaused )
 		{
 			if ( players[player]->shootmode )
 			{
@@ -4025,7 +4026,7 @@ void ingameHud()
 
 		// spell list
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") )   //TODO: Move to function in interface or something?
+		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") && !gamePaused )   //TODO: Move to function in interface or something?
 		{
 			if ( !inputs.getUIInteraction(player)->selectedItem )
 			{
@@ -4040,7 +4041,7 @@ void ingameHud()
 
 		// spellcasting
 		// player needs to be alive
-		if ( players[player]->isLocalPlayerAlive() )
+		if ( players[player]->isLocalPlayerAlive() && !gamePaused )
 		{
             const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
@@ -4059,7 +4060,7 @@ void ingameHud()
 			}
 			else if (!command && shootmode)
 			{
-			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")))
+			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
 			    {
 				    allowCasting = true;
 				    if (tryHotbarQuickCast == false) {
@@ -4160,7 +4161,7 @@ void ingameHud()
 		}
 		players[player]->magic.resetQuickCastSpell();
 
-		if ( !command && input.consumeBinaryToggle("Open Log") )
+		if ( !command && input.consumeBinaryToggle("Open Log") && !gamePaused )
 		{
 			// TODO perhaps this should open the new chat log window.
 		}
@@ -4170,7 +4171,7 @@ void ingameHud()
 				&& players[player]->worldUI.bTooltipInView
 				&& players[player]->worldUI.tooltipsInRange.size() > 1);
 
-		if ( !command && input.consumeBinaryToggle("Cycle NPCs") )
+		if ( !command && input.consumeBinaryToggle("Cycle NPCs") && !gamePaused )
 		{
 			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
@@ -4191,7 +4192,7 @@ void ingameHud()
 	// commands - uses local clientnum only
 	Input& input = Input::inputs[clientnum];
 
-	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command )
+	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command && !gamePaused )
 	{
 		cursorflash = ticks;
 		command = true;
@@ -4221,7 +4222,7 @@ void ingameHud()
 			}
 		}
 	}
-	else if ( command )
+	else if ( command && !gamePaused )
 	{
 		int commandPlayer = clientnum;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -5775,10 +5776,10 @@ int main(int argc, char** argv)
 						continue;
 					}
 					if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
-							|| (inputs.bPlayerUsingKeyboardControl(i) && Input::keys[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
+							|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
 						&& !command )
 					{
-						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 						if ( !players[i]->shootmode )
 						{
 							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
@@ -5791,11 +5792,36 @@ int main(int argc, char** argv)
 						}
 						break;
 					}
-					Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+					keystatus[SDL_SCANCODE_ESCAPE] = 0;
 				}
 				if ( doPause )
 				{
-					pauseGame(0, MAXPLAYERS);
+					if ( !MainMenu::main_menu_frame || !gamePaused )
+					{
+						pauseGame(0, MAXPLAYERS);
+					}
+					else 
+					{
+						if ( gamePaused && MainMenu::main_menu_frame )
+						{
+							int dimmers = 0;
+							for ( auto frame : MainMenu::main_menu_frame->getFrames() )
+							{
+								if ( !strcmp(frame->getName(), "dimmer") )
+								{
+									++dimmers;
+								}
+							}
+							if ( dimmers == 0 )
+							{
+								pauseGame(0, MAXPLAYERS);
+							}
+						}
+						else
+						{
+							pauseGame(0, MAXPLAYERS);
+						}
+					}
 				}
 
 				// main drawing

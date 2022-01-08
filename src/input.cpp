@@ -111,20 +111,21 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelUpAlt", "MouseWheelUp"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDownAlt", "MouseWheelDown"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
+
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuUp", "Up"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeft", "Left"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRight", "Right"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuDown", "Down"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuConfirm", "Space"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuCancel", "Escape"));
+		//inputs[c].kb_system_bindings.insert(std::make_pair("MenuAlt1", "Left Shift"));
+		//inputs[c].kb_system_bindings.insert(std::make_pair("MenuAlt2", "Left Ctrl"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuStart", "Return"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuSelect", "Backspace"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuPageLeft", "["));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuPageRight", "]"));
 	}
 #ifndef NINTENDO
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuUp", "Up"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuLeft", "Left"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuRight", "Right"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuDown", "Down"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuConfirm", "Space"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuCancel", "Escape"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuAlt1", "Left Shift"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuAlt2", "Left Ctrl"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuStart", "Return"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuSelect", "Backspace"));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuPageLeft", "["));
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuPageRight", "]"));
 #endif
 }
 

@@ -4,6 +4,7 @@
 #include <string>
 #include "../main.hpp"
 #include "../json.hpp"
+#include "../ui/Frame.hpp"
 
 namespace MainMenu {
 	// Here be new menu options:
@@ -11,6 +12,7 @@ namespace MainMenu {
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
 	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)
+	extern Frame* main_menu_frame;
 
 	enum class FadeDestination : Uint8 {
 		None = 0,

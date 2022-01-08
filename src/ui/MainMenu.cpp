@@ -28,6 +28,7 @@ namespace MainMenu {
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
 	bool cursor_delete_mode = false;
+	Frame* main_menu_frame = nullptr;
 
 	// If you want to add new player-visible bindings, ADD THEM HERE:
 	// The first string in a binding is the name of the binding.
@@ -70,7 +71,6 @@ namespace MainMenu {
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
-	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
 	static float main_menu_cursor_bob = 0.f;
