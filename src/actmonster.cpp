@@ -2029,7 +2029,7 @@ void actMonster(Entity* my)
 					MONSTER_SOUND = playSoundPlayer(c, 179, 128);
 					playSoundPlayer(c, 166, 128);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-					messagePlayerColor(c, color, language[512]);
+					messagePlayerColor(c, MESSAGE_WORLD, color, language[512]);
 				}
 			}
 		}
@@ -2101,7 +2101,7 @@ void actMonster(Entity* my)
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
 						playSoundPlayer(c, 392, 128);
-						messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[2647]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue(*mainsurface), language[2647]);
 					}
 				}
 				else if ( lichAlly && my->monsterLichAllyUID == 0 )
@@ -2120,7 +2120,7 @@ void actMonster(Entity* my)
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
 						playSoundPlayer(c, 391, 128);
-						messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[2649]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[2649]);
 					}
 				}
 				else if ( lichAlly && my->monsterLichAllyUID == 0 )
@@ -6243,12 +6243,12 @@ timeToGoAgain:
 					if ( myStats->type == LICH_FIRE )
 					{
 						playSoundPlayer(c, 376, 128);
-						messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[2646]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[2646]);
 					}
 					else if ( myStats->type == LICH_ICE )
 					{
 						playSoundPlayer(c, 381, 128);
-						messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[2648]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue(*mainsurface), language[2648]);
 					}
 				}
 			}
@@ -9350,11 +9350,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				if ( skillLVL < SKILL_LEVEL_BASIC )
 				{
-					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3680]);
+					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF, language[3680]);
 				}
 				else
 				{
-					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3679]);
+					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF, language[3679]);
 				}
 				monsterAllyPickupItems = ALLY_GYRO_DETECT_NONE;
 			}
@@ -10168,7 +10168,8 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_WAIT:
 				if ( myStats.type == SENTRYBOT || myStats.type == SPELLBOT )
 				{
-					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3676], monstertypename[myStats.type]);
+					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF,
+					    language[3676], monstertypename[myStats.type]);
 				}
 				else
 				{
@@ -10179,7 +10180,8 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_FOLLOW:
 				if ( myStats.type == SENTRYBOT || myStats.type == SPELLBOT )
 				{
-					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3677], monstertypename[myStats.type]);
+					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF,
+					    language[3677], monstertypename[myStats.type]);
 				}
 				else
 				{

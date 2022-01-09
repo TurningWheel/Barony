@@ -16719,24 +16719,24 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				}
 				if ( c == player )
 				{
-					messagePlayerColor(c, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
+					messagePlayerColor(c, MESSAGE_OBITUARY, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
 				else
 				{
-					messagePlayerColor(c, color, msgGeneric, stats[player]->name, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
+					messagePlayerColor(c, MESSAGE_OBITUARY, color, msgGeneric, stats[player]->name, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
 		{
-			messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), 
+			messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(),
 				getMonsterLocalizedInjury((Monster)monsterType).c_str());
 		}
 		else if ( detailType == MSG_STEAL_WEAPON )
 		{
 			if ( monsterStats.weapon )
 			{
-				messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.weapon->getName());
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.weapon->getName());
 			}
 		}
 		else if ( detailType == MSG_TOOL_BOMB )
@@ -16745,12 +16745,12 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			if ( optionalEntity && optionalEntity->behavior == &actBomb )
 			{
 				itemType = optionalEntity->skill[21];
-				messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
 			}
 		}
 		else
 		{
-			messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+			messagePlayerColor(player, MESSAGE_MISC, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
 	}
 	else
@@ -16760,26 +16760,26 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		{
 			if ( namedMonsterAsGeneric )
 			{
-				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
+				messagePlayerColor(player, MESSAGE_INSPECTION, color, msgGeneric, monsterStats.name);
 			}
 			else
 			{
-				messagePlayerColor(player, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.name);
+				messagePlayerColor(player, MESSAGE_INSPECTION, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.name);
 			}
 		}
 		else if ( detailType == MSG_COMBAT )
 		{
 			if ( namedMonsterAsGeneric )
 			{
-				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name);
 			}
 			else if ( monsterType < KOBOLD ) //Original monster count
 			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name);
 			}
 			else if ( monsterType >= KOBOLD ) //New monsters
 			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name);
 			}
 		}
 		else if ( detailType == MSG_OBITUARY )
@@ -16794,16 +16794,16 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				{
 					if ( c == player )
 					{
-						messagePlayerColor(c, color, msgNamed, monsterStats.name, monsterStats.obituary);
+						messagePlayerColor(c, MESSAGE_OBITUARY, color, msgNamed, monsterStats.name, monsterStats.obituary);
 					}
 					else
 					{
-						messagePlayerColor(c, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
+						messagePlayerColor(c, MESSAGE_OBITUARY, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
 					}
 				}
 				else
 				{
-					messagePlayerColor(c, color, "%s %s", monsterStats.name, monsterStats.obituary);
+					messagePlayerColor(c, MESSAGE_OBITUARY, color, "%s %s", monsterStats.name, monsterStats.obituary);
 				}
 			}
 		}
@@ -16811,22 +16811,22 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		{
 			if ( namedMonsterAsGeneric || monsterType == HUMAN || (optionalEntity && optionalEntity->behavior == &actPlayer) )
 			{
-				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
+				messagePlayerColor(player, MESSAGE_HINT, color, msgGeneric, monsterStats.name);
 			}
 			else
 			{
-				messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+				messagePlayerColor(player, MESSAGE_HINT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
 		{
 			if ( namedMonsterAsGeneric )
 			{
-				messagePlayerColor(player, color, msgGeneric, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
 			else
 			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
 		}
 		else if ( detailType == MSG_STEAL_WEAPON )
@@ -16835,15 +16835,15 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				if ( namedMonsterAsGeneric )
 				{
-					messagePlayerColor(player, color, msgGeneric, monsterStats.name, monsterStats.weapon->getName());
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, monsterStats.weapon->getName());
 				}
 				else if ( monsterType < KOBOLD ) //Original monster count
 				{
-					messagePlayerColor(player, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
 				}
 				else if ( monsterType >= KOBOLD ) //New monsters
 				{
-					messagePlayerColor(player, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
 				}
 			}
 		}
@@ -16855,11 +16855,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				itemType = optionalEntity->skill[21];
 				if ( namedMonsterAsGeneric || monsterType == HUMAN )
 				{
-					messagePlayerColor(player, color, msgGeneric, monsterStats.name, items[itemType].name_identified);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, items[itemType].name_identified);
 				}
 				else
 				{
-					messagePlayerColor(player, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
 				}
 			}
 		}

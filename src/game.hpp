@@ -115,6 +115,22 @@ extern SDL_Surface* selected_cursor_bmp;
 extern SDL_Surface* controllerglyphs1_bmp;
 extern SDL_Surface* skillIcons_bmp;
 
+enum MessageType {
+	MESSAGE_COMBAT = 1 << 0, // damage received or given in combat
+	MESSAGE_STATUS = 1 << 1, // character status changes and passive effects
+	MESSAGE_INVENTORY = 1 << 2, // inventory and item appraisal
+	MESSAGE_EQUIPMENT = 1 << 3, // player equipment changes
+	MESSAGE_WORLD = 1 << 4, // diegetic messages, such as speech and text
+	MESSAGE_CHAT = 1 << 5, // multiplayer chat
+	MESSAGE_PROGRESSION = 1 << 6, // player character progression messages (ie level-ups)
+	MESSAGE_INTERACTION = 1 << 7, // player interactions with the world
+	MESSAGE_INSPECTION = 1 << 8, // player inspections of world objects
+	MESSAGE_HINT = 1 << 9, // special text cues and descriptive messages
+	MESSAGE_OBITUARY = 1 << 10, // character death announcement
+	MESSAGE_MISC = 1 << 31, // miscellaneous messages
+};
+extern Uint32 messagesEnabled;
+
 enum PlayerClasses : int
 {
 	CLASS_BARBARIAN,

@@ -2476,11 +2476,11 @@ void Entity::actTextSource()
 					{
 						if ( foundPlayerRef != std::string::npos && stats[c] )
 						{
-							messagePlayerColor(c, color, buf, stats[c]->name);
+							messagePlayerColor(c, MESSAGE_MISC, color, buf, stats[c]->name);
 						}
 						else
 						{
-							messagePlayerColor(c, color, buf);
+							messagePlayerColor(c, MESSAGE_MISC, color, buf);
 						}
 					}
 				}

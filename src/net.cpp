@@ -233,7 +233,7 @@ Support function, messages all local players with the message "message"
 
 -------------------------------------------------------------------------------*/
 
-void messageLocalPlayers(char const * const message, ...)
+void messageLocalPlayers(MessageType type, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -246,7 +246,7 @@ void messageLocalPlayers(char const * const message, ...)
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayer(player, str);
+			messagePlayerColor(player, type, 0xFFFFFFFF, str);
 		}
 	}
 }
@@ -260,7 +260,7 @@ void messageLocalPlayers(char const * const message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayer(int player, char const * const message, ...)
+void messagePlayer(int player, MessageType type, char const * const message, ...)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -273,7 +273,7 @@ void messagePlayer(int player, char const * const message, ...)
 	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
-	messagePlayerColor(player, 0xFFFFFFFF, str);
+	messagePlayerColor(player, type, 0xFFFFFFFF, str);
 }
 
 /*-------------------------------------------------------------------------------
@@ -285,7 +285,7 @@ and color "color"
 
 -------------------------------------------------------------------------------*/
 
-void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
+void messageLocalPlayersColor(MessageType type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -298,7 +298,7 @@ void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayerColor(player, color, str);
+			messagePlayerColor(player, type, color, str);
 		}
 	}
 }
@@ -312,7 +312,7 @@ void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerColor(int player, Uint32 color, char const * const message, ...)
+void messagePlayerColor(int player, MessageType type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
@@ -324,6 +324,16 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
 		return;
+	}
+
+    // if this is for a local player, but we've disabled this message type, don't print it!
+    const bool localPlayer = players[player]->isLocalPlayer();
+	if ( localPlayer )
+	{
+	    if (disable_messages || !(messagesEnabled & type))
+	    {
+	        return;
+	    }
 	}
 
 	// format the content
@@ -338,7 +348,7 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 		return;
 	}
 
-	if ( players[player]->isLocalPlayer() )
+	if ( localPlayer )
 	{
 	    bool end = false;
 	    char *ptr = str;
@@ -3131,15 +3141,18 @@ void clientHandlePacket()
 			Uint32 color = SDLNet_Read32(&net_packet->data[4]);
 			messagePlayerColor(clientnum, color, (char*)(&net_packet->data[8]));
 		}
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		if (!disable_messages && (messagesEnabled & MESSAGE_CHAT))
 		{
-			if ( !strncmp( (char*)(&net_packet->data[8]), stats[c]->name, std::min<size_t>(strlen(stats[c]->name), 10) ) )    //TODO: Why are size_t and int being compared?
-			{
-				if ( net_packet->data[8 + std::min<size_t>(strlen(stats[c]->name), 10)] == ':' )   //TODO: Why are size_t and int being compared?
-				{
-					playSound(238, 64);
-				}
-			}
+		    for ( c = 0; c < MAXPLAYERS; c++ )
+		    {
+			    if ( !strncmp( (char*)(&net_packet->data[8]), stats[c]->name, std::min<size_t>(strlen(stats[c]->name), 10) ) )    //TODO: Why are size_t and int being compared?
+			    {
+				    if ( net_packet->data[8 + std::min<size_t>(strlen(stats[c]->name), 10)] == ':' )   //TODO: Why are size_t and int being compared?
+				    {
+					    playSound(238, 64);
+				    }
+			    }
+		    }
 		}
 		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
 		{

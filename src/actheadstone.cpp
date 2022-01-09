@@ -112,7 +112,7 @@ void actHeadstone(Entity* my)
 					{
 						shouldspawn = true;
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-						messagePlayerColor(i, color, language[502]);
+						messagePlayerColor(i, MESSAGE_INTERACTION, color, language[502]);
 					}
 				}
 			}

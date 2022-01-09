@@ -164,7 +164,7 @@ void actBeartrap(Entity* my)
 					{
 						int player = entity->skill[2];
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(player, color, language[454]);
+						messagePlayerColor(player, MESSAGE_STATUS, color, language[454]);
 						if ( !players[player]->isLocalPlayer() )
 						{
 							serverUpdateEffects(player);
@@ -356,11 +356,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		// you stumbled into the trap!
 		if ( !hitByAOE )
 		{
-			messagePlayerColor(player, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
 		}
 		else
 		{
-			messagePlayerColor(player, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
 		}
 	}
 
@@ -432,7 +432,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			if ( triggered->behavior == &actPlayer )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerColor(triggered->skill[2], color, language[3611]);
+				messagePlayerColor(triggered->skill[2], MESSAGE_STATUS, color, language[3611]);
 				achievementObserver.playerAchievements[triggered->skill[2]].checkPathBetweenObjects(triggered, my, AchievementObserver::BARONY_ACH_WONDERFUL_TOYS);
 			}
 

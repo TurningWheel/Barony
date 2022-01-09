@@ -265,7 +265,7 @@ void actFountain(Entity* my)
 								{
 									if ( creature == INCUBUS )
 									{
-										messagePlayerColor(i, color, language[2519]);
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
 										Stat* tmpStats = spawnedMonster->getStats();
 										if ( tmpStats )
 										{
@@ -274,13 +274,13 @@ void actFountain(Entity* my)
 									}
 									else
 									{
-										messagePlayerColor(i, color, language[469]);
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
 									}
 								}
 							}
 							else if ( currentlevel < 10 )
 							{
-								messagePlayerColor(i, color, language[469]);
+								messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
 								spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
 							}
 							else if ( currentlevel < 20 )
@@ -293,17 +293,17 @@ void actFountain(Entity* my)
 									{
 										strcpy(tmpStats->name, "lesser incubus");
 									}
-									messagePlayerColor(i, color, language[2519]);
+									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
 								}
 								else
 								{
-									messagePlayerColor(i, color, language[469]);
+									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
 									spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
 								}
 							}
 							else
 							{
-								messagePlayerColor(i, color, language[2519]);
+								messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
 								spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
 							}
 							break;
@@ -325,7 +325,7 @@ void actFountain(Entity* my)
 								players[i]->entity->setObituary(language[1533]);
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(i, color, language[3183]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
@@ -358,8 +358,8 @@ void actFountain(Entity* my)
 							playSoundEntity(players[i]->entity, 52, 64);
 							//playSoundEntity(players[i]->entity, 167, 64);
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-							messagePlayerColor(i, textcolor, language[471]);
-							messagePlayerColor(i, textcolor, language[473]);
+							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[471]);
+							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[473]);
 							bool stuckOnYouSuccess = false;
 
 							if ( !stats[i] )
@@ -467,7 +467,7 @@ void actFountain(Entity* my)
 							playSoundEntity(players[i]->entity, 52, 64);
 							//playSoundEntity(players[i]->entity, 167, 64);
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-							messagePlayerColor(i, textcolor, language[471]);
+							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[471]);
 							//Choose only one piece of equipment to bless.
 
 							if ( !stats[i] )
@@ -520,7 +520,7 @@ void actFountain(Entity* my)
 
 							if ( items.size() )
 							{
-								messagePlayerColor(i, textcolor, language[2592]); //"The fountain blesses a piece of equipment"
+								messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[2592]); //"The fountain blesses a piece of equipment"
 								//Randomly choose a piece of equipment.
 								std::pair<Item*, Uint32> chosen = items[rand()%items.size()];
 								if ( chosen.first->beatitude == 0 )
@@ -554,11 +554,11 @@ void actFountain(Entity* my)
 					}
 					if ( potionDropQuantity > 1 )
 					{
-						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3245], potionDropQuantity);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3245], potionDropQuantity);
 					}
 					else if ( potionDropQuantity == 1 )
 					{
-						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3246]);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3246]);
 					}
 					messagePlayer(i, language[474]);
 					my->skill[0] = 0; //Dry up fountain.

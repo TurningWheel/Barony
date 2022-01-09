@@ -309,7 +309,7 @@ namespace MainMenu {
 	static void createInviteButton(int index);
 	static void createWaitingStone(int index);
 	static void createLobby(LobbyType);
-	static void createLobbyBrowser();
+	static void createLobbyBrowser(Button&);
 
 /******************************************************************************/
 
@@ -914,12 +914,32 @@ namespace MainMenu {
 /******************************************************************************/
 
 	inline void Messages::save() {
-		// TODO record these message settings to some globally-accessible variables.
+		messagesEnabled = 0;
+		messagesEnabled |= combat ? MESSAGE_COMBAT : 0;
+		messagesEnabled |= status ? MESSAGE_STATUS : 0;
+		messagesEnabled |= inventory ? MESSAGE_INVENTORY : 0;
+		messagesEnabled |= equipment ? MESSAGE_EQUIPMENT : 0;
+		messagesEnabled |= world ? MESSAGE_WORLD : 0;
+		messagesEnabled |= chat ? MESSAGE_CHAT : 0;
+		messagesEnabled |= progression ? MESSAGE_PROGRESSION : 0;
+		messagesEnabled |= interaction ? MESSAGE_INTERACTION : 0;
+		messagesEnabled |= inspection ? MESSAGE_INSPECTION : 0;
+		messagesEnabled |= MESSAGE_HINT;
+		messagesEnabled |= MESSAGE_MISC;
 	}
 
 	inline Messages Messages::load() {
-		// TODO populate our variables with the values of some globally-accessed ones
-		return Messages::reset();
+		Messages messages;
+		messages.combat = messagesEnabled & MESSAGE_COMBAT;
+		messages.status = messagesEnabled & MESSAGE_STATUS;
+		messages.inventory = messagesEnabled & MESSAGE_INVENTORY;
+		messages.equipment = messagesEnabled & MESSAGE_EQUIPMENT;
+		messages.world = messagesEnabled & MESSAGE_WORLD;
+		messages.chat = messagesEnabled & MESSAGE_CHAT;
+		messages.progression = messagesEnabled & MESSAGE_PROGRESSION;
+		messages.interaction = messagesEnabled & MESSAGE_INTERACTION;
+		messages.inspection = messagesEnabled & MESSAGE_INSPECTION;
+		return messages;
 	}
 
 	inline Messages Messages::reset() {
@@ -2718,43 +2738,41 @@ namespace MainMenu {
 
 		y += settingsAddSubHeader(*subwindow, y, "categories_header", "Categories", true);
 
-		// TODO bind these to actual settings
-
 		y += settingsAddBooleanOption(*subwindow, y, "messages_combat", "Combat messages",
 			"Enable report of damage received or given in combat.",
-			true, nullptr);
+			allSettings.messages.combat, [](Button& button){allSettings.messages.combat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
 			"Enable report of player character status changes and other passive effects.",
-			true, nullptr);
+			allSettings.messages.status, [](Button& button){allSettings.messages.status = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
 			"Enable report of inventory and item appraisal messages.",
-			true, nullptr);
+			allSettings.messages.inventory, [](Button& button){allSettings.messages.inventory = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment", "Equipment messages",
 			"Enable report of player equipment changes.",
-			true, nullptr);
+			allSettings.messages.equipment, [](Button& button){allSettings.messages.equipment = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_world", "World messages",
 			"Enable report of diegetic messages, such as speech and text.",
-			true, nullptr);
+			allSettings.messages.world, [](Button& button){allSettings.messages.world = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_chat", "Player chat",
 			"Enable multiplayer chat.",
-			true, nullptr);
+			allSettings.messages.chat, [](Button& button){allSettings.messages.chat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", "Progression messages",
 			"Enable report of player character progression messages (ie level-ups).",
-			true, nullptr);
+			allSettings.messages.progression, [](Button& button){allSettings.messages.progression = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", "Interaction messages",
 			"Enable report of player interactions with the world.",
-			true, nullptr);
+			allSettings.messages.interaction, [](Button& button){allSettings.messages.interaction = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection", "Inspection messages",
 			"Enable player inspections of world objects.",
-			true, nullptr);
+			allSettings.messages.inspection, [](Button& button){allSettings.messages.inspection = button.isPressed();});
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Boolean, "messages_combat"},
@@ -3313,7 +3331,7 @@ bind_failed:
 
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-		// TODO
+		// TODO we need a special window just for Nintendo Switch joycons.
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controller bindings.",
 			nullptr);
@@ -4167,8 +4185,8 @@ bind_failed:
 			normal->select();
 		}
 
-		// TODO on non-english languages, normal text must be used
-
+		// TODO on non-english languages, normal text will need to be used.
+        // here's the code for that, but how to gate it?
 		/*auto hard_label = card->addField("hard_label", 64);
 		hard_label->setSize(SDL_Rect{68, 178, 144, 26});
 		hard_label->setFont(smallfont_outline);
@@ -4603,8 +4621,6 @@ bind_failed:
 		);
 		appearance_selected->disabled = true;
 		appearance_selected->ontop = true;
-
-		// TODO give these callbacks so they can be clicked:
 
 		auto appearance_uparrow = card->addButton("appearance_uparrow");
 		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
@@ -5803,10 +5819,6 @@ bind_failed:
 		}
 	}
 
-	static void createLobbyBrowser() {
-		// TODO
-	}
-
 /******************************************************************************/
 
 	static void createPlayWindow() {
@@ -5917,7 +5929,7 @@ bind_failed:
 		}
 	}
 
-	static void openLobbyBrowser(Button& button) {
+	static void createLobbyBrowser(Button& button) {
 		soundActivate();
 
 		enum class BrowserMode {
@@ -6249,7 +6261,7 @@ bind_failed:
 		join_button->setWidgetSearchParent(window->getName());
 		join_button->setWidgetBack("back_button");
 		join_button->setWidgetUp("host_online");
-		join_button->setCallback(openLobbyBrowser);
+		join_button->setCallback(createLobbyBrowser);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 324, 120, 68},

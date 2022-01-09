@@ -234,6 +234,8 @@ Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
 
+Uint32 messagesEnabled = 0xffffffff; // all enabled
+
 TimerExperiments::time_point TimerExperiments::timepoint{};
 TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();
 TimerExperiments::duration TimerExperiments::accumulator = std::chrono::milliseconds{ 0 };
@@ -1807,7 +1809,7 @@ void gameLogic(void)
 								}
 							}
 						}
-						messageLocalPlayers(language[2599]);
+						messageLocalPlayers(MESSAGE_STATUS, language[2599]);
 
 						// undo shopkeeper grudge
 						swornenemies[SHOPKEEPER][HUMAN] = false;
@@ -1834,46 +1836,46 @@ void gameLogic(void)
 
 					if ( !secretlevel )
 					{
-						messageLocalPlayers(language[710], currentlevel);
+						messageLocalPlayers(MESSAGE_PROGRESSION, language[710], currentlevel);
 					}
 					else
 					{
-						messageLocalPlayers(language[711], map.name);
+						messageLocalPlayers(MESSAGE_PROGRESSION, language[711], map.name);
 					}
 					if ( !secretlevel && result )
 					{
 						switch ( currentlevel )
 						{
 							case 2:
-								messageLocalPlayers(language[712]);
+								messageLocalPlayers(MESSAGE_HINT, language[712]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[712]));
 								break;
 							case 3:
-								messageLocalPlayers(language[713]);
+								messageLocalPlayers(MESSAGE_HINT, language[713]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[713]));
 								break;
 							case 7:
-								messageLocalPlayers(language[714]);
+								messageLocalPlayers(MESSAGE_HINT, language[714]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[714]));
 								break;
 							case 8:
-								messageLocalPlayers(language[715]);
+								messageLocalPlayers(MESSAGE_HINT, language[715]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[715]));
 								break;
 							case 11:
-								messageLocalPlayers(language[716]);
+								messageLocalPlayers(MESSAGE_HINT, language[716]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[716]));
 								break;
 							case 13:
-								messageLocalPlayers(language[717]);
+								messageLocalPlayers(MESSAGE_HINT, language[717]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[717]));
 								break;
 							case 16:
-								messageLocalPlayers(language[718]);
+								messageLocalPlayers(MESSAGE_HINT, language[718]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[718]));
 								break;
 							case 18:
-								messageLocalPlayers(language[719]);
+								messageLocalPlayers(MESSAGE_HINT, language[719]);
 								Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[719]));
 								break;
 							default:
@@ -1890,16 +1892,16 @@ void gameLogic(void)
 					}
 					if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 					{
-						messageLocalPlayers(language[2382]);
+						messageLocalPlayers(MESSAGE_HINT, language[2382]);
 					}
 					if ( MFLAG_DISABLELEVITATION )
 					{
-						messageLocalPlayers(language[2383]);
+						messageLocalPlayers(MESSAGE_HINT, language[2383]);
 						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", language[2383]));
 					}
 					if ( MFLAG_DISABLEDIGGING )
 					{
-						messageLocalPlayers(language[2450]);
+						messageLocalPlayers(MESSAGE_HINT, language[2450]);
 						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", language[2450]));
 					}
 					if ( MFLAG_DISABLEHUNGER )
@@ -2190,18 +2192,18 @@ void gameLogic(void)
 					{
 						// regained connection
 						losingConnection[c] = false;
-						messageLocalPlayers(language[724], c, stats[c]->name);
+						messageLocalPlayers(MESSAGE_MISC, language[724], c, stats[c]->name);
 					}
 					else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 30 - 1 )
 					{
 						// 30 second timer
 						losingConnection[c] = true;
-						messageLocalPlayers(language[725], c, stats[c]->name);
+						messageLocalPlayers(MESSAGE_MISC, language[725], c, stats[c]->name);
 					}
 					else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 45 - 1 )
 					{
 						// additional 15 seconds (kick time)
-						messageLocalPlayers(language[726], c, stats[c]->name);
+						messageLocalPlayers(MESSAGE_MISC, language[726], c, stats[c]->name);
 						strcpy((char*)net_packet->data, "KICK");
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
@@ -2454,12 +2456,12 @@ void gameLogic(void)
 				{
 					// 30 second timer
 					losingConnection[0] = true;
-					messageLocalPlayers(language[729]);
+					messageLocalPlayers(MESSAGE_MISC, language[729]);
 				}
 				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * 45 - 1 )
 				{
 					// additional 15 seconds (disconnect time)
-					messageLocalPlayers(language[730]);
+					messageLocalPlayers(MESSAGE_MISC, language[730]);
                     MainMenu::disconnectedFromServer();
 					client_disconnected[0] = true;
 				}

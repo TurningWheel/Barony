@@ -185,7 +185,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				if ( entity->behavior == &actPlayer )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerColor(entity->skill[2], color, language[455]);
+					messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, language[455]);
 					if ( players[entity->skill[2]]->isLocalPlayer() )
 					{
 						cameravars[entity->skill[2]].shakex += .1;
@@ -362,7 +362,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 							for ( c = 0; c < MAXPLAYERS; c++ )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(c, color, language[406]);
+								messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
 							}
 						}
 						boulderSokobanOnDestroy(false);
@@ -736,7 +736,7 @@ void actBoulder(Entity* my)
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 					if ( !client_disconnected[c] )
 					{
-						messagePlayerColor(c, color, language[3401]);
+						messagePlayerColor(c, MESSAGE_HINT, color, language[3401]);
 					}
 				}
 
@@ -826,7 +826,7 @@ void actBoulder(Entity* my)
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 									if ( !client_disconnected[c] )
 									{
-										messagePlayerColor(c, color, language[3401]);
+										messagePlayerColor(c, MESSAGE_HINT, color, language[3401]);
 									}
 								}
 
@@ -1725,18 +1725,18 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 			if ( goldCount >= 39 )
 			{
 				playSoundPlayer(c, 393, 128);
-				messagePlayerColor(c, color, language[2969]);
+				messagePlayerColor(c, MESSAGE_HINT, color, language[2969]);
 			}
 			else
 			{
 				playSoundPlayer(c, 395, 128);
 				if ( goldCount < 25 )
 				{
-					messagePlayerColor(c, color, language[2971]); // less than impressed.
+					messagePlayerColor(c, MESSAGE_HINT, color, language[2971]); // less than impressed.
 				}
 				else
 				{
-					messagePlayerColor(c, color, language[2970]); // mildly entertained.
+					messagePlayerColor(c, MESSAGE_HINT, color, language[2970]); // mildly entertained.
 				}
 			}
 		}

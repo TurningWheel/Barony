@@ -453,7 +453,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// function sets dark level for us.
 		if ( darkmap )
 		{
-			messageLocalPlayers(language[1108]);
+			messageLocalPlayers(MESSAGE_HINT, language[1108]);
 		}
 	}
 	else if ( !secretlevel )
@@ -463,7 +463,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
 			{
 				darkmap = true;
-				messageLocalPlayers(language[1108]);
+				messageLocalPlayers(MESSAGE_HINT, language[1108]);
 			}
 			else
 			{
@@ -475,7 +475,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( prng_get_uint() % 4 == 0 )
 			{
 				darkmap = true;
-				messageLocalPlayers(language[1108]);
+				messageLocalPlayers(MESSAGE_HINT, language[1108]);
 			}
 		}
 	}
