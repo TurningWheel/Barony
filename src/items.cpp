@@ -2352,7 +2352,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 					players[player]->entity->modMP(stats[player]->MAXMP);
 					// results of eating
 					const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-					messagePlayerColor(player, color, language[3699]); // superheats
+					messagePlayerColor(player, MESSAGE_STATUS, color, language[3699]); // superheats
 					serverUpdateHunger(player);
 					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 					{
@@ -4306,10 +4306,10 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					{
 						// failed.
 						const Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(player, color, language[3871]); // trap fires.
+						messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3871]); // trap fires.
 						if ( skill < 2 )
 						{
-							messagePlayer(player, language[3887]); // not skilled enough.
+							messagePlayer(player, MESSAGE_INTERACTION, language[3887]); // not skilled enough.
 						}
 						failed = true;
 					}
@@ -4322,7 +4322,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					else
 					{
 						const Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						messagePlayerColor(player, color, language[3872]);
+						messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3872]);
 						playSoundEntity(entity, 176, 128);
 						entity->skill[4] = player + 1; // disabled flag and spit out items.
 						serverUpdateEntitySkill(entity, 4); // update clients.

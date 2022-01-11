@@ -646,7 +646,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( !skipMessage )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							messagePlayerColor(player, color, language[376]);
+							messagePlayerColor(player, MESSAGE_COMBAT, color, language[376]);
 						}
 						if ( hitstats )
 						{
@@ -1661,7 +1661,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[392]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, language[392]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
@@ -1755,7 +1755,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[395]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, language[395]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							if ( oldHP > 0 && hitstats->HP <= 0 )
@@ -1872,7 +1872,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										serverUpdateEffects(hit.entity->skill[2]);
 										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-										messagePlayerColor(hit.entity->skill[2], color, language[396]);
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[396]);
 									}
 									if ( parent )
 									{
@@ -2077,8 +2077,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
-								messagePlayerColor(parent->skill[2], color, language[3101]); // disabled locking spell.
+								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3097]);
+								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3101]); // disabled locking spell.
 							}
 							else
 							{
@@ -2088,7 +2088,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[399]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[399]);
 									}
 								}
 							}
@@ -2102,8 +2102,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
-									messagePlayerColor(parent->skill[2], color, language[3100]); // disabled locking spell.
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3099]);
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3100]); // disabled locking spell.
 								}
 								else
 								{
@@ -2112,7 +2112,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayer(parent->skill[2], language[400]);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[400]);
 										}
 									}
 								}
@@ -2123,11 +2123,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( parent )
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]);
 								}
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, MESSAGE_COMBAT, language[401]);
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
@@ -2144,8 +2144,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
-									messagePlayerColor(parent->skill[2], color, language[3101]); // disabled opening spell.
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3097]);
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3101]); // disabled opening spell.
 								}
 							}
 							else
@@ -2181,8 +2181,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3098]);
-									messagePlayerColor(parent->skill[2], color, language[3102]); // disabled opening spell.
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3098]);
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3102]); // disabled opening spell.
 								}
 							}
 							else
@@ -2219,8 +2219,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( parent && parent->behavior == &actPlayer )
 									{
 										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-										messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
-										messagePlayerColor(parent->skill[2], color, language[3100]); // disabled opening spell.
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3099]);
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3100]); // disabled opening spell.
 									}
 								}
 								else
@@ -2346,7 +2346,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								if ( player >= 0 )
 								{
-									messagePlayerColor(player, color, language[2422]);
+									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2422]);
 								}
 							}
 							else
@@ -2467,7 +2467,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[2425]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, language[2425]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							for ( int gibs = 0; gibs < 10; ++gibs )
@@ -3724,7 +3724,7 @@ void actParticleTimer(Entity* my)
 						if ( target->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-							messagePlayerColor(target->skill[2], color, language[3461]);
+							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, language[3461]);
 						}
 						real_t distance =  sqrt((target->x - oldx) * (target->x - oldx) + (target->y - oldy) * (target->y - oldy)) / 16.f;
 						//real_t distance = (entityDist(parent, target)) / 16;
@@ -3760,7 +3760,7 @@ void actParticleTimer(Entity* my)
 									target->y + (-4 + rand() % 9) + sin(target->yaw) * 2, target->z + rand() % 4);
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-							messagePlayerColor(target->skill[2], color, language[3462]);
+							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, language[3462]);
 						}
 						if ( multiplayer == SERVER )
 						{
@@ -4265,7 +4265,7 @@ void actParticleSapCenter(Entity* my)
 				if ( parent->behavior == &actPlayer )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(parent->skill[2], color, language[2445]);
+					messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[2445]);
 				}
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);

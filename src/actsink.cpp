@@ -178,7 +178,7 @@ void actSink(Entity* my)
 							if ( monster )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(i, color, language[582]);
+								messagePlayerColor(i, MESSAGE_HINT, color, language[582]);
 								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
 								monster->sprite = 210;
@@ -195,7 +195,7 @@ void actSink(Entity* my)
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(i, color, language[3700]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, language[3700]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER -= 200; //Lose boiler
 								players[i]->entity->modMP(5 + rand() % 6); //Raise temperature because steam.
@@ -216,7 +216,7 @@ void actSink(Entity* my)
 								players[i]->entity->setObituary(language[1533]);
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(i, color, language[3183]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
 									cameravars[i].shakex += .1;
@@ -244,7 +244,7 @@ void actSink(Entity* my)
 							if ( stats[i]->type == AUTOMATON )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(i, color, language[3701]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, language[3701]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 200; //Gain boiler
 								players[i]->entity->modMP(2);
@@ -266,7 +266,7 @@ void actSink(Entity* my)
 								players[i]->entity->setObituary(language[1533]);
 
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(i, color, language[584]);
+								messagePlayerColor(i, MESSAGE_STATUS, color, language[584]);
 
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{

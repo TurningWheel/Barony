@@ -1040,7 +1040,7 @@ void actThrown(Entity* my)
 									hit.entity->setEffect(EFF_MESSY, true, 250, false);
 									serverUpdateEffects(hit.entity->skill[2]);
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], color, language[3877]);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[3877]);
 									messagePlayer(hit.entity->skill[2], language[910]);
 								}
 								for ( int i = 0; i < 5; ++i )
@@ -1071,7 +1071,7 @@ void actThrown(Entity* my)
 								else if ( hit.entity->behavior == &actPlayer )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
 								}
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
 								if ( newTarget )
@@ -1366,7 +1366,7 @@ void actThrown(Entity* my)
 				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
+					messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
 					if ( damage == 0 && !wasPotion )
 					{
 						messagePlayer(hit.entity->skill[2], language[452]);

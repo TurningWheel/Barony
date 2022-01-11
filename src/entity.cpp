@@ -1585,24 +1585,24 @@ void Entity::increaseSkill(int skill, bool notify)
 		myStats->PROFICIENCIES[skill]++;
 		if ( notify )
 		{
-			messagePlayerColor(player, color, language[615], getSkillLangEntry(skill));
+			messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[615], getSkillLangEntry(skill));
 		}
 		switch ( myStats->PROFICIENCIES[skill] )
 		{
 			case 20:
-				messagePlayerColor(player, color, language[616], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[616], getSkillLangEntry(skill));
 				break;
 			case 40:
-				messagePlayerColor(player, color, language[617], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[617], getSkillLangEntry(skill));
 				break;
 			case 60:
-				messagePlayerColor(player, color, language[618], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[618], getSkillLangEntry(skill));
 				break;
 			case 80:
-				messagePlayerColor(player, color, language[619], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[619], getSkillLangEntry(skill));
 				break;
 			case 100:
-				messagePlayerColor(player, color, language[620], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[620], getSkillLangEntry(skill));
 				break;
 			default:
 				break;
@@ -2433,7 +2433,7 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 		if ( player >= 0 && notifyOverexpend )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-			messagePlayerColor(player, color, language[621]);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[621]);
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
 		Stat* tempStats = this->getStats();
@@ -2478,7 +2478,7 @@ bool Entity::safeConsumeMP(int amount)
 			if ( (HP - stat->HP > 0) && (stat->HP % 5 == 0) )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-				messagePlayerColor(skill[2], color, language[621]);
+				messagePlayerColor(skill[2], MESSAGE_STATUS, color, language[621]);
 			}
 			return true;
 		}
@@ -2713,7 +2713,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-		messagePlayerColor(player, color, language[622]);
+		messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[622]);
 		playSoundPlayer(player, 97, 128);
 
 		// increase MAXHP/MAXMP
@@ -2926,7 +2926,7 @@ void Entity::handleEffects(Stat* myStats)
 
 			for ( i = 0; i < 3; i++ )
 			{
-				messagePlayerColor(player, color, language[623 + increasestat[i]]);
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[623 + increasestat[i]]);
 				switch ( increasestat[i] )
 				{
 					case STAT_STR: // STR
@@ -3970,7 +3970,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( player >= 0 && (myStats->EFFECTS[EFF_LEVITATING] || myStats->EFFECTS[EFF_FLUTTER]) && MFLAG_DISABLELEVITATION)
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-		messagePlayerColor(player, color, language[2382]); // disabled levitation.
+		messagePlayerColor(player, MESSAGE_HINT, color, language[2382]); // disabled levitation.
 		this->setEffect(EFF_LEVITATING, false, 0, true);
 		this->setEffect(EFF_FLUTTER, false, 0, true);
 	}
@@ -4320,7 +4320,7 @@ void Entity::handleEffects(Stat* myStats)
 							if ( rand() % 3 > 0 && myStats->MP < myStats->MAXMP )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(player, color, language[3358]);
+								messagePlayerColor(player, MESSAGE_HINT, color, language[3358]);
 								int amount = 2 + rand() % 2;
 								int oldMP = myStats->MP;
 								this->modMP(amount);
@@ -6069,7 +6069,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( playerhit >= 0 )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(playerhit, color, language[2523]);
+									messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2523]);
 								}
 							}
 							tmpEntity->modHP(-explodeDmg);
@@ -6958,7 +6958,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								for ( c = 0; c < MAXPLAYERS; c++ )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-									messagePlayerColor(c, color, language[406]);
+									messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
 								}
 							}
 							boulderSokobanOnDestroy(false);
@@ -7690,7 +7690,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( player >= 0 )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-							messagePlayerColor(player, color, language[3446]);
+							messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[3446]);
 						}
 					}
 
@@ -9388,18 +9388,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 									if ( playerhit >= 0 )
 									{
 										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-										messagePlayerColor(playerhit, color, playerHitMessage);
+										messagePlayerColor(playerhit, MESSAGE_STATUS, color, playerHitMessage);
 									}
 									else
 									{
 										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 										if ( !strcmp(hitstats->name, "") )
 										{
-											messagePlayerColor(player, color, monsterHitMessage, getMonsterLocalizedName(hitstats->type).c_str());
+											messagePlayerColor(player, MESSAGE_COMBAT, color, monsterHitMessage, getMonsterLocalizedName(hitstats->type).c_str());
 										}
 										else
 										{
-											messagePlayerColor(player, color, monsterHitMessage, hitstats->name);
+											messagePlayerColor(player, MESSAGE_COMBAT, color, monsterHitMessage, hitstats->name);
 										}
 									}
 
@@ -9411,7 +9411,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										this->setEffect(EFF_MP_REGEN, true, 250, true);
 										if ( behavior == &actPlayer )
 										{
-											messagePlayerColor(player, color, language[3753]);
+											messagePlayerColor(player, MESSAGE_HINT, color, language[3753]);
 											steamStatisticUpdateClient(player, STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
 										}
 										playSoundEntity(this, 168, 128);
@@ -9507,7 +9507,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( playerhit >= 0 )
 										{
 											Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-											messagePlayerColor(playerhit, color, language[2523]);
+											messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2523]);
 										}
 									}
 								}
@@ -9624,18 +9624,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( playerhit >= 0 )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(playerhit, color, language[2441]);
+								messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2441]);
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( !strcmp(hitstats->name, "") )
 								{
-									messagePlayerColor(player, color, language[2440], getMonsterLocalizedName(hitstats->type).c_str());
+									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2440], getMonsterLocalizedName(hitstats->type).c_str());
 								}
 								else
 								{
-									messagePlayerColor(player, color, language[2439], hitstats->name);
+									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2439], hitstats->name);
 								}
 							}
 						}
@@ -9761,7 +9761,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-								messagePlayerColor(this->skill[2], color, language[2380]); // disabled digging.
+								messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
@@ -10033,7 +10033,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
-			messagePlayerColor(player, color, language[2381]);
+			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
 			return false;
 		}
 	}
@@ -10126,7 +10126,7 @@ bool Entity::teleportRandom()
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
-			messagePlayerColor(player, color, language[2381]);
+			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
 			return false;
 		}
 
@@ -10194,7 +10194,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
-			messagePlayerColor(player, color, language[2381]);
+			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
 			return false;
 		}
 	}

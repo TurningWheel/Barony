@@ -5655,22 +5655,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( basePotion->identified && secondaryPotion->identified )
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3332],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3332],
 			items[basePotion->type].name_identified, items[secondaryPotion->type].name_identified);
 	}
 	else if ( basePotion->identified )
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3334],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3334],
 			items[basePotion->type].name_identified);
 	}
 	else if ( secondaryPotion->identified )
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3333],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3333],
 			items[secondaryPotion->type].name_identified);
 	}
 	else
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3335]);
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3335]);
 	}
 
 	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
@@ -5923,11 +5923,11 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 				{
 					if ( isItemBaseIngredient(type) )
 					{
-						messagePlayerColor(gui_player, color, language[3346], items[type].name_identified);
+						messagePlayerColor(gui_player, MESSAGE_PROGRESSION, color, language[3346], items[type].name_identified);
 					}
 					else if ( isItemSecondaryIngredient(type) )
 					{
-						messagePlayerColor(gui_player, color, language[3349], items[type].name_identified);
+						messagePlayerColor(gui_player, MESSAGE_PROGRESSION, color, language[3349], items[type].name_identified);
 					}
 				}
 				if ( increaseskill )
@@ -6295,7 +6295,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			if ( bonusMetalScrap > 0 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(player, color, language[3665], metal, items[pickedUp->type].name_identified);
+				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			else
 			{
@@ -6314,7 +6314,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			if ( bonusMagicScrap > 0 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(player, color, language[3665], magic, items[pickedUp->type].name_identified);
+				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], magic, items[pickedUp->type].name_identified);
 			}
 			else
 			{
@@ -8194,7 +8194,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			//messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724]);
 			int oldcount = pickedUp->count;
 			pickedUp->count = 1;
-			messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
+			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
 			//scribingBlankScrollTarget = nullptr;

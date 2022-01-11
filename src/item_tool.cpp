@@ -45,7 +45,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			if ( entity.doorDisableLockpicks == 1 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(player, color, language[3101]); // disabled.
+				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else
 			{
@@ -103,7 +103,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				messagePlayer(player, language[3605]);
 			}
-			messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3606]);
+			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorGreen(*mainsurface), language[3606]);
 		}
 		else if ( entity.skill[22] == BOMB_TRIGGER_ALL )
 		{
@@ -115,7 +115,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				messagePlayer(player, language[3607]);
 			}
-			messagePlayerColor(player, uint32ColorRed(*mainsurface), language[3608]);
+			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorRed(*mainsurface), language[3608]);
 		}
 		else if ( entity.skill[22] == BOMB_TELEPORT_RECEIVER )
 		{
@@ -168,7 +168,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
 						stats[player]->GOLD += goldAmount;
-						messagePlayerColor(player, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
+						// TODO make this a lang entry!!!
+						messagePlayerColor(player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
 					}
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
@@ -286,7 +287,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			if ( entity.doorDisableLockpicks == 1 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(player, color, language[3101]); // disabled.
+				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else if ( capstoneUnlocked 
 				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200

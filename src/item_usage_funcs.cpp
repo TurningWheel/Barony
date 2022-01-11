@@ -156,7 +156,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			if ( stats->type == AUTOMATON )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-				messagePlayerColor(player, color, language[3700]);
+				messagePlayerColor(player, MESSAGE_STATUS, color, language[3700]);
 				stats->HUNGER -= 200; //Lose boiler
 				int mpAmount = 3 + rand() % 6;
 				if ( item->beatitude > 0 )
@@ -185,7 +185,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		if ( stats->type == VAMPIRE )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-			messagePlayerColor(player, color, language[3183]);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3183]);
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
@@ -199,7 +199,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		if ( stats->type == SKELETON )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-			messagePlayerColor(player, color, language[3184]);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3184]);
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
@@ -211,7 +211,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			stats->type == VAMPIRE )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-			messagePlayerColor(player, color, language[3183]);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3183]);
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
@@ -225,7 +225,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		if ( stats->type == VAMPIRE )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-			messagePlayerColor(player, color, language[3183]);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3183]);
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
@@ -479,7 +479,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			}
 			entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
 			serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
-			messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
+			messagePlayerColor(player, MESSAGE_STATUS, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
 		}
 		else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
 		{
@@ -620,7 +620,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 				}
 				entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
 				serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
-				messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
+				messagePlayerColor(player, MESSAGE_STATUS, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
 			}
 			else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
 			{
@@ -945,7 +945,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	}
 
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-	messagePlayerColor(player, color, language[763]);
+	messagePlayerColor(player, MESSAGE_STATUS, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
 		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) 
@@ -1616,7 +1616,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			stats->HUNGER = std::min(stats->HUNGER + 1500, 1500);
 			players[player]->entity->modMP(stats->MAXMP);
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-			messagePlayerColor(player, color, language[3699]); // superheats
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3699]); // superheats
 			serverUpdateHunger(player);
 			for ( int c = 0; c < 100; c++ )
 			{
@@ -1857,7 +1857,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 	else
 	{
-		messagePlayerColor(player, color, language[773]);
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[773]);
 		// stop bleeding
 		if ( stats->EFFECTS[EFF_BLEEDING] )
 		{
@@ -2000,7 +2000,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 	else
 	{
-		messagePlayerColor(player, color, language[773]);
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[773]);
 		// stop bleeding
 		if ( stats->EFFECTS[EFF_BLEEDING] )
 		{
@@ -5055,7 +5055,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		{
 			stats[player]->HUNGER += 1500;
 			players[player]->entity->modMP(stats[player]->MAXMP);
-			messagePlayerColor(player, color, language[3699]); // superheats
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3699]); // superheats
 			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
@@ -5143,27 +5143,27 @@ void item_FoodAutomaton(Item*& item, int player)
 	// results of eating
 	if ( stats[player]->HUNGER >= 1500 )
 	{
-		messagePlayerColor(player, color, language[3483]); // at capacity
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[3483]); // at capacity
 	}
 	else if ( stats[player]->HUNGER >= 1200 && oldHunger < 1200 )
 	{
-		messagePlayerColor(player, color, language[3484]);
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[3484]);
 	}
 	else if ( stats[player]->HUNGER >= 600 && oldHunger < 600 )
 	{
-		messagePlayerColor(player, color, language[3696]);
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[3696]);
 	}
 	else if ( stats[player]->HUNGER >= 300 && oldHunger < 300 )
 	{
-		messagePlayerColor(player, color, language[3485]);
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[3485]);
 	}
 	else if ( stats[player]->HUNGER <= 300 )
 	{
-		messagePlayerColor(player, color, language[3486]);
+		messagePlayerColor(player, MESSAGE_STATUS, color, language[3486]);
 	}
 	else if ( oldHunger < stats[player]->HUNGER )
 	{
-		messagePlayer(player, language[3704]);
+		messagePlayer(player, MESSAGE_STATUS, language[3704]);
 	}
 
 	serverUpdateHunger(player);

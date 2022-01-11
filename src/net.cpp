@@ -233,7 +233,7 @@ Support function, messages all local players with the message "message"
 
 -------------------------------------------------------------------------------*/
 
-void messageLocalPlayers(MessageType type, char const * const message, ...)
+bool messageLocalPlayers(MessageType type, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -242,13 +242,16 @@ void messageLocalPlayers(MessageType type, char const * const message, ...)
 	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
 	va_end(argptr);
 
+    bool result = true;
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayerColor(player, type, 0xFFFFFFFF, str);
+			result = messagePlayerColor(player, type, 0xFFFFFFFF, str) ? result : false;
 		}
 	}
+
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -260,11 +263,11 @@ void messageLocalPlayers(MessageType type, char const * const message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayer(int player, MessageType type, char const * const message, ...)
+bool messagePlayer(int player, MessageType type, char const * const message, ...)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return false;
 	}
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -273,7 +276,7 @@ void messagePlayer(int player, MessageType type, char const * const message, ...
 	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
-	messagePlayerColor(player, type, 0xFFFFFFFF, str);
+	return messagePlayerColor(player, type, 0xFFFFFFFF, str);
 }
 
 /*-------------------------------------------------------------------------------
@@ -285,7 +288,7 @@ and color "color"
 
 -------------------------------------------------------------------------------*/
 
-void messageLocalPlayersColor(MessageType type, Uint32 color, char const * const message, ...)
+bool messageLocalPlayersColor(MessageType type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -294,13 +297,16 @@ void messageLocalPlayersColor(MessageType type, Uint32 color, char const * const
 	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
 	va_end(argptr);
 
+    bool result = true;
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayerColor(player, type, color, str);
+			result = messagePlayerColor(player, type, color, str) ? result : false;
 		}
 	}
+
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -312,18 +318,18 @@ void messageLocalPlayersColor(MessageType type, Uint32 color, char const * const
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerColor(int player, MessageType type, Uint32 color, char const * const message, ...)
+bool messagePlayerColor(int player, MessageType type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
 
 	if ( message == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return false;
 	}
 
     // if this is for a local player, but we've disabled this message type, don't print it!
@@ -332,7 +338,7 @@ void messagePlayerColor(int player, MessageType type, Uint32 color, char const *
 	{
 	    if (disable_messages || !(messagesEnabled & type))
 	    {
-	        return;
+	        return false;
 	    }
 	}
 
@@ -345,7 +351,7 @@ void messagePlayerColor(int player, MessageType type, Uint32 color, char const *
 	if (!initialized)
 	{
 		printlog("%s\n", str);
-		return;
+		return true;
 	}
 
 	if ( localPlayer )
@@ -387,6 +393,7 @@ void messagePlayerColor(int player, MessageType type, Uint32 color, char const *
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
+    // player death messages trigger this achievement
 	int c;
 	char tempstr[256];
 	for ( c = 0; c < MAXPLAYERS; c++ )
@@ -401,6 +408,8 @@ void messagePlayerColor(int player, MessageType type, Uint32 color, char const *
 			steamAchievementClient(player, "BARONY_ACH_NOT_A_TEAM_PLAYER");
 		}
 	}
+
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
