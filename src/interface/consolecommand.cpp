@@ -2756,11 +2756,19 @@ void consoleCommand(char const * const command_str)
 					{
 						inputs.setPlayerIDAllowedKeyboard(0);
 						messagePlayer(clientnum, "Keyboard controlled by player %d", 0);
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							Input::inputs[c].refresh();
+						}
 					}
 					else
 					{
 						inputs.setPlayerIDAllowedKeyboard(i + 1);
 						messagePlayer(clientnum, "Keyboard controlled by player %d", i + 1);
+						for ( int c = 0; c < MAXPLAYERS; ++c )
+						{
+							Input::inputs[c].refresh();
+						}
 					}
 					break;
 				}
