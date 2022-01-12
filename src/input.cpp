@@ -7,6 +7,7 @@
 #else
 #include "player.hpp"
 #endif
+#include "mod_tools.hpp"
 
 #include <algorithm>
 
@@ -22,7 +23,9 @@ std::unordered_map<std::string, SDL_Scancode> Input::scancodeNames;
 std::unordered_map<int, SDL_GameController*> Input::gameControllers;
 std::unordered_map<int, SDL_Joystick*> Input::joysticks;
 bool Input::keys[SDL_NUM_SCANCODES] = { false };
-bool Input::mouseButtons[8] = { false };
+bool Input::mouseButtons[18] = { false };
+const int Input::MOUSE_WHEEL_UP = 16;
+const int Input::MOUSE_WHEEL_DOWN = 17;
 std::string Input::lastInputOfAnyKind;
 int Input::waitingToBindControllerForPlayer = -1;
 
@@ -235,8 +238,8 @@ bool Input::consumeBinaryToggle(const char* binding) {
 	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
 		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
-			&& ((*b).second.mouseButton == SDL_BUTTON_WHEELDOWN
-				|| (*b).second.mouseButton == SDL_BUTTON_WHEELUP) )
+			&& ((*b).second.mouseButton == MOUSE_WHEEL_DOWN
+				|| (*b).second.mouseButton == MOUSE_WHEEL_UP) )
 		{
 			mouseButtons[(*b).second.mouseButton] = false; // manually need to clear this
 		}
@@ -361,12 +364,12 @@ Input::binding_t Input::input(const char* binding) const {
 	return b != bindings.end() ? (*b).second : Input::binding_t();
 }
 
-std::string Input::getGlyphPathForInput(const char* binding) const
+std::string Input::getGlyphPathForInput(const char* binding, bool pressed) const
 {
-	return getGlyphPathForInput(input(binding));
+	return getGlyphPathForInput(input(binding), pressed);
 }
 
-std::string Input::getGlyphPathForInput(binding_t binding) const
+std::string Input::getGlyphPathForInput(binding_t binding, bool pressed) const
 {
 	std::string rootPath = "images/ui/Glyphs/";
 	if ( binding.type == binding_t::bindtype_t::CONTROLLER_BUTTON )
@@ -483,7 +486,69 @@ std::string Input::getGlyphPathForInput(binding_t binding) const
 	}
 	else if ( binding.type == binding_t::bindtype_t::KEYBOARD )
 	{
-		return "";
+		return GlyphHelper.getGlyphPath(binding.scancode, pressed);
+	}
+	else if ( binding.type == binding_t::bindtype_t::MOUSE_BUTTON )
+	{
+		if ( binding.mouseButton == 1 )
+		{
+			if ( pressed )
+			{
+				return rootPath + "Mouse/Mouse_LClick_Unpressed_00.png";
+			}
+			else
+			{
+				return rootPath + "Mouse/Mouse_LClick_Pressed_00.png";
+			}
+		}
+		else if ( binding.mouseButton == 3 )
+		{
+			if ( pressed )
+			{
+				return rootPath + "Mouse/Mouse_RClick_Unpressed_00.png";
+			}
+			else
+			{
+				return rootPath + "Mouse/Mouse_RClick_Pressed_00.png";
+			}
+		}
+		else if ( binding.mouseButton == 2 )
+		{
+			if ( pressed )
+			{
+				return rootPath + "Mouse/Mouse_MClick_Unpressed_00.png";
+			}
+			else
+			{
+				return rootPath + "Mouse/Mouse_MClick_Pressed_00.png";
+			}
+		}
+		else if ( binding.mouseButton == MOUSE_WHEEL_DOWN )
+		{
+			if ( pressed )
+			{
+				return rootPath + "Mouse/Mouse_MWheelDown_Unpressed_00.png";
+			}
+			else
+			{
+				return rootPath + "Mouse/Mouse_MWheelDown_Pressed_00.png";
+			}
+		}
+		else if ( binding.mouseButton == MOUSE_WHEEL_UP )
+		{
+			if ( pressed )
+			{
+				return rootPath + "Mouse/Mouse_MWheelUp_Unpressed_00.png";
+			}
+			else
+			{
+				return rootPath + "Mouse/Mouse_MWheelUp_Pressed_00.png";
+			}
+		}
+		else
+		{
+			return "";
+		}
 	}
 	return "";
 }
@@ -751,16 +816,16 @@ void Input::bind(const char* binding, const char* input) {
 		(*b).second.type = binding_t::MOUSE_BUTTON;
 		if ( (strncmp((const char*)(input + 5), "WheelUp", 7) == 0) )
 		{
-			(*b).second.mouseButton = SDL_BUTTON_WHEELUP;
+			(*b).second.mouseButton = MOUSE_WHEEL_UP;
 			return;
 		}
 		else if ( (strncmp((const char*)(input + 5), "WheelDown", 9) == 0) )
 		{
-			(*b).second.mouseButton = SDL_BUTTON_WHEELDOWN;
+			(*b).second.mouseButton = MOUSE_WHEEL_DOWN;
 			return;
 		}
 		Uint32 index = strtol((const char*)(input + 5), nullptr, 10);
-		int result = std::min(index, 4U);
+		int result = std::min(index, 15U);
 		(*b).second.mouseButton = result;
 		return;
 	} else {

@@ -920,7 +920,7 @@ void drawStatus(int player)
 	}
 
 	// draw action prompts.
-	if ( players[player]->hud.bShowActionPrompts )
+	/*if ( players[player]->hud.bShowActionPrompts )
 	{
 		int skill = (ticks / 100) % 16;
 		int iconSize = 48;
@@ -938,7 +938,7 @@ void drawStatus(int player)
 		skillPos.x = hotbar_t.hotbarBox.x + hotbar_t.hotbarBox.w + 0.5 * iconSize;
 		players[player]->hud.drawActionIcon(skillPos, players[player]->hud.getActionIconForPlayer(Player::HUD_t::ACTION_PROMPT_MAGIC, promptString));
 		players[player]->hud.drawActionGlyph(skillPos, Player::HUD_t::ACTION_PROMPT_MAGIC);
-	}
+	}*/
 
 	Item* item = nullptr;
 	//Now the hotbar.
@@ -1293,7 +1293,7 @@ void drawStatus(int player)
 					tmp.x += pos.w;
 					if ( !(hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_LEFT) )
 					{
-						players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+						//players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
 					}
 				}
 				else if ( num == 4 )
@@ -1301,7 +1301,7 @@ void drawStatus(int player)
 					tmp.y = pos.y + pos.h + 24;
 					if ( !(hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_MIDDLE) )
 					{
-						players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+						//players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
 					}
 				}
 				else if ( num == 7 )
@@ -1312,17 +1312,17 @@ void drawStatus(int player)
 
 					if ( !(hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_RIGHT) )
 					{
-						players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+						//players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
 					}
 				}
 				else
 				{
-					players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
+					//players[player]->hotbar.drawFaceButtonGlyph(num, tmp);
 				}
 			}
 			else
 			{
-				players[player]->hotbar.drawFaceButtonGlyph(num, pos);
+				//players[player]->hotbar.drawFaceButtonGlyph(num, pos);
 			}
 		}
 		else if ( uiscale_hotbar >= 1.5 )

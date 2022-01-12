@@ -112,8 +112,6 @@ extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
 extern SDL_Surface* selected_cursor_bmp;
-extern SDL_Surface* controllerglyphs1_bmp;
-extern SDL_Surface* skillIcons_bmp;
 
 enum PlayerClasses : int
 {

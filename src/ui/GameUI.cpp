@@ -876,6 +876,573 @@ void Player::HUD_t::updateUINavigation()
 	}
 }
 
+void createWorldTooltipPrompts(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto& worldTooltipFrame = hud_t.worldTooltipFrame;
+	worldTooltipFrame = hud_t.hudFrame->addFrame("world tooltip");
+	worldTooltipFrame->setHollow(true);
+	worldTooltipFrame->setBorder(0);
+	worldTooltipFrame->setOwner(player);
+	worldTooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	worldTooltipFrame->setDisabled(true);
+
+	const char* promptFont = "fonts/pixel_maz_multiline.ttf#16#2";
+
+	Uint32 iconColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity);
+	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
+
+	auto text = worldTooltipFrame->addField("prompt text", 256);
+	text->setFont(promptFont);
+	text->setText("");
+	text->setDisabled(true);
+	text->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+	const int iconSize = 24;
+	SDL_Rect iconPos{ 0, 0, iconSize, iconSize };
+
+	auto icon = worldTooltipFrame->addImage(iconPos,
+		iconColor, "images/system/white.png", "icon img");
+	icon->disabled = true;
+
+	auto glyph = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "glyph img");
+	glyph->disabled = true;
+
+	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "cursor img");
+	cursor->disabled = true;
+}
+
+void Player::HUD_t::updateWorldTooltipPrompts()
+{
+	if ( !hudFrame )
+	{
+		return;
+	}
+
+	if ( !worldTooltipFrame )
+	{
+		createWorldTooltipPrompts(player.playernum);
+		if ( !worldTooltipFrame )
+		{
+			return;
+		}
+	}
+
+	worldTooltipFrame->setDisabled(true);
+
+	if ( !player.shootmode || nohud || gamePaused )
+	{
+		return;
+	}
+
+	SDL_Rect promptPos{ player.camera_virtualWidth() / 2, player.camera_virtualHeight() / 2, 0, 0 };
+
+	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
+
+	auto icon = worldTooltipFrame->findImage("icon img");
+	icon->disabled = true;
+	auto glyph = worldTooltipFrame->findImage("glyph img");
+	glyph->disabled = true;
+	auto cursor = worldTooltipFrame->findImage("cursor img");
+	cursor->disabled = true;
+	auto text = worldTooltipFrame->findField("prompt text");
+	text->setDisabled(true);
+
+	SDL_Rect textPos{ 0, 0, 0, 0 };
+	const int skillIconToGlyphPadding = 4;
+	const int nominalGlyphHeight = 26;
+
+	if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+	{
+		bool forceBlankInteractText = false;
+		if ( !player.worldUI.isEnabled() )
+		{
+			cursor->path = "images/system/cursor.png";
+			if ( auto imgGet = Image::get(cursor->path.c_str()) )
+			{
+				cursor->disabled = false;
+				promptPos.x -= imgGet->getWidth() / 2;
+				promptPos.y -= imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				cursor->pos = cursorPos;
+				cursor->color = makeColor(255, 255, 255, 191);
+			}
+			textPos.x = cursor->pos.x + 24;
+			textPos.y = cursor->pos.y + 24;
+		}
+		else
+		{
+			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+			{
+				cursor->path = "images/system/cursor.png";
+				if ( auto imgGet = Image::get(cursor->path.c_str()) )
+				{
+					cursor->disabled = false;
+					promptPos.x -= imgGet->getWidth() / 2;
+					promptPos.y -= imgGet->getHeight() / 2;
+					SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+					cursor->pos = cursorPos;
+					cursor->color = makeColor(255, 255, 255, 191);
+				}
+
+				textPos.x = cursor->pos.x + cursor->pos.w / 2;
+				textPos.y = cursor->pos.y + cursor->pos.h / 2;
+				textPos.x -= selected_cursor_bmp->w / 2;
+				textPos.y -= selected_cursor_bmp->h / 2;
+
+				if ( textPos.x < 0 )
+				{
+					promptPos.x += textPos.x;
+					cursor->pos.x -= textPos.x;
+					textPos.x = 0;
+				}
+				if ( textPos.y < 0 )
+				{
+					promptPos.y += textPos.y;
+					cursor->pos.y -= textPos.y;
+					textPos.y = 0;
+				}
+			}
+			else
+			{
+				if ( (player.worldUI.isEnabled() && !player.worldUI.bTooltipInView) )
+				{
+					forceBlankInteractText = true;
+
+					cursor->path = "images/system/cross.png";
+					if ( auto imgGet = Image::get(cursor->path.c_str()) )
+					{
+						cursor->disabled = false;
+						promptPos.x -= imgGet->getWidth() / 2;
+						promptPos.y -= imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						cursor->pos = cursorPos;
+						cursor->color = makeColor(255, 255, 255, 128);
+					}
+
+					textPos.x = cursor->pos.x + cursor->pos.w / 2;
+					textPos.y = cursor->pos.y + cursor->pos.h / 2;
+					textPos.x -= selected_cursor_bmp->w / 2;
+					textPos.y -= selected_cursor_bmp->h / 2;
+
+					if ( textPos.x < 0 )
+					{
+						promptPos.x += textPos.x;
+						cursor->pos.x -= textPos.x;
+						textPos.x = 0;
+					}
+					if ( textPos.y < 0 )
+					{
+						promptPos.y += textPos.y;
+						cursor->pos.y -= textPos.y;
+						textPos.y = 0;
+					}
+				}
+				else
+				{
+					cursor->path = "images/system/selectedcursor.png";
+					if ( auto imgGet = Image::get(cursor->path.c_str()) )
+					{
+						cursor->disabled = false;
+						promptPos.x -= imgGet->getWidth() / 2;
+						promptPos.y -= imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						cursor->pos = cursorPos;
+						cursor->color = makeColor(255, 255, 255, 128);
+					}
+				}
+			}
+
+			textPos.x += 40;
+			textPos.y += 20;
+			textPos.h = selected_cursor_bmp->h;
+			textPos.w = textPos.h;
+
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+			if ( ticks % 50 < 25 )
+			{
+				glyph->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyph->pos.h )
+						{
+							glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+						}
+
+						if ( unpressedHeight != nominalGlyphHeight )
+						{
+							glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}
+					}
+					textPos.x += glyph->pos.w;
+				}
+			}
+			else
+			{
+				glyph->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					textPos.x += glyph->pos.w;
+
+					if ( glyph->pos.h != nominalGlyphHeight )
+					{
+						glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+					}
+				}
+			}
+			textPos.x += skillIconToGlyphPadding;
+
+			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+			{
+				if ( skill.skillId == PRO_LEADERSHIP )
+				{
+					if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+					{
+						icon->path = skill.skillIconPathLegend;
+					}
+					else
+					{
+						icon->path = skill.skillIconPath;
+					}
+					break;
+				}
+			}
+
+			if ( auto imgGet = Image::get(icon->path.c_str()) )
+			{
+				icon->disabled = false;
+				SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+				icon->pos = iconPos;
+				textPos.x += icon->pos.w + skillIconToGlyphPadding;
+			}
+		}
+
+		if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+		{
+			if ( followerMenu.followerToCommand
+				&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+					|| followerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+				)
+			{
+				text->setDisabled(false);
+				text->setText(language[3650]);
+			}
+			else
+			{
+				text->setDisabled(false);
+				text->setText(language[3039]);
+			}
+		}
+		else
+		{
+			if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
+			{
+				if ( followerMenu.followerToCommand )
+				{
+					int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+					if ( followerMenu.allowedInteractItems(type)
+						|| followerMenu.allowedInteractFood(type)
+						|| followerMenu.allowedInteractWorld(type)
+						)
+					{
+						text->setDisabled(false);
+						text->setText(language[4041]); // "Interact with..."
+					}
+					else
+					{
+						text->setDisabled(false);
+						text->setText(language[4042]); // "Attack..."
+					}
+				}
+				else
+				{
+					text->setDisabled(false);
+					text->setText(language[4041]); // "Interact with..."
+				}
+			}
+			else
+			{
+				text->setDisabled(false);
+				text->setText(followerMenu.interactText);
+			}
+		}
+	}
+	else
+	{
+		bool foundTinkeringKit = false;
+		if ( player.entity && stats[player.playernum]
+			&& stats[player.playernum]->defending )
+		{
+			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
+			{
+				foundTinkeringKit = true;
+			}
+		}
+		if ( player.worldUI.bTooltipInView )
+		{
+			cursor->path = "images/system/selectedcursor.png";
+			if ( auto imgGet = Image::get(cursor->path.c_str()) )
+			{
+				cursor->disabled = false;
+				promptPos.x -= imgGet->getWidth() / 2;
+				promptPos.y -= imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				cursor->pos = cursorPos;
+				cursor->color = makeColor(255, 255, 255, 128);
+			}
+
+			textPos.x += 40;
+			textPos.y += 20;
+			textPos.h = selected_cursor_bmp->h;
+			textPos.w = textPos.h;
+
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+			if ( ticks % 50 < 25 )
+			{
+				glyph->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyph->pos.h )
+						{
+							glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+						}
+
+						if ( unpressedHeight != nominalGlyphHeight )
+						{
+							glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}
+					}
+					textPos.x += glyph->pos.w;
+				}
+			}
+			else
+			{
+				glyph->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					textPos.x += glyph->pos.w;
+
+					if ( glyph->pos.h != nominalGlyphHeight )
+					{
+						glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+					}
+				}
+			}
+			textPos.x += skillIconToGlyphPadding;
+
+			if ( foundTinkeringKit )
+			{
+				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+				{
+					if ( skill.skillId == PRO_LOCKPICKING )
+					{
+						if ( skillCapstoneUnlocked(player.playernum, PRO_LOCKPICKING) )
+						{
+							icon->path = skill.skillIconPathLegend;
+						}
+						else
+						{
+							icon->path = skill.skillIconPath;
+						}
+						break;
+					}
+				}
+
+				if ( auto imgGet = Image::get(icon->path.c_str()) )
+				{
+					icon->disabled = false;
+					SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					icon->pos = iconPos;
+					textPos.x += icon->pos.w + skillIconToGlyphPadding;
+				}
+			}
+
+			text->setDisabled(false);
+			text->setText(player.worldUI.interactText.c_str());
+		}
+		else
+		{
+			cursor->path = "images/system/cross.png";
+			if ( auto imgGet = Image::get(cursor->path.c_str()) )
+			{
+				cursor->disabled = false;
+				promptPos.x -= imgGet->getWidth() / 2;
+				promptPos.y -= imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				cursor->pos = cursorPos;
+				cursor->color = makeColor(255, 255, 255, 128);
+			}
+
+			if ( foundTinkeringKit )
+			{
+				if ( player.worldUI.isEnabled() )
+				{
+					textPos.x = cursor->pos.x + cursor->pos.w / 2;
+					textPos.y = cursor->pos.y + cursor->pos.h / 2;
+					textPos.x -= selected_cursor_bmp->w / 2;
+					textPos.y -= selected_cursor_bmp->h / 2;
+
+					if ( textPos.x < 0 )
+					{
+						promptPos.x += textPos.x;
+						cursor->pos.x -= textPos.x;
+						textPos.x = 0;
+					}
+					if ( textPos.y < 0 )
+					{
+						promptPos.y += textPos.y;
+						cursor->pos.y -= textPos.y;
+						textPos.y = 0;
+					}
+
+					// skip cursor here, no tooltip in view
+					//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+					textPos.x += 40;
+					textPos.y += 20;
+					textPos.h = selected_cursor_bmp->h;
+					textPos.w = textPos.h;
+
+					auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
+					auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+					if ( ticks % 50 < 25 )
+					{
+						glyph->path = glyphPathPressed;
+						if ( auto imgGet = Image::get(glyph->path.c_str()) )
+						{
+							glyph->disabled = false;
+							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							glyph->pos = glyphPos;
+							if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+							{
+								const int unpressedHeight = imgGetUnpressed->getHeight();
+								if ( unpressedHeight != glyph->pos.h )
+								{
+									glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+								}
+
+								if ( unpressedHeight != nominalGlyphHeight )
+								{
+									glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+								}
+							}
+							textPos.x += glyph->pos.w;
+						}
+					}
+					else
+					{
+						glyph->path = glyphPathUnpressed;
+						if ( auto imgGet = Image::get(glyph->path.c_str()) )
+						{
+							glyph->disabled = false;
+							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							glyph->pos = glyphPos;
+							textPos.x += glyph->pos.w;
+
+							if ( glyph->pos.h != nominalGlyphHeight )
+							{
+								glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+							}
+						}
+					}
+					textPos.x += skillIconToGlyphPadding;
+
+					for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == PRO_LOCKPICKING )
+						{
+							if ( skillCapstoneUnlocked(player.playernum, PRO_LOCKPICKING) )
+							{
+								icon->path = skill.skillIconPathLegend;
+							}
+							else
+							{
+								icon->path = skill.skillIconPath;
+							}
+							break;
+						}
+					}
+
+					if ( auto imgGet = Image::get(icon->path.c_str()) )
+					{
+						icon->disabled = false;
+						SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+						icon->pos = iconPos;
+						textPos.x += icon->pos.w + skillIconToGlyphPadding;
+					}
+
+					text->setDisabled(false);
+					text->setText(language[3663]);
+				}
+				else
+				{
+					textPos.x += 24;
+					textPos.y += 24;
+
+					text->setDisabled(false);
+					text->setText(language[3663]);
+				}
+			}
+		}
+	}
+
+	if ( !text->isDisabled() )
+	{
+		textPos.w = text->getTextObject()->getWidth();
+		textPos.h = Font::get(text->getFont())->height() + 8;
+		textPos.y -= 1;
+		text->setVJustify(Field::justify_t::CENTER);
+		text->setSize(textPos);
+
+		promptPos.w = text->getSize().x + text->getSize().w;
+		promptPos.h = text->getSize().y + text->getSize().h;
+	}
+	if ( !glyph->disabled )
+	{
+		promptPos.w = std::max(glyph->pos.x + glyph->pos.w, promptPos.w);
+		promptPos.h = std::max(glyph->pos.y + glyph->pos.h, promptPos.h);
+	}
+	if ( !icon->disabled )
+	{
+		if ( icon->pos.h != nominalGlyphHeight )
+		{
+			icon->pos.y -= (icon->pos.h - nominalGlyphHeight) / 2;
+		}
+
+		promptPos.w = std::max(icon->pos.x + icon->pos.w, promptPos.w);
+		promptPos.h = std::max(icon->pos.y + icon->pos.h, promptPos.h);
+	}
+	if ( !cursor->disabled )
+	{
+		promptPos.w = std::max(cursor->pos.x + cursor->pos.w, promptPos.w);
+		promptPos.h = std::max(cursor->pos.y + cursor->pos.h, promptPos.h);
+	}
+	worldTooltipFrame->setSize(promptPos);
+	worldTooltipFrame->setDisabled(false);
+}
+
 std::string actionPromptBackingIconPath00 = "";
 std::string actionPromptBackingIconPath20 = "";
 std::string actionPromptBackingIconPath60 = "";
@@ -919,8 +1486,9 @@ void createActionPrompts(const int player)
 		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	mainHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
-	mainHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
-		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	Frame::image_t* glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action mainhand glyph");
+	glyph->ontop = true;
 	auto mainHandText = actionPromptFrame->addField("action mainhand text", 64);
 	mainHandText->setFont(promptFont);
 	mainHandText->setText("Attack");
@@ -932,8 +1500,9 @@ void createActionPrompts(const int player)
 		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	offHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
-	offHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
-		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action offhand glyph");
+	glyph->ontop = true;
 	auto offHandText = actionPromptFrame->addField("action offhand text", 64);
 	offHandText->setFont(promptFont);
 	offHandText->setText("Sneak");
@@ -945,8 +1514,9 @@ void createActionPrompts(const int player)
 		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	magic->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
-	magic->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
-		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action magic glyph");
+	glyph->ontop = true;
 	auto magicText = actionPromptFrame->addField("action magic text", 64);
 	magicText->setFont(promptFont);
 	magicText->setText("Cast spell");
@@ -1017,8 +1587,9 @@ void Player::HUD_t::updateActionPrompts()
 	{
 		if ( auto prompt = actionPromptsFrame->findFrame(promptInfo.name.c_str()) )
 		{
+			std::string glyphName = promptInfo.name + " glyph";
 			auto img = prompt->findImage("action img");
-			auto glyph = prompt->findImage("action glyph");
+			auto glyph = actionPromptsFrame->findImage(glyphName.c_str());
 			auto imgBacking = prompt->findImage("action img backing");
 
 			SDL_Rect promptPos = prompt->getSize();
@@ -1139,6 +1710,7 @@ void Player::HUD_t::updateActionPrompts()
 				}
 			}
 			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str());
+			glyph->disabled = prompt->isDisabled();
 			if ( !player.shootmode )
 			{
 				glyph->disabled = true;
@@ -1156,9 +1728,9 @@ void Player::HUD_t::updateActionPrompts()
 				glyph->pos.w = imgGet->getWidth();
 				glyph->pos.h = imgGet->getHeight();
 			}
-			glyph->pos.x = prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
+			glyph->pos.x = prompt->getSize().x + prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 0;
-			glyph->pos.y = img->pos.y + img->pos.h - glyphToImgPadY; // just above the skill img with some padding
+			glyph->pos.y = prompt->getSize().y + img->pos.y + img->pos.h - glyphToImgPadY; // just above the skill img with some padding
 		}
 		++index;
 	}
@@ -16593,14 +17165,14 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 				{
-					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
 					{
-						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
 						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					}
-					if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
 					{
-						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
 				}

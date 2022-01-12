@@ -1202,6 +1202,7 @@ public:
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
+		Frame* worldTooltipFrame = nullptr;
 		Frame* uiNavFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
@@ -1309,8 +1310,6 @@ public:
 			ACTION_PROMPT_OFFHAND,
 			ACTION_PROMPT_MAGIC
 		};
-		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
-		void drawActionIcon(SDL_Rect& pos, int skill) const;
 		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
 		int XP_FRAME_WIDTH = 650;
@@ -1339,6 +1338,7 @@ public:
 		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
 		void updateCursor();
 		void updateActionPrompts();
+		void updateWorldTooltipPrompts();
 		void updateUINavigation();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
@@ -1690,7 +1690,6 @@ public:
 			player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
 		}
 		void initFaceButtonHotbar();
-		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
 		void processHotbar();
 		void updateHotbar();

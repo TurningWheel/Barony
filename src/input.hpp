@@ -180,18 +180,20 @@ public:
 	//! return the binding_t struct for the input name
 	binding_t input(const char* binding) const;
 
-	std::string getGlyphPathForInput(binding_t binding) const;
-	std::string getGlyphPathForInput(const char* binding) const;
+	std::string getGlyphPathForInput(binding_t binding, bool pressed = false) const;
+	std::string getGlyphPathForInput(const char* binding, bool pressed = false) const;
 
 	static float getJoystickRebindingDeadzone() { return rebinding_deadzone; }
 
 	//! list of connected input devices
 	static std::string lastInputOfAnyKind;
-	static int Input::waitingToBindControllerForPlayer;
+	static int waitingToBindControllerForPlayer;
 	static std::unordered_map<int, SDL_GameController*> gameControllers;
 	static std::unordered_map<int, SDL_Joystick*> joysticks;
 	static bool keys[SDL_NUM_SCANCODES];
-	static bool mouseButtons[8];
+	static bool mouseButtons[18];
+	static const int MOUSE_WHEEL_UP;
+	static const int MOUSE_WHEEL_DOWN;
 private:
 	std::unordered_map<std::string, binding_t> bindings;
 
