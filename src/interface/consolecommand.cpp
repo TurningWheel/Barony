@@ -3240,6 +3240,16 @@ void consoleCommand(char const * const command_str)
 			TimerExperiments::bDebug = !TimerExperiments::bDebug;
 			messagePlayer(clientnum, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
 		}
+		else if ( !strncmp(command_str, "/loadglyphs", 11) )
+		{
+			GlyphHelper.readFromFile();
+			messagePlayer(clientnum, "Reloaded keyboard glyph paths from JSON file");
+		}
+		else if ( !strncmp(command_str, "/renderglyphs", 13) )
+		{
+			GlyphHelper.renderGlyphsToPNGs();
+			messagePlayer(clientnum, "Re-rendering keyboard glyphs...");
+		}
 		else if ( !strncmp(command_str, "/framesearchdebug", 17) )
 		{
 			Frame::findFrameDefaultSearchType = 

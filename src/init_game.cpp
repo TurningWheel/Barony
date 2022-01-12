@@ -300,6 +300,8 @@ int initGame()
 		ItemTooltips.readItemsFromFile();
 		ItemTooltips.readTooltipsFromFile();
 
+		GlyphHelper.readFromFile();
+
 		loadHUDSettingsJSON();
 		Player::SkillSheet_t::loadSkillSheetJSON();
 		Player::CharacterSheet_t::loadCharacterSheetJSON();

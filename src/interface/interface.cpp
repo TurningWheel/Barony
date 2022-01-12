@@ -178,8 +178,6 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
 	std::make_pair(&cross_bmp, "images/system/cross.png"),
 	std::make_pair(&selected_cursor_bmp, "images/system/selectedcursor.png"),
-	std::make_pair(&controllerglyphs1_bmp, "images/system/glyphsheet_ns.png"),
-	std::make_pair(&skillIcons_bmp, "images/system/skillicons_sheet.png"),
 
 	std::make_pair(&fancyWindow_bmp, "images/system/fancyWindow.png"),
 	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
