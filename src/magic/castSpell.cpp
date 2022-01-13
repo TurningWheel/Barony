@@ -131,8 +131,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 				}
 				else
 				{
-					messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3241]);
-					messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
+					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3241]);
+					messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen(*mainsurface), language[3242]);
 					//messagePlayer(player, language[408], spell->name);
 					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
@@ -1074,7 +1074,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					else
 					{
-						messagePlayerColor(i, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3712], numItems);
+						messagePlayerColor(i, MESSAGE_INVENTORY, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3712], numItems);
 						playSoundEntity(caster, 167, 128);
 					}
 
@@ -1136,12 +1136,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( overdrewIntoHP )
 					{
 						amount /= 4;
-						messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 255, 255, 255), language[3400]);
+						messagePlayerColor(player, MESSAGE_COMBAT, SDL_MapRGB(mainsurface->format, 255, 255, 255), language[3400]);
 					}
 
 					caster->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(i, color, language[3490]);
+					messagePlayerColor(i, MESSAGE_HINT, color, language[3490]);
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
@@ -1161,7 +1161,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 							if ( entity->behavior == &actPlayer )
 							{
-								messagePlayerColor(entity->skill[2], color, language[3490]);
+								messagePlayerColor(entity->skill[2], MESSAGE_HINT, color, language[3490]);
 							}
 						}
 					}
@@ -1192,7 +1192,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					if ( caster->setEffect(EFF_FLUTTER, true, duration, true) )
 					{
-						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3767]);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3767]);
 						playSoundEntity(caster, 178, 128);
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
 					}
@@ -1267,7 +1267,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
 					caster->setEffect(EFF_FAST, true, duration, true);
-					messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[768]);
+					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[768]);
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
@@ -1287,7 +1287,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 							if ( entity->behavior == &actPlayer )
 							{
-								messagePlayerColor(entity->skill[2], uint32ColorGreen(*mainsurface), language[768]);
+								messagePlayerColor(entity->skill[2], MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[768]);
 							}
 						}
 					}
@@ -1438,7 +1438,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(caster->skill[2], color, language[3419], getMonsterLocalizedName((Monster)caster->effectShapeshift).c_str());
+				messagePlayerColor(caster->skill[2], MESSAGE_STATUS, color, language[3419], getMonsterLocalizedName((Monster)caster->effectShapeshift).c_str());
 			}
 			else
 			{
@@ -1480,7 +1480,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(i, color, language[411]);
+					messagePlayerColor(i, MESSAGE_STATUS, color, language[411]);
 					int c = 0;
 					for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 					{

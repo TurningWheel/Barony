@@ -107,7 +107,7 @@ void actHeadstone(Entity* my)
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[485 + HEADSTONE_MESSAGE % 17]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[485 + HEADSTONE_MESSAGE % 17]);
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
 						shouldspawn = true;

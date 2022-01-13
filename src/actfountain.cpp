@@ -165,13 +165,13 @@ void actFountain(Entity* my)
 				if (my->skill[0] == 0)
 				{
 					//Depleted
-					messagePlayer(i, language[467]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[467]);
 				}
 				else
 				{
 					if (players[i]->entity->flags[BURNING])
 					{
-						messagePlayer(i, language[468]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[468]);
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
@@ -311,8 +311,8 @@ void actFountain(Entity* my)
 						case 1:
 							if ( stats[i] && stats[i]->type != VAMPIRE )
 							{
-								messagePlayer(i, language[470]);
-								messagePlayer(i, language[471]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[470]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[471]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 100;
 								players[i]->entity->modHP(5);
@@ -346,7 +346,7 @@ void actFountain(Entity* my)
 						case 2:
 						{
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
-							messagePlayer(i, language[470]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[470]);
 							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
 							useItem(item, i, my);
 							// Long live the mystical fountain of TODO.
@@ -560,7 +560,7 @@ void actFountain(Entity* my)
 					{
 						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3246]);
 					}
-					messagePlayer(i, language[474]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[474]);
 					my->skill[0] = 0; //Dry up fountain.
 					serverUpdateEntitySkill(my, 0);
 					//TODO: messagePlayersInSight() instead.

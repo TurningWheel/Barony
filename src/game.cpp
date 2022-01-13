@@ -1511,7 +1511,7 @@ void gameLogic(void)
 								item->ownerUid = parent->getUID();
 								Item* pickedUp = itemPickup(parent->skill[2], item);
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3746], items[item->type].name_unidentified);
+								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
 								if ( pickedUp )
 								{
 									if ( parent->skill[2] == 0 || (parent->skill[2] > 0 && splitscreen) )
@@ -4334,7 +4334,7 @@ void ingameHud()
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
 						Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
-						if (messagePlayerColor(commandPlayer, color, chatstring)) {
+						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 						    playSound(238, 64);
 						}
 

@@ -867,7 +867,7 @@ void actBoulder(Entity* my)
 						}
 						if ( playerSTR < 5 )
 						{
-							messagePlayer(i, language[456]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[456]);
 						}
 						else
 						{
@@ -950,7 +950,7 @@ void actBoulder(Entity* my)
 				BOULDER_ROLLING = 0;
 				if ( BOULDER_SOUND_ON_PUSH > 0 )
 				{
-					messagePlayer(BOULDER_SOUND_ON_PUSH - 1, language[3974]);
+					messagePlayer(BOULDER_SOUND_ON_PUSH - 1, MESSAGE_HINT, language[3974]);
 					BOULDER_SOUND_ON_PUSH = 0;
 				}
 			}
@@ -1042,7 +1042,7 @@ void actBoulder(Entity* my)
 							}
 							else
 							{
-								messagePlayer(BOULDER_SOUND_ON_PUSH - 1, language[3974]);
+								messagePlayer(BOULDER_SOUND_ON_PUSH - 1, MESSAGE_HINT, language[3974]);
 							}
 							BOULDER_SOUND_ON_PUSH = 0;
 						}

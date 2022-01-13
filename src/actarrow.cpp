@@ -896,7 +896,7 @@ void actArrow(Entity* my)
 									if ( rand() % 8 == 0 && hit.entity->skill[26] == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
 									{
 										// maybe vomit
-										messagePlayer(hit.entity->skill[2], language[634]);
+										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[634]);
 										if ( hitstats->type != SKELETON
 											&& hit.entity->effectShapeshift == NOTHING
 											&& hitstats->type != AUTOMATON )
@@ -930,7 +930,7 @@ void actArrow(Entity* my)
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							messagePlayer(hit.entity->skill[2], language[452]); // player notified no damage.
+							messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, language[452]); // player notified no damage.
 						}
 						if ( parent && parent->behavior == &actPlayer )
 						{
@@ -938,16 +938,16 @@ void actArrow(Entity* my)
 							{
 								if ( hitstats->sex )
 								{
-									messagePlayer(parent->skill[2], language[449]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[449]);
 								}
 								else
 								{
-									messagePlayer(parent->skill[2], language[450]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[450]);
 								}
 							}
 							else
 							{
-								messagePlayer(parent->skill[2], language[447]);
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[447]);
 							}
 						}
 					}

@@ -5843,7 +5843,7 @@ void mapFoodOnLevel(int player)
 	}
 	else
 	{
-		messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0),language[3424]);
+		messagePlayerColor(player, MESSAGE_HINT, SDL_MapRGB(mainsurface->format, 0, 255, 0),language[3424]);
 	}
 }
 

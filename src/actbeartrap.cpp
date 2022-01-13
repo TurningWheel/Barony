@@ -86,7 +86,7 @@ void actBeartrap(Entity* my)
 				entity->skill[15] = BEARTRAP_IDENTIFIED;
 				entity->itemNotMoving = 1;
 				entity->itemNotMovingClient = 1;
-				messagePlayer(i, language[1300]);
+				messagePlayer(i, MESSAGE_INTERACTION, language[1300]);
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -194,11 +194,11 @@ void actBeartrap(Entity* my)
 							{
 								if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 								{
-									messagePlayer(player, language[2521]);
+									messagePlayer(player, MESSAGE_HINT, language[2521]);
 								}
 								else
 								{
-									messagePlayer(player, language[2522]);
+									messagePlayer(player, MESSAGE_HINT, language[2522]);
 								}
 								if ( rand() % 10 == 0 )
 								{
@@ -566,11 +566,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 				{
-					messagePlayer(player, language[3494]);
+					messagePlayer(player, MESSAGE_HINT, language[3494]);
 				}
 				else
 				{
-					messagePlayer(player, language[3495]);
+					messagePlayer(player, MESSAGE_HINT, language[3495]);
 				}
 			}
 			if ( triggered->behavior == &actMonster )
@@ -689,7 +689,7 @@ void actBomb(Entity* my)
 					entity->itemNotMoving = 0;
 					entity->itemNotMovingClient = 0;
 				}
-				messagePlayer(i, language[3600], items[BOMB_ITEMTYPE].name_identified);
+				messagePlayer(i, MESSAGE_INTERACTION, language[3600], items[BOMB_ITEMTYPE].name_identified);
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -1251,7 +1251,7 @@ void actDecoyBox(Entity* my)
 											}
 											if ( !message )
 											{
-												messagePlayer(parent->skill[2], language[3671]);
+												messagePlayer(parent->skill[2], MESSAGE_WORLD, language[3671]);
 												message = true;
 											}
 											break;
@@ -1268,7 +1268,7 @@ void actDecoyBox(Entity* my)
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3882]);
+				messagePlayer(parent->skill[2], MESSAGE_HINT, language[3882]);
 			}
 		}
 	}
@@ -1322,7 +1322,7 @@ void actDecoyBox(Entity* my)
 			}
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3770]);
+				messagePlayer(parent->skill[2], MESSAGE_EQUIPMENT, language[3770]);
 			}
 			list_RemoveNode(my->mynode);
 			return;

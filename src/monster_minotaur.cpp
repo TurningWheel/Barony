@@ -621,7 +621,7 @@ void actMinotaurTrap(Entity* my)
 					{
 						playSoundPlayer( c, 107 + rand() % 3, 128 );
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-						messagePlayerColor(c, color, language[1113]);
+						messagePlayerColor(c, MESSAGE_HINT, color, language[1113]);
 					}
 				}
 			}
@@ -674,11 +674,11 @@ void actMinotaurTimer(Entity* my)
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 				if ( stats[c]->type == HUMAN )
 				{
-					messagePlayerColor(c, color, language[1114], stats[c]->name);
+					messagePlayerColor(c, MESSAGE_WORLD, color, language[1114], stats[c]->name);
 				}
 				else
 				{
-					messagePlayerColor(c, color, language[3285]);
+					messagePlayerColor(c, MESSAGE_WORLD, color, language[3285]);
 				}
 			}
 		}
@@ -696,7 +696,7 @@ void actMinotaurTimer(Entity* my)
 			{
 				playSoundPlayer( c, 107 + rand() % 3, 128 );
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-				messagePlayerColor(c, color, language[1115]);
+				messagePlayerColor(c, MESSAGE_HINT, color, language[1115]);
 			}
 			MINOTAURTIMER_ACTIVE = MINOTAURTIMER_LIFE;
 		}
@@ -710,16 +710,16 @@ void actMinotaurTimer(Entity* my)
 			{
 				playSoundPlayer(c, 120 + rand() % 3, 128);
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(c, color, language[1116]);
-				messagePlayerColor(c, color, language[73]);
+				messagePlayerColor(c, MESSAGE_WORLD, color, language[1116]);
+				messagePlayerColor(c, MESSAGE_WORLD, color, language[73]);
 			}
 			else
 			{
 				playSoundPlayer(c, 375, 128);
 				playSoundPlayer(c, 379, 128);
-				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[1116]);
-				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[73]);
-				messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[73]);
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[1116]);
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[73]);
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue(*mainsurface), language[73]);
 			}
 		}
 		list_RemoveNode(my->mynode);

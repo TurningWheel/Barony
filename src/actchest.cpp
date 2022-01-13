@@ -630,7 +630,7 @@ void Entity::actChest()
 
 		if ( chestStatus == 1 )
 		{
-			messagePlayer(chestOpener, language[671]); // "The chest is smashed into pieces!" only notify if chest is currently open.
+			messagePlayer(chestOpener, MESSAGE_WORLD, language[671]); // "The chest is smashed into pieces!" only notify if chest is currently open.
 		}
 
 		this->closeChest();
@@ -711,7 +711,7 @@ void Entity::actChest()
 		{
 			if ( !chestStatus )
 			{
-				messagePlayer(chestclicked, language[459]);
+				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[459]);
 				openedChest[chestclicked] = this;
 
 				chestOpener = chestclicked;
@@ -762,7 +762,7 @@ void Entity::actChest()
 			}
 			else
 			{
-				messagePlayer(chestclicked, language[460]);
+				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]);
 				if ( !players[chestOpener]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -777,14 +777,14 @@ void Entity::actChest()
 				}
 				if (chestOpener != chestclicked)
 				{
-					messagePlayer(chestOpener, language[461]);
+					messagePlayer(chestOpener, MESSAGE_HINT, language[461]);
 				}
 				closeChestServer();
 			}
 		}
 		else if ( chestLocked )
 		{
-			messagePlayer(chestclicked, language[462]);
+			messagePlayer(chestclicked, MESSAGE_INTERACTION, language[462]);
 			playSoundEntity(this, 152, 64);
 		}
 	}
@@ -897,7 +897,7 @@ void Entity::closeChest()
 			//Message server.
 			if ( chestHealth > 0 )
 			{
-				messagePlayer(player, language[460]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[460]);
 			}
 			
 			strcpy( (char*)net_packet->data, "CCLS" );
@@ -918,7 +918,7 @@ void Entity::closeChest()
 
 		if ( chestHealth > 0 )
 		{
-			messagePlayer(player, language[460]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[460]);
 		}
 
 		openedChest[chestOpener] = nullptr;
@@ -1047,11 +1047,11 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		{
 			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 			{
-				messagePlayer(player, language[3218]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, language[3218]);
 			}
 			else
 			{
-				messagePlayer(player, language[1087]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, language[1087]);
 			}
 			item->identified = true;
 			return;
@@ -1165,7 +1165,7 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		}
 	}
 
-	messagePlayer(player, language[463], newitem->getName());
+	messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
 	addItemToChest(newitem);
 
 	return; //Do not execute the rest of this function.
@@ -1447,22 +1447,22 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], language[3617], items[magicProjectile.skill[21]].name_identified, language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].name_identified, language[675]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[2520]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[2520]);
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], language[3618], items[magicProjectile.skill[21]].name_identified, language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].name_identified, language[675]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[378], language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[378], language[675]);
 				}
 			}
 		}

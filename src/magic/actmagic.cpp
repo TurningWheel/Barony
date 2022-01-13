@@ -4282,7 +4282,7 @@ void actParticleSapCenter(Entity* my)
 				/*if ( parent->behavior == &actPlayer )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(parent->skill[2], color, language[774]);
+					messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, language[774]);
 				}*/
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
@@ -4305,7 +4305,7 @@ void actParticleSapCenter(Entity* my)
 					item->ownerUid = parent->getUID();
 					Item* pickedUp = itemPickup(parent->skill[2], item);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
+					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
 					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
 					if ( pickedUp )
 					{
@@ -5475,7 +5475,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
+				messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
 				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
 			else
@@ -5613,7 +5613,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				for ( c = 0; c < MAXPLAYERS; c++ )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-					messagePlayerColor(c, color, language[406]);
+					messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
 				}
 			}
 			boulderSokobanOnDestroy(false);

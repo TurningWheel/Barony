@@ -164,6 +164,8 @@ namespace MainMenu {
 		bool progression = true;
 		bool interaction = true;
 		bool inspection = true;
+		bool hint = true;
+		bool obituary = true;
 		inline void save();
 		static inline Messages load();
 		static inline Messages reset();
@@ -759,6 +761,8 @@ namespace MainMenu {
 	}
 
 	void InventorySorting::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("hotbarWeapons", hotbarWeapons);
 		file->property("hotbarArmor", hotbarArmor);
 		file->property("hotbarAmulets", hotbarAmulets);
@@ -835,6 +839,8 @@ namespace MainMenu {
 	}
 
 	void Bindings::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		Uint32 num_players = 4;
 		file->propertyName("players");
 		file->beginArray(num_players);
@@ -905,6 +911,8 @@ namespace MainMenu {
 	}
 
 	void Minimap::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("map_scale", map_scale);
 		file->property("icon_scale", icon_scale);
 		file->property("foreground_opacity", foreground_opacity);
@@ -924,7 +932,8 @@ namespace MainMenu {
 		messagesEnabled |= progression ? MESSAGE_PROGRESSION : 0;
 		messagesEnabled |= interaction ? MESSAGE_INTERACTION : 0;
 		messagesEnabled |= inspection ? MESSAGE_INSPECTION : 0;
-		messagesEnabled |= MESSAGE_HINT;
+		messagesEnabled |= hint ? MESSAGE_HINT : 0;
+		messagesEnabled |= obituary ? MESSAGE_OBITUARY : 0;
 		messagesEnabled |= MESSAGE_MISC;
 	}
 
@@ -939,6 +948,8 @@ namespace MainMenu {
 		messages.progression = messagesEnabled & MESSAGE_PROGRESSION;
 		messages.interaction = messagesEnabled & MESSAGE_INTERACTION;
 		messages.inspection = messagesEnabled & MESSAGE_INSPECTION;
+		messages.hint = messagesEnabled & MESSAGE_HINT;
+		messages.obituary = messagesEnabled & MESSAGE_OBITUARY;
 		return messages;
 	}
 
@@ -947,6 +958,8 @@ namespace MainMenu {
 	}
 
 	void Messages::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("combat", combat);
 		file->property("status", status);
 		file->property("inventory", inventory);
@@ -956,6 +969,8 @@ namespace MainMenu {
 		file->property("progression", progression);
 		file->property("interaction", interaction);
 		file->property("inspection", inspection);
+		file->property("hint", hint);
+		file->property("obituary", obituary);
 	}
 
 	/******************************************************************************/
@@ -1155,6 +1170,8 @@ namespace MainMenu {
 	}
 
 	void AllSettings::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);

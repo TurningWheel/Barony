@@ -386,10 +386,11 @@ bool messagePlayerColor(int player, MessageType type, Uint32 color, char const *
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
-		strcpy((char*)(&net_packet->data[8]), str);
+		SDLNet_Write32((Uint32)type, &net_packet->data[8]);
+		strcpy((char*)(&net_packet->data[12]), str);
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 8 + strlen(str) + 1;
+		net_packet->len = 12 + strlen(str) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
@@ -3145,25 +3146,27 @@ void clientHandlePacket()
 	// textbox message
 	else if (!strncmp((char*)net_packet->data, "MSGS", 4))
 	{
+		Uint32 color = SDLNet_Read32(&net_packet->data[4]);
+		MessageType type = (MessageType)SDLNet_Read32(&net_packet->data[8]);
+		char* msg = &net_packet->data[12];
 		if ( ticks != 1 )
 		{
-			Uint32 color = SDLNet_Read32(&net_packet->data[4]);
-			messagePlayerColor(clientnum, color, (char*)(&net_packet->data[8]));
+			messagePlayerColor(clientnum, type, color, msg);
 		}
 		if (!disable_messages && (messagesEnabled & MESSAGE_CHAT))
 		{
 		    for ( c = 0; c < MAXPLAYERS; c++ )
 		    {
-			    if ( !strncmp( (char*)(&net_packet->data[8]), stats[c]->name, std::min<size_t>(strlen(stats[c]->name), 10) ) )    //TODO: Why are size_t and int being compared?
+			    if ( !strncmp( msg, stats[c]->name, std::min<size_t>(strlen(stats[c]->name), (size_t)10) ) )
 			    {
-				    if ( net_packet->data[8 + std::min<size_t>(strlen(stats[c]->name), 10)] == ':' )   //TODO: Why are size_t and int being compared?
+				    if ( msg[std::min<size_t>(strlen(stats[c]->name), (size_t)10)] == ':' )
 				    {
 					    playSound(238, 64);
 				    }
 			    }
 		    }
 		}
-		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
+		if ( !strcmp(msg, language[577]) ) //TODO: Replace with a UDIE packet.
 		{
 			// this is how the client knows it died...
 			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0 )
@@ -3285,7 +3288,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
+		else if ( !strcmp(msg, language[1109]) )
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
@@ -3301,7 +3304,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		else if ( !strncmp((char*)(&net_packet->data[8]), language[1114], 28) )
+		else if ( !strncmp(msg, language[1114], 28) )
 		{
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
@@ -3309,11 +3312,11 @@ void clientHandlePacket()
 			playMusic( sounds[175], false, true, false );
 #endif
 		}
-		else if ( (strstr((char*)(&net_packet->data[8]), language[1160])) != NULL )
+		else if ( (strstr(msg, language[1160])) != NULL )
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				if ( !strncmp(stats[c]->name, (char*)(&net_packet->data[8]), strlen(stats[c]->name)) )
+				if ( !strncmp(stats[c]->name, msg, strlen(stats[c]->name)) )
 				{
 					if (players[clientnum] && players[clientnum]->entity && players[c] && players[c]->entity)
 					{
@@ -4939,6 +4942,7 @@ void serverHandlePacket()
 		int pnum = net_packet->data[4];
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
+		Uint32 type = (Uint32)MESSAGE_CHAT; // the only kind of message you can get from a client.
 
 		// strncpy() does not copy N bytes if a terminating null is encountered first
 		// see http://www.cplusplus.com/reference/cstring/strncpy/
@@ -4946,10 +4950,10 @@ void serverHandlePacket()
 		// GCC throws a warning (intended) when the length argument to strncpy() in
 		// any way depends on strlen(src) to discourage this (and related) construct(s).
 		strncpy(tempstr, stats[pnum]->name, 10);
-		tempstr[std::min<size_t>(strlen(stats[pnum]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
+		tempstr[std::min<size_t>(strlen(stats[pnum]->name), (size_t)10)] = 0;
 		strcat(tempstr, ": ");
 		strcat(tempstr, (char*)(&net_packet->data[9]));
-		messagePlayerColor(clientnum, color, tempstr);
+		messagePlayerColor(clientnum, type, color, tempstr);
 
 		playSound(238, 64);
 
@@ -4960,12 +4964,13 @@ void serverHandlePacket()
 			{
 				continue;
 			}
-			strcpy((char*)net_packet->data, "MSGS");
+			memcpy((char*)net_packet->data, "MSGS", 4);
 			SDLNet_Write32(color, &net_packet->data[4]);
-			strcpy((char*)(&net_packet->data[8]), tempstr);
+			SDLNet_Write32(type, &net_packet->data[8]);
+			strcpy((char*)(&net_packet->data[12]), tempstr);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 8 + strlen(tempstr) + 1;
+			net_packet->len = 12 + strlen(tempstr) + 1;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 		return;
@@ -5684,8 +5689,8 @@ void serverHandlePacket()
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, true, 1, true);
-				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3241]);
-				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
+				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3241]);
+				messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen(*mainsurface), language[3242]);
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
 				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");
