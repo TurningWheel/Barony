@@ -203,14 +203,14 @@ void Entity::actPedestalBase()
 							case 1: // blue
 								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
 								{
-									messagePlayer(i, language[2910]);
+									messagePlayer(i, MESSAGE_INTERACTION, language[2910]);
 								}
 								players[i]->entity->setEffect(EFF_SHRINE_BLUE_BUFF, true, 1000, false);
 								break;
 							case 2: // red
 								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_RED_BUFF] )
 								{
-									messagePlayer(i, language[2904]);
+									messagePlayer(i, MESSAGE_INTERACTION, language[2904]);
 								}
 								players[i]->entity->setEffect(EFF_SHRINE_RED_BUFF, true, 1000, false);
 								break;
@@ -219,7 +219,7 @@ void Entity::actPedestalBase()
 							case 4: // green
 								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 								{
-									messagePlayer(i, language[2909]);
+									messagePlayer(i, MESSAGE_INTERACTION, language[2909]);
 								}
 								players[i]->entity->setEffect(EFF_SHRINE_GREEN_BUFF, true, 1000, false);
 								break;
@@ -272,7 +272,7 @@ void Entity::actPedestalBase()
 						if ( pedestalHasOrb == pedestalOrbType && pedestalLockOrb == 1 )
 						{
 							// if orb locked, then can't retreive.
-							messagePlayer(i, language[2367]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2367]);
 						}
 						else
 						{
@@ -293,7 +293,7 @@ void Entity::actPedestalBase()
 							}
 							pedestalHasOrb = 0;
 							serverUpdateEntitySkill(this, 0); // update orb status.
-							messagePlayer(i, language[2374], itemOrb->getName());
+							messagePlayer(i, MESSAGE_INTERACTION, language[2374], itemOrb->getName());
 						}
 					}
 					else
@@ -302,20 +302,20 @@ void Entity::actPedestalBase()
 						{
 							if ( rand() % 2 == 0 )
 							{
-								messagePlayer(i, language[476]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[476]);
 							}
 							else
 							{
-								messagePlayer(i, language[2364]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[2364]);
 							}
 						}
 						else if ( players[i]->entity->getINT() < 15 )
 						{
-							messagePlayer(i, language[2365]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2365]);
 						}
 						else
 						{
-							messagePlayer(i, language[2366]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2366]);
 						}
 					}
 				}
@@ -372,7 +372,7 @@ void Entity::actPedestalOrb()
 								if ( parent->pedestalHasOrb == parent->pedestalOrbType && parent->pedestalLockOrb == 1 )
 								{
 									// if orb locked, then can't retreive.
-									messagePlayer(i, language[2367]);
+									messagePlayer(i, MESSAGE_INTERACTION, language[2367]);
 								}
 								else
 								{
@@ -393,7 +393,7 @@ void Entity::actPedestalOrb()
 									}
 									parent->pedestalHasOrb = 0;
 									serverUpdateEntitySkill(parent, 0); // update orb status 
-									messagePlayer(i, language[2374], itemOrb->getName());
+									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[2374], itemOrb->getName());
 								}
 							}
 						}

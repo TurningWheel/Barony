@@ -1265,7 +1265,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			if ( !swimDebuffMessageHasPlayed )
 			{
-				messagePlayer(PLAYER_NUM, language[3182]);
+				messagePlayer(PLAYER_NUM, MESSAGE_HINT, language[3182]);
 				swimDebuffMessageHasPlayed = true;
 			}
 			// no swim good
@@ -1819,7 +1819,7 @@ void actPlayer(Entity* my)
 	{
 		if ( ticks % 50 == 0 )
 		{
-			messagePlayer(0, "checkObstacle() calls/sec: %d", logCheckObstacleCount);
+			messagePlayer(0, MESSAGE_DEBUG, "checkObstacle() calls/sec: %d", logCheckObstacleCount);
 			logCheckObstacleCount = 0;
 		}
 	}
@@ -1837,9 +1837,9 @@ void actPlayer(Entity* my)
 			for ( size_t c = 0; c < HASH_SIZE; ++c ) {
 				totalSize += list_Size(&ttfTextHash[c]);
 			}
-			messagePlayer(0, "IMGREF: %d, total size: %d", imgref, totalSize);
+			messagePlayer(0, MESSAGE_DEBUG, "IMGREF: %d, total size: %d", imgref, totalSize);
 			s[63] = '\0';
-			messagePlayer(0, "%s", s);
+			messagePlayer(0, MESSAGE_DEBUG, "%s", s);
 			//messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
 		}
 	}
@@ -3262,7 +3262,7 @@ void actPlayer(Entity* my)
 			{
 				//Auto-succeed on rocks.
 				tempItem->identified = true;
-				messagePlayer(PLAYER_NUM, language[570], tempItem->description());
+				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[570], tempItem->description());
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 
@@ -3358,7 +3358,7 @@ void actPlayer(Entity* my)
 					if ( success )
 					{
 						tempItem->identified = true;
-						messagePlayer(PLAYER_NUM, language[570], tempItem->description());
+						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[570], tempItem->description());
 						if ( tempItem->type == GEM_GLASS )
 						{
 							steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
@@ -3368,7 +3368,7 @@ void actPlayer(Entity* my)
 					{
 						if ( itemCategory(tempItem) == GEM )
 						{
-							messagePlayer(PLAYER_NUM, language[3240], tempItem->description());
+							messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[3240], tempItem->description());
 						}
 					}
 
@@ -3910,7 +3910,7 @@ void actPlayer(Entity* my)
 							}
 						}
 						clipMove(&my->x, &my->y, velx, vely, my);
-						messagePlayer(PLAYER_NUM, language[3869]);
+						messagePlayer(PLAYER_NUM, MESSAGE_HINT, language[3869]);
 						if ( players[PLAYER_NUM]->isLocalPlayer() )
 						{
 							cameravars[PLAYER_NUM].shakex += .1;
@@ -3991,10 +3991,10 @@ void actPlayer(Entity* my)
 				PLAYER_INWATER = 1;
 				if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 				{
-					messagePlayer(PLAYER_NUM, language[573]);
+					messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[573]);
 					if ( stats[PLAYER_NUM]->type == AUTOMATON )
 					{
-						messagePlayer(PLAYER_NUM, language[3703]);
+						messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3703]);
 					}
 					cameravars[PLAYER_NUM].shakex += .1;
 					cameravars[PLAYER_NUM].shakey += 10;
@@ -4009,7 +4009,7 @@ void actPlayer(Entity* my)
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
 				{
-					messagePlayer(PLAYER_NUM, language[3702]);
+					messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3702]);
 					playSound(136, 128);
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
@@ -4025,7 +4025,7 @@ void actPlayer(Entity* my)
 					if ( my->flags[BURNING] )
 					{
 						my->flags[BURNING] = false;
-						messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
+						messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[574]); // "The water extinguishes the flames!"
 						serverUpdateEntityFlag(my, BURNING);
 					}
 					if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
@@ -4036,8 +4036,8 @@ void actPlayer(Entity* my)
 							my->effectPolymorph = 0;
 							serverUpdateEntitySkill(my, 50);
 
-							messagePlayer(PLAYER_NUM, language[3192]);
-							messagePlayer(PLAYER_NUM, language[3185]);
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3192]);
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3185]);
 						}
 						/*if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 						{
@@ -4073,7 +4073,7 @@ void actPlayer(Entity* my)
 						}
 						if ( ticks % 50 == 0 )
 						{
-							messagePlayer(PLAYER_NUM, language[3702]);
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3702]);
 							stats[PLAYER_NUM]->HUNGER -= 25;
 							serverUpdateHunger(PLAYER_NUM);
 						}
@@ -4087,7 +4087,7 @@ void actPlayer(Entity* my)
 						my->modMP(2);
 						if ( ticks % 50 == 0 )
 						{
-							messagePlayer(PLAYER_NUM, language[3703]);
+							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3703]);
 							stats[PLAYER_NUM]->HUNGER += 50;
 							serverUpdateHunger(PLAYER_NUM);
 						}
@@ -4333,7 +4333,7 @@ void actPlayer(Entity* my)
 								}
 								else
 								{
-									messagePlayer(PLAYER_NUM, language[3094]);
+									messagePlayer(PLAYER_NUM, MESSAGE_HINT, language[3094]);
 									followerMenu.optionSelected = ALLY_CMD_CANCEL;
 									followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
 									followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
@@ -4537,8 +4537,8 @@ void actPlayer(Entity* my)
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)
 				{
-					messagePlayer(i, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
-					messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
+					messagePlayer(i, MESSAGE_INTERACTION, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
+					messagePlayer(PLAYER_NUM, MESSAGE_INTERACTION, language[576], stats[i]->name);
 					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{
 						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
@@ -4874,8 +4874,9 @@ void actPlayer(Entity* my)
 								continue;
 							}
 							char whatever[256];
-							snprintf(whatever, 255, "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary); //Potential snprintf of 256 bytes into 255 byte destination
-							messagePlayer(c, whatever);
+							snprintf(whatever, sizeof(whatever), "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary);
+							whatever[255] = '\0';
+							messagePlayer(c, MESSAGE_OBITUARY, whatever);
 						}
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, color, language[577]);
@@ -5236,7 +5237,7 @@ void actPlayer(Entity* my)
 
 						if ( multiplayer != SINGLE )
 						{
-							messagePlayer(PLAYER_NUM, language[578]);
+							messagePlayer(PLAYER_NUM, MESSAGE_HINT, language[578]);
 						}
 					}
 					my->removeLightField();
@@ -5275,7 +5276,7 @@ void actPlayer(Entity* my)
 			if ( CHAR_DRUNK >= drunkInterval )
 			{
 				CHAR_DRUNK = 0;
-				messagePlayer(PLAYER_NUM, language[579]);
+				messagePlayer(PLAYER_NUM, MESSAGE_WORLD, language[579]);
 				cameravars[PLAYER_NUM].shakex -= .04;
 				cameravars[PLAYER_NUM].shakey -= 5;
 			}

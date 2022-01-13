@@ -713,11 +713,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			//Follows this player already!
 			if ( my->getINT() > -2 && race == HUMAN )
 			{
-				messagePlayer(monsterclicked, language[535], namesays, stats[monsterclicked]->name);
+				messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[535], namesays, stats[monsterclicked]->name);
 			}
 			else
 			{
-				messagePlayer(monsterclicked, language[534], namesays);
+				messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 			}
 		}
 		else
@@ -725,11 +725,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			//Follows somebody else.
 			if ( my->getINT() > -2 && race == HUMAN )
 			{
-				messagePlayer(monsterclicked, language[536], namesays, stats[monsterclicked]->name);
+				messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[536], namesays, stats[monsterclicked]->name);
 			}
 			else
 			{
-				messagePlayer(monsterclicked, language[534], namesays);
+				messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 			}
 
 			if ( my->checkFriend(players[monsterclicked]->entity) )
@@ -880,7 +880,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		}
 		else
 		{
-			messagePlayer(monsterclicked, language[3482]);
+			messagePlayer(monsterclicked, MESSAGE_INTERACTION, language[3482]);
 		}
 	}
 	else
@@ -899,7 +899,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			if ( race != HUMAN )
 			{
 				tryAlly = false;
-				messagePlayer(monsterclicked, language[3481], myStats->name);
+				messagePlayer(monsterclicked, MESSAGE_INTERACTION, language[3481], myStats->name);
 			}
 		}
 		if ( tryAlly )
@@ -1037,11 +1037,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 				{
 					if ( numFollowers >= 8 )
 					{
-						messagePlayer(monsterclicked, language[3482]);
+						messagePlayer(monsterclicked, MESSAGE_INTERACTION, language[3482]);
 					}
 					else
 					{
-						messagePlayer(monsterclicked, language[3480]);
+						messagePlayer(monsterclicked, MESSAGE_INTERACTION, language[3480]);
 					}
 				}
 			}
@@ -1054,13 +1054,13 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		if ( my->getINT() > -2 && race == HUMAN )
 		{
 			//Human tells off the player.
-			messagePlayer(monsterclicked, language[530 + rand() % 4], namesays);
+			messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[530 + rand() % 4], namesays);
 			// move aside
 			monsterMoveAside(my, players[monsterclicked]->entity);
 		}
 		else
 		{
-			messagePlayer(monsterclicked, language[534], namesays);
+			messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 		}
 
 		return false;
@@ -1079,7 +1079,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 
 	if ( my->getINT() > -2 && race == HUMAN )
 	{
-		messagePlayer(monsterclicked, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
+		messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
 	}
 	else
 	{
@@ -1379,7 +1379,7 @@ void printFollowerTableForSkillsheet(int monsterclicked, Entity* my, Stat* mySta
 	fp->write(os.GetString(), sizeof(char), os.GetSize());
 
 	FileIO::close(fp);
-	messagePlayer(0, "Exported file: %s", outputPath.c_str());
+	messagePlayer(0, MESSAGE_MISC, "Exported file: %s", outputPath.c_str());
 }
 
 void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
@@ -3231,24 +3231,24 @@ void actMonster(Entity* my)
 				switch (myStats->type)
 				{
 					case HUMAN:
-						messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+						messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + rand() % 4], namesays);
 						break;
 					case SHOPKEEPER:
 						if ( stats[monsterclicked] )
 						{
 							if ( stats[monsterclicked]->type != HUMAN )
 							{
-								messagePlayer(monsterclicked, language[3243], 
+								messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[3243],
 									namesays, getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
 							}
 							else
 							{
-								messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+								messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + rand() % 4], namesays);
 							}
 						}
 						else
 						{
-							messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + rand() % 4], namesays);
 						}
 						break;
 					default:
@@ -3264,10 +3264,10 @@ void actMonster(Entity* my)
 					{
 						case SHOPKEEPER:
 						case HUMAN:
-							messagePlayer(monsterclicked, language[520 + rand() % 4], namesays);
+							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[520 + rand() % 4], namesays);
 							break;
 						default:
-							messagePlayer(monsterclicked, language[524], namesays);
+							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[524], namesays);
 							break;
 					}
 				}
@@ -3323,10 +3323,10 @@ void actMonster(Entity* my)
 							{
 								case SHOPKEEPER:
 								case HUMAN:
-									messagePlayer(monsterclicked, language[520 + rand() % 3], namesays);
+									messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[520 + rand() % 3], namesays);
 									break;
 								default:
-									messagePlayer(monsterclicked, language[524], namesays);
+									messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[524], namesays);
 									break;
 							}
 						}
@@ -5041,7 +5041,7 @@ timeToGoAgain:
 					my->monsterState = MONSTER_STATE_WAIT;
 					if ( target && target->behavior == actPlayer )
 					{
-						messagePlayer(target->skill[2], language[2518]);
+						messagePlayer(target->skill[2], MESSAGE_HINT, language[2518]);
 					}
 					return;
 				}
@@ -8969,7 +8969,7 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[6
 			// choose randomly
 			NPClastLine = 1 + rand() % numLines;
 		}
-		messagePlayer(monsterclicked, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
+		messagePlayer(monsterclicked, MESSAGE_WORLD | MESSAGE_INTERACTION, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
 		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
 	}
 	return true;
@@ -9408,7 +9408,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 				if ( !droppedSomething )
 				{
-					messagePlayer(monsterAllyIndex, language[3868]);
+					messagePlayer(monsterAllyIndex, MESSAGE_HINT, language[3868]);
 				}
 			}
 			else if ( stats[monsterAllyIndex] )
@@ -9864,6 +9864,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	}
 
 	std::string message;
+	MessageType message_type = MESSAGE_WORLD;
 
 	if ( myStats.type == HUMAN )
 	{
@@ -9871,15 +9872,18 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 		{
 			case ALLY_EVENT_MOVEASIDE:
 				message = language[535];
+				message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_MOVETO_BEGIN:
 				if ( rand() % 10 == 0 )
 				{
 					message = language[3079 + rand() % 2];
+				    message_type = MESSAGE_WORLD;
 				}
 				break;
 			case ALLY_EVENT_MOVETO_FAIL:
 				message = language[3077 + rand() % 2];
+			    message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
 				if ( FollowerMenu[monsterAllyIndex].entityToInteractWith && FollowerMenu[monsterAllyIndex].entityToInteractWith->behavior == &actItem )
@@ -9926,7 +9930,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 						}
 						if ( strcmp(fullmsg, "") )
 						{
-							messagePlayer(monsterAllyIndex, fullmsg);
+							messagePlayer(monsterAllyIndex, MESSAGE_WORLD, fullmsg);
 						}
 					}
 					if ( item )
@@ -9938,37 +9942,46 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
 				message = language[3074];
+			    message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_BAD:
 				message = language[3088];
+			    message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD:
 				if ( myStats.HUNGER > 800 )
 				{
 					message = language[3076];
+			        message_type = MESSAGE_WORLD;
 				}
 				else
 				{
 					message = language[3075];
+			        message_type = MESSAGE_WORLD;
 				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
 				message = language[3091];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
 				message = language[3089 + rand() % 2];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_OTHER:
 				break;
 			case ALLY_EVENT_ATTACK:
 			case ALLY_EVENT_SPOT_ENEMY:
 				message = language[516 + rand() % 3];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_ATTACK_FRIENDLY_FIRE:
 				message = language[3084 + rand() % 2];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_DROP_HUMAN_REFUSE:
 				message = language[3135];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_DROP_WEAPON:
 			case ALLY_EVENT_DROP_EQUIP:
@@ -9978,27 +9991,33 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 					if ( rand() % 2 && event == ALLY_EVENT_DROP_ALL )
 					{
 						message = language[3083];
+			            message_type = MESSAGE_WORLD;
 					}
 					else
 					{
 						message = language[3072 + rand() % 2];
+			            message_type = MESSAGE_WORLD;
 					}
 				}
 				else
 				{
 					message = language[3081 + rand() % 2];
+			        message_type = MESSAGE_WORLD;
 				}
 				break;
 			case ALLY_EVENT_WAIT:
 				message = language[3069 + rand() % 2];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_FOLLOW:
 				message = language[526 + rand() % 3];
+		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_MOVETO_REPATH:
 				if ( rand() % 20 == 0 )
 				{
 					message = language[3086 + rand() % 2];
+			        message_type = MESSAGE_WORLD;
 				}
 				break;
 			default:

@@ -88,14 +88,14 @@ void actSink(Entity* my)
 				//First check that it's not depleted.
 				if (my->skill[0] == 0)
 				{
-					messagePlayer(i, language[580]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[580]);
 					playSoundEntity(my, 140 + rand() % 2, 64);
 				}
 				else
 				{
 					if ( players[i]->entity->flags[BURNING] )
 					{
-						messagePlayer(i, language[468]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[468]);
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
@@ -107,8 +107,8 @@ void actSink(Entity* my)
 							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
 							players[i]->entity->effectPolymorph = 0;
 							serverUpdateEntitySkill(players[i]->entity, 50);
-							messagePlayer(i, language[3192]);
-							messagePlayer(i, language[3185]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[3192]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[3185]);
 						}
 						/*if ( stats[i]->EFFECTS[EFF_SHAPESHIFT] )
 						{
@@ -128,7 +128,7 @@ void actSink(Entity* my)
 						case 0:
 						{
 							//playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, language[581]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[581]);
 
 							//Randomly choose a ring.
 							//88-99 are rings.
@@ -164,7 +164,7 @@ void actSink(Entity* my)
 							if (item)
 							{
 								itemPickup(i, item);
-								messagePlayer(i, language[504], item->description());
+								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
 								free(item);
 							}
 							break;
@@ -203,7 +203,7 @@ void actSink(Entity* my)
 							}
 							else if ( stats[i]->type != VAMPIRE )
 							{
-								messagePlayer(i, language[583]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[583]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
 								players[i]->entity->modHP(1);
@@ -330,7 +330,7 @@ void actSink(Entity* my)
 					else     //Second usage.
 					{
 						my->skill[0]--; //Sink is depleted!
-						messagePlayer(i, language[585]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[585]);
 						playSoundEntity(my, 132, 64);
 					}
 					serverUpdateEntitySkill(my, 0);

@@ -1456,16 +1456,18 @@ namespace MainMenu {
 			strcpy((char*)net_packet->data, "SVFL");
 			SDLNet_Write32(svFlags, &net_packet->data[4]);
 			net_packet->len = 8;
-			for ( int c = 1; c < MAXPLAYERS; ++c ) {
-				if ( client_disconnected[c] ) {
-					continue;
-				}
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				messagePlayer(c, language[276]);
+			if (multiplayer == SERVER) {
+			    for ( int c = 1; c < MAXPLAYERS; ++c ) {
+				    if ( client_disconnected[c] ) {
+					    continue;
+				    }
+				    net_packet->address.host = net_clients[c - 1].host;
+				    net_packet->address.port = net_clients[c - 1].port;
+				    sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				    messagePlayer(c, MESSAGE_MISC, language[276]);
+			    }
 			}
-			messagePlayer(clientnum, language[276]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
 		}
 
 		// update volume for sound groups

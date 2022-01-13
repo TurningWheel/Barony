@@ -408,17 +408,17 @@ void actThrown(Entity* my)
 						if ( itemIsThrowableTinkerTool(item) && tinkeringItemCanBePlaced )
 						{
 							// we can place it, just not on water/lava.
-							messagePlayer(parent->skill[2], language[3900]);
+							messagePlayer(parent->skill[2], MESSAGE_HINT, language[3900]);
 						}
 						else if ( item->isTinkeringItemWithThrownLimit() && !tinkeringItemCanBePlaced )
 						{
 							if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
 							{
-								messagePlayer(parent->skill[2], language[3884]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3884]);
 							}
 							else
 							{
-								messagePlayer(parent->skill[2], language[3883]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3883]);
 							}
 						}
 					}
@@ -553,7 +553,7 @@ void actThrown(Entity* my)
 							}
 							int oldcount = item->count;
 							item->count = 1;
-							messagePlayer(i, language[504], item->description());
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
 							item->count = oldcount;
 							if ( i != 0 && !players[i]->isLocalPlayer() )
 							{
@@ -1040,8 +1040,8 @@ void actThrown(Entity* my)
 									hit.entity->setEffect(EFF_MESSY, true, 250, false);
 									serverUpdateEffects(hit.entity->skill[2]);
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[3877]);
-									messagePlayer(hit.entity->skill[2], language[910]);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3877]);
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[910]);
 								}
 								for ( int i = 0; i < 5; ++i )
 								{
@@ -1331,7 +1331,7 @@ void actThrown(Entity* my)
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
 								if ( damage == 0 )
 								{
-									messagePlayer(parent->skill[2], language[447]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[447]);
 								}
 							}
 						}
@@ -1352,11 +1352,11 @@ void actThrown(Entity* my)
 								{
 									if ( hitstats->sex )
 									{
-										messagePlayer(parent->skill[2], language[449]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[449]);
 									}
 									else
 									{
-										messagePlayer(parent->skill[2], language[450]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[450]);
 									}
 								}
 							}
@@ -1369,7 +1369,7 @@ void actThrown(Entity* my)
 					messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
 					if ( damage == 0 && !wasPotion )
 					{
-						messagePlayer(hit.entity->skill[2], language[452]);
+						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, language[452]);
 					}
 				}
 			}

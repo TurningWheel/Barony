@@ -127,6 +127,7 @@ enum MessageType {
 	MESSAGE_INSPECTION = 1 << 8, // player inspections of world objects
 	MESSAGE_HINT = 1 << 9, // special text cues and descriptive messages
 	MESSAGE_OBITUARY = 1 << 10, // character death announcement
+	MESSAGE_DEBUG = 1 << 30, // debug only messages
 	MESSAGE_MISC = 1 << 31, // miscellaneous messages
 };
 extern Uint32 messagesEnabled;
