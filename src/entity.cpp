@@ -928,7 +928,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, language[591]);    //If cure ailments or somesuch bombs the status effects.
+							messagePlayer(c, MESSAGE_COMBAT, language[591]);    //If cure ailments or somesuch bombs the status effects.
 						}
 					}
 					node_t* temp = nullptr;
@@ -953,7 +953,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, language[592]);
+							messagePlayer(c, MESSAGE_COMBAT, language[592]);
 						}
 					}
 					node_t* temp = nullptr;
@@ -978,7 +978,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, language[2446]);
+							messagePlayer(c, MESSAGE_COMBAT, language[2446]);
 						}
 					}
 					node_t* temp = nullptr;
@@ -1003,7 +1003,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, language[3441]);
+							messagePlayer(c, MESSAGE_COMBAT, language[3441]);
 						}
 					}
 					node_t* temp = nullptr;
@@ -1028,7 +1028,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, language[2447]);
+							messagePlayer(c, MESSAGE_COMBAT, language[2447]);
 						}
 					}
 					node_t* temp = nullptr;
@@ -1090,7 +1090,7 @@ void Entity::effectTimes()
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
 					playSoundPlayer(player, 32, 128);
-					messagePlayer(player, language[3193]);
+					messagePlayer(player, MESSAGE_STATUS, language[3193]);
 				}
 			}
 			else if ( c == EFF_SHAPESHIFT )
@@ -1098,7 +1098,7 @@ void Entity::effectTimes()
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
 					playSoundPlayer(player, 32, 128);
-					messagePlayer(player, language[3475]);
+					messagePlayer(player, MESSAGE_STATUS, language[3475]);
 				}
 			}
 			if ( myStats->EFFECTS_TIMERS[c] == 0 )
@@ -1107,7 +1107,7 @@ void Entity::effectTimes()
 				switch ( c )
 				{
 					case EFF_ASLEEP:
-						messagePlayer(player, language[593]);
+						messagePlayer(player, MESSAGE_STATUS, language[593]);
 						if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
 						{
 							monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
@@ -1116,24 +1116,24 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_HP_REGEN:
-						//messagePlayer(player, language[3476]);
+						//messagePlayer(player, MESSAGE_STATUS, language[3476]);
 						updateClient = true;
 						break;
 					case EFF_MP_REGEN:
-						//messagePlayer(player, language[3477]);
+						//messagePlayer(player, MESSAGE_STATUS, language[3477]);
 						updateClient = true;
 						break;
 					case EFF_POISONED:
-						messagePlayer(player, language[594]);
+						messagePlayer(player, MESSAGE_STATUS, language[594]);
 						break;
 					case EFF_STUNNED:
-						//messagePlayer(player, language[595]);
+						//messagePlayer(player, MESSAGE_STATUS, language[595]);
 						break;
 					case EFF_CONFUSED:
-						messagePlayer(player, language[596]);
+						messagePlayer(player, MESSAGE_STATUS, language[596]);
 						break;
 					case EFF_DRUNK:
-						messagePlayer(player, language[597]);
+						messagePlayer(player, MESSAGE_STATUS, language[597]);
 						break;
 					case EFF_INVISIBLE:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
@@ -1159,7 +1159,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, language[598]);
+											messagePlayer(i, MESSAGE_STATUS, language[598]);
 										}
 									}
 									unsustainSpell = invisibility_hijacked;
@@ -1176,34 +1176,34 @@ void Entity::effectTimes()
 						{
 							if ( !this->isBlind() )
 							{
-								messagePlayer(player, language[599]);
+								messagePlayer(player, MESSAGE_STATUS, language[599]);
 							}
 						}
 						break;
 					case EFF_BLIND:
 						if ( !this->isBlind() )
 						{
-							messagePlayer(player, language[600]);
+							messagePlayer(player, MESSAGE_STATUS, language[600]);
 						}
 						else
 						{
-							messagePlayer(player, language[601]);
+							messagePlayer(player, MESSAGE_STATUS, language[601]);
 						}
 						break;
 					case EFF_GREASY:
-						messagePlayer(player, language[602]);
+						messagePlayer(player, MESSAGE_STATUS, language[602]);
 						break;
 					case EFF_MESSY:
-						messagePlayer(player, language[603]);
+						messagePlayer(player, MESSAGE_STATUS, language[603]);
 						break;
 					case EFF_FAST:
-						messagePlayer(player, language[604]);
+						messagePlayer(player, MESSAGE_STATUS, language[604]);
 						break;
 					case EFF_PARALYZED:
-						messagePlayer(player, language[605]);
+						messagePlayer(player, MESSAGE_STATUS, language[605]);
 						break;
 					case EFF_POTION_STR:
-						messagePlayer(player, language[3355]);
+						messagePlayer(player, MESSAGE_STATUS, language[3355]);
 						break;
 					case EFF_LEVITATING:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
@@ -1229,7 +1229,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, language[606]);    //TODO: Unhardcode name?
+											messagePlayer(i, MESSAGE_STATUS, language[606]);    //TODO: Unhardcode name?
 										}
 									}
 									unsustainSpell = levitation_hijacked;
@@ -1245,7 +1245,7 @@ void Entity::effectTimes()
 						{
 							if ( !isLevitating(myStats) )
 							{
-								messagePlayer(player, language[607]);
+								messagePlayer(player, MESSAGE_STATUS, language[607]);
 							}
 						}
 						break;
@@ -1258,7 +1258,7 @@ void Entity::effectTimes()
 						else
 						{
 							setEffect(EFF_TELEPATH, false, 0, true);
-							messagePlayer(player, language[608]);
+							messagePlayer(player, MESSAGE_STATUS, language[608]);
 							if ( player >= 0 && players[player]->isLocalPlayer() )
 							{
 								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
@@ -1274,39 +1274,39 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_VOMITING:
-						messagePlayer(player, language[609]);
+						messagePlayer(player, MESSAGE_STATUS, language[609]);
 						if ( myStats->HUNGER > 1500 )
 						{
-							messagePlayer(player, language[610]);
+							messagePlayer(player, MESSAGE_STATUS, language[610]);
 						}
 						else if ( myStats->HUNGER > 150 && myStats->HUNGER <= 250 )
 						{
-							messagePlayer(player, language[611]);
+							messagePlayer(player, MESSAGE_STATUS, language[611]);
 							playSoundPlayer(player, 32, 128);
 						}
 						else if ( myStats->HUNGER > 50 && myStats->HUNGER <= 150 )
 						{
-							messagePlayer(player, language[612]);
+							messagePlayer(player, MESSAGE_STATUS, language[612]);
 							playSoundPlayer(player, 32, 128);
 						}
 						else if ( myStats->HUNGER <= 50 )
 						{
 							myStats->HUNGER = 50;
-							messagePlayer(player, language[613]);
+							messagePlayer(player, MESSAGE_STATUS, language[613]);
 							playSoundPlayer(player, 32, 128);
 						}
 						serverUpdateHunger(player);
 						break;
 					case EFF_BLEEDING:
-						messagePlayer(player, language[614]);
+						messagePlayer(player, MESSAGE_STATUS, language[614]);
 						break;
 					case EFF_MAGICRESIST:
-						messagePlayer(player, language[2470]);
+						messagePlayer(player, MESSAGE_STATUS, language[2470]);
 						break;
 					case EFF_FLUTTER:
 						if ( !isLevitating(myStats) )
 						{
-							messagePlayer(player, language[607]);
+							messagePlayer(player, MESSAGE_STATUS, language[607]);
 							if ( behavior == &actPlayer 
 								&& achievementObserver.playerAchievements[skill[2]].flutterShyCoordinates.first > 0.01
 								&& achievementObserver.playerAchievements[skill[2]].flutterShyCoordinates.second > 0.01 )
@@ -1344,7 +1344,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, language[2474]);
+											messagePlayer(i, MESSAGE_STATUS, language[2474]);
 										}
 									}
 									unsustainSpell = reflectMagic_hijacked;
@@ -1359,7 +1359,7 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
-							messagePlayer(player, language[2471]);
+							messagePlayer(player, MESSAGE_STATUS, language[2471]);
 							updateClient = true;
 						}
 						break;
@@ -1386,7 +1386,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, language[3443]);
+											messagePlayer(i, MESSAGE_STATUS, language[3443]);
 										}
 									}
 									unsustainSpell = amplifyMagic_hijacked;
@@ -1400,7 +1400,7 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
-							messagePlayer(player, language[3441]);
+							messagePlayer(player, MESSAGE_STATUS, language[3441]);
 							updateClient = true;
 						}
 						break;
@@ -1434,7 +1434,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											//messagePlayer(player, language[2449]);
+											//messagePlayer(player, MESSAGE_STATUS, language[2449]);
 										}
 									}
 									unsustainSpell = vampiricAura_hijacked;
@@ -1454,17 +1454,17 @@ void Entity::effectTimes()
 							//	myStats->HUNGER = 252; // set to above 250 to trigger the hunger sound/messages when it decrements to 250.
 							//	serverUpdateHunger(player);
 							//}
-							messagePlayer(player, language[2449]);
+							messagePlayer(player, MESSAGE_STATUS, language[2449]);
 							updateClient = true;
 						}
 						break;
 					case EFF_SLOW:
-						messagePlayer(player, language[604]); // "You return to your normal speed."
+						messagePlayer(player, MESSAGE_STATUS, language[604]); // "You return to your normal speed."
 						break;
 					case EFF_POLYMORPH:
 						effectPolymorph = 0;
 						serverUpdateEntitySkill(this, 50);
-						messagePlayer(player, language[3185]);
+						messagePlayer(player, MESSAGE_STATUS, language[3185]);
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
@@ -1474,7 +1474,7 @@ void Entity::effectTimes()
 					case EFF_SHAPESHIFT:
 						effectShapeshift = 0;
 						serverUpdateEntitySkill(this, 53);
-						messagePlayer(player, language[3417]);
+						messagePlayer(player, MESSAGE_STATUS, language[3417]);
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
@@ -1482,7 +1482,7 @@ void Entity::effectTimes()
 						updateClient = true;
 						break;
 					case EFF_TROLLS_BLOOD:
-						messagePlayer(player, language[3491]);
+						messagePlayer(player, MESSAGE_STATUS, language[3491]);
 						updateClient = true;
 						break;
 					case EFF_KNOCKBACK:
@@ -1499,15 +1499,15 @@ void Entity::effectTimes()
 							else
 							{
 								playSoundPlayer(player, 32, 128);
-								messagePlayer(player, language[3247 + rand() % 3]);
-								messagePlayer(player, language[3222]);
+								messagePlayer(player, MESSAGE_STATUS, language[3247 + rand() % 3]);
+								messagePlayer(player, MESSAGE_STATUS, language[3222]);
 								this->setEffect(EFF_WITHDRAWAL, true, -2, true); // set effect as "active"
 							}
 						}
 						break;
 					case EFF_FEAR:
 						this->monsterFearfulOfUid = 0;
-						messagePlayer(player, language[3439]);
+						messagePlayer(player, MESSAGE_STATUS, language[3439]);
 						updateClient = true;
 						break;
 					case EFF_PACIFY:
@@ -3126,14 +3126,14 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				if ( myStats->HUNGER == 299 )
 				{
-					messagePlayer(player, language[3708]);
-					messagePlayer(player, language[3709]);
+					messagePlayer(player, MESSAGE_STATUS, language[3708]);
+					messagePlayer(player, MESSAGE_STATUS, language[3709]);
 					playSoundPlayer(player, 32, 128);
 				}
 				else if ( myStats->HUNGER == 0 )
 				{
-					messagePlayer(player, language[3708]);
-					messagePlayer(player, language[3710]);
+					messagePlayer(player, MESSAGE_STATUS, language[3708]);
+					messagePlayer(player, MESSAGE_STATUS, language[3710]);
 					playSoundPlayer(player, 32, 128);
 				}
 			}
@@ -3170,7 +3170,7 @@ void Entity::handleEffects(Stat* myStats)
 
 				if ( myStats->HP > 0 )
 				{
-					messagePlayer(player, language[3253]);
+					messagePlayer(player, MESSAGE_STATUS, language[3253]);
 
 					// Shake the Host's screen
 					if ( myStats->HP <= 10 )
@@ -3218,7 +3218,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, language[629]);
+					messagePlayer(player, MESSAGE_STATUS, language[629]);
 				}
 				serverUpdateHunger(player);
 			}
@@ -3226,7 +3226,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, language[630]);
+					messagePlayer(player, MESSAGE_STATUS, language[630]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
@@ -3235,7 +3235,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, language[631]);
+					messagePlayer(player, MESSAGE_STATUS, language[631]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
@@ -3244,7 +3244,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, language[632]);
+					messagePlayer(player, MESSAGE_STATUS, language[632]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
@@ -3323,11 +3323,11 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						if ( playerAutomaton )
 						{
-							messagePlayer(player, language[3714]);
+							messagePlayer(player, MESSAGE_STATUS, language[3714]);
 						}
 						else
 						{
-							messagePlayer(player, language[633]);
+							messagePlayer(player, MESSAGE_STATUS, language[633]);
 						}
 					}
 
@@ -3366,14 +3366,14 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, language[634]);
+				messagePlayer(player, MESSAGE_STATUS, language[634]);
 				this->char_gonnavomit = 140 + rand() % 60;
 			}
 		}
 		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
 		{
 			// drunkenness
-			messagePlayer(player, language[634]);
+			messagePlayer(player, MESSAGE_STATUS, language[634]);
 			this->char_gonnavomit = 140 + rand() % 60;
 		}
 	}
@@ -3382,7 +3382,7 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_gonnavomit--;
 		if ( this->char_gonnavomit == 0 )
 		{
-			messagePlayer(player, language[635]);
+			messagePlayer(player, MESSAGE_STATUS, language[635]);
 			myStats->EFFECTS[EFF_VOMITING] = true;
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + rand() % 20;
 			serverUpdateEffects(player);
@@ -3658,7 +3658,7 @@ void Entity::handleEffects(Stat* myStats)
 					|| shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude < 0)
 				)
 			{
-				messagePlayer(player, language[636]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, language[636]);
 				if ( player >= 0 )
 				{
 					dropItem(myStats->weapon, player);
@@ -3701,11 +3701,11 @@ void Entity::handleEffects(Stat* myStats)
 				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
 				if ( myStats->shield->status > BROKEN )
 				{
-					messagePlayer(player, language[637], myStats->shield->getName());
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[637], myStats->shield->getName());
 				}
 				else
 				{
-					messagePlayer(player, language[638], myStats->shield->getName());
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
 				}
 				if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 				{
@@ -3726,7 +3726,7 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( myStats->type == INSECTOID )
 		{
-			messagePlayer(player, language[640]);
+			messagePlayer(player, MESSAGE_STATUS, language[640]);
 			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 			myStats->EFFECTS[EFF_POISONED] = false;
 			serverUpdateEffects(player);
@@ -3734,8 +3734,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( myStats->amulet && myStats->amulet->type == AMULET_POISONRESISTANCE )
 		{
-			messagePlayer(player, language[639]);
-			messagePlayer(player, language[640]);
+			messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_HINT, language[639]);
+			messagePlayer(player, MESSAGE_STATUS, language[640]);
 			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 			myStats->EFFECTS[EFF_POISONED] = false;
 			serverUpdateEffects(player);
@@ -3811,7 +3811,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( rand() % 5 == 0 && getCON() >= -3 )
 			{
-				messagePlayer(player, language[641]);
+				messagePlayer(player, MESSAGE_STATUS, language[641]);
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 				myStats->EFFECTS[EFF_POISONED] = false;
 				serverUpdateEffects(player);
@@ -3879,7 +3879,7 @@ void Entity::handleEffects(Stat* myStats)
 					net_packet->len = 6;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
-				messagePlayer(player, language[642]);
+				messagePlayer(player, MESSAGE_STATUS, language[642]);
 				if ( spawn_blood )
 				{
 					Entity* entity = nullptr;
@@ -3926,7 +3926,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, language[643]);
+				messagePlayer(player, MESSAGE_STATUS, language[643]);
 				myStats->EFFECTS[EFF_BLEEDING] = false;
 				myStats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 				serverUpdateEffects(player);
@@ -4043,7 +4043,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( this->char_fire <= 0 )
 		{
 			this->flags[BURNING] = false;
-			messagePlayer(player, language[647]); // "The flames go out."
+			messagePlayer(player, MESSAGE_STATUS, language[647]); // "The flames go out."
 			serverUpdateEntityFlag(this, BURNING);
 		}
 		else
@@ -4106,7 +4106,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 
 				// Give the Player feedback on being hurt
-				messagePlayer(player, language[644]); // "It burns! It burns!"
+				messagePlayer(player, MESSAGE_STATUS, language[644]); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
 				// Shake the Camera
@@ -4142,11 +4142,11 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
 						if ( myStats->cloak->status != BROKEN )
 						{
-							messagePlayer(player, language[645], myStats->cloak->getName()); // "Your %s smoulders!"
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[645], myStats->cloak->getName()); // "Your %s smoulders!"
 						}
 						else
 						{
-							messagePlayer(player, language[646], myStats->cloak->getName()); // "Your %s burns to ash!"
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[646], myStats->cloak->getName()); // "Your %s burns to ash!"
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -4165,7 +4165,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( (rand() % this->chanceToPutOutFire) == 0 )
 				{
 					this->flags[BURNING] = false;
-					messagePlayer(player, language[647]); // "The flames go out."
+					messagePlayer(player, MESSAGE_STATUS, language[647]); // "The flames go out."
 					serverUpdateEntityFlag(this, BURNING);
 				}
 			}
@@ -4233,16 +4233,16 @@ void Entity::handleEffects(Stat* myStats)
 			
 			if ( manaTotal >= 75 )
 			{
-				messagePlayer(player, language[651]);
+				messagePlayer(player, MESSAGE_STATUS, language[651]);
 				if ( revivedWithFriendship )
 				{
-					messagePlayer(player, language[3198]);
+					messagePlayer(player, MESSAGE_STATUS, language[3198]);
 				}
 				else
 				{
-					messagePlayer(player, language[3180]);
+					messagePlayer(player, MESSAGE_STATUS, language[3180]);
 				}
-				messagePlayer(player, language[654]);
+				messagePlayer(player, MESSAGE_STATUS, language[654]);
 
 				steamAchievementClient(player, "BARONY_ACH_SECOND_CHANCE");
 
@@ -4295,7 +4295,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, language[3181]);
+				messagePlayer(player, MESSAGE_HINT, language[3181]);
 			}
 		}
 	}
@@ -4310,7 +4310,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( rand() % 25 )
 				{
-					messagePlayer(player, language[648]);
+					messagePlayer(player, MESSAGE_STATUS, language[648]);
 					this->modHP(-(2 + rand() % 3));
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
 					if ( player >= 0 )
@@ -4379,8 +4379,8 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				else
 				{
-					messagePlayer(player, language[649]);
-					messagePlayer(player, language[650]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_EQUIPMENT, language[649]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_EQUIPMENT, language[650]);
 					if ( player <= 0 )
 					{
 						Item* item = myStats->amulet;
@@ -4412,20 +4412,20 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( myStats->HUNGER > 0 )
 				{
-					messagePlayer(player, language[651]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[651]);
 				}
 				if ( !this->isBlind() )
 				{
-					messagePlayer(player, language[652]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[652]);
 				}
 				else
 				{
-					messagePlayer(player, language[653]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[653]);
 				}
 				if ( myStats->amulet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 				{
-					messagePlayer(player, language[654]);
-					messagePlayer(player, language[655]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[654]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[655]);
 
 					playSoundEntity(this, 167, 128);
 					createParticleDropRising(this, 174, 1.0);
@@ -4495,8 +4495,8 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				else
 				{
-					messagePlayer(player, language[656]);
-					messagePlayer(player, language[657]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[656]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[657]);
 				}
 				myStats->amulet->status = BROKEN;
 				playSoundEntity(this, 76, 64);
@@ -4561,7 +4561,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP > myStats->HP || (myStats->type >= LICH && myStats->type < KOBOLD)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
-		messagePlayer(player, language[658]);
+		messagePlayer(player, MESSAGE_STATUS, language[658]);
 		if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
 		{
 			// allies resting. if poison/bleed damage here, then ignore it (startingHPInHandleEffects will equal current HP)
@@ -6190,7 +6190,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							castSpell(uid, &spell_poison, true, false);
 							break;
 						default:
-							messagePlayer(player, "This is my wish stick! Wishy wishy wish!");
+							messagePlayer(player, MESSAGE_DEBUG | MESSAGE_MISC, "This is my wish stick! Wishy wishy wish!");
 							break;
 					}
 
@@ -6226,7 +6226,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
-							messagePlayer(player, language[659]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[659]);
 						}
 						else
 						{
@@ -6234,7 +6234,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
-							messagePlayer(player, language[660]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[660]);
 							if ( player >= 0 && players[player]->isLocalPlayer() && client_classes[player] == CLASS_MESMER )
 							{
 								if ( myStats->weapon->type == MAGICSTAFF_CHARM )
@@ -6441,12 +6441,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
-							messagePlayer(player, language[661], myStats->weapon->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[661], myStats->weapon->getName());
 						}
 						else
 						{
 							playSoundEntity(this, 76, 64);
-							messagePlayer(player, language[662], myStats->weapon->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[662], myStats->weapon->getName());
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -6911,7 +6911,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// destroy the boulder
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
-						messagePlayer(player, language[663]);
+						messagePlayer(player, MESSAGE_COMBAT, language[663]);
 						if ( myStats->weapon && rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
@@ -6921,12 +6921,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( myStats->weapon->status == BROKEN )
 							{
-								messagePlayer(player, language[664]);
+								messagePlayer(player, MESSAGE_COMBAT, language[664]);
 								playSoundEntity(this, 76, 64);
 							}
 							else
 							{
-								messagePlayer(player, language[665]);
+								messagePlayer(player, MESSAGE_COMBAT, language[665]);
 							}
 							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 							{
@@ -7159,30 +7159,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( hit.entity->behavior == &actDoor )
 					{
-						messagePlayer(player, language[666]);
+						messagePlayer(player, MESSAGE_COMBAT, language[666]);
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
-						messagePlayer(player, language[667]);
+						messagePlayer(player, MESSAGE_COMBAT, language[667]);
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						switch ( hit.entity->furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(player, language[669]);
+								messagePlayer(player, MESSAGE_COMBAT, language[669]);
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(player, language[668]);
+								messagePlayer(player, MESSAGE_COMBAT, language[668]);
 								break;
 							case FURNITURE_BED:
-								messagePlayer(player, language[2509], language[2505]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2509], language[2505]);
 								break;
 							case FURNITURE_BUNKBED:
-								messagePlayer(player, language[2509], language[2506]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2509], language[2506]);
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(player, language[2509], language[2507]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2509], language[2507]);
 								break;
 							default:
 								break;
@@ -7194,7 +7194,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					hit.entity->skill[4] = 0;
 					if ( hit.entity->behavior == &actDoor )
 					{
-						messagePlayer(player, language[670]);
+						messagePlayer(player, MESSAGE_COMBAT, language[670]);
 						if ( !hit.entity->skill[0] )
 						{
 							hit.entity->skill[6] = (x > hit.entity->x);
@@ -7206,26 +7206,26 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
-						messagePlayer(player, language[671]);
+						messagePlayer(player, MESSAGE_COMBAT, language[671]);
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						switch ( hit.entity->furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(player, language[673]);
+								messagePlayer(player, MESSAGE_COMBAT, language[673]);
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(player, language[672]);
+								messagePlayer(player, MESSAGE_COMBAT, language[672]);
 								break;
 							case FURNITURE_BED:
-								messagePlayer(player, language[2510], language[2505]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2510], language[2505]);
 								break;
 							case FURNITURE_BUNKBED:
-								messagePlayer(player, language[2510], language[2506]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2510], language[2506]);
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(player, language[2510], language[2507]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2510], language[2507]);
 								break;
 							default:
 								break;
@@ -7275,7 +7275,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					playSoundEntity(hit.entity, 28, 64);
 				}
 				playSoundEntity(hit.entity, 140 + rand(), 64);
-				messagePlayer(player, language[678]);
+				messagePlayer(player, MESSAGE_COMBAT, language[678]);
 				if ( hit.entity->skill[0] > 0 )
 				{
 					hit.entity->skill[0]--; //Deplete one usage.
@@ -7287,7 +7287,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Entity* monster = summonMonster(SLIME, x, y);
 						if ( monster )
 						{
-							messagePlayer(player, language[582]);
+							messagePlayer(player, MESSAGE_HINT, language[582]);
 							Stat* monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
 						}
@@ -7295,7 +7295,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( hit.entity->skill[0] == 0 )   //Depleted.
 					{
-						messagePlayer(player, language[585]); //TODO: Alert all players that see (or otherwise in range) it?
+						messagePlayer(player, MESSAGE_COMBAT, language[585]); //TODO: Alert all players that see (or otherwise in range) it?
 						playSoundEntity(hit.entity, 132, 64);
 					}
 				}
@@ -7324,12 +7324,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
 						{
-							messagePlayer(skill[2], language[3923]); // prevent attack.
+							messagePlayer(skill[2], MESSAGE_HINT, language[3923]); // prevent attack.
 							return;
 						}
 						if ( achievementRangedMode[skill[2]] )
 						{
-							messagePlayer(skill[2], language[3924]); // notify no longer eligible for achievement but still atk.
+							messagePlayer(skill[2], MESSAGE_HINT, language[3924]); // notify no longer eligible for achievement but still atk.
 						}
 						if ( !playerFailedRangedOnlyConduct[skill[2]] )
 						{
@@ -7341,12 +7341,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( achievementRangedMode[skill[2]] && conductGameChallenges[CONDUCT_RANGED_ONLY] )
 						{
-							messagePlayer(skill[2], language[3923]); // prevent attack.
+							messagePlayer(skill[2], MESSAGE_HINT, language[3923]); // prevent attack.
 							return;
 						}
 						if ( achievementRangedMode[skill[2]] )
 						{
-							messagePlayer(skill[2], language[3924]); // notify no longer eligible for achievement but still atk.
+							messagePlayer(skill[2], MESSAGE_HINT, language[3924]); // notify no longer eligible for achievement but still atk.
 						}
 						conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
 					}
@@ -7830,12 +7830,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								(*weaponToBreak)->status = static_cast<Status>((*weaponToBreak)->status - 1);
 								if ( (*weaponToBreak)->status != BROKEN )
 								{
-									messagePlayer(player, language[679]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[679]);
 								}
 								else
 								{
 									playSoundEntity(this, 76, 64);
-									messagePlayer(player, language[680]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[680]);
 								}
 								if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 								{
@@ -8101,7 +8101,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									// If a Player was hit, and they are now on fire, tell them what set them on fire
 									if ( playerhit > 0 && hit.entity->flags[BURNING] )
 									{
-										messagePlayer(playerhit, language[683]); // "Dyrnwyn sets you on fire!"
+										messagePlayer(playerhit, MESSAGE_COMBAT, language[683]); // "Dyrnwyn sets you on fire!"
 									}
 								}
 							}
@@ -8439,8 +8439,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							case SCORPION:
 								hitstats->EFFECTS[EFF_PARALYZED] = true;
 								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
-								messagePlayer(playerhit, language[684]);
-								messagePlayer(playerhit, language[685]);
+								messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
+								messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
 								serverUpdateEffects(playerhit);
 								break;
 							case SPIDER:
@@ -8462,8 +8462,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									playerPoisonedTarget = true;
 									hitstats->EFFECTS[EFF_POISONED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-									messagePlayer(playerhit, language[686]);
-									messagePlayer(playerhit, language[687]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
 									serverUpdateEffects(playerhit);
 									for ( int tmp = 0; tmp < 3; ++tmp )
 									{
@@ -8529,7 +8529,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 									}
 									armor->count = 1;
-									messagePlayer(playerhit, language[688], armor->getName());
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[688], armor->getName());
 									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
 									stolenArmor->ownerUid = hit.entity->getUID();
 									Item** slot = itemSlot(hitstats, armor);
@@ -8575,8 +8575,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								case SCORPION:
 									hitstats->EFFECTS[EFF_PARALYZED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
-									messagePlayer(playerhit, language[684]);
-									messagePlayer(playerhit, language[685]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
 									serverUpdateEffects(playerhit);
 									statusInflicted = true;
 									break;
@@ -8585,8 +8585,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										hitstats->EFFECTS[EFF_POISONED] = true;
 										hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
-										messagePlayer(playerhit, language[686]);
-										messagePlayer(playerhit, language[687]);
+										messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+										messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
 										serverUpdateEffects(playerhit);
 										statusInflicted = true;
 									}
@@ -8655,7 +8655,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( damage == 0 )
 							{
 								// blow bounces off
-								messagePlayer(player, language[691]);
+								messagePlayer(player, MESSAGE_COMBAT, language[691]);
 							}
 							else
 							{
@@ -9748,7 +9748,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						messagePlayer(player, language[706]);
+						messagePlayer(player,  language[706]);
 					}
 				}
 				else if ( myStats->weapon != NULL && !shapeshifted )
