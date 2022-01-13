@@ -38,7 +38,7 @@ void Player::BookGUI_t::createBookGUI()
 		players[player.playernum]->camera_virtualy1(),
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
-	frame->setHollow(true);
+	frame->setHollow(false);
 	frame->setBorder(0);
 	frame->setOwner(player.playernum);
 	frame->setInheritParentFrameOpacity(false);
@@ -156,6 +156,12 @@ void Player::BookGUI_t::updateBookGUI()
 		{
 			errorOpening = true;
 		}
+	}
+
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& player.GUI.activeModule != player.GUI.MODULE_BOOK_VIEW )
+	{
+		bBookOpen = false;
 	}
 
 	if ( !bBookOpen || allBooks.empty() || errorOpening )
@@ -491,11 +497,7 @@ void Player::BookGUI_t::closeBookGUI()
 		bookFrame->setDisabled(true);
 	}
 
-	if ( !player.shootmode )
-	{
-		players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
-			INVENTORY_MODE_ITEM);
-	}
+	player.GUI.returnToPreviousActiveModule();
 }
 
 /*-------------------------------------------------------------------------------
@@ -512,6 +514,8 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 	{
 		return;
 	}
+
+	player.GUI.previousModule = player.GUI.activeModule;
 
 	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, 
 		INVENTORY_MODE_ITEM, player.GUI.MODULE_BOOK_VIEW); // Reset the GUI to the inventory.

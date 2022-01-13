@@ -2038,6 +2038,46 @@ void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 	drawBox(&pos, color, 127);
 }
 
+std::string getBindingNameForMissingTooltipPrompts(int index)
+{
+	if ( index == 1 )
+	{
+#ifdef NINTENDO
+		return "MenuAlt1";
+#else
+		return "MenuAlt2";
+#endif
+	}
+	else if ( index == 2 )
+	{
+#ifdef NINTENDO
+		return "MenuAlt2";
+#else
+		return "MenuAlt1";
+#endif
+	}
+	else if ( index == 3 )
+	{
+#ifdef NINTENDO
+		return "MenuConfirm";
+#else
+		return "MenuCancel";
+#endif
+	}
+	else if ( index == 4 )
+	{
+#ifdef NINTENDO
+		return "MenuCancel";
+#else
+		return "MenuConfirm";
+#endif
+	}
+	else
+	{
+		return "";
+	}
+}
+
 int getContextMenuOptionOrder(ItemContextMenuPrompts prompt)
 {
 	std::string bindingName = getContextMenuOptionBindingName(prompt);
@@ -3687,7 +3727,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor )
+	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor && !players[player]->shootmode )
 	{
 		auto options = getContextTooltipOptionsForItem(player, item);
 
@@ -3701,7 +3741,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			frameTooltipPrompt->setOpacity(frameMain->getOpacity());
 			std::vector<std::pair<Frame::image_t*, Field*>> promptFrames;
 			
-			// disable all the text and prompts
+			// disable all the text
 			for ( int index = 1; index < 5; ++index )
 			{
 				char imgName[16];
@@ -3715,11 +3755,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					Uint8 r, g, b, a;
 					SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
 					a = 128;
+					img->disabled = false; // unused glyphs will show as partially opaque
 					img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 					txt->setDisabled(true);
 					promptFrames.push_back(std::make_pair(img, txt));
 				}
 			}
+
+			std::set<int> promptsAvailable;
 
 			// set the text and button prompts from the available options
 			for ( auto& option : options )
@@ -3727,6 +3770,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				char imgName[16];
 				char fieldName[16];
 				const int order = getContextMenuOptionOrder(option);
+				promptsAvailable.insert(order);
 
 				snprintf(imgName, sizeof(imgName), "glyph %d", order);
 				snprintf(fieldName, sizeof(imgName), "txt %d", order);
@@ -3743,10 +3787,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			}
 
 			int alignx1 = xres;
+			int index = 1;
 			for ( auto& pair : promptFrames )
 			{
 				auto& img = pair.first;
 				auto& txt = pair.second;
+				if ( img->path == "" )
+				{
+					img->path = Input::inputs[player].getGlyphPathForInput(getBindingNameForMissingTooltipPrompts(index).c_str());
+				}
 				if ( !txt->isDisabled() )
 				{
 					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
@@ -3759,6 +3808,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						}
 					}
 				}
+				++index;
 			}
 
 			// shift everything by the further left text as anchor
@@ -4313,7 +4363,8 @@ void Player::Inventory_t::updateInventory()
 		int startx = 0;
 		int starty = 0;
 
-		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
+		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
 			{
@@ -4331,10 +4382,6 @@ void Player::Inventory_t::updateInventory()
 									// mouse movement captures the inventory
 									players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 								}
-								/*if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !disableMouseDisablingHotbarFocus )
-								{
-									players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-								}*/
 							}
 						}
 
@@ -4353,7 +4400,8 @@ void Player::Inventory_t::updateInventory()
 				}
 			}
 		}
-		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
 		{
 			for ( int x = 0; x < MAX_SPELLS_X; ++x )
 			{
@@ -4722,7 +4770,8 @@ void Player::Inventory_t::updateInventory()
 				continue;    //Skip over this item if not in inventory mode
 			}
 
-			mouseOverSlot = slotFrame->capturesMouse();
+			mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
+				&& slotFrame->capturesMouse();
 
 			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
 			{

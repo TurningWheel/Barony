@@ -2452,7 +2452,9 @@ void drawStatusNew(const int player)
 			{
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
-				if ( !shootmode && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouse() )
+				if ( !shootmode && !hotbarSlotFrame->isDisabled() 
+					&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR)
+					&& hotbarSlotFrame->capturesMouse() )
 				{
 					if ( (inputs.bMouseLeft(player)
 						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str())
@@ -2694,6 +2696,7 @@ void drawStatusNew(const int player)
 					&& !hotbarSlotFrame->isDisabled() 
 					&& players[player]->hotbar.current_hotbar == num
 					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+					&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR)
 					&& hotbarSlotFrame->capturesMouse();
 				if ( !drawTooltipOnSlot )
 				{
@@ -2753,13 +2756,21 @@ void drawStatusNew(const int player)
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;
 						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
-						if ( players[player]->inventoryUI.tooltipPromptFrame )
+						if ( players[player]->inventoryUI.tooltipPromptFrame
+							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled() )
 						{
 							SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 							SDL_Rect promptPos = players[player]->inventoryUI.tooltipPromptFrame->getSize();
 							promptPos.x = tooltipPos.x + tooltipPos.w - 6 - promptPos.w;
 							promptPos.y = tooltipPos.y + tooltipPos.h - 2;
+
+							const int heightChange = promptPos.h * .75;
+
+							tooltipPos.y -= heightChange;
+							promptPos.y -= heightChange;
+
 							players[player]->inventoryUI.tooltipPromptFrame->setSize(promptPos);
+							players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
 						}
 					}
 
@@ -3058,7 +3069,9 @@ void drawStatusNew(const int player)
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.
-		if ( (mousexrel || mouseyrel) && !shootmode )
+		if ( (mousexrel || mouseyrel) 
+			&& !shootmode
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 		{
 			if ( hotbar_t.hotbarFrame )
 			{

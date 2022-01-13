@@ -722,12 +722,15 @@ public:
 			MODULE_SPELLS
 		};
 		GUIModules activeModule = MODULE_NONE;
+		GUIModules previousModule = MODULE_NONE;
 		void activateModule(GUIModules module);
 		bool warpControllerToModule(bool moveCursorInstantly);
 		bool bActiveModuleUsesInventory();
 		bool bActiveModuleHasNoCursor();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
+		bool returnToPreviousActiveModule();
 		GUIDropdown_t dropdownMenu;
 		void closeDropdowns();
 		bool isDropdownActive();

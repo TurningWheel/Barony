@@ -784,6 +784,67 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	return false;
 }
 
+bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
+{
+	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
+		|| moduleToAccess == MODULE_HOTBAR )
+	{
+		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
+			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
+		{
+			return false;
+		}
+		return true;
+	}
+	return true;
+}
+
+bool Player::GUI_t::returnToPreviousActiveModule()
+{
+	if ( previousModule == MODULE_NONE )
+	{
+		return false;
+	}
+
+	if ( player.shootmode )
+	{
+		// no action
+	}
+	else if ( previousModule == Player::GUI_t::MODULE_HOTBAR )
+	{
+		activateModule(MODULE_HOTBAR);
+		player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+		warpControllerToModule(false);
+	}
+	else if ( previousModule == MODULE_INVENTORY || previousModule == MODULE_SPELLS )
+	{
+		if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+		{
+			activateModule(MODULE_SPELLS);
+			warpControllerToModule(false);
+		}
+		else if ( player.inventory_mode == INVENTORY_MODE_ITEM )
+		{
+			activateModule(MODULE_INVENTORY);
+			warpControllerToModule(false);
+		}
+	}
+	else if ( previousModule == MODULE_CHARACTERSHEET )
+	{
+		activateModule(MODULE_CHARACTERSHEET);
+		//player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+		warpControllerToModule(false);
+	}
+	else
+	{
+		player.openStatusScreen(GUI_MODE_INVENTORY,
+			INVENTORY_MODE_ITEM);
+	}
+
+	previousModule = MODULE_NONE;
+	return true;
+}
+
 bool Player::GUI_t::handleInventoryMovement()
 {
 	bool dpad_moved = false;
@@ -795,6 +856,15 @@ bool Player::GUI_t::handleInventoryMovement()
 	int player = this->player.playernum;
 	auto& hotbar_t = players[player]->hotbar;
 
+	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+		players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+		players[player]->GUI.warpControllerToModule(false);
+
+		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+		inputs.getVirtualMouse(player)->draw_cursor = false;
+	}
 	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )

@@ -680,6 +680,7 @@ void createUINavigation(const int player)
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 			players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
 		});
+
 		auto itemsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "items button glyph")->disabled = true;
 
@@ -695,6 +696,7 @@ void createUINavigation(const int player)
 			messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
 			players[button.getOwner()]->skillSheet.openSkillSheet();
 		});
+
 		auto skillsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "skills button glyph")->disabled = true;
 	}
@@ -2234,6 +2236,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setCallback([](Button& button){
 			    openMinimap(button.getOwner());
 			});
+			mapButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected()
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
 			mapSelector->setSize(buttonPos);
@@ -2251,6 +2261,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			logButton->setCallback([](Button& button) {
 				messagePlayer(button.getOwner(), "%d: Log button clicked", button.getOwner());
+			});
+			logButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected()
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
 			});
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
@@ -2306,6 +2324,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
 				bShowTimer = !bShowTimer;
 			});
+			timerButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected() 
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			});
 
 			SDL_Rect textPos = timerImg->pos;
 			textPos.x += 12;
@@ -2331,6 +2357,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setCallback([](Button& button) {
 				messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
 				players[button.getOwner()]->skillSheet.openSkillSheet();
+			});
+			skillsButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected()
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
 			});
 		}
 
@@ -3938,11 +3972,17 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 	Frame::image_t* img = nullptr;
 	Field* elementField = nullptr;
 	Button* elementButton = nullptr;
+	bool selectedAButton = false;
 	switch ( element )
 	{
 		case SHEET_OPEN_LOG:
 			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
 			{
+				if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+				{
+					elementFrame->findButton("log button")->select();
+					selectedAButton = true;
+				}
 				elementFrame = elementFrame->findFrame("log button selector");
 				//img = elementFrame->findImage("log button img");
 			}
@@ -3950,15 +3990,30 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		case SHEET_OPEN_MAP:
 			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
 			{
+				if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+				{
+					elementFrame->findButton("map button")->select();
+					selectedAButton = true;
+				}
 				elementFrame = elementFrame->findFrame("map button selector");
 				//img = elementFrame->findImage("map button img");
 			}
 			break;
 		case SHEET_SKILL_LIST:
 			elementFrame = sheetFrame->findFrame("skills button frame");
+			if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				elementFrame->findButton("skills button")->select();
+				selectedAButton = true;
+			}
 			break;
 		case SHEET_TIMER:
 			elementFrame = sheetFrame->findFrame("game timer");
+			if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				elementFrame->findButton("timer selector")->select();
+				selectedAButton = true;
+			}
 			break;
 		case SHEET_GOLD:
 			if ( elementFrame = sheetFrame->findFrame("character info") )
@@ -4132,6 +4187,17 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		pos.y -= player.camera_virtualy1();
 		player.hud.setCursorDisabled(false);
 		player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
+	}
+	if ( !selectedAButton && elementFrame && !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		if ( elementButton )
+		{
+			elementButton->select();
+		}
+		else
+		{
+			elementFrame->select();
+		}
 	}
 }
 
@@ -14741,10 +14807,15 @@ void Player::SkillSheet_t::closeSkillSheet()
 	{
 		player.shootmode = true;
 	}
+	else
+	{
+		player.GUI.returnToPreviousActiveModule();
+	}
 }
 
 void Player::SkillSheet_t::openSkillSheet()
 {
+	player.GUI.previousModule = player.GUI.activeModule;
 	if ( player.shootmode )
 	{
 		players[player.playernum]->openStatusScreen(GUI_MODE_NONE,
