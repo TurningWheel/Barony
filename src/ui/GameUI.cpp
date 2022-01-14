@@ -1597,11 +1597,11 @@ void Player::HUD_t::updateActionPrompts()
 	std::vector<PromptInfo> allPrompts;
 	std::string blockBinding = Input::inputs[player.playernum].binding("Block");
 	std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
-	const bool sneakingSeparateFromBlock = blockBinding != sneakBinding;
+	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
 	if ( sneakingSeparateFromBlock )
 	{
-		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
 		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
 		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
 		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
 	}
@@ -1785,7 +1785,14 @@ void Player::HUD_t::updateActionPrompts()
 				pressed = true;
 			}*/
 
-			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str(), pressed);
+			if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
+			{
+				glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("Sneak", pressed);
+			}
+			else
+			{
+				glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str(), pressed);
+			}
 			glyph->disabled = prompt->isDisabled();
 			if ( !player.shootmode )
 			{
