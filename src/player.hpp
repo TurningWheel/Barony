@@ -1311,7 +1311,8 @@ public:
 		{
 			ACTION_PROMPT_MAINHAND,
 			ACTION_PROMPT_OFFHAND,
-			ACTION_PROMPT_MAGIC
+			ACTION_PROMPT_MAGIC,
+			ACTION_PROMPT_SNEAK
 		};
 		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();

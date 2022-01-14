@@ -973,7 +973,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				cursor->color = makeColor(255, 255, 255, 191);
 			}
 			textPos.x = cursor->pos.x + 24;
-			textPos.y = cursor->pos.y + 24;
+			textPos.y = cursor->pos.y + 20;
 		}
 		else
 		{
@@ -992,8 +992,11 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 				textPos.x = cursor->pos.x + cursor->pos.w / 2;
 				textPos.y = cursor->pos.y + cursor->pos.h / 2;
-				textPos.x -= selected_cursor_bmp->w / 2;
-				textPos.y -= selected_cursor_bmp->h / 2;
+				if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+				{
+					textPos.x -= imgGet->getWidth() / 2;
+					textPos.y -= imgGet->getHeight() / 2;
+				}
 
 				if ( textPos.x < 0 )
 				{
@@ -1027,8 +1030,11 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 					textPos.x = cursor->pos.x + cursor->pos.w / 2;
 					textPos.y = cursor->pos.y + cursor->pos.h / 2;
-					textPos.x -= selected_cursor_bmp->w / 2;
-					textPos.y -= selected_cursor_bmp->h / 2;
+					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+					{
+						textPos.x -= imgGet->getWidth() / 2;
+						textPos.y -= imgGet->getHeight() / 2;
+					}
 
 					if ( textPos.x < 0 )
 					{
@@ -1060,8 +1066,6 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 			textPos.x += 40;
 			textPos.y += 20;
-			textPos.h = selected_cursor_bmp->h;
-			textPos.w = textPos.h;
 
 			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
 			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
@@ -1208,8 +1212,6 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 			textPos.x += 40;
 			textPos.y += 20;
-			textPos.h = selected_cursor_bmp->h;
-			textPos.w = textPos.h;
 
 			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
 			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
@@ -1304,8 +1306,11 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				{
 					textPos.x = cursor->pos.x + cursor->pos.w / 2;
 					textPos.y = cursor->pos.y + cursor->pos.h / 2;
-					textPos.x -= selected_cursor_bmp->w / 2;
-					textPos.y -= selected_cursor_bmp->h / 2;
+					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+					{
+						textPos.x -= imgGet->getWidth() / 2;
+						textPos.y -= imgGet->getHeight() / 2;
+					}
 
 					if ( textPos.x < 0 )
 					{
@@ -1324,8 +1329,6 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
 					textPos.x += 40;
 					textPos.y += 20;
-					textPos.h = selected_cursor_bmp->h;
-					textPos.w = textPos.h;
 
 					auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
 					auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
@@ -1400,8 +1403,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				}
 				else
 				{
-					textPos.x += 24;
-					textPos.y += 24;
+					textPos.x = cursor->pos.x + 15;
+					textPos.y = cursor->pos.y + 11;
 
 					text->setDisabled(false);
 					text->setText(language[3663]);
@@ -1523,6 +1526,20 @@ void createActionPrompts(const int player)
 	magicText->setFont(promptFont);
 	magicText->setText("Cast spell");
 	magicText->setHJustify(Field::justify_t::CENTER);
+
+	auto sneak = actionPromptFrame->addFrame("action sneak");
+	sneak->setSize(SDL_Rect{ 480, 400, maxWidth, promptHeight });
+	sneak->addImage(iconBackingPos,
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
+	sneak->addImage(iconPos,
+		iconColor, "images/system/white.png", "action img");
+	glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action sneak glyph");
+	glyph->ontop = true;
+	auto sneakText = actionPromptFrame->addField("action sneak text", 64);
+	sneakText->setFont(promptFont);
+	sneakText->setText("Sneak");
+	sneakText->setHJustify(Field::justify_t::CENTER);
 }
 
 int Player::HUD_t::actionPromptOffsetX = 280;
@@ -1576,19 +1593,38 @@ void Player::HUD_t::updateActionPrompts()
 		ActionPrompts promptType;
 		std::string inputName;
 	};
+
 	std::vector<PromptInfo> allPrompts;
-	allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
-	allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
-	allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	std::string blockBinding = Input::inputs[player.playernum].binding("Block");
+	std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
+	const bool sneakingSeparateFromBlock = blockBinding != sneakBinding;
+	if ( sneakingSeparateFromBlock )
+	{
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	}
+	else
+	{
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
+		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	}
 
 	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
 	Uint32 iconColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity);
+	Uint32 iconFadedColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity * .5);
+	Uint32 iconFadedBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity * .5);
 
 	int index = 0;
 	for ( auto& promptInfo : allPrompts )
 	{
 		if ( auto prompt = actionPromptsFrame->findFrame(promptInfo.name.c_str()) )
 		{
+			prompt->setDisabled(false);
+
 			std::string glyphName = promptInfo.name + " glyph";
 			auto img = prompt->findImage("action img");
 			auto glyph = actionPromptsFrame->findImage(glyphName.c_str());
@@ -1611,6 +1647,10 @@ void Player::HUD_t::updateActionPrompts()
 					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
 					promptPos.x -= promptPos.w;
 					break;
+				case 3: // to the right after the previous
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x += 16;
+					break;
 				default:
 					break;
 			}
@@ -1624,9 +1664,6 @@ void Player::HUD_t::updateActionPrompts()
 			img->color = iconColor;
 			imgBacking->color = iconBackingColor;
 
-			std::string textForPrompt = "";
-			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
-
 			Field* promptText = nullptr;
 			switch ( promptInfo.promptType )
 			{
@@ -1639,8 +1676,33 @@ void Player::HUD_t::updateActionPrompts()
 				case ACTION_PROMPT_MAGIC:
 					promptText = actionPromptsFrame->findField("action magic text");
 					break;
+				case ACTION_PROMPT_SNEAK:
+					promptText = actionPromptsFrame->findField("action sneak text");
+					break;
 				default:
 					break;
+			}
+
+			if ( promptInfo.promptType == ACTION_PROMPT_SNEAK && !sneakingSeparateFromBlock )
+			{
+				prompt->setDisabled(true);
+				promptText->setDisabled(true);
+				glyph->disabled = true;
+				++index;
+				continue;
+			}
+
+			std::string textForPrompt = "";
+			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
+			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && sneakingSeparateFromBlock
+				&& skillForPrompt == PRO_STEALTH )
+			{
+				// offhand wants to display sneak - redundant, hide this prompt
+				prompt->setDisabled(true);
+				promptText->setDisabled(true);
+				glyph->disabled = true;
+				++index;
+				continue;
 			}
 
 			if ( player.shootmode )
@@ -1711,7 +1773,19 @@ void Player::HUD_t::updateActionPrompts()
 					img->path = '*' + img->path;
 				}
 			}
-			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str());
+
+			bool pressed = false;
+			/*if ( skillForPrompt == PRO_SHIELD && stats[player.playernum]->defending )
+			{
+				pressed = true;
+			}
+			if ( skillForPrompt == PRO_STEALTH && !stats[player.playernum]->defending
+				&& stats[player.playernum]->sneaking )
+			{
+				pressed = true;
+			}*/
+
+			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str(), pressed);
 			glyph->disabled = prompt->isDisabled();
 			if ( !player.shootmode )
 			{
@@ -1719,7 +1793,7 @@ void Player::HUD_t::updateActionPrompts()
 			}
 			else if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 			{
-				glyph->disabled = false; // keyboard glyph support TODO
+				glyph->disabled = false;
 			}
 			else
 			{
@@ -1732,7 +1806,39 @@ void Player::HUD_t::updateActionPrompts()
 			}
 			glyph->pos.x = prompt->getSize().x + prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 0;
-			glyph->pos.y = prompt->getSize().y + img->pos.y + img->pos.h - glyphToImgPadY; // just above the skill img with some padding
+			int pressedOffset = 0;
+			/*if ( pressed )
+			{
+				if ( auto imgGet = Image::get(Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str()).c_str()) )
+				{
+					int unpressedHeight = imgGet->getHeight();
+					if ( glyph->pos.h != unpressedHeight )
+					{
+						pressedOffset = (unpressedHeight - glyph->pos.h);
+					}
+				}
+			}*/
+			glyph->pos.y = prompt->getSize().y + img->pos.y + img->pos.h - glyphToImgPadY + pressedOffset; // just above the skill img with some padding
+
+			if ( promptInfo.promptType == ACTION_PROMPT_SNEAK )
+			{
+				if ( !(!stats[player.playernum]->defending && stats[player.playernum]->sneaking) )
+				{
+					//glyph->disabled = true;
+					img->color = iconFadedColor;
+					//imgBacking->color = iconFadedBackingColor;
+				}
+			}
+			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && skillForPrompt == PRO_SHIELD
+				&& sneakingSeparateFromBlock )
+			{
+				if ( !stats[player.playernum]->defending )
+				{
+					//glyph->disabled = true;
+					img->color = iconFadedColor;
+					//imgBacking->color = iconFadedBackingColor;
+				}
+			}
 		}
 		++index;
 	}

@@ -2915,7 +2915,12 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 		}
 	}
 
-	if ( prompt == ACTION_PROMPT_OFFHAND )
+	if ( prompt == ACTION_PROMPT_SNEAK )
+	{
+		promptString = language[4077];
+		return PRO_STEALTH;
+	}
+	else if ( prompt == ACTION_PROMPT_OFFHAND )
 	{
 		int skill = PRO_SHIELD;
 		promptString = language[4076];
