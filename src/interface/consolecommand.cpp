@@ -3250,6 +3250,11 @@ void consoleCommand(char const * const command_str)
 			GlyphHelper.renderGlyphsToPNGs();
 			messagePlayer(clientnum, "Re-rendering keyboard glyphs...");
 		}
+		else if ( !strncmp(command_str, "/debugkeys", 10) )
+		{
+			enableDebugKeys = !enableDebugKeys;
+			messagePlayer(clientnum, "Set enableDebugKeys to %d", enableDebugKeys);
+		}
 		else if ( !strncmp(command_str, "/framesearchdebug", 17) )
 		{
 			Frame::findFrameDefaultSearchType = 
