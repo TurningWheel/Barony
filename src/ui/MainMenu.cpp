@@ -38,24 +38,14 @@ namespace MainMenu {
     static const char* emptyBinding = "[unbound]";
 	static const char* hiddenBinding = "[hidden]";
 	static const char* defaultBindings[][4] = {
-		{"Move Forward", "W", "StickLeftY-", emptyBinding},
-		{"Move Left", "A", "StickLeftX-", emptyBinding},
-		{"Move Backward", "S", "StickLeftY+", emptyBinding},
-		{"Move Right", "D", "StickLeftX+", emptyBinding},
-		{"Turn Left", "Left", "StickRightX-", emptyBinding},
-		{"Turn Right", "Right", "StickRightX+", emptyBinding},
-		{"Look Up", "Up", "StickRightY-", emptyBinding},
-		{"Look Down", "Down", "StickRightY+", emptyBinding},
-		{"Chat", "Return", hiddenBinding, emptyBinding},
-		{"Console Command", "/", hiddenBinding, emptyBinding},
-		{"Character Status", "Tab", "ButtonBack", emptyBinding},
-		{"Pause Game", emptyBinding, "ButtonStart", emptyBinding},
-		{"Spell List", "M", hiddenBinding, emptyBinding},
+		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
+		{"Use", "Mouse3", "ButtonA", emptyBinding},
 		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
 		{"Block", "Space", "LeftTrigger", emptyBinding},
 		{"Sneak", "Left Shift", "ButtonLeftBumper", emptyBinding},
-		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
-		{"Use", "Mouse3", "ButtonA", emptyBinding},
+		{"Character Status", "Tab", "ButtonBack", emptyBinding},
+		{"Pause Game", emptyBinding, "ButtonStart", emptyBinding},
+		{"Spell List", "M", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", emptyBinding, emptyBinding},
 		{"Command NPC", "Q", "DpadY-", emptyBinding},
 		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
@@ -67,7 +57,17 @@ namespace MainMenu {
 		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
 		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
-		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding }
+		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
+		{"Chat", "Return", hiddenBinding, emptyBinding},
+		{"Move Forward", "W", "StickLeftY-", emptyBinding},
+		{"Move Left", "A", "StickLeftX-", emptyBinding},
+		{"Move Backward", "S", "StickLeftY+", emptyBinding},
+		{"Move Right", "D", "StickLeftX+", emptyBinding},
+		{"Turn Left", "Left", "StickRightX-", emptyBinding},
+		{"Turn Right", "Right", "StickRightX+", emptyBinding},
+		{"Look Up", "Up", "StickRightY-", emptyBinding},
+		{"Look Down", "Down", "StickRightY+", emptyBinding},
+		{"Console Command", "/", hiddenBinding, emptyBinding}
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
