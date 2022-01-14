@@ -4271,27 +4271,46 @@ void actPlayer(Entity* my)
 				bool clickedOnGUI = false;
 
 				EntityClickType clickType = ENTITY_CLICK_USE;
-				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+
+				bool skipUse = false;
+				if ( players[PLAYER_NUM]->worldUI.isEnabled() && !players[PLAYER_NUM]->shootmode )
 				{
-					clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
-					Entity* activeTooltipEntity = uidToEntity(players[PLAYER_NUM]->worldUI.uidForActiveTooltip);
-					if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
-					{
-						clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
-					}
+					skipUse = true;
+				}
+				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && inputs.hasController(PLAYER_NUM) 
+					&& !players[PLAYER_NUM]->shootmode )
+				{
+					skipUse = true;
 				}
 
-				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
-				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+				if ( !skipUse )
 				{
-					if ( clickType == ENTITY_CLICK_USE )
+					if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 					{
-						// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-						if ( input.binary("Use") )
+						clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
+						Entity* activeTooltipEntity = uidToEntity(players[PLAYER_NUM]->worldUI.uidForActiveTooltip);
+						if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
 						{
-							++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+							clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
 						}
 					}
+
+					selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
+					if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+					{
+						if ( clickType == ENTITY_CLICK_USE )
+						{
+							// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+							if ( input.binary("Use") )
+							{
+								++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+							}
+						}
+					}
+				}
+				else
+				{
+					input.consumeBinaryToggle("Use");
 				}
 			}
 			else
