@@ -8032,7 +8032,7 @@ void Player::CharacterSheet_t::updateStats()
 	const int leftAlignPosX = 10;
 	auto statsInnerPos = statsInnerFrame->getSize();
 	statsInnerPos.x = rightAlignPosX;
-	if ( keystatus[SDL_SCANCODE_I] )
+	if ( keystatus[SDL_SCANCODE_I] && enableDebugKeys )
 	{
 		statsInnerPos.x = leftAlignPosX;
 	}
@@ -10694,8 +10694,9 @@ void createPlayerSpellList(const int player)
 		closeBtn->setSize(closeBtnPos);
 		closeBtn->setColor(makeColor(255, 255, 255, 255));
 		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-		closeBtn->setText("Close");
+		closeBtn->setText(language[4053]);
 		closeBtn->setFont(font);
+		closeBtn->setHideGlyphs(true);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), "%d: Close spell button clicked", button.getOwner());
