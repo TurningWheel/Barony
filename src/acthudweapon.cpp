@@ -3832,7 +3832,6 @@ void actHudAdditional(Entity* my)
 	}
 
 	bool defending = false;
-	bool sneaking = false;
 
 	// shield switching animation
 	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
