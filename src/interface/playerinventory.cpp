@@ -4308,29 +4308,6 @@ void Player::Inventory_t::updateInventory()
 				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
-
-		if ( inputs.bControllerInputPressed(player, INJOY_MENU_INVENTORY_TAB) )
-		{
-			inputs.controllerClearInput(player, INJOY_MENU_INVENTORY_TAB);
-			if ( !selectedItem )
-			{
-				cycleInventoryTab();
-			}
-		}
-
-		if ( lastkeypressed == 300 )
-		{
-			lastkeypressed = 0;
-		}
-
-		if ( inputs.bControllerInputPressed(player, INJOY_MENU_MAGIC_TAB) )
-		{
-			inputs.controllerClearInput(player, INJOY_MENU_MAGIC_TAB);
-			if ( !selectedItem )
-			{
-				cycleInventoryTab();
-			}
-		}
 	}
 
 	Input& input = Input::inputs[player];
