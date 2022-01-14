@@ -845,6 +845,131 @@ bool Player::GUI_t::returnToPreviousActiveModule()
 	return true;
 }
 
+void Player::GUI_t::handleModuleNavigation()
+{
+	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
+		|| nohud || !player.isLocalPlayer() )
+	{
+		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+		return;
+	}
+
+	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+	{
+		if ( activeModule == Player::GUI_t::MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				activateModule(Player::GUI_t::MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+			}
+			else
+			{
+				activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+				if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+				{
+					player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+				}
+				warpControllerToModule(false);
+			}
+		}
+		else if ( activeModule == Player::GUI_t::MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		{
+			activateModule(Player::GUI_t::MODULE_HOTBAR);
+			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+			warpControllerToModule(false);
+		}
+		else if ( activeModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			{
+				activateModule(Player::GUI_t::MODULE_SPELLS);
+				warpControllerToModule(false);
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			{
+				activateModule(Player::GUI_t::MODULE_INVENTORY);
+				warpControllerToModule(false);
+			}
+		}
+		else if ( activeModule == Player::GUI_t::MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		{
+			activateModule(Player::GUI_t::MODULE_HOTBAR);
+			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+			warpControllerToModule(false);
+		}
+
+		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+	}
+	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+	{
+		if ( activeModule == Player::GUI_t::MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		{
+			activateModule(Player::GUI_t::MODULE_HOTBAR);
+			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+			warpControllerToModule(false);
+		}
+		else if ( activeModule == Player::GUI_t::MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		{
+			activateModule(Player::GUI_t::MODULE_HOTBAR);
+			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+			warpControllerToModule(false);
+		}
+		else if ( activeModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+				{
+					activateModule(Player::GUI_t::MODULE_SPELLS);
+					warpControllerToModule(false);
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+				{
+					activateModule(Player::GUI_t::MODULE_INVENTORY);
+					warpControllerToModule(false);
+				}
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				if ( player.inventoryUI.spellPanel.isInteractable )
+				{
+					activateModule(Player::GUI_t::MODULE_SPELLS);
+					warpControllerToModule(false);
+				}
+			}
+			else
+			{
+				activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+				if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+				{
+					player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+				}
+				warpControllerToModule(false);
+			}
+		}
+		else if ( activeModule == Player::GUI_t::MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		{
+			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			{
+				activateModule(Player::GUI_t::MODULE_SPELLS);
+				warpControllerToModule(false);
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			{
+				activateModule(Player::GUI_t::MODULE_INVENTORY);
+				warpControllerToModule(false);
+			}
+		}
+
+		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+	}
+}
+
 bool Player::GUI_t::handleInventoryMovement()
 {
 	bool dpad_moved = false;
@@ -855,55 +980,6 @@ bool Player::GUI_t::handleInventoryMovement()
 	}
 	int player = this->player.playernum;
 	auto& hotbar_t = players[player]->hotbar;
-
-	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-	{
-		players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-		players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
-		players[player]->GUI.warpControllerToModule(false);
-
-		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-		inputs.getVirtualMouse(player)->draw_cursor = false;
-	}
-	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
-	{
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
-		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
-			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			players[player]->GUI.warpControllerToModule(false);
-		}
-		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
-		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
-			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			players[player]->GUI.warpControllerToModule(false);
-		}
-		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
-		{
-			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-			{
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-				players[player]->GUI.warpControllerToModule(false);
-			}
-			else if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
-			{
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-				players[player]->GUI.warpControllerToModule(false);
-			}
-			//players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-			//players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
-			//players[player]->GUI.warpControllerToModule(false);
-		}
-		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
-		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-			players[player]->GUI.warpControllerToModule(false);
-		}
-
-		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-		inputs.getVirtualMouse(player)->draw_cursor = false;
-	}
 
 	if ( !bActiveModuleUsesInventory() )
 	{
@@ -3137,7 +3213,7 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 			y = snapToItem->y;
 		}
 
-		if ( isInteractable )
+		if ( spellPanel.isInteractable )
 		{
 			if ( abs(spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) > 0.00001 )
 			{
@@ -3148,7 +3224,7 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 
 		if ( auto slot = getSpellSlotFrame(x, y) )
 		{
-			if ( !isInteractable )
+			if ( !spellPanel.isInteractable )
 			{
 				//messagePlayer(0, "[Debug]: select spell queued");
 				cursor.queuedModule = Player::GUI_t::MODULE_SPELLS;

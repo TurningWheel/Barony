@@ -4028,7 +4028,13 @@ void ingameHud()
 		// player not needed to be alive
 		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") && !gamePaused )   //TODO: Move to function in interface or something?
 		{
-			if ( !inputs.getUIInteraction(player)->selectedItem )
+			// no dropdowns/no selected item, if controller, has to be in inventory/hotbar + !shootmode
+			if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
+				&& (!inputs.hasController(player) 
+					|| (inputs.hasController(player) && !players[player]->shootmode
+						&& (players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR))) )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
 				if ( players[player]->shootmode )
@@ -4450,6 +4456,7 @@ void ingameHud()
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
+		players[player]->GUI.handleModuleNavigation();
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();

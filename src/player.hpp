@@ -729,6 +729,7 @@ public:
 		bool bActiveModuleHasNoCursor();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+		void handleModuleNavigation();
 		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
 		bool returnToPreviousActiveModule();
 		GUIDropdown_t dropdownMenu;
