@@ -8,6 +8,7 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
+
 #include <sstream>
 #include "../main.hpp"
 #include "../files.hpp"
@@ -38,6 +39,22 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
+#define CCMD (int argc, const char **argv)
+typedef void (*ccmd_function)CCMD;
+typedef std::unordered_map<std::string, ccmd_function> ccmd_map_t;
+static ccmd_map_t& getConsoleCommands()
+{
+	static ccmd_map_t ccmd_map;
+	return ccmd_map;
+}
+
+class ConsoleCommand {
+    ConsoleCommand(const char* name, ccmd_function func) {
+        auto& map = getConsoleCommands();
+        map.emplace(name, func);
+    }
+};
+
 /*-------------------------------------------------------------------------------
 
 	consoleCommand
@@ -48,62 +65,92 @@ bool autoLimbReload = false;
 
 void consoleCommand(char const * const command_str)
 {
-	node_t* node;
-	Entity* entity;
-	char name[64];
-	int c;
-	bool invalidcommand = false;
-
-	if ( !command_str )
+	if ( !command_str || command_str[0] == '\0' )
 	{
 		return;
 	}
 
-	if ( !strncmp(command_str, "/ping", 5) )
-	{
-		if ( multiplayer != CLIENT )
-		{
-			messagePlayer(clientnum, language[1117], 0);
-		}
-		else
-		{
-			strcpy((char*)net_packet->data, "PING");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-			pingtime = SDL_GetTicks();
-		}
+	char buf[1024];
+	size_t size = strlen(command_str);
+	size = std::min(size, sizeof(buf) - 1);
+	memcpy(buf, command_str, size);
+	buf[size] = '\0';
+
+    const char* command = NULL;
+    std::vector<const char*> tokens;
+    auto token = strtok(buf, " ");
+	auto command = token;
+	while (token) {
+	    tokens.push_back(token);
+	    strtok(token, " ");
 	}
-	else if ( !strncmp(command_str, "/usemodelcache", 14) )
-	{
-		useModelCache = true;
+
+	auto& map = getConsoleCommands();
+	auto find = map.find(command);
+	if (find == map.end()) {
+	    // invalid command
+		messagePlayer(clientnum, MESSAGE_MISC, language[305], command_str);
+	} else {
+	    auto ccmd = find->second;
+	    (*ccmd)(tokens.size(), tokens.data());
 	}
-	else if ( !strncmp(command_str, "/disablemodelcache", 14) )
-	{
-		useModelCache = false;
-	}
-	else if (!strncmp(command_str, "/fov", 4))
-	{
-		fov = atoi(&command_str[5]);
-		fov = std::min(std::max<Uint32>(40, fov), 100u);
-	}
-	else if ( !strncmp(command_str, "/fps", 4) )
-	{
-		fpsLimit = atoi(&command_str[5]);
+}
+
+namespace ConsoleCommands {
+    static ConsoleCommand ccmd_ping("/ping", []CCMD{
+	    if ( multiplayer != CLIENT )
+	    {
+		    messagePlayer(clientnum, MESSAGE_MISC, language[1117], 0);
+	    }
+	    else
+	    {
+		    strcpy((char*)net_packet->data, "PING");
+		    net_packet->data[4] = clientnum;
+		    net_packet->address.host = net_server.host;
+		    net_packet->address.port = net_server.port;
+		    net_packet->len = 5;
+		    sendPacketSafe(net_sock, -1, net_packet, 0);
+		    pingtime = SDL_GetTicks();
+	    }
+        });
+
+    static ConsoleCommand ccmd_usemodelcache("/usemodelcache", []CCMD{
+        useModelCache = true;
+        });
+
+    static ConsoleCommand ccmd_disablemodelcache("/disablemodelcache", []CCMD{
+	    useModelCache = false;
+        });
+
+    static ConsoleCommand ccmd_fov("/fov", []CCMD{
+        if (argc < 2) {
+            return;
+        }
+	    fov = atoi(argv[1]);
+	    fov = std::min(std::max<Uint32>(40, fov), 100u);
+        });
+
+    static ConsoleCommand ccmd_fps("/fps", []CCMD{
+        if (argc < 2) {
+            return;
+        }
+		fpsLimit = atoi(argv[1]);
 		fpsLimit = std::min(std::max<Uint32>(30, fpsLimit), 300u);
-	}
-	else if (!strncmp(command_str, "/svflags ", 9))
-	{
+        });
+
+    static ConsoleCommand ccmd_svflags("/svflags", []CCMD{
 		if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[275]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[275]);
 		}
 		else
 		{
-			svFlags = atoi(&command_str[9]);
-			messagePlayer(clientnum, language[276]);
+		    if (argc < 2)
+		    {
+		        return;
+		    }
+			svFlags = atoi(argv[1]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
 
 			if ( multiplayer == SERVER )
 			{
@@ -121,62 +168,60 @@ void consoleCommand(char const * const command_str)
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
-					messagePlayer(c, language[276]);
+					messagePlayer(c, MESSAGE_MISC, language[276]);
 				}
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/lastname ", 10) )
-	{
-		strcpy(name, command_str + 10);
-		lastname = (string)name;
-		lastname = lastname.substr(0, lastname.size() - 1);
-	}
-	else if ( !strncmp(command_str, "/lastcharacter ", 15) )
-	{
-		int loadedValues = 0;
-		for ( c = 0; c < strlen(command_str); ++c )
+        });
+
+    static ConsoleCommand ccmd_lastname("/lastname", []CCMD{
+        if (argc < 2)
+        {
+            return;
+        }
+		lastname = argv[1];
+		});
+
+    static ConsoleCommand ccmd_lastchar("/lastcharacter", []CCMD{
+		for ( int c = 1; c < argc; ++c )
 		{
-			if ( command_str[c] == ' ' )
+			switch ( c )
 			{
-				switch ( loadedValues )
-				{
-					case 0:
-						lastCreatedCharacterSex = atoi(&command_str[c + 1]);
-						break;
-					case 1:
-						lastCreatedCharacterClass = atoi(&command_str[c + 1]);
-						break;
-					case 2:
-						lastCreatedCharacterAppearance = atoi(&command_str[c + 1]);
-						break;
-					case 3:
-						lastCreatedCharacterRace = atoi(&command_str[c + 1]);
-						break;
-					default:
-						break;
-				}
-				++loadedValues;
+				case 1:
+					lastCreatedCharacterSex = atoi(argv[c]);
+					break;
+				case 2:
+					lastCreatedCharacterClass = atoi(argv[c]);
+					break;
+				case 3:
+					lastCreatedCharacterAppearance = atoi(argv[c]);
+					break;
+				case 4:
+					lastCreatedCharacterRace = atoi(argv[c]);
+					break;
+				default:
+					break;
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/spawnitem ", 11) )
-	{
+		});
+
+	static ConsoleCommand ccmd_spawnitem("/spawnitem", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		strcpy(name, command_str + 11);
+		if (argc < 2)
+		{
+		    return;
+		}
+		auto name = argv[1];
 
+        int c;
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
 			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
-				if ( c == TOOL_TINOPENER )
-				{
-					dropItem(newItem(FOOD_TIN, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
-				}
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -187,10 +232,6 @@ void consoleCommand(char const * const command_str)
 			{
 				if ( strstr(items[c].name_identified, name) )
 				{
-					if ( c == TOOL_TINOPENER )
-					{
-						dropItem(newItem(FOOD_TIN, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
-					}
 					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 					break;
 				}
@@ -198,25 +239,27 @@ void consoleCommand(char const * const command_str)
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, language[278], name);
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name);
 		}
-	}
-	else if ( !strncmp(command_str, "/spawncursed ", 13) )
-	{
+	    });
+
+	static ConsoleCommand ccmd_spawncursed("/spawncursed", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		strcpy(name, command_str + 13);
+		if (argc < 2)
+		{
+		    return;
+		}
+		auto name = argv[1];
+
+		int c;
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
 			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
-				if ( c == TOOL_TINOPENER )
-				{
-					dropItem(newItem(FOOD_TIN, WORN, -2, 1, rand(), true, &stats[clientnum]->inventory), 0);
-				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -227,10 +270,6 @@ void consoleCommand(char const * const command_str)
 			{
 				if ( strstr(items[c].name_identified, name) )
 				{
-					if ( c == TOOL_TINOPENER )
-					{
-						dropItem(newItem(FOOD_TIN, WORN, -2, 1, rand(), true, &stats[clientnum]->inventory), 0);
-					}
 					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 					break;
 				}
@@ -238,25 +277,27 @@ void consoleCommand(char const * const command_str)
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, language[278], name);
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name);
 		}
-	}
-	else if ( !strncmp(command_str, "/spawnblessed ", 14) )
-	{
+	    });
+
+	static ConsoleCommand ccmd_spawnblessed("/spawnblessed", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		strcpy(name, command_str + 14);
+		if (argc < 2)
+		{
+		    return;
+		}
+		auto name = argv[1];
+
+		int c;
 		for ( c = 0; c < NUMITEMS; ++c )
 		{
 			if ( strcmp(items[c].name_identified, name) == 0 )
 			{
-				if ( c == TOOL_TINOPENER )
-				{
-					dropItem(newItem(FOOD_TIN, WORN, 2, 1, rand(), true, &stats[clientnum]->inventory), 0);
-				}
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
@@ -267,10 +308,6 @@ void consoleCommand(char const * const command_str)
 			{
 				if ( strstr(items[c].name_identified, name) )
 				{
-					if ( c == TOOL_TINOPENER )
-					{
-						dropItem(newItem(FOOD_TIN, WORN, 2, 1, rand(), true, &stats[clientnum]->inventory), 0);
-					}
 					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 					break;
 				}
@@ -278,15 +315,19 @@ void consoleCommand(char const * const command_str)
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, language[278], name);
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name);
 		}
-	}
-	else if ( !strncmp(command_str, "/kick ", 6) )
-	{
-		strcpy(name, command_str + 6);
+	    });
+
+	static ConsoleCommand ccmd_kick("/kick", []CCMD{
+		if (argc < 2)
+		{
+		    return;
+		}
+		auto name = argv[1];
 		if ( multiplayer == SERVER )
 		{
-			for ( c = 1; c < MAXPLAYERS; c++ )
+			for ( int c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) && !players[c]->isLocalPlayer() )
 				{
@@ -299,199 +340,210 @@ void consoleCommand(char const * const command_str)
 					int i;
 					for ( i = 0; i < MAXPLAYERS; i++ )
 					{
-						messagePlayer(i, language[279], c, stats[c]->name);
+						messagePlayer(i, MESSAGE_MISC, language[279], c, stats[c]->name);
 					}
 					break;
 				}
 			}
 			if ( c == MAXPLAYERS )
 			{
-				messagePlayer(clientnum, language[280]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[280]);
 			}
 		}
 		else if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[281]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[281]);
 		}
 		else
 		{
-			messagePlayer(clientnum, language[282]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[282]);
 		}
-	}
-	else if ( !strncmp(command_str, "/spawnbook ", 11) )
-	{
+	    });
+
+	static ConsoleCommand ccmd_spawnbook("/spawnbook", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-
-		strcpy(name, command_str + 11);
+        if (argc < 2)
+        {
+            return;
+        }
+		auto name = argv[1];
 		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), true, &stats[clientnum]->inventory), 0);
-	}
-	else if ( !strncmp(command_str, "/savemap ", 9) )
-	{
-		if ( command_str[9] != 0 )
+	    });
+
+	static ConsoleCommand ccmd_savemap("/savemap", []CCMD{
+		if ( argc > 1 )
 		{
-			saveMap(command_str + 9);
-			messagePlayer(clientnum, language[283], command_str + 9);
+			saveMap(argv[1]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[283], argv[1]);
 		}
-	}
-	else if ( !strncmp(command_str, "/nextlevel", 10) )
-	{
+	    });
+
+	static ConsoleCommand ccmd_nextlevel("/nextlevel", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
 		}
 		else
 		{
-			messagePlayer(clientnum, language[285]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[285]);
 			loadnextlevel = true;
 		}
-	}
-	else if ( !strncmp(command_str, "/pos", 4) )
-	{
+	    });
+
+	static ConsoleCommand ccmd_pos("/pos", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		messagePlayer(clientnum, language[286], (int)cameras[0].x, (int)cameras[0].y, (int)cameras[0].z, cameras[0].ang, cameras[0].vang);
-	}
-	else if ( !strncmp(command_str, "/pathmap", 4) )
-	{
+		messagePlayer(clientnum, language[286],
+		    (int)cameras[0].x,
+		    (int)cameras[0].y,
+		    (int)cameras[0].z,
+		    cameras[0].ang,
+		    cameras[0].vang);
+	    });
+
+	static ConsoleCommand ccmd_asdf("/asdf", []CCMD{
+	    });
+
+	static ConsoleCommand ccmd_pathmap("/pathmap", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if (players[clientnum] && players[clientnum]->entity)
 		{
 			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			messagePlayer(clientnum, "pathMapGrounded value: %d", pathMapGrounded[y + x * map.height]);
-			messagePlayer(clientnum, "pathMapFlying value: %d", pathMapFlying[y + x * map.height]);
+			messagePlayer(clientnum, MESSAGE_MISC, "pathMapGrounded value: %d", pathMapGrounded[y + x * map.height]);
+			messagePlayer(clientnum, MESSAGE_MISC, "pathMapFlying value: %d", pathMapFlying[y + x * map.height]);
 		}
-	}
-	else if ( !strncmp(command_str, "/exit", 5) )
-	{
+	    });
+
+	static ConsoleCommand ccmd_exit("/exit", []CCMD{
 		mainloop = 0;
-	}
-	else if ( !strncmp(command_str, "/showfps", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_showfps("/showfps", []CCMD{
 		showfps = (showfps == false);
-	}
-	else if ( !strncmp(command_str, "/noclip", 7) )
-	{
+		});
+
+	static ConsoleCommand ccmd_noclip("/noclip", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[287]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[287]);
 		}
 		else
 		{
 			noclip = (noclip == false);
 			if ( noclip )
 			{
-				messagePlayer(clientnum, language[288]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[288]);
 			}
 			else
 			{
-				messagePlayer(clientnum, language[289]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[289]);
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/god", 4) )
-	{
+		});
+
+	static ConsoleCommand ccmd_god("/god", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[290]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[290]);
 		}
 		else
 		{
 			godmode = (godmode == false);
 			if ( godmode )
 			{
-				messagePlayer(clientnum, language[291]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[291]);
 			}
 			else
 			{
-				messagePlayer(clientnum, language[292]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[292]);
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/spam", 5) )
-	{
+		});
+
+	static ConsoleCommand ccmd_spam("/spam", []CCMD{
 		spamming = !(spamming);
-	}
-	else if ( !strncmp(command_str, "/logobstacle", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_logobstacle("/logobstacle", []CCMD{
 		logCheckObstacle = !(logCheckObstacle);
-	}
-	else if ( !strncmp(command_str, "/showfirst", 10) )
-	{
+		});
+
+	static ConsoleCommand ccmd_showfirst("/showfirst", []CCMD{
 		showfirst = !(showfirst);
-	}
-	else if ( !strncmp(command_str, "/buddha", 7) )
-	{
+		});
+
+	static ConsoleCommand ccmd_buddha("/buddha", []CCMD{
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[293]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[293]);
 		}
 		else
 		{
 			buddhamode = (buddhamode == false);
 			if ( buddhamode )
 			{
-				messagePlayer(clientnum, language[294]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[294]);
 			}
 			else
 			{
-				messagePlayer(clientnum, language[295]);
+				messagePlayer(clientnum, MESSAGE_MISC, language[295]);
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/friendly", 9) )
-	{
+		});
+
+	static ConsoleCommand ccmd_friendly("/friendly", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
 			return;
 		}
 		everybodyfriendly = (everybodyfriendly == false);
 		if ( everybodyfriendly )
 		{
-			messagePlayer(clientnum, language[296]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[296]);
 		}
 		else
 		{
-			messagePlayer(clientnum, language[297]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[297]);
 		}
-	}
-	else if ( !strncmp(command_str, "/dowse", 6) )
-	{
+		});
+
+	static ConsoleCommand ccmd_dowse("/dowse", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		for ( node = map.entities->first; node != NULL; node = node->next )
@@ -499,38 +551,45 @@ void consoleCommand(char const * const command_str)
 			entity = (Entity*)node->element;
 			if ( entity->behavior == &actLadder )
 			{
-				messagePlayer(clientnum, language[298], (int)(entity->x / 16), (int)(entity->y / 16));
+				messagePlayer(clientnum, MESSAGE_MISC, language[298], (int)(entity->x / 16), (int)(entity->y / 16));
 			}
 		}
-	}
-	else if (!strncmp(command_str, "/thirdperson", 12))
-	{
-		/*if (!(svFlags & SV_FLAG_CHEATS))
+		});
+
+	static ConsoleCommand ccmd_thirdperson("/thirdperson", []CCMD{
+		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, language[277]);
+		    // this is definitely considered a cheat.
+		    // otherwise it's a major gameplay exploit.
+		    // do not disable this code block.
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
-		}*/
+		}
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
 			if (players[clientnum]->entity->skill[3] == 1)
 			{
-				messagePlayer(clientnum, "thirdperson ON");
+				messagePlayer(clientnum, MESSAGE_MISC, "thirdperson ON");
 			}
 			else
 			{
-				messagePlayer(clientnum, "thirdperson OFF");
+				messagePlayer(clientnum, MESSAGE_MISC, "thirdperson OFF");
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/res ", 5) )
-	{
-		xres = atoi(&command_str[5]);
-		for ( c = 0; c < strlen(command_str); c++ )
+		});
+
+	static ConsoleCommand ccmd_res("/res", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		xres = atoi(argv[1]);
+		for ( int c = 0; c < strlen(argv[1]); c++ )
 		{
-			if ( command_str[c] == 'x' )
+			if ( argv[1][c] == 'x' )
 			{
-				yres = atoi(&command_str[c + 1]);
+				yres = atoi(&argv[1][c + 1]);
 				break;
 			}
 		}
@@ -542,60 +601,63 @@ void consoleCommand(char const * const command_str)
 				mainloop = 0;
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/rscale", 7) )
-	{
-		rscale = atoi(&command_str[8]);
-	}
-	else if ( !strncmp(command_str, "/smoothlighting", 15) )
-	{
-		smoothlighting = true;
-	}
-	else if ( !strncmp(command_str, "/fullscreen", 11) )
-	{
+		});
+
+	static ConsoleCommand ccmd_rscale("/rscale", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		rscale = atoi(argv[1]);
+		});
+
+	static ConsoleCommand ccmd_fullscreen("/fullscreen", []CCMD{
 		fullscreen = (fullscreen == 0);
-	}
-	else if ( !strncmp(command_str, "/shaking", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_shaking("/shaking", []CCMD{
 		shaking = (shaking == 0);
-	}
-	else if ( !strncmp(command_str, "/bobbing", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_bobbing("/bobbing", []CCMD{
 		bobbing = (bobbing == 0);
-	}
-	else if ( !strncmp(command_str, "/sfxvolume", 10) )
-	{
-		sfxvolume = atoi(&command_str[11]);
-	}
-	else if ( !strncmp(command_str, "/musvolume", 10) )
-	{
-		musvolume = atoi(&command_str[11]);
-	}
-	else if ( !strncmp(command_str, "/bind", 5) )
-	{
+		});
+
+	static ConsoleCommand ccmd_sfxvolume("/sfxvolume", []CCMD{
+	    if (argc > 1)
+		    sfxvolume = strtof(argv[1], nullptr);
+		});
+
+	static ConsoleCommand ccmd_musvolume("/musvolume", []CCMD{
+	    if (argc > 1)
+		    musvolume = strtof(argv[1], nullptr);
+		});
+
+	static ConsoleCommand ccmd_bind("/bind", []CCMD{
 		printlog("Note: /bind is now deprecated.\n");
-	}
-	else if (!strncmp(command_str, "/joybind", 8))
-	{
+		});
+
+	static ConsoleCommand ccmd_joybind("/joybind", []CCMD{
 		printlog("Note: /joybind is now deprecated.\n");
-	}
-	else if ( !strncmp(command_str, "/mousespeed", 11) )
-	{
-		mousespeed = atoi(&command_str[12]);
-	}
-	else if ( !strncmp(command_str, "/reversemouse", 13) )
-	{
+		});
+
+	static ConsoleCommand ccmd_mousespeed("/mousespeed", []CCMD{
+	    if (argc > 1)
+		    mousespeed = atoi(argv[1]);
+		});
+
+	static ConsoleCommand ccmd_reversemouse("/reversemouse", []CCMD{
 		reversemouse = (reversemouse == 0);
-	}
-	else if ( !strncmp(command_str, "/smoothmouse", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_smoothmouse("/smoothmouse", []CCMD{
 		smoothmouse = (smoothmouse == false);
-	}
-	else if ( !strncmp(command_str, "/mana", 4) )
-	{
+		});
+
+	static ConsoleCommand ccmd_mana("/mana", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -605,14 +667,14 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if ( !strncmp(command_str, "/heal", 4) )
-	{
+		});
+
+	static ConsoleCommand ccmd_heal("/heal", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -622,83 +684,91 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if ( !strncmp(command_str, "/damage ", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_damage("/damage", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
+        if (argc < 2) {
+            return;
+        }
 
-		int amount = atoi(&command_str[8]);
+		int amount = atoi(argv[1]);
 
 		players[clientnum]->entity->modHP(-amount);
 
-		messagePlayer(clientnum, "Damaging you by %d. New health: %d", amount, stats[clientnum]->HP);
-	}
-	else if (!strncmp(command_str, "/ip ", 4))
-	{
-		if ( command_str[4] != 0 )
+		messagePlayer(clientnum, MESSAGE_MISC, "Damaging you by %d. New health: %d", amount, stats[clientnum]->HP);
+		});
+
+	static ConsoleCommand ccmd_ip("/ip", []CCMD{
+		if ( argc > 1 )
 		{
-			strcpy(last_ip, command_str + 4);
-			last_ip[strlen(last_ip) - 1] = 0;
+		    size_t size = strlen(argv[1]);
+		    size = std::min(size, sizeof(last_ip) - 1);
+		    memcpy(last_ip, argv[1], size);
+		    last_ip[size] = '\0';
 		}
-	}
-	else if (!strncmp(command_str, "/port ", 6))
-	{
-		if (command_str[6] != 0)
+		});
+
+	static ConsoleCommand ccmd_port("/port", []CCMD{
+		if ( argc > 1 )
 		{
-			strcpy(last_port, command_str + 6);
-			last_port[strlen(last_port) - 1] = 0;
+		    size_t size = strlen(argv[1]);
+		    size = std::min(size, sizeof(last_port) - 1);
+		    memcpy(last_port, argv[1], size);
+		    last_port[size] = '\0';
 		}
-	}
-	else if (!strncmp(command_str, "/noblood", 8))
-	{
+		});
+
+	static ConsoleCommand ccmd_noblood("/noblood", []CCMD{
 		spawn_blood = (spawn_blood == false);
-	}
-	else if (!strncmp(command_str, "/nolightflicker", 15))
-	{
+		});
+
+	static ConsoleCommand ccmd_nolightflicker("/nolightflicker", []CCMD{
 		flickerLights = (flickerLights == false);
-	}
-	else if ( !strncmp(command_str, "/vsync", 6) )
-	{
+		});
+
+	static ConsoleCommand ccmd_vsync("/vsync", []CCMD{
 		verticalSync = (verticalSync == false);
-	}
-	else if ( !strncmp(command_str, "/hidestatusicons", 16) )
-	{
+		});
+
+	static ConsoleCommand ccmd_hidestatusicons("/hidestatusicons", []CCMD{
 		showStatusEffectIcons = (showStatusEffectIcons == false);
-	}
-	else if ( !strncmp(command_str, "/muteping", 9) )
-	{
+		});
+
+	static ConsoleCommand ccmd_muteping("/muteping", []CCMD{
 		minimapPingMute = (minimapPingMute == false);
-	}
-	else if (!strncmp(command_str, "/colorblind", 11))
-	{
+		});
+
+	static ConsoleCommand ccmd_colorblind("/colorblind", []CCMD{
 		colorblind = (colorblind == false);
-	}
-	else if (!strncmp(command_str, "/gamma", 6))
-	{
-		std::stringstream ss;
-		ss << command_str + 7;
-		ss >> vidgamma;
-	}
-	else if (!strncmp(command_str, "/capturemouse", 13))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamma("/gamma", []CCMD{
+        if (argc < 2) {
+            return;
+        }
+		vidgamma = strtof(argv[1], nullptr);
+		});
+
+	static ConsoleCommand ccmd_capturemouse("/capturemouse", []CCMD{
 		capture_mouse = (capture_mouse == false);
-	}
-	else if (!strncmp(command_str, "/levelup", 8))
-	{
+		});
+
+	static ConsoleCommand ccmd_levelup("/levelup", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -718,14 +788,14 @@ void consoleCommand(char const * const command_str)
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(clientnum, language[299]);
+			//messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if ( !strncmp(command_str, "/maxout2", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_maxout2("/maxout2", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -758,28 +828,31 @@ void consoleCommand(char const * const command_str)
 			{
 				consoleCommand("/levelup");
 			}
-			//messagePlayer(clientnum, language[299]);
+			//messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if ( !strncmp(command_str, "/jumplevel ", 11) )
-	{
+		});
+
+	static ConsoleCommand ccmd_jumplevel("/jumplevel", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		skipLevelsOnLoad = atoi((char*)(command_str + 11));
+        if (argc < 2) {
+            return;
+        }
+		skipLevelsOnLoad = atoi(argv[1]);
 		if ( skipLevelsOnLoad == -1 )
 		{
 			loadingSameLevelAsCurrent = true;
 		}
 		consoleCommand("/nextlevel");
-	}
-	else if ( !strncmp(command_str, "/maxout3", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_maxout3("/maxout3", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -815,14 +888,14 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if ( !strncmp(command_str, "/maxout4", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_maxout4("/maxout4", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -863,14 +936,14 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if (!strncmp(command_str, "/maxout", 7))
-	{
+		});
+
+	static ConsoleCommand ccmd_maxout("/maxout", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -902,14 +975,14 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if (!strncmp(command_str, "/hunger", 7))
-	{
+		});
+
+	static ConsoleCommand ccmd_hunger("/hunger", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -923,14 +996,14 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if (!strncmp(command_str, "/poison", 7))
-	{
+		});
+
+	static ConsoleCommand ccmd_poison("/poison", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -945,26 +1018,26 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if (!strncmp(command_str, "/testsound ", 11))
-	{
-		int num = 0;
-		//snprintf((char *)(command_str + 11), strlen(command_str)-11, "%d", num);
-		//printlog( "Number is %d. Original is: \"%s\"\n", num, (char *)(&command_str[11]));
-		num = atoi((char*)(command_str + 11));
+		});
+
+	static ConsoleCommand ccmd_testsound("/testsound", []CCMD{
+        if (argc < 2) {
+            return;
+        }
+		int num = atoi(argv[1]);
 		playSound(num, 256);
-	}
-	else if (!strncmp(command_str, "/skipintro", 10))
-	{
+		});
+
+	static ConsoleCommand ccmd_skipintro("/skipintro", []CCMD{
 		skipintro = (skipintro == false);
-	}
-	else if (!strncmp(command_str, "/levelmagic", 11))
-	{
+		});
+
+	static ConsoleCommand ccmd_levelmagic("/levelmagic", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
@@ -979,23 +1052,23 @@ void consoleCommand(char const * const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 		}
-	}
-	else if (!strncmp(command_str, "/numentities", 12))
-	{
-		messagePlayer(clientnum, language[300], list_Size(map.entities));
-	}
-	else if ( !strncmp(command_str, "/nummonsters2", 13) )
-	{
-		messagePlayer(clientnum, language[2353], list_Size(map.creatures));
-	}
-	else if ( !strncmp(command_str, "/nummonsters", 12) )
-	{
-		messagePlayer(clientnum, language[2353], nummonsters);
-	}
-	else if ( !strncmp(command_str, "/verifycreaturelist", strlen("/verifycreaturelist")) )
-	{
+		});
+
+	static ConsoleCommand ccmd_numentities("/numentities", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, language[300], list_Size(map.entities));
+		});
+
+	static ConsoleCommand ccmd_nummonsters2("/nummonsters2", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, language[2353], list_Size(map.creatures));
+		});
+
+	static ConsoleCommand ccmd_nummonsters("/nummonsters", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, language[2353], nummonsters);
+		});
+
+	static ConsoleCommand ccmd_verifycreaturelist("/verifycreaturelist", []CCMD{
 		//Make sure that the number of creatures in the creature list are the real count in the game world.
 		unsigned entcount = 0;
 
@@ -1011,26 +1084,29 @@ void consoleCommand(char const * const command_str)
 			}
 		}
 
-		messagePlayer(clientnum, "ent count = %d, creatures list size = %d", entcount, list_Size(map.creatures));
+		messagePlayer(clientnum, MESSAGE_MISC, "ent count = %d, creatures list size = %d", entcount, list_Size(map.creatures));
 
 		if ( entcount == list_Size(map.creatures) )
 		{
-			messagePlayer(clientnum, "Yes, list is verified correct.");
+			messagePlayer(clientnum, MESSAGE_MISC, "Yes, list is verified correct.");
 		}
 		else
 		{
-			messagePlayer(clientnum, "Nope, much problemo!");
+			messagePlayer(clientnum, MESSAGE_MISC, "Nope, much problemo!");
 		}
-	}
-	else if ( !strncmp(command_str, "/loadmodels ", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_loadmodels("/loadmodels", []CCMD{
 		char name2[128];
 		char buf[16] = "";
 		int startIndex = 0;
 		int endIndex = nummodels;
 		int i = 0;
-		strcpy(name, command_str + 12);
-		for ( c = 0; name[c] != '\0'; c++ )
+        if (argc < 2) {
+            return;
+        }
+		auto name = argv[1];
+		for ( int c = 0; name[c] != '\0'; c++ )
 		{
 			if ( name[c] == ' ' && startIndex == 0 )
 			{
@@ -1055,9 +1131,9 @@ void consoleCommand(char const * const command_str)
 		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 		File *fp = openDataFile(modelsDirectory.c_str(), "r");
-		for ( c = 0; !fp->eof(); c++ )
+		for ( int c = 0; !fp->eof(); c++ )
 		{
-			fp->gets2(name2, 128);
+			fp->gets2(name2, sizeof(name2));
 			if ( c >= startIndex && c < endIndex )
 			{
 				if ( models[c] != NULL )
@@ -1103,17 +1179,17 @@ void consoleCommand(char const * const command_str)
 		//messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
 		generatePolyModels(startIndex, endIndex, true);
-	}
-	else if (!strncmp(command_str, "/killmonsters", 13))
-	{
+		});
+
+	static ConsoleCommand ccmd_killmonsters("/killmonsters", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
 		}
 		else
 		{
@@ -1129,11 +1205,11 @@ void consoleCommand(char const * const command_str)
 					c++;
 				}
 			}
-			messagePlayer(clientnum, language[301], c);
+			messagePlayer(clientnum, MESSAGE_MISC, language[301], c);
 		}
-	}
-	else if (!strncmp(command_str, "/die", 4))
-	{
+		});
+
+	static ConsoleCommand ccmd_die("/die", []CCMD{
 		if ( multiplayer == CLIENT )
 		{
 			// request sweet release.
@@ -1151,23 +1227,23 @@ void consoleCommand(char const * const command_str)
 				players[clientnum]->entity->setHP(0);
 			}
 		}
-	}
-	else if (!strncmp(command_str, "/segfault", 9))
-	{
+		});
+
+	static ConsoleCommand ccmd_segfault("/segfault", []CCMD{
 		int* potato = NULL;
 		(*potato) = 322; //Crash the game!
-	}
-	else if ( !(strncmp(command_str, "/flames", 7)) )
-	{
+		});
+
+	static ConsoleCommand ccmd_flames("/flames", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
@@ -1184,18 +1260,18 @@ void consoleCommand(char const * const command_str)
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
 		}
-	}
-	else if ( !(strncmp(command_str, "/cure", 5)) )
-	{
+		});
+
+	static ConsoleCommand ccmd_cure("/cure", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
@@ -1212,21 +1288,24 @@ void consoleCommand(char const * const command_str)
 		{
 			players[clientnum]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 		}
-	}
-	else if (!strncmp(command_str, "/summonall ", 11))
-	{
+		});
+
+	static ConsoleCommand ccmd_summonall("/summonall", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
 		}
 		else if (players[clientnum] && players[clientnum]->entity)
 		{
-			strcpy(name, command_str + 11);
+            if (argc < 2) {
+                return;
+            }
+			auto name = argv[1];
 			int i, creature;
 			bool found = false;
 
@@ -1249,24 +1328,27 @@ void consoleCommand(char const * const command_str)
 			}
 			else
 			{
-				messagePlayer(clientnum, language[304], name);
+				messagePlayer(clientnum, MESSAGE_MISC, language[304], name);
 			}
 		}
-	}
-	else if (!strncmp(command_str, "/summon ", 8))
-	{
+		});
+
+	static ConsoleCommand ccmd_summon("/summon", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
 		}
 		else if (players[clientnum] && players[clientnum]->entity)
 		{
-			strcpy(name, command_str + 8);
+            if (argc < 2) {
+                return;
+            }
+			auto name = argv[1];
 			int i, creature;
 			bool found = false;
 
@@ -1287,7 +1369,7 @@ void consoleCommand(char const * const command_str)
 					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 					if ( monster )
 					{
-						messagePlayer(clientnum, language[302], getMonsterLocalizedName(static_cast<Monster>(statEntry->type)).c_str());
+						messagePlayer(clientnum, MESSAGE_MISC, language[302], getMonsterLocalizedName(static_cast<Monster>(statEntry->type)).c_str());
 						if ( monster->getStats() )
 						{
 							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
@@ -1339,70 +1421,79 @@ void consoleCommand(char const * const command_str)
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					messagePlayer(clientnum, language[302], getMonsterLocalizedName((Monster)creature).c_str());
+					messagePlayer(clientnum, MESSAGE_MISC, language[302], getMonsterLocalizedName((Monster)creature).c_str());
 				}
 				else
 				{
-					messagePlayer(clientnum, language[303], getMonsterLocalizedName((Monster)creature).c_str());
+					messagePlayer(clientnum, MESSAGE_MISC, language[303], getMonsterLocalizedName((Monster)creature).c_str());
 				}
 			}
 			else
 			{
-				messagePlayer(clientnum, language[304], name);
+				messagePlayer(clientnum, MESSAGE_MISC, language[304], name);
 			}
 		}
-	}
-	else if (!strncmp(command_str, "/summonchest", 12)) //MAGIC TEST FUNCTION WE NEEDED LONG AGO.
-	{
+		});
+
+	static ConsoleCommand ccmd_summonchest("/summonchest", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
 		}
 		else if (players[clientnum] && players[clientnum]->entity)
 		{
-			playSoundEntity(players[clientnum]->entity, 153, 64);
+		    auto player = players[clientnum]->entity;
 
-			//Spawn monster
-			Entity* chest = summonChest(players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+			playSoundEntity(player, 153, 64);
+
+            real_t x = player->x + 32.0 * cos(player->yaw);
+            real_t y = player->y + 32.0 * sin(player->yaw);
+			Entity* chest = summonChest(x, y);
 		}
-	}
-	else if (!strncmp(command_str, "/broadcast", 10))
-	{
+		});
+
+	static ConsoleCommand ccmd_broadcast("/broadcast", []CCMD{
 		broadcast = (broadcast == false);
-	}
-	else if (!strncmp(command_str, "/nohud", 6))
-	{
+		});
+
+	static ConsoleCommand ccmd_nohud("/nohud", []CCMD{
 		nohud = (nohud == false);
-	}
-	else if (!strncmp(command_str, "/disablehotbarnewitems", 15))
-	{
+		});
+
+	static ConsoleCommand ccmd_disablehotbarnewitems("/disablehotbarnewitems", []CCMD{
 		auto_hotbar_new_items = (auto_hotbar_new_items == false);
-	}
-	else if ( !strncmp(command_str, "/hotbarenablecategory ", 22) )
-	{
-		int catIndex = atoi(&command_str[22]);
-		int value = atoi(&command_str[24]);
+		});
+
+	static ConsoleCommand ccmd_hotbarenablecategory("/hotbarenablecategory", []CCMD{
+        if (argc < 3) {
+            return;
+        }
+		int catIndex = atoi(argv[1]);
+		int value = atoi(argv[2]);
 		auto_hotbar_categories[catIndex] = value;
 		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
-	}
-	else if ( !strncmp(command_str, "/autosortcategory ", 18) )
-	{
-		int catIndex = atoi(&command_str[18]);
-		int value = atoi(&command_str[20]);
+		});
+
+	static ConsoleCommand ccmd_autosortcategory("/autosortcategory", []CCMD{
+        if (argc < 3) {
+            return;
+        }
+		int catIndex = atoi(argv[1]);
+		int value = atoi(argv[2]);
 		autosort_inventory_categories[catIndex] = value;
 		printlog("Autosort inventory category %d, priority %d.", catIndex, value);
-	}
-	else if ( !strncmp(command_str, "/quickaddtohotbar", 17) )
-	{
+		});
+
+	static ConsoleCommand ccmd_quickaddtohotbar("/quickaddtohotbar", []CCMD{
 		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
-	}
-	else if ( !strncmp(command_str, "/locksidebar", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_locksidebar("/locksidebar", []CCMD{
 		if ( players[clientnum] ) // warning - this doesn't exist when loadConfig() is called on init.
 		{
 			players[clientnum]->characterSheet.lock_right_sidebar = (players[clientnum]->characterSheet.lock_right_sidebar == false);
@@ -1411,62 +1502,51 @@ void consoleCommand(char const * const command_str)
 				players[clientnum]->characterSheet.proficienciesPage = 1;
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/showgametimer", 14) )
-	{
+		});
+
+	static ConsoleCommand ccmd_showgametimer("/showgametimer", []CCMD{
 		show_game_timer_always = (show_game_timer_always == false);
-	}
-	else if (!strncmp(command_str, "/lang ", 6))
-	{
-		char *lang = strdup(command_str);
-		lang[8] = 0;
-		loadLanguage(lang + 6);
-		free(lang);
-	}
-	else if ( !strncmp(command_str, "/mapseed", 8) )
-	{
-		messagePlayer(clientnum, "%d", mapseed);
-	}
-	else if (!strncmp(command_str, "/reloadlang", 11))
-	{
+		});
+
+	static ConsoleCommand ccmd_lang("/lang", []CCMD{
+	    if (argc > 1) {
+		    loadLanguage(argv[1]);
+	    }
+		});
+
+	static ConsoleCommand ccmd_mapseed("/mapseed", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, "%d", mapseed);
+		});
+
+	static ConsoleCommand ccmd_reloadlang("/reloadlang", []CCMD{
 		reloadLanguage();
-	}
-	else if (!strncmp(command_str, "/disablemessages", 15))
-	{
+		});
+
+	static ConsoleCommand ccmd_disablemessages("/disablemessages", []CCMD{
 		disable_messages = true;
-	}
-	else if (!strncmp(command_str, "/right_click_protect", 19))
-	{
+		});
+
+	static ConsoleCommand ccmd_right_click_protect("/right_click_protect", []CCMD{
 		right_click_protect = (right_click_protect == false);
-	}
-	else if (!strncmp(command_str, "/autoappraisenewitems", 21))
-	{
+		});
+
+	static ConsoleCommand ccmd_autoappraisenewitems("/autoappraisenewitems", []CCMD{
 		auto_appraise_new_items = true;
-	}
-	else if (!strncmp(command_str, "/startfloor ", 12))
-	{
-		startfloor = atoi(&command_str[12]);
-		//Ensure its value is in range.
-		startfloor = std::max(startfloor, 0);
-		//startfloor = std::min(startfloor, numlevels);
-		printlog("Start floor is %d.", startfloor);
-	}
-	else if ( !strncmp(command_str, "/splitscreen ", 13) 
-		|| !strncmp(command_str, "/splitscreen", 12)
-		|| !strncmp(command_str, "/splitscreen2vertical", 21) )
-	{
+		});
+
+	static ConsoleCommand ccmd_startfloor("/startfloor", []CCMD{
+	    if (argc > 1)
+	    {
+		    startfloor = atoi(argv[1]);
+		    //Ensure its value is in range.
+		    startfloor = std::max(startfloor, 0);
+		    //startfloor = std::min(startfloor, numlevels);
+		    printlog("Start floor is %d.", startfloor);
+		}
+		});
+
+	static ConsoleCommand ccmd_splitscreen("/splitscreen", []CCMD{
 		int numPlayers = 4;
-		bool verticalSplitscreen = !strncmp(command_str, "/splitscreen2vertical", 21);
-
-		if ( verticalSplitscreen )
-		{
-			numPlayers = 2;
-		}
-		else if ( !strncmp(command_str, "/splitscreen ", 13) )
-		{
-			numPlayers = std::min(4, std::max(atoi(&command_str[13]), 2));
-		}
-
 		splitscreen = !splitscreen;
 
 		if ( splitscreen )
@@ -1643,120 +1723,160 @@ void consoleCommand(char const * const command_str)
 				intro = oldIntro;
 			}
 		}
-	}
-	else if (!strncmp(command_str, "/gamepad_deadzone ", 18))
-	{
-		gamepad_deadzone = atoi(&command_str[18]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_deadzone("/gamepad_deadzone", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_deadzone = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_deadzone = std::max(gamepad_deadzone, 0);
 		printlog("Controller deadzone is %d.", gamepad_deadzone);
-	}
-	else if (!strncmp(command_str, "/gamepad_trigger_deadzone ", 26))
-	{
-		gamepad_trigger_deadzone = atoi(&command_str[26]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_trigger_deadzone("/gamepad_trigger_deadzone", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_trigger_deadzone = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_trigger_deadzone = std::max(gamepad_trigger_deadzone, 0);
 		printlog("Controller trigger deadzone is %d.", gamepad_trigger_deadzone);
-	}
-	else if (!strncmp(command_str, "/gamepad_leftx_sensitivity ", 27))
-	{
-		gamepad_leftx_sensitivity = atoi(&command_str[27]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_leftx_sensitivity("/gamepad_leftx_sensitivity", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_leftx_sensitivity = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_leftx_sensitivity = std::max(gamepad_leftx_sensitivity, 1);
 		printlog("Controller leftx sensitivity is %d.", gamepad_leftx_sensitivity);
-	}
-	else if (!strncmp(command_str, "/gamepad_lefty_sensitivity ", 27))
-	{
-		gamepad_lefty_sensitivity = atoi(&command_str[27]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_lefty_sensitivity("/gamepad_lefty_sensitivity", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_lefty_sensitivity = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_lefty_sensitivity = std::max(gamepad_lefty_sensitivity, 1);
 		printlog("Controller lefty sensitivity is %d.", gamepad_lefty_sensitivity);
-	}
-	else if (!strncmp(command_str, "/gamepad_rightx_sensitivity ", 28))
-	{
-		gamepad_rightx_sensitivity = atoi(&command_str[28]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_rightx_sensitivity("/gamepad_rightx_sensitivity", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_rightx_sensitivity = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_rightx_sensitivity = std::max(gamepad_rightx_sensitivity, 1);
 		printlog("Controller rightx sensitivity is %d.", gamepad_rightx_sensitivity);
-	}
-	else if (!strncmp(command_str, "/gamepad_righty_sensitivity ", 28))
-	{
-		gamepad_righty_sensitivity = atoi(&command_str[28]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_righty_sensitivity("/gamepad_righty_sensitivity", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_righty_sensitivity = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1);
 		printlog("Controller righty sensitivity is %d.", gamepad_righty_sensitivity);
-	}
-	else if (!strncmp(command_str, "/gamepad_menux_sensitivity ", 27))
-	{
-		gamepad_menux_sensitivity = atoi(&command_str[27]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_menux_sensitivity("/gamepad_menux_sensitivity", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_menux_sensitivity = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_menux_sensitivity = std::max(gamepad_menux_sensitivity, 1);
 		printlog("Controller menux sensitivity is %d.", gamepad_menux_sensitivity);
-	}
-	else if (!strncmp(command_str, "/gamepad_menuy_sensitivity ", 27))
-	{
-		gamepad_menuy_sensitivity = atoi(&command_str[27]);
+		});
+
+	static ConsoleCommand ccmd_gamepad_menuy_sensitivity("/gamepad_menuy_sensitivity", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		gamepad_menuy_sensitivity = atoi(argv[1]);
 		//Ensure its value is in range.
 		gamepad_menuy_sensitivity = std::max(gamepad_menuy_sensitivity, 1);
 		printlog("Controller menuy sensitivity is %d.", gamepad_menuy_sensitivity);
-	}
-	else if (!strncmp(command_str, "/gamepad_leftx_invert", 21))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamepad_leftx_invert("/gamepad_leftx_invert", []CCMD{
 		gamepad_leftx_invert = true;
-	}
-	else if (!strncmp(command_str, "/gamepad_lefty_invert", 21))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamepad_lefty_invert("/gamepad_lefty_invert", []CCMD{
 		gamepad_lefty_invert = true;
-	}
-	else if (!strncmp(command_str, "/gamepad_rightx_invert", 22))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamepad_rightx_invert("/gamepad_rightx_invert", []CCMD{
 		gamepad_rightx_invert = true;
-	}
-	else if (!strncmp(command_str, "/gamepad_righty_invert", 22))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamepad_righty_invert("/gamepad_righty_invert", []CCMD{
 		gamepad_righty_invert = true;
-	}
-	else if (!strncmp(command_str, "/gamepad_menux_invert", 21))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamepad_menux_invert("/gamepad_menux_invert", []CCMD{
 		gamepad_menux_invert = true;
-	}
-	else if (!strncmp(command_str, "/gamepad_menuy_invert", 21))
-	{
+		});
+
+	static ConsoleCommand ccmd_gamepad_menuy_invert("/gamepad_menuy_invert", []CCMD{
 		gamepad_menuy_invert = true;
-	}
-	else if ( !strncmp(command_str, "/numgold", 8) )
-	{
+		});
+
+	static ConsoleCommand ccmd_numgold("/numgold", []CCMD{
 		for ( unsigned i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( client_disconnected[i] )
 			{
 				continue;
 			}
-			messagePlayer(clientnum, "Player %d has %d gold.", i, stats[i]->GOLD);
+			messagePlayer(clientnum, MESSAGE_MISC, "Player %d has %d gold.", i, stats[i]->GOLD);
 		}
-	}
-	else if ( !strncmp(command_str, "/gold ", 5) )
-	{
+		});
+
+	static ConsoleCommand ccmd_gold("/gold", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
-		int amount = atoi(&command_str[5]);
+        if (argc < 2)
+        {
+            return;
+        }
+		int amount = atoi(argv[1]);
 		stats[clientnum]->GOLD += amount;
 		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
 
-		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
-	}
-	else if ( !strncmp(command_str, "/dropgold ", 9) )
-	{
-		int amount = atoi(&command_str[9]);
+		messagePlayer(clientnum, MESSAGE_MISC, "Giving %d gold pieces.", amount);
+		});
+
+	static ConsoleCommand ccmd_dropgold("/dropgold", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		int amount = atoi(argv[1]);
 		if ( !stats[clientnum] )
 		{
 			return;
@@ -1781,7 +1901,7 @@ void consoleCommand(char const * const command_str)
 			}
 			if ( amount == 0 )
 			{
-				messagePlayer(clientnum, language[2593]);
+				messagePlayer(clientnum, MESSAGE_INVENTORY, language[2593]);
 				return;
 			}
 			stats[clientnum]->GOLD -= amount;
@@ -1812,23 +1932,23 @@ void consoleCommand(char const * const command_str)
 				entity->behavior = &actGoldBag;
 				entity->goldAmount = amount; // amount
 			}
-			messagePlayer(clientnum, language[2594], amount);
+			messagePlayer(clientnum, MESSAGE_INVENTORY, language[2594], amount);
 		}
 		else
 		{
-			messagePlayer(clientnum, language[4085]); // invalid location to drop gold
+			messagePlayer(clientnum, MESSAGE_INVENTORY | MESSAGE_MISC, language[4085]); // invalid location to drop gold
 		}
-	}
-	else if (!strncmp(command_str, "/minotaurlevel", 14))
-	{
+		});
+
+	static ConsoleCommand ccmd_minotaurlevel("/minotaurlevel", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
@@ -1837,17 +1957,17 @@ void consoleCommand(char const * const command_str)
 			minotaurlevel = 1;
 			createMinotaurTimer(players[0]->entity, &map);
 		}
-	}
-	else if ( !strncmp(command_str, "/minotaurnow", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_minotaurnow("/minotaurnow", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
@@ -1865,24 +1985,28 @@ void consoleCommand(char const * const command_str)
 				}
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/levelskill ", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_levelskill("/levelskill", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
-		int skill = atoi(&command_str[12]);
+		if (argc < 2)
+        {
+            return;
+        }
+		int skill = atoi(argv[1]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
-			messagePlayer(clientnum, language[3239]); //Skill out of range.
+			messagePlayer(clientnum, MESSAGE_MISC, language[3239]); //Skill out of range.
 		}
 		else
 		{
@@ -1891,35 +2015,34 @@ void consoleCommand(char const * const command_str)
 				players[clientnum]->entity->increaseSkill(skill);
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/maplevel", 9) )
-	{
+		});
+
+	static ConsoleCommand ccmd_maplevel("/maplevel", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
-		messagePlayer(clientnum, language[412]);
-		printlog("Made it this far...");
+		messagePlayer(clientnum, MESSAGE_MISC, language[412]);
 
 		mapLevel(clientnum);
-	}
-	else if ( !strncmp(command_str, "/drunky", 7) )
-	{
+		});
+
+	static ConsoleCommand ccmd_drunky("/drunky", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
@@ -1933,24 +2056,28 @@ void consoleCommand(char const * const command_str)
 			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = false;
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
 		}
-	}
-	else if ( !strncmp(command_str, "/maxskill ", 10) )
-	{
+		});
+
+	static ConsoleCommand ccmd_maxskill("/maxskill", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
-		int skill = atoi(&command_str[10]);
+		if (argc < 2)
+        {
+            return;
+        }
+		int skill = atoi(argv[1]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
-			messagePlayer(clientnum, "Invalid skill ID"); //Skill out of range.
+			messagePlayer(clientnum, MESSAGE_MISC, "Invalid skill ID"); //Skill out of range.
 		}
 		else
 		{
@@ -1959,16 +2086,16 @@ void consoleCommand(char const * const command_str)
 				players[clientnum]->entity->increaseSkill(skill);
 			}
 		}
-	}
-	else if ( !strncmp(command_str, "/reloadlimbs", 12) )
-	{
+		});
+
+	static ConsoleCommand ccmd_reloadlimbs("/reloadlimbs", []CCMD{
 		int x;
 		File* fp;
 		bool success = true;
 
 		if ( !autoLimbReload )
 		{
-			messagePlayer(clientnum, "Reloading limb offsets from limbs.txt files...");
+			messagePlayer(clientnum, MESSAGE_MISC, "Reloading limb offsets from limbs.txt files...");
 		}
 
 		for ( c = 1; c < NUMMONSTERS; c++ )
@@ -2011,14 +2138,14 @@ void consoleCommand(char const * const command_str)
 				// process line
 				if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
 				{
-					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb index!", filename, line);
+					messagePlayer(clientnum, MESSAGE_MISC, "warning: syntax error in '%s':%d\n invalid limb index!", filename, line);
 					printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
 					success = false;
 					continue;
 				}
 				if ( sscanf(data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2]) != 4 )
 				{
-					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb offsets!", filename, line);
+					messagePlayer(clientnum, MESSAGE_MISC, "warning: syntax error in '%s':%d\n invalid limb offsets!", filename, line);
 					printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
 					success = false;
 					continue;
@@ -2030,1226 +2157,1262 @@ void consoleCommand(char const * const command_str)
 		}
 		if ( success && !autoLimbReload )
 		{
-			messagePlayer(clientnum, "Successfully reloaded all limbs.txt!");
+			messagePlayer(clientnum, MESSAGE_MISC, "Successfully reloaded all limbs.txt!");
 		}
-	}
-	else if ( !strncmp(command_str, "/animspeed ", 10) )
-	{
+		});
+
+	static ConsoleCommand ccmd_animspeed("/animspeed", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
-		int speed = atoi(&command_str[11]);
+		if (argc < 2)
+        {
+            return;
+        }
+		int speed = atoi(argv[1]);
 		monsterGlobalAnimationMultiplier = speed;
-		messagePlayer(clientnum, "Changed animation speed multiplier to %f.", speed / 10.0);
-	}
-	else if ( !strncmp(command_str, "/atkspeed ", 9) )
-	{
+		messagePlayer(clientnum, MESSAGE_MISC, "Changed animation speed multiplier to %f.", speed / 10.0);
+		});
+
+	static ConsoleCommand ccmd_atkspeed("/atkspeed", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
 
-		int speed = atoi(&command_str[10]);
+		if (argc < 2)
+        {
+            return;
+        }
+		int speed = atoi(argv[1]);
 		monsterGlobalAttackTimeMultiplier = speed;
-		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
-	}
-	else if ( !strncmp(command_str, "/loadmod ", 9) )
-	{
-		std::string cmd = command_str;
-		std::size_t dirfind = cmd.find("dir:");
-		std::size_t namefind = cmd.find("name:");
-		std::string modname;
-		std::size_t fileidFind = cmd.find("fileid:");
-		if ( dirfind != std::string::npos && namefind != std::string::npos && fileidFind == std::string::npos )
-		{
-			std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
-			modname = cmd.substr(namefind + 5);
-			modname = modname.substr(0, modname.length() - 1);
-			printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
-			gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
-			gamemods_modelsListRequiresReload = true;
-			gamemods_soundListRequiresReload = true;
-		}
-		if ( dirfind != std::string::npos && namefind != std::string::npos && fileidFind != std::string::npos )
-		{
+		messagePlayer(clientnum, MESSAGE_MISC, "Changed attack speed multiplier to %d.", speed);
+		});
+
+	static ConsoleCommand ccmd_loadmod("/loadmod", []CCMD{
+	    for (int c = 1; c < argc; ++c)
+	    {
+		    std::string cmd = argv[c];
+		    std::size_t dirfind = cmd.find("dir:");
+		    std::size_t namefind = cmd.find("name:");
+		    std::size_t fileidFind = cmd.find("fileid:");
+	    }
+	    std::string modname;
+	    if ( dirfind != std::string::npos && namefind != std::string::npos &&  )
+	    {
+	        if ( fileidFind == std::string::npos )
+	        {
+		        std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
+		        modname = cmd.substr(namefind + 5);
+		        modname = modname.substr(0, modname.length() - 1);
+		        printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
+		        gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
+		        gamemods_modelsListRequiresReload = true;
+		        gamemods_soundListRequiresReload = true;
+	        }
 #ifdef STEAMWORKS
-			std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
-			modname = cmd.substr(namefind + 5, fileidFind - (namefind + 6));
-			printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
-			gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
-			gamemods_modelsListRequiresReload = true;
-			gamemods_soundListRequiresReload = true;
+	        else
+	        {
+		        std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
+		        modname = cmd.substr(namefind + 5, fileidFind - (namefind + 6));
+		        printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
+		        gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
+		        gamemods_modelsListRequiresReload = true;
+		        gamemods_soundListRequiresReload = true;
 
-			uint64 id = atoi(cmd.substr(fileidFind + 7).c_str());
-			gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
-			printlog("[Mods]: Steam Workshop mod file ID added for previous entry:%lld", id);
+		        uint64 id = atoi(cmd.substr(fileidFind + 7).c_str());
+		        gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
+		        printlog("[Mods]: Steam Workshop mod file ID added for previous entry:%lld", id);
+	        }
 #endif
-		}
-	}
-	else
-	{
-		invalidcommand = true;
-	}
+	    }
+		});
 
-	if ( invalidcommand ) // starting new if else block to get around compiler >128 statement limit.
-	{
-		if ( !strncmp(command_str, "/muteaudiofocuslost", 19) )
-		{
-			mute_audio_on_focus_lost = (mute_audio_on_focus_lost == false);
-		}
-		else if ( !strncmp(command_str, "/muteplayermonstersounds", 24) )
-		{
-			mute_player_monster_sounds = (mute_player_monster_sounds == false);
-		}
-		else if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
-		{
-			minimapTransparencyForeground = atoi(&command_str[23]);
-			minimapTransparencyForeground = std::min(std::max<int>(0, minimapTransparencyForeground), 100);
+	static ConsoleCommand ccmd_muteaudiofocuslost("/muteaudiofocuslost", []CCMD{
+		mute_audio_on_focus_lost = (mute_audio_on_focus_lost == false);
+		});
 
-		}
-		else if ( !strncmp(command_str, "/minimaptransparencybg", 22) )
-		{
-			minimapTransparencyBackground = atoi(&command_str[23]);
-			minimapTransparencyBackground = std::min(std::max<int>(0, minimapTransparencyBackground), 100);
+	static ConsoleCommand ccmd_muteplayermonstersounds("/muteplayermonstersounds", []CCMD{
+		mute_player_monster_sounds = (mute_player_monster_sounds == false);
+		});
 
-		}
-		else if ( !strncmp(command_str, "/minimapscale", 13) )
-		{
-			minimapScale = atoi(&command_str[14]);
-			minimapScale = std::min(std::max<int>(2, minimapScale), 16);
-		}
-		else if ( !strncmp(command_str, "/minimapobjectzoom", 18) )
-		{
-			minimapObjectZoom = atoi(&command_str[19]);
-			minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
-		}
-		else if ( !strncmp(command_str, "/uiscale_inv", 12) )
-		{
-			std::stringstream ss;
-			ss << command_str + 13;
-			ss >> uiscale_inventory;
-		}
-		else if ( !strncmp(command_str, "/uiscale_hotbar", 15) )
-		{
-			std::stringstream ss;
-			ss << command_str + 16;
-			ss >> uiscale_hotbar;
-		}
-		else if ( !strncmp(command_str, "/uiscale_chatbox", 16) )
-		{
-			std::stringstream ss;
-			ss << command_str + 17;
-			ss >> uiscale_chatlog;
-		}
-		else if ( !strncmp(command_str, "/uiscale_playerbars", 19) )
-		{
-			std::stringstream ss;
-			ss << command_str + 20;
-			ss >> uiscale_playerbars;
-		}
-		else if ( !strncmp(command_str, "/uiscale_charsheet", 18) )
-		{
-			uiscale_charactersheet = !uiscale_charactersheet;
-		}
-		else if ( !strncmp(command_str, "/uiscale_skillsheet", 19) )
-		{
-			uiscale_skillspage = !uiscale_skillspage;
-		}
-		else if ( !strncmp(command_str, "/hidestatusbar", 14) )
-		{
-			//hide_statusbar = !hide_statusbar;
-		}
-		else if ( !strncmp(command_str, "/hideplayertags", 15) )
-		{
-			hide_playertags = !hide_playertags;
-		}
-		else if ( !strncmp(command_str, "/showskillvalues", 16) )
-		{
-			show_skill_values = !show_skill_values;
-		}
-		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
-		{
-			disableMultithreadedSteamNetworking = true;// !disableMultithreadedSteamNetworking;
-		}
-		else if ( !strncmp(command_str, "/autolimbreload", 15) )
-		{
-			autoLimbReload = !autoLimbReload;
-		}
-		else if ( !strncmp(command_str, "/togglesecretlevel", 18) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-			secretlevel = (secretlevel == false);
-		}
-		else if ( !strncmp(command_str, "/seteffect ", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
+	static ConsoleCommand ccmd_minimaptransparencyfg("/minimaptransparencyfg", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		minimapTransparencyForeground = atoi(argv[1]);
+		minimapTransparencyForeground = std::min(std::max<int>(0, minimapTransparencyForeground), 100);
 
-			int effect = atoi(&command_str[11]);
-			if ( effect >= NUMEFFECTS || effect < 0 )
-			{
-				return;
-			}
-			else
-			{
-				players[clientnum]->entity->setEffect(effect, true, 500, true);
-			}
-		}
-		else if ( !strncmp(command_str, "/levelsummon", 12) )
+		});
+
+	static ConsoleCommand ccmd_minimaptransparencybg("/minimaptransparencybg", []CCMD{
+		minimapTransparencyBackground = atoi(argv[1]);
+		minimapTransparencyBackground = std::min(std::max<int>(0, minimapTransparencyBackground), 100);
+
+		});
+
+	static ConsoleCommand ccmd_minimapscale("/minimapscale", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		minimapScale = atoi(argv[1]);
+		minimapScale = std::min(std::max<int>(2, minimapScale), 16);
+		});
+
+	static ConsoleCommand ccmd_minimapobjectzoom("/minimapobjectzoom", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		minimapObjectZoom = atoi(argv[1]);
+		minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
+		});
+
+	static ConsoleCommand ccmd_uiscale_charsheet("/uiscale_charsheet", []CCMD{
+		uiscale_charactersheet = !uiscale_charactersheet;
+		});
+
+	static ConsoleCommand ccmd_uiscale_skillsheet("/uiscale_skillsheet", []CCMD{
+		uiscale_skillspage = !uiscale_skillspage;
+		});
+
+	static ConsoleCommand ccmd_hidestatusbar("/hidestatusbar", []CCMD{
+		//hide_statusbar = !hide_statusbar;
+		});
+
+	static ConsoleCommand ccmd_hideplayertags("/hideplayertags", []CCMD{
+		hide_playertags = !hide_playertags;
+		});
+
+	static ConsoleCommand ccmd_showskillvalues("/showskillvalues", []CCMD{
+		show_skill_values = !show_skill_values;
+		});
+
+	static ConsoleCommand ccmd_disablenetworkmultithreading("/disablenetworkmultithreading", []CCMD{
+		disableMultithreadedSteamNetworking = true;// !disableMultithreadedSteamNetworking;
+		});
+
+	static ConsoleCommand ccmd_autolimbreload("/autolimbreload", []CCMD{
+		autoLimbReload = !autoLimbReload;
+		});
+
+	static ConsoleCommand ccmd_togglesecretlevel("/togglesecretlevel", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
-			{
-				Entity* entity = (Entity*)node->element;
-				if ( entity && entity->behavior == &actMonster && entity->monsterAllySummonRank != 0 )
-				{
-					Stat* entityStats = entity->getStats();
-					if ( entityStats )
-					{
-						entityStats->EXP += 100;
-					}
-				}
-			}
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		else if ( !strncmp(command_str, "/brawlermode", 12) )
+		if ( multiplayer != SINGLE )
 		{
-			achievementBrawlerMode = !achievementBrawlerMode;
-			if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
-			{
-				messagePlayer(clientnum, language[2995]);
-			}
-			else if ( achievementBrawlerMode && !conductGameChallenges[CONDUCT_BRAWLER] )
-			{
-				messagePlayer(clientnum, language[2998]);
-			}
-			else if ( !achievementBrawlerMode )
-			{
-				messagePlayer(clientnum, language[2996]);
-			}
-		}
-		else if ( !strncmp(command_str, "/rangermode", 11) )
-		{
-			int player = -1;
-			if ( !strncmp(command_str, "/rangermode ", 12) )
-			{
-				player = std::min(std::max(0, atoi(&command_str[12])), MAXPLAYERS);
-			}
-			else
-			{
-				player = 0;
-			}
-
-			if ( multiplayer == CLIENT )
-			{
-				messagePlayer(clientnum, language[284]);
-				return;
-			}
-
-			achievementRangedMode[player] = !achievementRangedMode[player];
-			if ( multiplayer == SERVER )
-			{
-				if ( player != clientnum )
-				{
-					if ( achievementRangedMode[player] )
-					{
-						messagePlayer(clientnum, language[3926], player);
-					}
-					else
-					{
-						messagePlayer(clientnum, language[3925], player);
-					}
-				}
-			}
-			if ( achievementRangedMode[player] && !playerFailedRangedOnlyConduct[player] )
-			{
-				messagePlayer(player, language[3921]);
-			}
-			else if ( achievementRangedMode[player] && playerFailedRangedOnlyConduct[player] )
-			{
-				messagePlayer(player, language[3924]);
-			}
-			else if ( !achievementRangedMode[player] )
-			{
-				messagePlayer(player, language[3922]);
-			}
-		}
-		else if ( !strncmp(command_str, "/gimmepotions", 13) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-
-			std::vector<int> potionChances =
-			{
-				1,	//POTION_WATER,
-				1,	//POTION_BOOZE,
-				1,	//POTION_JUICE,
-				1,	//POTION_SICKNESS,
-				1,	//POTION_CONFUSION,
-				1,	//POTION_EXTRAHEALING,
-				1,	//POTION_HEALING,
-				1,	//POTION_CUREAILMENT,
-				1,	//POTION_BLINDNESS,
-				1,	//POTION_RESTOREMAGIC,
-				1,	//POTION_INVISIBILITY,
-				1,	//POTION_LEVITATION,
-				1,	//POTION_SPEED,
-				1,	//POTION_ACID,
-				1,	//POTION_PARALYSIS,
-				1,	//POTION_POLYMORPH
-			};
-
-			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
-			for ( int i = 0; i < 10; ++i )
-			{
-				auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
-				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
-					0, 1, generatedPotion.second, true, nullptr);
-				itemPickup(clientnum, potion);
-				//free(potion);
-			}
-		}
-		else if ( !strncmp(command_str, "/hungoverstats", 14) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-
-			messagePlayer(clientnum, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
-				stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
-				stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
-		else if ( !strncmp(command_str, "/debugtimers", 12) )
-		{
-			logCheckMainLoopTimers = !logCheckMainLoopTimers;
-		}
-		else if ( !strncmp(command_str, "/entityfreeze", 13) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			gameloopFreezeEntities = !gameloopFreezeEntities;
-		}
-		else if ( !strncmp(command_str, "/tickrate", 9) )
-		{
-			networkTickrate = atoi(&command_str[10]);
-			networkTickrate = std::max<Uint32>(1, networkTickrate);
-			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.",
-				networkTickrate, 100.f / networkTickrate);
-		}
-		else if ( !strncmp(command_str, "/disablenetcodefpslimit", 23) )
-		{
-			disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
-		}
-		else if ( !strncmp(command_str, "/allspells1", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
+		secretlevel = (secretlevel == false);
+		});
 
-			for ( auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it )
-			{
-				spell_t* spell = *it;
-				bool learned = addSpell(spell->ID, clientnum, true);
-			}
+	static ConsoleCommand ccmd_seteffect("/seteffect", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		else if ( !strncmp(command_str, "/setmapseed ", 12) )
+		if ( multiplayer != SINGLE )
 		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( multiplayer == CLIENT )
-			{
-				messagePlayer(clientnum, language[284]);
-				return;
-			}
-
-			Uint32 newseed = atoi(&command_str[12]);
-			forceMapSeed = newseed;
-			messagePlayer(clientnum, "Set next map seed to: %d", forceMapSeed);
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
 			return;
 		}
-		else if ( !strncmp(command_str, "/greaseme", 9) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( multiplayer == CLIENT )
-			{
-				messagePlayer(clientnum, language[284]);
-				return;
-			}
-			if ( players[clientnum] && players[clientnum]->entity )
-			{
-				players[clientnum]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * 20, false);
-			}
-		}
-		else if ( !strncmp(command_str, "/gimmearrows", 12) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
-			{
-				dropItem(newItem(static_cast<ItemType>(i), EXCELLENT, 0, 25 + rand() % 26, rand(), true, &stats[clientnum]->inventory), 0);
-			}
-		}
-		else if ( !strncmp(command_str, "/gimmescrap", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
-		}
-		else if ( !strncmp(command_str, "/gimmerobots", 12) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		}
-		else if ( !strncmp(command_str, "/toggletinkeringlimits", 22) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			overrideTinkeringLimit = !overrideTinkeringLimit;
-			if ( overrideTinkeringLimit )
-			{
-				messagePlayer(clientnum, "Disabled tinkering bot limit");
-			}
-			else
-			{
-				messagePlayer(clientnum, "Re-enabled tinkering bot limit");
-			}
-		}
-		else if ( !strncmp(command_str, "/setdecoyrange ", 15) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( multiplayer == CLIENT )
-			{
-				messagePlayer(clientnum, language[284]);
-				return;
-			}
-			decoyBoxRange = atoi(&command_str[15]);
-			messagePlayer(clientnum, "Set decoy range to %d", decoyBoxRange);
-		}
-		else if ( !strncmp(command_str, "/gimmegoblinbooks", 17) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			for ( int i = 0; i < NUM_SPELLS; ++i )
-			{
-				int spellbook = getSpellbookFromSpellID(i);
-				dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, rand(), true, &stats[clientnum]->inventory), 0);
-			}
-		}
-		else if ( !strncmp(command_str, "/unsetdlc2achievements", 22) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-#ifdef STEAMWORKS
-			steamUnsetAchievement("BARONY_ACH_TAKING_WITH");
-			steamUnsetAchievement("BARONY_ACH_TELEFRAG");
-			steamUnsetAchievement("BARONY_ACH_FASCIST");
-			steamUnsetAchievement("BARONY_ACH_REAL_BOY");
-			steamUnsetAchievement("BARONY_ACH_OVERCLOCKED");
-			steamUnsetAchievement("BARONY_ACH_TRASH_COMPACTOR");
-			steamUnsetAchievement("BARONY_ACH_BOILERPLATE_BARON");
-			steamUnsetAchievement("BARONY_ACH_PIMPIN");
-			steamUnsetAchievement("BARONY_ACH_BAD_BEAUTIFUL");
-			steamUnsetAchievement("BARONY_ACH_SERIAL_THRILLA");
-			steamUnsetAchievement("BARONY_ACH_TRADITION");
-			steamUnsetAchievement("BARONY_ACH_BAD_BOY_BARON");
-			steamUnsetAchievement("BARONY_ACH_POP_QUIZ");
-			steamUnsetAchievement("BARONY_ACH_DYSLEXIA");
-			steamUnsetAchievement("BARONY_ACH_SAVAGE");
-			steamUnsetAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
-			steamUnsetAchievement("BARONY_ACH_BAYOU_BARON");
-			steamUnsetAchievement("BARONY_ACH_GASTRIC_BYPASS");
-			steamUnsetAchievement("BARONY_ACH_BOOKWORM");
-			steamUnsetAchievement("BARONY_ACH_FLUTTERSHY");
-			steamUnsetAchievement("BARONY_ACH_MONARCH");
-			steamUnsetAchievement("BARONY_ACH_BUGGAR_BARON");
-			steamUnsetAchievement("BARONY_ACH_TIME_TO_PLAN");
-			steamUnsetAchievement("BARONY_ACH_WONDERFUL_TOYS");
-			steamUnsetAchievement("BARONY_ACH_SUPER_SHREDDER");
-			steamUnsetAchievement("BARONY_ACH_UTILITY_BELT");
-			steamUnsetAchievement("BARONY_ACH_FIXER_UPPER");
-			steamUnsetAchievement("BARONY_ACH_TORCHERER");
-			steamUnsetAchievement("BARONY_ACH_LEVITANT_LACKEY");
-			steamUnsetAchievement("BARONY_ACH_GOODNIGHT_SWEET_PRINCE");
-			steamUnsetAchievement("BARONY_ACH_MANY_PEDI_PALP");
-			steamUnsetAchievement("BARONY_ACH_5000_SECOND_RULE");
-			steamUnsetAchievement("BARONY_ACH_FORUM_TROLL");
-			steamUnsetAchievement("BARONY_ACH_SOCIAL_BUTTERFLY");
-			steamUnsetAchievement("BARONY_ACH_ROLL_THE_BONES");
-			steamUnsetAchievement("BARONY_ACH_COWBOY_FROM_HELL");
-			steamUnsetAchievement("BARONY_ACH_IRONIC_PUNISHMENT");
-			steamUnsetAchievement("BARONY_ACH_SELF_FLAGELLATION");
-			steamUnsetAchievement("BARONY_ACH_OHAI_MARK");
-			steamUnsetAchievement("BARONY_ACH_CHOPPING_BLOCK");
-			steamUnsetAchievement("BARONY_ACH_ITS_A_LIVING");
-			steamUnsetAchievement("BARONY_ACH_ARSENAL");
-			steamUnsetAchievement("BARONY_ACH_IF_YOU_LOVE_SOMETHING");
-			steamUnsetAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
-			steamUnsetAchievement("BARONY_ACH_STRUNG_OUT");
-			steamUnsetAchievement("BARONY_ACH_FELL_BEAST");
-			steamUnsetAchievement("BARONY_ACH_PLEASE_HOLD");
-			steamUnsetAchievement("BARONY_ACH_SWINGERS");
-			steamUnsetAchievement("BARONY_ACH_COLD_BLOODED");
-			steamUnsetAchievement("BARONY_ACH_SOULLESS");
-			steamUnsetAchievement("BARONY_ACH_TRIBAL");
-			steamUnsetAchievement("BARONY_ACH_MANAGEMENT_TEAM");
-			steamUnsetAchievement("BARONY_ACH_SOCIOPATHS");
-			steamUnsetAchievement("BARONY_ACH_FACES_OF_DEATH");
-			steamUnsetAchievement("BARONY_ACH_SURVIVALISTS");
-			steamUnsetAchievement("BARONY_ACH_I_WANT_IT_ALL");
-			steamUnsetAchievement("BARONY_ACH_RUST_IN_PEACE");
-			steamUnsetAchievement("BARONY_ACH_MACHINE_HEAD");
-			steamUnsetAchievement("BARONY_ACH_RAGE_AGAINST");
-			steamUnsetAchievement("BARONY_ACH_GUERILLA_RADIO");
-			steamUnsetAchievement("BARONY_ACH_BOMBTRACK");
-			steamUnsetAchievement("BARONY_ACH_CALM_LIKE_A_BOMB");
-			steamUnsetAchievement("BARONY_ACH_CAUGHT_IN_A_MOSH");
-			steamUnsetAchievement("BARONY_ACH_SPICY");
-			for ( int i = STEAM_STAT_TRASH_COMPACTOR; i < 43; ++i )
-			{
-				g_SteamStats[i].m_iValue = 0;
-				SteamUserStats()->SetStat(g_SteamStats[i].m_pchStatName, 0);
-			}
-			SteamUserStats()->StoreStats();
-#endif // STEAMWORKS
-		}
-		else if ( !strncmp(command_str, "/gimmebombs", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-			dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		}
-		else if ( !strncmp(command_str, "/showhunger", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			messagePlayer(clientnum, "Hunger value: %d", stats[clientnum]->HUNGER);
-		}
-		else if ( !strncmp(command_str, "/disablemouserotationlimit", 26) )
-		{
-			disablemouserotationlimit = (disablemouserotationlimit == false);
-		}
-		else if ( !strncmp(command_str, "/usecamerasmoothing", 19) )
-		{
-			usecamerasmoothing = (usecamerasmoothing == false);
-		}
-		else if ( !strncmp(command_str, "/lightupdate ", 13) )
-		{
-			globalLightSmoothingRate = atoi(&command_str[13]);
-		}
-		else if ( !strncmp(command_str, "/dumpnetworkdata", 16) )
-		{
-			for ( auto element : DebugStats.networkPackets )
-			{
-				printlog("Packet: %s | %d", element.second.first.c_str(), element.second.second);
-			}
-		}
-		else if ( !strncmp(command_str, "/dumpentudata", 13) )
-		{
-			for ( auto element : DebugStats.entityUpdatePackets )
-			{
-				printlog("Sprite: %d | %d", element.first, element.second);
-			}
-		}
-		else if ( !strncmp(command_str, "/borderless", 11) )
-		{
-			borderless = (!borderless);
-		}
-		else if ( !strncmp(command_str, "/jsonexportmonster ", 19) )
-		{
-			strcpy(name, command_str + 19);
-			int creature = NOTHING;
 
-			for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
-			{
-				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
-				{
-					creature = i;
-					break;
-				}
-			}
-
-			if ( creature != NOTHING )
-			{
-				Stat* monsterStats = new Stat(1000 + creature);
-				monsterStatCustomManager.writeAllFromStats(monsterStats);
-				delete monsterStats;
-			}
-		}
-		else if ( !strncmp(command_str, "/jsonexportfromcursor", 21) )
+		if (argc < 2)
+        {
+            return;
+        }
+		int effect = atoi(argv[1]);
+		if ( effect >= NUMEFFECTS || effect < 0 )
 		{
-			Entity* target = entityClicked(nullptr, true, clientnum, EntityClickType::ENTITY_CLICK_USE);
-			if ( target )
-			{
-				Entity* parent = uidToEntity(target->skill[2]);
-				if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
-				{
-					// see if we selected a limb
-					if ( parent )
-					{
-						target = parent;
-					}
-				}
-				monsterStatCustomManager.writeAllFromStats(target->getStats());
-			}
-		}
-		else if ( !strncmp(command_str, "/newui", 6) ) {
-			newui = !newui;
-		}
-		else if ( !strncmp(command_str, "/jsonexportgameplaymodifiers", 28) )
-		{
-			gameplayCustomManager.writeAllToDocument();
-		}
-		else if ( !strncmp(command_str, "/jsonexportmonstercurve", 23) )
-		{
-			monsterCurveCustomManager.writeSampleToDocument();
-		}
-		else if ( !strncmp(command_str, "/crossplay", 10) )
-		{
-#if (defined STEAMWORKS && defined USE_EOS)
-			EOS.CrossplayAccountManager.autologin = true;
-#endif // USE_EOS
-		}
-#if (defined SOUND)
-		else if ( !strncmp(command_str, "/sfxambientvolume", 17) )
-		{
-			sfxAmbientVolume = atoi(&command_str[18]);
-		}
-		else if ( !strncmp(command_str, "/sfxambientdynamic", 18) )
-		{
-			sfxUseDynamicAmbientVolume = !sfxUseDynamicAmbientVolume;
-			if ( sfxUseDynamicAmbientVolume )
-			{
-				messagePlayer(clientnum, "Dynamic ambient volume ON");
-			}
-			else
-			{
-				messagePlayer(clientnum, "Dynamic ambient volume OFF");
-			}
-		}
-		else if ( !strncmp(command_str, "/sfxenvironmentdynamic", 22) )
-		{
-			sfxUseDynamicEnvironmentVolume = !sfxUseDynamicEnvironmentVolume;
-			if ( sfxUseDynamicEnvironmentVolume )
-			{
-				messagePlayer(clientnum, "Dynamic environment volume ON");
-			}
-			else
-			{
-				messagePlayer(clientnum, "Dynamic environment volume OFF");
-			}
-		}
-		else if ( !strncmp(command_str, "/sfxenvironmentvolume", 21) )
-		{
-			sfxEnvironmentVolume = atoi(&command_str[22]);
-		}
-#endif
-		else if ( !strncmp(command_str, "/cyclekeyboard", 14) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					if ( i + 1 >= MAXPLAYERS )
-					{
-						inputs.setPlayerIDAllowedKeyboard(0);
-						messagePlayer(clientnum, "Keyboard controlled by player %d", 0);
-					}
-					else
-					{
-						inputs.setPlayerIDAllowedKeyboard(i + 1);
-						messagePlayer(clientnum, "Keyboard controlled by player %d", i + 1);
-					}
-					break;
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/cyclegamepad", 13) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.hasController(i) )
-				{
-					int id = inputs.getControllerID(i);
-					inputs.removeControllerWithDeviceID(id);
-					if ( i + 1 >= MAXPLAYERS )
-					{
-						inputs.setControllerID(0, id);
-					}
-					else
-					{
-						inputs.setControllerID(i + 1, id);
-					}
-					break;
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/cycledeadzoneleft", 18) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.hasController(i) )
-				{
-					switch ( inputs.getController(i)->leftStickDeadzoneType )
-					{
-						case GameController::DEADZONE_PER_AXIS:
-							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
-							messagePlayer(i, "Using radial deadzone on left stick.");
-							break;
-						case GameController::DEADZONE_MAGNITUDE_LINEAR:
-							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
-							messagePlayer(i, "Using curved radial deadzone on left stick.");
-							break;
-						case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
-							inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
-							messagePlayer(i, "Using per-axis deadzone on left stick.");
-							break;
-					}
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/cycledeadzoneright", 19) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.hasController(i) )
-				{
-					switch ( inputs.getController(i)->rightStickDeadzoneType )
-					{
-						case GameController::DEADZONE_PER_AXIS:
-							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
-							messagePlayer(i, "Using radial deadzone on right stick.");
-							break;
-						case GameController::DEADZONE_MAGNITUDE_LINEAR:
-							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
-							messagePlayer(i, "Using curved radial deadzone on right stick.");
-							break;
-						case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
-							inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
-							messagePlayer(i, "Using per-axis deadzone on right stick.");
-							break;
-					}
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/vibration", 10) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.hasController(i) )
-				{
-					inputs.getController(i)->haptics.vibrationEnabled = !inputs.getController(i)->haptics.vibrationEnabled;
-					if ( inputs.getController(i)->haptics.vibrationEnabled )
-					{
-						messagePlayer(i, "Controller vibration is enabled.");
-					}
-					else
-					{
-						messagePlayer(i, "Controller vibration is disabled.");
-					}
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/tooltipoffset ", 15) )
-		{
-			int offset = atoi((char*)(command_str + 15));
-			Player::WorldUI_t::tooltipHeightOffsetZ = static_cast<real_t>(offset) / 10.0;
-			messagePlayer(clientnum, "Tooltip Z offset set to: %.1f", Player::WorldUI_t::tooltipHeightOffsetZ);
-		}
-		else if ( !strncmp(command_str, "/radialhotbar", 13) )
-		{
-			players[clientnum]->hotbar.useHotbarRadialMenu = !players[clientnum]->hotbar.useHotbarRadialMenu;
-		}
-		else if ( !strncmp(command_str, "/radialhotslots ", 16) )
-		{
-			int slots = atoi((char*)(command_str + 16));
-			players[clientnum]->hotbar.radialHotbarSlots = slots;
-			messagePlayer(clientnum, "Slots in use: %d", slots);
-		}
-		else if ( !strncmp(command_str, "/facehotbar", 11) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					players[i]->hotbar.useHotbarFaceMenu = !players[i]->hotbar.useHotbarFaceMenu;
-					messagePlayer(i, "Face button hotbar: %d", players[i]->hotbar.useHotbarFaceMenu ? 1 : 0);
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/facebarinvert", 14) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					players[i]->hotbar.faceMenuInvertLayout = !players[i]->hotbar.faceMenuInvertLayout;
-					messagePlayer(i, "Face button invert position: %d", players[i]->hotbar.faceMenuInvertLayout ? 1 : 0);
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/facebarquickcast", 17) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					players[i]->hotbar.faceMenuQuickCastEnabled = !players[i]->hotbar.faceMenuQuickCastEnabled;
-					messagePlayer(i, "Face button quickcast: %d", players[i]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/paperdoll", 10) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					players[i]->paperDoll.enabled = !players[i]->paperDoll.enabled;
-					messagePlayer(i, "Paper doll: %d", players[i]->paperDoll.enabled ? 1 : 0);
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/facebaralternate", 17) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					players[i]->hotbar.faceMenuAlternateLayout = !players[i]->hotbar.faceMenuAlternateLayout;
-					messagePlayer(i, "Face button alternate: %d", players[i]->hotbar.faceMenuAlternateLayout ? 1 : 0);
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/inventorynew", 13) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					players[i]->inventoryUI.bNewInventoryLayout = !players[i]->inventoryUI.bNewInventoryLayout;
-					players[i]->inventoryUI.resetInventory();
-					messagePlayer(i, "New Inventory layout: %d", players[i]->inventoryUI.bNewInventoryLayout ? 1 : 0);
-				}
-			}
-		}
-		else if ( !strncmp(command_str, "/worldui", 8) )
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
-					if ( players[i]->worldUI.isEnabled() )
-					{
-						players[i]->worldUI.disable();
-					}
-					else
-					{
-						players[i]->worldUI.enable();
-					}
-				}
-			}
-		}
-#ifndef NINTENDO
-		else if ( !strncmp(command_str, "/ircconnect", 11) )
-		{
-			if ( IRCHandler.connect() )
-			{
-				messagePlayer(clientnum, "[IRC]: Connected.");
-			}
-			else
-			{
-				IRCHandler.disconnect();
-				messagePlayer(clientnum, "[IRC]: Error connecting.");
-			}
-		}
-		else if ( !strncmp(command_str, "/ircdisconnect", 14) )
-		{
-			IRCHandler.disconnect();
-			messagePlayer(clientnum, "[IRC]: Disconnected.");
-		}
-		else if ( !strncmp(command_str, "/irc ", 5) )
-		{
-			std::string message = command_str + 5;
-			message.append("\r\n");
-			IRCHandler.packetSend(message);
-			messagePlayer(clientnum, "[IRC]: Sent message.");
-		}
-#endif // !NINTENDO
-		else if ( !strncmp(command_str, "/loadtooltips", 13) )
-		{
-			ItemTooltips.readTooltipsFromFile();
-			messagePlayer(clientnum, "Reloaded item_tooltips.json");
-		}
-		else if ( !strncmp(command_str, "/reflowtext", 11) )
-		{
-			bUsePreciseFieldTextReflow = !bUsePreciseFieldTextReflow;
-			messagePlayer(clientnum, "Set bUsePreciseFieldTextReflow to %d", bUsePreciseFieldTextReflow);
-		}
-		else if ( !strncmp(command_str, "/selectedanimcycle", 18) )
-		{
-			bUseSelectedSlotCycleAnimation = !bUseSelectedSlotCycleAnimation;
-			messagePlayer(clientnum, "Set bUseSelectedSlotCycleAnimation to %d", bUseSelectedSlotCycleAnimation);
-		}
-		else if ( !strncmp(command_str, "/autoloadtooltips", 17) )
-		{
-			ItemTooltips.autoReload = !ItemTooltips.autoReload;
-			messagePlayer(clientnum, "Set auto-reload to %d for item_tooltips.json", ItemTooltips.autoReload);
-		}
-		else if ( !strncmp(command_str, "/debugtooltips", 14) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-			ItemTooltips.itemDebug = !ItemTooltips.itemDebug;
-			messagePlayer(clientnum, "Set item-debug to %d for item_tooltips.json", ItemTooltips.itemDebug);
-		}
-		else if ( !strncmp(command_str, "/loaditems", 10) )
-		{
-			ItemTooltips.readItemsFromFile();
-			messagePlayer(clientnum, "Reloaded items.json");
-		}
-		else if ( !strncmp(command_str, "/gimmeallpotions", 16) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
-			{
-				auto generatedPotion = potionStandardAppearanceMap.at(i);
-				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
-					0, 1, generatedPotion.second, true, nullptr);
-				itemPickup(clientnum, potion);
-				//free(potion);
-			}
-		}
-		else if ( !strncmp(command_str, "/gimmeblessedpotions", 20) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
-			{
-				auto generatedPotion = potionStandardAppearanceMap.at(i);
-				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
-					1 + rand() % 2, 1, generatedPotion.second, true, nullptr);
-				itemPickup(clientnum, potion);
-				//free(potion);
-			}
-		}
-		else if ( !strncmp(command_str, "/gimmecursedpotions", 19) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( multiplayer != SINGLE )
-			{
-				messagePlayer(clientnum, language[299]);
-				return;
-			}
-			for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
-			{
-				auto generatedPotion = potionStandardAppearanceMap.at(i);
-				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
-					-2 + rand() % 2, 1, generatedPotion.second, true, nullptr);
-				itemPickup(clientnum, potion);
-				//free(potion);
-			}
-		}
-		else if ( !strncmp(command_str, "/allspells2", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			for ( auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it )
-			{
-				spell_t* spell = *it;
-				bool learned = addSpell(spell->ID, clientnum, true);
-			}
 			return;
-		}
-		else if ( !strncmp(command_str, "/allspells3", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
-			{
-				spell_t* spell = *it;
-				bool learned = addSpell(spell->ID, clientnum, true);
-			}
-			return;
-		}
-		else if ( !strncmp(command_str, "/gimmexp", 8) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-
-			if ( players[clientnum] && players[clientnum]->entity )
-			{
-				players[clientnum]->entity->getStats()->EXP += 1 + rand() % 50;
-			}
-		}
-		else if ( !strncmp(command_str, "/loadhudsettings", 16) )
-		{
-			loadHUDSettingsJSON();
-			messagePlayer(clientnum, "Reloaded HUD_settings.json");
-		}
-		else if ( !strncmp(command_str, "/loadskillsheet", 15) )
-		{
-			Player::SkillSheet_t::loadSkillSheetJSON();
-			messagePlayer(clientnum, "Reloaded skillsheet_entries.json");
-		}
-		else if ( !strncmp(command_str, "/loadcharsheet", 14) )
-		{
-			Player::CharacterSheet_t::loadCharacterSheetJSON();
-			messagePlayer(clientnum, "Reloaded charsheet_settings.json");
-		}
-		else if ( !strncmp(command_str, "/printleaderlist", 16) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
-			messagePlayer(clientnum, "On next human right click leader list will be generated.");
-		}
-		else if ( !strncmp(command_str, "/poly", 5) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( players[clientnum]->entity )
-			{
-				spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
-			}
-		}
-		else if ( !strncmp(command_str, "/sexchange", 10) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			stats[clientnum]->sex = stats[clientnum]->sex == sex_t::MALE ? sex_t::FEMALE : sex_t::MALE;
-		}
-		else if ( !strncmp(command_str, "/appearances", 12) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			++stats[clientnum]->appearance;
-			if ( stats[clientnum]->appearance >= NUMAPPEARANCES )
-			{
-				stats[clientnum]->appearance = 0;
-			}
-		}
-		else if ( !strncmp(command_str, "/classdebug", 11) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			client_classes[clientnum] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
-		}
-		else if ( !strncmp(command_str, "/unpoly", 7) )
-		{
-			if ( !(svFlags & SV_FLAG_CHEATS) )
-			{
-				messagePlayer(clientnum, language[277]);
-				return;
-			}
-			if ( players[clientnum]->entity )
-			{
-				players[clientnum]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
-			}
-		}
-		else if ( !strncmp(command_str, "/usepaperdollmovement", 21) )
-		{
-			restrictPaperDollMovement = !restrictPaperDollMovement;
-			messagePlayer(clientnum, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
-		}
-		else if ( !strncmp(command_str, "/exportstatue", 13) )
-		{
-			StatueManager.exportActive = true;
-		}
-		else if ( !strncmp(command_str, "/importstatue ", 14) )
-		{
-			int index = atoi(&command_str[14]);
-			StatueManager.readStatueFromFile(index);
-		}
-		else if ( !strncmp(command_str, "/timertests", 11) )
-		{
-			TimerExperiments::bUseTimerInterpolation = !TimerExperiments::bUseTimerInterpolation;
-			messagePlayer(clientnum, "Set bUseTimerInterpolation to %d", TimerExperiments::bUseTimerInterpolation);
-		}
-		else if ( !strncmp(command_str, "/timertestsdebug", 16) )
-		{
-			TimerExperiments::bDebug = !TimerExperiments::bDebug;
-			messagePlayer(clientnum, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
-		}
-		else if ( !strncmp(command_str, "/framesearchdebug", 17) )
-		{
-			Frame::findFrameDefaultSearchType = 
-				Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST 
-				? Frame::FRAME_SEARCH_BREADTH_FIRST
-				: Frame::FRAME_SEARCH_DEPTH_FIRST;
-			if ( Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST )
-			{
-				messagePlayer(clientnum, "Set Frame::findFrameDefaultSearchType to depth first");
-			}
-			else
-			{
-				messagePlayer(clientnum, "Set Frame::findFrameDefaultSearchType to breadth first");
-			}
 		}
 		else
 		{
-			messagePlayer(clientnum, language[305], command_str);
+			players[clientnum]->entity->setEffect(effect, true, 500, true);
+		}
+		});
+
+	static ConsoleCommand ccmd_levelsummon("/levelsummon", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity && entity->behavior == &actMonster && entity->monsterAllySummonRank != 0 )
+			{
+				Stat* entityStats = entity->getStats();
+				if ( entityStats )
+				{
+					entityStats->EXP += 100;
+				}
+			}
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_brawlermode("/brawlermode", []CCMD{
+		achievementBrawlerMode = !achievementBrawlerMode;
+		if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[2995]);
+		}
+		else if ( achievementBrawlerMode && !conductGameChallenges[CONDUCT_BRAWLER] )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[2998]);
+		}
+		else if ( !achievementBrawlerMode )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[2996]);
+		}
+		});
+
+	static ConsoleCommand ccmd_rangermode("/rangermode", []CCMD{
+		int player = -1;
+		if ( argc > 1 )
+		{
+			player = atoi(argv[1]);
+		}
+		else
+		{
+			player = 0;
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			return;
+		}
+
+		achievementRangedMode[player] = !achievementRangedMode[player];
+		if ( multiplayer == SERVER )
+		{
+			if ( player != clientnum )
+			{
+				if ( achievementRangedMode[player] )
+				{
+					messagePlayer(clientnum, MESSAGE_MISC, language[3926], player);
+				}
+				else
+				{
+					messagePlayer(clientnum, MESSAGE_MISC, language[3925], player);
+				}
+			}
+		}
+		if ( achievementRangedMode[player] && !playerFailedRangedOnlyConduct[player] )
+		{
+			messagePlayer(player, MESSAGE_MISC, language[3921]);
+		}
+		else if ( achievementRangedMode[player] && playerFailedRangedOnlyConduct[player] )
+		{
+			messagePlayer(player, MESSAGE_MISC, language[3924]);
+		}
+		else if ( !achievementRangedMode[player] )
+		{
+			messagePlayer(player, MESSAGE_MISC, language[3922]);
+		}
+		});
+
+	static ConsoleCommand ccmd_gimmepotions("/gimmepotions", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		std::vector<int> potionChances =
+		{
+			1,	//POTION_WATER,
+			1,	//POTION_BOOZE,
+			1,	//POTION_JUICE,
+			1,	//POTION_SICKNESS,
+			1,	//POTION_CONFUSION,
+			1,	//POTION_EXTRAHEALING,
+			1,	//POTION_HEALING,
+			1,	//POTION_CUREAILMENT,
+			1,	//POTION_BLINDNESS,
+			1,	//POTION_RESTOREMAGIC,
+			1,	//POTION_INVISIBILITY,
+			1,	//POTION_LEVITATION,
+			1,	//POTION_SPEED,
+			1,	//POTION_ACID,
+			1,	//POTION_PARALYSIS,
+			1,	//POTION_POLYMORPH
+		};
+
+		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+		for ( int i = 0; i < 10; ++i )
+		{
+			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+				0, 1, generatedPotion.second, true, nullptr);
+			itemPickup(clientnum, potion);
+			//free(potion);
+		}
+		});
+
+	static ConsoleCommand ccmd_hungoverstats("/hungoverstats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		messagePlayer(clientnum, MESSAGE_MISC, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
+			stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
+			stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+		return;
+		});
+
+	static ConsoleCommand ccmd_debugtimers("/debugtimers", []CCMD{
+		logCheckMainLoopTimers = !logCheckMainLoopTimers;
+		});
+
+	static ConsoleCommand ccmd_entityfreeze("/entityfreeze", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		gameloopFreezeEntities = !gameloopFreezeEntities;
+		});
+
+	static ConsoleCommand ccmd_tickrate("/tickrate", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		networkTickrate = atoi(argv[1]);
+		networkTickrate = std::max<Uint32>(1, networkTickrate);
+		messagePlayer(clientnum, MESSAGE_MISC, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.",
+			networkTickrate, 100.f / networkTickrate);
+		});
+
+	static ConsoleCommand ccmd_disablenetcodefpslimit("/disablenetcodefpslimit", []CCMD{
+		disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
+		});
+
+	static ConsoleCommand ccmd_allspells1("/allspells1", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		for ( auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it )
+		{
+			spell_t* spell = *it;
+			bool learned = addSpell(spell->ID, clientnum, true);
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_setmapseed("/setmapseed", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			return;
+		}
+
+		if (argc < 2)
+        {
+            return;
+        }
+		Uint32 newseed = atoi(argv[1]);
+		forceMapSeed = newseed;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set next map seed to: %d", forceMapSeed);
+		return;
+		});
+
+	static ConsoleCommand ccmd_greaseme("/greaseme", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			return;
+		}
+		if ( players[clientnum] && players[clientnum]->entity )
+		{
+			players[clientnum]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * 20, false);
+		}
+		});
+
+	static ConsoleCommand ccmd_gimmearrows("/gimmearrows", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
+		{
+			dropItem(newItem(static_cast<ItemType>(i), EXCELLENT, 0, 25 + rand() % 26, rand(), true, &stats[clientnum]->inventory), 0);
+		}
+		});
+
+	static ConsoleCommand ccmd_gimmescrap("/gimmescrap", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+		});
+
+	static ConsoleCommand ccmd_gimmerobots("/gimmerobots", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		});
+
+	static ConsoleCommand ccmd_toggletinkeringlimits("/toggletinkeringlimits", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		overrideTinkeringLimit = !overrideTinkeringLimit;
+		if ( overrideTinkeringLimit )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Disabled tinkering bot limit");
+		}
+		else
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Re-enabled tinkering bot limit");
+		}
+		});
+
+	static ConsoleCommand ccmd_setdecoyrange("/setdecoyrange", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			return;
+		}
+		if (argc < 2)
+        {
+            return;
+        }
+		decoyBoxRange = atoi(argv[1]);
+		messagePlayer(clientnum, MESSAGE_MISC, "Set decoy range to %d", decoyBoxRange);
+		});
+
+	static ConsoleCommand ccmd_gimmegoblinbooks("/gimmegoblinbooks", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			int spellbook = getSpellbookFromSpellID(i);
+			dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, rand(), true, &stats[clientnum]->inventory), 0);
+		}
+		});
+
+	static ConsoleCommand ccmd_unsetdlc2achievements("/unsetdlc2achievements", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+#ifdef STEAMWORKS
+		steamUnsetAchievement("BARONY_ACH_TAKING_WITH");
+		steamUnsetAchievement("BARONY_ACH_TELEFRAG");
+		steamUnsetAchievement("BARONY_ACH_FASCIST");
+		steamUnsetAchievement("BARONY_ACH_REAL_BOY");
+		steamUnsetAchievement("BARONY_ACH_OVERCLOCKED");
+		steamUnsetAchievement("BARONY_ACH_TRASH_COMPACTOR");
+		steamUnsetAchievement("BARONY_ACH_BOILERPLATE_BARON");
+		steamUnsetAchievement("BARONY_ACH_PIMPIN");
+		steamUnsetAchievement("BARONY_ACH_BAD_BEAUTIFUL");
+		steamUnsetAchievement("BARONY_ACH_SERIAL_THRILLA");
+		steamUnsetAchievement("BARONY_ACH_TRADITION");
+		steamUnsetAchievement("BARONY_ACH_BAD_BOY_BARON");
+		steamUnsetAchievement("BARONY_ACH_POP_QUIZ");
+		steamUnsetAchievement("BARONY_ACH_DYSLEXIA");
+		steamUnsetAchievement("BARONY_ACH_SAVAGE");
+		steamUnsetAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
+		steamUnsetAchievement("BARONY_ACH_BAYOU_BARON");
+		steamUnsetAchievement("BARONY_ACH_GASTRIC_BYPASS");
+		steamUnsetAchievement("BARONY_ACH_BOOKWORM");
+		steamUnsetAchievement("BARONY_ACH_FLUTTERSHY");
+		steamUnsetAchievement("BARONY_ACH_MONARCH");
+		steamUnsetAchievement("BARONY_ACH_BUGGAR_BARON");
+		steamUnsetAchievement("BARONY_ACH_TIME_TO_PLAN");
+		steamUnsetAchievement("BARONY_ACH_WONDERFUL_TOYS");
+		steamUnsetAchievement("BARONY_ACH_SUPER_SHREDDER");
+		steamUnsetAchievement("BARONY_ACH_UTILITY_BELT");
+		steamUnsetAchievement("BARONY_ACH_FIXER_UPPER");
+		steamUnsetAchievement("BARONY_ACH_TORCHERER");
+		steamUnsetAchievement("BARONY_ACH_LEVITANT_LACKEY");
+		steamUnsetAchievement("BARONY_ACH_GOODNIGHT_SWEET_PRINCE");
+		steamUnsetAchievement("BARONY_ACH_MANY_PEDI_PALP");
+		steamUnsetAchievement("BARONY_ACH_5000_SECOND_RULE");
+		steamUnsetAchievement("BARONY_ACH_FORUM_TROLL");
+		steamUnsetAchievement("BARONY_ACH_SOCIAL_BUTTERFLY");
+		steamUnsetAchievement("BARONY_ACH_ROLL_THE_BONES");
+		steamUnsetAchievement("BARONY_ACH_COWBOY_FROM_HELL");
+		steamUnsetAchievement("BARONY_ACH_IRONIC_PUNISHMENT");
+		steamUnsetAchievement("BARONY_ACH_SELF_FLAGELLATION");
+		steamUnsetAchievement("BARONY_ACH_OHAI_MARK");
+		steamUnsetAchievement("BARONY_ACH_CHOPPING_BLOCK");
+		steamUnsetAchievement("BARONY_ACH_ITS_A_LIVING");
+		steamUnsetAchievement("BARONY_ACH_ARSENAL");
+		steamUnsetAchievement("BARONY_ACH_IF_YOU_LOVE_SOMETHING");
+		steamUnsetAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+		steamUnsetAchievement("BARONY_ACH_STRUNG_OUT");
+		steamUnsetAchievement("BARONY_ACH_FELL_BEAST");
+		steamUnsetAchievement("BARONY_ACH_PLEASE_HOLD");
+		steamUnsetAchievement("BARONY_ACH_SWINGERS");
+		steamUnsetAchievement("BARONY_ACH_COLD_BLOODED");
+		steamUnsetAchievement("BARONY_ACH_SOULLESS");
+		steamUnsetAchievement("BARONY_ACH_TRIBAL");
+		steamUnsetAchievement("BARONY_ACH_MANAGEMENT_TEAM");
+		steamUnsetAchievement("BARONY_ACH_SOCIOPATHS");
+		steamUnsetAchievement("BARONY_ACH_FACES_OF_DEATH");
+		steamUnsetAchievement("BARONY_ACH_SURVIVALISTS");
+		steamUnsetAchievement("BARONY_ACH_I_WANT_IT_ALL");
+		steamUnsetAchievement("BARONY_ACH_RUST_IN_PEACE");
+		steamUnsetAchievement("BARONY_ACH_MACHINE_HEAD");
+		steamUnsetAchievement("BARONY_ACH_RAGE_AGAINST");
+		steamUnsetAchievement("BARONY_ACH_GUERILLA_RADIO");
+		steamUnsetAchievement("BARONY_ACH_BOMBTRACK");
+		steamUnsetAchievement("BARONY_ACH_CALM_LIKE_A_BOMB");
+		steamUnsetAchievement("BARONY_ACH_CAUGHT_IN_A_MOSH");
+		steamUnsetAchievement("BARONY_ACH_SPICY");
+		for ( int i = STEAM_STAT_TRASH_COMPACTOR; i < 43; ++i )
+		{
+			g_SteamStats[i].m_iValue = 0;
+			SteamUserStats()->SetStat(g_SteamStats[i].m_pchStatName, 0);
+		}
+		SteamUserStats()->StoreStats();
+#endif // STEAMWORKS
+		});
+
+	static ConsoleCommand ccmd_gimmebombs("/gimmebombs", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		});
+
+	static ConsoleCommand ccmd_showhunger("/showhunger", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		messagePlayer(clientnum, MESSAGE_MISC, "Hunger value: %d", stats[clientnum]->HUNGER);
+		});
+
+	static ConsoleCommand ccmd_disablemouserotationlimit("/disablemouserotationlimit", []CCMD{
+		disablemouserotationlimit = (disablemouserotationlimit == false);
+		});
+
+	static ConsoleCommand ccmd_usecamerasmoothing("/usecamerasmoothing", []CCMD{
+		usecamerasmoothing = (usecamerasmoothing == false);
+		});
+
+	static ConsoleCommand ccmd_lightupdate("/lightupdate", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		globalLightSmoothingRate = atoi(argv[1]);
+		});
+
+	static ConsoleCommand ccmd_dumpnetworkdata("/dumpnetworkdata", []CCMD{
+		for ( auto element : DebugStats.networkPackets )
+		{
+			printlog("Packet: %s | %d", element.second.first.c_str(), element.second.second);
+		}
+		});
+
+	static ConsoleCommand ccmd_dumpentudata("/dumpentudata", []CCMD{
+		for ( auto element : DebugStats.entityUpdatePackets )
+		{
+			printlog("Sprite: %d | %d", element.first, element.second);
+		}
+		});
+
+	static ConsoleCommand ccmd_borderless("/borderless", []CCMD{
+		borderless = (!borderless);
+		});
+
+	static ConsoleCommand ccmd_jsonexportmonster("/jsonexportmonster", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		auto name = argv[1];
+		int creature = NOTHING;
+
+		for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
+		{
+			if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+			{
+				creature = i;
+				break;
+			}
+		}
+
+		if ( creature != NOTHING )
+		{
+			Stat* monsterStats = new Stat(1000 + creature);
+			monsterStatCustomManager.writeAllFromStats(monsterStats);
+			delete monsterStats;
+		}
+		});
+
+	static ConsoleCommand ccmd_jsonexportfromcursor("/jsonexportfromcursor", []CCMD{
+		Entity* target = entityClicked(nullptr, true, clientnum, EntityClickType::ENTITY_CLICK_USE);
+		if ( target )
+		{
+			Entity* parent = uidToEntity(target->skill[2]);
+			if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+			{
+				// see if we selected a limb
+				if ( parent )
+				{
+					target = parent;
+				}
+			}
+			monsterStatCustomManager.writeAllFromStats(target->getStats());
+		}
+		});
+
+	static ConsoleCommand ccmd_newui("/newui", []CCMD{
+		});
+
+	static ConsoleCommand ccmd_jsonexportgameplaymodifiers("/jsonexportgameplaymodifiers", []CCMD{
+		gameplayCustomManager.writeAllToDocument();
+		});
+
+	static ConsoleCommand ccmd_jsonexportmonstercurve("/jsonexportmonstercurve", []CCMD{
+		monsterCurveCustomManager.writeSampleToDocument();
+		});
+
+	static ConsoleCommand ccmd_crossplay("/crossplay", []CCMD{
+#if (defined STEAMWORKS && defined USE_EOS)
+		EOS.CrossplayAccountManager.autologin = true;
+#endif // USE_EOS
+	}
+#if (defined SOUND)
+	static ConsoleCommand ccmd_sfxambientvolume("/sfxambientvolume", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		sfxAmbientVolume = srtof(argv[1], nullptr);
+		});
+
+	static ConsoleCommand ccmd_sfxambientdynamic("/sfxambientdynamic", []CCMD{
+		sfxUseDynamicAmbientVolume = !sfxUseDynamicAmbientVolume;
+		if ( sfxUseDynamicAmbientVolume )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Dynamic ambient volume ON");
+		}
+		else
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Dynamic ambient volume OFF");
+		}
+		});
+
+	static ConsoleCommand ccmd_sfxenvironmentdynamic("/sfxenvironmentdynamic", []CCMD{
+		sfxUseDynamicEnvironmentVolume = !sfxUseDynamicEnvironmentVolume;
+		if ( sfxUseDynamicEnvironmentVolume )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Dynamic environment volume ON");
+		}
+		else
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Dynamic environment volume OFF");
+		}
+		});
+
+	static ConsoleCommand ccmd_sfxenvironmentvolume("/sfxenvironmentvolume", []CCMD{
+		if (argc < 2)
+        {
+            return;
+        }
+		sfxEnvironmentVolume = strtof(argv[1], nullptr);
+	}
+#endif
+	static ConsoleCommand ccmd_cyclekeyboard("/cyclekeyboard", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				if ( i + 1 >= MAXPLAYERS )
+				{
+					inputs.setPlayerIDAllowedKeyboard(0);
+					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", 0);
+				}
+				else
+				{
+					inputs.setPlayerIDAllowedKeyboard(i + 1);
+					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", i + 1);
+				}
+				break;
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_cyclegamepad("/cyclegamepad", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				int id = inputs.getControllerID(i);
+				inputs.removeControllerWithDeviceID(id);
+				if ( i + 1 >= MAXPLAYERS )
+				{
+					inputs.setControllerID(0, id);
+				}
+				else
+				{
+					inputs.setControllerID(i + 1, id);
+				}
+				break;
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_cycledeadzoneleft("/cycledeadzoneleft", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				switch ( inputs.getController(i)->leftStickDeadzoneType )
+				{
+					case GameController::DEADZONE_PER_AXIS:
+						inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
+						messagePlayer(i, MESSAGE_MISC, "Using radial deadzone on left stick.");
+						break;
+					case GameController::DEADZONE_MAGNITUDE_LINEAR:
+						inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
+						messagePlayer(i, MESSAGE_MISC, "Using curved radial deadzone on left stick.");
+						break;
+					case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
+						inputs.getController(i)->leftStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
+						messagePlayer(i, MESSAGE_MISC, "Using per-axis deadzone on left stick.");
+						break;
+				}
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_cycledeadzoneright("/cycledeadzoneright", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				switch ( inputs.getController(i)->rightStickDeadzoneType )
+				{
+					case GameController::DEADZONE_PER_AXIS:
+						inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_LINEAR;
+						messagePlayer(i, MESSAGE_MISC, "Using radial deadzone on right stick.");
+						break;
+					case GameController::DEADZONE_MAGNITUDE_LINEAR:
+						inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_MAGNITUDE_HALFPIPE;
+						messagePlayer(i, MESSAGE_MISC, "Using curved radial deadzone on right stick.");
+						break;
+					case GameController::DEADZONE_MAGNITUDE_HALFPIPE:
+						inputs.getController(i)->rightStickDeadzoneType = GameController::DEADZONE_PER_AXIS;
+						messagePlayer(i, MESSAGE_MISC, "Using per-axis deadzone on right stick.");
+						break;
+				}
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_vibration("/vibration", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				inputs.getController(i)->haptics.vibrationEnabled = !inputs.getController(i)->haptics.vibrationEnabled;
+				if ( inputs.getController(i)->haptics.vibrationEnabled )
+				{
+					messagePlayer(i, MESSAGE_MISC, "Controller vibration is enabled.");
+				}
+				else
+				{
+					messagePlayer(i, MESSAGE_MISC, "Controller vibration is disabled.");
+				}
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_tooltipoffset("/tooltipoffset", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		int offset = atoi(argv[1]);
+		Player::WorldUI_t::tooltipHeightOffsetZ = static_cast<real_t>(offset) / 10.0;
+		messagePlayer(clientnum, MESSAGE_MISC, "Tooltip Z offset set to: %.1f", Player::WorldUI_t::tooltipHeightOffsetZ);
+		});
+
+	static ConsoleCommand ccmd_radialhotbar("/radialhotbar", []CCMD{
+		players[clientnum]->hotbar.useHotbarRadialMenu = !players[clientnum]->hotbar.useHotbarRadialMenu;
+		});
+
+	static ConsoleCommand ccmd_radialhotslots("/radialhotslots", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		int slots = atoi(argv[1]);
+		players[clientnum]->hotbar.radialHotbarSlots = slots;
+		messagePlayer(clientnum, MESSAGE_MISC, "Slots in use: %d", slots);
+		});
+
+	static ConsoleCommand ccmd_facehotbar("/facehotbar", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->hotbar.useHotbarFaceMenu = !players[i]->hotbar.useHotbarFaceMenu;
+				messagePlayer(i, MESSAGE_MISC, "Face button hotbar: %d", players[i]->hotbar.useHotbarFaceMenu ? 1 : 0);
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_facebarinvert("/facebarinvert", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->hotbar.faceMenuInvertLayout = !players[i]->hotbar.faceMenuInvertLayout;
+				messagePlayer(i, MESSAGE_MISC, "Face button invert position: %d", players[i]->hotbar.faceMenuInvertLayout ? 1 : 0);
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_facebarquickcast("/facebarquickcast", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->hotbar.faceMenuQuickCastEnabled = !players[i]->hotbar.faceMenuQuickCastEnabled;
+				messagePlayer(i, MESSAGE_MISC, "Face button quickcast: %d", players[i]->hotbar.faceMenuQuickCastEnabled ? 1 : 0);
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_paperdoll("/paperdoll", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->paperDoll.enabled = !players[i]->paperDoll.enabled;
+				messagePlayer(i, MESSAGE_MISC, "Paper doll: %d", players[i]->paperDoll.enabled ? 1 : 0);
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_facebaralternate("/facebaralternate", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->hotbar.faceMenuAlternateLayout = !players[i]->hotbar.faceMenuAlternateLayout;
+				messagePlayer(i, MESSAGE_MISC, "Face button alternate: %d", players[i]->hotbar.faceMenuAlternateLayout ? 1 : 0);
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_inventorynew("/inventorynew", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->inventoryUI.bNewInventoryLayout = !players[i]->inventoryUI.bNewInventoryLayout;
+				players[i]->inventoryUI.resetInventory();
+				messagePlayer(i, MESSAGE_MISC, "New Inventory layout: %d", players[i]->inventoryUI.bNewInventoryLayout ? 1 : 0);
+			}
+		}
+		});
+
+	static ConsoleCommand ccmd_worldui("/worldui", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				if ( players[i]->worldUI.isEnabled() )
+				{
+					players[i]->worldUI.disable();
+				}
+				else
+				{
+					players[i]->worldUI.enable();
+				}
+			}
 		}
 	}
+
+#ifndef NINTENDO
+	static ConsoleCommand ccmd_ircconnect("/ircconnect", []CCMD{
+		if ( IRCHandler.connect() )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Connected.");
+		}
+		else
+		{
+			IRCHandler.disconnect();
+			messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Error connecting.");
+		}
+		});
+
+	static ConsoleCommand ccmd_ircdisconnect("/ircdisconnect", []CCMD{
+		IRCHandler.disconnect();
+		messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Disconnected.");
+		});
+
+	static ConsoleCommand ccmd_irc("/irc", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		std::string message = argv[1];
+		message.append("\r\n");
+		IRCHandler.packetSend(message);
+		messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Sent message.");
+	}
+#endif // !NINTENDO
+
+	static ConsoleCommand ccmd_loadtooltips("/loadtooltips", []CCMD{
+		ItemTooltips.readTooltipsFromFile();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded item_tooltips.json");
+		});
+
+	static ConsoleCommand ccmd_reflowtext("/reflowtext", []CCMD{
+		bUsePreciseFieldTextReflow = !bUsePreciseFieldTextReflow;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set bUsePreciseFieldTextReflow to %d", bUsePreciseFieldTextReflow);
+		});
+
+	static ConsoleCommand ccmd_selectedanimcycle("/selectedanimcycle", []CCMD{
+		bUseSelectedSlotCycleAnimation = !bUseSelectedSlotCycleAnimation;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set bUseSelectedSlotCycleAnimation to %d", bUseSelectedSlotCycleAnimation);
+		});
+
+	static ConsoleCommand ccmd_autoloadtooltips("/autoloadtooltips", []CCMD{
+		ItemTooltips.autoReload = !ItemTooltips.autoReload;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set auto-reload to %d for item_tooltips.json", ItemTooltips.autoReload);
+		});
+
+	static ConsoleCommand ccmd_debugtooltips("/debugtooltips", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+		ItemTooltips.itemDebug = !ItemTooltips.itemDebug;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set item-debug to %d for item_tooltips.json", ItemTooltips.itemDebug);
+		});
+
+	static ConsoleCommand ccmd_loaditems("/loaditems", []CCMD{
+		ItemTooltips.readItemsFromFile();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded items.json");
+		});
+
+	static ConsoleCommand ccmd_gimmeallpotions("/gimmeallpotions", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+		for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+		{
+			auto generatedPotion = potionStandardAppearanceMap.at(i);
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+				0, 1, generatedPotion.second, true, nullptr);
+			itemPickup(clientnum, potion);
+			//free(potion);
+		}
+		});
+
+	static ConsoleCommand ccmd_gimmeblessedpotions("/gimmeblessedpotions", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+		for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+		{
+			auto generatedPotion = potionStandardAppearanceMap.at(i);
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+				1 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+			itemPickup(clientnum, potion);
+			//free(potion);
+		}
+		});
+
+	static ConsoleCommand ccmd_gimmecursedpotions("/gimmecursedpotions", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+		for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
+		{
+			auto generatedPotion = potionStandardAppearanceMap.at(i);
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+				-2 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+			itemPickup(clientnum, potion);
+			//free(potion);
+		}
+		});
+
+	static ConsoleCommand ccmd_allspells2("/allspells2", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		for ( auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it )
+		{
+			spell_t* spell = *it;
+			bool learned = addSpell(spell->ID, clientnum, true);
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_allspells3("/allspells3", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+		{
+			spell_t* spell = *it;
+			bool learned = addSpell(spell->ID, clientnum, true);
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_gimmexp("/gimmexp", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( players[clientnum] && players[clientnum]->entity )
+		{
+			players[clientnum]->entity->getStats()->EXP += 1 + rand() % 50;
+		}
+		});
+
+	static ConsoleCommand ccmd_loadhudsettings("/loadhudsettings", []CCMD{
+		loadHUDSettingsJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded HUD_settings.json");
+		});
+
+	static ConsoleCommand ccmd_loadskillsheet("/loadskillsheet", []CCMD{
+		Player::SkillSheet_t::loadSkillSheetJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded skillsheet_entries.json");
+		});
+
+	static ConsoleCommand ccmd_loadcharsheet("/loadcharsheet", []CCMD{
+		Player::CharacterSheet_t::loadCharacterSheetJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded charsheet_settings.json");
+		});
+
+	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
+		messagePlayer(clientnum, MESSAGE_MISC, "On next human right click leader list will be generated.");
+		});
+
+	static ConsoleCommand ccmd_poly("/poly", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( players[clientnum]->entity )
+		{
+			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
+		}
+		});
+
+	static ConsoleCommand ccmd_sexchange("/sexchange", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		stats[clientnum]->sex = stats[clientnum]->sex == sex_t::MALE ? sex_t::FEMALE : sex_t::MALE;
+		});
+
+	static ConsoleCommand ccmd_appearances("/appearances", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		++stats[clientnum]->appearance;
+		if ( stats[clientnum]->appearance >= NUMAPPEARANCES )
+		{
+			stats[clientnum]->appearance = 0;
+		}
+		});
+
+	static ConsoleCommand ccmd_classdebug("/classdebug", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		client_classes[clientnum] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+		});
+
+	static ConsoleCommand ccmd_unpoly("/unpoly", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( players[clientnum]->entity )
+		{
+			players[clientnum]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+		}
+		});
+
+	static ConsoleCommand ccmd_usepaperdollmovement("/usepaperdollmovement", []CCMD{
+		restrictPaperDollMovement = !restrictPaperDollMovement;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
+		});
+
+	static ConsoleCommand ccmd_exportstatue("/exportstatue", []CCMD{
+		StatueManager.exportActive = true;
+		});
+
+	static ConsoleCommand ccmd_importstatue("/importstatue", []CCMD{
+	    if (argc < 2)
+	    {
+	        return;
+	    }
+		int index = atoi(argv[1]);
+		StatueManager.readStatueFromFile(index);
+		});
+
+	static ConsoleCommand ccmd_timertests("/timertests", []CCMD{
+		TimerExperiments::bUseTimerInterpolation = !TimerExperiments::bUseTimerInterpolation;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set bUseTimerInterpolation to %d", TimerExperiments::bUseTimerInterpolation);
+		});
+
+	static ConsoleCommand ccmd_timertestsdebug("/timertestsdebug", []CCMD{
+		TimerExperiments::bDebug = !TimerExperiments::bDebug;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
+		});
+
+	static ConsoleCommand ccmd_framesearchdebug("/framesearchdebug", []CCMD{
+		Frame::findFrameDefaultSearchType =
+			Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST
+			? Frame::FRAME_SEARCH_BREADTH_FIRST
+			: Frame::FRAME_SEARCH_DEPTH_FIRST;
+		if ( Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Set Frame::findFrameDefaultSearchType to depth first");
+		}
+		else
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Set Frame::findFrameDefaultSearchType to breadth first");
+		}
+		});
 }
