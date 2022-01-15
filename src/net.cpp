@@ -1955,7 +1955,7 @@ void clientHandlePacket()
 		else
 		{
 			DebugStats.networkPackets.insert(std::make_pair(hash, std::make_pair(tmp, 0)));
-			messagePlayer(clientnum, "%s", tmp.c_str());
+			messagePlayer(clientnum, MESSAGE_DEBUG, "%s", tmp.c_str());
 		}
 		if ( !strcmp(packetinfo, "ENTU") )
 		{
@@ -2525,7 +2525,7 @@ void clientHandlePacket()
 	// ping
 	else if (!strncmp((char*)net_packet->data, "PING", 4))
 	{
-		messagePlayer(clientnum, language[1117], (SDL_GetTicks() - pingtime));
+		messagePlayer(clientnum, MESSAGE_MISC, language[1117], (SDL_GetTicks() - pingtime));
 		return;
 	}
 
@@ -2548,7 +2548,7 @@ void clientHandlePacket()
 	// pause game
 	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
 	{
-		messagePlayer(clientnum, language[1118], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
 		pauseGame(2, 0);
 		return;
 	}
@@ -2556,7 +2556,7 @@ void clientHandlePacket()
 	// unpause game
 	else if (!strncmp((char*)net_packet->data, "UNPS", 4))
 	{
-		messagePlayer(clientnum, language[1119], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
 		pauseGame(1, 0);
 		return;
 	}
@@ -3788,46 +3788,46 @@ void clientHandlePacket()
 
 		if ( !secretlevel )
 		{
-			messagePlayer(clientnum, language[710], currentlevel);
+			messagePlayer(clientnum, MESSAGE_PROGRESSION, language[710], currentlevel);
 		}
 		else
 		{
-			messagePlayer(clientnum, language[711], map.name);
+			messagePlayer(clientnum, MESSAGE_PROGRESSION, language[711], map.name);
 		}
 		if ( !secretlevel && result )
 		{
 			switch ( currentlevel )
 			{
 				case 2:
-					messagePlayer(clientnum, language[712]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[712]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[712]));
 					break;
 				case 3:
-					messagePlayer(clientnum, language[713]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[713]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[713]));
 					break;
 				case 7:
-					messagePlayer(clientnum, language[714]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[714]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[714]));
 					break;
 				case 8:
-					messagePlayer(clientnum, language[715]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[715]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[715]));
 					break;
 				case 11:
-					messagePlayer(clientnum, language[716]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[716]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[716]));
 					break;
 				case 13:
-					messagePlayer(clientnum, language[717]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[717]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[717]));
 					break;
 				case 16:
-					messagePlayer(clientnum, language[718]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[718]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[718]));
 					break;
 				case 18:
-					messagePlayer(clientnum, language[719]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[719]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[719]));
 					break;
 				default:
@@ -3844,16 +3844,16 @@ void clientHandlePacket()
 		}
 		if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 		{
-			messagePlayer(clientnum, language[2382]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2382]);
 		}
 		if ( MFLAG_DISABLELEVITATION )
 		{
-			messagePlayer(clientnum, language[2383]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2383]);
 			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", language[2383]));
 		}
 		if ( MFLAG_DISABLEDIGGING )
 		{
-			messagePlayer(clientnum, language[2450]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2450]);
 			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", language[2450]));
 		}
 		if ( MFLAG_DISABLEHUNGER )
@@ -3862,7 +3862,7 @@ void clientHandlePacket()
 		}
 		if ( !strncmp(map.name, "Mages Guild", 11) )
 		{
-			messagePlayer(clientnum, language[2599]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2599]);
 		}
 		loading = false;
 		fadeout = false;
@@ -4658,7 +4658,7 @@ void serverHandlePacket()
 	// pause game
 	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
 	{
-		messagePlayer(clientnum, language[1118], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
 		pauseGame(2, j);
 		return;
@@ -4667,7 +4667,7 @@ void serverHandlePacket()
 	// unpause game
 	else if (!strncmp((char*)net_packet->data, "UNPS", 4))
 	{
-		messagePlayer(clientnum, language[1119], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
 		pauseGame(1, j);
 		return;
@@ -4928,9 +4928,9 @@ void serverHandlePacket()
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 11;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
-			messagePlayer(c, language[1120], shortname);
+			messagePlayer(c, MESSAGE_MISC, language[1120], shortname);
 		}
-		messagePlayer(clientnum, language[1120], shortname);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1120], shortname);
 		return;
 	}
 

@@ -438,7 +438,7 @@ void GameController::handleAnalog(int player)
 						{
 							players[player]->hotbar.selectHotbarSlot(hotbarSlot);
 						}
-						messagePlayer(0, "%d", hotbarSlot);
+						messagePlayer(0, MESSAGE_DEBUG, "%d", hotbarSlot);
 					}
 				}
 			}
