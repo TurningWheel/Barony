@@ -1275,7 +1275,7 @@ int saveGame(int saveIndex)
 	// open file
 	if ( !intro )
 	{
-		messagePlayer(clientnum, language[1121]);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1121]);
 	}
 
 	if ( multiplayer == SINGLE )
@@ -4908,7 +4908,7 @@ void AchievementObserver::updateData()
 	{
 		entityAchievementsToProcess.clear();
 #ifdef DEBUG_ACHIEVEMENTS
-		messagePlayer(0, "[DEBUG]: Achievement data reset for floor.");
+		messagePlayer(0, MESSAGE_DEBUG, "[DEBUG]: Achievement data reset for floor.");
 #endif
 	}
 }
@@ -4961,7 +4961,7 @@ void AchievementObserver::printActiveAchievementTimers()
 	{
 		for ( auto inner_it = (*it).second.begin(); inner_it != (*it).second.end(); ++inner_it )
 		{
-			messagePlayer(0, "Uid: %d, achievement: %d, ticks: %d, counter: %d", (*it).first, (*inner_it).first, (*inner_it).second.first, (*inner_it).second.second);
+			messagePlayer(0, MESSAGE_DEBUG, "Uid: %d, achievement: %d, ticks: %d, counter: %d", (*it).first, (*inner_it).first, (*inner_it).second.first, (*inner_it).second.second);
 		}
 	}
 }
@@ -5285,7 +5285,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 			break;
 	}
 #ifdef DEBUG_ACHIEVEMENTS
-	messagePlayer(player, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
+	messagePlayer(player, MESSAGE_DEBUG, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
 #endif
 }
 
@@ -5388,7 +5388,7 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			steamAchievementClient(player, "BARONY_ACH_IRONIC_PUNISHMENT");
 			break;
 		default:
-			messagePlayer(player, "[WARNING]: Unhandled achievement: %d", achievement);
+			messagePlayer(player, MESSAGE_DEBUG, "[WARNING]: Unhandled achievement: %d", achievement);
 			break;
 	}
 }
