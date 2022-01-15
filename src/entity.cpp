@@ -9748,7 +9748,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						messagePlayer(player,  language[706]);
+						messagePlayer(player, MESSAGE_HINT, language[706]);
 					}
 				}
 				else if ( myStats->weapon != NULL && !shapeshifted )
@@ -9836,12 +9836,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
 								{
-									messagePlayer(player, language[704]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[704]);
 									playSoundEntity(this, 76, 64);
 								}
 								else
 								{
-									messagePlayer(player, language[705]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[705]);
 								}
 								if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 								{
@@ -9859,7 +9859,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else
 						{
 							spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
-							messagePlayer(player, language[706]);
+							messagePlayer(player, MESSAGE_HINT, language[706]);
 						}
 					}
 					else
@@ -10040,7 +10040,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
 	{
-		messagePlayer(player, language[707]);
+		messagePlayer(player, MESSAGE_HINT, language[707]);
 		return false;
 	}
 
@@ -10058,7 +10058,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 		y = oldy;
 		if ( multiplayer == SERVER && player > 0 )
 		{
-			messagePlayer(player, language[707]);
+			messagePlayer(player, MESSAGE_HINT, language[707]);
 		}
 		return false;
 	}
@@ -10143,7 +10143,7 @@ bool Entity::teleportRandom()
 	}
 	if ( numlocations == 0 )
 	{
-		messagePlayer(player, language[708]);
+		messagePlayer(player, MESSAGE_HINT, language[708]);
 		return false;
 	}
 	pickedlocation = rand() % numlocations;
@@ -10296,7 +10296,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	//messagePlayer(0, "locations: %d", numlocations);
 	if ( numlocations == 0 )
 	{
-		messagePlayer(player, language[708]);
+		messagePlayer(player, MESSAGE_HINT, language[708]);
 		return false;
 	}
 	std::pair<int, int> tmpPair;
@@ -10371,7 +10371,7 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 		y = oldy;
 		if ( multiplayer == SERVER && player > 0 )
 		{
-			messagePlayer(player, language[707]);
+			messagePlayer(player, MESSAGE_HINT, language[707]);
 		}
 		return false;
 	}*/
@@ -14435,13 +14435,13 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			if ( targetStats->type != HUMAN )
 			{
-				messagePlayer(target.skill[2], language[3243],
+				messagePlayer(target.skill[2], MESSAGE_WORLD, language[3243],
 					namesays, getMonsterLocalizedName(targetStats->type).c_str());
 				steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 			}
 			else
 			{
-				messagePlayer(target.skill[2], language[516 + rand() % 4], namesays);
+				messagePlayer(target.skill[2], MESSAGE_WORLD, language[516 + rand() % 4], namesays);
 			}
 
 			if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
@@ -14803,13 +14803,13 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						switch ( item->type )
 						{
 							case ARTIFACT_ORB_BLUE:
-								messagePlayer(owner->skill[2], language[3889], myStats->name);
+								messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
 								break;
 							case ARTIFACT_ORB_RED:
-								messagePlayer(owner->skill[2], language[3890], myStats->name);
+								messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
 								break;
 							case ARTIFACT_ORB_GREEN:
-								messagePlayer(owner->skill[2], language[3888], myStats->name);
+								messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
 								break;
 							default:
 								break;
@@ -14825,11 +14825,11 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					if ( item->identified )
 					{
-						messagePlayer(monsterAllyIndex, language[3145], items[item->type].name_identified);
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].name_identified);
 					}
 					else
 					{
-						messagePlayer(monsterAllyIndex, language[3145], items[item->type].name_unidentified);
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].name_unidentified);
 					}
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
 					pickedUpItemReturnValue = true;
@@ -15541,11 +15541,11 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
 		{
-			messagePlayer(playerhit, language[2350], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[2350], armor.getName());
 		}
 		else
 		{
-			messagePlayer(playerhit, language[681], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[681], armor.getName());
 		}
 	}
 	else
@@ -15553,17 +15553,17 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		if ( armor.type == TOOL_CRYSTALSHARD )
 		{
 			playSoundEntity(this, 162, 64);
-			messagePlayer(playerhit, language[2351], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[2351], armor.getName());
 		}
 		else if ( itemCategory(&armor) == SPELLBOOK )
 		{
 			playSoundEntity(this, 414, 64);
-			messagePlayer(playerhit, language[3459], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[3459], armor.getName());
 		}
 		else
 		{
 			playSoundEntity(this, 76, 64);
-			messagePlayer(playerhit, language[682], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[682], armor.getName());
 		}
 	}
 	if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )

@@ -357,7 +357,7 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 				real_t prevStateYaw = players[player]->entity->lerpPreviousState.yaw.position;
 				if ( abs(diff) > PI / 8 )
 				{
-					messagePlayer(0, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
+					messagePlayer(0, MESSAGE_DEBUG, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
 						players[player]->entity->lerpRenderState.yaw.position, camera.ang, curStateYaw, prevStateYaw);
 				}
 				printTextFormatted(font8x8_bmp, 8, 20, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
@@ -2389,7 +2389,7 @@ void gameLogic(void)
 						&& item->x != Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE
 						&& (item->x >= players[player]->inventoryUI.getSizeX() || item->y >= backpack_sizey[player]) )
 					{
-						messagePlayer(player, language[727], item->getName());
+						messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName());
 						bool droppedAll = false;
 						while ( item && item->count > 1 )
 						{
@@ -2450,7 +2450,7 @@ void gameLogic(void)
 				{
 					// regained connection
 					losingConnection[0] = false;
-					messagePlayer(i, language[728]);
+					messagePlayer(i, MESSAGE_MISC, language[728]);
 				}
 				else if ( !losingConnection[0] && ticks - client_keepalive[0] == TICKS_PER_SECOND * 30 - 1 )
 				{
@@ -2966,7 +2966,7 @@ void gameLogic(void)
 					&& item->x != Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE
 					&& (item->x >= players[clientnum]->inventoryUI.getSizeX() || item->y >= backpack_sizey) )
 				{
-					messagePlayer(clientnum, language[727], item->getName());
+					messagePlayer(clientnum, MESSAGE_INVENTORY, language[727], item->getName());
 					bool droppedAll = false;
 					while ( item && item->count > 1 )
 					{
@@ -4103,7 +4103,7 @@ void ingameHud()
 					    {
 						    if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
 						    {
-							    messagePlayer(player, language[3863]); // prevent casting of spell.
+							    messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, language[3863]); // prevent casting of spell.
 							    input.consumeBinaryToggle("Block");
 							    allowCasting = false;
 						    }
@@ -4120,13 +4120,13 @@ void ingameHud()
 					{
 						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 						{
-							messagePlayer(player, language[2999]); // prevent casting of spell.
+							messagePlayer(player, MESSAGE_MISC, language[2999]); // prevent casting of spell.
 						}
 						else
 						{
 							if ( achievementBrawlerMode && players[player]->magic.selectedSpell() )
 							{
-								messagePlayer(player, language[2998]); // notify no longer eligible for achievement but still cast.
+								messagePlayer(player, MESSAGE_MISC, language[2998]); // notify no longer eligible for achievement but still cast.
 							}
 							if ( tryInventoryQuickCast )
 							{
@@ -4269,7 +4269,7 @@ void ingameHud()
 				if ( command_str[0] == '/' )
 				{
 					// backslash invokes command procedure
-					messagePlayer(commandPlayer, command_str);
+					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
 					consoleCommand(command_str);
 				}
 				else
@@ -4323,7 +4323,7 @@ void ingameHud()
 				if ( command_str[0] == '/' )
 				{
 					// backslash invokes command procedure
-					messagePlayer(commandPlayer, command_str);
+					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
 					consoleCommand(command_str);
 				}
 				else
@@ -5757,7 +5757,7 @@ int main(int argc, char** argv)
 						char temp[128];
 						strncpy(temp, result.str.c_str(), 128);
 						temp[127] = '\0';
-						messagePlayer(clientnum, temp);
+						messagePlayer(clientnum, MESSAGE_MISC, temp);
 						consoleCommand(temp);
 					}
 				}
@@ -6152,7 +6152,7 @@ int main(int argc, char** argv)
 					DebugStats.displayStats = true;
 					DebugStats.storeStats();
 					DebugStats.storeEventStats();
-					messagePlayer(clientnum, "Timers: %f total.", timer);
+					messagePlayer(clientnum, MESSAGE_MISC, "Timers: %f total.", timer);
 				}
 				if ( DebugStats.displayStats )
 				{

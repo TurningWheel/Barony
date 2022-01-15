@@ -935,6 +935,9 @@ namespace MainMenu {
 		messagesEnabled |= hint ? MESSAGE_HINT : 0;
 		messagesEnabled |= obituary ? MESSAGE_OBITUARY : 0;
 		messagesEnabled |= MESSAGE_MISC;
+#ifndef NDEBUG
+        messagesEnabled |= MESSAGE_DEBUG;
+#endif
 	}
 
 	inline Messages Messages::load() {
