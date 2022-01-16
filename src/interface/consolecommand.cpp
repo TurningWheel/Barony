@@ -163,7 +163,7 @@ namespace ConsoleCommands {
         messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
         });
 
-    static ConsoleVariable cvar_test("/cvar_test", "a test cvar");
+    static ConsoleVariable cvar_test("/cvar_test", "", "a test cvar");
 
     static ConsoleCommand ccmd_cvar_print("/cvar_print", "print contents of /cvar_test", []CCMD{
         messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test.data.c_str());
