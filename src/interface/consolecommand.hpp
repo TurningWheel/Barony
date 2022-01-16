@@ -23,7 +23,7 @@
  * They can be defined anywhere.
  */
 
-typedef void (*ccmd_function)(int argc, const char **argv);
+typedef void (*const ccmd_function)(int argc, const char **argv);
 
 class ConsoleCommand {
 public:
@@ -34,9 +34,9 @@ public:
     {
         add_to_map();
     }
-    const char* name;
-    const char* desc;
-    const ccmd_function func;
+
+    const char* const name;
+    const char* const desc;
 
     void operator()(int argc, const char** argv) {
         (*func)(argc, argv);
@@ -44,4 +44,5 @@ public:
 
 private:
     void add_to_map();
+    const ccmd_function func;
 };
