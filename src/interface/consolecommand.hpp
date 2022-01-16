@@ -17,7 +17,7 @@
  *
  * ConsoleCommand myCmd("/dothing", "put a helpful description here",
  *     [](int argc, const char** argv){
- *
+ *     // do something
  *     });
  *
  * They can be defined anywhere.
@@ -45,4 +45,38 @@ public:
 private:
     void add_to_map();
     const ccmd_function func;
+};
+
+/*
+ * ConsoleVariables are defined just like console commands.
+ * They automatically define the func to be a setter function,
+ * And define a data member which is public.
+ * Make SURE your ConsoleVariable is static so its data member
+ * doesn't fall out of scope!!!
+ *
+ * ex:
+ * static ConsoleVariable my_var("/my_var", "a variable players can mess with");
+ */
+
+class ConsoleVariable : ConsoleCommand {
+public:
+    ConsoleVariable(const char* _name, const char* _desc = ""):
+        ConsoleCommand(_name, _desc, &ConsoleVariable::setter)
+    {
+        add_to_map();
+    }
+
+    void operator()(const char* arg) {
+        const char* args[2] = {
+            name,
+            arg,
+        };
+        setter(2, args);
+    }
+
+    std::string data;
+
+private:
+    static void setter(int argc, const char** argv);
+    void add_to_map();
 };

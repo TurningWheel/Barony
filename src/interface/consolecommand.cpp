@@ -47,10 +47,36 @@ static ccmd_map_t& getConsoleCommands()
     return ccmd_map;
 }
 
+typedef std::unordered_map<std::string, ConsoleVariable&> cvar_map_t;
+static cvar_map_t& getConsoleVariables()
+{
+    static cvar_map_t cvar_map;
+    return cvar_map;
+}
+
 void ConsoleCommand::add_to_map()
 {
     auto& map = getConsoleCommands();
     map.emplace(name, *this);
+}
+
+void ConsoleVariable::add_to_map()
+{
+    auto& map = getConsoleVariables();
+    map.emplace(name, *this);
+}
+
+void ConsoleVariable::setter(int argc, const char** argv)
+{
+    if (argc < 2) {
+        return;
+    }
+    auto& map = getConsoleVariables();
+    auto find = map.find(argv[0]);
+    if (find != map.end()) {
+        auto& cvar = find->second;
+        cvar.data = argv[1];
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -135,6 +161,12 @@ namespace ConsoleCommands {
             }
         }
         messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
+        });
+
+    static ConsoleVariable cvar_test("/cvar_test", "a test cvar");
+
+    static ConsoleCommand ccmd_cvar_print("/cvar_print", "print contents of /cvar_test", []CCMD{
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test.data.c_str());
         });
 
     static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
