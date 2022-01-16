@@ -682,12 +682,10 @@ void defaultConfig()
 #ifdef PANDORA
 	consoleCommand("/res 960x600");
 	consoleCommand("/gamma 2.000");
-	consoleCommand("/smoothlighting");
 	consoleCommand("/fullscreen");
 #else
 	consoleCommand("/res 1280x720");
 	consoleCommand("/gamma 1.000");
-	consoleCommand("/smoothlighting");
 #endif
 	consoleCommand("/shaking");
 	consoleCommand("/bobbing");
@@ -695,88 +693,8 @@ void defaultConfig()
 	consoleCommand("/sfxambientvolume 64");
 	consoleCommand("/sfxenvironmentvolume 64");
 	consoleCommand("/musvolume 32");
-#ifdef PANDORA
-	consoleCommand("/mousespeed 105");
-	consoleCommand("/svflags 30");
-	consoleCommand("/bind 82 IN_FORWARD");
-	consoleCommand("/bind 80 IN_LEFT");
-	consoleCommand("/bind 81 IN_BACK");
-	consoleCommand("/bind 79 IN_RIGHT");
-#else
 	consoleCommand("/mousespeed 16");
 	consoleCommand("/svflags 30");
-	consoleCommand("/bind 26 IN_FORWARD");
-	consoleCommand("/bind 4 IN_LEFT");
-	consoleCommand("/bind 22 IN_BACK");
-	consoleCommand("/bind 7 IN_RIGHT");
-#endif
-	consoleCommand("/bind 80 IN_TURNL");
-	consoleCommand("/bind 79 IN_TURNR");
-	consoleCommand("/bind 82 IN_UP");
-	consoleCommand("/bind 81 IN_DOWN");
-	consoleCommand("/bind 40 IN_CHAT");
-	consoleCommand("/bind 56 IN_COMMAND");
-	consoleCommand("/bind 43 IN_STATUS");
-#ifdef PANDORA
-	consoleCommand("/bind 75 IN_SPELL_LIST");
-	consoleCommand("/bind 77 IN_CAST_SPELL");
-	consoleCommand("/bind 78 IN_DEFEND");
-#else
-	consoleCommand("/bind 16 IN_SPELL_LIST");
-	consoleCommand("/bind 9 IN_CAST_SPELL");
-	consoleCommand("/bind 44 IN_DEFEND");
-#endif
-	consoleCommand("/bind 283 IN_ATTACK");
-	consoleCommand("/bind 285 IN_USE");
-	consoleCommand("/bind 21 IN_AUTOSORT");
-	consoleCommand("/bind 27 IN_MINIMAPSCALE");
-	consoleCommand("/bind 15 IN_TOGGLECHATLOG");
-	consoleCommand("/bind 6 IN_FOLLOWERMENU");
-	consoleCommand("/bind 20 IN_FOLLOWERMENU_LASTCMD");
-	consoleCommand("/bind 8 IN_FOLLOWERMENU_CYCLENEXT");
-	consoleCommand("/bind 286 IN_HOTBAR_SCROLL_LEFT");
-	consoleCommand("/bind 287 IN_HOTBAR_SCROLL_RIGHT");
-	consoleCommand("/bind 284 IN_HOTBAR_SCROLL_SELECT");
-
-	consoleCommand("/joybind 307 INJOY_STATUS");
-	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
-	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
-	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
-	consoleCommand("/joybind 301 INJOY_GAME_USE");
-	consoleCommand("/joybind 301 INJOY_MENU_USE");
-	consoleCommand("/joybind 305 INJOY_PAUSE_MENU");
-	consoleCommand("/joybind 303 INJOY_MENU_LEFT_CLICK");
-	consoleCommand("/joybind 314 INJOY_DPAD_LEFT");
-	consoleCommand("/joybind 315 INJOY_DPAD_RIGHT");
-	consoleCommand("/joybind 312 INJOY_DPAD_UP");
-	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
-	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 315 INJOY_GAME_HOTBAR_NEXT");
-	consoleCommand("/joybind 314 INJOY_GAME_HOTBAR_PREV");
-	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_ACTIVATE");
-	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
-	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
-	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
-	consoleCommand("/joybind 304 INJOY_MENU_DONT_LOAD_SAVE");
-	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
-	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
-	consoleCommand("/joybind 302 INJOY_MENU_DROP_ITEM");
-	consoleCommand("/joybind 310 INJOY_MENU_CYCLE_SHOP_LEFT");
-	consoleCommand("/joybind 311 INJOY_MENU_CYCLE_SHOP_RIGHT");
-	consoleCommand("/joybind 311 INJOY_MENU_BOOK_NEXT");
-	consoleCommand("/joybind 310 INJOY_MENU_BOOK_PREV");
-	consoleCommand("/joybind 311 INJOY_MENU_SETTINGS_NEXT");
-	consoleCommand("/joybind 310 INJOY_MENU_SETTINGS_PREV");
-	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
-	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
-	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
-	consoleCommand("/joybind 399 INJOY_GAME_MINIMAPSCALE"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_TOGGLECHATLOG"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU_LASTCMD"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU_CYCLE"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");

@@ -332,16 +332,6 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 		return false;
 	}
 
-    // if this is for a local player, but we've disabled this message type, don't print it!
-    const bool localPlayer = players[player]->isLocalPlayer();
-	if ( localPlayer )
-	{
-	    if (disable_messages || !(messagesEnabled & type))
-	    {
-	        return false;
-	    }
-	}
-
 	// format the content
 	va_start( argptr, message );
 	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
@@ -352,6 +342,16 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	{
 		printlog("%s\n", str);
 		return true;
+	}
+
+    // if this is for a local player, but we've disabled this message type, don't print it!
+    const bool localPlayer = players[player]->isLocalPlayer();
+	if ( localPlayer )
+	{
+	    if (disable_messages || !(messagesEnabled & type))
+	    {
+	        return false;
+	    }
 	}
 
 	if ( localPlayer )

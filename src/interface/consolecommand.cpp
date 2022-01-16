@@ -80,17 +80,28 @@ void consoleCommand(char const * const command_str)
     std::vector<const char*> tokens;
     auto token = strtok(buf, " ");
 	auto command = token;
-	while (token) {
+	while (token)
+	{
 	    tokens.push_back(token);
-	    strtok(token, " ");
+	    token = strtok(nullptr, " ");
 	}
 
 	auto& map = getConsoleCommands();
 	auto find = map.find(command);
-	if (find == map.end()) {
+	if (find == map.end())
+	{
 	    // invalid command
-		messagePlayer(clientnum, MESSAGE_MISC, language[305], command_str);
-	} else {
+	    if (intro || !initialized)
+	    {
+	        printlog("Unknown command: '%s'\n", command_str);
+	    }
+	    else
+	    {
+		    messagePlayer(clientnum, MESSAGE_MISC, language[305], command_str);
+	    }
+	}
+	else
+	{
 	    auto ccmd = find->second;
 	    (*ccmd)(tokens.size(), tokens.data());
 	}
