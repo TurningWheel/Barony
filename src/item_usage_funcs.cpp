@@ -3975,7 +3975,7 @@ void item_ToolBeartrap(Item*& item, int player)
 	entity->skill[14] = item->appearance;
 	entity->skill[15] = item->identified;
 	entity->skill[17] = players[player]->entity->skill[2];
-	messagePlayer(player, language[906]);
+	messagePlayer(player, MESSAGE_EQUIPMENT, language[906]);
 	consumeItem(item, player);
 	return;
 }
@@ -4007,7 +4007,7 @@ void item_Food(Item*& item, int player)
 			{
 				steamAchievement("BARONY_ACH_BONEHEADED");
 				dropItem(item, player); // client drop item
-				messagePlayer(player, language[3179]);
+				messagePlayer(player, MESSAGE_HINT, language[3179]);
 			}
 			return;
 		}
@@ -4019,7 +4019,7 @@ void item_Food(Item*& item, int player)
 		{
 			if ( players[player]->isLocalPlayer() )
 			{
-				messagePlayer(player, language[756]);
+				messagePlayer(player, MESSAGE_HINT, language[756]);
 			}
 			return;
 		}
@@ -4030,7 +4030,7 @@ void item_Food(Item*& item, int player)
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayer(player, language[757]);
+			messagePlayer(player, MESSAGE_HINT, language[757]);
 		}
 		return;
 	}
@@ -4058,7 +4058,7 @@ void item_Food(Item*& item, int player)
 	// consumption message
 	oldcount = item->count;
 	item->count = 1;
-	messagePlayer(player, language[907], item->description());
+	messagePlayer(player, MESSAGE_STATUS, language[907], item->description());
 	item->count = oldcount;
 
 	// eating sound
@@ -4113,15 +4113,15 @@ void item_Food(Item*& item, int player)
 		}
 		if ( stats[player]->type == VAMPIRE )
 		{
-			messagePlayer(player, language[3201]);
+			messagePlayer(player, MESSAGE_STATUS, language[3201]);
 		}
 		else if ( item->type == FOOD_BLOOD )
 		{
-			messagePlayer(player, language[3203]);
+			messagePlayer(player, MESSAGE_STATUS, language[3203]);
 		}
 		else
 		{
-			messagePlayer(player, language[908]);
+			messagePlayer(player, MESSAGE_STATUS, language[908]);
 		}
 		if ( stats[player] && players[player] && players[player]->entity )
 		{
@@ -4137,8 +4137,8 @@ void item_Food(Item*& item, int player)
 	}
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
 	{
-		messagePlayer(player, language[909]);
-		messagePlayer(player, language[910]);
+		messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, language[909]);
+		messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, language[910]);
 		stats[player]->EFFECTS[EFF_MESSY] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
 		serverUpdateEffects(player);
@@ -4276,7 +4276,7 @@ void item_FoodTin(Item*& item, int player)
 			{
 				steamAchievement("BARONY_ACH_BONEHEADED");
 				dropItem(item, player); // client drop item
-				messagePlayer(player, language[3179]);
+				messagePlayer(player, MESSAGE_HINT, language[3179]);
 			}
 			return;
 		}
@@ -4288,7 +4288,7 @@ void item_FoodTin(Item*& item, int player)
 		{
 			if ( players[player]->isLocalPlayer() )
 			{
-				messagePlayer(player, language[756]);
+				messagePlayer(player, MESSAGE_HINT, language[756]);
 			}
 			return;
 		}
@@ -4299,7 +4299,7 @@ void item_FoodTin(Item*& item, int player)
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayer(player, language[757]);
+			messagePlayer(player, MESSAGE_HINT, language[757]);
 		}
 		return;
 	}
@@ -4372,11 +4372,11 @@ void item_FoodTin(Item*& item, int player)
 
 	if ( stats[player]->type == GOATMAN )
 	{
-		messagePlayer(player, language[3220], tempstr);
+		messagePlayer(player, MESSAGE_STATUS, language[3220], tempstr);
 	}
 	else
 	{
-		messagePlayer(player, language[764], tempstr);
+		messagePlayer(player, MESSAGE_STATUS, language[764], tempstr);
 	}
 	item->count = oldcount;
 
@@ -4399,11 +4399,11 @@ void item_FoodTin(Item*& item, int player)
 		}
 		if ( stats[player]->type == VAMPIRE )
 		{
-			messagePlayer(player, language[3201]);
+			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[3201]);
 		}
 		else
 		{
-			messagePlayer(player, language[908]);
+			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[908]);
 		}
 
 		if ( stats[player] && players[player] && players[player]->entity )
@@ -4456,7 +4456,7 @@ void item_FoodTin(Item*& item, int player)
 	// greasy fingers
 	if ( slippery )
 	{
-		messagePlayer(player, language[966]);
+		messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[966]);
 		stats[player]->EFFECTS[EFF_GREASY] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_GREASY] = TICKS_PER_SECOND * (60 + rand() % 60); // 1-2 minutes of greasy
 		serverUpdateEffects(player);
@@ -4491,11 +4491,11 @@ void item_AmuletSexChange(Item* item, int player)
 			{
 				if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 				{
-					messagePlayer(player, language[3217], stats[player]->amulet->getName());
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[3217], stats[player]->amulet->getName());
 				}
 				else
 				{
-					messagePlayer(player, language[1089], stats[player]->amulet->getName());
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1089], stats[player]->amulet->getName());
 				}
 			}
 			return;
@@ -4504,7 +4504,7 @@ void item_AmuletSexChange(Item* item, int player)
 
 	if ( players[player] && players[player]->isLocalPlayer() )
 	{
-		messagePlayer(player, language[1094]);
+		messagePlayer(player, MESSAGE_EQUIPMENT, language[1094]);
 	}
 
 	stats[player]->amulet = NULL;
@@ -4525,26 +4525,26 @@ void item_AmuletSexChange(Item* item, int player)
 		&& stats[player]->playerRace == RACE_INCUBUS 
 		&& stats[player]->appearance == 0 )
 	{
-		messagePlayer(player, language[4048]); // don't feel like yourself
+		messagePlayer(player, MESSAGE_HINT, language[4048]); // don't feel like yourself
 	}
 	else if ( stats[player]->sex == MALE 
 		&& stats[player]->playerRace == RACE_SUCCUBUS 
 		&& stats[player]->appearance == 0 )
 	{
-		messagePlayer(player, language[4048]); // don't feel like yourself
+		messagePlayer(player, MESSAGE_HINT, language[4048]); // don't feel like yourself
 	}
 	else
 	{
 		if ( stats[player]->sex == MALE )
 		{
-			messagePlayer(player, language[967]);
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, language[967]);
 		}
 		else
 		{
-			messagePlayer(player, language[968]);
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, language[968]);
 		}
 	}
-	messagePlayer(player, language[969]);
+	messagePlayer(player, MESSAGE_INVENTORY, language[969]);
 }
 
 void item_Spellbook(Item*& item, int player)
@@ -4559,12 +4559,12 @@ void item_Spellbook(Item*& item, int player)
 
 	if ( players[player] && players[player]->entity && players[player]->entity->isBlind())
 	{
-		messagePlayer(player, language[970]);
+		messagePlayer(player, MESSAGE_HINT, language[970]);
 		return;
 	}
 	if ( itemIsEquipped(item, player) )
 	{
-		messagePlayer(player, language[3460]);
+		messagePlayer(player, MESSAGE_MISC, language[3460]);
 		return;
 	}
 
@@ -4572,12 +4572,12 @@ void item_Spellbook(Item*& item, int player)
 	{
 		if ( players[player]->entity->effectShapeshift != NOTHING )
 		{
-			messagePlayer(player, language[3445]);
+			messagePlayer(player, MESSAGE_HINT, language[3445]);
 			return;
 		}
 		else if ( stats[player] && (stats[player]->type == GOBLIN || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
 		{
-			messagePlayer(player, language[3444]);
+			messagePlayer(player, MESSAGE_HINT, language[3444]);
 			return;
 		}
 	}
@@ -4586,7 +4586,7 @@ void item_Spellbook(Item*& item, int player)
 
 	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
 	{
-		messagePlayer(player, language[971]);
+		messagePlayer(player, MESSAGE_INVENTORY, language[971]);
 		if ( list_Size(&players[player]->magic.spellList) > 0 && stats[player]->type != AUTOMATON )
 		{
 			// randomly delete a spell
@@ -4606,7 +4606,7 @@ void item_Spellbook(Item*& item, int player)
 				if ( list_Size(&players[player]->magic.spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
 				{
 					// no spells to delete. return early.
-					messagePlayer(player, language[973]);
+					messagePlayer(player, MESSAGE_HINT, language[973]);
 					consumeItem(item, player);
 					return;
 				}
@@ -4678,13 +4678,13 @@ void item_Spellbook(Item*& item, int player)
 			if ( !deleted )
 			{
 				// maybe we've got an inventory full of shapeshift spells?
-				messagePlayer(player, language[973]);
+				messagePlayer(player, MESSAGE_HINT, language[973]);
 				consumeItem(item, player);
 				return;
 			}
 			else if ( deleted )
 			{
-				messagePlayer(player, language[972]);
+				messagePlayer(player, MESSAGE_STATUS | MESSAGE_PROGRESSION | MESSAGE_HINT, language[972]);
 				if ( spell == players[player]->magic.selectedSpell() )
 				{
 					players[player]->magic.equipSpell(nullptr);
@@ -4701,7 +4701,7 @@ void item_Spellbook(Item*& item, int player)
 		}
 		else
 		{
-			messagePlayer(player, language[973]);
+			messagePlayer(player, MESSAGE_HINT, language[973]);
 		}
 		consumeItem(item, player);
 		return;
@@ -4890,11 +4890,11 @@ void item_Spellbook(Item*& item, int player)
 			item->status = static_cast<Status>(item->status - 1);
 			if ( item->status != BROKEN )
 			{
-				messagePlayer(player, language[2595]);
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, language[2595]);
 			}
 			else
 			{
-				messagePlayer(player, language[2596]);
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, language[2596]);
 				consumeItem(item, player);
 			}
 
@@ -4940,7 +4940,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	{
 		int oldcount = item->count;
 		item->count = 1;
-		messagePlayer(player, language[907], item->description());
+		messagePlayer(player, MESSAGE_STATUS, language[907], item->description());
 		item->count = oldcount;
 	}
 
@@ -4957,8 +4957,8 @@ void item_FoodAutomaton(Item*& item, int player)
 
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
 	{
-		messagePlayer(player, language[909]);
-		messagePlayer(player, language[910]);
+		messagePlayer(player, MESSAGE_STATUS | MESSAGE_COMBAT, language[909]);
+		messagePlayer(player, MESSAGE_STATUS | MESSAGE_COMBAT, language[910]);
 		stats[player]->EFFECTS[EFF_MESSY] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
 		serverUpdateEffects(player);
