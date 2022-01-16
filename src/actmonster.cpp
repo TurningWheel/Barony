@@ -10223,7 +10223,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	strcpy(fullmsg, message.c_str());
 	if ( strcmp(fullmsg, "") )
 	{
-		messagePlayer(monsterAllyIndex, fullmsg, namesays, stats[monsterAllyIndex]->name);
+		messagePlayer(monsterAllyIndex, message_type, fullmsg, namesays, stats[monsterAllyIndex]->name);
 	}
 }
 

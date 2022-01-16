@@ -233,7 +233,7 @@ Support function, messages all local players with the message "message"
 
 -------------------------------------------------------------------------------*/
 
-bool messageLocalPlayers(MessageType type, char const * const message, ...)
+bool messageLocalPlayers(Uint32 type, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -263,7 +263,7 @@ bool messageLocalPlayers(MessageType type, char const * const message, ...)
 
 -------------------------------------------------------------------------------*/
 
-bool messagePlayer(int player, MessageType type, char const * const message, ...)
+bool messagePlayer(int player, Uint32 type, char const * const message, ...)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -288,7 +288,7 @@ and color "color"
 
 -------------------------------------------------------------------------------*/
 
-bool messageLocalPlayersColor(MessageType type, Uint32 color, char const * const message, ...)
+bool messageLocalPlayersColor(Uint32 type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -318,7 +318,7 @@ bool messageLocalPlayersColor(MessageType type, Uint32 color, char const * const
 
 -------------------------------------------------------------------------------*/
 
-bool messagePlayerColor(int player, MessageType type, Uint32 color, char const * const message, ...)
+bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
@@ -3148,7 +3148,7 @@ void clientHandlePacket()
 	{
 		Uint32 color = SDLNet_Read32(&net_packet->data[4]);
 		MessageType type = (MessageType)SDLNet_Read32(&net_packet->data[8]);
-		char* msg = &net_packet->data[12];
+		char* msg = (char*)(&net_packet->data[12]);
 		if ( ticks != 1 )
 		{
 			messagePlayerColor(clientnum, type, color, msg);
@@ -4942,7 +4942,7 @@ void serverHandlePacket()
 		int pnum = net_packet->data[4];
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
-		Uint32 type = (Uint32)MESSAGE_CHAT; // the only kind of message you can get from a client.
+		MessageType type = MESSAGE_CHAT; // the only kind of message you can get from a client.
 
 		// strncpy() does not copy N bytes if a terminating null is encountered first
 		// see http://www.cplusplus.com/reference/cstring/strncpy/
@@ -4966,7 +4966,7 @@ void serverHandlePacket()
 			}
 			memcpy((char*)net_packet->data, "MSGS", 4);
 			SDLNet_Write32(color, &net_packet->data[4]);
-			SDLNet_Write32(type, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)type, &net_packet->data[8]);
 			strcpy((char*)(&net_packet->data[12]), tempstr);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;

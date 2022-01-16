@@ -313,11 +313,11 @@ void sellItemToShop(const int player, Item* item)
 	{
 		if ( item->beatitude > 0 )
 		{
-			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT, language[3219], item->getName());
+			messagePlayer(player, MESSAGE_INVENTORY, language[3219], item->getName());
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT, language[1124], item->getName());
+			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
 		}
 		playSound(90, 64);
 		return;

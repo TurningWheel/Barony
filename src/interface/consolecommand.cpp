@@ -49,6 +49,7 @@ static ccmd_map_t& getConsoleCommands()
 }
 
 class ConsoleCommand {
+public:
     ConsoleCommand(const char* name, ccmd_function func) {
         auto& map = getConsoleCommands();
         map.emplace(name, func);
@@ -76,7 +77,6 @@ void consoleCommand(char const * const command_str)
 	memcpy(buf, command_str, size);
 	buf[size] = '\0';
 
-    const char* command = NULL;
     std::vector<const char*> tokens;
     auto token = strtok(buf, " ");
 	auto command = token;
@@ -327,7 +327,8 @@ namespace ConsoleCommands {
 		auto name = argv[1];
 		if ( multiplayer == SERVER )
 		{
-			for ( int c = 1; c < MAXPLAYERS; c++ )
+		    int c;
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) && !players[c]->isLocalPlayer() )
 				{
@@ -405,7 +406,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		messagePlayer(clientnum, language[286],
+		messagePlayer(clientnum, MESSAGE_MISC, language[286],
 		    (int)cameras[0].x,
 		    (int)cameras[0].y,
 		    (int)cameras[0].z,
@@ -546,9 +547,9 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( auto node = map.entities->first; node != NULL; node = node->next )
 		{
-			entity = (Entity*)node->element;
+			auto entity = (Entity*)node->element;
 			if ( entity->behavior == &actLadder )
 			{
 				messagePlayer(clientnum, MESSAGE_MISC, language[298], (int)(entity->x / 16), (int)(entity->y / 16));
@@ -1177,7 +1178,7 @@ namespace ConsoleCommands {
 		}
 		FileIO::close(fp);
 		//messagePlayer(clientnum, language[2354]);
-		messagePlayer(clientnum, language[2355], startIndex, endIndex);
+		messagePlayer(clientnum, MESSAGE_MISC, language[2355], startIndex, endIndex);
 		generatePolyModels(startIndex, endIndex, true);
 		});
 
@@ -1250,9 +1251,9 @@ namespace ConsoleCommands {
 		// Attempt to set the Player on fire
 		players[clientnum]->entity->SetEntityOnFire();
 
-		for ( c = 0; c < 100; c++ )
+		for ( int c = 0; c < 100; c++ )
 		{
-			entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME);
+			auto entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
 			double vel = rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
@@ -1275,7 +1276,7 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
+		for ( int c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
 			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) 
 				&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
@@ -1588,14 +1589,7 @@ namespace ConsoleCommands {
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			if ( verticalSplitscreen )
-			{
-				players[i]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
-			}
-			else
-			{
-				players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-			}
+			players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
 
 			if ( !splitscreen )
 			{
@@ -1920,7 +1914,7 @@ namespace ConsoleCommands {
 			else
 			{
 				playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
-				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x = players[clientnum]->entity->x;
@@ -2098,7 +2092,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, "Reloading limb offsets from limbs.txt files...");
 		}
 
-		for ( c = 1; c < NUMMONSTERS; c++ )
+		for ( int c = 1; c < NUMMONSTERS; c++ )
 		{
 			// initialize all offsets to zero
 			for ( x = 0; x < 20; x++ )
@@ -2204,21 +2198,35 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_loadmod("/loadmod", []CCMD{
+	    std::string dir, name, fileid;
 	    for (int c = 1; c < argc; ++c)
 	    {
 		    std::string cmd = argv[c];
 		    std::size_t dirfind = cmd.find("dir:");
+		    if (dirfind != std::string::npos) {
+		        dir = cmd.substr(dirfind + 4);
+		        continue;
+		    }
 		    std::size_t namefind = cmd.find("name:");
+		    if (namefind != std::string::npos) {
+		        name = cmd.substr(namefind + 5);
+		        continue;
+		    }
 		    std::size_t fileidFind = cmd.find("fileid:");
+		    if (fileidFind != std::string::npos) {
+		        fileid = cmd.substr(fileidFind + 7);
+		        continue;
+		    }
 	    }
 	    std::string modname;
-	    if ( dirfind != std::string::npos && namefind != std::string::npos &&  )
+	    if ( !dir.empty() && !name.empty() )
 	    {
-	        if ( fileidFind == std::string::npos )
+	        if ( fileid.empty() )
 	        {
-		        std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
-		        modname = cmd.substr(namefind + 5);
-		        modname = modname.substr(0, modname.length() - 1);
+		        std::string directory = dir;
+		        modname = name;
+		        //TODO is this still necessary?
+		        //modname = modname.substr(0, modname.length() - 1);
 		        printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
 		        gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
 		        gamemods_modelsListRequiresReload = true;
@@ -2227,14 +2235,14 @@ namespace ConsoleCommands {
 #ifdef STEAMWORKS
 	        else
 	        {
-		        std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
-		        modname = cmd.substr(namefind + 5, fileidFind - (namefind + 6));
+		        std::string directory = dir;
+		        modname = name;
 		        printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
 		        gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
 		        gamemods_modelsListRequiresReload = true;
 		        gamemods_soundListRequiresReload = true;
 
-		        uint64 id = atoi(cmd.substr(fileidFind + 7).c_str());
+		        uint64 id = atoi(fileid.c_str());
 		        gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
 		        printlog("[Mods]: Steam Workshop mod file ID added for previous entry:%lld", id);
 	        }
@@ -2857,14 +2865,14 @@ namespace ConsoleCommands {
 #if (defined STEAMWORKS && defined USE_EOS)
 		EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
-	}
+	    });
 #if (defined SOUND)
 	static ConsoleCommand ccmd_sfxambientvolume("/sfxambientvolume", []CCMD{
 		if (argc < 2)
         {
             return;
         }
-		sfxAmbientVolume = srtof(argv[1], nullptr);
+		sfxAmbientVolume = strtof(argv[1], nullptr);
 		});
 
 	static ConsoleCommand ccmd_sfxambientdynamic("/sfxambientdynamic", []CCMD{
@@ -2897,7 +2905,7 @@ namespace ConsoleCommands {
             return;
         }
 		sfxEnvironmentVolume = strtof(argv[1], nullptr);
-	}
+		});
 #endif
 	static ConsoleCommand ccmd_cyclekeyboard("/cyclekeyboard", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -3111,7 +3119,7 @@ namespace ConsoleCommands {
 				}
 			}
 		}
-	}
+		});
 
 #ifndef NINTENDO
 	static ConsoleCommand ccmd_ircconnect("/ircconnect", []CCMD{
@@ -3140,7 +3148,7 @@ namespace ConsoleCommands {
 		message.append("\r\n");
 		IRCHandler.packetSend(message);
 		messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Sent message.");
-	}
+		});
 #endif // !NINTENDO
 
 	static ConsoleCommand ccmd_loadtooltips("/loadtooltips", []CCMD{

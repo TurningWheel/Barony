@@ -1463,13 +1463,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					else
 					{
-						messagePlayer(caster->skill[2], language[3715]);
+						messagePlayer(caster->skill[2], MESSAGE_HINT, language[3715]);
 						playSoundEntity(caster, 163, 128);
 					}
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[3420]);
+					messagePlayer(caster->skill[2], MESSAGE_HINT, language[3420]);
 				}
 			}
 		}
@@ -1738,7 +1738,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( players[i] && caster && (caster == players[i]->entity) )
 					{
 						serverUpdateEffects(i);
-						messagePlayer(i, language[3442]);
+						messagePlayer(i, MESSAGE_PROGRESSION, language[3442]);
 					}
 				}
 
@@ -2329,7 +2329,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							if ( players[i] && caster && (caster == players[i]->entity) )
 							{
-								messagePlayer(i, language[2591]);
+								messagePlayer(i, MESSAGE_HINT, language[2591]);
 							}
 						}
 					}

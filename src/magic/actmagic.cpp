@@ -761,11 +761,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( !spellIsReflectingMagic )
 							{
-								messagePlayer(player, language[379]);
+								messagePlayer(player, MESSAGE_COMBAT, language[379]);
 							}
 							else
 							{
-								messagePlayer(player, language[2475]);
+								messagePlayer(player, MESSAGE_COMBAT, language[2475]);
 							}
 						}
 					}
@@ -773,7 +773,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayer(parent->skill[2], language[379]);
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[379]);
 						}
 					}
 					if ( hit.side == HORIZONTAL )
@@ -863,11 +863,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->cloak->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->cloak->status - 1));
 								if ( hitstats->cloak->status != BROKEN )
 								{
-									messagePlayer(player, language[380]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[380]);
 								}
 								else
 								{
-									messagePlayer(player, language[381]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[381]);
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -877,11 +877,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->amulet->status - 1));
 								if ( hitstats->amulet->status != BROKEN )
 								{
-									messagePlayer(player, language[382]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[382]);
 								}
 								else
 								{
-									messagePlayer(player, language[383]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[383]);
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -891,11 +891,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->shield->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->shield->status - 1));
 								if ( hitstats->shield->status != BROKEN )
 								{
-									messagePlayer(player, language[384]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[384]);
 								}
 								else
 								{
-									messagePlayer(player, language[385]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, language[385]);
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -942,7 +942,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats )
 							{
 								hit.entity->setEffect(EFF_MAGICREFLECT, false, 0, true);
-								messagePlayer(player, language[2476]);
+								messagePlayer(player, MESSAGE_STATUS, language[2476]);
 							}
 						}
 					}
@@ -1118,7 +1118,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayer(parent->skill[2], language[386]);
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[386]);
 						}
 					}
 				}
@@ -1204,23 +1204,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										switch ( hit.entity->furnitureType )
 										{
 											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
 												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
 												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
 												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
 												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											default:
@@ -1347,23 +1347,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										switch ( hit.entity->furnitureType )
 										{
 											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
 												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
 												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
 												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
 												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											default:
@@ -1588,23 +1588,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										switch ( hit.entity->furnitureType )
 										{
 											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
 												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
 												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
 												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
 												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											default:
@@ -1819,7 +1819,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, color, language[395]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, language[395]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
@@ -2034,23 +2034,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										switch ( hit.entity->furnitureType )
 										{
 											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], language[388]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
 												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], language[389]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
 												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], language[2508], language[2505]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
 												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], language[2508], language[2506]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
 												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], language[2508], language[2507]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											default:
@@ -2169,7 +2169,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], language[402]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[402]);
 									}
 								}
 							}
@@ -2203,7 +2203,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[403]); // "The spell opens the gate!"
 										}
 									}
 								}
@@ -2231,7 +2231,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer)
 										{
-											messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[404]); // "The spell unlocks the chest!"
 										}
 									}
 								}
@@ -2256,7 +2256,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											if ( parent->behavior == &actPlayer )
 											{
-												messagePlayer(parent->skill[2], language[2358]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2358]);
 											}
 										}
 									}
@@ -2269,13 +2269,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]); // "No telling what it did..."
 								}
 							}
 
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]); // "No telling what it did..."
+								messagePlayer(player, MESSAGE_COMBAT, language[401]); // "No telling what it did..."
 							}
 						}
 
@@ -2309,11 +2309,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( parent )
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]);
 								}
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, MESSAGE_COMBAT, language[401]);
 							}
 						}
 					}
@@ -5591,7 +5591,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		{
 			if ( parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[405]);
+				messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[405]);
 			}
 		}
 

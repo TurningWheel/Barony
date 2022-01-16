@@ -97,7 +97,7 @@ void spell_magicMap(int player)
 		return;
 	}
 
-	messagePlayer(player, language[412]);
+	messagePlayer(player, MESSAGE_HINT, language[412]);
 	mapLevel(player);
 }
 
@@ -270,7 +270,7 @@ void spell_summonFamiliar(int player)
 	{
 		if ( numCreatures <= 1 )
 		{
-			messagePlayer(player, language[879], getMonsterLocalizedName(creature).c_str());
+			messagePlayer(player, MESSAGE_HINT, language[879], getMonsterLocalizedName(creature).c_str());
 			/*if ( item->beatitude >= 2 )
 			{
 				messagePlayer(player, language[880]);
@@ -278,7 +278,7 @@ void spell_summonFamiliar(int player)
 		}
 		else
 		{
-			messagePlayer(player, language[881], getMonsterLocalizedPlural(creature).c_str());
+			messagePlayer(player, MESSAGE_HINT, language[881], getMonsterLocalizedPlural(creature).c_str());
 			//if ( item->beatitude >= 2 )
 			//{
 			//	messagePlayer(player, language[882]);
@@ -1534,7 +1534,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
 							if ( currentCharmedFollowerCount > 0 )
 							{
-								messagePlayer(parent->skill[2], language[3327]);
+								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3327]);
 							}
 						}
 						// update enemy bar for attacker
@@ -1594,7 +1594,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			messagePlayer(parent->skill[2], language[3191]); // had no effect
+			messagePlayer(parent->skill[2], MESSAGE_HINT, language[3191]); // had no effect
 		}
 		return nullptr;
 	}
@@ -1611,7 +1611,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			messagePlayer(parent->skill[2], language[3191]); // had no effect
+			messagePlayer(parent->skill[2], MESSAGE_HINT, language[3191]); // had no effect
 		}
 		return nullptr;
 	}
@@ -1749,11 +1749,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			{
 				if ( fellInWater )
 				{
-					messagePlayer(parent->skill[2], language[3192]); // water make no work :<
+					messagePlayer(parent->skill[2], MESSAGE_STATUS, language[3192]); // water make no work :<
 				}
 				else
 				{
-					messagePlayer(parent->skill[2], language[3191]); // failed for some other reason
+					messagePlayer(parent->skill[2], MESSAGE_STATUS, language[3191]); // failed for some other reason
 				}
 			}
 			return nullptr;
@@ -1764,7 +1764,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3191]);
+				messagePlayer(parent->skill[2], MESSAGE_HINT, language[3191]);
 			}
 			return nullptr;
 		}
@@ -2216,7 +2216,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		}
 		else
 		{
-			messagePlayer(target->skill[2], language[3189]);
+			messagePlayer(target->skill[2], MESSAGE_STATUS | MESSAGE_HINT, language[3189]);
 		}
 
 	}
@@ -2351,7 +2351,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 						if ( parent->behavior == &actPlayer )
 						{
 							// no room to teleport!
-							messagePlayer(parent->skill[2], language[3453]);
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[3453]);
 						}
 						return false;
 					}
@@ -2373,7 +2373,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 						if ( parent->behavior == &actPlayer )
 						{
 							// no room to teleport!
-							messagePlayer(parent->skill[2], language[3453]);
+							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[3453]);
 						}
 						return false;
 					}
@@ -2618,7 +2618,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					if ( parent->behavior == &actPlayer )
 					{
 						// no room to spawn!
-						messagePlayer(parent->skill[2], language[3471]);
+						messagePlayer(parent->skill[2], MESSAGE_MISC, language[3471]);
 					}
 					return false;
 				}

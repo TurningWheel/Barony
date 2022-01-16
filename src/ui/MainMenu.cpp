@@ -2762,39 +2762,47 @@ namespace MainMenu {
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_combat", "Combat messages",
 			"Enable report of damage received or given in combat.",
-			allSettings.messages.combat, [](Button& button){allSettings.messages.combat = button.isPressed();});
+			allSettings.show_messages.combat, [](Button& button){allSettings.show_messages.combat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
 			"Enable report of player character status changes and other passive effects.",
-			allSettings.messages.status, [](Button& button){allSettings.messages.status = button.isPressed();});
+			allSettings.show_messages.status, [](Button& button){allSettings.show_messages.status = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
 			"Enable report of inventory and item appraisal messages.",
-			allSettings.messages.inventory, [](Button& button){allSettings.messages.inventory = button.isPressed();});
+			allSettings.show_messages.inventory, [](Button& button){allSettings.show_messages.inventory = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment", "Equipment messages",
 			"Enable report of player equipment changes.",
-			allSettings.messages.equipment, [](Button& button){allSettings.messages.equipment = button.isPressed();});
+			allSettings.show_messages.equipment, [](Button& button){allSettings.show_messages.equipment = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_world", "World messages",
 			"Enable report of diegetic messages, such as speech and text.",
-			allSettings.messages.world, [](Button& button){allSettings.messages.world = button.isPressed();});
+			allSettings.show_messages.world, [](Button& button){allSettings.show_messages.world = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_chat", "Player chat",
 			"Enable multiplayer chat.",
-			allSettings.messages.chat, [](Button& button){allSettings.messages.chat = button.isPressed();});
+			allSettings.show_messages.chat, [](Button& button){allSettings.show_messages.chat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", "Progression messages",
 			"Enable report of player character progression messages (ie level-ups).",
-			allSettings.messages.progression, [](Button& button){allSettings.messages.progression = button.isPressed();});
+			allSettings.show_messages.progression, [](Button& button){allSettings.show_messages.progression = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", "Interaction messages",
 			"Enable report of player interactions with the world.",
-			allSettings.messages.interaction, [](Button& button){allSettings.messages.interaction = button.isPressed();});
+			allSettings.show_messages.interaction, [](Button& button){allSettings.show_messages.interaction = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection", "Inspection messages",
 			"Enable player inspections of world objects.",
-			allSettings.messages.inspection, [](Button& button){allSettings.messages.inspection = button.isPressed();});
+			allSettings.show_messages.inspection, [](Button& button){allSettings.show_messages.inspection = button.isPressed();});
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_hint", "Hint messages",
+			"Enable cryptic hints for certain items, world events, etc.",
+			allSettings.show_messages.hint, [](Button& button){allSettings.show_messages.hint = button.isPressed();});
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_obituary", "Obituary messages",
+			"Enable obituary messages for player deaths.",
+			allSettings.show_messages.obituary, [](Button& button){allSettings.show_messages.obituary = button.isPressed();});
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Boolean, "messages_combat"},
@@ -2806,6 +2814,8 @@ namespace MainMenu {
 			{Setting::Type::Boolean, "messages_progression"},
 			{Setting::Type::Boolean, "messages_interaction"},
 			{Setting::Type::Boolean, "messages_inspection"},
+			{Setting::Type::Boolean, "messages_hint"},
+			{Setting::Type::Boolean, "messages_obituary"},
 			});
 		settingsSubwindowFinalize(*subwindow, y);
 		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});

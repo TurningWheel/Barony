@@ -245,11 +245,11 @@ void Item::applyLockpick(int player, Entity& entity)
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( status != BROKEN )
 						{
-							messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, language[1103]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[1103]);
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, language[1104]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[1104]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
