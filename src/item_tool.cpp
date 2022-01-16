@@ -168,8 +168,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
 						stats[player]->GOLD += goldAmount;
-						// TODO make this a lang entry!!!
-						messagePlayerColor(player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
+						messagePlayerColor(player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), language[4088], goldAmount);
 					}
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
