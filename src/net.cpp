@@ -288,7 +288,7 @@ and color "color"
 
 -------------------------------------------------------------------------------*/
 
-bool messageLocalPlayersColor(Uint32 type, Uint32 color, char const * const message, ...)
+bool messageLocalPlayersColor(Uint32 color, Uint32 type, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 

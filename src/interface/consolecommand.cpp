@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include <sstream>
+#include "consolecommand.hpp"
 #include "../main.hpp"
 #include "../files.hpp"
 #include "../game.hpp"
@@ -39,22 +40,18 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
-#define CCMD (int argc, const char **argv)
-typedef void (*ccmd_function)CCMD;
-typedef std::unordered_map<std::string, ccmd_function> ccmd_map_t;
+typedef std::unordered_map<std::string, ConsoleCommand> ccmd_map_t;
 static ccmd_map_t& getConsoleCommands()
 {
-	static ccmd_map_t ccmd_map;
-	return ccmd_map;
+    static ccmd_map_t ccmd_map;
+    return ccmd_map;
 }
 
-class ConsoleCommand {
-public:
-    ConsoleCommand(const char* name, ccmd_function func) {
-        auto& map = getConsoleCommands();
-        map.emplace(name, func);
-    }
-};
+void ConsoleCommand::add_to_map()
+{
+    auto& map = getConsoleCommands();
+    map.emplace(name, *this);
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -102,13 +99,45 @@ void consoleCommand(char const * const command_str)
 	}
 	else
 	{
-	    auto ccmd = find->second;
-	    (*ccmd)(tokens.size(), tokens.data());
+	    auto& ccmd = find->second;
+	    ccmd(tokens.size(), tokens.data());
 	}
 }
 
+#define CCMD (int argc, const char **argv)
+
 namespace ConsoleCommands {
-    static ConsoleCommand ccmd_ping("/ping", []CCMD{
+    static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help /listcmds)", []CCMD{
+        const char* cmd = argc == 1 ? "/help" : argv[1];
+        auto& map = getConsoleCommands();
+        auto find = map.find(cmd);
+        if (find != map.end()) {
+            messagePlayer(clientnum, MESSAGE_MISC, "%s", find->second.desc);
+        } else {
+            messagePlayer(clientnum, MESSAGE_MISC, "command '%s' not found", cmd);
+        }
+        });
+
+    static ConsoleCommand ccmd_listcmds("/listcmds", "list all console commands", []CCMD{
+        auto& map = getConsoleCommands();
+        int pagenum = argc > 1 ? atoi(argv[1]) : 0;
+        int index = 0;
+        const int num_per_page = 5;
+        for (auto& pair : map) {
+            auto& cmd = pair.second;
+            ++index;
+            const int cur_page = index / num_per_page;
+            if (cur_page == pagenum) {
+                messagePlayer(clientnum, MESSAGE_MISC, "%s", cmd.name);
+            }
+            else if (cur_page > pagenum) {
+                break;
+            }
+        }
+        messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
+        });
+
+    static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
 	    if ( multiplayer != CLIENT )
 	    {
 		    messagePlayer(clientnum, MESSAGE_MISC, language[1117], 0);
@@ -125,15 +154,15 @@ namespace ConsoleCommands {
 	    }
         });
 
-    static ConsoleCommand ccmd_usemodelcache("/usemodelcache", []CCMD{
+    static ConsoleCommand ccmd_usemodelcache("/usemodelcache", "use the model cache saved on disk", []CCMD{
         useModelCache = true;
         });
 
-    static ConsoleCommand ccmd_disablemodelcache("/disablemodelcache", []CCMD{
+    static ConsoleCommand ccmd_disablemodelcache("/disablemodelcache", "disables use of model cache", []CCMD{
 	    useModelCache = false;
         });
 
-    static ConsoleCommand ccmd_fov("/fov", []CCMD{
+    static ConsoleCommand ccmd_fov("/fov", "change field-of-view", []CCMD{
         if (argc < 2) {
             return;
         }
@@ -141,7 +170,7 @@ namespace ConsoleCommands {
 	    fov = std::min(std::max<Uint32>(40, fov), 100u);
         });
 
-    static ConsoleCommand ccmd_fps("/fps", []CCMD{
+    static ConsoleCommand ccmd_fps("/fps", "set frame rate limit", []CCMD{
         if (argc < 2) {
             return;
         }
@@ -149,7 +178,7 @@ namespace ConsoleCommands {
 		fpsLimit = std::min(std::max<Uint32>(30, fpsLimit), 300u);
         });
 
-    static ConsoleCommand ccmd_svflags("/svflags", []CCMD{
+    static ConsoleCommand ccmd_svflags("/svflags", "set server flags", []CCMD{
 		if ( multiplayer == CLIENT )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[275]);
@@ -185,7 +214,7 @@ namespace ConsoleCommands {
 		}
         });
 
-    static ConsoleCommand ccmd_lastname("/lastname", []CCMD{
+    static ConsoleCommand ccmd_lastname("/lastname", "set cached last name", []CCMD{
         if (argc < 2)
         {
             return;
@@ -193,7 +222,7 @@ namespace ConsoleCommands {
 		lastname = argv[1];
 		});
 
-    static ConsoleCommand ccmd_lastchar("/lastcharacter", []CCMD{
+    static ConsoleCommand ccmd_lastchar("/lastcharacter", "set last character attribute", []CCMD{
 		for ( int c = 1; c < argc; ++c )
 		{
 			switch ( c )
@@ -216,7 +245,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_spawnitem("/spawnitem", []CCMD{
+	static ConsoleCommand ccmd_spawnitem("/spawnitem", "spawn an item (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -254,7 +283,7 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_spawncursed("/spawncursed", []CCMD{
+	static ConsoleCommand ccmd_spawncursed("/spawncursed", "spawn a cursed item (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -292,7 +321,7 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_spawnblessed("/spawnblessed", []CCMD{
+	static ConsoleCommand ccmd_spawnblessed("/spawnblessed", "spawn a blessed item (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -330,7 +359,7 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_kick("/kick", []CCMD{
+	static ConsoleCommand ccmd_kick("/kick", "remove a player from the server by name", []CCMD{
 		if (argc < 2)
 		{
 		    return;
@@ -372,7 +401,7 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_spawnbook("/spawnbook", []CCMD{
+	static ConsoleCommand ccmd_spawnbook("/spawnbook", "spawn a readable book (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -386,7 +415,7 @@ namespace ConsoleCommands {
 		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), true, &stats[clientnum]->inventory), 0);
 	    });
 
-	static ConsoleCommand ccmd_savemap("/savemap", []CCMD{
+	static ConsoleCommand ccmd_savemap("/savemap", "save the current level to disk", []CCMD{
 		if ( argc > 1 )
 		{
 			saveMap(argv[1]);
@@ -394,7 +423,7 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_nextlevel("/nextlevel", []CCMD{
+	static ConsoleCommand ccmd_nextlevel("/nextlevel", "advance to the next dungeon level (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -411,7 +440,7 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_pos("/pos", []CCMD{
+	static ConsoleCommand ccmd_pos("/pos", "show the camera coordinates", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -425,10 +454,7 @@ namespace ConsoleCommands {
 		    cameras[0].vang);
 	    });
 
-	static ConsoleCommand ccmd_asdf("/asdf", []CCMD{
-	    });
-
-	static ConsoleCommand ccmd_pathmap("/pathmap", []CCMD{
+	static ConsoleCommand ccmd_pathmap("/pathmap", "display pathmap values at player coords", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -443,15 +469,15 @@ namespace ConsoleCommands {
 		}
 	    });
 
-	static ConsoleCommand ccmd_exit("/exit", []CCMD{
+	static ConsoleCommand ccmd_exit("/exit", "exit the game", []CCMD{
 		mainloop = 0;
 		});
 
-	static ConsoleCommand ccmd_showfps("/showfps", []CCMD{
+	static ConsoleCommand ccmd_showfps("/showfps", "display FPS counter", []CCMD{
 		showfps = (showfps == false);
 		});
 
-	static ConsoleCommand ccmd_noclip("/noclip", []CCMD{
+	static ConsoleCommand ccmd_noclip("/noclip", "toggle noclip mode (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -475,7 +501,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_god("/god", []CCMD{
+	static ConsoleCommand ccmd_god("/god", "toggle god mode (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -499,19 +525,24 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_spam("/spam", []CCMD{
+	static ConsoleCommand ccmd_spam("/spam", "", []CCMD{
 		spamming = !(spamming);
 		});
 
-	static ConsoleCommand ccmd_logobstacle("/logobstacle", []CCMD{
+	static ConsoleCommand ccmd_logobstacle("/logobstacle", "", []CCMD{
 		logCheckObstacle = !(logCheckObstacle);
 		});
 
-	static ConsoleCommand ccmd_showfirst("/showfirst", []CCMD{
+	static ConsoleCommand ccmd_showfirst("/showfirst", "", []CCMD{
 		showfirst = !(showfirst);
 		});
 
-	static ConsoleCommand ccmd_buddha("/buddha", []CCMD{
+	static ConsoleCommand ccmd_buddha("/buddha", "toggle buddha mode (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[293]);
@@ -530,7 +561,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_friendly("/friendly", []CCMD{
+	static ConsoleCommand ccmd_friendly("/friendly", "make all NPCs friendly (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -552,7 +583,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_dowse("/dowse", []CCMD{
+	static ConsoleCommand ccmd_dowse("/dowse", "print the down stairs coords (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -568,7 +599,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_thirdperson("/thirdperson", []CCMD{
+	static ConsoleCommand ccmd_thirdperson("/thirdperson", "toggle thirdperson mode (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
 		    // this is definitely considered a cheat.
@@ -591,7 +622,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_res("/res", []CCMD{
+	static ConsoleCommand ccmd_res("/res", "change the window resolution", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -615,7 +646,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_rscale("/rscale", []CCMD{
+	static ConsoleCommand ccmd_rscale("/rscale", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -623,50 +654,46 @@ namespace ConsoleCommands {
 		rscale = atoi(argv[1]);
 		});
 
-	static ConsoleCommand ccmd_fullscreen("/fullscreen", []CCMD{
+	static ConsoleCommand ccmd_fullscreen("/fullscreen", "toggle fullscreen mode", []CCMD{
 		fullscreen = (fullscreen == 0);
 		});
 
-	static ConsoleCommand ccmd_shaking("/shaking", []CCMD{
+	static ConsoleCommand ccmd_shaking("/shaking", "toggle camera shaking", []CCMD{
 		shaking = (shaking == 0);
 		});
 
-	static ConsoleCommand ccmd_bobbing("/bobbing", []CCMD{
+	static ConsoleCommand ccmd_bobbing("/bobbing", "toggle camera bobbing", []CCMD{
 		bobbing = (bobbing == 0);
 		});
 
-	static ConsoleCommand ccmd_sfxvolume("/sfxvolume", []CCMD{
+	static ConsoleCommand ccmd_sfxvolume("/sfxvolume", "set sfx volume", []CCMD{
 	    if (argc > 1)
 		    sfxvolume = strtof(argv[1], nullptr);
 		});
 
-	static ConsoleCommand ccmd_musvolume("/musvolume", []CCMD{
+	static ConsoleCommand ccmd_musvolume("/musvolume", "set music volume", []CCMD{
 	    if (argc > 1)
 		    musvolume = strtof(argv[1], nullptr);
 		});
 
-	static ConsoleCommand ccmd_bind("/bind", []CCMD{
+	static ConsoleCommand ccmd_bind("/bind", "bind input to game action", []CCMD{
 		printlog("Note: /bind is now deprecated.\n");
 		});
 
-	static ConsoleCommand ccmd_joybind("/joybind", []CCMD{
-		printlog("Note: /joybind is now deprecated.\n");
-		});
-
-	static ConsoleCommand ccmd_mousespeed("/mousespeed", []CCMD{
+	static ConsoleCommand ccmd_mousespeed("/mousespeed", "change mouse speed", []CCMD{
 	    if (argc > 1)
 		    mousespeed = atoi(argv[1]);
 		});
 
-	static ConsoleCommand ccmd_reversemouse("/reversemouse", []CCMD{
+	static ConsoleCommand ccmd_reversemouse("/reversemouse", "toggle reverse mouse mode", []CCMD{
 		reversemouse = (reversemouse == 0);
 		});
 
-	static ConsoleCommand ccmd_smoothmouse("/smoothmouse", []CCMD{
+	static ConsoleCommand ccmd_smoothmouse("/smoothmouse", "toggle mouse smoothing", []CCMD{
 		smoothmouse = (smoothmouse == false);
 		});
 
-	static ConsoleCommand ccmd_mana("/mana", []CCMD{
+	static ConsoleCommand ccmd_mana("/mana", "give player mana (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -683,7 +710,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_heal("/heal", []CCMD{
+	static ConsoleCommand ccmd_heal("/heal", "heal the player (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -700,7 +727,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_damage("/damage", []CCMD{
+	static ConsoleCommand ccmd_damage("/damage", "damage the player (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -722,7 +749,7 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Damaging you by %d. New health: %d", amount, stats[clientnum]->HP);
 		});
 
-	static ConsoleCommand ccmd_ip("/ip", []CCMD{
+	static ConsoleCommand ccmd_ip("/ip", "set the saved ip address", []CCMD{
 		if ( argc > 1 )
 		{
 		    size_t size = strlen(argv[1]);
@@ -732,7 +759,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_port("/port", []CCMD{
+	static ConsoleCommand ccmd_port("/port", "set the saved port number", []CCMD{
 		if ( argc > 1 )
 		{
 		    size_t size = strlen(argv[1]);
@@ -742,42 +769,42 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_noblood("/noblood", []CCMD{
+	static ConsoleCommand ccmd_noblood("/noblood", "toggle content control", []CCMD{
 		spawn_blood = (spawn_blood == false);
 		});
 
-	static ConsoleCommand ccmd_nolightflicker("/nolightflicker", []CCMD{
+	static ConsoleCommand ccmd_nolightflicker("/nolightflicker", "toggle flickering lights", []CCMD{
 		flickerLights = (flickerLights == false);
 		});
 
-	static ConsoleCommand ccmd_vsync("/vsync", []CCMD{
+	static ConsoleCommand ccmd_vsync("/vsync", "toggle vertical sync", []CCMD{
 		verticalSync = (verticalSync == false);
 		});
 
-	static ConsoleCommand ccmd_hidestatusicons("/hidestatusicons", []CCMD{
+	static ConsoleCommand ccmd_hidestatusicons("/hidestatusicons", "toggle status icons", []CCMD{
 		showStatusEffectIcons = (showStatusEffectIcons == false);
 		});
 
-	static ConsoleCommand ccmd_muteping("/muteping", []CCMD{
+	static ConsoleCommand ccmd_muteping("/muteping", "toggle minimap ping audio", []CCMD{
 		minimapPingMute = (minimapPingMute == false);
 		});
 
-	static ConsoleCommand ccmd_colorblind("/colorblind", []CCMD{
+	static ConsoleCommand ccmd_colorblind("/colorblind", "toggle colorblind mode", []CCMD{
 		colorblind = (colorblind == false);
 		});
 
-	static ConsoleCommand ccmd_gamma("/gamma", []CCMD{
+	static ConsoleCommand ccmd_gamma("/gamma", "set gamma value", []CCMD{
         if (argc < 2) {
             return;
         }
 		vidgamma = strtof(argv[1], nullptr);
 		});
 
-	static ConsoleCommand ccmd_capturemouse("/capturemouse", []CCMD{
+	static ConsoleCommand ccmd_capturemouse("/capturemouse", "toggle mouse capture", []CCMD{
 		capture_mouse = (capture_mouse == false);
 		});
 
-	static ConsoleCommand ccmd_levelup("/levelup", []CCMD{
+	static ConsoleCommand ccmd_levelup("/levelup", "level up the player character (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -804,7 +831,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_maxout2("/maxout2", []CCMD{
+	static ConsoleCommand ccmd_maxout2("/maxout2", "give player lots of stuff (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -844,7 +871,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_jumplevel("/jumplevel", []CCMD{
+	static ConsoleCommand ccmd_jumplevel("/jumplevel", "advance several levels", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -861,7 +888,7 @@ namespace ConsoleCommands {
 		consoleCommand("/nextlevel");
 		});
 
-	static ConsoleCommand ccmd_maxout3("/maxout3", []CCMD{
+	static ConsoleCommand ccmd_maxout3("/maxout3", "give player lots of stuff (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -904,7 +931,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_maxout4("/maxout4", []CCMD{
+	static ConsoleCommand ccmd_maxout4("/maxout4", "give player lots of stuff (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -952,7 +979,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_maxout("/maxout", []CCMD{
+	static ConsoleCommand ccmd_maxout("/maxout", "give player lots of stuff (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -991,7 +1018,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_hunger("/hunger", []CCMD{
+	static ConsoleCommand ccmd_hunger("/hunger", "set player hunger (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1012,7 +1039,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_poison("/poison", []CCMD{
+	static ConsoleCommand ccmd_poison("/poison", "poison the player (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1034,7 +1061,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_testsound("/testsound", []CCMD{
+	static ConsoleCommand ccmd_testsound("/testsound", "test a sound effect", []CCMD{
         if (argc < 2) {
             return;
         }
@@ -1042,11 +1069,11 @@ namespace ConsoleCommands {
 		playSound(num, 256);
 		});
 
-	static ConsoleCommand ccmd_skipintro("/skipintro", []CCMD{
+	static ConsoleCommand ccmd_skipintro("/skipintro", "toggle skipping the opening cutscene", []CCMD{
 		skipintro = (skipintro == false);
 		});
 
-	static ConsoleCommand ccmd_levelmagic("/levelmagic", []CCMD{
+	static ConsoleCommand ccmd_levelmagic("/levelmagic", "level up magic skills (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1068,19 +1095,19 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_numentities("/numentities", []CCMD{
+	static ConsoleCommand ccmd_numentities("/numentities", "display number of entities in the level", []CCMD{
 		messagePlayer(clientnum, MESSAGE_MISC, language[300], list_Size(map.entities));
 		});
 
-	static ConsoleCommand ccmd_nummonsters2("/nummonsters2", []CCMD{
+	static ConsoleCommand ccmd_nummonsters2("/nummonsters2", "display number of NPCs in the level", []CCMD{
 		messagePlayer(clientnum, MESSAGE_MISC, language[2353], list_Size(map.creatures));
 		});
 
-	static ConsoleCommand ccmd_nummonsters("/nummonsters", []CCMD{
+	static ConsoleCommand ccmd_nummonsters("/nummonsters", "display number of monsters in the level", []CCMD{
 		messagePlayer(clientnum, MESSAGE_MISC, language[2353], nummonsters);
 		});
 
-	static ConsoleCommand ccmd_verifycreaturelist("/verifycreaturelist", []CCMD{
+	static ConsoleCommand ccmd_verifycreaturelist("/verifycreaturelist", "", []CCMD{
 		//Make sure that the number of creatures in the creature list are the real count in the game world.
 		unsigned entcount = 0;
 
@@ -1108,7 +1135,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_loadmodels("/loadmodels", []CCMD{
+	static ConsoleCommand ccmd_loadmodels("/loadmodels", "", []CCMD{
 		char name2[128];
 		char buf[16] = "";
 		int startIndex = 0;
@@ -1193,7 +1220,7 @@ namespace ConsoleCommands {
 		generatePolyModels(startIndex, endIndex, true);
 		});
 
-	static ConsoleCommand ccmd_killmonsters("/killmonsters", []CCMD{
+	static ConsoleCommand ccmd_killmonsters("/killmonsters", "kill all monsters (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1221,7 +1248,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_die("/die", []CCMD{
+	static ConsoleCommand ccmd_die("/die", "suicide the player", []CCMD{
 		if ( multiplayer == CLIENT )
 		{
 			// request sweet release.
@@ -1241,12 +1268,12 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_segfault("/segfault", []CCMD{
+	static ConsoleCommand ccmd_segfault("/segfault", "don't try this at home", []CCMD{
 		int* potato = NULL;
 		(*potato) = 322; //Crash the game!
 		});
 
-	static ConsoleCommand ccmd_flames("/flames", []CCMD{
+	static ConsoleCommand ccmd_flames("/flames", "ignite the player (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1274,7 +1301,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_cure("/cure", []CCMD{
+	static ConsoleCommand ccmd_cure("/cure", "cure the player of ailments (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1302,7 +1329,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_summonall("/summonall", []CCMD{
+	static ConsoleCommand ccmd_summonall("/summonall", "summon a bunch of monsters (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1345,7 +1372,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_summon("/summon", []CCMD{
+	static ConsoleCommand ccmd_summon("/summon", "summon a monster (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1447,7 +1474,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_summonchest("/summonchest", []CCMD{
+	static ConsoleCommand ccmd_summonchest("/summonchest", "spawn a chest (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1469,19 +1496,19 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_broadcast("/broadcast", []CCMD{
+	static ConsoleCommand ccmd_broadcast("/broadcast", "", []CCMD{
 		broadcast = (broadcast == false);
 		});
 
-	static ConsoleCommand ccmd_nohud("/nohud", []CCMD{
+	static ConsoleCommand ccmd_nohud("/nohud", "disable in-game hud", []CCMD{
 		nohud = (nohud == false);
 		});
 
-	static ConsoleCommand ccmd_disablehotbarnewitems("/disablehotbarnewitems", []CCMD{
+	static ConsoleCommand ccmd_disablehotbarnewitems("/disablehotbarnewitems", "", []CCMD{
 		auto_hotbar_new_items = (auto_hotbar_new_items == false);
 		});
 
-	static ConsoleCommand ccmd_hotbarenablecategory("/hotbarenablecategory", []CCMD{
+	static ConsoleCommand ccmd_hotbarenablecategory("/hotbarenablecategory", "", []CCMD{
         if (argc < 3) {
             return;
         }
@@ -1491,7 +1518,7 @@ namespace ConsoleCommands {
 		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
 		});
 
-	static ConsoleCommand ccmd_autosortcategory("/autosortcategory", []CCMD{
+	static ConsoleCommand ccmd_autosortcategory("/autosortcategory", "", []CCMD{
         if (argc < 3) {
             return;
         }
@@ -1501,11 +1528,11 @@ namespace ConsoleCommands {
 		printlog("Autosort inventory category %d, priority %d.", catIndex, value);
 		});
 
-	static ConsoleCommand ccmd_quickaddtohotbar("/quickaddtohotbar", []CCMD{
+	static ConsoleCommand ccmd_quickaddtohotbar("/quickaddtohotbar", "", []CCMD{
 		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
 		});
 
-	static ConsoleCommand ccmd_locksidebar("/locksidebar", []CCMD{
+	static ConsoleCommand ccmd_locksidebar("/locksidebar", "", []CCMD{
 		if ( players[clientnum] ) // warning - this doesn't exist when loadConfig() is called on init.
 		{
 			players[clientnum]->characterSheet.lock_right_sidebar = (players[clientnum]->characterSheet.lock_right_sidebar == false);
@@ -1516,37 +1543,37 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_showgametimer("/showgametimer", []CCMD{
+	static ConsoleCommand ccmd_showgametimer("/showgametimer", "display in-game timer", []CCMD{
 		show_game_timer_always = (show_game_timer_always == false);
 		});
 
-	static ConsoleCommand ccmd_lang("/lang", []CCMD{
+	static ConsoleCommand ccmd_lang("/lang", "load specified language file (eg: /lang en)", []CCMD{
 	    if (argc > 1) {
 		    loadLanguage(argv[1]);
 	    }
 		});
 
-	static ConsoleCommand ccmd_mapseed("/mapseed", []CCMD{
+	static ConsoleCommand ccmd_mapseed("/mapseed", "display map seed", []CCMD{
 		messagePlayer(clientnum, MESSAGE_MISC, "%d", mapseed);
 		});
 
-	static ConsoleCommand ccmd_reloadlang("/reloadlang", []CCMD{
+	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
 		reloadLanguage();
 		});
 
-	static ConsoleCommand ccmd_disablemessages("/disablemessages", []CCMD{
+	static ConsoleCommand ccmd_disablemessages("/disablemessages", "disable all messages", []CCMD{
 		disable_messages = true;
 		});
 
-	static ConsoleCommand ccmd_right_click_protect("/right_click_protect", []CCMD{
+	static ConsoleCommand ccmd_right_click_protect("/right_click_protect", "toggle right-click protection", []CCMD{
 		right_click_protect = (right_click_protect == false);
 		});
 
-	static ConsoleCommand ccmd_autoappraisenewitems("/autoappraisenewitems", []CCMD{
+	static ConsoleCommand ccmd_autoappraisenewitems("/autoappraisenewitems", "auto appraise new items", []CCMD{
 		auto_appraise_new_items = true;
 		});
 
-	static ConsoleCommand ccmd_startfloor("/startfloor", []CCMD{
+	static ConsoleCommand ccmd_startfloor("/startfloor", "set the start floor", []CCMD{
 	    if (argc > 1)
 	    {
 		    startfloor = atoi(argv[1]);
@@ -1557,7 +1584,12 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_splitscreen("/splitscreen", []CCMD{
+	static ConsoleCommand ccmd_splitscreen("/splitscreen", "enable splitscreen mode (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
 		int numPlayers = 4;
 		splitscreen = !splitscreen;
 
@@ -1730,7 +1762,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gamepad_deadzone("/gamepad_deadzone", []CCMD{
+	static ConsoleCommand ccmd_gamepad_deadzone("/gamepad_deadzone", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1741,7 +1773,7 @@ namespace ConsoleCommands {
 		printlog("Controller deadzone is %d.", gamepad_deadzone);
 		});
 
-	static ConsoleCommand ccmd_gamepad_trigger_deadzone("/gamepad_trigger_deadzone", []CCMD{
+	static ConsoleCommand ccmd_gamepad_trigger_deadzone("/gamepad_trigger_deadzone", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1752,7 +1784,7 @@ namespace ConsoleCommands {
 		printlog("Controller trigger deadzone is %d.", gamepad_trigger_deadzone);
 		});
 
-	static ConsoleCommand ccmd_gamepad_leftx_sensitivity("/gamepad_leftx_sensitivity", []CCMD{
+	static ConsoleCommand ccmd_gamepad_leftx_sensitivity("/gamepad_leftx_sensitivity", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1763,7 +1795,7 @@ namespace ConsoleCommands {
 		printlog("Controller leftx sensitivity is %d.", gamepad_leftx_sensitivity);
 		});
 
-	static ConsoleCommand ccmd_gamepad_lefty_sensitivity("/gamepad_lefty_sensitivity", []CCMD{
+	static ConsoleCommand ccmd_gamepad_lefty_sensitivity("/gamepad_lefty_sensitivity", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1774,7 +1806,7 @@ namespace ConsoleCommands {
 		printlog("Controller lefty sensitivity is %d.", gamepad_lefty_sensitivity);
 		});
 
-	static ConsoleCommand ccmd_gamepad_rightx_sensitivity("/gamepad_rightx_sensitivity", []CCMD{
+	static ConsoleCommand ccmd_gamepad_rightx_sensitivity("/gamepad_rightx_sensitivity", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1785,7 +1817,7 @@ namespace ConsoleCommands {
 		printlog("Controller rightx sensitivity is %d.", gamepad_rightx_sensitivity);
 		});
 
-	static ConsoleCommand ccmd_gamepad_righty_sensitivity("/gamepad_righty_sensitivity", []CCMD{
+	static ConsoleCommand ccmd_gamepad_righty_sensitivity("/gamepad_righty_sensitivity", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1796,7 +1828,7 @@ namespace ConsoleCommands {
 		printlog("Controller righty sensitivity is %d.", gamepad_righty_sensitivity);
 		});
 
-	static ConsoleCommand ccmd_gamepad_menux_sensitivity("/gamepad_menux_sensitivity", []CCMD{
+	static ConsoleCommand ccmd_gamepad_menux_sensitivity("/gamepad_menux_sensitivity", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1807,7 +1839,7 @@ namespace ConsoleCommands {
 		printlog("Controller menux sensitivity is %d.", gamepad_menux_sensitivity);
 		});
 
-	static ConsoleCommand ccmd_gamepad_menuy_sensitivity("/gamepad_menuy_sensitivity", []CCMD{
+	static ConsoleCommand ccmd_gamepad_menuy_sensitivity("/gamepad_menuy_sensitivity", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -1818,31 +1850,31 @@ namespace ConsoleCommands {
 		printlog("Controller menuy sensitivity is %d.", gamepad_menuy_sensitivity);
 		});
 
-	static ConsoleCommand ccmd_gamepad_leftx_invert("/gamepad_leftx_invert", []CCMD{
+	static ConsoleCommand ccmd_gamepad_leftx_invert("/gamepad_leftx_invert", "", []CCMD{
 		gamepad_leftx_invert = true;
 		});
 
-	static ConsoleCommand ccmd_gamepad_lefty_invert("/gamepad_lefty_invert", []CCMD{
+	static ConsoleCommand ccmd_gamepad_lefty_invert("/gamepad_lefty_invert", "", []CCMD{
 		gamepad_lefty_invert = true;
 		});
 
-	static ConsoleCommand ccmd_gamepad_rightx_invert("/gamepad_rightx_invert", []CCMD{
+	static ConsoleCommand ccmd_gamepad_rightx_invert("/gamepad_rightx_invert", "", []CCMD{
 		gamepad_rightx_invert = true;
 		});
 
-	static ConsoleCommand ccmd_gamepad_righty_invert("/gamepad_righty_invert", []CCMD{
+	static ConsoleCommand ccmd_gamepad_righty_invert("/gamepad_righty_invert", "", []CCMD{
 		gamepad_righty_invert = true;
 		});
 
-	static ConsoleCommand ccmd_gamepad_menux_invert("/gamepad_menux_invert", []CCMD{
+	static ConsoleCommand ccmd_gamepad_menux_invert("/gamepad_menux_invert", "", []CCMD{
 		gamepad_menux_invert = true;
 		});
 
-	static ConsoleCommand ccmd_gamepad_menuy_invert("/gamepad_menuy_invert", []CCMD{
+	static ConsoleCommand ccmd_gamepad_menuy_invert("/gamepad_menuy_invert", "", []CCMD{
 		gamepad_menuy_invert = true;
 		});
 
-	static ConsoleCommand ccmd_numgold("/numgold", []CCMD{
+	static ConsoleCommand ccmd_numgold("/numgold", "tell how much gold the given player has (eg: /numgold 0)", []CCMD{
 		for ( unsigned i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( client_disconnected[i] )
@@ -1853,7 +1885,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gold("/gold", []CCMD{
+	static ConsoleCommand ccmd_gold("/gold", "give the player gold (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1876,9 +1908,10 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Giving %d gold pieces.", amount);
 		});
 
-	static ConsoleCommand ccmd_dropgold("/dropgold", []CCMD{
+	static ConsoleCommand ccmd_dropgold("/dropgold", "drop some gold", []CCMD{
 		if (argc < 2)
         {
+            messagePlayer(clientnum, MESSAGE_MISC, "Please include the amount of gold to drop. (eg: /dropgold 10)");
             return;
         }
 		int amount = atoi(argv[1]);
@@ -1945,7 +1978,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_minotaurlevel("/minotaurlevel", []CCMD{
+	static ConsoleCommand ccmd_minotaurlevel("/minotaurlevel", "create a minotaur timer (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1964,7 +1997,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_minotaurnow("/minotaurnow", []CCMD{
+	static ConsoleCommand ccmd_minotaurnow("/minotaurnow", "summon the minotaur (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -1992,7 +2025,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_levelskill("/levelskill", []CCMD{
+	static ConsoleCommand ccmd_levelskill("/levelskill", "increase a skill (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2022,7 +2055,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_maplevel("/maplevel", []CCMD{
+	static ConsoleCommand ccmd_maplevel("/maplevel", "magic mapping for the level (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2039,7 +2072,7 @@ namespace ConsoleCommands {
 		mapLevel(clientnum);
 		});
 
-	static ConsoleCommand ccmd_drunky("/drunky", []CCMD{
+	static ConsoleCommand ccmd_drunky("/drunky", "make me drunk (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2063,7 +2096,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_maxskill("/maxskill", []CCMD{
+	static ConsoleCommand ccmd_maxskill("/maxskill", "max out player skills (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2093,7 +2126,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_reloadlimbs("/reloadlimbs", []CCMD{
+	static ConsoleCommand ccmd_reloadlimbs("/reloadlimbs", "reload limb files", []CCMD{
 		int x;
 		File* fp;
 		bool success = true;
@@ -2166,7 +2199,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_animspeed("/animspeed", []CCMD{
+	static ConsoleCommand ccmd_animspeed("/animspeed", "change animation speed (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2187,7 +2220,7 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Changed animation speed multiplier to %f.", speed / 10.0);
 		});
 
-	static ConsoleCommand ccmd_atkspeed("/atkspeed", []CCMD{
+	static ConsoleCommand ccmd_atkspeed("/atkspeed", "change attack speed (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2208,7 +2241,7 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Changed attack speed multiplier to %d.", speed);
 		});
 
-	static ConsoleCommand ccmd_loadmod("/loadmod", []CCMD{
+	static ConsoleCommand ccmd_loadmod("/loadmod", "load the specified mod", []CCMD{
 	    std::string dir, name, fileid;
 	    for (int c = 1; c < argc; ++c)
 	    {
@@ -2261,15 +2294,15 @@ namespace ConsoleCommands {
 	    }
 		});
 
-	static ConsoleCommand ccmd_muteaudiofocuslost("/muteaudiofocuslost", []CCMD{
+	static ConsoleCommand ccmd_muteaudiofocuslost("/muteaudiofocuslost", "", []CCMD{
 		mute_audio_on_focus_lost = (mute_audio_on_focus_lost == false);
 		});
 
-	static ConsoleCommand ccmd_muteplayermonstersounds("/muteplayermonstersounds", []CCMD{
+	static ConsoleCommand ccmd_muteplayermonstersounds("/muteplayermonstersounds", "", []CCMD{
 		mute_player_monster_sounds = (mute_player_monster_sounds == false);
 		});
 
-	static ConsoleCommand ccmd_minimaptransparencyfg("/minimaptransparencyfg", []CCMD{
+	static ConsoleCommand ccmd_minimaptransparencyfg("/minimaptransparencyfg", "", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2279,13 +2312,13 @@ namespace ConsoleCommands {
 
 		});
 
-	static ConsoleCommand ccmd_minimaptransparencybg("/minimaptransparencybg", []CCMD{
+	static ConsoleCommand ccmd_minimaptransparencybg("/minimaptransparencybg", "", []CCMD{
 		minimapTransparencyBackground = atoi(argv[1]);
 		minimapTransparencyBackground = std::min(std::max<int>(0, minimapTransparencyBackground), 100);
 
 		});
 
-	static ConsoleCommand ccmd_minimapscale("/minimapscale", []CCMD{
+	static ConsoleCommand ccmd_minimapscale("/minimapscale", "", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2294,7 +2327,7 @@ namespace ConsoleCommands {
 		minimapScale = std::min(std::max<int>(2, minimapScale), 16);
 		});
 
-	static ConsoleCommand ccmd_minimapobjectzoom("/minimapobjectzoom", []CCMD{
+	static ConsoleCommand ccmd_minimapobjectzoom("/minimapobjectzoom", "", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2303,35 +2336,35 @@ namespace ConsoleCommands {
 		minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
 		});
 
-	static ConsoleCommand ccmd_uiscale_charsheet("/uiscale_charsheet", []CCMD{
+	static ConsoleCommand ccmd_uiscale_charsheet("/uiscale_charsheet", "", []CCMD{
 		uiscale_charactersheet = !uiscale_charactersheet;
 		});
 
-	static ConsoleCommand ccmd_uiscale_skillsheet("/uiscale_skillsheet", []CCMD{
+	static ConsoleCommand ccmd_uiscale_skillsheet("/uiscale_skillsheet", "", []CCMD{
 		uiscale_skillspage = !uiscale_skillspage;
 		});
 
-	static ConsoleCommand ccmd_hidestatusbar("/hidestatusbar", []CCMD{
+	static ConsoleCommand ccmd_hidestatusbar("/hidestatusbar", "", []CCMD{
 		//hide_statusbar = !hide_statusbar;
 		});
 
-	static ConsoleCommand ccmd_hideplayertags("/hideplayertags", []CCMD{
+	static ConsoleCommand ccmd_hideplayertags("/hideplayertags", "", []CCMD{
 		hide_playertags = !hide_playertags;
 		});
 
-	static ConsoleCommand ccmd_showskillvalues("/showskillvalues", []CCMD{
+	static ConsoleCommand ccmd_showskillvalues("/showskillvalues", "", []CCMD{
 		show_skill_values = !show_skill_values;
 		});
 
-	static ConsoleCommand ccmd_disablenetworkmultithreading("/disablenetworkmultithreading", []CCMD{
+	static ConsoleCommand ccmd_disablenetworkmultithreading("/disablenetworkmultithreading", "", []CCMD{
 		disableMultithreadedSteamNetworking = true;// !disableMultithreadedSteamNetworking;
 		});
 
-	static ConsoleCommand ccmd_autolimbreload("/autolimbreload", []CCMD{
+	static ConsoleCommand ccmd_autolimbreload("/autolimbreload", "", []CCMD{
 		autoLimbReload = !autoLimbReload;
 		});
 
-	static ConsoleCommand ccmd_togglesecretlevel("/togglesecretlevel", []CCMD{
+	static ConsoleCommand ccmd_togglesecretlevel("/togglesecretlevel", "put the player on the secret level track (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2345,7 +2378,7 @@ namespace ConsoleCommands {
 		secretlevel = (secretlevel == false);
 		});
 
-	static ConsoleCommand ccmd_seteffect("/seteffect", []CCMD{
+	static ConsoleCommand ccmd_seteffect("/seteffect", "give the player the specified effect (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2372,7 +2405,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_levelsummon("/levelsummon", []CCMD{
+	static ConsoleCommand ccmd_levelsummon("/levelsummon", "level up monster summons (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2393,7 +2426,7 @@ namespace ConsoleCommands {
 		return;
 		});
 
-	static ConsoleCommand ccmd_brawlermode("/brawlermode", []CCMD{
+	static ConsoleCommand ccmd_brawlermode("/brawlermode", "activate brawler mode", []CCMD{
 		achievementBrawlerMode = !achievementBrawlerMode;
 		if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 		{
@@ -2409,7 +2442,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_rangermode("/rangermode", []CCMD{
+	static ConsoleCommand ccmd_rangermode("/rangermode", "activate ranger mode", []CCMD{
 		int player = -1;
 		if ( argc > 1 )
 		{
@@ -2455,7 +2488,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gimmepotions("/gimmepotions", []CCMD{
+	static ConsoleCommand ccmd_gimmepotions("/gimmepotions", "give the player some potions (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2499,7 +2532,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_hungoverstats("/hungoverstats", []CCMD{
+	static ConsoleCommand ccmd_hungoverstats("/hungoverstats", "display stats on drunkenness (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2518,11 +2551,11 @@ namespace ConsoleCommands {
 		return;
 		});
 
-	static ConsoleCommand ccmd_debugtimers("/debugtimers", []CCMD{
+	static ConsoleCommand ccmd_debugtimers("/debugtimers", "", []CCMD{
 		logCheckMainLoopTimers = !logCheckMainLoopTimers;
 		});
 
-	static ConsoleCommand ccmd_entityfreeze("/entityfreeze", []CCMD{
+	static ConsoleCommand ccmd_entityfreeze("/entityfreeze", "freeze all entities (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2531,7 +2564,7 @@ namespace ConsoleCommands {
 		gameloopFreezeEntities = !gameloopFreezeEntities;
 		});
 
-	static ConsoleCommand ccmd_tickrate("/tickrate", []CCMD{
+	static ConsoleCommand ccmd_tickrate("/tickrate", "set game tick rate", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2542,11 +2575,11 @@ namespace ConsoleCommands {
 			networkTickrate, 100.f / networkTickrate);
 		});
 
-	static ConsoleCommand ccmd_disablenetcodefpslimit("/disablenetcodefpslimit", []CCMD{
+	static ConsoleCommand ccmd_disablenetcodefpslimit("/disablenetcodefpslimit", "", []CCMD{
 		disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
 		});
 
-	static ConsoleCommand ccmd_allspells1("/allspells1", []CCMD{
+	static ConsoleCommand ccmd_allspells1("/allspells1", "teach player some spells (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2561,7 +2594,7 @@ namespace ConsoleCommands {
 		return;
 		});
 
-	static ConsoleCommand ccmd_setmapseed("/setmapseed", []CCMD{
+	static ConsoleCommand ccmd_setmapseed("/setmapseed", "set the next map seed (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2583,7 +2616,7 @@ namespace ConsoleCommands {
 		return;
 		});
 
-	static ConsoleCommand ccmd_greaseme("/greaseme", []CCMD{
+	static ConsoleCommand ccmd_greaseme("/greaseme", "make the player greasy (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2600,7 +2633,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gimmearrows("/gimmearrows", []CCMD{
+	static ConsoleCommand ccmd_gimmearrows("/gimmearrows", "give the player some arrows (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2612,7 +2645,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gimmescrap("/gimmescrap", []CCMD{
+	static ConsoleCommand ccmd_gimmescrap("/gimmescrap", "give the player some scrap metal (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2623,7 +2656,7 @@ namespace ConsoleCommands {
 		dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 		});
 
-	static ConsoleCommand ccmd_gimmerobots("/gimmerobots", []CCMD{
+	static ConsoleCommand ccmd_gimmerobots("/gimmerobots", "give the player some robots (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2635,7 +2668,7 @@ namespace ConsoleCommands {
 		dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 		});
 
-	static ConsoleCommand ccmd_toggletinkeringlimits("/toggletinkeringlimits", []CCMD{
+	static ConsoleCommand ccmd_toggletinkeringlimits("/toggletinkeringlimits", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2652,7 +2685,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_setdecoyrange("/setdecoyrange", []CCMD{
+	static ConsoleCommand ccmd_setdecoyrange("/setdecoyrange", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2671,7 +2704,7 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Set decoy range to %d", decoyBoxRange);
 		});
 
-	static ConsoleCommand ccmd_gimmegoblinbooks("/gimmegoblinbooks", []CCMD{
+	static ConsoleCommand ccmd_gimmegoblinbooks("/gimmegoblinbooks", "give the player some spellbooks (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2684,7 +2717,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_unsetdlc2achievements("/unsetdlc2achievements", []CCMD{
+	static ConsoleCommand ccmd_unsetdlc2achievements("/unsetdlc2achievements", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2764,7 +2797,7 @@ namespace ConsoleCommands {
 #endif // STEAMWORKS
 		});
 
-	static ConsoleCommand ccmd_gimmebombs("/gimmebombs", []CCMD{
+	static ConsoleCommand ccmd_gimmebombs("/gimmebombs", "give the player some bombs (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2776,7 +2809,7 @@ namespace ConsoleCommands {
 		dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 		});
 
-	static ConsoleCommand ccmd_showhunger("/showhunger", []CCMD{
+	static ConsoleCommand ccmd_showhunger("/showhunger", "show the player's hunger value (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -2785,15 +2818,15 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Hunger value: %d", stats[clientnum]->HUNGER);
 		});
 
-	static ConsoleCommand ccmd_disablemouserotationlimit("/disablemouserotationlimit", []CCMD{
+	static ConsoleCommand ccmd_disablemouserotationlimit("/disablemouserotationlimit", "", []CCMD{
 		disablemouserotationlimit = (disablemouserotationlimit == false);
 		});
 
-	static ConsoleCommand ccmd_usecamerasmoothing("/usecamerasmoothing", []CCMD{
+	static ConsoleCommand ccmd_usecamerasmoothing("/usecamerasmoothing", "", []CCMD{
 		usecamerasmoothing = (usecamerasmoothing == false);
 		});
 
-	static ConsoleCommand ccmd_lightupdate("/lightupdate", []CCMD{
+	static ConsoleCommand ccmd_lightupdate("/lightupdate", "", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2801,25 +2834,25 @@ namespace ConsoleCommands {
 		globalLightSmoothingRate = atoi(argv[1]);
 		});
 
-	static ConsoleCommand ccmd_dumpnetworkdata("/dumpnetworkdata", []CCMD{
+	static ConsoleCommand ccmd_dumpnetworkdata("/dumpnetworkdata", "", []CCMD{
 		for ( auto element : DebugStats.networkPackets )
 		{
 			printlog("Packet: %s | %d", element.second.first.c_str(), element.second.second);
 		}
 		});
 
-	static ConsoleCommand ccmd_dumpentudata("/dumpentudata", []CCMD{
+	static ConsoleCommand ccmd_dumpentudata("/dumpentudata", "", []CCMD{
 		for ( auto element : DebugStats.entityUpdatePackets )
 		{
 			printlog("Sprite: %d | %d", element.first, element.second);
 		}
 		});
 
-	static ConsoleCommand ccmd_borderless("/borderless", []CCMD{
+	static ConsoleCommand ccmd_borderless("/borderless", "toggle borderless mode", []CCMD{
 		borderless = (!borderless);
 		});
 
-	static ConsoleCommand ccmd_jsonexportmonster("/jsonexportmonster", []CCMD{
+	static ConsoleCommand ccmd_jsonexportmonster("/jsonexportmonster", "", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2844,7 +2877,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_jsonexportfromcursor("/jsonexportfromcursor", []CCMD{
+	static ConsoleCommand ccmd_jsonexportfromcursor("/jsonexportfromcursor", "", []CCMD{
 		Entity* target = entityClicked(nullptr, true, clientnum, EntityClickType::ENTITY_CLICK_USE);
 		if ( target )
 		{
@@ -2861,24 +2894,21 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_newui("/newui", []CCMD{
-		});
-
-	static ConsoleCommand ccmd_jsonexportgameplaymodifiers("/jsonexportgameplaymodifiers", []CCMD{
+	static ConsoleCommand ccmd_jsonexportgameplaymodifiers("/jsonexportgameplaymodifiers", "", []CCMD{
 		gameplayCustomManager.writeAllToDocument();
 		});
 
-	static ConsoleCommand ccmd_jsonexportmonstercurve("/jsonexportmonstercurve", []CCMD{
+	static ConsoleCommand ccmd_jsonexportmonstercurve("/jsonexportmonstercurve", "", []CCMD{
 		monsterCurveCustomManager.writeSampleToDocument();
 		});
 
-	static ConsoleCommand ccmd_crossplay("/crossplay", []CCMD{
+	static ConsoleCommand ccmd_crossplay("/crossplay", "", []CCMD{
 #if (defined STEAMWORKS && defined USE_EOS)
 		EOS.CrossplayAccountManager.autologin = true;
 #endif // USE_EOS
 	    });
 #if (defined SOUND)
-	static ConsoleCommand ccmd_sfxambientvolume("/sfxambientvolume", []CCMD{
+	static ConsoleCommand ccmd_sfxambientvolume("/sfxambientvolume", "set ambient sfx volume", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2886,7 +2916,7 @@ namespace ConsoleCommands {
 		sfxAmbientVolume = strtof(argv[1], nullptr);
 		});
 
-	static ConsoleCommand ccmd_sfxambientdynamic("/sfxambientdynamic", []CCMD{
+	static ConsoleCommand ccmd_sfxambientdynamic("/sfxambientdynamic", "", []CCMD{
 		sfxUseDynamicAmbientVolume = !sfxUseDynamicAmbientVolume;
 		if ( sfxUseDynamicAmbientVolume )
 		{
@@ -2898,7 +2928,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_sfxenvironmentdynamic("/sfxenvironmentdynamic", []CCMD{
+	static ConsoleCommand ccmd_sfxenvironmentdynamic("/sfxenvironmentdynamic", "", []CCMD{
 		sfxUseDynamicEnvironmentVolume = !sfxUseDynamicEnvironmentVolume;
 		if ( sfxUseDynamicEnvironmentVolume )
 		{
@@ -2910,7 +2940,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_sfxenvironmentvolume("/sfxenvironmentvolume", []CCMD{
+	static ConsoleCommand ccmd_sfxenvironmentvolume("/sfxenvironmentvolume", "set environment sfx volume", []CCMD{
 		if (argc < 2)
         {
             return;
@@ -2918,7 +2948,7 @@ namespace ConsoleCommands {
 		sfxEnvironmentVolume = strtof(argv[1], nullptr);
 		});
 #endif
-	static ConsoleCommand ccmd_cyclekeyboard("/cyclekeyboard", []CCMD{
+	static ConsoleCommand ccmd_cyclekeyboard("/cyclekeyboard", "assign the keyboard to another player", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -2938,7 +2968,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_cyclegamepad("/cyclegamepad", []CCMD{
+	static ConsoleCommand ccmd_cyclegamepad("/cyclegamepad", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.hasController(i) )
@@ -2958,7 +2988,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_cycledeadzoneleft("/cycledeadzoneleft", []CCMD{
+	static ConsoleCommand ccmd_cycledeadzoneleft("/cycledeadzoneleft", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.hasController(i) )
@@ -2982,7 +3012,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_cycledeadzoneright("/cycledeadzoneright", []CCMD{
+	static ConsoleCommand ccmd_cycledeadzoneright("/cycledeadzoneright", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.hasController(i) )
@@ -3006,7 +3036,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_vibration("/vibration", []CCMD{
+	static ConsoleCommand ccmd_vibration("/vibration", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.hasController(i) )
@@ -3024,7 +3054,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_tooltipoffset("/tooltipoffset", []CCMD{
+	static ConsoleCommand ccmd_tooltipoffset("/tooltipoffset", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -3034,11 +3064,11 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Tooltip Z offset set to: %.1f", Player::WorldUI_t::tooltipHeightOffsetZ);
 		});
 
-	static ConsoleCommand ccmd_radialhotbar("/radialhotbar", []CCMD{
+	static ConsoleCommand ccmd_radialhotbar("/radialhotbar", "", []CCMD{
 		players[clientnum]->hotbar.useHotbarRadialMenu = !players[clientnum]->hotbar.useHotbarRadialMenu;
 		});
 
-	static ConsoleCommand ccmd_radialhotslots("/radialhotslots", []CCMD{
+	static ConsoleCommand ccmd_radialhotslots("/radialhotslots", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -3048,7 +3078,7 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Slots in use: %d", slots);
 		});
 
-	static ConsoleCommand ccmd_facehotbar("/facehotbar", []CCMD{
+	static ConsoleCommand ccmd_facehotbar("/facehotbar", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3059,7 +3089,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_facebarinvert("/facebarinvert", []CCMD{
+	static ConsoleCommand ccmd_facebarinvert("/facebarinvert", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3070,7 +3100,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_facebarquickcast("/facebarquickcast", []CCMD{
+	static ConsoleCommand ccmd_facebarquickcast("/facebarquickcast", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3081,7 +3111,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_paperdoll("/paperdoll", []CCMD{
+	static ConsoleCommand ccmd_paperdoll("/paperdoll", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3092,7 +3122,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_facebaralternate("/facebaralternate", []CCMD{
+	static ConsoleCommand ccmd_facebaralternate("/facebaralternate", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3103,7 +3133,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_inventorynew("/inventorynew", []CCMD{
+	static ConsoleCommand ccmd_inventorynew("/inventorynew", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3115,7 +3145,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_worldui("/worldui", []CCMD{
+	static ConsoleCommand ccmd_worldui("/worldui", "", []CCMD{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -3133,7 +3163,7 @@ namespace ConsoleCommands {
 		});
 
 #ifndef NINTENDO
-	static ConsoleCommand ccmd_ircconnect("/ircconnect", []CCMD{
+	static ConsoleCommand ccmd_ircconnect("/ircconnect", "", []CCMD{
 		if ( IRCHandler.connect() )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Connected.");
@@ -3145,12 +3175,12 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_ircdisconnect("/ircdisconnect", []CCMD{
+	static ConsoleCommand ccmd_ircdisconnect("/ircdisconnect", "", []CCMD{
 		IRCHandler.disconnect();
 		messagePlayer(clientnum, MESSAGE_MISC, "[IRC]: Disconnected.");
 		});
 
-	static ConsoleCommand ccmd_irc("/irc", []CCMD{
+	static ConsoleCommand ccmd_irc("/irc", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -3162,27 +3192,27 @@ namespace ConsoleCommands {
 		});
 #endif // !NINTENDO
 
-	static ConsoleCommand ccmd_loadtooltips("/loadtooltips", []CCMD{
+	static ConsoleCommand ccmd_loadtooltips("/loadtooltips", "", []CCMD{
 		ItemTooltips.readTooltipsFromFile();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded item_tooltips.json");
 		});
 
-	static ConsoleCommand ccmd_reflowtext("/reflowtext", []CCMD{
+	static ConsoleCommand ccmd_reflowtext("/reflowtext", "", []CCMD{
 		bUsePreciseFieldTextReflow = !bUsePreciseFieldTextReflow;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set bUsePreciseFieldTextReflow to %d", bUsePreciseFieldTextReflow);
 		});
 
-	static ConsoleCommand ccmd_selectedanimcycle("/selectedanimcycle", []CCMD{
+	static ConsoleCommand ccmd_selectedanimcycle("/selectedanimcycle", "", []CCMD{
 		bUseSelectedSlotCycleAnimation = !bUseSelectedSlotCycleAnimation;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set bUseSelectedSlotCycleAnimation to %d", bUseSelectedSlotCycleAnimation);
 		});
 
-	static ConsoleCommand ccmd_autoloadtooltips("/autoloadtooltips", []CCMD{
+	static ConsoleCommand ccmd_autoloadtooltips("/autoloadtooltips", "", []CCMD{
 		ItemTooltips.autoReload = !ItemTooltips.autoReload;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set auto-reload to %d for item_tooltips.json", ItemTooltips.autoReload);
 		});
 
-	static ConsoleCommand ccmd_debugtooltips("/debugtooltips", []CCMD{
+	static ConsoleCommand ccmd_debugtooltips("/debugtooltips", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3198,12 +3228,12 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Set item-debug to %d for item_tooltips.json", ItemTooltips.itemDebug);
 		});
 
-	static ConsoleCommand ccmd_loaditems("/loaditems", []CCMD{
+	static ConsoleCommand ccmd_loaditems("/loaditems", "", []CCMD{
 		ItemTooltips.readItemsFromFile();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded items.json");
 		});
 
-	static ConsoleCommand ccmd_gimmeallpotions("/gimmeallpotions", []CCMD{
+	static ConsoleCommand ccmd_gimmeallpotions("/gimmeallpotions", "give all potions (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3225,7 +3255,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gimmeblessedpotions("/gimmeblessedpotions", []CCMD{
+	static ConsoleCommand ccmd_gimmeblessedpotions("/gimmeblessedpotions", "give blessed potions (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3247,7 +3277,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_gimmecursedpotions("/gimmecursedpotions", []CCMD{
+	static ConsoleCommand ccmd_gimmecursedpotions("/gimmecursedpotions", "give cursed potions (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3269,7 +3299,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_allspells2("/allspells2", []CCMD{
+	static ConsoleCommand ccmd_allspells2("/allspells2", "teach the player some spells (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3284,7 +3314,7 @@ namespace ConsoleCommands {
 		return;
 		});
 
-	static ConsoleCommand ccmd_allspells3("/allspells3", []CCMD{
+	static ConsoleCommand ccmd_allspells3("/allspells3", "teach the player some spells (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3299,7 +3329,7 @@ namespace ConsoleCommands {
 		return;
 		});
 
-	static ConsoleCommand ccmd_gimmexp("/gimmexp", []CCMD{
+	static ConsoleCommand ccmd_gimmexp("/gimmexp", "give the player some XP (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3312,22 +3342,22 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_loadhudsettings("/loadhudsettings", []CCMD{
+	static ConsoleCommand ccmd_loadhudsettings("/loadhudsettings", "", []CCMD{
 		loadHUDSettingsJSON();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded HUD_settings.json");
 		});
 
-	static ConsoleCommand ccmd_loadskillsheet("/loadskillsheet", []CCMD{
+	static ConsoleCommand ccmd_loadskillsheet("/loadskillsheet", "", []CCMD{
 		Player::SkillSheet_t::loadSkillSheetJSON();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded skillsheet_entries.json");
 		});
 
-	static ConsoleCommand ccmd_loadcharsheet("/loadcharsheet", []CCMD{
+	static ConsoleCommand ccmd_loadcharsheet("/loadcharsheet", "", []CCMD{
 		Player::CharacterSheet_t::loadCharacterSheetJSON();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded charsheet_settings.json");
 		});
 
-	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", []CCMD{
+	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3337,7 +3367,7 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "On next human right click leader list will be generated.");
 		});
 
-	static ConsoleCommand ccmd_poly("/poly", []CCMD{
+	static ConsoleCommand ccmd_poly("/poly", "polymorph the player (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3349,7 +3379,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_sexchange("/sexchange", []CCMD{
+	static ConsoleCommand ccmd_sexchange("/sexchange", "fix yourself (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3358,7 +3388,7 @@ namespace ConsoleCommands {
 		stats[clientnum]->sex = stats[clientnum]->sex == sex_t::MALE ? sex_t::FEMALE : sex_t::MALE;
 		});
 
-	static ConsoleCommand ccmd_appearances("/appearances", []CCMD{
+	static ConsoleCommand ccmd_appearances("/appearances", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3371,7 +3401,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_classdebug("/classdebug", []CCMD{
+	static ConsoleCommand ccmd_classdebug("/classdebug", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3380,7 +3410,7 @@ namespace ConsoleCommands {
 		client_classes[clientnum] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
 		});
 
-	static ConsoleCommand ccmd_unpoly("/unpoly", []CCMD{
+	static ConsoleCommand ccmd_unpoly("/unpoly", "unpolymorph the player (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
@@ -3392,16 +3422,16 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_usepaperdollmovement("/usepaperdollmovement", []CCMD{
+	static ConsoleCommand ccmd_usepaperdollmovement("/usepaperdollmovement", "", []CCMD{
 		restrictPaperDollMovement = !restrictPaperDollMovement;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set restrictPaperDollMovement to %d", restrictPaperDollMovement);
 		});
 
-	static ConsoleCommand ccmd_exportstatue("/exportstatue", []CCMD{
+	static ConsoleCommand ccmd_exportstatue("/exportstatue", "", []CCMD{
 		StatueManager.exportActive = true;
 		});
 
-	static ConsoleCommand ccmd_importstatue("/importstatue", []CCMD{
+	static ConsoleCommand ccmd_importstatue("/importstatue", "", []CCMD{
 	    if (argc < 2)
 	    {
 	        return;
@@ -3410,17 +3440,17 @@ namespace ConsoleCommands {
 		StatueManager.readStatueFromFile(index);
 		});
 
-	static ConsoleCommand ccmd_timertests("/timertests", []CCMD{
+	static ConsoleCommand ccmd_timertests("/timertests", "", []CCMD{
 		TimerExperiments::bUseTimerInterpolation = !TimerExperiments::bUseTimerInterpolation;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set bUseTimerInterpolation to %d", TimerExperiments::bUseTimerInterpolation);
 		});
 
-	static ConsoleCommand ccmd_timertestsdebug("/timertestsdebug", []CCMD{
+	static ConsoleCommand ccmd_timertestsdebug("/timertestsdebug", "", []CCMD{
 		TimerExperiments::bDebug = !TimerExperiments::bDebug;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set TimerExperiments::bDebug to %d", TimerExperiments::bDebug);
 		});
 
-	static ConsoleCommand ccmd_framesearchdebug("/framesearchdebug", []CCMD{
+	static ConsoleCommand ccmd_framesearchdebug("/framesearchdebug", "", []CCMD{
 		Frame::findFrameDefaultSearchType =
 			Frame::findFrameDefaultSearchType == Frame::FRAME_SEARCH_DEPTH_FIRST
 			? Frame::FRAME_SEARCH_BREADTH_FIRST

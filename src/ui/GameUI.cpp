@@ -1241,7 +1241,7 @@ void Player::MessageZone_t::createChatbox()
 		Frame* messages = chatMainFrame->addFrame("message box");
 		messages->setHollow(true);
 		messages->setSize(SDL_Rect{ 224, 16, 
-			players[player.playernum]->camera_virtualWidth() / 2,
+			players[player.playernum]->camera_virtualWidth() - 224,
 			players[player.playernum]->camera_virtualHeight() });
 
 		static const char* bigfont = "fonts/pixelmix.ttf#16#2";

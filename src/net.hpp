@@ -28,7 +28,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
 bool messagePlayer(int player, Uint32 type, char const * const message, ...);
 bool messageLocalPlayers(Uint32 type, char const * const message, ...);
 bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * const message, ...);
-bool messageLocalPlayersColor(Uint32 type, Uint32 color, char const * const message, ...);
+bool messageLocalPlayersColor(Uint32 color, Uint32 type, char const * const message, ...);
 void sendEntityUDP(Entity* entity, int c, bool guarantee);
 void sendEntityTCP(Entity* entity, int c);
 void sendMapSeedTCP(int c);
