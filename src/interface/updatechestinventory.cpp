@@ -157,7 +157,7 @@ inline void drawChestSlots(const int player)
 						inputs.mouseClearLeft(player);
 						inputs.controllerClearInput(player, INJOY_MENU_USE);
 						item = openedChest[player]->getItemFromChest(invitemschest[player][i], false);
-						messagePlayer(player, language[374], item->description());
+						messagePlayer(player, MESSAGE_INVENTORY, language[374], item->description());
 						itemPickup(player, item);
 						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
@@ -166,7 +166,7 @@ inline void drawChestSlots(const int player)
 					{
 						inputs.mouseClearRight(player);
 						item = openedChest[player]->getItemFromChest(invitemschest[player][i], true);
-						messagePlayer(player, language[374], item->description());
+						messagePlayer(player, MESSAGE_INVENTORY, language[374], item->description());
 						itemPickup(player, item); //Grab all of that item from the chest.
 						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
@@ -370,7 +370,7 @@ void updateChestInventory(const int player)
 
 	if (!chest_inventory)
 	{
-		messagePlayer(0, "Warning: openedChest[%d] has no inventory. This should not happen.", player);
+		messagePlayer(0, MESSAGE_DEBUG, "Warning: openedChest[%d] has no inventory. This should not happen.", player);
 	}
 	else
 	{
@@ -425,7 +425,7 @@ void updateChestInventory(const int player)
 					item = openedChest[player]->getItemFromChest(static_cast<Item* >(node->element), true);
 					if ( item != NULL )
 					{
-						messagePlayer(player, language[374], item->description());
+						messagePlayer(player, MESSAGE_INVENTORY, language[374], item->description());
 						itemPickup(player, item);
 						playSound(35 + rand() % 3, 64);
 					}

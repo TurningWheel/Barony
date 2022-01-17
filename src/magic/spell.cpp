@@ -344,7 +344,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			else if ( foundNormalSpell )
 			{
 				// can't learn, already have it.
-				messagePlayer(player, language[439], new_spell->name);
+				messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->name);
 				spellDeconstructor((void*)new_spell);
 				return false;
 			}
@@ -352,7 +352,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		else
 		{
 			// can't learn, already have it.
-			messagePlayer(player, language[439], new_spell->name);
+			messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->name);
 			spellDeconstructor((void*)new_spell);
 			return false;
 		}
@@ -364,13 +364,13 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	if ( !ignoreSkill && skillLVL < new_spell->difficulty )
 	{
-		messagePlayer(player, language[440]);
+		messagePlayer(player, MESSAGE_PROGRESSION, language[440]);
 		spellDeconstructor((void*)new_spell);
 		return false;
 	}
 	if ( !intro )
 	{
-		messagePlayer(player, language[441], new_spell->name);
+		messagePlayer(player, MESSAGE_PROGRESSION, language[441], new_spell->name);
 	}
 	node = list_AddNodeLast(&players[player]->magic.spellList);
 	node->element = new_spell;
@@ -636,7 +636,7 @@ void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 	if ( players[playernum]->isLocalPlayer() )
 	{
 		players[playernum]->magic.equipSpell(spell);
-		messagePlayer(playernum, language[442], spell->name);
+		messagePlayer(playernum, MESSAGE_MISC, language[442], spell->name);
 		players[playernum]->magic.selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
 	}
 }
@@ -1154,12 +1154,12 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			if ( overdrewFromHP )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerColor(player, color, language[3400]);
+				messagePlayerColor(player, MESSAGE_STATUS, color, language[3400]);
 			}
 			else
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(player, color, language[443]);
+				messagePlayerColor(player, MESSAGE_STATUS, color, language[443]);
 			}
 		}
 		else
@@ -1167,11 +1167,11 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 			if (amount == 0)
 			{
-				messagePlayerColor(player, color, language[444]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, language[444]);
 			}
 			else
 			{
-				messagePlayerColor(player, color, language[445]);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, language[445]);
 			}
 		}
 

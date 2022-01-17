@@ -64,7 +64,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 	if ( !droppingAndUnequipping && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	{
 		// no backpack space
-		messagePlayer(player, language[3997], item->getName());
+		messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
 		return false;
 	}
 
@@ -1598,7 +1598,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 					{
 						// can't drag off into inventory, no slots available
-						messagePlayer(player, language[3997], selectedItem->getName());
+						messagePlayer(player, MESSAGE_INVENTORY, language[3997], selectedItem->getName());
 						selectedItem = nullptr;
 						toggleclick = false;
 						if ( inputs.bMouseLeft(player) )

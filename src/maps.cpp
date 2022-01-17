@@ -453,7 +453,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// function sets dark level for us.
 		if ( darkmap )
 		{
-			messageLocalPlayers(language[1108]);
+			messageLocalPlayers(MESSAGE_HINT, language[1108]);
 		}
 	}
 	else if ( !secretlevel )
@@ -463,7 +463,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
 			{
 				darkmap = true;
-				messageLocalPlayers(language[1108]);
+				messageLocalPlayers(MESSAGE_HINT, language[1108]);
 			}
 			else
 			{
@@ -475,7 +475,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( prng_get_uint() % 4 == 0 )
 			{
 				darkmap = true;
-				messageLocalPlayers(language[1108]);
+				messageLocalPlayers(MESSAGE_HINT, language[1108]);
 			}
 		}
 	}
@@ -2625,7 +2625,7 @@ void assignActions(map_t* map)
 					{
 						if ( stats[numplayers]->HP <= 0 )
 						{
-							messagePlayer(numplayers, language[1109]);
+							messagePlayer(numplayers, MESSAGE_STATUS, language[1109]);
 							stats[numplayers]->HP = stats[numplayers]->MAXHP / 2;
 							stats[numplayers]->MP = stats[numplayers]->MAXMP / 2;
 							stats[numplayers]->HUNGER = 500;
@@ -5835,15 +5835,15 @@ void mapFoodOnLevel(int player)
 	}
 	if ( numFood == 0 && previouslyIdentifiedFood )
 	{
-		messagePlayer(player, language[3425]);
+		messagePlayer(player, MESSAGE_HINT, language[3425]);
 	}
 	else if ( numFood == 0 )
 	{
-		messagePlayer(player, language[3423]);
+		messagePlayer(player, MESSAGE_HINT, language[3423]);
 	}
 	else
 	{
-		messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0),language[3424]);
+		messagePlayerColor(player, MESSAGE_HINT, SDL_MapRGB(mainsurface->format, 0, 255, 0),language[3424]);
 	}
 }
 

@@ -85,32 +85,32 @@ void drawMinimap(const int player, SDL_Rect rect)
 			if (x < 0 || y < 0 || x >= map.width || y >= map.height)
 			{
 			    // out-of-bounds
-			    color = makeColor(0, 0, 0, backgroundAlpha);
+			    color = makeColor(0, 64, 64, backgroundAlpha);
 			}
 			else if ( minimap[y][x] == 0 )
 			{
 			    // unknown / no floor
-				color = makeColor(0, 0, 0, backgroundAlpha);
+				color = makeColor(0, 64, 64, backgroundAlpha);
 			}
 			else if ( minimap[y][x] == 1 )
 			{
 			    // walkable space
-				color = makeColor(96, 96, 96, foregroundAlpha);
+				color = makeColor(0, 128, 128, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 2 )
 			{
 			    // wall
-				color = makeColor(128, 128, 128, foregroundAlpha);
+				color = makeColor(0, 255, 255, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 3 )
 			{
 			    // mapped but undiscovered walkable ground
-				color = makeColor(32, 32, 32, foregroundAlpha);
+				color = makeColor(64, 64, 64, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 4 )
 			{
 			    // mapped but undiscovered wall
-				color = makeColor(64, 64, 64, foregroundAlpha);
+				color = makeColor(128, 128, 128, foregroundAlpha);
 			}
 			putPixel(minimapSurface, x - xmin, y - ymin, color);
 		}

@@ -233,7 +233,7 @@ Support function, messages all local players with the message "message"
 
 -------------------------------------------------------------------------------*/
 
-void messageLocalPlayers(char const * const message, ...)
+bool messageLocalPlayers(Uint32 type, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -242,13 +242,16 @@ void messageLocalPlayers(char const * const message, ...)
 	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
 	va_end(argptr);
 
+    bool result = true;
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayer(player, str);
+			result = messagePlayerColor(player, type, 0xFFFFFFFF, str) ? result : false;
 		}
 	}
+
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -260,11 +263,11 @@ void messageLocalPlayers(char const * const message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayer(int player, char const * const message, ...)
+bool messagePlayer(int player, Uint32 type, char const * const message, ...)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return false;
 	}
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -273,7 +276,7 @@ void messagePlayer(int player, char const * const message, ...)
 	vsnprintf( str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr );
 	va_end( argptr );
 
-	messagePlayerColor(player, 0xFFFFFFFF, str);
+	return messagePlayerColor(player, type, 0xFFFFFFFF, str);
 }
 
 /*-------------------------------------------------------------------------------
@@ -285,7 +288,7 @@ and color "color"
 
 -------------------------------------------------------------------------------*/
 
-void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
+bool messageLocalPlayersColor(Uint32 color, Uint32 type, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 
@@ -294,13 +297,16 @@ void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
 	vsnprintf(str, Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH - 1, message, argptr);
 	va_end(argptr);
 
+    bool result = true;
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			messagePlayerColor(player, color, str);
+			result = messagePlayerColor(player, type, color, str) ? result : false;
 		}
 	}
+
+	return result;
 }
 
 /*-------------------------------------------------------------------------------
@@ -312,18 +318,18 @@ void messageLocalPlayersColor(Uint32 color, char const * const message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerColor(int player, Uint32 color, char const * const message, ...)
+bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * const message, ...)
 {
 	char str[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
 
 	if ( message == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return false;
 	}
 
 	// format the content
@@ -335,10 +341,20 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 	if (!initialized)
 	{
 		printlog("%s\n", str);
-		return;
+		return true;
 	}
 
-	if ( players[player]->isLocalPlayer() )
+    // if this is for a local player, but we've disabled this message type, don't print it!
+    const bool localPlayer = players[player]->isLocalPlayer();
+	if ( localPlayer )
+	{
+	    if (disable_messages || !(messagesEnabled & type))
+	    {
+	        return false;
+	    }
+	}
+
+	if ( localPlayer )
 	{
 	    bool end = false;
 	    char *ptr = str;
@@ -370,13 +386,15 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
-		strcpy((char*)(&net_packet->data[8]), str);
+		SDLNet_Write32((Uint32)type, &net_packet->data[8]);
+		strcpy((char*)(&net_packet->data[12]), str);
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 8 + strlen(str) + 1;
+		net_packet->len = 12 + strlen(str) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
+    // player death messages trigger this achievement
 	int c;
 	char tempstr[256];
 	for ( c = 0; c < MAXPLAYERS; c++ )
@@ -391,6 +409,8 @@ void messagePlayerColor(int player, Uint32 color, char const * const message, ..
 			steamAchievementClient(player, "BARONY_ACH_NOT_A_TEAM_PLAYER");
 		}
 	}
+
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1935,7 +1955,7 @@ void clientHandlePacket()
 		else
 		{
 			DebugStats.networkPackets.insert(std::make_pair(hash, std::make_pair(tmp, 0)));
-			messagePlayer(clientnum, "%s", tmp.c_str());
+			messagePlayer(clientnum, MESSAGE_DEBUG, "%s", tmp.c_str());
 		}
 		if ( !strcmp(packetinfo, "ENTU") )
 		{
@@ -2505,7 +2525,7 @@ void clientHandlePacket()
 	// ping
 	else if (!strncmp((char*)net_packet->data, "PING", 4))
 	{
-		messagePlayer(clientnum, language[1117], (SDL_GetTicks() - pingtime));
+		messagePlayer(clientnum, MESSAGE_MISC, language[1117], (SDL_GetTicks() - pingtime));
 		return;
 	}
 
@@ -2528,7 +2548,7 @@ void clientHandlePacket()
 	// pause game
 	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
 	{
-		messagePlayer(clientnum, language[1118], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
 		pauseGame(2, 0);
 		return;
 	}
@@ -2536,7 +2556,7 @@ void clientHandlePacket()
 	// unpause game
 	else if (!strncmp((char*)net_packet->data, "UNPS", 4))
 	{
-		messagePlayer(clientnum, language[1119], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
 		pauseGame(1, 0);
 		return;
 	}
@@ -3126,22 +3146,27 @@ void clientHandlePacket()
 	// textbox message
 	else if (!strncmp((char*)net_packet->data, "MSGS", 4))
 	{
+		Uint32 color = SDLNet_Read32(&net_packet->data[4]);
+		MessageType type = (MessageType)SDLNet_Read32(&net_packet->data[8]);
+		char* msg = (char*)(&net_packet->data[12]);
 		if ( ticks != 1 )
 		{
-			Uint32 color = SDLNet_Read32(&net_packet->data[4]);
-			messagePlayerColor(clientnum, color, (char*)(&net_packet->data[8]));
+			messagePlayerColor(clientnum, type, color, msg);
 		}
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		if (!disable_messages && (messagesEnabled & MESSAGE_CHAT))
 		{
-			if ( !strncmp( (char*)(&net_packet->data[8]), stats[c]->name, std::min<size_t>(strlen(stats[c]->name), 10) ) )    //TODO: Why are size_t and int being compared?
-			{
-				if ( net_packet->data[8 + std::min<size_t>(strlen(stats[c]->name), 10)] == ':' )   //TODO: Why are size_t and int being compared?
-				{
-					playSound(238, 64);
-				}
-			}
+		    for ( c = 0; c < MAXPLAYERS; c++ )
+		    {
+			    if ( !strncmp( msg, stats[c]->name, std::min<size_t>(strlen(stats[c]->name), (size_t)10) ) )
+			    {
+				    if ( msg[std::min<size_t>(strlen(stats[c]->name), (size_t)10)] == ':' )
+				    {
+					    playSound(238, 64);
+				    }
+			    }
+		    }
 		}
-		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
+		if ( !strcmp(msg, language[577]) ) //TODO: Replace with a UDIE packet.
 		{
 			// this is how the client knows it died...
 			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0 )
@@ -3263,7 +3288,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
+		else if ( !strcmp(msg, language[1109]) )
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
@@ -3279,7 +3304,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		else if ( !strncmp((char*)(&net_packet->data[8]), language[1114], 28) )
+		else if ( !strncmp(msg, language[1114], 28) )
 		{
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
@@ -3287,11 +3312,11 @@ void clientHandlePacket()
 			playMusic( sounds[175], false, true, false );
 #endif
 		}
-		else if ( (strstr((char*)(&net_packet->data[8]), language[1160])) != NULL )
+		else if ( (strstr(msg, language[1160])) != NULL )
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				if ( !strncmp(stats[c]->name, (char*)(&net_packet->data[8]), strlen(stats[c]->name)) )
+				if ( !strncmp(stats[c]->name, msg, strlen(stats[c]->name)) )
 				{
 					if (players[clientnum] && players[clientnum]->entity && players[c] && players[c]->entity)
 					{
@@ -3763,46 +3788,46 @@ void clientHandlePacket()
 
 		if ( !secretlevel )
 		{
-			messagePlayer(clientnum, language[710], currentlevel);
+			messagePlayer(clientnum, MESSAGE_PROGRESSION, language[710], currentlevel);
 		}
 		else
 		{
-			messagePlayer(clientnum, language[711], map.name);
+			messagePlayer(clientnum, MESSAGE_PROGRESSION, language[711], map.name);
 		}
 		if ( !secretlevel && result )
 		{
 			switch ( currentlevel )
 			{
 				case 2:
-					messagePlayer(clientnum, language[712]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[712]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[712]));
 					break;
 				case 3:
-					messagePlayer(clientnum, language[713]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[713]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[713]));
 					break;
 				case 7:
-					messagePlayer(clientnum, language[714]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[714]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[714]));
 					break;
 				case 8:
-					messagePlayer(clientnum, language[715]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[715]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[715]));
 					break;
 				case 11:
-					messagePlayer(clientnum, language[716]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[716]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[716]));
 					break;
 				case 13:
-					messagePlayer(clientnum, language[717]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[717]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[717]));
 					break;
 				case 16:
-					messagePlayer(clientnum, language[718]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[718]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[718]));
 					break;
 				case 18:
-					messagePlayer(clientnum, language[719]);
+					messagePlayer(clientnum, MESSAGE_HINT, language[719]);
 					Player::Minimap_t::mapDetails.push_back(std::make_pair("secret_exit_description", language[719]));
 					break;
 				default:
@@ -3819,16 +3844,16 @@ void clientHandlePacket()
 		}
 		if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 		{
-			messagePlayer(clientnum, language[2382]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2382]);
 		}
 		if ( MFLAG_DISABLELEVITATION )
 		{
-			messagePlayer(clientnum, language[2383]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2383]);
 			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_levitation", language[2383]));
 		}
 		if ( MFLAG_DISABLEDIGGING )
 		{
-			messagePlayer(clientnum, language[2450]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2450]);
 			Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_digging", language[2450]));
 		}
 		if ( MFLAG_DISABLEHUNGER )
@@ -3837,7 +3862,7 @@ void clientHandlePacket()
 		}
 		if ( !strncmp(map.name, "Mages Guild", 11) )
 		{
-			messagePlayer(clientnum, language[2599]);
+			messagePlayer(clientnum, MESSAGE_HINT, language[2599]);
 		}
 		loading = false;
 		fadeout = false;
@@ -4633,7 +4658,7 @@ void serverHandlePacket()
 	// pause game
 	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
 	{
-		messagePlayer(clientnum, language[1118], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
 		pauseGame(2, j);
 		return;
@@ -4642,7 +4667,7 @@ void serverHandlePacket()
 	// unpause game
 	else if (!strncmp((char*)net_packet->data, "UNPS", 4))
 	{
-		messagePlayer(clientnum, language[1119], stats[net_packet->data[4]]->name);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
 		pauseGame(1, j);
 		return;
@@ -4903,9 +4928,9 @@ void serverHandlePacket()
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 11;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
-			messagePlayer(c, language[1120], shortname);
+			messagePlayer(c, MESSAGE_MISC, language[1120], shortname);
 		}
-		messagePlayer(clientnum, language[1120], shortname);
+		messagePlayer(clientnum, MESSAGE_MISC, language[1120], shortname);
 		return;
 	}
 
@@ -4917,6 +4942,7 @@ void serverHandlePacket()
 		int pnum = net_packet->data[4];
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
+		MessageType type = MESSAGE_CHAT; // the only kind of message you can get from a client.
 
 		// strncpy() does not copy N bytes if a terminating null is encountered first
 		// see http://www.cplusplus.com/reference/cstring/strncpy/
@@ -4924,10 +4950,10 @@ void serverHandlePacket()
 		// GCC throws a warning (intended) when the length argument to strncpy() in
 		// any way depends on strlen(src) to discourage this (and related) construct(s).
 		strncpy(tempstr, stats[pnum]->name, 10);
-		tempstr[std::min<size_t>(strlen(stats[pnum]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
+		tempstr[std::min<size_t>(strlen(stats[pnum]->name), (size_t)10)] = 0;
 		strcat(tempstr, ": ");
 		strcat(tempstr, (char*)(&net_packet->data[9]));
-		messagePlayerColor(clientnum, color, tempstr);
+		messagePlayerColor(clientnum, type, color, tempstr);
 
 		playSound(238, 64);
 
@@ -4938,12 +4964,13 @@ void serverHandlePacket()
 			{
 				continue;
 			}
-			strcpy((char*)net_packet->data, "MSGS");
+			memcpy((char*)net_packet->data, "MSGS", 4);
 			SDLNet_Write32(color, &net_packet->data[4]);
-			strcpy((char*)(&net_packet->data[8]), tempstr);
+			SDLNet_Write32((Uint32)type, &net_packet->data[8]);
+			strcpy((char*)(&net_packet->data[12]), tempstr);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 8 + strlen(tempstr) + 1;
+			net_packet->len = 12 + strlen(tempstr) + 1;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 		return;
@@ -5662,8 +5689,8 @@ void serverHandlePacket()
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, true, 1, true);
-				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3241]);
-				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
+				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3241]);
+				messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen(*mainsurface), language[3242]);
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
 				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");

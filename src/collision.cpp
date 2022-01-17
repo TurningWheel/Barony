@@ -852,7 +852,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								// If the Entity is now on fire, tell them
 								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 								{
-									messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[590]); // "You suddenly catch fire!"
 								}
 							}
 						}
@@ -880,7 +880,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								// If the Entity is now on fire, tell them
 								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 								{
-									messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
+									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[590]); // "You suddenly catch fire!"
 								}
 							}
 						}

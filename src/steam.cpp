@@ -764,7 +764,7 @@ bool achievementUnlocked(const char* achName)
 void steamAchievement(const char* achName)
 {
 #ifdef DEBUG_ACHIEVEMENTS
-	messagePlayer(clientnum, "%s", achName);
+	messagePlayer(clientnum, MESSAGE_DEBUG, "%s", achName);
 #endif
 
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
@@ -1323,7 +1323,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 		}
 #ifdef DEBUG_ACHIEVEMENTS
-		messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
+		messagePlayer(clientnum, MESSAGE_DEBUG, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
 			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
 #endif
 	}

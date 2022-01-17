@@ -15,12 +15,43 @@ namespace MainMenu {
 	extern Frame* main_menu_frame;
 
 	enum class FadeDestination : Uint8 {
-		None = 0,
-		RootMainMenu = 1,
-		IntroStoryScreen = 2,
-		IntroStoryScreenNoMusicFade = 3,
-		HallOfTrials = 4,
-		GameStart = 5,
+		None,
+		RootMainMenu,
+
+		// Story scenes:
+
+		IntroStoryScreen,
+		IntroStoryScreenNoMusicFade,
+
+		HerxMidpointHuman,
+		HerxMidpointAutomaton,
+		HerxMidpointBeast,
+		HerxMidpointEvil,
+
+		BaphometMidpointHuman,
+		BaphometMidpointAutomaton,
+		BaphometMidpointBeast,
+		BaphometMidpointEvil,
+
+		EndingHuman,
+		EndingAutomaton,
+		EndingBeast,
+		EndingEvil,
+
+		ClassicEndingHuman,
+		ClassicEndingAutomaton,
+		ClassicEndingBeast,
+		ClassicEndingEvil,
+
+		ClassicBaphometEndingHuman,
+		ClassicBaphometEndingAutomaton,
+		ClassicBaphometEndingBeast,
+		ClassicBaphometEndingEvil,
+
+        // Game starts:
+
+		HallOfTrials,
+		GameStart,
 	};
 
 	void beginFade(FadeDestination);

@@ -77,7 +77,7 @@ void actRotate(Entity* my)
 		{
 			my->sprite = 0;
 		}
-		messagePlayer(clientnum, "test sprite: %d", my->sprite);
+		messagePlayer(clientnum, MESSAGE_MISC, "test sprite: %d", my->sprite);
 	}
 	if ( keystatus[SDL_SCANCODE_END] )
 	{
@@ -87,7 +87,7 @@ void actRotate(Entity* my)
 		{
 			my->sprite = 0;
 		}
-		messagePlayer(clientnum, "test sprite: %d", my->sprite);
+		messagePlayer(clientnum, MESSAGE_MISC, "test sprite: %d", my->sprite);
 	}
 #endif
 }
@@ -250,29 +250,29 @@ void Entity::actFurniture()
 						switch ( furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(i, language[476]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[476]);
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(i, language[477]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[477]);
 								break;
 							case FURNITURE_BED:
-								messagePlayer(i, language[2493]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[2493]);
 								break;
 							case FURNITURE_BUNKBED:
 								if ( i == 0 || i == 2 )
 								{
-									messagePlayer(i, language[2494]);
+									messagePlayer(i, MESSAGE_INTERACTION, language[2494]);
 								}
 								else
 								{
-									messagePlayer(i, language[2495]);
+									messagePlayer(i, MESSAGE_INTERACTION, language[2495]);
 								}
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(i, language[2496]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[2496]);
 								break;
 							default:
-								messagePlayer(i, language[477]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[477]);
 								break;
 						}
 					}
@@ -310,7 +310,7 @@ void actMCaxe(Entity* my)
 				{
 					if (inrange[i])
 					{
-						messagePlayer(i, language[478 + rand() % 5]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[478 + rand() % 5]);
 						MCAXE_USED = 1;
 						serverUpdateEntitySkill(my, 0);
 					}
@@ -454,7 +454,7 @@ void actStatueAnimator(Entity* my)
 					StatueManager.statueEditorHeightOffset = 0.0;
 				}
 				StatueManager.activeEditing = !StatueManager.activeEditing;
-				messagePlayer(0, "Statue editing mode: %d", StatueManager.activeEditing);
+				messagePlayer(0, MESSAGE_MISC, "Statue editing mode: %d", StatueManager.activeEditing);
 
 				my->skill[0] = StatueManager.activeEditing ? 1 : 0;
 			}
@@ -714,7 +714,7 @@ void actFloorDecoration(Entity* my)
 					found = output.find("\\n");
 				}
 				strcpy(buf, output.c_str());
-				messagePlayer(i, buf);
+				messagePlayer(i, MESSAGE_INTERACTION, buf);
 			}
 		}
 	}
@@ -2476,11 +2476,11 @@ void Entity::actTextSource()
 					{
 						if ( foundPlayerRef != std::string::npos && stats[c] )
 						{
-							messagePlayerColor(c, color, buf, stats[c]->name);
+							messagePlayerColor(c, MESSAGE_MISC, color, buf, stats[c]->name);
 						}
 						else
 						{
-							messagePlayerColor(c, color, buf);
+							messagePlayerColor(c, MESSAGE_MISC, color, buf);
 						}
 					}
 				}

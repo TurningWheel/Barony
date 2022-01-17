@@ -365,7 +365,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	}
 	if (item->identified)
 	{
-		messagePlayer(player.playernum, language[319], item->getName());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[319], item->getName());
 		return;
 	}
 
@@ -389,7 +389,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		item->identified = true;
-		messagePlayer(player.playernum, language[320], item->description());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[320], item->description());
 		if ( timer > 0 && current_item != 0	&& current_item == item->uid)
 		{
 			timer = 0;
@@ -402,7 +402,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	}
 	else
 	{
-		messagePlayer(player.playernum, language[321], item->description());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[321], item->description());
 
 		//Tick the timer in act player.
 		//Once the timer hits zero, roll to see if the item is identified.

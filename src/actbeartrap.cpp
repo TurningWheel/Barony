@@ -86,7 +86,7 @@ void actBeartrap(Entity* my)
 				entity->skill[15] = BEARTRAP_IDENTIFIED;
 				entity->itemNotMoving = 1;
 				entity->itemNotMovingClient = 1;
-				messagePlayer(i, language[1300]);
+				messagePlayer(i, MESSAGE_INTERACTION, language[1300]);
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -164,7 +164,7 @@ void actBeartrap(Entity* my)
 					{
 						int player = entity->skill[2];
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(player, color, language[454]);
+						messagePlayerColor(player, MESSAGE_STATUS, color, language[454]);
 						if ( !players[player]->isLocalPlayer() )
 						{
 							serverUpdateEffects(player);
@@ -194,11 +194,11 @@ void actBeartrap(Entity* my)
 							{
 								if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 								{
-									messagePlayer(player, language[2521]);
+									messagePlayer(player, MESSAGE_HINT, language[2521]);
 								}
 								else
 								{
-									messagePlayer(player, language[2522]);
+									messagePlayer(player, MESSAGE_HINT, language[2522]);
 								}
 								if ( rand() % 10 == 0 )
 								{
@@ -356,11 +356,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		// you stumbled into the trap!
 		if ( !hitByAOE )
 		{
-			messagePlayerColor(player, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
 		}
 		else
 		{
-			messagePlayerColor(player, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
 		}
 	}
 
@@ -432,7 +432,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			if ( triggered->behavior == &actPlayer )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerColor(triggered->skill[2], color, language[3611]);
+				messagePlayerColor(triggered->skill[2], MESSAGE_STATUS, color, language[3611]);
 				achievementObserver.playerAchievements[triggered->skill[2]].checkPathBetweenObjects(triggered, my, AchievementObserver::BARONY_ACH_WONDERFUL_TOYS);
 			}
 
@@ -566,11 +566,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 				{
-					messagePlayer(player, language[3494]);
+					messagePlayer(player, MESSAGE_HINT, language[3494]);
 				}
 				else
 				{
-					messagePlayer(player, language[3495]);
+					messagePlayer(player, MESSAGE_HINT, language[3495]);
 				}
 			}
 			if ( triggered->behavior == &actMonster )
@@ -689,7 +689,7 @@ void actBomb(Entity* my)
 					entity->itemNotMoving = 0;
 					entity->itemNotMovingClient = 0;
 				}
-				messagePlayer(i, language[3600], items[BOMB_ITEMTYPE].name_identified);
+				messagePlayer(i, MESSAGE_INTERACTION, language[3600], items[BOMB_ITEMTYPE].name_identified);
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -1251,7 +1251,7 @@ void actDecoyBox(Entity* my)
 											}
 											if ( !message )
 											{
-												messagePlayer(parent->skill[2], language[3671]);
+												messagePlayer(parent->skill[2], MESSAGE_WORLD, language[3671]);
 												message = true;
 											}
 											break;
@@ -1268,7 +1268,7 @@ void actDecoyBox(Entity* my)
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3882]);
+				messagePlayer(parent->skill[2], MESSAGE_HINT, language[3882]);
 			}
 		}
 	}
@@ -1322,7 +1322,7 @@ void actDecoyBox(Entity* my)
 			}
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3770]);
+				messagePlayer(parent->skill[2], MESSAGE_EQUIPMENT, language[3770]);
 			}
 			list_RemoveNode(my->mynode);
 			return;

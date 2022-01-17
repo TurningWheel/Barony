@@ -633,7 +633,7 @@ void createUINavigation(const int player)
 		magicButton->setColor(makeColor(255, 255, 255, 191));
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), "%d: Magic button clicked", button.getOwner());
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Magic button clicked", button.getOwner());
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
@@ -657,7 +657,7 @@ void createUINavigation(const int player)
 		statusButton->setColor(makeColor(255, 255, 255, 191));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), "%d: Status button clicked", button.getOwner());
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Status button clicked", button.getOwner());
 			if ( players[button.getOwner()]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
@@ -676,7 +676,7 @@ void createUINavigation(const int player)
 		itemsButton->setColor(makeColor(255, 255, 255, 191));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), "%d: Item button clicked", button.getOwner());
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Item button clicked", button.getOwner());
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 			players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
 		});
@@ -693,7 +693,7 @@ void createUINavigation(const int player)
 		skillsButton->setColor(makeColor(255, 255, 255, 191));
 		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		skillsButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 			players[button.getOwner()]->skillSheet.openSkillSheet();
 		});
 
@@ -1932,7 +1932,7 @@ void Player::MessageZone_t::createChatbox()
 		Frame* messages = chatMainFrame->addFrame("message box");
 		messages->setHollow(true);
 		messages->setSize(SDL_Rect{ 224, 16, 
-			players[player.playernum]->camera_virtualWidth() / 2,
+			players[player.playernum]->camera_virtualWidth() - 224,
 			players[player.playernum]->camera_virtualHeight() });
 
 		static const char* bigfont = "fonts/pixelmix.ttf#16#2";
@@ -2373,7 +2373,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			logButton->setCallback([](Button& button) {
-				messagePlayer(button.getOwner(), "%d: Log button clicked", button.getOwner());
+				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Log button clicked", button.getOwner());
 			});
 			logButton->setTickCallback([](Widget& widget) {
 				if ( widget.isSelected()
@@ -2468,7 +2468,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setColor(makeColor(255, 255, 255, 191));
 			skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			skillsButton->setCallback([](Button& button) {
-				messagePlayer(button.getOwner(), "%d: Skills button clicked", button.getOwner());
+				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 				players[button.getOwner()]->skillSheet.openSkillSheet();
 			});
 			skillsButton->setTickCallback([](Widget& widget) {
@@ -3174,7 +3174,7 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 	auto& dropdown = allDropDowns[name];
 	if ( dropdown.options[option].action == "no_action" )
 	{
-		messagePlayer(player.playernum, "[Dropdowns]: Warning, no action for %s : option %d", name.c_str(), option);
+		messagePlayer(player.playernum, MESSAGE_DEBUG, "[Dropdowns]: Warning, no action for %s : option %d", name.c_str(), option);
 	}
 	else
 	{
@@ -3202,7 +3202,7 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", std::max(0, stats[player.playernum]->GOLD));
 			consoleCommand(dropCommand);
 		}
-		messagePlayer(player.playernum, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
+		messagePlayer(player.playernum, MESSAGE_DEBUG, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
 			dropdown.options[option].action.c_str(), name.c_str(), option);
 	}
 }
@@ -5680,14 +5680,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		if ( keystatus[SDL_SCANCODE_V] )
 		{
 			keystatus[SDL_SCANCODE_V] = 0;
-			messagePlayer(player.playernum, "Remove this");
+			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
 			stats[player.playernum]->playerRace = RACE_AUTOMATON;
 			stats[player.playernum]->appearance = 0;
 		}
 		if ( keystatus[SDL_SCANCODE_B] )
 		{
 			keystatus[SDL_SCANCODE_B] = 0;
-			messagePlayer(player.playernum, "Remove this");
+			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
 			stats[player.playernum]->playerRace = RACE_INSECTOID;
 			stats[player.playernum]->appearance = 0;
 		}
@@ -10706,7 +10706,7 @@ void createPlayerSpellList(const int player)
 		closeBtn->setHideGlyphs(true);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), "%d: Close spell button clicked", button.getOwner());
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
@@ -11542,7 +11542,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else
 			{
-				messagePlayer(player, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
 		}
 		else if ( item->type == TOOL_TINKERING_KIT )
@@ -11553,7 +11553,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else
 			{
-				messagePlayer(player, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
 		}
 		else
@@ -11607,11 +11607,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 			{
-				messagePlayer(player, language[3488]); // unable to use with current level.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 			}
 			else
 			{
-				messagePlayer(player, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
 		}
 		return;
@@ -11626,11 +11626,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 			{
-				messagePlayer(player, language[3488]); // unable to use with current level.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 			}
 			else
 			{
-				messagePlayer(player, language[3432]); // unable to use in current form message.
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
 		}
 		return;

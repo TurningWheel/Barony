@@ -184,7 +184,7 @@ void actSwitch(Entity* my)
 			{
 				if (inrange[i])   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 				{
-					messagePlayer(i, language[1110]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[1110]);
 					playSoundEntity(my, 56, 64);
 					my->toggleSwitch();
 				}
@@ -264,16 +264,16 @@ void actSwitchWithTimer(Entity* my)
 					switch ( my->leverStatus )
 					{
 						case 0:
-							messagePlayer(i, language[2360]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2360]);
 							break;
 						case 1:
-							messagePlayer(i, language[2361]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2361]);
 							break;
 						case 2:
-							messagePlayer(i, language[2362]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2362]);
 							break;
 						default:
-							messagePlayer(i, language[2363]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2363]);
 							break;
 					}
 

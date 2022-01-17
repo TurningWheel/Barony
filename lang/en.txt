@@ -6039,5 +6039,6 @@ Cast#
 4085 You can not drop gold here.#
 4086 View item details#
 4087 Hide item details#
+4088 You found %d gold pieces in the chest!#
 
 4099 end#

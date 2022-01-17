@@ -680,12 +680,10 @@ void defaultConfig()
 #ifdef PANDORA
 	consoleCommand("/res 960x600");
 	consoleCommand("/gamma 2.000");
-	consoleCommand("/smoothlighting");
 	consoleCommand("/fullscreen");
 #else
 	consoleCommand("/res 1280x720");
 	consoleCommand("/gamma 1.000");
-	consoleCommand("/smoothlighting");
 #endif
 	consoleCommand("/shaking");
 	consoleCommand("/bobbing");
@@ -693,88 +691,8 @@ void defaultConfig()
 	consoleCommand("/sfxambientvolume 64");
 	consoleCommand("/sfxenvironmentvolume 64");
 	consoleCommand("/musvolume 32");
-#ifdef PANDORA
-	consoleCommand("/mousespeed 105");
-	consoleCommand("/svflags 30");
-	consoleCommand("/bind 82 IN_FORWARD");
-	consoleCommand("/bind 80 IN_LEFT");
-	consoleCommand("/bind 81 IN_BACK");
-	consoleCommand("/bind 79 IN_RIGHT");
-#else
 	consoleCommand("/mousespeed 16");
 	consoleCommand("/svflags 30");
-	consoleCommand("/bind 26 IN_FORWARD");
-	consoleCommand("/bind 4 IN_LEFT");
-	consoleCommand("/bind 22 IN_BACK");
-	consoleCommand("/bind 7 IN_RIGHT");
-#endif
-	consoleCommand("/bind 80 IN_TURNL");
-	consoleCommand("/bind 79 IN_TURNR");
-	consoleCommand("/bind 82 IN_UP");
-	consoleCommand("/bind 81 IN_DOWN");
-	consoleCommand("/bind 40 IN_CHAT");
-	consoleCommand("/bind 56 IN_COMMAND");
-	consoleCommand("/bind 43 IN_STATUS");
-#ifdef PANDORA
-	consoleCommand("/bind 75 IN_SPELL_LIST");
-	consoleCommand("/bind 77 IN_CAST_SPELL");
-	consoleCommand("/bind 78 IN_DEFEND");
-#else
-	consoleCommand("/bind 16 IN_SPELL_LIST");
-	consoleCommand("/bind 9 IN_CAST_SPELL");
-	consoleCommand("/bind 44 IN_DEFEND");
-#endif
-	consoleCommand("/bind 283 IN_ATTACK");
-	consoleCommand("/bind 285 IN_USE");
-	consoleCommand("/bind 21 IN_AUTOSORT");
-	consoleCommand("/bind 27 IN_MINIMAPSCALE");
-	consoleCommand("/bind 15 IN_TOGGLECHATLOG");
-	consoleCommand("/bind 6 IN_FOLLOWERMENU");
-	consoleCommand("/bind 20 IN_FOLLOWERMENU_LASTCMD");
-	consoleCommand("/bind 8 IN_FOLLOWERMENU_CYCLENEXT");
-	consoleCommand("/bind 286 IN_HOTBAR_SCROLL_LEFT");
-	consoleCommand("/bind 287 IN_HOTBAR_SCROLL_RIGHT");
-	consoleCommand("/bind 284 IN_HOTBAR_SCROLL_SELECT");
-
-	consoleCommand("/joybind 307 INJOY_STATUS");
-	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
-	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
-	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
-	consoleCommand("/joybind 301 INJOY_GAME_USE");
-	consoleCommand("/joybind 301 INJOY_MENU_USE");
-	consoleCommand("/joybind 305 INJOY_PAUSE_MENU");
-	consoleCommand("/joybind 303 INJOY_MENU_LEFT_CLICK");
-	consoleCommand("/joybind 314 INJOY_DPAD_LEFT");
-	consoleCommand("/joybind 315 INJOY_DPAD_RIGHT");
-	consoleCommand("/joybind 312 INJOY_DPAD_UP");
-	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
-	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 315 INJOY_GAME_HOTBAR_NEXT");
-	consoleCommand("/joybind 314 INJOY_GAME_HOTBAR_PREV");
-	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_ACTIVATE");
-	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
-	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
-	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
-	consoleCommand("/joybind 304 INJOY_MENU_DONT_LOAD_SAVE");
-	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
-	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
-	consoleCommand("/joybind 302 INJOY_MENU_DROP_ITEM");
-	consoleCommand("/joybind 310 INJOY_MENU_CYCLE_SHOP_LEFT");
-	consoleCommand("/joybind 311 INJOY_MENU_CYCLE_SHOP_RIGHT");
-	consoleCommand("/joybind 311 INJOY_MENU_BOOK_NEXT");
-	consoleCommand("/joybind 310 INJOY_MENU_BOOK_PREV");
-	consoleCommand("/joybind 311 INJOY_MENU_SETTINGS_NEXT");
-	consoleCommand("/joybind 310 INJOY_MENU_SETTINGS_PREV");
-	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
-	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
-	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
-	consoleCommand("/joybind 399 INJOY_GAME_MINIMAPSCALE"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_TOGGLECHATLOG"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU_LASTCMD"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU_CYCLE"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -2034,15 +1952,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 						// tell player current monster can't do what you asked (e.g using last command & swapping between monsters with different requirements)
 						if ( disableOption < 0 )
 						{
-							messagePlayer(gui_player, language[3640], getMonsterLocalizedName(followerStats->type).c_str());
+							messagePlayer(gui_player, MESSAGE_MISC, language[3640], getMonsterLocalizedName(followerStats->type).c_str());
 						}
 						else if ( tinkeringFollower )
 						{
-							messagePlayer(gui_player, language[3639], getMonsterLocalizedName(followerStats->type).c_str());
+							messagePlayer(gui_player, MESSAGE_MISC, language[3639], getMonsterLocalizedName(followerStats->type).c_str());
 						}
 						else
 						{
-							messagePlayer(gui_player, language[3638], getMonsterLocalizedName(followerStats->type).c_str());
+							messagePlayer(gui_player, MESSAGE_MISC, language[3638], getMonsterLocalizedName(followerStats->type).c_str());
 						}
 					}
 
@@ -3671,11 +3589,11 @@ void GenericGUIMenu::rebuildGUIInventory()
 			// did not find mixable item... close GUI
 			if ( !experimentingAlchemy )
 			{
-				messagePlayer(gui_player, language[3338]);
+				messagePlayer(gui_player, MESSAGE_MISC, language[3338]);
 			}
 			else
 			{
-				messagePlayer(gui_player, language[3343]);
+				messagePlayer(gui_player, MESSAGE_MISC | MESSAGE_INVENTORY, language[3343]);
 			}
 			closeGUI();
 			return;
@@ -4194,7 +4112,7 @@ void GenericGUIMenu::updateGUI()
 
 		if ( !player_inventory )
 		{
-			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", gui_player);
+			messagePlayer(0, MESSAGE_DEBUG, "Warning: stats[%d].inventory is not a valid list. This should not happen.", gui_player);
 		}
 		else
 		{
@@ -4427,7 +4345,7 @@ void GenericGUIMenu::updateGUI()
 								}
 								else
 								{
-									messagePlayer(0, "%d", item->type);
+									messagePlayer(clientnum, MESSAGE_DEBUG, "%d", item->type);
 									strncat(tempstr, "invalid item", 13);
 								}
 							}
@@ -4624,12 +4542,12 @@ void GenericGUIMenu::uncurseItem(Item* item)
 	}
 	if ( !shouldDisplayItemInGUI(item) )
 	{
-		messagePlayer(gui_player, language[347], item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, language[347], item->getName());
 		return;
 	}
 
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
-	messagePlayer(gui_player, language[348], item->description());
+	messagePlayer(gui_player, MESSAGE_MISC, language[348], item->description());
 
 	closeGUI();
 	if ( multiplayer == CLIENT && itemIsEquipped(item, gui_player) )
@@ -4694,12 +4612,12 @@ void GenericGUIMenu::identifyItem(Item* item)
 	}
 	if ( !shouldDisplayItemInGUI(item) )
 	{
-		messagePlayer(gui_player, language[319], item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, language[319], item->getName());
 		return;
 	}
 
 	item->identified = true;
-	messagePlayer(gui_player, language[320], item->description());
+	messagePlayer(gui_player, MESSAGE_MISC, language[320], item->description());
 	closeGUI();
 }
 
@@ -4711,7 +4629,7 @@ void GenericGUIMenu::repairItem(Item* item)
 	}
 	if ( !shouldDisplayItemInGUI(item) )
 	{
-		messagePlayer(gui_player, language[3287], item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, language[3287], item->getName());
 		return;
 	}
 
@@ -4751,7 +4669,7 @@ void GenericGUIMenu::repairItem(Item* item)
 			item->appearance += repairAmount;
 			item->status = EXCELLENT;
 		}
-		messagePlayer(gui_player, language[3730], item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, language[3730], item->getName());
 	}
 	else
 	{
@@ -4770,7 +4688,7 @@ void GenericGUIMenu::repairItem(Item* item)
 				item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
 			}
 		}
-		messagePlayer(gui_player, language[872], item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, language[872], item->getName());
 	}
 	closeGUI();
 	if ( multiplayer == CLIENT && isEquipped )
@@ -5095,11 +5013,11 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				// did not find mixable item... close GUI
 				if ( !experimentingAlchemy )
 				{
-					messagePlayer(gui_player, language[3337]);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3337]);
 				}
 				else
 				{
-					messagePlayer(gui_player, language[3342]);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3342]);
 				}
 				closeGUI();
 				return false;
@@ -5182,7 +5100,7 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 	{
 		if ( players[gui_player]->entity->isBlind() )
 		{
-			messagePlayer(gui_player, language[892]);
+			messagePlayer(gui_player, MESSAGE_MISC, language[892]);
 			closeGUI();
 			return false; // I can't see!
 		}
@@ -5642,22 +5560,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( basePotion->identified && secondaryPotion->identified )
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3332],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3332],
 			items[basePotion->type].name_identified, items[secondaryPotion->type].name_identified);
 	}
 	else if ( basePotion->identified )
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3334],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3334],
 			items[basePotion->type].name_identified);
 	}
 	else if ( secondaryPotion->identified )
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3333],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3333],
 			items[secondaryPotion->type].name_identified);
 	}
 	else
 	{
-		messagePlayerColor(gui_player, uint32ColorWhite(*mainsurface), language[3335]);
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3335]);
 	}
 
 	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
@@ -5745,7 +5663,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		{
 			Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 			itemPickup(gui_player, emptyBottle);
-			messagePlayer(gui_player, language[3351], items[POTION_EMPTY].name_identified);
+			messagePlayer(gui_player, MESSAGE_MISC, language[3351], items[POTION_EMPTY].name_identified);
 			free(emptyBottle);
 		}
 	}
@@ -5773,11 +5691,11 @@ void GenericGUIMenu::alchemyCombinePotions()
 		alembicItem->status = static_cast<Status>(alembicItem->status - 1);
 		if ( alembicItem->status > BROKEN )
 		{
-			messagePlayer(gui_player, language[681], alembicItem->getName());
+			messagePlayer(gui_player, MESSAGE_MISC, language[681], alembicItem->getName());
 		}
 		else
 		{
-			messagePlayer(gui_player, language[2351], alembicItem->getName());
+			messagePlayer(gui_player, MESSAGE_MISC, language[2351], alembicItem->getName());
 			playSoundPlayer(gui_player, 162, 64);
 			consumeItem(alembicItem, gui_player);
 			alembicItem = nullptr;
@@ -5839,7 +5757,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			{
 				if ( result == POTION_WATER && !duplicateSucceed )
 				{
-					messagePlayer(gui_player, language[3356]);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3356]);
 					newPotion->identified = true;
 				}
 				else
@@ -5851,12 +5769,12 @@ void GenericGUIMenu::alchemyCombinePotions()
 						newPotion->identified = duplicatedPotion->identified;
 						newPotion->status = duplicatedPotion->status;
 					}
-					messagePlayer(gui_player, language[3352], newPotion->description());
+					messagePlayer(gui_player, MESSAGE_MISC, language[3352], newPotion->description());
 				}
 			}
 			else
 			{
-				messagePlayer(gui_player, language[3352], newPotion->description());
+				messagePlayer(gui_player, MESSAGE_MISC, language[3352], newPotion->description());
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 			}
 			itemPickup(gui_player, newPotion);
@@ -5910,11 +5828,11 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 				{
 					if ( isItemBaseIngredient(type) )
 					{
-						messagePlayerColor(gui_player, color, language[3346], items[type].name_identified);
+						messagePlayerColor(gui_player, MESSAGE_PROGRESSION, color, language[3346], items[type].name_identified);
 					}
 					else if ( isItemSecondaryIngredient(type) )
 					{
-						messagePlayerColor(gui_player, color, language[3349], items[type].name_identified);
+						messagePlayerColor(gui_player, MESSAGE_PROGRESSION, color, language[3349], items[type].name_identified);
 					}
 				}
 				if ( increaseskill )
@@ -6169,13 +6087,13 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
 	{
 		playSound(90, 64);
-		messagePlayer(gui_player, language[3652], items[item->type].name_identified);
+		messagePlayer(gui_player, MESSAGE_MISC, language[3652], items[item->type].name_identified);
 		return false;
 	}
 	if ( !tinkeringPlayerCanAffordCraft(item) )
 	{
 		playSound(90, 64);
-		messagePlayer(gui_player, language[3648], items[item->type].name_identified);
+		messagePlayer(gui_player, MESSAGE_MISC, language[3648], items[item->type].name_identified);
 		return false;
 	}
 
@@ -6183,7 +6101,7 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	if ( crafted )
 	{
 		Item* pickedUp = itemPickup(gui_player, crafted);
-		messagePlayer(gui_player, language[3668], crafted->description());
+		messagePlayer(gui_player, MESSAGE_MISC, language[3668], crafted->description());
 		free(crafted);
 		return true;
 	}
@@ -6199,7 +6117,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 	if ( !outsideInventory && itemIsEquipped(item, player) )
 	{
-		messagePlayer(player, language[3669]);
+		messagePlayer(player, MESSAGE_MISC, language[3669]);
 		return false; // don't want to deal with client/server desync problems here.
 	}
 
@@ -6282,11 +6200,11 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			if ( bonusMetalScrap > 0 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(player, color, language[3665], metal, items[pickedUp->type].name_identified);
+				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			else
 			{
-				messagePlayer(player, language[3665], metal, items[pickedUp->type].name_identified);
+				messagePlayer(player, MESSAGE_MISC, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			free(crafted); // if player != clientnum, then crafted == pickedUp
 			didCraft = true;
@@ -6301,11 +6219,11 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			if ( bonusMagicScrap > 0 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				messagePlayerColor(player, color, language[3665], magic, items[pickedUp->type].name_identified);
+				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], magic, items[pickedUp->type].name_identified);
 			}
 			else
 			{
-				messagePlayer(player, language[3665], magic, items[pickedUp->type].name_identified);
+				messagePlayer(player, MESSAGE_MISC, language[3665], magic, items[pickedUp->type].name_identified);
 			}
 			free(crafted); // if player != clientnum, then crafted == pickedUp
 			didCraft = true;
@@ -6325,7 +6243,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 				else if ( rand() % 20 == 0 )
 				{
-					messagePlayer(player, language[3666]); // nothing left to learn from salvaging.
+					messagePlayer(player, MESSAGE_MISC, language[3666]); // nothing left to learn from salvaging.
 				}
 			}
 		}
@@ -6339,7 +6257,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 				else if ( rand() % 20 == 0 )
 				{
-					messagePlayer(player, language[3666]); // nothing left to learn from salvaging.
+					messagePlayer(player, MESSAGE_MISC, language[3666]); // nothing left to learn from salvaging.
 				}
 			}
 		}
@@ -6574,7 +6492,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 					}
 					else if ( rand() % 20 == 0 )
 					{
-						messagePlayer(gui_player, language[3667], items[item->type].name_identified);
+						messagePlayer(gui_player, MESSAGE_MISC, language[3667], items[item->type].name_identified);
 					}
 				}
 			}
@@ -7461,11 +7379,11 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
 		if ( toDegrade->status > BROKEN )
 		{
-			messagePlayer(gui_player, language[681], toDegrade->getName());
+			messagePlayer(gui_player, MESSAGE_MISC, language[681], toDegrade->getName());
 		}
 		else
 		{
-			messagePlayer(gui_player, language[662], toDegrade->getName());
+			messagePlayer(gui_player, MESSAGE_MISC, language[662], toDegrade->getName());
 			if ( players[gui_player] && players[gui_player]->entity )
 			{
 				playSoundEntityLocal(players[gui_player]->entity, 76, 64);
@@ -7542,13 +7460,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( craftRequirement == -1 ) // can't craft, can't upgrade!
 				{
 					playSound(90, 64);
-					messagePlayer(gui_player, language[3685], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3685], items[item->type].name_identified);
 					return false;
 				}
 				else if ( !tinkeringPlayerCanAffordRepair(item) )
 				{
 					playSound(90, 64);
-					messagePlayer(gui_player, language[3687], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3687], items[item->type].name_identified);
 					return false;
 				}
 				
@@ -7558,7 +7476,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( maxStatus <= item->status )
 				{
 					playSound(90, 64);
-					messagePlayer(gui_player, language[3685], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3685], items[item->type].name_identified);
 					return false;
 				}
 
@@ -7590,7 +7508,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						}
 						free(upgradedItem);
 					}
-					messagePlayer(gui_player, language[3683], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3683], items[item->type].name_identified);
 					consumeItem(item, gui_player);
 					return true;
 				}
@@ -7601,13 +7519,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( craftRequirement == -1 ) // can't craft, can't repair!
 				{
 					playSound(90, 64);
-					messagePlayer(gui_player, language[3688], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3688], items[item->type].name_identified);
 					return false;
 				}
 				else if ( !tinkeringPlayerCanAffordRepair(item) )
 				{
 					playSound(90, 64);
-					messagePlayer(gui_player, language[3686], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3686], items[item->type].name_identified);
 					return false;
 				}
 
@@ -7643,7 +7561,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						}
 						free(repairedItem);
 					}
-					messagePlayer(gui_player, language[3682], items[item->type].name_identified);
+					messagePlayer(gui_player, MESSAGE_MISC, language[3682], items[item->type].name_identified);
 					consumeItem(item, gui_player);
 					return true;
 				}
@@ -7656,13 +7574,13 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 			if ( craftRequirement == -1 && itemCategory(item) == TOOL ) // can't craft, can't repair!
 			{
 				playSound(90, 64);
-				messagePlayer(gui_player, language[3688], items[item->type].name_identified);
+				messagePlayer(gui_player, MESSAGE_MISC, language[3688], items[item->type].name_identified);
 				return false;
 			}
 			if ( !tinkeringPlayerCanAffordRepair(item) )
 			{
 				playSound(90, 64);
-				messagePlayer(gui_player, language[3686], items[item->type].name_identified);
+				messagePlayer(gui_player, MESSAGE_MISC, language[3686], items[item->type].name_identified);
 				return false;
 			}
 
@@ -7671,7 +7589,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 				bool isEquipped = itemIsEquipped(item, gui_player);
 				item->status = static_cast<Status>(repairedStatus);
-				messagePlayer(gui_player, language[872], item->getName());
+				messagePlayer(gui_player, MESSAGE_MISC, language[872], item->getName());
 				bool replaceTinkeringKit = false;
 				if ( item == tinkeringKitItem )
 				{
@@ -8054,7 +7972,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
 		{
 			toDegrade->status = BROKEN;
-			messagePlayer(gui_player, language[3727], toDegrade->getName());
+			messagePlayer(gui_player, MESSAGE_EQUIPMENT, language[3727], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return usageCost;
 		}
@@ -8063,7 +7981,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 			if ( durability > 25 && (toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY) <= 25 )
 			{
 				// notify we're at less than 25%.
-				messagePlayer(gui_player, language[3729], toDegrade->getName());
+				messagePlayer(gui_player, MESSAGE_EQUIPMENT, language[3729], toDegrade->getName());
 			}
 		}
 	}
@@ -8077,13 +7995,13 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 		if ( (usageCost / 2) < durability && itemCategory(itemUsedWith) == SCROLL )
 		{
 			// if scroll cost is a little more than the durability, then let it succeed.
-			messagePlayer(gui_player, language[3727], toDegrade->getName());
+			messagePlayer(gui_player, MESSAGE_EQUIPMENT, language[3727], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return usageCost;
 		}
 		else
 		{
-			messagePlayer(gui_player, language[3728], toDegrade->getName());
+			messagePlayer(gui_player, MESSAGE_EQUIPMENT, language[3728], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return 0;
 		}
@@ -8181,7 +8099,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			//messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724]);
 			int oldcount = pickedUp->count;
 			pickedUp->count = 1;
-			messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
+			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
 			//scribingBlankScrollTarget = nullptr;
@@ -8244,8 +8162,8 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 		bool isEquipped = itemIsEquipped(item, gui_player);
 		item->status = static_cast<Status>(repairedStatus);
-		messagePlayer(gui_player, language[3725]);
-		messagePlayer(gui_player, language[872], item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, language[3725]);
+		messagePlayer(gui_player, MESSAGE_INVENTORY, language[872], item->getName());
 		if ( !isEquipped )
 		{
 			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);

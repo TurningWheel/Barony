@@ -76,17 +76,17 @@ void actLadder(Entity* my)
 						dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 						if (dist > TOUCHRANGE)
 						{
-							messagePlayer(i, language[505]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[505]);
 							return;
 						}
 					}
 					if (playercount == 1)
 					{
-						messagePlayer(i, language[506]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[506]);
 					}
 					else
 					{
-						messagePlayer(i, language[507]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[507]);
 					}
 					loadnextlevel = true;
 					if (secretlevel)
@@ -138,7 +138,7 @@ void actLadderUp(Entity* my)
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[508]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[508]);
 					return;
 				}
 			}
@@ -272,17 +272,17 @@ void actPortal(Entity* my)
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE)
 					{
-						messagePlayer(i, language[505]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[505]);
 						return;
 					}
 				}
 				if (playercount == 1)
 				{
-					messagePlayer(i, language[510]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[510]);
 				}
 				else
 				{
-					messagePlayer(i, language[511]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[511]);
 				}
 				loadnextlevel = true;
 				if ( secretlevel )
@@ -473,7 +473,7 @@ void actWinningPortal(Entity* my)
 					dist = sqrt( pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE)
 					{
-						messagePlayer(i, language[509]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
 						return;
 					}
 				}
@@ -618,7 +618,7 @@ void Entity::actExpansionEndGamePortal()
 					dist = sqrt(pow(x - players[c]->entity->x, 2) + pow(y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, language[509]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
 						return;
 					}
 				}
@@ -782,7 +782,7 @@ void Entity::actMidGamePortal()
 					dist = sqrt(pow(x - players[c]->entity->x, 2) + pow(y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, language[509]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
 						return;
 					}
 				}
@@ -1125,17 +1125,17 @@ void actCustomPortal(Entity* my)
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, language[509]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
 						return;
 					}
 				}
 				if ( playercount == 1 )
 				{
-					messagePlayer(i, language[506]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[506]);
 				}
 				else
 				{
-					messagePlayer(i, language[507]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[507]);
 				}
 				loadnextlevel = true;
 				skipLevelsOnLoad = 0;
@@ -1241,7 +1241,7 @@ void actCustomPortal(Entity* my)
 						// could not find the map name anywhere.
 						loadnextlevel = false;
 						skipLevelsOnLoad = 0;
-						messagePlayer(i, "Error: Map %s was not found in the maps folder!", mapName);
+						messagePlayer(i, MESSAGE_MISC, "Error: Map %s was not found in the maps folder!", mapName);
 						return;
 					}
 					int levelDifference = currentlevel - levelToJumpTo;

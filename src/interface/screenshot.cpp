@@ -64,7 +64,7 @@ void takeScreenshot(const char* output_path)
 	SDL_FreeSurface( temp );
 	if ( !intro && !output_path )
 	{
-		messagePlayer(clientnum, "%s", filename);
+		messagePlayer(clientnum, MESSAGE_MISC, "%s", filename);
 	}
 	else
 	{

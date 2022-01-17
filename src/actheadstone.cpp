@@ -107,12 +107,12 @@ void actHeadstone(Entity* my)
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[485 + HEADSTONE_MESSAGE % 17]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[485 + HEADSTONE_MESSAGE % 17]);
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
 						shouldspawn = true;
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-						messagePlayerColor(i, color, language[502]);
+						messagePlayerColor(i, MESSAGE_INTERACTION, color, language[502]);
 					}
 				}
 			}
