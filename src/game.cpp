@@ -5856,9 +5856,9 @@ int main(int argc, char** argv)
 					{
 						continue;
 					}
-					if ((subwindow && !players[i]->shootmode) || (gamePaused && i == clientnum))
+					if ((subwindow && !players[i]->shootmode) || (gamePaused && inputs.bPlayerUsingKeyboardControl(i)))
 					{
-						if (inputs.getVirtualMouse(i)->draw_cursor || (inputs.getVirtualMouse(i)->draw_cursor && gamePaused && i == clientnum))
+						if (inputs.getVirtualMouse(i)->draw_cursor || (inputs.getVirtualMouse(i)->draw_cursor && gamePaused && inputs.bPlayerUsingKeyboardControl(i)))
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
