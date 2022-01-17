@@ -1061,8 +1061,30 @@ namespace MainMenu {
 		svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 		::skipintro = skipintro;
 
-		return result;
-	}
+        // TODO crossplay settings
+#ifdef USE_EOS
+        /*
+	    if ( LobbyHandler.settings_crossplayEnabled )
+	    {
+		    if ( !LobbyHandler.crossplayEnabled )
+		    {
+			    LobbyHandler.settings_crossplayEnabled = false;
+			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+		    }
+	    }
+	    else
+	    {
+		    if ( LobbyHandler.crossplayEnabled )
+		    {
+			    LobbyHandler.crossplayEnabled = false;
+			    EOS.CrossplayAccountManager.logOut = true;
+		    }
+	    }
+        */
+#endif
+
+	    return result;
+    }
 
 	inline AllSettings AllSettings::load() {
 		AllSettings settings;

@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include <sstream>
+#include <unordered_map>
 #include "consolecommand.hpp"
 #include "../main.hpp"
 #include "../files.hpp"

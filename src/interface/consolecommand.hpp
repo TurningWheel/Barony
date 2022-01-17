@@ -10,7 +10,6 @@
 -------------------------------------------------------------------------------*/
 
 #include <string>
-#include <unordered_map>
 
 /*
  * How to define a console command:
