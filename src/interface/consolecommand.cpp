@@ -68,14 +68,21 @@ void ConsoleVariable::add_to_map()
 
 void ConsoleVariable::setter(int argc, const char** argv)
 {
-    if (argc < 2) {
-        return;
-    }
     auto& map = getConsoleVariables();
     auto find = map.find(argv[0]);
     if (find != map.end()) {
         auto& cvar = find->second;
-        cvar.data = argv[1];
+        if (argc >= 2) {
+            cvar.data = argv[1];
+            for (int c = 2; c < argc; ++c) {
+                cvar.data += " ";
+                cvar.data += argv[c];
+            }
+        } else {
+            cvar.data = "";
+        }
+        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+            cvar.name + 1, cvar.data.c_str());
     }
 }
 

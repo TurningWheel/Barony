@@ -55,7 +55,15 @@ private:
  * doesn't fall out of scope!!!
  *
  * ex:
- * static ConsoleVariable my_var("/my_var", "some_value", "a variable players can mess with");
+ * static ConsoleVariable my_var("/my_var", "some value", "a variable players can mess with");
+ *
+ * Note: due to the way ConsoleCommands tokenize strings, using several successive
+ * spaces in a ConsoleVariable value will result in just one space being recorded.
+ *
+ * ex:
+ * /cvar Hello       World
+ * =
+ * Hello World
  */
 
 class ConsoleVariable : ConsoleCommand {
@@ -63,8 +71,8 @@ public:
     ConsoleVariable(const char* _name, const char* _default = "", const char* _desc = ""):
         ConsoleCommand(_name, _desc, &ConsoleVariable::setter)
     {
-        data = _default;
         add_to_map();
+        (*this)(_default);
     }
 
     void operator()(const char* arg) {
