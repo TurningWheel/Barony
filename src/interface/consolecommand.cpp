@@ -1354,6 +1354,11 @@ namespace ConsoleCommands {
 			return;
 		}
 
+		if ( !players[clientnum]->entity )
+		{
+			return;
+		}
+
 		for ( int c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
 			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) 
@@ -2435,7 +2440,7 @@ namespace ConsoleCommands {
             return;
         }
 		int effect = atoi(argv[1]);
-		if ( effect >= NUMEFFECTS || effect < 0 )
+		if ( effect >= NUMEFFECTS || effect < 0 || !players[clientnum]->entity )
 		{
 			return;
 		}
@@ -2997,11 +3002,19 @@ namespace ConsoleCommands {
 				{
 					inputs.setPlayerIDAllowedKeyboard(0);
 					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", 0);
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						Input::inputs[c].refresh();
+					}
 				}
 				else
 				{
 					inputs.setPlayerIDAllowedKeyboard(i + 1);
 					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", i + 1);
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						Input::inputs[c].refresh();
+					}
 				}
 				break;
 			}
@@ -3504,4 +3517,19 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, "Set Frame::findFrameDefaultSearchType to breadth first");
 		}
 		});
+
+	static ConsoleCommand ccmd_timertestsdebug("/debugkeys", "", []CCMD{
+		enableDebugKeys = !enableDebugKeys;
+		messagePlayer(clientnum, MESSAGE_MISC, "Set enableDebugKeys to %d", enableDebugKeys);
+	});
+
+	static ConsoleCommand ccmd_loadglyphs("/loadglyphs", "", []CCMD{
+		GlyphHelper.readFromFile();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded keyboard glyph paths from JSON file");
+	});
+
+	static ConsoleCommand ccmd_renderglyphs("/renderglyphs", "", []CCMD{
+		GlyphHelper.renderGlyphsToPNGs();
+		messagePlayer(clientnum, MESSAGE_MISC, "Re-rendering keyboard glyphs...");
+	});
 }
