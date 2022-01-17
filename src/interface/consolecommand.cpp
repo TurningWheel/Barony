@@ -133,10 +133,10 @@ void consoleCommand(char const * const command_str)
 #define CCMD (int argc, const char **argv)
 
 namespace ConsoleCommands {
-    static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help /listcmds)", []CCMD{
-        const char* cmd = argc == 1 ? "/help" : argv[1];
+    static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help listcmds)", []CCMD{
+        const char* cmd = argc == 1 ? "help" : argv[1];
         auto& map = getConsoleCommands();
-        auto find = map.find(cmd);
+        auto find = map.find(std::string("/") + cmd);
         if (find != map.end()) {
             messagePlayer(clientnum, MESSAGE_MISC, "%s", find->second.desc);
         } else {
