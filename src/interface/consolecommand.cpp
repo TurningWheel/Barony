@@ -97,6 +97,12 @@ typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables
     return cvar_map;
 }
 
+template <typename T>
+T& ConsoleVariable<T>::operator*()
+{
+    return data;
+}
+
 /*******************************************************************************
     std::string cvars
 *******************************************************************************/
@@ -231,6 +237,13 @@ namespace ConsoleCommands {
     static ConsoleCommand ccmd_test_print_string("/test_print_string", "print contents of cvar_test_string",
         [](int argc, const char** argv){
         messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test_string.data.c_str());
+        });
+
+    static ConsoleCommand ccmd_test_cvars_reset("/test_cvars_reset", "reset test cvars",
+        [](int argc, const char** argv){
+        *cvar_test_float = 1.f;
+        *cvar_test_int = 1;
+        *cvar_test_string = "Hello world";
         });
 
     static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help listcmds)", []CCMD{

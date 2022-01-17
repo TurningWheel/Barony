@@ -82,6 +82,7 @@ public:
 
     void operator()(const T& arg);
     void operator=(const char* arg);
+    T& operator*();
 
     T data;
 
