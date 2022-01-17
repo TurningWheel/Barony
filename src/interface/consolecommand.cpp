@@ -41,6 +41,8 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
+/******************************************************************************/
+
 typedef std::unordered_map<std::string, ConsoleCommand> ccmd_map_t;
 static ccmd_map_t& getConsoleCommands()
 {
@@ -48,28 +50,22 @@ static ccmd_map_t& getConsoleCommands()
     return ccmd_map;
 }
 
-typedef std::unordered_map<std::string, ConsoleVariable&> cvar_map_t;
-static cvar_map_t& getConsoleVariables()
-{
-    static cvar_map_t cvar_map;
-    return cvar_map;
-}
-
 void ConsoleCommand::add_to_map()
 {
     auto& map = getConsoleCommands();
-    map.emplace(name, *this);
+    auto result = map.emplace(name, *this);
+    if (result.second == false) {
+        printlog("A ConsoleCommand by the name \"%s\" already exists! Aborting\n", name);
+        assert(0 && "A ConsoleCommand with a duplicate name was found. Aborting");
+        exit(1);
+    }
 }
 
-void ConsoleVariable::add_to_map()
-{
-    auto& map = getConsoleVariables();
-    map.emplace(name, *this);
-}
+/******************************************************************************/
 
-void ConsoleVariable::setter(int argc, const char** argv)
+template<> void ConsoleVariable<std::string>::setter(int argc, const char** argv)
 {
-    auto& map = getConsoleVariables();
+    auto& map = getConsoleVariables<std::string>();
     auto find = map.find(argv[0]);
     if (find != map.end()) {
         auto& cvar = find->second;
@@ -85,6 +81,68 @@ void ConsoleVariable::setter(int argc, const char** argv)
         messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
             cvar.name + 1, cvar.data.c_str());
     }
+}
+
+template<> void ConsoleVariable<std::string>::operator()(const std::string& arg)
+{
+    auto& str = arg;
+    const char* args[2] = {
+        name,
+        str.c_str(),
+    };
+    setter(2, args);
+}
+
+template<> void ConsoleVariable<int>::setter(int argc, const char** argv)
+{
+    auto& map = getConsoleVariables<int>();
+    auto find = map.find(argv[0]);
+    if (find != map.end()) {
+        auto& cvar = find->second;
+        if (argc >= 2) {
+            cvar.data = (int)strtol(argv[1], nullptr, 10);
+        } else {
+            cvar.data = 0;
+        }
+        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
+            cvar.name + 1, cvar.data);
+    }
+}
+
+template<> void ConsoleVariable<int>::operator()(const int& arg)
+{
+    auto str = std::to_string(arg);
+    const char* args[2] = {
+        name,
+        str.c_str(),
+    };
+    setter(2, args);
+}
+
+template<> void ConsoleVariable<float>::setter(int argc, const char** argv)
+{
+    auto& map = getConsoleVariables<float>();
+    auto find = map.find(argv[0]);
+    if (find != map.end()) {
+        auto& cvar = find->second;
+        if (argc >= 2) {
+            cvar.data = strtof(argv[1], nullptr);
+        } else {
+            cvar.data = 0.f;
+        }
+        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
+            cvar.name + 1, cvar.data);
+    }
+}
+
+template<> void ConsoleVariable<float>::operator()(const float& arg)
+{
+    auto str = std::to_string(arg);
+    const char* args[2] = {
+        name,
+        str.c_str(),
+    };
+    setter(2, args);
 }
 
 /*-------------------------------------------------------------------------------
@@ -141,6 +199,25 @@ void consoleCommand(char const * const command_str)
 #define CCMD (int argc, const char **argv)
 
 namespace ConsoleCommands {
+    static ConsoleVariable<float> cvar_test_float("/cvar_test_float", 1.f, "test floats in cvars");
+    static ConsoleVariable<int> cvar_test_int("/cvar_test_int", 1, "test ints in cvars");
+    static ConsoleVariable<std::string> cvar_test_string("/cvar_test_string", "Hello world", "test strings in cvars");
+
+    static ConsoleCommand ccmd_test_print_float("/test_print_float", "print contents of cvar_test_float",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%f", cvar_test_float.data);
+        });
+
+    static ConsoleCommand ccmd_test_print_int("/test_print_int", "print contents of cvar_test_int",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%d", cvar_test_int.data);
+        });
+
+    static ConsoleCommand ccmd_test_print_string("/test_print_string", "print contents of cvar_test_string",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test_string.data.c_str());
+        });
+
     static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help listcmds)", []CCMD{
         const char* cmd = argc == 1 ? "help" : argv[1];
         auto& map = getConsoleCommands();
@@ -169,12 +246,6 @@ namespace ConsoleCommands {
             }
         }
         messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
-        });
-
-    static ConsoleVariable cvar_test("/cvar_test", "", "a test cvar");
-
-    static ConsoleCommand ccmd_cvar_print("/cvar_print", "print contents of /cvar_test", []CCMD{
-        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test.data.c_str());
         });
 
     static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
