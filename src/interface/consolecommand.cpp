@@ -9,9 +9,9 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <unordered_map>
 #include "consolecommand.hpp"
+
+#include <sstream>
 #include "../main.hpp"
 #include "../files.hpp"
 #include "../game.hpp"
@@ -60,27 +60,52 @@ void ConsoleCommand::add_to_map()
         exit(1);
     }
 }
-
 /******************************************************************************/
 
-template<> void ConsoleVariable<std::string>::setter(int argc, const char** argv)
+template<typename T>
+void ConsoleVariable<T>::setter(int argc, const char** argv)
 {
-    auto& map = getConsoleVariables<std::string>();
+    auto& map = getConsoleVariables();
     auto find = map.find(argv[0]);
     if (find != map.end()) {
         auto& cvar = find->second;
         if (argc >= 2) {
-            cvar.data = argv[1];
+            std::string data;
+            data = argv[1];
             for (int c = 2; c < argc; ++c) {
-                cvar.data += " ";
-                cvar.data += argv[c];
+                data.append(" ");
+                data.append(argv[c]);
             }
+            cvar = data.c_str();
         } else {
-            cvar.data = "";
+            cvar = "";
         }
-        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
-            cvar.name + 1, cvar.data.c_str());
     }
+}
+
+template<typename T>
+void ConsoleVariable<T>::add_to_map()
+{
+    auto& map = getConsoleVariables();
+    (void)map.emplace(name, *this);
+}
+
+template <typename T>
+typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables()
+{
+    static ConsoleVariable<T>::cvar_map_t cvar_map;
+    return cvar_map;
+}
+
+/*******************************************************************************
+    std::string cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<std::string>::operator=(const char* arg)
+{
+    data = arg;
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+        name + 1, data.c_str());
 }
 
 template<> void ConsoleVariable<std::string>::operator()(const std::string& arg)
@@ -93,20 +118,15 @@ template<> void ConsoleVariable<std::string>::operator()(const std::string& arg)
     setter(2, args);
 }
 
-template<> void ConsoleVariable<int>::setter(int argc, const char** argv)
+/*******************************************************************************
+    int cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<int>::operator=(const char* arg)
 {
-    auto& map = getConsoleVariables<int>();
-    auto find = map.find(argv[0]);
-    if (find != map.end()) {
-        auto& cvar = find->second;
-        if (argc >= 2) {
-            cvar.data = (int)strtol(argv[1], nullptr, 10);
-        } else {
-            cvar.data = 0;
-        }
-        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
-            cvar.name + 1, cvar.data);
-    }
+    data = (int)strtol(arg, nullptr, 10);
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
+        name + 1, data);
 }
 
 template<> void ConsoleVariable<int>::operator()(const int& arg)
@@ -119,20 +139,15 @@ template<> void ConsoleVariable<int>::operator()(const int& arg)
     setter(2, args);
 }
 
-template<> void ConsoleVariable<float>::setter(int argc, const char** argv)
+/*******************************************************************************
+    float cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<float>::operator=(const char* arg)
 {
-    auto& map = getConsoleVariables<float>();
-    auto find = map.find(argv[0]);
-    if (find != map.end()) {
-        auto& cvar = find->second;
-        if (argc >= 2) {
-            cvar.data = strtof(argv[1], nullptr);
-        } else {
-            cvar.data = 0.f;
-        }
-        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
-            cvar.name + 1, cvar.data);
-    }
+    data = strtof(arg, nullptr);
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
+        name + 1, data);
 }
 
 template<> void ConsoleVariable<float>::operator()(const float& arg)

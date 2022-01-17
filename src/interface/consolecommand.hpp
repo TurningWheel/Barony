@@ -11,12 +11,6 @@
 
 #include <string>
 #include <unordered_map>
-#include <cstdlib>
-#include <cassert>
-
-#include "../main.hpp"
-#include "../game.hpp"
-#include "../net.hpp"
 
 /*
  * How to define a console command:
@@ -87,32 +81,13 @@ public:
     }
 
     void operator()(const T& arg);
+    void operator=(const char* arg);
 
     T data;
 
 private:
     static void setter(int argc, const char** argv);
     void add_to_map();
+    using cvar_map_t = std::unordered_map<std::string, ConsoleVariable<T>&>;
+    static cvar_map_t& getConsoleVariables();
 };
-
-template <typename T>
-using cvar_map_t = std::unordered_map<std::string, ConsoleVariable<T>&>;
-
-template <typename T>
-cvar_map_t<T>& getConsoleVariables()
-{
-    static cvar_map_t<T> cvar_map;
-    return cvar_map;
-}
-
-template <typename T>
-void ConsoleVariable<T>::add_to_map()
-{
-    auto& map = getConsoleVariables<T>();
-    auto result = map.emplace(name, *this);
-    if (result.second == false) {
-        printlog("A ConsoleVariable by the name \"%s\" already exists! Aborting\n", name);
-        assert(0 && "A ConsoleVariable with a duplicate name was found. Aborting");
-        exit(1);
-    }
-}
