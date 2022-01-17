@@ -9,9 +9,9 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <unordered_map>
 #include "consolecommand.hpp"
+
+#include <sstream>
 #include "../main.hpp"
 #include "../files.hpp"
 #include "../game.hpp"
@@ -41,6 +41,8 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
+/******************************************************************************/
+
 typedef std::unordered_map<std::string, ConsoleCommand> ccmd_map_t;
 static ccmd_map_t& getConsoleCommands()
 {
@@ -48,43 +50,90 @@ static ccmd_map_t& getConsoleCommands()
     return ccmd_map;
 }
 
-typedef std::unordered_map<std::string, ConsoleVariable&> cvar_map_t;
-static cvar_map_t& getConsoleVariables()
-{
-    static cvar_map_t cvar_map;
-    return cvar_map;
-}
-
 void ConsoleCommand::add_to_map()
 {
     auto& map = getConsoleCommands();
-    map.emplace(name, *this);
+    auto result = map.emplace(name, *this);
+    if (result.second == false) {
+        printlog("A ConsoleCommand by the name \"%s\" already exists! Aborting\n", name);
+        assert(0 && "A ConsoleCommand with a duplicate name was found. Aborting");
+        exit(1);
+    }
 }
+/******************************************************************************/
 
-void ConsoleVariable::add_to_map()
-{
-    auto& map = getConsoleVariables();
-    map.emplace(name, *this);
-}
-
-void ConsoleVariable::setter(int argc, const char** argv)
+template<typename T>
+void ConsoleVariable<T>::setter(int argc, const char** argv)
 {
     auto& map = getConsoleVariables();
     auto find = map.find(argv[0]);
     if (find != map.end()) {
         auto& cvar = find->second;
         if (argc >= 2) {
-            cvar.data = argv[1];
+            std::string data;
+            data = argv[1];
             for (int c = 2; c < argc; ++c) {
-                cvar.data += " ";
-                cvar.data += argv[c];
+                data.append(" ");
+                data.append(argv[c]);
             }
+            cvar = data.c_str();
         } else {
-            cvar.data = "";
+            cvar = "";
         }
-        messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
-            cvar.name + 1, cvar.data.c_str());
     }
+}
+
+template<typename T>
+void ConsoleVariable<T>::add_to_map()
+{
+    auto& map = getConsoleVariables();
+    (void)map.emplace(name, *this);
+}
+
+template <typename T>
+typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables()
+{
+    static ConsoleVariable<T>::cvar_map_t cvar_map;
+    return cvar_map;
+}
+
+template <typename T>
+T& ConsoleVariable<T>::operator*()
+{
+    return data;
+}
+
+/*******************************************************************************
+    std::string cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<std::string>::operator=(const char* arg)
+{
+    data = arg;
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+        name + 1, data.c_str());
+}
+
+/*******************************************************************************
+    int cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<int>::operator=(const char* arg)
+{
+    data = (int)strtol(arg, nullptr, 10);
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
+        name + 1, data);
+}
+
+/*******************************************************************************
+    float cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<float>::operator=(const char* arg)
+{
+    data = strtof(arg, nullptr);
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
+        name + 1, data);
 }
 
 /*-------------------------------------------------------------------------------
@@ -141,6 +190,32 @@ void consoleCommand(char const * const command_str)
 #define CCMD (int argc, const char **argv)
 
 namespace ConsoleCommands {
+    static ConsoleVariable<float> cvar_test_float("/cvar_test_float", 1.f, "test floats in cvars");
+    static ConsoleVariable<int> cvar_test_int("/cvar_test_int", 1, "test ints in cvars");
+    static ConsoleVariable<std::string> cvar_test_string("/cvar_test_string", "Hello world", "test strings in cvars");
+
+    static ConsoleCommand ccmd_test_print_float("/test_print_float", "print contents of cvar_test_float",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%f", cvar_test_float.data);
+        });
+
+    static ConsoleCommand ccmd_test_print_int("/test_print_int", "print contents of cvar_test_int",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%d", cvar_test_int.data);
+        });
+
+    static ConsoleCommand ccmd_test_print_string("/test_print_string", "print contents of cvar_test_string",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test_string.data.c_str());
+        });
+
+    static ConsoleCommand ccmd_test_cvars_reset("/test_cvars_reset", "reset test cvars",
+        [](int argc, const char** argv){
+        *cvar_test_float = 1.f;
+        *cvar_test_int = 1;
+        *cvar_test_string = "Hello world";
+        });
+
     static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help listcmds)", []CCMD{
         const char* cmd = argc == 1 ? "help" : argv[1];
         auto& map = getConsoleCommands();
@@ -169,12 +244,6 @@ namespace ConsoleCommands {
             }
         }
         messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
-        });
-
-    static ConsoleVariable cvar_test("/cvar_test", "", "a test cvar");
-
-    static ConsoleCommand ccmd_cvar_print("/cvar_print", "print contents of /cvar_test", []CCMD{
-        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test.data.c_str());
         });
 
     static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
