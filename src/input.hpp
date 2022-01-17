@@ -87,6 +87,27 @@ public:
 	//! useful way to get direct access to bindings
 	auto& getBindings() const { return bindings; }
 
+	//! useful way to get direct access to more bindings
+	auto& getKeyboardBindings() { return kb_bindings; }
+	auto& getSystemKeyboardBindings() { return kb_system_bindings; }
+	auto& getGamepadBindings() { return gamepad_bindings; }
+	auto& getSystemGamepadBindings() { return gamepad_system_bindings; }
+	auto& getJoystickBindings() { return joystick_bindings; }
+	auto& getSystemJoystickBindings() { return joystick_system_bindings; }
+	void setKeyboardBindings(std::unordered_map<std::string, std::string>& toSet) { kb_bindings = toSet; }
+	void setGamepadBindings(std::unordered_map<std::string, std::string>& toSet) { gamepad_bindings = toSet; }
+	void setJoystickBindings(std::unordered_map<std::string, std::string>& toSet) { joystick_bindings = toSet; }
+
+	//! controller type
+	enum playerControlType_t {
+		PLAYER_CONTROLLED_BY_INVALID,
+		PLAYER_CONTROLLED_BY_KEYBOARD,
+		PLAYER_CONTROLLED_BY_CONTROLLER,
+		PLAYER_CONTROLLED_BY_JOYSTICK,
+		NUM
+	};
+	playerControlType_t getPlayerControlType();
+
 	//! disable all bindings temporarily
 	void setDisabled(bool _disabled) { disabled = _disabled; }
 
@@ -159,18 +180,33 @@ public:
 	//! return the binding_t struct for the input name
 	binding_t input(const char* binding) const;
 
-	std::string getGlyphPathForInput(binding_t binding) const;
-	std::string getGlyphPathForInput(const char* binding) const;
+	std::string getGlyphPathForInput(binding_t binding, bool pressed = false) const;
+	std::string getGlyphPathForInput(const char* binding, bool pressed = false) const;
+
+	static float getJoystickRebindingDeadzone() { return rebinding_deadzone; }
 
 	//! list of connected input devices
 	static std::string lastInputOfAnyKind;
+	static int waitingToBindControllerForPlayer;
 	static std::unordered_map<int, SDL_GameController*> gameControllers;
 	static std::unordered_map<int, SDL_Joystick*> joysticks;
 	static bool keys[SDL_NUM_SCANCODES];
-	static bool mouseButtons[8];
-
+	static bool mouseButtons[18];
+	static const int MOUSE_WHEEL_UP;
+	static const int MOUSE_WHEEL_DOWN;
 private:
 	std::unordered_map<std::string, binding_t> bindings;
+
+	//! bindings written by the config file
+	std::unordered_map<std::string, std::string> kb_bindings;
+	std::unordered_map<std::string, std::string> gamepad_bindings;
+	std::unordered_map<std::string, std::string> joystick_bindings;
+
+	//! default system bindings, likely not changeable
+	std::unordered_map<std::string, std::string> kb_system_bindings;
+	std::unordered_map<std::string, std::string> gamepad_system_bindings;
+	std::unordered_map<std::string, std::string> joystick_system_bindings;
+
 	bool disabled = false;
 
 	//! converts the given input to a boolean value
@@ -186,6 +222,9 @@ private:
 
 	//! joystick deadzone
 	static const float deadzone;
+
+	//! joystick deadzone for rebinding
+	static const float rebinding_deadzone;
 
 	//! analog binding threshold
 	static const float analogToggleThreshold;

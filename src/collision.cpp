@@ -321,6 +321,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	Entity* entity = uidToEntity(uidnum);
 	if ( players[player]->worldUI.isEnabled() )
 	{
+		bool waitingForInputHeld = false;
 		for ( node_t* node = map.worldUI->first; node; node = node->next )
 		{
 			Entity* tooltip = (Entity*)node->element;
@@ -332,18 +333,13 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			{
 				if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
 				{
-					bool gamepad = false;
-					auto b = input.getBindings();
-					if ( b.find("Use") != b.end() )
-					{
-						if ( b["Use"].isBindingUsingGamepad() )
-						{
-							gamepad = true;
-						}
-					}
-					if ( (gamepad && input.binaryHeldToggle("Use")) || (!gamepad && input.binaryToggle("Use")) )
+					if ( input.binaryHeldToggle("Use") )
 					{
 						entity = uidToEntity(tooltip->parent);
+					}
+					else
+					{
+						waitingForInputHeld = true;
 					}
 				}
 				else
@@ -355,8 +351,11 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 		}
 		if ( !entity )
 		{
-			// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
-			input.consumeBinaryToggle("Use");
+			if ( !waitingForInputHeld )
+			{
+				// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
+				input.consumeBinaryToggle("Use");
+			}
 		}
 	}
 

@@ -205,7 +205,7 @@ public:
 
 	void initBindings();
 	const int getID() { return id; }
-	const SDL_GameController* getControllerDevice() { return sdl_device; }
+	SDL_GameController* getControllerDevice() const { return sdl_device; }
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
 	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
@@ -722,12 +722,16 @@ public:
 			MODULE_SPELLS
 		};
 		GUIModules activeModule = MODULE_NONE;
+		GUIModules previousModule = MODULE_NONE;
 		void activateModule(GUIModules module);
 		bool warpControllerToModule(bool moveCursorInstantly);
 		bool bActiveModuleUsesInventory();
 		bool bActiveModuleHasNoCursor();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
+		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
+		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
+		bool returnToPreviousActiveModule();
 		GUIDropdown_t dropdownMenu;
 		void closeDropdowns();
 		bool isDropdownActive();
@@ -857,6 +861,7 @@ public:
 
 			bool isItemSameAsCurrent(const int player, Item* newItem);
 			void updateItem(const int player, Item* newItem);
+			bool displayingShortFormTooltip = false;
 			ItemTooltipDisplay_t();
 		};
 		ItemTooltipDisplay_t itemTooltipDisplay;
@@ -900,6 +905,7 @@ public:
 		void updateItemContextMenu();
 		void cycleInventoryTab();
 		void activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt);
+		bool moveItemToFreeInventorySlot(Item* item);
 		void resetInventory()
 		{
 			if ( bNewInventoryLayout )
@@ -1200,6 +1206,7 @@ public:
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
+		Frame* worldTooltipFrame = nullptr;
 		Frame* uiNavFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
@@ -1305,10 +1312,9 @@ public:
 		{
 			ACTION_PROMPT_MAINHAND,
 			ACTION_PROMPT_OFFHAND,
-			ACTION_PROMPT_MAGIC
+			ACTION_PROMPT_MAGIC,
+			ACTION_PROMPT_SNEAK
 		};
-		void drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const;
-		void drawActionIcon(SDL_Rect& pos, int skill) const;
 		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
 		int XP_FRAME_WIDTH = 650;
@@ -1337,6 +1343,7 @@ public:
 		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
 		void updateCursor();
 		void updateActionPrompts();
+		void updateWorldTooltipPrompts();
 		void updateUINavigation();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
@@ -1412,7 +1419,8 @@ public:
 		real_t getMaximumSpeed();
 		real_t getWeightRatio(int weight, Sint32 STR);
 		int getCharacterWeight();
-		int getCharacterModifiedWeight();
+		int getCharacterEquippedWeight();
+		int getCharacterModifiedWeight(int* customWeight = nullptr);
 		real_t getSpeedFactor(real_t weightratio, Sint32 DEX);
 		real_t getCurrentMovementSpeed();
 		void handlePlayerCameraPosition(bool useRefreshRateDelta);
@@ -1687,7 +1695,6 @@ public:
 			player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
 		}
 		void initFaceButtonHotbar();
-		void drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos);
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
 		void processHotbar();
 		void updateHotbar();

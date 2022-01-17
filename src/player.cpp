@@ -320,39 +320,41 @@ void GameController::handleAnalog(int player)
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
 
-			if ( gamePaused )
-			{
-				if ( !mouse->draw_cursor )
-				{
-					mouse->draw_cursor = true;
-				}
+			return;
 
-				if ( inputs.bPlayerUsingKeyboardControl(player) )
-				{
-					//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
-					//mouse->warpMouseInScreen(screen, rightx, righty);
-					// smoother to use virtual mouse than push mouse events
-					if ( gamePaused )
-					{
-						mouse->warpMouseInScreen(screen, rightx, righty);
-					}
-					else
-					{
-						mouse->warpMouseInCamera(cameras[player], rightx, righty);
-					}
-				}
-				else
-				{
-					if ( gamePaused )
-					{
-						mouse->warpMouseInScreen(screen, rightx, righty);
-					}
-					else
-					{
-						mouse->warpMouseInCamera(cameras[player], rightx, righty);
-					}
-				}
-			}
+			//if ( gamePaused )
+			//{
+			//	if ( !mouse->draw_cursor )
+			//	{
+			//		mouse->draw_cursor = true;
+			//	}
+
+			//	if ( inputs.bPlayerUsingKeyboardControl(player) )
+			//	{
+			//		//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
+			//		//mouse->warpMouseInScreen(screen, rightx, righty);
+			//		// smoother to use virtual mouse than push mouse events
+			//		if ( gamePaused )
+			//		{
+			//			mouse->warpMouseInScreen(screen, rightx, righty);
+			//		}
+			//		else
+			//		{
+			//			mouse->warpMouseInCamera(cameras[player], rightx, righty);
+			//		}
+			//	}
+			//	else
+			//	{
+			//		if ( gamePaused )
+			//		{
+			//			mouse->warpMouseInScreen(screen, rightx, righty);
+			//		}
+			//		else
+			//		{
+			//			mouse->warpMouseInCamera(cameras[player], rightx, righty);
+			//		}
+			//	}
+			//}
 		}
 	}
 	else
@@ -383,73 +385,7 @@ void GameController::handleAnalog(int player)
 		real_t floatx = 0;
 		real_t floaty = 0;
 
-		if ( false && players[player]->hotbar.useHotbarRadialMenu
-			&& buttonHeldToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-		{
-			real_t floatx = getRightXPercent();
-			real_t floaty = getRightYPercent();
-			const int numoptions = players[player]->hotbar.radialHotbarSlots;
-			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
-			RadialSelection dir = RadialSelection::RADIAL_INVALID;
-			if ( magnitude > 1 )
-			{
-				real_t stickAngle = atan2(floaty, floatx);
-				while ( stickAngle >= (2 * PI + (2 * PI /*- (PI / numoptions)*/)) )
-				{
-					stickAngle -= PI * 2;
-				}
-				while ( stickAngle < (2 * PI /*- (PI / numoptions)*/) )
-				{
-					stickAngle += PI * 2;
-				}
-
-				real_t angleStart = 2 * PI /*- (PI / (2 * numoptions))*/;
-				real_t angleMiddle = angleStart + PI / (2 * numoptions);
-				real_t angleEnd = angleMiddle + PI / (2 * numoptions);
-				for ( int i = 0; i < numoptions * 2; ++i )
-				{
-					if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
-					{
-						dir = static_cast<RadialSelection>(i);
-					}
-					angleStart += 2 * PI / (2 * numoptions);
-					angleMiddle = angleStart + PI / (2 * numoptions);
-					angleEnd = angleMiddle + PI / (2 * numoptions);
-				}
-				RadialSelection oldRadial = radialSelection.padRadialSelection;
-				radialSelection.padRadialSelection = dir;
-				if ( oldRadial != radialSelection.padRadialSelection )
-				{
-					// unconsume the input whenever it's released or pressed again.
-					radialSelection.consumed = false;
-
-					if ( radialSelection.padRadialSelection > RADIAL_CENTERED )
-					{
-						int hotbarSlot = -1;
-						if ( radialSelection.padRadialSelection < numoptions )
-						{
-							hotbarSlot = numoptions - radialSelection.padRadialSelection - 1;
-						}
-						else
-						{
-							hotbarSlot = radialSelection.padRadialSelection - numoptions;
-						}
-						if ( hotbarSlot >= 0 )
-						{
-							players[player]->hotbar.selectHotbarSlot(hotbarSlot);
-						}
-						messagePlayer(0, MESSAGE_DEBUG, "%d", hotbarSlot);
-					}
-				}
-			}
-			else
-			{
-				radialSelection.consumed = false;
-			}
-			rightx = 0;
-			righty = 0;
-		}
-		else if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
+		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 		{
 			rightx = getRightXMove();
 			righty = getRightYMove();
@@ -524,36 +460,15 @@ void GameController::handleAnalog(int player)
 				mouse->floatxrel += rightx;
 				mouse->floatyrel += righty;
 
-				if ( !mouse->draw_cursor )
+				/*if ( !mouse->draw_cursor )
 				{
 					mouse->draw_cursor = true;
-				}
+				}*/
 				mouse->moved = true;
 			}
 		}
 
-		if ( players[player]->hotbar.useHotbarRadialMenu
-			&& binaryToggle(SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
-		{
-			if ( floatx > 0.0001 )
-			{
-				players[player]->hotbar.radialHotbarProgress += 5;
-			}
-			else if ( floatx < -0.0001 )
-			{
-				players[player]->hotbar.radialHotbarProgress -= 5;
-			}
-			players[player]->hotbar.radialHotbarProgress = std::max(0, players[player]->hotbar.radialHotbarProgress);
-			players[player]->hotbar.radialHotbarProgress = std::min(1000, players[player]->hotbar.radialHotbarProgress);
-			int slot = players[player]->hotbar.radialHotbarProgress / 100;
-			int oldSlot = players[player]->hotbar.current_hotbar;
-			players[player]->hotbar.selectHotbarSlot(slot);
-			inputs.getController(player)->radialSelection.consumed = false;
-			if ( oldSlot != slot )
-			{
-			}
-		}
-		else if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
+		if ( abs(floatx) > 0.0001 || abs(floaty) > 0.0001 )
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
@@ -563,10 +478,10 @@ void GameController::handleAnalog(int player)
 			mouse->floatxrel += floatx;
 			mouse->floatyrel += floaty;
 
-			if ( !mouse->draw_cursor )
+			/*if ( !mouse->draw_cursor )
 			{
 				mouse->draw_cursor = true;
-			}
+			}*/
 			mouse->moved = true;
 		}
 	}
@@ -869,6 +784,288 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	return false;
 }
 
+bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
+{
+	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
+		|| moduleToAccess == MODULE_HOTBAR )
+	{
+		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
+			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
+		{
+			return false;
+		}
+		return true;
+	}
+	return true;
+}
+
+bool Player::GUI_t::returnToPreviousActiveModule()
+{
+	if ( previousModule == MODULE_NONE )
+	{
+		return false;
+	}
+
+	if ( player.shootmode )
+	{
+		// no action
+	}
+	else if ( previousModule == Player::GUI_t::MODULE_HOTBAR )
+	{
+		activateModule(MODULE_HOTBAR);
+		player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+		warpControllerToModule(false);
+	}
+	else if ( previousModule == MODULE_INVENTORY || previousModule == MODULE_SPELLS )
+	{
+		if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+		{
+			activateModule(MODULE_SPELLS);
+			warpControllerToModule(false);
+		}
+		else if ( player.inventory_mode == INVENTORY_MODE_ITEM )
+		{
+			activateModule(MODULE_INVENTORY);
+			warpControllerToModule(false);
+		}
+	}
+	else if ( previousModule == MODULE_CHARACTERSHEET )
+	{
+		activateModule(MODULE_CHARACTERSHEET);
+		//player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+		warpControllerToModule(false);
+	}
+	else
+	{
+		player.openStatusScreen(GUI_MODE_INVENTORY,
+			INVENTORY_MODE_ITEM);
+	}
+
+	previousModule = MODULE_NONE;
+	return true;
+}
+
+Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation)
+{
+	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
+		|| nohud || !player.isLocalPlayer() )
+	{
+		if ( !checkDestinationOnly )
+		{
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+		}
+		return MODULE_NONE;
+	}
+
+	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
+		|| (checkLeftNavigation && checkDestinationOnly) )
+	{
+		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_HOTBAR);
+					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_HOTBAR;
+			}
+			else
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+		}
+		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		{
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_HOTBAR )
+		{
+			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_SPELLS);
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_SPELLS;
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_INVENTORY;
+			}
+		}
+		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		{
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_HOTBAR;
+		}
+
+		if ( !checkDestinationOnly )
+		{
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		}
+	}
+	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+		|| (!checkLeftNavigation && checkDestinationOnly) )
+	{
+		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		{
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		{
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_HOTBAR )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_SPELLS);
+						warpControllerToModule(false);
+						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_SPELLS;
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_INVENTORY);
+						warpControllerToModule(false);
+						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_INVENTORY;
+				}
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				if ( player.inventoryUI.spellPanel.isInteractable )
+				{
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_SPELLS);
+						warpControllerToModule(false);
+						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_SPELLS;
+				}
+			}
+			else
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+		}
+		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		{
+			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_SPELLS);
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_SPELLS;
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_INVENTORY;
+			}
+		}
+
+		if ( !checkDestinationOnly )
+		{
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		}
+	}
+	return MODULE_NONE;
+}
+
 bool Player::GUI_t::handleInventoryMovement()
 {
 	bool dpad_moved = false;
@@ -879,46 +1076,6 @@ bool Player::GUI_t::handleInventoryMovement()
 	}
 	int player = this->player.playernum;
 	auto& hotbar_t = players[player]->hotbar;
-
-	if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
-	{
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
-		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
-			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			players[player]->GUI.warpControllerToModule(false);
-		}
-		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
-		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_HOTBAR);
-			players[player]->hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			players[player]->GUI.warpControllerToModule(false);
-		}
-		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
-		{
-			if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
-			{
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
-				players[player]->GUI.warpControllerToModule(false);
-			}
-			else if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
-			{
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-				players[player]->GUI.warpControllerToModule(false);
-			}
-			//players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-			//players[player]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
-			//players[player]->GUI.warpControllerToModule(false);
-		}
-		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
-		{
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-			players[player]->GUI.warpControllerToModule(false);
-		}
-
-		inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-		inputs.getVirtualMouse(player)->draw_cursor = false;
-	}
 
 	if ( !bActiveModuleUsesInventory() )
 	{
@@ -1357,9 +1514,8 @@ void initGameControllers()
 		if (SDL_IsGameController(c) && controller_itr->open(c))
 		{
 			printlog("(Device %d successfully initialized as game controller.)\n", c);
-			inputs.setControllerID(c, controller_itr->getID());
-			Input::gameControllers[controller_itr->getID()] = 
-				const_cast<SDL_GameController*>(controller_itr->getControllerDevice());
+			//inputs.setControllerID(c, controller_itr->getID());
+			Input::gameControllers[controller_itr->getID()] = controller_itr->getControllerDevice();
 			for ( int c = 0; c < 4; ++c ) {
 				Input::inputs[c].refresh();
 			}
@@ -2910,149 +3066,6 @@ Player::Hotbar_t::FaceMenuGroup Player::Hotbar_t::getFaceMenuGroupForSlot(int ho
 	return FaceMenuGroup::GROUP_NONE;
 }
 
-void Player::Hotbar_t::drawFaceButtonGlyph(Uint32 slot, SDL_Rect& slotPos)
-{
-	int height = 2.25 * uiscale_hotbar;
-	int width = 2.25 * uiscale_hotbar;
-	int x = slotPos.x + slotPos.w / 2;
-	int y = slotPos.y;
-	SDL_Rect glyphsrc {0, 0, 0, 0};
-	bool draw = true;
-
-	switch ( slot )
-	{
-		case 0:
-			if ( faceMenuButtonHeld == GROUP_LEFT )
-			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-			}
-			else
-			{
-				draw = false;
-			}
-			break;
-		case 1:
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_LEFT, 0,
-				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X);
-			break;
-		case 2:
-			if ( faceMenuButtonHeld == GROUP_LEFT )
-			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-			}
-			else
-			{
-				draw = false;
-			}
-			break;
-		case 3:
-			// always grab this to determine the highest button height.
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-			if ( faceMenuButtonHeld == GROUP_MIDDLE )
-			{
-				draw = true;
-			}
-			else
-			{
-				draw = false;
-			}
-			break;
-		case 4:
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_MIDDLE, 0,
-				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y);
-			break;
-		case 5:
-			// always grab this to determine the highest button height.
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-			if ( faceMenuButtonHeld == GROUP_MIDDLE )
-			{
-				draw = true;
-			}
-			else
-			{
-				draw = false;
-			}
-			break;
-		case 6:
-			if ( faceMenuButtonHeld == GROUP_RIGHT )
-			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-			}
-			else
-			{
-				draw = false;
-			}
-			break;
-		case 7:
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, faceMenuButtonHeld == GROUP_RIGHT, 0,
-				SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B);
-			break;
-		case 8:
-			if ( faceMenuButtonHeld == GROUP_RIGHT )
-			{
-				glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-					SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-			}
-			else
-			{
-				draw = false;
-			}
-			break;
-		case 9:
-			return;
-		default:
-			return;
-	}
-
-	// temporary
-	if ( faceMenuAlternateLayout )
-	{
-		if ( slot == 2 )
-		{
-			x -= slotPos.w;
-		}
-		else if ( slot == 6 )
-		{
-			x += slotPos.w;
-		}
-	}
-
-	height *= glyphsrc.h;
-	width *= glyphsrc.w;
-	x -= width / 2;
-	y -= height;
-
-	if ( (faceMenuAlternateLayout && (slot == 3 || slot == 5) ) // highest slots
-		|| (!faceMenuAlternateLayout && slot == 4) )
-	{
-		int offsetY = 0;
-		int posY = y;
-		// check if button not pressed and raised.
-		if ( !faceMenuAlternateLayout && !(faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE) )
-		{
-			offsetY = getSlotSize() / 4;
-		}
-		else if ( faceMenuAlternateLayout )
-		{
-			posY = faceButtonPositions[4].y;
-			posY -= height;
-		}
-
-		faceButtonTopYPosition = std::min(posY - offsetY, faceButtonTopYPosition);
-	}
-
-	if ( draw )
-	{
-		SDL_Rect glyphpos{ x, y, width, height };
-		drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
-	}
-}
-
 const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const
 {
 	if ( prompt == ACTION_PROMPT_MAGIC ) 
@@ -3074,7 +3087,12 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 		}
 	}
 
-	if ( prompt == ACTION_PROMPT_OFFHAND )
+	if ( prompt == ACTION_PROMPT_SNEAK )
+	{
+		promptString = language[4077];
+		return PRO_STEALTH;
+	}
+	else if ( prompt == ACTION_PROMPT_OFFHAND )
 	{
 		int skill = PRO_SHIELD;
 		promptString = language[4076];
@@ -3181,57 +3199,6 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 	}
 }
 
-void Player::HUD_t::drawActionIcon(SDL_Rect& pos, int skill) const
-{
-	SDL_Rect skillIconSrc = getRectForSkillIcon(skill);
-	SDL_Rect skillIconPos{ pos.x, pos.y, pos.w, pos.h };
-
-	drawImageScaled(skillIcons_bmp, &skillIconSrc, &skillIconPos);
-}
-
-void Player::HUD_t::drawActionGlyph(SDL_Rect& pos, ActionPrompts prompt) const
-{
-	if ( !bShowActionPrompts )
-	{
-		return;
-	}
-
-	real_t scale = 2.25;
-	int height = scale;
-	int width = scale;
-	int x = pos.x + pos.w / 2;
-	int y = pos.y + pos.h;
-	SDL_Rect glyphsrc;
-
-	switch ( prompt )
-	{
-		case ACTION_PROMPT_MAINHAND:
-			// replace these dirty hax
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-				INJOY_GAME_ATTACK);
-			break;
-		case ACTION_PROMPT_OFFHAND:
-			// replace these dirty hax
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-				INJOY_GAME_DEFEND);
-			break;
-		case ACTION_PROMPT_MAGIC:
-			// replace these dirty hax
-			glyphsrc = inputs.getGlyphRectForInput(player.playernum, true, 0,
-				std::min(joyimpulses[INJOY_GAME_CAST_SPELL] - 301U, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX - 1U));
-			break;
-		default:
-			return;
-	}
-
-	height *= glyphsrc.h;
-	width *= glyphsrc.w;
-	x -= width / 2;
-	y -= 8;
-	SDL_Rect glyphpos{ x, y, width, height };
-	drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &glyphpos);
-}
-
 const int Player::Inventory_t::getPlayerItemInventoryX() const
 {
 	int x = DEFAULT_INVENTORY_SIZEX;
@@ -3250,7 +3217,7 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 		return y;
 	}
 	if ( stats[player.playernum]->cloak
-		&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+		&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK && stats[player.playernum]->cloak->status != BROKEN
 		&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
 	{
 		y = DEFAULT_INVENTORY_SIZEY + 1;
@@ -3342,7 +3309,7 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 			y = snapToItem->y;
 		}
 
-		if ( isInteractable )
+		if ( spellPanel.isInteractable )
 		{
 			if ( abs(spellPanel.scrollAnimateX - spellPanel.scrollSetpoint) > 0.00001 )
 			{
@@ -3353,7 +3320,7 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 
 		if ( auto slot = getSpellSlotFrame(x, y) )
 		{
-			if ( !isInteractable )
+			if ( !spellPanel.isInteractable )
 			{
 				//messagePlayer(0, "[Debug]: select spell queued");
 				cursor.queuedModule = Player::GUI_t::MODULE_SPELLS;
@@ -3563,8 +3530,12 @@ void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 
 const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 {
-	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController 
-		|| (players[player]->shootmode && !gamePaused && !intro)) )
+	if ( bPlayerUsingKeyboardControl(player) 
+		&& (!getVirtualMouse(player)->lastMovementFromController 
+		|| (players[player]->shootmode && !gamePaused && !intro)
+		|| gamePaused
+			) 
+		)
 	{
 		// add controller virtual mouse if applicable, only in shootmode
 		// shootmode has no limits on rotation, but !shootmode is inventory

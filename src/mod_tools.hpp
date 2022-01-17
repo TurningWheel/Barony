@@ -2820,3 +2820,51 @@ public:
 	void printAllTimepoints();
 };
 extern DebugTimers_t DebugTimers;
+
+class GlyphRenderer_t
+{
+	std::string baseSourceFolder = "";
+	std::string renderedGlyphFolder = "";
+	std::string basePressedGlyphPath = "";
+	std::string baseUnpressedGlyphPath = "";
+	std::string pressedRenderedPrefix = "";
+	std::string unpressedRenderedPrefix = "";
+	std::string defaultstring = "";
+public:
+	struct GlyphData_t
+	{
+		std::string keyname = "";
+		std::string folder = "";
+		std::string fullpath = "";
+		std::string pressedRenderedFullpath = "";
+		std::string unpressedRenderedFullpath = "";
+		std::string filename = "";
+		std::string unpressedGlyphPath = "";
+		std::string pressedGlyphPath = "";
+		int render_offsetx = 0;
+		int render_offsety = 0;
+		int scancode = SDL_SCANCODE_UNKNOWN;
+	};
+	std::map<int, GlyphData_t> allGlyphs;
+
+	GlyphRenderer_t() {};
+	~GlyphRenderer_t() {};
+	bool readFromFile();
+	void renderGlyphsToPNGs();
+	std::string& getGlyphPath(int scancode, bool pressed = false) 
+	{ 
+		if ( allGlyphs.find(scancode) != allGlyphs.end() )
+		{ 
+			if ( pressed )
+			{
+				return allGlyphs[scancode].pressedRenderedFullpath;
+			}
+			else
+			{
+				return allGlyphs[scancode].unpressedRenderedFullpath;
+			}
+		}
+		return defaultstring;
+	}
+};
+extern GlyphRenderer_t GlyphHelper;

@@ -46,6 +46,7 @@
 #include "ui/Field.hpp"
 #include "input.hpp"
 #include "ui/Image.hpp"
+#include "ui/MainMenu.hpp"
 
 #include "UnicodeDecoder.h"
 
@@ -1125,7 +1126,7 @@ void gameLogic(void)
 									}
 
 									// lava bubbles
-									if ( lavatiles[map.tiles[index]] )
+									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
 										{
@@ -1406,8 +1407,10 @@ void gameLogic(void)
 							&& entity->behavior != &actHudAdditional
 							&& entity->behavior != &actHudArrowModel
 							&& entity->behavior != &actLeftHandMagic
-							&& entity->behavior != &actRightHandMagic )
+							&& entity->behavior != &actRightHandMagic
+							&& entity->behavior != &actFlame )
 						{
+							TimerExperiments::updateEntityInterpolationPosition(entity);
 							continue;
 						}
 						int ox = -1;
@@ -2254,7 +2257,7 @@ void gameLogic(void)
 				const int inventorySizeX = players[player]->inventoryUI.getSizeX();
 				auto& playerInventory = players[player]->inventoryUI;
 
-				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK
+				if ( stats[player]->cloak && stats[player]->cloak->type == CLOAK_BACKPACK && stats[player]->cloak->status != BROKEN
 					&& (shouldInvertEquipmentBeatitude(stats[player]) ? abs(stats[player]->cloak->beatitude) >= 0 : stats[player]->cloak->beatitude >= 0) )
 				{
 					backpack_sizey[player] = playerInventory.DEFAULT_INVENTORY_SIZEY + playerInventory.getPlayerBackpackBonusSizeY();
@@ -2266,66 +2269,7 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
-					{
-						// we should rearrange our spells.
-						for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
-						{
-							int scanx = 0;
-							int scany = 0;
-							bool notfree = false;
-							bool foundaspot = false;
-							Item* item = (Item*)node->element;
-							if ( itemCategory(item) != SPELL_CAT )
-							{
-								continue;
-							}
-							if ( item->appearance >= 1000 )
-							{
-								continue; // shaman spells.
-							}
-							while ( 1 )
-							{
-								for ( scany = 0; scany < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; scany++ )
-								{
-									node_t* node2;
-									for ( node2 = stats[player]->inventory.first; node2 != NULL; node2 = node2->next )
-									{
-										Item* tempItem = (Item*)node2->element;
-										if ( tempItem == item )
-										{
-											continue;
-										}
-										if ( tempItem )
-										{
-											if ( tempItem->x == scanx && tempItem->y == scany )
-											{
-												if ( itemCategory(tempItem) == SPELL_CAT )
-												{
-													notfree = true;  //Both spells. Can't fit in the same slot.
-												}
-											}
-										}
-									}
-									if ( notfree )
-									{
-										notfree = false;
-										continue;
-									}
-									item->x = scanx;
-									item->y = scany;
-									foundaspot = true;
-									break;
-								}
-								if ( foundaspot )
-								{
-									break;
-								}
-								scanx++;
-							}
-						}
-					}
-					players[player]->inventoryUI.setSizeY(players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
+					playerInventory.setSizeY(players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY);
 				}
 			}
 
@@ -2380,6 +2324,16 @@ void gameLogic(void)
 						if ( item->beatitude >= 10 )
 						{
 							steamAchievement("BARONY_ACH_BLESSED");
+						}
+					}
+
+					if ( item->status == BROKEN && itemCategory(item) != SPELL_CAT
+						&& item->x == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE )
+					{
+						// item was equipped, but needs a new home in the inventory.
+						if ( !players[player]->inventoryUI.moveItemToFreeInventorySlot(item) )
+						{
+							item->x = players[player]->inventoryUI.getSizeX(); // force unequip below
 						}
 					}
 
@@ -2511,7 +2465,7 @@ void gameLogic(void)
 									}
 
 									// lava bubbles
-									if ( lavatiles[map.tiles[index]] )
+									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
 										{
@@ -2846,7 +2800,7 @@ void gameLogic(void)
 			auto& playerInventory = players[clientnum]->inventoryUI;
 			const int inventorySizeX = playerInventory.getSizeX();
 			int backpack_sizey = playerInventory.DEFAULT_INVENTORY_SIZEY;
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->status != BROKEN
 				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(stats[clientnum]->cloak->beatitude) >= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
 				backpack_sizey += playerInventory.getPlayerBackpackBonusSizeY();
@@ -2858,65 +2812,6 @@ void gameLogic(void)
 			}
 			else
 			{
-				if ( playerInventory.getSizeY() > playerInventory.DEFAULT_INVENTORY_SIZEY )
-				{
-					// we should rearrange our spells.
-					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
-					{
-						int scanx = 0;
-						int scany = 0;
-						bool notfree = false;
-						bool foundaspot = false;
-						Item* item = (Item*)node->element;
-						if ( itemCategory(item) != SPELL_CAT )
-						{
-							continue;
-						}
-						if ( item->appearance >= 1000 )
-						{
-							continue; // shaman spells.
-						}
-						while ( 1 )
-						{
-							for ( scany = 0; scany < playerInventory.DEFAULT_INVENTORY_SIZEY; scany++ )
-							{
-								node_t* node2;
-								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
-								{
-									Item* tempItem = (Item*)node2->element;
-									if ( tempItem == item )
-									{
-										continue;
-									}
-									if ( tempItem )
-									{
-										if ( tempItem->x == scanx && tempItem->y == scany )
-										{
-											if ( itemCategory(tempItem) == SPELL_CAT )
-											{
-												notfree = true;  //Both spells. Can't fit in the same slot.
-											}
-										}
-									}
-								}
-								if ( notfree )
-								{
-									notfree = false;
-									continue;
-								}
-								item->x = scanx;
-								item->y = scany;
-								foundaspot = true;
-								break;
-							}
-							if ( foundaspot )
-							{
-								break;
-							}
-							scanx++;
-						}
-					}
-				}
 				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY);
 			}
 
@@ -2958,6 +2853,16 @@ void gameLogic(void)
 				if ( item->type == FOOD_BLOOD && item->count >= 20 )
 				{
 					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+				}
+
+				if ( item->status == BROKEN && itemCategory(item) != SPELL_CAT
+					&& item->x == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE )
+				{
+					// item was equipped, but needs a new home in the inventory.
+					if ( !players[clientnum]->inventoryUI.moveItemToFreeInventorySlot(item) )
+					{
+						item->x = players[clientnum]->inventoryUI.getSizeX(); // force unequip below
+					}
 				}
 
 				// drop any inventory items you don't have room for
@@ -3425,14 +3330,14 @@ void handleEvents(void)
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
-					Input::mouseButtons[SDL_BUTTON_WHEELUP] = 1;
+					Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 1;
 					Input::lastInputOfAnyKind = "MouseWheelUp";
 					lastkeypressed = 286;
 				}
 				else if ( event.wheel.y < 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
-					Input::mouseButtons[SDL_BUTTON_WHEELDOWN] = 1;
+					Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 1;
 					Input::lastInputOfAnyKind = "MouseWheelDown";
 					lastkeypressed = 287;
 				}
@@ -3480,7 +3385,7 @@ void handleEvents(void)
 			{
 				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				char buf[32];
+				char buf[32] = "";
 				switch (event.cbutton.button) {
 				case SDL_CONTROLLER_BUTTON_A: snprintf(buf, sizeof(buf), "Pad%dButtonA", event.cbutton.which); break;
 				case SDL_CONTROLLER_BUTTON_B: snprintf(buf, sizeof(buf), "Pad%dButtonB", event.cbutton.which); break;
@@ -3498,32 +3403,98 @@ void handleEvents(void)
 				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: snprintf(buf, sizeof(buf), "Pad%dDpadY+", event.cbutton.which); break;
 				}
 				Input::lastInputOfAnyKind = buf;
+#ifndef NINTENDO
+				if ( Input::waitingToBindControllerForPlayer >= 0
+					&& event.cbutton.button == SDL_CONTROLLER_BUTTON_A )
+				{
+					const int id = event.cdevice.which;
+					if ( SDL_IsGameController(id) )
+					{
+						for ( auto& controller : game_controllers )
+						{
+							if ( controller.isActive() && controller.getID() == id )
+							{
+								inputs.removeControllerWithDeviceID(id); // clear any other player using this
+								if ( inputs.bPlayerUsingKeyboardControl(Input::waitingToBindControllerForPlayer) )
+								{
+									inputs.setPlayerIDAllowedKeyboard(-1);
+								}
+								inputs.setControllerID(Input::waitingToBindControllerForPlayer, id);
+								printlog("(Device %d added to player %d", id, Input::waitingToBindControllerForPlayer);
+								for ( int c = 0; c < 4; ++c ) {
+									Input::inputs[c].refresh();
+								}
+								Input::waitingToBindControllerForPlayer = -1;
+								break;
+							}
+						}
+					}
+				}
+#endif
 				break;
 			}
 			case SDL_CONTROLLERAXISMOTION:
 			{
-				char buf[32];
+				char buf[32] = "";
+				float rebindingDeadzone = Input::getJoystickRebindingDeadzone() * 32768.f;
 				switch (event.caxis.axis) {
-				case SDL_CONTROLLER_AXIS_LEFTX: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftX-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftX+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_LEFTX: 
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftX-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftX+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_LEFTY: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftY-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickLeftY+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_LEFTY: 
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftY-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickLeftY+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_RIGHTX: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickRightX-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickRightX+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_RIGHTX: 
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightX-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightX+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_RIGHTY: event.caxis.value < 0 ?
-					snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which):
-					snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
+				case SDL_CONTROLLER_AXIS_RIGHTY:
+					if ( event.caxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightY-", event.caxis.which);
+					}
+					else if ( event.caxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dStickRightY+", event.caxis.which);
+					}
 					break;
-				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: snprintf(buf, sizeof(buf), "Pad%dLeftTrigger", event.caxis.which); break;
-				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: snprintf(buf, sizeof(buf), "Pad%dRightTrigger", event.caxis.which); break;
+				case SDL_CONTROLLER_AXIS_TRIGGERLEFT: 
+					if ( abs(event.caxis.value) > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dLeftTrigger", event.caxis.which); 
+					}
+					break;
+				case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: 
+					if ( abs(event.caxis.value) > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Pad%dRightTrigger", event.caxis.which); 
+					}
+					break;
 				}
-				Input::lastInputOfAnyKind = buf;
+				if ( strcmp(buf, "") )
+				{
+					Input::lastInputOfAnyKind = buf;
+				}
 				break;
 			}
 			case SDL_CONTROLLERBUTTONUP:
@@ -3566,8 +3537,8 @@ void handleEvents(void)
 					if ( SDL_IsGameController(id) && controller.open(id) )
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", id);
-						inputs.addControllerIDToNextAvailableInput(id);
-						Input::gameControllers[id]= const_cast<SDL_GameController*>(controller.getControllerDevice());
+						//inputs.addControllerIDToNextAvailableInput(id);
+						Input::gameControllers[id] = controller.getControllerDevice();
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
@@ -3607,6 +3578,11 @@ void handleEvents(void)
 			}
 			case SDL_JOYDEVICEADDED:
 			{
+				if ( SDL_IsGameController(event.jdevice.which) )
+				{
+					// this is supported by the SDL_GameController interface, no need to make a joystick for it
+					break;
+				}
 				SDL_Joystick* joystick = SDL_JoystickOpen(event.jdevice.which);
 				if (!joystick) {
 					printlog("A joystick was plugged in, but no handle is available!");
@@ -3624,41 +3600,62 @@ void handleEvents(void)
 			}
 			case SDL_JOYBUTTONDOWN:
 			{
-				char buf[32];
-				snprintf(buf, sizeof(buf), "Joy%dButton%d", event.jbutton.which, event.jbutton.button);
-				Input::lastInputOfAnyKind = buf;
+				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
+				{
+					char buf[32] = "";
+					snprintf(buf, sizeof(buf), "Joy%dButton%d", event.jbutton.which, event.jbutton.button);
+					Input::lastInputOfAnyKind = buf;
+				}
 				break;
 			}
 			case SDL_JOYAXISMOTION:
 			{
-				char buf[32];
-				if (event.jaxis.value < 0) {
-					snprintf(buf, sizeof(buf), "Joy%dAxis-%d", event.jaxis.which, event.jaxis.axis);
-				} else {
-					snprintf(buf, sizeof(buf), "Joy%dAxis+%d", event.jaxis.which, event.jaxis.axis);
+				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
+				{
+					char buf[32] = "";
+					float rebindingDeadzone = Input::getJoystickRebindingDeadzone() * 32768.f;
+					if ( event.jaxis.value < -rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Joy%dAxis-%d", event.jaxis.which, event.jaxis.axis);
+					}
+					else if ( event.jaxis.value > rebindingDeadzone )
+					{
+						snprintf(buf, sizeof(buf), "Joy%dAxis+%d", event.jaxis.which, event.jaxis.axis);
+					}
+					if ( strcmp(buf, "") )
+					{
+						Input::lastInputOfAnyKind = buf;
+					}
 				}
-				Input::lastInputOfAnyKind = buf;
 				break;
 			}
 			case SDL_JOYHATMOTION:
 			{
-				char buf[32];
-				switch (event.jhat.value) {
-				case SDL_HAT_LEFTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftUp", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_UP: snprintf(buf, sizeof(buf), "Joy%dHat%dUp", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_RIGHTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dRightUp", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_RIGHT: snprintf(buf, sizeof(buf), "Joy%dHat%dRight", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_RIGHTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dRightDown", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_DOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dDown", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_LEFTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftDown", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_LEFT: snprintf(buf, sizeof(buf), "Joy%dHat%dLeft", event.jhat.which, event.jhat.hat); break;
-				case SDL_HAT_CENTERED: snprintf(buf, sizeof(buf), "Joy%dHat%dCentered", event.jhat.which, event.jhat.hat); break;
+				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
+				{
+					char buf[32] = "";
+					switch (event.jhat.value) {
+					case SDL_HAT_LEFTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftUp", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_UP: snprintf(buf, sizeof(buf), "Joy%dHat%dUp", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_RIGHTUP: snprintf(buf, sizeof(buf), "Joy%dHat%dRightUp", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_RIGHT: snprintf(buf, sizeof(buf), "Joy%dHat%dRight", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_RIGHTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dRightDown", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_DOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dDown", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_LEFTDOWN: snprintf(buf, sizeof(buf), "Joy%dHat%dLeftDown", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_LEFT: snprintf(buf, sizeof(buf), "Joy%dHat%dLeft", event.jhat.which, event.jhat.hat); break;
+					case SDL_HAT_CENTERED: snprintf(buf, sizeof(buf), "Joy%dHat%dCentered", event.jhat.which, event.jhat.hat); break;
+					}
+					Input::lastInputOfAnyKind = buf;
 				}
-				Input::lastInputOfAnyKind = buf;
 				break;
 			}
 			case SDL_JOYDEVICEREMOVED:
 			{
+				if ( SDL_IsGameController(event.jdevice.which) )
+				{
+					// this is supported by the SDL_GameController interface, no need to make a joystick for it
+					break;
+				}
 				SDL_Joystick* joystick = SDL_JoystickFromInstanceID(event.jdevice.which);
 				if (joystick == nullptr) {
 					printlog("A joystick was removed, but I don't know which one!");
@@ -4013,13 +4010,13 @@ void ingameHud()
 
 	    // toggle minimap
 		// player not needed to be alive
-        if ( input.consumeBinaryToggle("Toggle Minimap") ) {
+        if ( input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
             openMinimap(player);
         }
 
 		// inventory interface
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") )
+		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") && !gamePaused )
 		{
 			if ( players[player]->shootmode )
 			{
@@ -4033,9 +4030,15 @@ void ingameHud()
 
 		// spell list
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") )   //TODO: Move to function in interface or something?
+		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") && !gamePaused )   //TODO: Move to function in interface or something?
 		{
-			if ( !inputs.getUIInteraction(player)->selectedItem )
+			// no dropdowns/no selected item, if controller, has to be in inventory/hotbar + !shootmode
+			if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
+				&& (!inputs.hasController(player) 
+					|| (inputs.hasController(player) && !players[player]->shootmode
+						&& (players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR))) )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
 				if ( players[player]->shootmode )
@@ -4048,7 +4051,7 @@ void ingameHud()
 
 		// spellcasting
 		// player needs to be alive
-		if ( players[player]->isLocalPlayerAlive() )
+		if ( players[player]->isLocalPlayerAlive() && !gamePaused )
 		{
             const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
@@ -4067,7 +4070,7 @@ void ingameHud()
 			}
 			else if (!command && shootmode)
 			{
-			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")))
+			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
 			    {
 				    allowCasting = true;
 				    if (tryHotbarQuickCast == false) {
@@ -4168,7 +4171,7 @@ void ingameHud()
 		}
 		players[player]->magic.resetQuickCastSpell();
 
-		if ( !command && input.consumeBinaryToggle("Open Log") )
+		if ( !command && input.consumeBinaryToggle("Open Log") && !gamePaused )
 		{
 			// TODO perhaps this should open the new chat log window.
 		}
@@ -4178,7 +4181,7 @@ void ingameHud()
 				&& players[player]->worldUI.bTooltipInView
 				&& players[player]->worldUI.tooltipsInRange.size() > 1);
 
-		if ( !command && input.consumeBinaryToggle("Cycle NPCs") )
+		if ( !command && input.consumeBinaryToggle("Cycle NPCs") && !gamePaused )
 		{
 			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
@@ -4199,7 +4202,7 @@ void ingameHud()
 	// commands - uses local clientnum only
 	Input& input = Input::inputs[clientnum];
 
-	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command )
+	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command && !gamePaused )
 	{
 		cursorflash = ticks;
 		command = true;
@@ -4229,7 +4232,7 @@ void ingameHud()
 			}
 		}
 	}
-	else if ( command )
+	else if ( command && !gamePaused )
 	{
 		int commandPlayer = clientnum;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -4377,6 +4380,10 @@ void ingameHud()
 		{
 			SDL_StopTextInput();
 		}
+		if ( inputstr == command_str )
+		{
+			inputstr = nullptr;
+		}
 	}
 
 	// other status
@@ -4455,6 +4462,7 @@ void ingameHud()
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
+		players[player]->GUI.handleModuleNavigation(false);
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
@@ -4797,289 +4805,7 @@ void ingameHud()
 #endif
 			}
 		}
-		else if ( !nohud )
-		{
-			pos.x = players[player]->camera_midx();
-			pos.y = players[player]->camera_midy();
-			pos.w = 0;
-			pos.h = 0;
-			if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-				|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
-			{
-				bool forceBlankInteractText = false;
-				if ( !players[player]->worldUI.isEnabled() )
-				{
-					pos.x -= cursor_bmp->w / 2;
-					pos.y -= cursor_bmp->h / 2;
-					drawImageAlpha(cursor_bmp, NULL, &pos, 191);
-					pos.x += 24;
-					pos.y += 24;
-				}
-				else
-				{
-					if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
-					{
-						pos.x -= cursor_bmp->w / 2;
-						pos.y -= cursor_bmp->h / 2;
-						drawImageAlpha(cursor_bmp, NULL, &pos, 191);
-
-						pos.x = players[player]->camera_midx();
-						pos.y = players[player]->camera_midy();
-						pos.x -= selected_cursor_bmp->w / 2;
-						pos.y -= selected_cursor_bmp->h / 2;
-					}
-					else
-					{
-						if ( (players[player]->worldUI.isEnabled() && !players[player]->worldUI.bTooltipInView) )
-						{
-							forceBlankInteractText = true;
-
-							pos.x -= cross_bmp->w / 2;
-							pos.y -= cross_bmp->h / 2;
-							drawImageAlpha(cross_bmp, NULL, &pos, 128);
-							pos.x = players[player]->camera_midx();
-							pos.y = players[player]->camera_midy();
-							pos.x -= selected_cursor_bmp->w / 2;
-							pos.y -= selected_cursor_bmp->h / 2;
-							//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
-						}
-						else
-						{
-							pos.x -= selected_cursor_bmp->w / 2;
-							pos.y -= selected_cursor_bmp->h / 2;
-							drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
-						}
-					}
-					pos.x += 40;
-					pos.y += 20;
-					pos.h = selected_cursor_bmp->h;
-					pos.w = pos.h;
-
-					SDL_Rect glyphsrc{ 0, 0, 0, 0 };
-
-					//TODO @wallofjustice update these "glyph rect" things to use Input::inputs[]
-
-					if ( ticks % 50 < 25 )
-					{
-						int button = joyimpulses[INJOY_GAME_USE] - 301;
-						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
-						pos.w = glyphsrc.w * 3;
-						pos.h = glyphsrc.h * 3;
-						pos.y -= 4;
-						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-						pos.y += 4;
-					}
-					else
-					{
-						int button = joyimpulses[INJOY_GAME_USE] - 301;
-						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
-						pos.w = glyphsrc.w * 3;
-						pos.h = glyphsrc.h * 3;
-						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-					}
-					pos.x += pos.w + 4;
-
-					SDL_Rect skillsrc = getRectForSkillIcon(PRO_LEADERSHIP);
-					SDL_Rect skillpos = pos;
-					skillpos.x += 4;
-					skillpos.w = 32;
-					skillpos.h = 32;
-					skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
-					drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
-					pos.x += skillpos.w + 8; // move text past the skill box
-					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
-				}
-
-				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
-				{
-					if ( followerMenu.followerToCommand
-						&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-							|| followerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
-						)
-					{
-						ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3650]);
-					}
-					else
-					{
-						ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3039]);
-					}
-				}
-				else
-				{
-					if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
-					{
-						if ( followerMenu.followerToCommand )
-						{
-							int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
-							if ( followerMenu.allowedInteractItems(type)
-								|| followerMenu.allowedInteractFood(type)
-								|| followerMenu.allowedInteractWorld(type)
-								)
-							{
-								ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[4041]); // "Interact with..."
-							}
-							else
-							{
-								ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[4042]); // "Attack..."
-							}
-						}
-						else
-						{
-							ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[4041]); // "Interact with..."
-						}
-					}
-					else
-					{
-						ttfPrintTextFormatted(ttf12, pos.x, pos.y, "%s", followerMenu.interactText);
-					}
-				}
-			}
-			else
-			{
-				bool foundTinkeringKit = false;
-				if ( players[player] && players[player]->entity && stats[player]
-					&& stats[player]->defending )
-				{
-					if ( stats[player]->shield && stats[player]->shield->type == TOOL_TINKERING_KIT )
-					{
-						foundTinkeringKit = true;
-					}
-				}
-				if ( players[player]->worldUI.bTooltipInView )
-				{
-					pos.x -= selected_cursor_bmp->w / 2;
-					pos.y -= selected_cursor_bmp->h / 2;
-					drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
-					pos.x += 40;
-					pos.y += 20;
-					pos.h = selected_cursor_bmp->h;
-					pos.w = pos.h;
-
-					SDL_Rect glyphsrc{ 0, 0, 0, 0 };
-
-					//TODO @wallofjustice update these "glyph rect" things to use Input::inputs[]
-
-					if ( ticks % 50 < 25 )
-					{
-						int button = joyimpulses[INJOY_GAME_USE] - 301;
-						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
-						pos.w = glyphsrc.w * 3;
-						pos.h = glyphsrc.h * 3;
-						pos.y -= 4;
-						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-						pos.y += 4;
-					}
-					else
-					{
-						int button = joyimpulses[INJOY_GAME_USE] - 301;
-						glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
-						pos.w = glyphsrc.w * 3;
-						pos.h = glyphsrc.h * 3;
-						drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-					}
-					pos.x += pos.w + 4;
-					if ( foundTinkeringKit )
-					{
-						SDL_Rect skillsrc = getRectForSkillIcon(PRO_LOCKPICKING);
-						SDL_Rect skillpos = pos;
-						skillpos.x += 4;
-						skillpos.w = 32;
-						skillpos.h = 32;
-						skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
-						drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
-						pos.x += skillpos.w + 8; // move text past the skill box
-					}
-					pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
-
-					if ( foundTinkeringKit )
-					{
-						ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
-					}
-					else
-					{
-						ttfPrintText(ttf12, pos.x, pos.y, players[player]->worldUI.interactText.c_str());
-					}
-				}
-				else
-				{
-					pos.x -= cross_bmp->w / 2;
-					pos.y -= cross_bmp->h / 2;
-					drawImageAlpha(cross_bmp, NULL, &pos, 128);
-
-					if ( foundTinkeringKit )
-					{
-						if ( players[player]->worldUI.isEnabled() )
-						{
-							pos.x = players[player]->camera_midx();
-							pos.y = players[player]->camera_midy();
-							pos.x -= selected_cursor_bmp->w / 2;
-							pos.y -= selected_cursor_bmp->h / 2;
-							// skip cursor here, no tooltip in view
-							//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
-							pos.x += 40;
-							pos.y += 20;
-							pos.h = selected_cursor_bmp->h;
-							pos.w = pos.h;
-
-							SDL_Rect glyphsrc{ 0, 0, 0, 0 };
-
-					        //TODO @wallofjustice update these "glyph rect" things to use Input::inputs[]
-
-							if ( ticks % 50 < 25 )
-							{
-								int button = joyimpulses[INJOY_GAME_USE] - 301;
-								glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
-								pos.w = glyphsrc.w * 3;
-								pos.h = glyphsrc.h * 3;
-								pos.y -= 4;
-								drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-								pos.y += 4;
-							}
-							else
-							{
-								int button = joyimpulses[INJOY_GAME_USE] - 301;
-								glyphsrc = inputs.getGlyphRectForInput(player, true, 0, button);
-								pos.w = glyphsrc.w * 3;
-								pos.h = glyphsrc.h * 3;
-								drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-							}
-							pos.x += pos.w + 4;
-
-							SDL_Rect skillsrc = getRectForSkillIcon(PRO_LOCKPICKING);
-							SDL_Rect skillpos = pos;
-							skillpos.x += 4;
-							skillpos.w = 32;
-							skillpos.h = 32;
-							skillpos.y -= (skillpos.h - pos.h) / 2; // to adjust for different glyph heights
-							drawImageScaled(skillIcons_bmp, &skillsrc, &skillpos);
-							pos.x += skillpos.w + 8; // move text past the skill box
-
-							pos.y += pos.h / 2 - getHeightOfFont(ttf12) / 2 + 3;
-							ttfPrintTextFormatted(ttf12, pos.x, pos.y, language[3663]);
-						}
-						else
-						{
-							ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
-						}
-					}
-				}
-
-				// prints out current pressed glyph
-				/*pos.x += 80;
-				for ( int i = 0; i < SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_MAX; ++i )
-				{
-				auto button = static_cast<SDL_GameControllerButton>(i);
-				if ( inputs.getController(player) && inputs.getController(player)->binary(button) )
-				{
-				SDL_Rect glyphsrc = inputs.getGlyphRectForInput(player, false, 0, i);
-				pos.y += 40;
-				pos.w = glyphsrc.w * 3;
-				pos.h = glyphsrc.h * 3;
-				drawImageScaled(controllerglyphs1_bmp, &glyphsrc, &pos);
-				}
-				}*/
-			}
-		}
+		players[player]->hud.updateWorldTooltipPrompts();
 	}
 
 	if ( ItemTooltips.autoReload )
@@ -5498,14 +5224,27 @@ int main(int argc, char** argv)
 							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
 						}
 					}
-					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] 
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT)
-						|| inputs.bControllerInputPressed(clientnum, INJOY_MENU_CANCEL))
+
+					bool skipButtonPressed = false;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
+						if ( Input::inputs[i].consumeBinaryToggle("MenuConfirm") )
+						{
+							skipButtonPressed = true;
+						}
+						if ( Input::inputs[i].consumeBinaryToggle("MenuCancel") )
+						{
+							skipButtonPressed = true;
+						}
+					}
+					if ( Input::keys[SDL_SCANCODE_ESCAPE] )
+					{
+						skipButtonPressed = true;
 						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
-						inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
-						inputs.controllerClearInput(clientnum, INJOY_MENU_CANCEL);
+					}
+
+					if ( fadefinished || skipButtonPressed )
+					{
 						fadealpha = 255;
 						int menuMapType = 0;
 						switch ( rand() % 4 ) // STEAM VERSION INTRO
@@ -5771,34 +5510,16 @@ int main(int argc, char** argv)
 					{
 						continue;
 					}
-					if ( inputs.bPlayerUsingKeyboardControl(i) )
+					if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
+							|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
+						&& !command )
 					{
-						if ( (keystatus[SDL_SCANCODE_ESCAPE] && rebindaction == -1) && !command )
-						{
-							keystatus[SDL_SCANCODE_ESCAPE] = 0;
-							if ( !players[i]->shootmode )
-							{
-								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-								players[i]->gui_mode = GUI_MODE_INVENTORY;
-								players[i]->characterSheet.attributespage = 0;
-								//proficienciesPage = 0;
-							}
-							else
-							{
-								doPause = true;
-							}
-							break;
-						}
-					}
-					if ( (inputs.bControllerInputPressed(i, INJOY_PAUSE_MENU) && rebindaction == -1) && !command )
-					{
-						inputs.controllerClearInput(i, INJOY_PAUSE_MENU);
+						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 						if ( !players[i]->shootmode )
 						{
 							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 							players[i]->gui_mode = GUI_MODE_INVENTORY;
 							players[i]->characterSheet.attributespage = 0;
-							//proficienciesPage = 0;
 						}
 						else
 						{
@@ -5809,7 +5530,32 @@ int main(int argc, char** argv)
 				}
 				if ( doPause )
 				{
-					pauseGame(0, MAXPLAYERS);
+					if ( !MainMenu::main_menu_frame || !gamePaused )
+					{
+						pauseGame(0, MAXPLAYERS);
+					}
+					else 
+					{
+						if ( gamePaused && MainMenu::main_menu_frame )
+						{
+							int dimmers = 0;
+							for ( auto frame : MainMenu::main_menu_frame->getFrames() )
+							{
+								if ( !strcmp(frame->getName(), "dimmer") )
+								{
+									++dimmers;
+								}
+							}
+							if ( dimmers == 0 )
+							{
+								pauseGame(0, MAXPLAYERS);
+							}
+						}
+						else
+						{
+							pauseGame(0, MAXPLAYERS);
+						}
+					}
 				}
 
 				// main drawing
@@ -6112,7 +5858,7 @@ int main(int argc, char** argv)
 					}
 					if ((subwindow && !players[i]->shootmode) || (gamePaused && i == clientnum))
 					{
-						if (inputs.getVirtualMouse(i)->draw_cursor || (gamePaused && i == clientnum))
+						if (inputs.getVirtualMouse(i)->draw_cursor || (inputs.getVirtualMouse(i)->draw_cursor && gamePaused && i == clientnum))
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
@@ -6126,6 +5872,8 @@ int main(int argc, char** argv)
 					// to make sure scroll wheel gets cleared, as it never un-sets itself
 					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Left"); 
 					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Right");
+					Input::inputs[i].consumeBinaryToggle("MenuMouseWheelUpAlt");
+					Input::inputs[i].consumeBinaryToggle("MenuMouseWheelDownAlt");
 				}
 			}
 
@@ -6172,9 +5920,9 @@ int main(int argc, char** argv)
 			GO_SwapBuffers(screen);
 
 			// screenshots
-			if ( keystatus[SDL_SCANCODE_F6] )
+			if ( Input::keys[SDL_SCANCODE_F6] )
 			{
-				keystatus[SDL_SCANCODE_F6] = 0;
+				Input::keys[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
 

@@ -28,6 +28,7 @@ namespace MainMenu {
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
 	bool cursor_delete_mode = false;
+	Frame* main_menu_frame = nullptr;
 
 	// If you want to add new player-visible bindings, ADD THEM HERE:
 	// The first string in a binding is the name of the binding.
@@ -35,7 +36,29 @@ namespace MainMenu {
     // The third is the default Gamepad input.
     // The fourth is the default Joystick input.
     static const char* emptyBinding = "[unbound]";
+	static const char* hiddenBinding = "[hidden]";
 	static const char* defaultBindings[][4] = {
+		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
+		{"Use", "Mouse3", "ButtonA", emptyBinding},
+		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
+		{"Block", "Space", "LeftTrigger", emptyBinding},
+		{"Sneak", "Left Shift", "ButtonLeftBumper", emptyBinding},
+		{"Character Status", "Tab", "ButtonBack", emptyBinding},
+		{"Pause Game", emptyBinding, "ButtonStart", emptyBinding},
+		{"Spell List", "M", hiddenBinding, emptyBinding},
+		{"Autosort Inventory", "R", emptyBinding, emptyBinding},
+		{"Command NPC", "Q", "DpadY-", emptyBinding},
+		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
+		{"Cycle NPCs", "E", "DpadX-", emptyBinding},
+		{"Minimap Scale", "=", emptyBinding, emptyBinding},
+		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
+		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", emptyBinding},
+		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", emptyBinding},
+		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
+		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
+		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
+		{"Chat", "Return", hiddenBinding, emptyBinding},
 		{"Move Forward", "W", "StickLeftY-", emptyBinding},
 		{"Move Left", "A", "StickLeftX-", emptyBinding},
 		{"Move Backward", "S", "StickLeftY+", emptyBinding},
@@ -44,29 +67,10 @@ namespace MainMenu {
 		{"Turn Right", "Right", "StickRightX+", emptyBinding},
 		{"Look Up", "Up", "StickRightY-", emptyBinding},
 		{"Look Down", "Down", "StickRightY+", emptyBinding},
-		{"Chat", "Return", emptyBinding, emptyBinding},
-		{"Console Command", "/", emptyBinding, emptyBinding},
-		{"Character Status", "Tab", "ButtonSelect", emptyBinding},
-		{"Spell List", "M", emptyBinding, emptyBinding},
-		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
-		{"Block", "Space", "LeftTrigger", emptyBinding},
-		{"Sneak", "Left Shift", "LeftBumper", emptyBinding},
-		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
-		{"Use", "Mouse3", "ButtonA", emptyBinding},
-		{"Autosort Inventory", "Y", emptyBinding, emptyBinding},
-		{"Command NPC", "C", "DpadY-", emptyBinding},
-		{"Show NPC Commands", "X", "DpadX+", emptyBinding},
-		{"Cycle NPCs", "Z", "DpadX-", emptyBinding},
-		{"Minimap Scale", "=", emptyBinding, emptyBinding},
-		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
-		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", emptyBinding},
-		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", emptyBinding},
-		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
-		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
+		{"Console Command", "/", hiddenBinding, emptyBinding}
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
-	static Frame* main_menu_frame = nullptr;
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
 	static float main_menu_cursor_bob = 0.f;
@@ -796,27 +800,14 @@ namespace MainMenu {
 	inline void Bindings::save() {
 		for (int c = 0; c < 4; ++c) {
 		    Input& input = Input::inputs[c];
-		    if (devices[c] == 0) {
-			    for (auto& binding : kb_mouse_bindings[c]) {
-			        input.bind(binding.first.c_str(), binding.second.c_str());
-			    }
-			}
-		    if (devices[c] >= 1 && devices[c] <= 4) {
-		        std::string prefix;
-		        prefix.append("Pad");
-		        prefix.append(std::to_string(devices[c] - 1));
-			    for (auto& binding : gamepad_bindings[c]) {
-			        input.bind(binding.first.c_str(), (prefix + binding.second).c_str());
-			    }
-			}
-		    if (devices[c] >= 5 && devices[c] <= 8) {
-		        std::string prefix;
-		        prefix.append("Joy");
-		        prefix.append(std::to_string(devices[c] - 5));
-			    for (auto& binding : joystick_bindings[c]) {
-			        input.bind(binding.first.c_str(), (prefix + binding.second).c_str());
-			    }
-			}
+			input.getKeyboardBindings().clear();
+			input.setKeyboardBindings(kb_mouse_bindings[c]);
+			input.getGamepadBindings().clear();
+			input.setGamepadBindings(gamepad_bindings[c]);
+			input.getJoystickBindings().clear();
+			input.setJoystickBindings(joystick_bindings[c]);
+
+			input.refresh();
 		}
 		old_bindings = *this;
 	}

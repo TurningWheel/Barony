@@ -531,7 +531,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// rotate
-	if ( !command && my->isMobile() )
+	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -645,7 +645,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// look up and down
-	if ( !command && my->isMobile() )
+	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -815,37 +815,38 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( ((input.binary("Move Forward") || input.binary("Move Backward"))
-			|| (input.binary("Move Left") - input.binary("Move Right")) )
-				|| (inputs.hasController(PLAYER_NUM) 
-						&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-							|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())) )
+		else if ( (!inputs.hasController(PLAYER_NUM) 
+				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
+					|| (input.binary("Move Left") - input.binary("Move Right"))))
+			|| (inputs.hasController(PLAYER_NUM) 
+				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
+					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())) )
 		{
-		    if (!command && !swimming)
-		    {
-			    if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
-			    {
-				    if ( PLAYER_BOBMODE )
-				    {
-					    PLAYER_BOBMOVE += .0125 * refreshRateDelta;
-				    }
-				    else
-				    {
-					    PLAYER_BOBMOVE -= .0125 * refreshRateDelta;
-				    }
-			    }
-			    else
-			    {
-				    if ( PLAYER_BOBMODE )
-				    {
-					    PLAYER_BOBMOVE += .025 * refreshRateDelta;
-				    }
-				    else
-				    {
-					    PLAYER_BOBMOVE -= .025 * refreshRateDelta;
-				    }
-			    }
-		    }
+			if ( !command && !swimming )
+			{
+				if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
+				{
+					if ( PLAYER_BOBMODE )
+					{
+						PLAYER_BOBMOVE += .0125 * refreshRateDelta;
+					}
+					else
+					{
+						PLAYER_BOBMOVE -= .0125 * refreshRateDelta;
+					}
+				}
+				else
+				{
+					if ( PLAYER_BOBMODE )
+					{
+						PLAYER_BOBMOVE += .025 * refreshRateDelta;
+					}
+					else
+					{
+						PLAYER_BOBMOVE -= .025 * refreshRateDelta;
+					}
+				}
+			}
 		}
 		else if ( !swimming )
 		{
@@ -854,7 +855,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 			PLAYER_BOBMODE = 0;
 		}
 
-		if ( !command && !swimming && (input.binary("Move Left") - input.binary("Move Right")) )
+		if ( !command && !swimming && !inputs.hasController(PLAYER_NUM) && (input.binary("Move Left") - input.binary("Move Right")) )
 		{
 			if ( (input.binary("Move Right") && !input.binary("Move Backward")) ||
 				(input.binary("Move Left") && input.binary("Move Backward")) )
@@ -1000,9 +1001,27 @@ real_t Player::PlayerMovement_t::getMaximumSpeed()
 	return maxSpeed;
 }
 
+int Player::PlayerMovement_t::getCharacterEquippedWeight()
+{
+	int weight = 0;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != NULL && player.paperDoll.isItemOnDoll(*item) )
+		{
+			if ( item->type >= 0 && item->type < NUMITEMS )
+			{
+				weight += item->getWeight();
+			}
+		}
+	}
+	//weight += stats[player.playernum]->GOLD / 100;
+	return weight;
+}
+
 int Player::PlayerMovement_t::getCharacterWeight()
 {
-	int weight = 0.0;
+	int weight = 0;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -1015,16 +1034,21 @@ int Player::PlayerMovement_t::getCharacterWeight()
 		}
 	}
 	weight += stats[player.playernum]->GOLD / 100;
+	return weight;
+}
+
+int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
+{
+	int weight = getCharacterWeight();
+	if ( customWeight )
+	{
+		weight = *customWeight;
+	}
+
 	if ( gameplayCustomManager.inUse() )
 	{
 		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
 	}
-	return weight;
-}
-
-int Player::PlayerMovement_t::getCharacterModifiedWeight()
-{
-	int weight = getCharacterWeight();
 	if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
 	{
 		weight = weight * 0.5;
@@ -1131,28 +1155,31 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 				backpedalMultiplier = 1.25;
 			}
 
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+			if ( !inputs.hasController(PLAYER_NUM) )
 			{
-				//Normal controls.
-				x_force = (input.binary("Move Right") - input.binary("Move Left"));
-				y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
-				if ( noclip )
+				if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] )
+					//Normal controls.
+					x_force = (input.binary("Move Right") - input.binary("Move Left"));
+					y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
+					if ( noclip )
 					{
-						x_force = x_force * 0.5;
-						y_force = y_force * 0.5;
+						if ( keystatus[SDL_SCANCODE_LSHIFT] )
+						{
+							x_force = x_force * 0.5;
+							y_force = y_force * 0.5;
+						}
 					}
 				}
-			}
-			else
-			{
-				//Confused controls.
-				x_force = input.binary("Move Left") - input.binary("Move Right");
-				y_force = input.binary("Move Backward") - (double)input.binary("Move Forward") * backpedalMultiplier;
+				else
+				{
+					//Confused controls.
+					x_force = input.binary("Move Left") - input.binary("Move Right");
+					y_force = input.binary("Move Backward") - (double)input.binary("Move Forward") * backpedalMultiplier;
+				}
 			}
 
-			if ( inputs.hasController(PLAYER_NUM) && !input.binary("Move Left") && !input.binary("Move Right") )
+			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
 			{
 				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement();
 
@@ -1161,7 +1188,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 					x_force *= -1;
 				}
 			}
-			if ( inputs.hasController(PLAYER_NUM) && !input.binary("Move Forward") && !input.binary("Move Backward") )
+			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
 			{
 				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement();
 
@@ -2791,6 +2818,61 @@ void actPlayer(Entity* my)
 		consoleCommand("/facebaralternate");
 		keystatus[SDL_SCANCODE_O] = 0;
 	}*/
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_1] )
+	{
+		Input::waitingToBindControllerForPlayer = 0;
+		keystatus[SDL_SCANCODE_KP_1] = 0;
+		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 0");
+	}
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_2] )
+	{
+		Input::waitingToBindControllerForPlayer = 1;
+		keystatus[SDL_SCANCODE_KP_2] = 0;
+		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 1");
+	}
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_3] )
+	{
+		Input::waitingToBindControllerForPlayer = 2;
+		keystatus[SDL_SCANCODE_KP_3] = 0;
+		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 2");
+	}
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_4] )
+	{
+		Input::waitingToBindControllerForPlayer = 3;
+		keystatus[SDL_SCANCODE_KP_4] = 0;
+		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 3");
+	}
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_5] )
+	{
+		keystatus[SDL_SCANCODE_KP_5] = 0;
+		consoleCommand("/cyclekeyboard");
+	}
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_0] )
+	{
+		keystatus[SDL_SCANCODE_KP_0] = 0;
+		inputs.setPlayerIDAllowedKeyboard(-1);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			Input::inputs[i].refresh();
+		}
+		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed keyboard for any player");
+	}
+	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
+	{
+		keystatus[SDL_SCANCODE_KP_9] = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				inputs.removeControllerWithDeviceID(inputs.getControllerID(i));
+			}
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			Input::inputs[i].refresh();
+		}
+		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed gamepad for player: %d", PLAYER_NUM);
+	}
 	if ( inputs.hasController(PLAYER_NUM) )
 	{
 		//if ( keystatus[SDL_SCANCODE_KP_1] )
@@ -4200,27 +4282,46 @@ void actPlayer(Entity* my)
 				bool clickedOnGUI = false;
 
 				EntityClickType clickType = ENTITY_CLICK_USE;
-				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
+
+				bool skipUse = false;
+				if ( players[PLAYER_NUM]->worldUI.isEnabled() && !players[PLAYER_NUM]->shootmode )
 				{
-					clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
-					Entity* activeTooltipEntity = uidToEntity(players[PLAYER_NUM]->worldUI.uidForActiveTooltip);
-					if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
-					{
-						clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
-					}
+					skipUse = true;
+				}
+				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && inputs.hasController(PLAYER_NUM) 
+					&& !players[PLAYER_NUM]->shootmode )
+				{
+					skipUse = true;
 				}
 
-				selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
-				if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+				if ( !skipUse )
 				{
-					if ( clickType == ENTITY_CLICK_USE )
+					if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 					{
-						// otherwise if we hold right click we'll keep trying this function, FPS will drop.
-						if ( input.binary("Use") )
+						clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
+						Entity* activeTooltipEntity = uidToEntity(players[PLAYER_NUM]->worldUI.uidForActiveTooltip);
+						if ( activeTooltipEntity && activeTooltipEntity->bEntityTooltipRequiresButtonHeld() )
 						{
-							++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+							clickType = ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY;
 						}
 					}
+
+					selectedEntity[PLAYER_NUM] = entityClicked(&clickedOnGUI, false, PLAYER_NUM, clickType); // using objects
+					if ( !selectedEntity[PLAYER_NUM] && !clickedOnGUI )
+					{
+						if ( clickType == ENTITY_CLICK_USE )
+						{
+							// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+							if ( input.binary("Use") )
+							{
+								++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
+							}
+						}
+					}
+				}
+				else
+				{
+					input.consumeBinaryToggle("Use");
 				}
 			}
 			else

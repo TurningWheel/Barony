@@ -80,22 +80,16 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->isDroppable = true;
 	if ( inventory )
 	{
-		bool notfree = false, foundaspot = false;
-
-		bool is_spell = false;
-		if (itemCategory(item) == SPELL_CAT)
-		{
-			is_spell = true;
-		}
-
 		Player::Inventory_t* playerInventoryUI = nullptr;
 		Player::Magic_t* playerMagic = nullptr;
+		int player = -1;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( stats[i] && inventory == &stats[i]->inventory )
 			{
 				playerInventoryUI = &players[i]->inventoryUI;
 				playerMagic = &players[i]->magic;
+				player = i;
 				break;
 			}
 		}
@@ -107,187 +101,9 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 			return item;
 		}
 
-		if ( is_spell )
+		if ( player >= 0 )
 		{
-			int x = 0;
-			int y = 0;
-			while ( true )
-			{
-				for ( x = 0; x < Player::Inventory_t::MAX_SPELLS_X; x++ )
-				{
-					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
-					{
-						Item* tempItem = static_cast<Item*>(node->element);
-						if ( tempItem == item )
-						{
-							continue;
-						}
-						if ( tempItem )
-						{
-							if ( tempItem->x == x && tempItem->y == y )
-							{
-								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
-								{
-									notfree = true;  //Both spells. Can't fit in the same slot.
-								}
-								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
-								{
-									notfree = true;  //Both not spells. Can't fit in the same slot.
-								}
-							}
-						}
-					}
-					if ( notfree )
-					{
-						notfree = false;
-						continue;
-					}
-					item->x = x;
-					item->y = y;
-					foundaspot = true;
-					break;
-				}
-				if ( foundaspot )
-				{
-					break;
-				}
-				y++;
-			}
-		}
-		else if ( !is_spell )
-		{
-			if ( multiplayer != CLIENT )
-			{
-				for ( int i = 0; i < MAXPLAYERS; ++i )
-				{
-					if ( stats[i] && &stats[i]->inventory == inventory )
-					{
-						if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
-							&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
-						{
-							playerInventoryUI->setSizeY(playerInventoryUI->DEFAULT_INVENTORY_SIZEY + playerInventoryUI->getPlayerBackpackBonusSizeY());
-							break;
-						}
-						break;
-					}
-				}
-			}
-			else if ( multiplayer == CLIENT )
-			{
-				for ( int i = 0; i < MAXPLAYERS; ++i )
-				{
-					if ( !players[i]->isLocalPlayer() )
-					{
-						continue;
-					}
-					if ( stats[i] && &stats[i]->inventory == inventory )
-					{
-						if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
-							&& (shouldInvertEquipmentBeatitude(stats[i]) ? abs(stats[i]->cloak->beatitude) >= 0 : stats[i]->cloak->beatitude >= 0) )
-						{
-							players[i]->inventoryUI.setSizeY(players[i]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[i]->inventoryUI.getPlayerBackpackBonusSizeY());
-							break;
-						}
-						break;
-					}
-				}
-			}
-
-			int x = 0;
-			int y = 0;
-			const int sort_y = std::min(std::max(playerInventoryUI->getSizeY(), 2), playerInventoryUI->DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
-			while ( true )
-			{
-				for ( y = 0; y < sort_y; y++ )
-				{
-					for ( node_t* node = inventory->first; node != nullptr; node = node->next )
-					{
-						Item* tempItem = static_cast<Item*>(node->element);
-						if ( tempItem == item )
-						{
-							continue;
-						}
-						if ( tempItem )
-						{
-							if ( tempItem->x == x && tempItem->y == y )
-							{
-								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
-								{
-									notfree = true;  //Both spells. Can't fit in the same slot.
-								}
-								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
-								{
-									notfree = true;  //Both not spells. Can't fit in the same slot.
-								}
-							}
-						}
-					}
-					if ( notfree )
-					{
-						notfree = false;
-						continue;
-					}
-					item->x = x;
-					item->y = y;
-					foundaspot = true;
-					break;
-				}
-				if ( foundaspot )
-				{
-					break;
-				}
-				x++;
-			}
-
-			// backpack sorting, sort into here as last priority.
-			if ( x > playerInventoryUI->getSizeX() - 1 && playerInventoryUI->getSizeY() > playerInventoryUI->DEFAULT_INVENTORY_SIZEY )
-			{
-				x = 0;
-				foundaspot = false;
-				notfree = false;
-				while ( true )
-				{
-					for ( y = playerInventoryUI->DEFAULT_INVENTORY_SIZEY; y < playerInventoryUI->getSizeY(); y++ )
-					{
-						for ( node_t* node = inventory->first; node != nullptr; node = node->next )
-						{
-							Item* tempItem = static_cast<Item*>(node->element);
-							if ( tempItem == item )
-							{
-								continue;
-							}
-							if ( tempItem )
-							{
-								if ( tempItem->x == x && tempItem->y == y )
-								{
-									if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
-									{
-										notfree = true;  //Both spells. Can't fit in the same slot.
-									}
-									else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
-									{
-										notfree = true;  //Both not spells. Can't fit in the same slot.
-									}
-								}
-							}
-						}
-						if ( notfree )
-						{
-							notfree = false;
-							continue;
-						}
-						item->x = x;
-						item->y = y;
-						foundaspot = true;
-						break;
-					}
-					if ( foundaspot )
-					{
-						break;
-					}
-					x++;
-				}
-			}
+			playerInventoryUI->moveItemToFreeInventorySlot(item);
 		}
 
 		// add the item to the hotbar automatically
@@ -1687,7 +1503,7 @@ void consumeItem(Item*& item, const int player)
 
 -------------------------------------------------------------------------------*/
 
-EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
+EquipItemResult equipItem(Item* const item, Item** const slot, const int player, bool checkInventorySpaceForPaperDoll)
 {
 	int oldcount;
 
@@ -1846,7 +1662,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 					&& players[player]->paperDoll.enabled
 					&& players[player]->paperDoll.isItemOnDoll(**slot) )
 				{
-					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+					if ( checkInventorySpaceForPaperDoll && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 					{
 						// no backpack space
 						messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
@@ -1925,7 +1741,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player)
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, const int player, Entity* usedBy)
+void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping)
 {
 	if ( item == nullptr )
 	{
@@ -2096,29 +1912,35 @@ void useItem(Item* item, const int player, Entity* usedBy)
 
 	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 
+	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
+	if ( unequipForDropping )
+	{
+		checkInventorySpaceForPaperDoll = false;
+	}
+
 	switch ( item->type )
 	{
 		case WOODEN_SHIELD:
-			equipItemResult = equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case QUARTERSTAFF:
 		case BRONZE_SWORD:
 		case BRONZE_MACE:
 		case BRONZE_AXE:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case BRONZE_SHIELD:
-			equipItemResult = equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SLING:
 		case IRON_SPEAR:
 		case IRON_SWORD:
 		case IRON_MACE:
 		case IRON_AXE:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case IRON_SHIELD:
-			equipItemResult = equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SHORTBOW:
 		case STEEL_HALBERD:
@@ -2134,19 +1956,19 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
 		case BOOMERANG:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
 		case CRYSTAL_SHIELD:
-			equipItemResult = equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CROSSBOW:
 		case LONGBOW:
 		case COMPOUND_BOW:
 		case HEAVY_CROSSBOW:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case GLOVES:
 		case GLOVES_DEXTERITY:
@@ -2160,7 +1982,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
 		case SUEDE_GLOVES:
-			equipItemResult = equipItem(item, &stats[player]->gloves, player);
+			equipItemResult = equipItem(item, &stats[player]->gloves, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CLOAK:
 		case CLOAK_BLACK:
@@ -2170,7 +1992,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
-			equipItemResult = equipItem(item, &stats[player]->cloak, player);
+			equipItemResult = equipItem(item, &stats[player]->cloak, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BOOTS:
 		case LEATHER_BOOTS_SPEED:
@@ -2182,7 +2004,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
-			equipItemResult = equipItem(item, &stats[player]->shoes, player);
+			equipItemResult = equipItem(item, &stats[player]->shoes, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BREASTPIECE:
 		case IRON_BREASTPIECE:
@@ -2195,7 +2017,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 		case MACHINIST_APRON:
-			equipItemResult = equipItem(item, &stats[player]->breastplate, player);
+			equipItemResult = equipItem(item, &stats[player]->breastplate, player, checkInventorySpaceForPaperDoll);
 			break;
 		case HAT_PHRYGIAN:
 		case HAT_HOOD:
@@ -2210,7 +2032,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case HAT_HOOD_RED:
 		case HAT_HOOD_SILVER:
 		case PUNISHER_HOOD:
-			equipItemResult = equipItem(item, &stats[player]->helmet, player);
+			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
 			item_AmuletSexChange(item, player);
@@ -2218,10 +2040,10 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
 		case AMULET_MAGICREFLECTION:
-			equipItemResult = equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_STRANGULATION:
-			equipItemResult = equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			if ( stats[player]->amulet )
 			{
 				messagePlayer(player, MESSAGE_EQUIPMENT, language[1095]);
@@ -2232,7 +2054,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			}
 			break;
 		case AMULET_POISONRESISTANCE:
-			equipItemResult = equipItem(item, &stats[player]->amulet, player);
+			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case POTION_WATER:
 			drankPotion = item_PotionWater(item, players[player]->entity, usedBy);
@@ -2428,7 +2250,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case RING_ADORNMENT:
 		case RING_SLOWDIGESTION:
@@ -2442,7 +2264,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
-			equipItemResult = equipItem(item, &stats[player]->ring, player);
+			equipItemResult = equipItem(item, &stats[player]->ring, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SPELLBOOK_FORCEBOLT:
 		case SPELLBOOK_MAGICMISSILE:
@@ -2515,11 +2337,11 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_PICKAXE:
 		case TOOL_WHIP:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TINOPENER:
 			item_ToolTinOpener(item, player);
@@ -2538,7 +2360,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case TOOL_GYROBOT:
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
@@ -2551,12 +2373,12 @@ void useItem(Item* item, const int player, Entity* usedBy)
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
-			equipItemResult = equipItem(item, &stats[player]->shield, player);
+			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:
 		case TOOL_BLINDFOLD_FOCUS:
 		case TOOL_BLINDFOLD_TELEPATHY:
-			equipItemResult = equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
@@ -2568,7 +2390,7 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		case TOOL_GLASSES:
 		case MASK_SHAMAN:
-			equipItemResult = equipItem(item, &stats[player]->mask, player);
+			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BEARTRAP:
 			item_ToolBeartrap(item, player);
@@ -2647,25 +2469,25 @@ void useItem(Item* item, const int player, Entity* usedBy)
 			break;
 		}
 		case ARTIFACT_SWORD:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case ARTIFACT_MACE:
 			if ( players[player]->isLocalPlayer() )
 			{
 				messagePlayer(player, MESSAGE_WORLD, language[1096]);
 			}
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case ARTIFACT_SPEAR:
 		case ARTIFACT_AXE:
 		case ARTIFACT_BOW:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case ARTIFACT_ORB_BLUE:
 		case ARTIFACT_ORB_RED:
 		case ARTIFACT_ORB_PURPLE:
 		case ARTIFACT_ORB_GREEN:
-			equipItemResult = equipItem(item, &stats[player]->weapon, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
@@ -5459,12 +5281,12 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		{
 			if ( !cast_animation[player].active_spellbook )
 			{
-				equipResult = equipItem(item, &stats[player]->shield, player);
+				equipResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			}
 		}
 		else
 		{
-			equipResult = equipItem(item, &stats[player]->weapon, player);
+			equipResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 		}
 		if ( equipResult != EQUIP_ITEM_FAIL_CANT_UNEQUIP )
 		{
@@ -5491,12 +5313,12 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		{
 			if ( !cast_animation[player].active_spellbook )
 			{
-				equipResult = equipItem(item, &stats[player]->shield, player);
+				equipResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			}
 		}
 		else
 		{
-			equipResult = equipItem(item, &stats[player]->weapon, player);
+			equipResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 		}
 	}
 }
@@ -5541,39 +5363,39 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 
 	if ( slot == EQUIP_ITEM_SLOT_HELM )
 	{
-		equipType = equipItem(item, &stats[player]->helmet, player);
+		equipType = equipItem(item, &stats[player]->helmet, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_BREASTPLATE )
 	{
-		equipType = equipItem(item, &stats[player]->breastplate, player);
+		equipType = equipItem(item, &stats[player]->breastplate, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_GLOVES )
 	{
-		equipType = equipItem(item, &stats[player]->gloves, player);
+		equipType = equipItem(item, &stats[player]->gloves, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_BOOTS )
 	{
-		equipType = equipItem(item, &stats[player]->shoes, player);
+		equipType = equipItem(item, &stats[player]->shoes, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
-		equipType = equipItem(item, &stats[player]->shield, player);
+		equipType = equipItem(item, &stats[player]->shield, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_CLOAK )
 	{
-		equipType = equipItem(item, &stats[player]->cloak, player);
+		equipType = equipItem(item, &stats[player]->cloak, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_AMULET )
 	{
-		equipType = equipItem(item, &stats[player]->amulet, player);
+		equipType = equipItem(item, &stats[player]->amulet, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_RING )
 	{
-		equipType = equipItem(item, &stats[player]->ring, player);
+		equipType = equipItem(item, &stats[player]->ring, player, false);
 	}
 	else if ( slot == EQUIP_ITEM_SLOT_MASK )
 	{
-		equipType = equipItem(item, &stats[player]->mask, player);
+		equipType = equipItem(item, &stats[player]->mask, player, false);
 	}
 
 	clientSendEquipUpdateToServer(slot, equipType, player,

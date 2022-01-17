@@ -838,7 +838,8 @@ enum ItemContextMenuPrompts {
 	PROMPT_RETRIEVE_CHEST,
 	PROMPT_DROP,
 	PROMPT_TINKER,
-	PROMPT_GRAB
+	PROMPT_GRAB,
+	PROMPT_UNEQUIP_FOR_DROP
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);

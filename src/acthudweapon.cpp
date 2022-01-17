@@ -3193,6 +3193,7 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
+	bool wouldBeDefending = false; // to handle different block/sneaking hotkeys. not allowed to sneak if we would be defending on the same hotkey
 	bool sneaking = false;
     const bool shootmode = players[HUDSHIELD_PLAYERNUM]->shootmode;
 	if (!command && !swimming && shootmode)
@@ -3205,12 +3206,13 @@ void actHudShield(Entity* my)
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )
 		{
-			if (input.binaryToggle("Block"))
+			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
 			{
-			    if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
-			    {
+				if (input.binaryToggle("Block"))
+				{
 				    defending = true;
 			    }
+				wouldBeDefending = true;
 			}
 			if (input.binaryToggle("Sneak"))
 			{
@@ -3223,6 +3225,7 @@ void actHudShield(Entity* my)
 	{
 		// can't defend with quivers.
 		defending = false;
+		wouldBeDefending = false;
 	}
 	if ( playerRace == RAT
 		|| playerRace == CREATURE_IMP
@@ -3230,6 +3233,7 @@ void actHudShield(Entity* my)
 		|| playerRace == SPIDER )
 	{
 		defending = false;
+		wouldBeDefending = false;
 	}
 
 	if (defending)
@@ -3240,7 +3244,7 @@ void actHudShield(Entity* my)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = false;
 	}
-	if ( sneaking )
+	if ( sneaking && (!defending && !wouldBeDefending) )
 	{
 		stats[HUDSHIELD_PLAYERNUM]->sneaking = true;
 	}
@@ -3832,7 +3836,6 @@ void actHudAdditional(Entity* my)
 	}
 
 	bool defending = false;
-	bool sneaking = false;
 
 	// shield switching animation
 	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )

@@ -1807,13 +1807,13 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
-			equipItem(item2, &stats[player]->weapon, player);
+			equipItem(item2, &stats[player]->weapon, player, false);
 			hotbar[1].item = item2->uid;
 			free(item);
 		}
 		else
 		{
-			equipItem(item, &stats[player]->weapon, player);
+			equipItem(item, &stats[player]->weapon, player, false);
 		}
 
 		// boots

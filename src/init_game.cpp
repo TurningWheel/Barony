@@ -300,6 +300,8 @@ int initGame()
 		ItemTooltips.readItemsFromFile();
 		ItemTooltips.readTooltipsFromFile();
 
+		GlyphHelper.readFromFile();
+
 		loadHUDSettingsJSON();
 		Player::SkillSheet_t::loadSkillSheetJSON();
 		Player::CharacterSheet_t::loadCharacterSheetJSON();
@@ -502,8 +504,6 @@ int initGame()
 		cursor_bmp = loadImage("images/system/cursor.png");
 		cross_bmp = loadImage("images/system/cross.png");
 		selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
-		controllerglyphs1_bmp = loadImage("images/system/glyphsheet_ns.png");
-		skillIcons_bmp = loadImage("images/system/skillicons_sheet.png");
 		if (!loadInterfaceResources())
 		{
 			printlog("Failed to load interface resources.\n");
@@ -624,16 +624,6 @@ void deinitGame()
 	{
 		SDL_FreeSurface(selected_cursor_bmp);
 	}
-	if ( controllerglyphs1_bmp != nullptr )
-	{
-		SDL_FreeSurface(controllerglyphs1_bmp);
-	}
-	if ( skillIcons_bmp != nullptr )
-	{
-		SDL_FreeSurface(skillIcons_bmp);
-	}
-	//if(sky_bmp!=NULL)
-	//	SDL_FreeSurface(sky_bmp);
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		list_FreeAll(&chestInv[i]);

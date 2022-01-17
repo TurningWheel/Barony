@@ -16,12 +16,14 @@ See LICENSE for details.
 #include "player.hpp"
 #include "scores.hpp"
 #include "ui/Field.hpp"
+#include "ui/Image.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
 GameplayCustomManager gameplayCustomManager;
 GameModeManager_t gameModeManager;
 ItemTooltips_t ItemTooltips;
+GlyphRenderer_t GlyphHelper;
 #ifndef NINTENDO
 IRCHandler_t IRCHandler;
 #endif // !NINTENDO
@@ -3532,4 +3534,333 @@ void DebugTimers_t::printTimepoints(std::string key, int& posy)
 		++index;
 	}
 	printTextFormatted(font8x8_bmp, 8, starty, "%s:\n%s", key.c_str(), output.c_str());
+}
+
+bool GlyphRenderer_t::readFromFile()
+{
+	if ( PHYSFS_getRealDir("/data/keyboard_glyph_config.json") )
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/keyboard_glyph_config.json");
+		inputPath.append("/data/keyboard_glyph_config.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return false;
+		}
+		char buf[65536];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return false;
+		}
+
+		allGlyphs.clear();
+		if ( d.HasMember("rendered_glyph_folder") )
+		{
+			renderedGlyphFolder = d["rendered_glyph_folder"].GetString();
+		}
+		if ( d.HasMember("base_glyph_folder") )
+		{
+			baseSourceFolder = d["base_glyph_folder"].GetString();
+		}
+		if ( d.HasMember("small_key_unpressed_path") )
+		{
+			baseUnpressedGlyphPath = d["small_key_unpressed_path"].GetString();
+		}
+		if ( d.HasMember("small_key_pressed_path") )
+		{
+			basePressedGlyphPath = d["small_key_pressed_path"].GetString();
+		}
+		int render_offsety = 0;
+		if ( d.HasMember("base_render_offset_y") )
+		{
+			render_offsety = d["base_render_offset_y"].GetInt();
+		}
+		pressedRenderedPrefix = "Pressed_";
+		if ( d.HasMember("pressed_rendered_glyph_prefix") )
+		{
+			pressedRenderedPrefix = d["pressed_rendered_glyph_prefix"].GetString();
+		}
+		unpressedRenderedPrefix = "Unpressed_";
+		if ( d.HasMember("unpressed_rendered_glyph_prefix") )
+		{
+			unpressedRenderedPrefix = d["unpressed_rendered_glyph_prefix"].GetString();
+		}
+
+		std::string basePath = baseSourceFolder;
+		basePath += '/';
+		std::string baseRenderedPath = basePath;
+		baseRenderedPath += renderedGlyphFolder;
+		baseRenderedPath += '/';
+
+		for ( rapidjson::Value::ConstValueIterator glyph_itr = d["glyphs"].Begin(); glyph_itr != d["glyphs"].End(); ++glyph_itr )
+		{
+			const rapidjson::Value& attributes = *glyph_itr;
+			if ( !attributes.HasMember("keyname") )
+			{
+				printlog("[JSON]: Glyph entry does not have keyname, skipping...");
+				continue;
+			}
+			std::string keyname = attributes["keyname"].GetString();
+			int scancode = SDL_GetScancodeFromName(keyname.c_str());
+			if ( scancode == SDL_SCANCODE_UNKNOWN )
+			{
+				printlog("[JSON]: Glyph name: %s could not find a scancode, skipping...", keyname.c_str());
+				continue;
+			}
+			allGlyphs[scancode] = GlyphData_t();
+			auto& glyphData = allGlyphs[scancode];
+			glyphData.scancode = scancode;
+			glyphData.keyname = keyname;
+			if ( !attributes.HasMember("folder") )
+			{
+				printlog("[JSON]: Glyph entry does not have base folder entry, skipping...");
+				continue;
+			}
+			glyphData.folder = attributes["folder"].GetString();
+			if ( !attributes.HasMember("path") )
+			{
+				printlog("[JSON]: Glyph entry does not have glyph path name, skipping...");
+				continue;
+			}
+			glyphData.filename = attributes["path"].GetString();
+			if ( attributes.HasMember("custom_render_offset_y") )
+			{
+				if ( attributes["custom_render_offset_y"].GetInt() != 0 )
+				{
+					glyphData.render_offsety = attributes["custom_render_offset_y"].GetInt();
+				}
+				else
+				{
+					glyphData.render_offsety = render_offsety;
+				}
+			}
+			else
+			{
+				glyphData.render_offsety = render_offsety;
+			}
+			if ( attributes.HasMember("pressed_glyph_background_path") )
+			{
+				glyphData.pressedGlyphPath = attributes["pressed_glyph_background_path"].GetString();
+			}
+			else
+			{
+				glyphData.pressedGlyphPath = basePressedGlyphPath;
+			}
+			if ( attributes.HasMember("unpressed_glyph_background_path") )
+			{
+				glyphData.unpressedGlyphPath = attributes["unpressed_glyph_background_path"].GetString();
+			}
+			else
+			{
+				glyphData.unpressedGlyphPath = baseUnpressedGlyphPath;
+			}
+		}
+
+		for ( auto& keyValue : allGlyphs )
+		{
+			auto& glyphData = keyValue.second;
+			std::string tmpPath = basePath;
+			tmpPath += glyphData.folder;
+			tmpPath += '/';
+			tmpPath += glyphData.filename;
+
+			if ( !PHYSFS_getRealDir(tmpPath.c_str()) ) // you need single forward '/' slashes for getRealDir to report true
+			{
+				printlog("[JSON]: Glyph path: %s not detected, skipping...", tmpPath.c_str());
+				glyphData.fullpath = "";
+				glyphData.pressedRenderedFullpath = "";
+				glyphData.unpressedRenderedFullpath = "";
+				continue;
+			}
+
+			glyphData.fullpath = tmpPath;
+
+			std::string renderedPath = baseRenderedPath;
+			renderedPath += glyphData.folder;
+			renderedPath += '/';
+
+			glyphData.unpressedRenderedFullpath = renderedPath;
+			glyphData.unpressedRenderedFullpath += unpressedRenderedPrefix;
+			glyphData.unpressedRenderedFullpath += glyphData.filename;
+			if ( glyphData.unpressedRenderedFullpath[0] == '/' )
+			{
+				glyphData.unpressedRenderedFullpath.erase((size_t)0, (size_t)1);
+			}
+
+			glyphData.pressedRenderedFullpath = renderedPath;
+			glyphData.pressedRenderedFullpath += pressedRenderedPrefix;
+			glyphData.pressedRenderedFullpath += glyphData.filename;
+			if ( glyphData.pressedRenderedFullpath[0] == '/' )
+			{
+				glyphData.pressedRenderedFullpath.erase((size_t)0, (size_t)1);
+			}
+		}
+
+		printlog("[JSON]: Successfully read json file %s, processed %d glyphs", inputPath.c_str(), allGlyphs.size());
+		return true;
+	}
+	printlog("[JSON]: Error: Could not locate json file %s", "/data/keyboard_glyph_config.json");
+	return false;
+}
+
+void GlyphRenderer_t::renderGlyphsToPNGs()
+{
+#ifdef EDITOR
+	return;
+#else
+	printlog("[Glyph Export]: Starting export...");
+	int errors = 0;
+	for ( auto& keyValue : allGlyphs )
+	{
+		std::string pressedPath = baseSourceFolder;
+		pressedPath += '/';
+		pressedPath += keyValue.second.pressedGlyphPath;
+		if ( pressedPath[0] == '/' )
+		{
+			pressedPath.erase((size_t)0, (size_t)1);
+		}
+
+		std::string unpressedPath = baseSourceFolder;
+		unpressedPath += '/';
+		unpressedPath += keyValue.second.unpressedGlyphPath;
+		if ( unpressedPath[0] == '/' )
+		{
+			unpressedPath.erase((size_t)0, (size_t)1);
+		}
+
+		auto& glyphData = keyValue.second;
+
+		Image* base = Image::get(unpressedPath.c_str());
+		if ( base->getWidth() != 0 )
+		{
+			// successfully loaded, do unpressed glyph
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(base->getSurf());
+			SDL_Rect pos{ 0, 0, base->getWidth(), base->getHeight() };
+			SDL_Surface* sprite = SDL_CreateRGBSurface(0, pos.w, pos.h, 32,
+				0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			SDL_SetSurfaceAlphaMod(srcSurf, 255);
+			SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+
+			std::string keyPath = keyValue.second.fullpath;
+			if ( keyPath[0] == '/' )
+			{
+				keyPath.erase((size_t)0, (size_t)1);
+			}
+			auto key = Image::get(keyPath.c_str());
+			if ( key->getWidth() != 0 )
+			{
+				// successfully loaded
+				SDL_Surface* keySurf = const_cast<SDL_Surface*>(key->getSurf());
+				SDL_Rect keyPos{ 0, 0, key->getWidth(), key->getHeight() };
+				keyPos.x = pos.w / 2 - keyPos.w / 2;
+				keyPos.y = keyValue.second.render_offsety;
+
+				SDL_BlitSurface(keySurf, nullptr, sprite, &keyPos);
+
+				std::string writePath = keyValue.second.unpressedRenderedFullpath;
+
+				if ( writePath[0] == '/' )
+				{
+					writePath.erase((size_t)0, (size_t)1);
+				}
+
+				if ( SDL_SavePNG(sprite, writePath.c_str()) == 0 )
+				{
+					printlog("[Glyph Export]: Successfully exported unpressed glyph: %s | path: %s", keyValue.second.keyname.c_str(), writePath.c_str());
+				}
+				else
+				{
+					printlog("[Glyph Export]: Failed exporting unpressed glyph: %s | path: %s", keyValue.second.keyname.c_str(), writePath.c_str());
+				}
+			}
+			else
+			{
+				printlog("[Glyph Export]: Failed exporting unpressed glyph: %s", keyValue.second.keyname.c_str());
+				++errors;
+			}
+			if ( sprite )
+			{
+				SDL_FreeSurface(sprite);
+				sprite = nullptr;
+			}
+		}
+		else
+		{
+			++errors;
+		}
+
+		base = Image::get(pressedPath.c_str());
+		if ( base->getWidth() != 0 )
+		{
+			// successfully loaded, do pressed glyph
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(base->getSurf());
+			SDL_Rect pos{ 0, 0, base->getWidth(), base->getHeight() };
+			SDL_Surface* sprite = SDL_CreateRGBSurface(0, pos.w, pos.h, 32,
+				0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			SDL_SetSurfaceAlphaMod(srcSurf, 255);
+			SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+
+			std::string keyPath = keyValue.second.fullpath;
+			if ( keyPath[0] == '/' )
+			{
+				keyPath.erase((size_t)0, (size_t)1);
+			}
+			auto key = Image::get(keyPath.c_str());
+			if ( key->getWidth() != 0 )
+			{
+				// successfully loaded
+				SDL_Surface* keySurf = const_cast<SDL_Surface*>(key->getSurf());
+				SDL_Rect keyPos{ 0, 0, key->getWidth(), key->getHeight() };
+				keyPos.x = pos.w / 2 - keyPos.w / 2;
+				keyPos.y = keyValue.second.render_offsety;
+
+				SDL_BlitSurface(keySurf, nullptr, sprite, &keyPos);
+
+				std::string writePath = keyValue.second.pressedRenderedFullpath;
+				if ( writePath[0] == '/' )
+				{
+					writePath.erase((size_t)0, (size_t)1);
+				}
+
+				if ( SDL_SavePNG(sprite, writePath.c_str()) == 0 )
+				{
+					printlog("[Glyph Export]: Successfully exported pressed glyph: %s | path: %s", keyValue.second.keyname.c_str(), writePath.c_str());
+				}
+				else
+				{
+					printlog("[Glyph Export]: Failed exporting pressed glyph: %s | path: %s", keyValue.second.keyname.c_str(), writePath.c_str());
+				}
+			}
+			else
+			{
+				printlog("[Glyph Export]: Failed exporting pressed glyph: %s", keyValue.second.keyname.c_str());
+				++errors;
+			}
+			if ( sprite )
+			{
+				SDL_FreeSurface(sprite);
+				sprite = nullptr;
+			}
+		}
+		else
+		{
+			++errors;
+		}
+
+	}
+
+	printlog("[Glyph Export]: Completed export of %d glyphs with %d errors.", allGlyphs.size(), errors);
+#endif
 }

@@ -40,7 +40,7 @@ SDL_Surface* inventory_mode_item_highlighted_img = NULL;
 SDL_Surface* inventory_mode_spell_img = NULL;
 SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 
-bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
+bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool droppingAndUnequipping)
 {
 	//TODO UI: VERIFY
 	if ( !item )
@@ -61,7 +61,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 		return false;
 	}
 
-	if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+	if ( !droppingAndUnequipping && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	{
 		// no backpack space
 		messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
@@ -71,7 +71,14 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item)
 	players[player]->gui_mode = GUI_MODE_INVENTORY;
 	openedChest[player] = nullptr;
 
-	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
+	if ( droppingAndUnequipping )
+	{
+		players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+	}
+	else
+	{
+		players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
+	}
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -1613,6 +1620,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				for (node = stats[player]->inventory.first; node != NULL;
 				        node = nextnode)
 				{
+					toggleclick = false;
 					nextnode = node->next;
 					Item* tempItem = (Item*) (node->element);
 					if (tempItem == selectedItem)
@@ -1620,7 +1628,6 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						continue;
 					}
 
-					toggleclick = false;
 					if (tempItem->x == selectedItem->x
 					        && tempItem->y == selectedItem->y)
 					{
@@ -1642,7 +1649,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 								int newx = selectedItem->x;
 								int newy = selectedItem->y;
 
-								bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem);
+								bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, false);
 								if ( !unequipped )
 								{
 									// failure to unequip
@@ -1691,7 +1698,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						int newx = selectedItem->x;
 						int newy = selectedItem->y;
 
-						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem);
+						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, false);
 						if ( !unequipped )
 						{
 							// failure to unequip, reset coords
@@ -1911,9 +1918,27 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				{
 					if ( bPaperDollItem )
 					{
-						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem); // unequip item
+						bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, true); // unequip item
 						if ( !unequipped )
 						{
+							selectedItem = NULL;
+							toggleclick = false;
+						}
+						else
+						{
+							bool droppedAll = false;
+							while ( selectedItem && selectedItem->count > 1 )
+							{
+								droppedAll = dropItem(selectedItem, player);
+								if ( droppedAll )
+								{
+									selectedItem = nullptr;
+								}
+							}
+							if ( !droppedAll )
+							{
+								dropItem(selectedItem, player);
+							}
 							selectedItem = NULL;
 							toggleclick = false;
 						}
@@ -2011,6 +2036,46 @@ void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 255, 127);
 	drawBox(&pos, color, 127);
+}
+
+std::string getBindingNameForMissingTooltipPrompts(int index)
+{
+	if ( index == 1 )
+	{
+#ifdef NINTENDO
+		return "MenuAlt1";
+#else
+		return "MenuAlt2";
+#endif
+	}
+	else if ( index == 2 )
+	{
+#ifdef NINTENDO
+		return "MenuAlt2";
+#else
+		return "MenuAlt1";
+#endif
+	}
+	else if ( index == 3 )
+	{
+#ifdef NINTENDO
+		return "MenuConfirm";
+#else
+		return "MenuCancel";
+#endif
+	}
+	else if ( index == 4 )
+	{
+#ifdef NINTENDO
+		return "MenuCancel";
+#else
+		return "MenuConfirm";
+#endif
+	}
+	else
+	{
+		return "";
+	}
 }
 
 int getContextMenuOptionOrder(ItemContextMenuPrompts prompt)
@@ -2151,6 +2216,26 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	const int imgTopBackgroundDefaultHeight = 28;
 	const int imgTopBackground2XHeight = 42;
 
+	bool doShortTooltip = false;
+	if ( players[player]->shootmode )
+	{
+		doShortTooltip = true;
+		if ( !tooltipDisplayedSettings.displayingShortFormTooltip )
+		{
+			bUpdateDisplayedTooltip = true;
+		}
+		tooltipDisplayedSettings.displayingShortFormTooltip = true;
+	}
+	else
+	{
+		doShortTooltip = false;
+		if ( tooltipDisplayedSettings.displayingShortFormTooltip )
+		{
+			bUpdateDisplayedTooltip = true;
+		}
+		tooltipDisplayedSettings.displayingShortFormTooltip = false;
+	}
+
 	if ( ItemTooltips.itemDebug )
 	{
 		if ( keystatus[SDL_SCANCODE_KP_PLUS] )
@@ -2204,9 +2289,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 	}
 
-	if ( keystatus[SDL_SCANCODE_KP_1] )
+	if ( Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
-		keystatus[SDL_SCANCODE_KP_1] = 0;
 		tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
 	}
 
@@ -2753,7 +2837,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		txtAttributes->setDisabled(true);
 
 		std::string descriptionTextString = "";
-		if ( itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0 )
+		if ( !doShortTooltip && (itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0) )
 		{
 			txtAttributes->setDisabled(false);
 			txtAttributes->setColor(itemTooltip.descriptionTextColor);
@@ -2778,7 +2862,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		frameDesc->setDisabled(true);
 
 		std::string detailsTextString = "";
-		if ( itemTooltip.detailsText.size() > 0 )
+		if ( !doShortTooltip && itemTooltip.detailsText.size() > 0 )
 		{
 			frameDesc->setDisabled(false);
 			txtDescription->setTextColor(itemTooltip.detailsTextColor);
@@ -3535,7 +3619,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 			framePromptPos.h = imgBottomBackground->pos.h;
 
-			if ( !item->identified )
+			if ( !item->identified || doShortTooltip )
 			{
 				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
 				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
@@ -3643,7 +3727,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor )
+	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor && !players[player]->shootmode )
 	{
 		auto options = getContextTooltipOptionsForItem(player, item);
 
@@ -3657,7 +3741,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			frameTooltipPrompt->setOpacity(frameMain->getOpacity());
 			std::vector<std::pair<Frame::image_t*, Field*>> promptFrames;
 			
-			// disable all the text and prompts
+			// disable all the text
 			for ( int index = 1; index < 5; ++index )
 			{
 				char imgName[16];
@@ -3671,11 +3755,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					Uint8 r, g, b, a;
 					SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
 					a = 128;
+					img->disabled = false; // unused glyphs will show as partially opaque
 					img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 					txt->setDisabled(true);
 					promptFrames.push_back(std::make_pair(img, txt));
 				}
 			}
+
+			std::set<int> promptsAvailable;
 
 			// set the text and button prompts from the available options
 			for ( auto& option : options )
@@ -3683,6 +3770,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				char imgName[16];
 				char fieldName[16];
 				const int order = getContextMenuOptionOrder(option);
+				promptsAvailable.insert(order);
 
 				snprintf(imgName, sizeof(imgName), "glyph %d", order);
 				snprintf(fieldName, sizeof(imgName), "txt %d", order);
@@ -3699,10 +3787,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			}
 
 			int alignx1 = xres;
+			int index = 1;
 			for ( auto& pair : promptFrames )
 			{
 				auto& img = pair.first;
 				auto& txt = pair.second;
+				if ( img->path == "" )
+				{
+					img->path = Input::inputs[player].getGlyphPathForInput(getBindingNameForMissingTooltipPrompts(index).c_str());
+				}
 				if ( !txt->isDisabled() )
 				{
 					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
@@ -3715,6 +3808,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						}
 					}
 				}
+				++index;
 			}
 
 			// shift everything by the further left text as anchor
@@ -4022,6 +4116,7 @@ void Player::Inventory_t::openInventory()
 		slideOutPercent = 1.0;
 		isInteractable = false;
 	}
+	player.hotbar.hotbarTooltipLastGameTick = 0;
 }
 void Player::Inventory_t::closeInventory()
 {
@@ -4033,6 +4128,10 @@ void Player::Inventory_t::closeInventory()
 	updateItemContextMenu(); // process + close the item context menu
 	bFirstTimeSnapCursor = false;
 	isInteractable = false;
+	itemTooltipDisplay.expanded = false;
+	itemTooltipDisplay.expandSetpoint = 0;
+	itemTooltipDisplay.expandCurrent = 0;
+	itemTooltipDisplay.expandAnimate = 0;
 }
 
 void Player::Inventory_t::updateInventory()
@@ -4209,29 +4308,6 @@ void Player::Inventory_t::updateInventory()
 				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
-
-		if ( inputs.bControllerInputPressed(player, INJOY_MENU_INVENTORY_TAB) )
-		{
-			inputs.controllerClearInput(player, INJOY_MENU_INVENTORY_TAB);
-			if ( !selectedItem )
-			{
-				cycleInventoryTab();
-			}
-		}
-
-		if ( lastkeypressed == 300 )
-		{
-			lastkeypressed = 0;
-		}
-
-		if ( inputs.bControllerInputPressed(player, INJOY_MENU_MAGIC_TAB) )
-		{
-			inputs.controllerClearInput(player, INJOY_MENU_MAGIC_TAB);
-			if ( !selectedItem )
-			{
-				cycleInventoryTab();
-			}
-		}
 	}
 
 	Input& input = Input::inputs[player];
@@ -4264,7 +4340,8 @@ void Player::Inventory_t::updateInventory()
 		int startx = 0;
 		int starty = 0;
 
-		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM )
+		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
 			{
@@ -4282,10 +4359,6 @@ void Player::Inventory_t::updateInventory()
 									// mouse movement captures the inventory
 									players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 								}
-								/*if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !disableMouseDisablingHotbarFocus )
-								{
-									players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-								}*/
 							}
 						}
 
@@ -4304,7 +4377,8 @@ void Player::Inventory_t::updateInventory()
 				}
 			}
 		}
-		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
+		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
 		{
 			for ( int x = 0; x < MAX_SPELLS_X; ++x )
 			{
@@ -4673,7 +4747,8 @@ void Player::Inventory_t::updateInventory()
 				continue;    //Skip over this item if not in inventory mode
 			}
 
-			mouseOverSlot = slotFrame->capturesMouse();
+			mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
+				&& slotFrame->capturesMouse();
 
 			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
 			{
@@ -4799,7 +4874,37 @@ void Player::Inventory_t::updateInventory()
 						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
 						{
 							bindingPressed = true;
-							activateItemContextMenuOption(item, option);
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								// need to unequip
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+								players[player]->paperDoll.updateSlots();
+								if ( players[player]->paperDoll.isItemOnDoll(*item) )
+								{
+									// couldn't unequip, no more actions
+								}
+								else
+								{
+									// successfully unequipped, let's drop it.
+									bool droppedAll = false;
+									while ( item && item->count > 1 )
+									{
+										droppedAll = dropItem(item, player);
+										if ( droppedAll )
+										{
+											item = nullptr;
+										}
+									}
+									if ( !droppedAll )
+									{
+										dropItem(item, player);
+									}
+								}
+							}
+							else
+							{
+								activateItemContextMenuOption(item, option);
+							}
 						}
 					}
 					if ( bindingPressed )
@@ -4835,9 +4940,9 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				// handle clicking
-				if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen )
+				if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen && inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 					{
 						if ( dropItem(item, player) ) // Quick item drop
 						{
@@ -4858,7 +4963,7 @@ void Player::Inventory_t::updateInventory()
 						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 					}
 				}
-				else if ( inputs.bMouseRight(player)
+				else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
 					&& !itemMenuOpen && !selectedItem )
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && selectedChestSlot[player] < 0 ) //TODO: selected shop slot, identify, remove curse?
@@ -4947,7 +5052,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				bool numkey_quick_add = hotbar_numkey_quick_add;
+				bool numkey_quick_add = hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player);
 				if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
 					players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
 				{
@@ -5316,6 +5421,7 @@ std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
 		case PROMPT_EQUIP:
 		case PROMPT_UNEQUIP:
 		case PROMPT_SPELL_EQUIP:
+		case PROMPT_UNEQUIP_FOR_DROP:
 			return "MenuAlt2";
 		case PROMPT_GRAB:
 			return "MenuAlt1";
@@ -5921,6 +6027,198 @@ void autosortInventory(int player, bool sortPaperDoll)
 	sortInventoryItemsOfType(player, -1, true); // clean up the rest of the items.
 }
 
+bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
+{
+	bool notfree = false;
+	bool is_spell = itemCategory(item) == SPELL_CAT;
+	bool foundaspot = false;
+
+	if ( is_spell )
+	{
+		int x = 0;
+		int y = 0;
+		while ( true )
+		{
+			for ( x = 0; x < Player::Inventory_t::MAX_SPELLS_X; x++ )
+			{
+				for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+				{
+					Item* tempItem = static_cast<Item*>(node->element);
+					if ( tempItem == item )
+					{
+						continue;
+					}
+					if ( tempItem )
+					{
+						if ( tempItem->x == x && tempItem->y == y )
+						{
+							if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+							{
+								notfree = true;  //Both spells. Can't fit in the same slot.
+							}
+							else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+							{
+								notfree = true;  //Both not spells. Can't fit in the same slot.
+							}
+						}
+					}
+				}
+				if ( notfree )
+				{
+					notfree = false;
+					continue;
+				}
+				item->x = x;
+				item->y = y;
+				foundaspot = true;
+				break;
+			}
+			if ( foundaspot )
+			{
+				return true;
+				break;
+			}
+			y++;
+		}
+		return false;
+	}
+	else
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( stats[player.playernum]->cloak
+				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK 
+				&& stats[player.playernum]->cloak->status != BROKEN
+				&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
+			{
+				setSizeY(DEFAULT_INVENTORY_SIZEY + getPlayerBackpackBonusSizeY());
+			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			if ( !players[player.playernum]->isLocalPlayer() )
+			{
+				return false;
+			}
+			if ( stats[player.playernum]->cloak 
+				&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK
+				&& stats[player.playernum]->cloak->status != BROKEN
+				&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
+			{
+				setSizeY(DEFAULT_INVENTORY_SIZEY + getPlayerBackpackBonusSizeY());
+			}
+		}
+
+		int x = 0;
+		int y = 0;
+		const int sort_y = std::min(getSizeY(), DEFAULT_INVENTORY_SIZEY);
+		while ( true )
+		{
+			for ( y = 0; y < sort_y; y++ )
+			{
+				for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+				{
+					Item* tempItem = static_cast<Item*>(node->element);
+					if ( tempItem == item )
+					{
+						continue;
+					}
+					if ( tempItem )
+					{
+						if ( tempItem->x == x && tempItem->y == y )
+						{
+							if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+							{
+								notfree = true;  //Both spells. Can't fit in the same slot.
+							}
+							else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+							{
+								notfree = true;  //Both not spells. Can't fit in the same slot.
+							}
+						}
+					}
+				}
+				if ( notfree )
+				{
+					notfree = false;
+					continue;
+				}
+				item->x = x;
+				item->y = y;
+				foundaspot = true;
+				break;
+			}
+			if ( foundaspot )
+			{
+				break;
+			}
+			x++;
+		}
+
+		if ( foundaspot && x < getSizeX() && y < getSizeY() )
+		{
+			return true;
+		}
+
+		// backpack sorting, sort into here as last priority.
+		if ( x > getSizeX() - 1 && getSizeY() > DEFAULT_INVENTORY_SIZEY )
+		{
+			x = 0;
+			foundaspot = false;
+			notfree = false;
+			while ( true )
+			{
+				for ( y = DEFAULT_INVENTORY_SIZEY; y < getSizeY(); y++ )
+				{
+					for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+					{
+						Item* tempItem = static_cast<Item*>(node->element);
+						if ( tempItem == item )
+						{
+							continue;
+						}
+						if ( tempItem )
+						{
+							if ( tempItem->x == x && tempItem->y == y )
+							{
+								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+								{
+									notfree = true;  //Both spells. Can't fit in the same slot.
+								}
+								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+								{
+									notfree = true;  //Both not spells. Can't fit in the same slot.
+								}
+							}
+						}
+					}
+					if ( notfree )
+					{
+						notfree = false;
+						continue;
+					}
+					item->x = x;
+					item->y = y;
+					foundaspot = true;
+					break;
+				}
+				if ( foundaspot )
+				{
+					return true;
+					break;
+				}
+				x++;
+			}
+		}
+
+		if ( !foundaspot )
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
 void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 {
 	node_t* node = nullptr;
@@ -5962,7 +6260,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 			bool notfree = false, foundaspot = false;
 
 			bool is_spell = false;
-			int inventory_y = std::min(std::max(players[player]->inventoryUI.getSizeY(), 2), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
+			int inventory_y = std::min(players[player]->inventoryUI.getSizeY(), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
 
 			if ( sortRightToLeft )
 			{

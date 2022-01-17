@@ -680,6 +680,7 @@ void createUINavigation(const int player)
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 			players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
 		});
+
 		auto itemsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "items button glyph")->disabled = true;
 
@@ -695,6 +696,7 @@ void createUINavigation(const int player)
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 			players[button.getOwner()]->skillSheet.openSkillSheet();
 		});
+
 		auto skillsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "skills button glyph")->disabled = true;
 	}
@@ -876,6 +878,576 @@ void Player::HUD_t::updateUINavigation()
 	}
 }
 
+void createWorldTooltipPrompts(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto& worldTooltipFrame = hud_t.worldTooltipFrame;
+	worldTooltipFrame = hud_t.hudFrame->addFrame("world tooltip");
+	worldTooltipFrame->setHollow(true);
+	worldTooltipFrame->setBorder(0);
+	worldTooltipFrame->setOwner(player);
+	worldTooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	worldTooltipFrame->setDisabled(true);
+
+	const char* promptFont = "fonts/pixel_maz_multiline.ttf#16#2";
+
+	Uint32 iconColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity);
+	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
+
+	auto text = worldTooltipFrame->addField("prompt text", 256);
+	text->setFont(promptFont);
+	text->setText("");
+	text->setDisabled(true);
+	text->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+	const int iconSize = 24;
+	SDL_Rect iconPos{ 0, 0, iconSize, iconSize };
+
+	auto icon = worldTooltipFrame->addImage(iconPos,
+		iconColor, "images/system/white.png", "icon img");
+	icon->disabled = true;
+
+	auto glyph = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "glyph img");
+	glyph->disabled = true;
+
+	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "cursor img");
+	cursor->disabled = true;
+}
+
+void Player::HUD_t::updateWorldTooltipPrompts()
+{
+	if ( !hudFrame )
+	{
+		return;
+	}
+
+	if ( !worldTooltipFrame )
+	{
+		createWorldTooltipPrompts(player.playernum);
+		if ( !worldTooltipFrame )
+		{
+			return;
+		}
+	}
+
+	worldTooltipFrame->setDisabled(true);
+
+	if ( !player.shootmode || nohud || gamePaused )
+	{
+		return;
+	}
+
+	SDL_Rect promptPos{ player.camera_virtualWidth() / 2, player.camera_virtualHeight() / 2, 0, 0 };
+
+	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
+
+	auto icon = worldTooltipFrame->findImage("icon img");
+	icon->disabled = true;
+	auto glyph = worldTooltipFrame->findImage("glyph img");
+	glyph->disabled = true;
+	auto cursor = worldTooltipFrame->findImage("cursor img");
+	cursor->disabled = true;
+	auto text = worldTooltipFrame->findField("prompt text");
+	text->setDisabled(true);
+
+	SDL_Rect textPos{ 0, 0, 0, 0 };
+	const int skillIconToGlyphPadding = 4;
+	const int nominalGlyphHeight = 26;
+
+	if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
+	{
+		bool forceBlankInteractText = false;
+		if ( !player.worldUI.isEnabled() )
+		{
+			cursor->path = "images/system/cursor.png";
+			if ( auto imgGet = Image::get(cursor->path.c_str()) )
+			{
+				cursor->disabled = false;
+				promptPos.x -= imgGet->getWidth() / 2;
+				promptPos.y -= imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				cursor->pos = cursorPos;
+				cursor->color = makeColor(255, 255, 255, 191);
+			}
+			textPos.x = cursor->pos.x + 24;
+			textPos.y = cursor->pos.y + 20;
+		}
+		else
+		{
+			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+			{
+				cursor->path = "images/system/cursor.png";
+				if ( auto imgGet = Image::get(cursor->path.c_str()) )
+				{
+					cursor->disabled = false;
+					promptPos.x -= imgGet->getWidth() / 2;
+					promptPos.y -= imgGet->getHeight() / 2;
+					SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+					cursor->pos = cursorPos;
+					cursor->color = makeColor(255, 255, 255, 191);
+				}
+
+				textPos.x = cursor->pos.x + cursor->pos.w / 2;
+				textPos.y = cursor->pos.y + cursor->pos.h / 2;
+				if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+				{
+					textPos.x -= imgGet->getWidth() / 2;
+					textPos.y -= imgGet->getHeight() / 2;
+				}
+
+				if ( textPos.x < 0 )
+				{
+					promptPos.x += textPos.x;
+					cursor->pos.x -= textPos.x;
+					textPos.x = 0;
+				}
+				if ( textPos.y < 0 )
+				{
+					promptPos.y += textPos.y;
+					cursor->pos.y -= textPos.y;
+					textPos.y = 0;
+				}
+			}
+			else
+			{
+				if ( (player.worldUI.isEnabled() && !player.worldUI.bTooltipInView) )
+				{
+					forceBlankInteractText = true;
+
+					cursor->path = "images/system/cross.png";
+					if ( auto imgGet = Image::get(cursor->path.c_str()) )
+					{
+						cursor->disabled = false;
+						promptPos.x -= imgGet->getWidth() / 2;
+						promptPos.y -= imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						cursor->pos = cursorPos;
+						cursor->color = makeColor(255, 255, 255, 128);
+					}
+
+					textPos.x = cursor->pos.x + cursor->pos.w / 2;
+					textPos.y = cursor->pos.y + cursor->pos.h / 2;
+					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+					{
+						textPos.x -= imgGet->getWidth() / 2;
+						textPos.y -= imgGet->getHeight() / 2;
+					}
+
+					if ( textPos.x < 0 )
+					{
+						promptPos.x += textPos.x;
+						cursor->pos.x -= textPos.x;
+						textPos.x = 0;
+					}
+					if ( textPos.y < 0 )
+					{
+						promptPos.y += textPos.y;
+						cursor->pos.y -= textPos.y;
+						textPos.y = 0;
+					}
+				}
+				else
+				{
+					cursor->path = "images/system/selectedcursor.png";
+					if ( auto imgGet = Image::get(cursor->path.c_str()) )
+					{
+						cursor->disabled = false;
+						promptPos.x -= imgGet->getWidth() / 2;
+						promptPos.y -= imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						cursor->pos = cursorPos;
+						cursor->color = makeColor(255, 255, 255, 128);
+					}
+				}
+			}
+
+			textPos.x += 40;
+			textPos.y += 20;
+
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+			if ( ticks % 50 < 25 )
+			{
+				glyph->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyph->pos.h )
+						{
+							glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+						}
+
+						if ( unpressedHeight != nominalGlyphHeight )
+						{
+							glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}
+					}
+					textPos.x += glyph->pos.w;
+				}
+			}
+			else
+			{
+				glyph->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					textPos.x += glyph->pos.w;
+
+					if ( glyph->pos.h != nominalGlyphHeight )
+					{
+						glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+					}
+				}
+			}
+			textPos.x += skillIconToGlyphPadding;
+
+			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+			{
+				if ( skill.skillId == PRO_LEADERSHIP )
+				{
+					if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+					{
+						icon->path = skill.skillIconPathLegend;
+					}
+					else
+					{
+						icon->path = skill.skillIconPath;
+					}
+					break;
+				}
+			}
+
+			if ( auto imgGet = Image::get(icon->path.c_str()) )
+			{
+				icon->disabled = false;
+				SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+				icon->pos = iconPos;
+				textPos.x += icon->pos.w + skillIconToGlyphPadding;
+			}
+		}
+
+		if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+		{
+			if ( followerMenu.followerToCommand
+				&& (followerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+					|| followerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
+				)
+			{
+				text->setDisabled(false);
+				text->setText(language[3650]);
+			}
+			else
+			{
+				text->setDisabled(false);
+				text->setText(language[3039]);
+			}
+		}
+		else
+		{
+			if ( !strcmp(followerMenu.interactText, "") || forceBlankInteractText )
+			{
+				if ( followerMenu.followerToCommand )
+				{
+					int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
+					if ( followerMenu.allowedInteractItems(type)
+						|| followerMenu.allowedInteractFood(type)
+						|| followerMenu.allowedInteractWorld(type)
+						)
+					{
+						text->setDisabled(false);
+						text->setText(language[4041]); // "Interact with..."
+					}
+					else
+					{
+						text->setDisabled(false);
+						text->setText(language[4042]); // "Attack..."
+					}
+				}
+				else
+				{
+					text->setDisabled(false);
+					text->setText(language[4041]); // "Interact with..."
+				}
+			}
+			else
+			{
+				text->setDisabled(false);
+				text->setText(followerMenu.interactText);
+			}
+		}
+	}
+	else
+	{
+		bool foundTinkeringKit = false;
+		if ( player.entity && stats[player.playernum]
+			&& stats[player.playernum]->defending )
+		{
+			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
+			{
+				foundTinkeringKit = true;
+			}
+		}
+		if ( player.worldUI.bTooltipInView )
+		{
+			cursor->path = "images/system/selectedcursor.png";
+			if ( auto imgGet = Image::get(cursor->path.c_str()) )
+			{
+				cursor->disabled = false;
+				promptPos.x -= imgGet->getWidth() / 2;
+				promptPos.y -= imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				cursor->pos = cursorPos;
+				cursor->color = makeColor(255, 255, 255, 128);
+			}
+
+			textPos.x += 40;
+			textPos.y += 20;
+
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+			if ( ticks % 50 < 25 )
+			{
+				glyph->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyph->pos.h )
+						{
+							glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+						}
+
+						if ( unpressedHeight != nominalGlyphHeight )
+						{
+							glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}
+					}
+					textPos.x += glyph->pos.w;
+				}
+			}
+			else
+			{
+				glyph->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				{
+					glyph->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					glyph->pos = glyphPos;
+					textPos.x += glyph->pos.w;
+
+					if ( glyph->pos.h != nominalGlyphHeight )
+					{
+						glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+					}
+				}
+			}
+			textPos.x += skillIconToGlyphPadding;
+
+			if ( foundTinkeringKit )
+			{
+				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+				{
+					if ( skill.skillId == PRO_LOCKPICKING )
+					{
+						if ( skillCapstoneUnlocked(player.playernum, PRO_LOCKPICKING) )
+						{
+							icon->path = skill.skillIconPathLegend;
+						}
+						else
+						{
+							icon->path = skill.skillIconPath;
+						}
+						break;
+					}
+				}
+
+				if ( auto imgGet = Image::get(icon->path.c_str()) )
+				{
+					icon->disabled = false;
+					SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					icon->pos = iconPos;
+					textPos.x += icon->pos.w + skillIconToGlyphPadding;
+				}
+			}
+
+			text->setDisabled(false);
+			text->setText(player.worldUI.interactText.c_str());
+		}
+		else
+		{
+			cursor->path = "images/system/cross.png";
+			if ( auto imgGet = Image::get(cursor->path.c_str()) )
+			{
+				cursor->disabled = false;
+				promptPos.x -= imgGet->getWidth() / 2;
+				promptPos.y -= imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				cursor->pos = cursorPos;
+				cursor->color = makeColor(255, 255, 255, 128);
+			}
+
+			if ( foundTinkeringKit )
+			{
+				if ( player.worldUI.isEnabled() )
+				{
+					textPos.x = cursor->pos.x + cursor->pos.w / 2;
+					textPos.y = cursor->pos.y + cursor->pos.h / 2;
+					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+					{
+						textPos.x -= imgGet->getWidth() / 2;
+						textPos.y -= imgGet->getHeight() / 2;
+					}
+
+					if ( textPos.x < 0 )
+					{
+						promptPos.x += textPos.x;
+						cursor->pos.x -= textPos.x;
+						textPos.x = 0;
+					}
+					if ( textPos.y < 0 )
+					{
+						promptPos.y += textPos.y;
+						cursor->pos.y -= textPos.y;
+						textPos.y = 0;
+					}
+
+					// skip cursor here, no tooltip in view
+					//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
+					textPos.x += 40;
+					textPos.y += 20;
+
+					auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
+					auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+					if ( ticks % 50 < 25 )
+					{
+						glyph->path = glyphPathPressed;
+						if ( auto imgGet = Image::get(glyph->path.c_str()) )
+						{
+							glyph->disabled = false;
+							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							glyph->pos = glyphPos;
+							if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+							{
+								const int unpressedHeight = imgGetUnpressed->getHeight();
+								if ( unpressedHeight != glyph->pos.h )
+								{
+									glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+								}
+
+								if ( unpressedHeight != nominalGlyphHeight )
+								{
+									glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+								}
+							}
+							textPos.x += glyph->pos.w;
+						}
+					}
+					else
+					{
+						glyph->path = glyphPathUnpressed;
+						if ( auto imgGet = Image::get(glyph->path.c_str()) )
+						{
+							glyph->disabled = false;
+							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							glyph->pos = glyphPos;
+							textPos.x += glyph->pos.w;
+
+							if ( glyph->pos.h != nominalGlyphHeight )
+							{
+								glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+							}
+						}
+					}
+					textPos.x += skillIconToGlyphPadding;
+
+					for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == PRO_LOCKPICKING )
+						{
+							if ( skillCapstoneUnlocked(player.playernum, PRO_LOCKPICKING) )
+							{
+								icon->path = skill.skillIconPathLegend;
+							}
+							else
+							{
+								icon->path = skill.skillIconPath;
+							}
+							break;
+						}
+					}
+
+					if ( auto imgGet = Image::get(icon->path.c_str()) )
+					{
+						icon->disabled = false;
+						SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+						icon->pos = iconPos;
+						textPos.x += icon->pos.w + skillIconToGlyphPadding;
+					}
+
+					text->setDisabled(false);
+					text->setText(language[3663]);
+				}
+				else
+				{
+					textPos.x = cursor->pos.x + 15;
+					textPos.y = cursor->pos.y + 11;
+
+					text->setDisabled(false);
+					text->setText(language[3663]);
+				}
+			}
+		}
+	}
+
+	if ( !text->isDisabled() )
+	{
+		textPos.w = text->getTextObject()->getWidth();
+		textPos.h = Font::get(text->getFont())->height() + 8;
+		textPos.y -= 1;
+		text->setVJustify(Field::justify_t::CENTER);
+		text->setSize(textPos);
+
+		promptPos.w = text->getSize().x + text->getSize().w;
+		promptPos.h = text->getSize().y + text->getSize().h;
+	}
+	if ( !glyph->disabled )
+	{
+		promptPos.w = std::max(glyph->pos.x + glyph->pos.w, promptPos.w);
+		promptPos.h = std::max(glyph->pos.y + glyph->pos.h, promptPos.h);
+	}
+	if ( !icon->disabled )
+	{
+		if ( icon->pos.h != nominalGlyphHeight )
+		{
+			icon->pos.y -= (icon->pos.h - nominalGlyphHeight) / 2;
+		}
+
+		promptPos.w = std::max(icon->pos.x + icon->pos.w, promptPos.w);
+		promptPos.h = std::max(icon->pos.y + icon->pos.h, promptPos.h);
+	}
+	if ( !cursor->disabled )
+	{
+		promptPos.w = std::max(cursor->pos.x + cursor->pos.w, promptPos.w);
+		promptPos.h = std::max(cursor->pos.y + cursor->pos.h, promptPos.h);
+	}
+	worldTooltipFrame->setSize(promptPos);
+	worldTooltipFrame->setDisabled(false);
+}
+
 std::string actionPromptBackingIconPath00 = "";
 std::string actionPromptBackingIconPath20 = "";
 std::string actionPromptBackingIconPath60 = "";
@@ -919,8 +1491,9 @@ void createActionPrompts(const int player)
 		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	mainHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
-	mainHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
-		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	Frame::image_t* glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action mainhand glyph");
+	glyph->ontop = true;
 	auto mainHandText = actionPromptFrame->addField("action mainhand text", 64);
 	mainHandText->setFont(promptFont);
 	mainHandText->setText("Attack");
@@ -932,8 +1505,9 @@ void createActionPrompts(const int player)
 		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	offHand->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
-	offHand->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
-		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action offhand glyph");
+	glyph->ontop = true;
 	auto offHandText = actionPromptFrame->addField("action offhand text", 64);
 	offHandText->setFont(promptFont);
 	offHandText->setText("Sneak");
@@ -945,12 +1519,27 @@ void createActionPrompts(const int player)
 		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
 	magic->addImage(iconPos,
 		iconColor, "images/system/white.png", "action img");
-	magic->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
-		0xFFFFFFFF, "images/system/white.png", "action glyph");
+	glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action magic glyph");
+	glyph->ontop = true;
 	auto magicText = actionPromptFrame->addField("action magic text", 64);
 	magicText->setFont(promptFont);
 	magicText->setText("Cast spell");
 	magicText->setHJustify(Field::justify_t::CENTER);
+
+	auto sneak = actionPromptFrame->addFrame("action sneak");
+	sneak->setSize(SDL_Rect{ 480, 400, maxWidth, promptHeight });
+	sneak->addImage(iconBackingPos,
+		iconBackingColor, actionPromptBackingIconPath00.c_str(), "action img backing");
+	sneak->addImage(iconPos,
+		iconColor, "images/system/white.png", "action img");
+	glyph = actionPromptFrame->addImage(SDL_Rect{ 0, 0, mainHand->getSize().w, glyphSize },
+		0xFFFFFFFF, "images/system/white.png", "action sneak glyph");
+	glyph->ontop = true;
+	auto sneakText = actionPromptFrame->addField("action sneak text", 64);
+	sneakText->setFont(promptFont);
+	sneakText->setText("Sneak");
+	sneakText->setHJustify(Field::justify_t::CENTER);
 }
 
 int Player::HUD_t::actionPromptOffsetX = 280;
@@ -1004,21 +1593,41 @@ void Player::HUD_t::updateActionPrompts()
 		ActionPrompts promptType;
 		std::string inputName;
 	};
+
 	std::vector<PromptInfo> allPrompts;
-	allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast" });
-	allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
-	allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	std::string blockBinding = Input::inputs[player.playernum].binding("Block");
+	std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
+	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
+	if ( sneakingSeparateFromBlock )
+	{
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
+		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	}
+	else
+	{
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
+		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
+		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
+	}
 
 	Uint32 iconBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity);
 	Uint32 iconColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity);
+	Uint32 iconFadedColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconOpacity * .5);
+	Uint32 iconFadedBackingColor = makeColor(255, 255, 255, Player::HUD_t::actionPromptIconBackingOpacity * .5);
 
 	int index = 0;
 	for ( auto& promptInfo : allPrompts )
 	{
 		if ( auto prompt = actionPromptsFrame->findFrame(promptInfo.name.c_str()) )
 		{
+			prompt->setDisabled(false);
+
+			std::string glyphName = promptInfo.name + " glyph";
 			auto img = prompt->findImage("action img");
-			auto glyph = prompt->findImage("action glyph");
+			auto glyph = actionPromptsFrame->findImage(glyphName.c_str());
 			auto imgBacking = prompt->findImage("action img backing");
 
 			SDL_Rect promptPos = prompt->getSize();
@@ -1038,6 +1647,10 @@ void Player::HUD_t::updateActionPrompts()
 					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
 					promptPos.x -= promptPos.w;
 					break;
+				case 3: // to the right after the previous
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x += 16;
+					break;
 				default:
 					break;
 			}
@@ -1051,9 +1664,6 @@ void Player::HUD_t::updateActionPrompts()
 			img->color = iconColor;
 			imgBacking->color = iconBackingColor;
 
-			std::string textForPrompt = "";
-			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
-
 			Field* promptText = nullptr;
 			switch ( promptInfo.promptType )
 			{
@@ -1066,8 +1676,33 @@ void Player::HUD_t::updateActionPrompts()
 				case ACTION_PROMPT_MAGIC:
 					promptText = actionPromptsFrame->findField("action magic text");
 					break;
+				case ACTION_PROMPT_SNEAK:
+					promptText = actionPromptsFrame->findField("action sneak text");
+					break;
 				default:
 					break;
+			}
+
+			if ( promptInfo.promptType == ACTION_PROMPT_SNEAK && !sneakingSeparateFromBlock )
+			{
+				prompt->setDisabled(true);
+				promptText->setDisabled(true);
+				glyph->disabled = true;
+				++index;
+				continue;
+			}
+
+			std::string textForPrompt = "";
+			int skillForPrompt = getActionIconForPlayer(promptInfo.promptType, textForPrompt);
+			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && sneakingSeparateFromBlock
+				&& skillForPrompt == PRO_STEALTH )
+			{
+				// offhand wants to display sneak - redundant, hide this prompt
+				prompt->setDisabled(true);
+				promptText->setDisabled(true);
+				glyph->disabled = true;
+				++index;
+				continue;
 			}
 
 			if ( player.shootmode )
@@ -1138,10 +1773,34 @@ void Player::HUD_t::updateActionPrompts()
 					img->path = '*' + img->path;
 				}
 			}
-			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str());
-			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+
+			bool pressed = false;
+			/*if ( skillForPrompt == PRO_SHIELD && stats[player.playernum]->defending )
 			{
-				glyph->disabled = false; // keyboard glyph support TODO
+				pressed = true;
+			}
+			if ( skillForPrompt == PRO_STEALTH && !stats[player.playernum]->defending
+				&& stats[player.playernum]->sneaking )
+			{
+				pressed = true;
+			}*/
+
+			if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
+			{
+				glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("Sneak", pressed);
+			}
+			else
+			{
+				glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str(), pressed);
+			}
+			glyph->disabled = prompt->isDisabled();
+			if ( !player.shootmode )
+			{
+				glyph->disabled = true;
+			}
+			else if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				glyph->disabled = false;
 			}
 			else
 			{
@@ -1152,9 +1811,41 @@ void Player::HUD_t::updateActionPrompts()
 				glyph->pos.w = imgGet->getWidth();
 				glyph->pos.h = imgGet->getHeight();
 			}
-			glyph->pos.x = prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
+			glyph->pos.x = prompt->getSize().x + prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 0;
-			glyph->pos.y = img->pos.y + img->pos.h - glyphToImgPadY; // just above the skill img with some padding
+			int pressedOffset = 0;
+			/*if ( pressed )
+			{
+				if ( auto imgGet = Image::get(Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str()).c_str()) )
+				{
+					int unpressedHeight = imgGet->getHeight();
+					if ( glyph->pos.h != unpressedHeight )
+					{
+						pressedOffset = (unpressedHeight - glyph->pos.h);
+					}
+				}
+			}*/
+			glyph->pos.y = prompt->getSize().y + img->pos.y + img->pos.h - glyphToImgPadY + pressedOffset; // just above the skill img with some padding
+
+			if ( promptInfo.promptType == ACTION_PROMPT_SNEAK )
+			{
+				if ( !(!stats[player.playernum]->defending && stats[player.playernum]->sneaking) )
+				{
+					//glyph->disabled = true;
+					img->color = iconFadedColor;
+					//imgBacking->color = iconFadedBackingColor;
+				}
+			}
+			if ( promptInfo.promptType == ACTION_PROMPT_OFFHAND && skillForPrompt == PRO_SHIELD
+				&& sneakingSeparateFromBlock )
+			{
+				if ( !stats[player.playernum]->defending )
+				{
+					//glyph->disabled = true;
+					img->color = iconFadedColor;
+					//imgBacking->color = iconFadedBackingColor;
+				}
+			}
 		}
 		++index;
 	}
@@ -1658,6 +2349,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setCallback([](Button& button){
 			    openMinimap(button.getOwner());
 			});
+			mapButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected()
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
 			mapSelector->setSize(buttonPos);
@@ -1675,6 +2374,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			logButton->setCallback([](Button& button) {
 				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Log button clicked", button.getOwner());
+			});
+			logButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected()
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
 			});
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
@@ -1730,6 +2437,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
 				bShowTimer = !bShowTimer;
 			});
+			timerButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected() 
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			});
 
 			SDL_Rect textPos = timerImg->pos;
 			textPos.x += 12;
@@ -1755,6 +2470,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setCallback([](Button& button) {
 				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 				players[button.getOwner()]->skillSheet.openSkillSheet();
+			});
+			skillsButton->setTickCallback([](Widget& widget) {
+				if ( widget.isSelected()
+					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
 			});
 		}
 
@@ -3362,11 +4085,17 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 	Frame::image_t* img = nullptr;
 	Field* elementField = nullptr;
 	Button* elementButton = nullptr;
+	bool selectedAButton = false;
 	switch ( element )
 	{
 		case SHEET_OPEN_LOG:
 			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
 			{
+				if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+				{
+					elementFrame->findButton("log button")->select();
+					selectedAButton = true;
+				}
 				elementFrame = elementFrame->findFrame("log button selector");
 				//img = elementFrame->findImage("log button img");
 			}
@@ -3374,15 +4103,30 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		case SHEET_OPEN_MAP:
 			if ( elementFrame = sheetFrame->findFrame("log map buttons") )
 			{
+				if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+				{
+					elementFrame->findButton("map button")->select();
+					selectedAButton = true;
+				}
 				elementFrame = elementFrame->findFrame("map button selector");
 				//img = elementFrame->findImage("map button img");
 			}
 			break;
 		case SHEET_SKILL_LIST:
 			elementFrame = sheetFrame->findFrame("skills button frame");
+			if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				elementFrame->findButton("skills button")->select();
+				selectedAButton = true;
+			}
 			break;
 		case SHEET_TIMER:
 			elementFrame = sheetFrame->findFrame("game timer");
+			if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			{
+				elementFrame->findButton("timer selector")->select();
+				selectedAButton = true;
+			}
 			break;
 		case SHEET_GOLD:
 			if ( elementFrame = sheetFrame->findFrame("character info") )
@@ -3556,6 +4300,17 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		pos.y -= player.camera_virtualy1();
 		player.hud.setCursorDisabled(false);
 		player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
+	}
+	if ( !selectedAButton && elementFrame && !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		if ( elementButton )
+		{
+			elementButton->select();
+		}
+		else
+		{
+			elementFrame->select();
+		}
 	}
 }
 
@@ -4657,11 +5412,16 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-					real_t weightratio1 = player.movement.getWeightRatio(player.movement.getCharacterWeight(), 0);
-					real_t weightratio2 = player.movement.getWeightRatio(player.movement.getCharacterWeight(), STR);
+					real_t weightratio1 = player.movement.getWeightRatio(player.movement.getCharacterModifiedWeight(), 0);
+					real_t weightratio2 = player.movement.getWeightRatio(player.movement.getCharacterModifiedWeight(), STR);
 					real_t speedFactor1 = player.movement.getSpeedFactor(weightratio1, DEX);
 					real_t speedFactor2 = player.movement.getSpeedFactor(weightratio2, DEX);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), speedFactor2 - speedFactor1);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t noSTRPercent = 100.0 * speedFactor1 / std::fmax(.01, maxSpeed);
+					real_t currentPercent = 100.0 * speedFactor2 / std::fmax(.01, maxSpeed);
+					real_t displayValue = currentPercent - noSTRPercent;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), displayValue);
 				}
 					break;
 				case SHEET_DEX:
@@ -4777,11 +5537,17 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_DEX:
 				{
 					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
-					real_t weightratio = player.movement.getWeightRatio(player.movement.getCharacterWeight(), STR);
+					real_t weightratio = player.movement.getWeightRatio(player.movement.getCharacterModifiedWeight(), STR);
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
 					real_t speedFactor1 = player.movement.getSpeedFactor(weightratio, 0);
 					real_t speedFactor2 = player.movement.getSpeedFactor(weightratio, DEX);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), speedFactor2 - speedFactor1);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t noDEXPercent = 100.0 * speedFactor1 / std::fmax(.01, maxSpeed);
+					real_t currentPercent = 100.0 * speedFactor2 / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = currentPercent - noDEXPercent;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_movement_value_format").c_str(), displayValue);
 				}
 					break;
 				case SHEET_CON:
@@ -5210,8 +5976,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_nobonus_format").c_str(), mpbuf);
 					}
 				}
-				break;
+					break;
 				case SHEET_WGT:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_base").c_str());
+					int weight = player.movement.getCharacterWeight();
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_nobonus_format").c_str(), weight);
+				}
 					break;
 				default:
 					break;
@@ -5504,8 +6275,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						}
 					}
 				}
-				break;
+					break;
 				case SHEET_WGT:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_movement_speed").c_str());
+					int weight = player.movement.getCharacterModifiedWeight();
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_format").c_str(), 
+						100.0 * currentSpeed / std::fmax(.01, maxSpeed));
+				}
 					break;
 				default:
 					break;
@@ -5586,7 +6367,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			// extra number display - line 3
 			hasEntryInfoLines = true;
 			if ( element == SHEET_ATK || element == SHEET_AC || element == SHEET_POW || element == SHEET_RES || element == SHEET_RGN
-				|| element == SHEET_RGN_MP )
+				|| element == SHEET_RGN_MP || element == SHEET_WGT )
 			{
 				if ( element == SHEET_RGN_MP && isInsectoidENRegen )
 				{
@@ -5635,6 +6416,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						entryTotalHeading->setText(getHoverTextString("attributes_rgn_mp_base_sum_header").c_str());
 					}
+				}
+				else if ( element == SHEET_WGT )
+				{
+					entryTotalHeading->setText(getHoverTextString("attributes_wgt_base_sum_header").c_str());
 				}
 				entryTotalHeading->setColor(hudColors.characterSheetOffWhiteText);
 				entryTotalHeading->setHJustify(Field::justify_t::RIGHT);
@@ -5801,6 +6586,29 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 				break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					//int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					//int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					//int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					//int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					//real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					//real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					//real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+					//real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_attributes_bonus").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						currentSpeedPercent + (noWeightSpeedPercent - currentSpeedPercent) /*+ (goldSpeedPercent - noWeightSpeedPercent)*/);
+				}
 					break;
 				default:
 					break;
@@ -6028,8 +6836,33 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenItemsEffects);
 					}
 				}
-				break;
+					break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					//real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					//real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = (currentEquippedSpeedPercent - noWeightSpeedPercent);
+					if ( displayValue >= 0.0 )
+					{
+						displayValue = -.000001; // so there is a negative sign
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_equipment_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						displayValue);
+				}
 					break;
 				default:
 					break;
@@ -6214,6 +7047,37 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 					break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+					real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = (currentSpeedPercent - noWeightSpeedPercent)
+						- (currentEquippedSpeedPercent - noWeightSpeedPercent)
+						- (goldSpeedPercent - noWeightSpeedPercent);
+					if ( displayValue >= 0.0 )
+					{
+						displayValue = -.000001; // so there is a negative sign
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_inventory_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						displayValue);
+				}
 					break;
 				default:
 					break;
@@ -6316,7 +7180,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 6, buf, valueBuf)
-			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) )
+			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) || element == SHEET_WGT )
 		{
 			// extra number display - line 6
 			hasEntryInfoLines = true;
@@ -6372,6 +7236,35 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 					break;
 				case SHEET_WGT:
+				{
+					int weight = player.movement.getCharacterModifiedWeight();
+					//int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					//int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
+					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
+					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
+					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
+					//real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
+					real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t maxSpeed = player.movement.getMaximumSpeed();
+
+					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
+					//real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
+					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
+					real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+
+					real_t displayValue = (goldSpeedPercent - noWeightSpeedPercent);
+					if ( displayValue >= 0.0 )
+					{
+						displayValue = -.000001; // so there is a negative sign
+					}
+
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_wgt_gold_value").c_str());
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_wgt_speed_bonus_format").c_str(),
+						displayValue);
+				}
 					break;
 				default:
 					break;
@@ -7146,7 +8039,7 @@ void Player::CharacterSheet_t::updateStats()
 	const int leftAlignPosX = 10;
 	auto statsInnerPos = statsInnerFrame->getSize();
 	statsInnerPos.x = rightAlignPosX;
-	if ( keystatus[SDL_SCANCODE_I] )
+	if ( keystatus[SDL_SCANCODE_I] && enableDebugKeys )
 	{
 		statsInnerPos.x = leftAlignPosX;
 	}
@@ -9808,8 +10701,9 @@ void createPlayerSpellList(const int player)
 		closeBtn->setSize(closeBtnPos);
 		closeBtn->setColor(makeColor(255, 255, 255, 255));
 		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-		closeBtn->setText("Close");
+		closeBtn->setText(language[4053]);
 		closeBtn->setFont(font);
+		closeBtn->setHideGlyphs(true);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
@@ -10670,7 +11564,8 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_EQUIP 
 		|| prompt == PROMPT_UNEQUIP
-		|| prompt == PROMPT_SPELL_EQUIP )
+		|| prompt == PROMPT_SPELL_EQUIP
+		|| prompt == PROMPT_UNEQUIP_FOR_DROP )
 	{
 		if ( isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook )
 		{
@@ -10680,17 +11575,32 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		if ( !disableItemUsage )
 		{
 			if ( prompt == PROMPT_EQUIP
-				|| prompt == PROMPT_UNEQUIP )
+				|| prompt == PROMPT_UNEQUIP
+				|| prompt == PROMPT_UNEQUIP_FOR_DROP )
 			{
 				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
 					|| itemCategory(item) == SPELLBOOK )
 				{
-					playerTryEquipItemAndUpdateServer(player, item, true);
+					if ( prompt == PROMPT_UNEQUIP_FOR_DROP )
+					{
+						playerTryEquipItemAndUpdateServer(player, item, false); // don't check inventory space to unequip
+					}
+					else
+					{
+						playerTryEquipItemAndUpdateServer(player, item, true);
+					}
 					return;
 				}
 			}
 
-			useItem(item, player);
+			if ( prompt == PROMPT_UNEQUIP_FOR_DROP )
+			{
+				useItem(item, player, players[player]->entity, true);
+			}
+			else
+			{
+				useItem(item, player);
+			}
 			return;
 		}
 		else
@@ -13207,6 +14117,10 @@ void Player::Hotbar_t::updateHotbar()
 			if ( controller )
 			{
 				glyph->disabled = slot->isDisabled();
+				if ( !player.shootmode )
+				{
+					glyph->disabled = true;
+				}
 			}
 
 			slot->findField("slot num text")->setDisabled(true); // disable the hotkey prompts per slot
@@ -14007,10 +14921,15 @@ void Player::SkillSheet_t::closeSkillSheet()
 	{
 		player.shootmode = true;
 	}
+	else
+	{
+		player.GUI.returnToPreviousActiveModule();
+	}
 }
 
 void Player::SkillSheet_t::openSkillSheet()
 {
+	player.GUI.previousModule = player.GUI.activeModule;
 	if ( player.shootmode )
 	{
 		players[player.playernum]->openStatusScreen(GUI_MODE_NONE,
@@ -16084,14 +17003,14 @@ void Player::SkillSheet_t::processSkillSheet()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				if ( Input::inputs[player.playernum].binaryToggle("MenuMouseWheelDownAlt") )
 				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelDownAlt");
 					scrollInertia = std::min(scrollInertia + .05, .15);
 				}
-				if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				if ( Input::inputs[player.playernum].binaryToggle("MenuMouseWheelUpAlt") )
 				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelUpAlt");
 					scrollInertia = std::max(scrollInertia - .05, -.15);
 				}
 			}
@@ -16431,14 +17350,14 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 				{
-					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
 					{
-						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
 						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					}
-					if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
 					{
-						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
 				}
