@@ -1126,7 +1126,7 @@ void gameLogic(void)
 									}
 
 									// lava bubbles
-									if ( lavatiles[map.tiles[index]] )
+									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
 										{
@@ -1407,8 +1407,10 @@ void gameLogic(void)
 							&& entity->behavior != &actHudAdditional
 							&& entity->behavior != &actHudArrowModel
 							&& entity->behavior != &actLeftHandMagic
-							&& entity->behavior != &actRightHandMagic )
+							&& entity->behavior != &actRightHandMagic
+							&& entity->behavior != &actFlame )
 						{
+							TimerExperiments::updateEntityInterpolationPosition(entity);
 							continue;
 						}
 						int ox = -1;
@@ -2463,7 +2465,7 @@ void gameLogic(void)
 									}
 
 									// lava bubbles
-									if ( lavatiles[map.tiles[index]] )
+									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
 										{
