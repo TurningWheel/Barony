@@ -3039,6 +3039,10 @@ namespace ConsoleCommands {
 				break;
 			}
 		}
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			Input::inputs[c].refresh();
+		}
 		});
 
 	static ConsoleCommand ccmd_cycledeadzoneleft("/cycledeadzoneleft", "", []CCMD{
