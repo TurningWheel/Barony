@@ -870,6 +870,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					activateModule(MODULE_HOTBAR);
 					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_HOTBAR;
 			}
@@ -883,6 +885,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 					}
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -894,6 +898,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
@@ -905,6 +911,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					activateModule(MODULE_SPELLS);
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_SPELLS;
 			}
@@ -914,6 +922,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_INVENTORY;
 			}
@@ -925,6 +935,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
@@ -945,6 +957,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
@@ -955,6 +969,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
+				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
@@ -968,6 +984,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					{
 						activateModule(MODULE_SPELLS);
 						warpControllerToModule(false);
+						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_SPELLS;
 				}
@@ -977,6 +995,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					{
 						activateModule(MODULE_INVENTORY);
 						warpControllerToModule(false);
+						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_INVENTORY;
 				}
@@ -989,6 +1009,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					{
 						activateModule(MODULE_SPELLS);
 						warpControllerToModule(false);
+						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_SPELLS;
 				}
@@ -1003,6 +1025,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 					}
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1015,6 +1039,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					activateModule(MODULE_SPELLS);
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_SPELLS;
 			}
@@ -1024,6 +1050,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
+					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_INVENTORY;
 			}

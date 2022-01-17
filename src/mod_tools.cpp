@@ -3715,6 +3715,9 @@ bool GlyphRenderer_t::readFromFile()
 
 void GlyphRenderer_t::renderGlyphsToPNGs()
 {
+#ifdef EDITOR
+	return;
+#else
 	printlog("[Glyph Export]: Starting export...");
 	int errors = 0;
 	for ( auto& keyValue : allGlyphs )
@@ -3859,4 +3862,5 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 	}
 
 	printlog("[Glyph Export]: Completed export of %d glyphs with %d errors.", allGlyphs.size(), errors);
+#endif
 }
