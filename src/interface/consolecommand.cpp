@@ -2994,10 +2994,12 @@ namespace ConsoleCommands {
 		});
 #endif
 	static ConsoleCommand ccmd_cyclekeyboard("/cyclekeyboard", "assign the keyboard to another player", []CCMD{
+		bool found = false;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(i) )
 			{
+				found = true;
 				if ( i + 1 >= MAXPLAYERS )
 				{
 					inputs.setPlayerIDAllowedKeyboard(0);
@@ -3018,6 +3020,10 @@ namespace ConsoleCommands {
 				}
 				break;
 			}
+		}
+		if ( !found )
+		{
+			inputs.setPlayerIDAllowedKeyboard(0);
 		}
 		});
 
