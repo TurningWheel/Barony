@@ -2844,6 +2844,7 @@ void actPlayer(Entity* my)
 	}
 	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_5] )
 	{
+		keystatus[SDL_SCANCODE_KP_5] = 0;
 		consoleCommand("/cyclekeyboard");
 	}
 	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_0] )
