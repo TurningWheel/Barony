@@ -4456,7 +4456,7 @@ void ingameHud()
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
-		players[player]->GUI.handleModuleNavigation();
+		players[player]->GUI.handleModuleNavigation(false);
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();

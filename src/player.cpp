@@ -845,129 +845,197 @@ bool Player::GUI_t::returnToPreviousActiveModule()
 	return true;
 }
 
-void Player::GUI_t::handleModuleNavigation()
+Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation)
 {
 	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
 		|| nohud || !player.isLocalPlayer() )
 	{
-		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-		return;
+		if ( !checkDestinationOnly )
+		{
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+		}
+		return MODULE_NONE;
 	}
 
-	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER) )
+	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
+		|| (checkLeftNavigation && checkDestinationOnly) )
 	{
-		if ( activeModule == Player::GUI_t::MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 			{
-				activateModule(Player::GUI_t::MODULE_HOTBAR);
-				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-				warpControllerToModule(false);
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_HOTBAR);
+					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+					warpControllerToModule(false);
+				}
+				return MODULE_HOTBAR;
 			}
 			else
 			{
-				activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-				if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+				if ( !checkDestinationOnly )
 				{
-					player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
 				}
-				warpControllerToModule(false);
+				return MODULE_CHARACTERSHEET;
 			}
 		}
-		else if ( activeModule == Player::GUI_t::MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
 		{
-			activateModule(Player::GUI_t::MODULE_HOTBAR);
-			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			warpControllerToModule(false);
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+			}
+			return MODULE_HOTBAR;
 		}
-		else if ( activeModule == Player::GUI_t::MODULE_HOTBAR )
+		else if ( activeModule == MODULE_HOTBAR )
 		{
 			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
 			{
-				activateModule(Player::GUI_t::MODULE_SPELLS);
-				warpControllerToModule(false);
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_SPELLS);
+					warpControllerToModule(false);
+				}
+				return MODULE_SPELLS;
 			}
 			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
 			{
-				activateModule(Player::GUI_t::MODULE_INVENTORY);
-				warpControllerToModule(false);
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+				}
+				return MODULE_INVENTORY;
 			}
 		}
-		else if ( activeModule == Player::GUI_t::MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
 		{
-			activateModule(Player::GUI_t::MODULE_HOTBAR);
-			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			warpControllerToModule(false);
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+			}
+			return MODULE_HOTBAR;
 		}
 
-		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		if ( !checkDestinationOnly )
+		{
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		}
 	}
-	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) )
+	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+		|| (!checkLeftNavigation && checkDestinationOnly) )
 	{
-		if ( activeModule == Player::GUI_t::MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
 		{
-			activateModule(Player::GUI_t::MODULE_HOTBAR);
-			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			warpControllerToModule(false);
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+			}
+			return MODULE_HOTBAR;
 		}
-		else if ( activeModule == Player::GUI_t::MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
 		{
-			activateModule(Player::GUI_t::MODULE_HOTBAR);
-			player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-			warpControllerToModule(false);
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_HOTBAR);
+				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+				warpControllerToModule(false);
+			}
+			return MODULE_HOTBAR;
 		}
-		else if ( activeModule == Player::GUI_t::MODULE_HOTBAR )
+		else if ( activeModule == MODULE_HOTBAR )
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
 				{
-					activateModule(Player::GUI_t::MODULE_SPELLS);
-					warpControllerToModule(false);
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_SPELLS);
+						warpControllerToModule(false);
+					}
+					return MODULE_SPELLS;
 				}
 				else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
 				{
-					activateModule(Player::GUI_t::MODULE_INVENTORY);
-					warpControllerToModule(false);
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_INVENTORY);
+						warpControllerToModule(false);
+					}
+					return MODULE_INVENTORY;
 				}
 			}
 			else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				if ( player.inventoryUI.spellPanel.isInteractable )
 				{
-					activateModule(Player::GUI_t::MODULE_SPELLS);
-					warpControllerToModule(false);
+					if ( !checkDestinationOnly )
+					{
+						activateModule(MODULE_SPELLS);
+						warpControllerToModule(false);
+					}
+					return MODULE_SPELLS;
 				}
 			}
 			else
 			{
-				activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
-				if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+				if ( !checkDestinationOnly )
 				{
-					player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
 				}
-				warpControllerToModule(false);
+				return MODULE_CHARACTERSHEET;
 			}
 		}
-		else if ( activeModule == Player::GUI_t::MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
 		{
 			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
 			{
-				activateModule(Player::GUI_t::MODULE_SPELLS);
-				warpControllerToModule(false);
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_SPELLS);
+					warpControllerToModule(false);
+				}
+				return MODULE_SPELLS;
 			}
 			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
 			{
-				activateModule(Player::GUI_t::MODULE_INVENTORY);
-				warpControllerToModule(false);
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+				}
+				return MODULE_INVENTORY;
 			}
 		}
 
-		inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		if ( !checkDestinationOnly )
+		{
+			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+		}
 	}
+	return MODULE_NONE;
 }
 
 bool Player::GUI_t::handleInventoryMovement()
