@@ -77,10 +77,9 @@ public:
         ConsoleCommand(_name, _desc, &ConsoleVariable::setter)
     {
         add_to_map();
-        (*this)(_default);
+        data = _default;
     }
 
-    void operator()(const T& arg);
     void operator=(const char* arg);
     T& operator*();
 

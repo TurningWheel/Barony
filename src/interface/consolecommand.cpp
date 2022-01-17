@@ -114,16 +114,6 @@ template<> void ConsoleVariable<std::string>::operator=(const char* arg)
         name + 1, data.c_str());
 }
 
-template<> void ConsoleVariable<std::string>::operator()(const std::string& arg)
-{
-    auto& str = arg;
-    const char* args[2] = {
-        name,
-        str.c_str(),
-    };
-    setter(2, args);
-}
-
 /*******************************************************************************
     int cvars
 *******************************************************************************/
@@ -135,16 +125,6 @@ template<> void ConsoleVariable<int>::operator=(const char* arg)
         name + 1, data);
 }
 
-template<> void ConsoleVariable<int>::operator()(const int& arg)
-{
-    auto str = std::to_string(arg);
-    const char* args[2] = {
-        name,
-        str.c_str(),
-    };
-    setter(2, args);
-}
-
 /*******************************************************************************
     float cvars
 *******************************************************************************/
@@ -154,16 +134,6 @@ template<> void ConsoleVariable<float>::operator=(const char* arg)
     data = strtof(arg, nullptr);
     messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
         name + 1, data);
-}
-
-template<> void ConsoleVariable<float>::operator()(const float& arg)
-{
-    auto str = std::to_string(arg);
-    const char* args[2] = {
-        name,
-        str.c_str(),
-    };
-    setter(2, args);
 }
 
 /*-------------------------------------------------------------------------------
