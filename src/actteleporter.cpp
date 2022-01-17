@@ -66,13 +66,13 @@ void Entity::actTeleporter()
 					switch ( teleporterType )
 					{
 						case 0:
-							messagePlayer(i, language[2378]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[2378]);
 							break;
 						case 1:
-							messagePlayer(i, language[506]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[506]);
 							break;
 						case 2:
-							messagePlayer(i, language[510]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[510]);
 							break;
 						default:
 							break;

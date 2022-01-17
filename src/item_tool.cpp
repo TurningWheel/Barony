@@ -28,12 +28,12 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		playSoundEntity(&entity, 91, 64);
 		if ( entity.skill[4] )
 		{
-			messagePlayer(player, language[1097]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[1097]);
 			entity.unlockChest();
 		}
 		else
 		{
-			messagePlayer(player, language[1098]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[1098]);
 			entity.lockChest();
 		}
 	}
@@ -45,23 +45,23 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			if ( entity.doorDisableLockpicks == 1 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(player, color, language[3101]); // disabled.
+				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else
 			{
-				messagePlayer(player, language[1099]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[1099]);
 				entity.doorLocked = 0;
 			}
 		}
 		else
 		{
-			messagePlayer(player, language[1100]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[1100]);
 			entity.doorLocked = 1;
 		}
 	}
 	else
 	{
-		messagePlayer(player, language[1101], getName());
+		messagePlayer(player, MESSAGE_INTERACTION, language[1101], getName());
 	}
 }
 
@@ -97,37 +97,37 @@ void Item::applyLockpick(int player, Entity& entity)
 		{
 			if ( gyrobotUsing )
 			{
-				messagePlayer(player, language[3865]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3865]);
 			}
 			else
 			{
-				messagePlayer(player, language[3605]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3605]);
 			}
-			messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3606]);
+			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorGreen(*mainsurface), language[3606]);
 		}
 		else if ( entity.skill[22] == BOMB_TRIGGER_ALL )
 		{
 			if ( gyrobotUsing )
 			{
-				messagePlayer(player, language[3866]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3866]);
 			}
 			else
 			{
-				messagePlayer(player, language[3607]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3607]);
 			}
-			messagePlayerColor(player, uint32ColorRed(*mainsurface), language[3608]);
+			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorRed(*mainsurface), language[3608]);
 		}
 		else if ( entity.skill[22] == BOMB_TELEPORT_RECEIVER )
 		{
 			if ( gyrobotUsing )
 			{
-				messagePlayer(player, language[3867]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3867]);
 			}
 			else
 			{
-				messagePlayer(player, language[3609]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3609]);
 			}
-			messagePlayer(player, language[3610]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[3610]);
 
 			playSoundEntity(&entity, 166, 128); // invisible.ogg
 			createParticleDropRising(&entity, 576, 1.0);
@@ -155,20 +155,20 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Unlock chest.
 				playSoundEntity(&entity, 91, 64);
-				messagePlayer(player, language[1097]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[1097]);
 				if ( capstoneUnlocked && !entity.chestPreventLockpickCapstoneExploit )
 				{
 					if ( rand() % 2 == 0 )
 					{
 						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600), static_cast<Status>(SERVICABLE + rand() % 2), 0 + rand() % 2, 1, rand(), false, nullptr);
 						entity.addItemToChest(generated);
-						messagePlayer(player, language[3897]);
+						messagePlayer(player, MESSAGE_INTERACTION, language[3897]);
 					}
 					else
 					{
 						int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
 						stats[player]->GOLD += goldAmount;
-						messagePlayerColor(player, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
+						messagePlayerColor(player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), language[4088], goldAmount);
 					}
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
@@ -181,7 +181,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( rand() % 20 == 0 )
 						{
-							messagePlayer(player, language[3689], language[675]);
+							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[675]);
 						}
 					}
 
@@ -207,7 +207,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Failed to unlock chest.
 				playSoundEntity(&entity, 92, 64);
-				messagePlayer(player, language[1102]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[1102]);
 				bool tryDegradeLockpick = true;
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
@@ -223,7 +223,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( rand() % 20 == 0 )
 						{
-							messagePlayer(player, language[3689], language[675]);
+							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[675]);
 							tryDegradeLockpick = false;
 						}
 					}
@@ -244,11 +244,11 @@ void Item::applyLockpick(int player, Entity& entity)
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( status != BROKEN )
 						{
-							messagePlayer(player, language[1103]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[1103]);
 						}
 						else
 						{
-							messagePlayer(player, language[1104]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, language[1104]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
@@ -266,7 +266,7 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		else
 		{
-			messagePlayer(player, language[1105]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[1105]);
 		}
 	}
 	else if ( entity.behavior == &actDoor )
@@ -286,7 +286,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			if ( entity.doorDisableLockpicks == 1 )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(player, color, language[3101]); // disabled.
+				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else if ( capstoneUnlocked 
 				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200
@@ -294,7 +294,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
-				messagePlayer(player, language[1099]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[1099]);
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
@@ -306,7 +306,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( rand() % 20 == 0 )
 						{
-							messagePlayer(player, language[3689], language[674]);
+							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[674]);
 						}
 					}
 				}
@@ -316,7 +316,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Failed to unlock door.
 				playSoundEntity(&entity, 92, 64);
-				messagePlayer(player, language[1106]);
+				messagePlayer(player, MESSAGE_INTERACTION, language[1106]);
 				bool tryDegradeLockpick = true;
 				if ( !entity.doorPreventLockpickExploit )
 				{
@@ -332,7 +332,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( rand() % 20 == 0 )
 						{
-							messagePlayer(player, language[3689], language[674]);
+							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[674]);
 							tryDegradeLockpick = false;
 						}
 					}
@@ -353,11 +353,11 @@ void Item::applyLockpick(int player, Entity& entity)
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( status != BROKEN )
 						{
-							messagePlayer(player, language[1103]);
+							messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, language[1103]);
 						}
 						else
 						{
-							messagePlayer(player, language[1104]);
+							messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, language[1104]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
@@ -375,7 +375,7 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		else
 		{
-			messagePlayer(player, language[1107]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[1107]);
 		}
 	}
 	else if ( entity.behavior == &actMonster )
@@ -391,7 +391,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				real_t yawDiff = entity.yawDifferenceFromPlayer(player);
 				if ( yawDiff < PI )
 				{
-					messagePlayer(player, language[2524], getName(), getMonsterLocalizedName(myStats->type).c_str());
+					messagePlayer(player, MESSAGE_INTERACTION, language[2524], getName(), getMonsterLocalizedName(myStats->type).c_str());
 					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
 					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (rand() % chance > 0) )
 					{
@@ -403,7 +403,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						myStats->EFFECTS[EFF_PARALYZED] = true;
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
 						playSoundEntity(&entity, 76, 128);
-						messagePlayer(player, language[2527], getMonsterLocalizedName(myStats->type).c_str());
+						messagePlayer(player, MESSAGE_COMBAT, language[2527], getMonsterLocalizedName(myStats->type).c_str());
 
 						if ( rand() % 3 == 0 )
 						{
@@ -437,7 +437,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					else
 					{
-						messagePlayer(player, language[2526], getMonsterLocalizedName(myStats->type).c_str());
+						messagePlayer(player, MESSAGE_COMBAT, language[2526], getMonsterLocalizedName(myStats->type).c_str());
 						myStats->EFFECTS[EFF_CONFUSED] = true;
 						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 						myStats->EFFECTS[EFF_PARALYZED] = true;
@@ -464,11 +464,11 @@ void Item::applyLockpick(int player, Entity& entity)
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( status != BROKEN )
 						{
-							messagePlayer(player, language[1103]);
+							messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, language[1103]);
 						}
 						else
 						{
-							messagePlayer(player, language[1104]);
+							messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, language[1104]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
@@ -484,18 +484,18 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				else
 				{
-					messagePlayer(player, language[2525], getMonsterLocalizedName(myStats->type).c_str());
+					messagePlayer(player, MESSAGE_INTERACTION, language[2525], getMonsterLocalizedName(myStats->type).c_str());
 				}
 			}
 		}
 		else
 		{
-			messagePlayer(player, language[2528], getName());
+			messagePlayer(player, MESSAGE_INTERACTION, language[2528], getName());
 		}
 	}
 	else
 	{
-		messagePlayer(player, language[1101], getName());
+		messagePlayer(player, MESSAGE_HINT, language[1101], getName());
 	}
 }
 
@@ -510,29 +510,29 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			consumeItem(item, player);
 			return;
 		}
-		messagePlayer(player, language[2368]);
+		messagePlayer(player, MESSAGE_INTERACTION, language[2368]);
 		bool playSound = true;
 
 		if ( type == ARTIFACT_ORB_BLUE && entity.pedestalOrbType == 1 )
 		{
-			messagePlayer(player, language[2370]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[2370]);
 		}
 		else if ( type == ARTIFACT_ORB_RED && entity.pedestalOrbType == 2 )
 		{
-			messagePlayer(player, language[2370]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[2370]);
 		}
 		else if ( type == ARTIFACT_ORB_PURPLE && entity.pedestalOrbType == 3 )
 		{
-			messagePlayer(player, language[2370]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[2370]);
 		}
 		else if ( type == ARTIFACT_ORB_GREEN && entity.pedestalOrbType == 4 )
 		{
-			messagePlayer(player, language[2370]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[2370]);
 		}
 		else
 		{
 			// incorrect orb.
-			messagePlayer(player, language[2369]);
+			messagePlayer(player, MESSAGE_INTERACTION, language[2369]);
 			playSound = false;
 		}
 
@@ -566,13 +566,13 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			switch ( this->type )
 			{
 				case ARTIFACT_ORB_BLUE:
-					messagePlayer(player, language[3889], entity.getStats()->name);
+					messagePlayer(player, MESSAGE_WORLD, language[3889], entity.getStats()->name);
 					break;
 				case ARTIFACT_ORB_RED:
-					messagePlayer(player, language[3890], entity.getStats()->name);
+					messagePlayer(player, MESSAGE_WORLD, language[3890], entity.getStats()->name);
 					break;
 				case ARTIFACT_ORB_GREEN:
-					messagePlayer(player, language[3888], entity.getStats()->name);
+					messagePlayer(player, MESSAGE_WORLD, language[3888], entity.getStats()->name);
 					break;
 				default:
 					break;
@@ -596,7 +596,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 	}
 	else
 	{
-		messagePlayer(player, language[2371]);
+		messagePlayer(player, MESSAGE_HINT, language[2371]);
 	}
 }
 
@@ -611,11 +611,11 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				if ( entity.behavior == &actFountain )
 				{
-					messagePlayer(player, language[467]);
+					messagePlayer(player, MESSAGE_INTERACTION, language[467]);
 				}
 				else
 				{
-					messagePlayer(player, language[580]);
+					messagePlayer(player, MESSAGE_INTERACTION, language[580]);
 				}
 			}
 			return;
@@ -765,7 +765,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		if ( item )
 		{
 			itemPickup(player, item);
-			messagePlayer(player, language[3353], item->description());
+			messagePlayer(player, MESSAGE_INTERACTION, language[3353], item->description());
 			if ( players[player] && players[player]->entity )
 			{
 				playSoundEntity(players[player]->entity, 401, 64);
@@ -860,7 +860,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 	}
 	else
 	{
-		messagePlayer(player, language[2371]);
+		messagePlayer(player, MESSAGE_HINT, language[2371]);
 	}
 }
 

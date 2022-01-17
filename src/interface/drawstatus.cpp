@@ -1195,11 +1195,11 @@ void drawStatus(int player)
 									{
 										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 										{
-											messagePlayer(player, language[3488]); // unable to use with current level.
+											messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
 										}
 										else
 										{
-											messagePlayer(player, language[3432]); // unable to use in current form message.
+											messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
 										}
 									}
 								}
@@ -1214,11 +1214,11 @@ void drawStatus(int player)
 								{
 									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 									{
-										messagePlayer(player, language[3488]); // unable to use with current level.
+										messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
 									}
 									else
 									{
-										messagePlayer(player, language[3432]); // unable to use in current form message.
+										messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
 									}
 								}
 							}
@@ -2211,11 +2211,11 @@ void drawStatus(int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
 				}
 			}
 		}
@@ -2920,11 +2920,11 @@ void drawStatusNew(const int player)
 									{
 										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 										{
-											messagePlayer(player, language[3488]); // unable to use with current level.
+											messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
 										}
 										else
 										{
-											messagePlayer(player, language[3432]); // unable to use in current form message.
+											messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
 										}
 									}
 								}
@@ -2939,11 +2939,11 @@ void drawStatusNew(const int player)
 								{
 									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 									{
-										messagePlayer(player, language[3488]); // unable to use with current level.
+										messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
 									}
 									else
 									{
-										messagePlayer(player, language[3432]); // unable to use in current form message.
+										messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
 									}
 								}
 							}
@@ -3706,11 +3706,11 @@ void drawStatusNew(const int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
 				}
 			}
 		}

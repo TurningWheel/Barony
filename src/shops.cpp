@@ -157,7 +157,7 @@ void startTradingServer(Entity* entity, int player)
 	}
 	entity->skill[0] = 4; // talk state
 	entity->skill[1] = players[player]->entity->getUID();
-	messagePlayer(player, language[1122], stats->name);
+	messagePlayer(player, MESSAGE_HINT, language[1122], stats->name);
 }
 
 /*-------------------------------------------------------------------------------
@@ -206,7 +206,7 @@ void buyItemFromShop(const int player, Item* item)
 		{
 			item->count = 1;
 		}
-		messagePlayer(player, language[1123], item->description(), item->buyValue(player));
+		messagePlayer(player, MESSAGE_INVENTORY, language[1123], item->description(), item->buyValue(player));
 		item->count = ocount;
 		if ( multiplayer != CLIENT )
 		{
@@ -313,11 +313,11 @@ void sellItemToShop(const int player, Item* item)
 	{
 		if ( item->beatitude > 0 )
 		{
-			messagePlayer(player, language[3219], item->getName());
+			messagePlayer(player, MESSAGE_INVENTORY, language[3219], item->getName());
 		}
 		else
 		{
-			messagePlayer(player, language[1124], item->getName());
+			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
 		}
 		playSound(90, 64);
 		return;
@@ -479,7 +479,7 @@ void sellItemToShop(const int player, Item* item)
 	{
 		item->count = 1;
 	}
-	messagePlayer(player, language[1125], item->description(), item->sellValue(player));
+	messagePlayer(player, MESSAGE_INVENTORY, language[1125], item->description(), item->sellValue(player));
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{

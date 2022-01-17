@@ -1829,6 +1829,8 @@ real_t getLightAt(int x, int y)
 
 -------------------------------------------------------------------------------*/
 
+#define TRANSPARENT_TILE 450
+
 void glDrawWorld(view_t* camera, int mode)
 {
 	int x, y, z;
@@ -1995,6 +1997,12 @@ void glDrawWorld(view_t* camera, int mode)
 						continue;
 					}
 
+					// skip special transparent tile
+					if ( map.tiles[index] == TRANSPARENT_TILE )
+					{
+					    continue;
+					}
+
 					// bind texture
 					if ( mode == REALCOLORS )
 					{
@@ -2024,7 +2032,8 @@ void glDrawWorld(view_t* camera, int mode)
 					}
 
 					// draw east wall
-					if ( x == map.width - 1 || !map.tiles[index + MAPLAYERS * map.height] )
+					int easter = index + MAPLAYERS * map.height;
+					if ( x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE )
 					{
 						if ( smoothlighting && mode == REALCOLORS )
 						{
@@ -2102,7 +2111,8 @@ void glDrawWorld(view_t* camera, int mode)
 					}
 
 					// draw south wall
-					if ( y == map.height - 1 || !map.tiles[index + MAPLAYERS] )
+					int souther = index + MAPLAYERS;
+					if ( y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE )
 					{
 						if ( smoothlighting && mode == REALCOLORS )
 						{
@@ -2176,7 +2186,8 @@ void glDrawWorld(view_t* camera, int mode)
 					}
 
 					// draw west wall
-					if ( x == 0 || !map.tiles[index - MAPLAYERS * map.height] )
+					int wester = index - MAPLAYERS * map.height;
+					if ( x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE )
 					{
 						if ( smoothlighting && mode == REALCOLORS )
 						{
@@ -2250,7 +2261,8 @@ void glDrawWorld(view_t* camera, int mode)
 					}
 
 					// draw north wall
-					if ( y == 0 || !map.tiles[index - MAPLAYERS] )
+					int norther = index - MAPLAYERS;
+					if ( y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE )
 					{
 						if ( smoothlighting && mode == REALCOLORS )
 						{

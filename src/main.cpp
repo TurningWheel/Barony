@@ -516,4 +516,6 @@ void printlog(const char* str, ...)
 	}
 	fprintf( stderr, "[%s] %s", buffer, newstr );
 	fflush( stderr );
+	fprintf( stdout, "[%s] %s", buffer, newstr );
+	fflush( stdout );
 }

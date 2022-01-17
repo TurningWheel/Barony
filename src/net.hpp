@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "game.hpp"
 #include <queue>
 
 #define DEFAULT_PORT 57165
@@ -24,10 +25,10 @@ extern list_t lobbyChatboxMessages;
 int power(int a, int b);
 int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool tryReliable = false);
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
-void messagePlayer(int player, char const * const message, ...);
-void messageLocalPlayers(char const * const message, ...);
-void messagePlayerColor(int player, Uint32 color, char const * const message, ...);
-void messageLocalPlayersColor(Uint32 color, char const * const message, ...);
+bool messagePlayer(int player, Uint32 type, char const * const message, ...);
+bool messageLocalPlayers(Uint32 type, char const * const message, ...);
+bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * const message, ...);
+bool messageLocalPlayersColor(Uint32 color, Uint32 type, char const * const message, ...);
 void sendEntityUDP(Entity* entity, int c, bool guarantee);
 void sendEntityTCP(Entity* entity, int c);
 void sendMapSeedTCP(int c);

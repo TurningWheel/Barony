@@ -550,7 +550,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 		{
 			std::string user = msg.substr(1, msg.find("!") - 1);
 			std::string formattedMsg = msg.substr(msgPrefix.length() + findMsg);
-			messagePlayer(clientnum, "IRC: [@%s]: %s", user.c_str(), formattedMsg.c_str());
+			messagePlayer(clientnum, MESSAGE_MISC, "IRC: [@%s]: %s", user.c_str(), formattedMsg.c_str());
 		}
 		return;
 	}

@@ -118,7 +118,7 @@ void actTorch(Entity* my)
 					if ( trySalvage )
 					{
 						// auto salvage this item, don't pick it up.
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
 						bool salvaged = false;
 						if ( GenericGUI[i].isItemSalvageable(item, i) )
 						{
@@ -152,7 +152,7 @@ void actTorch(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
 						list_RemoveNode(my->light->node);
 						list_RemoveNode(my->mynode);
 						itemPickup(i, item);
@@ -267,7 +267,7 @@ void actCrystalShard(Entity* my)
 					if ( trySalvage )
 					{
 						// auto salvage this item, don't pick it up.
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
 						bool salvaged = false;
 						if ( GenericGUI[i].isItemSalvageable(item, i) )
 						{
@@ -301,7 +301,7 @@ void actCrystalShard(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
 						list_RemoveNode(my->light->node);
 						list_RemoveNode(my->mynode);
 						itemPickup(i, item);

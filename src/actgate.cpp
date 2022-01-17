@@ -116,7 +116,7 @@ void Entity::actGate()
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, language[475]);
+					messagePlayer(i, MESSAGE_INTERACTION, language[475]);
 				}
 			}
 		}

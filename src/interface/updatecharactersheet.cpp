@@ -330,7 +330,7 @@ void updateCharacterSheet(const int player)
 		}
 		if ( amount == 0 )
 		{
-			messagePlayer(player, language[2593]);
+			messagePlayer(player, MESSAGE_INVENTORY, language[2593]);
 			return;
 		}
 		stats[player]->GOLD -= amount;
@@ -368,7 +368,7 @@ void updateCharacterSheet(const int player)
 			}
 			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
 		}
-		messagePlayer(player, language[2594], amount);
+		messagePlayer(player, MESSAGE_INVENTORY, language[2594], amount);
 	}
 }
 

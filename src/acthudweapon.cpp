@@ -994,7 +994,7 @@ void actHudWeapon(Entity* my)
 		{
 			if ( cast_animation[HUDWEAPON_PLAYERNUM].active || cast_animation[HUDWEAPON_PLAYERNUM].active_spellbook )
 			{
-				messagePlayer(HUDWEAPON_PLAYERNUM, language[1301]);
+				messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_COMBAT, language[1301]);
 				spellcastingAnimationManager_deactivate(&cast_animation[HUDWEAPON_PLAYERNUM]);
 			}
 			if ( castStrikeAnimation )
@@ -1019,12 +1019,12 @@ void actHudWeapon(Entity* my)
 					{
 						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[2997]); // prevent attack.
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, language[2997]); // prevent attack.
 							return;
 						}
 						if ( achievementBrawlerMode )
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[2998]); // notify no longer eligible for achievement but still atk.
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, language[2998]); // notify no longer eligible for achievement but still atk.
 						}
 						conductGameChallenges[CONDUCT_BRAWLER] = 0;
 					}
@@ -1390,7 +1390,7 @@ void actHudWeapon(Entity* my)
 									}
 									if ( !foundWall )
 									{
-										messagePlayer(HUDWEAPON_PLAYERNUM, language[503], item->getName());
+										messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, language[503], item->getName());
 									}
 								}
 							}
@@ -1409,11 +1409,11 @@ void actHudWeapon(Entity* my)
 							{
 								if ( statGetINT(stats[HUDWEAPON_PLAYERNUM], player) <= 10 )
 								{
-									messagePlayer(HUDWEAPON_PLAYERNUM, language[2373], item->getName());
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, language[2373], item->getName());
 								}
 								else
 								{
-									messagePlayer(HUDWEAPON_PLAYERNUM, language[2372], item->getName());
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, language[2372], item->getName());
 								}
 							}
 						}
@@ -1431,7 +1431,7 @@ void actHudWeapon(Entity* my)
 								}
 								else
 								{
-									messagePlayer(HUDWEAPON_PLAYERNUM, language[3336]);
+									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, language[3336]);
 								}
 								throwGimpTimer = TICKS_PER_SECOND / 2;
 							}
@@ -2528,11 +2528,11 @@ void actHudWeapon(Entity* my)
 						throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
 						if ( stats[HUDWEAPON_PLAYERNUM]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[3884]);
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_MISC, language[3884]);
 						}
 						else
 						{
-							messagePlayer(HUDWEAPON_PLAYERNUM, language[3883]);
+							messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_PROGRESSION, language[3883]);
 						}
 					}
 					else if ( stats[HUDWEAPON_PLAYERNUM]->weapon && player )

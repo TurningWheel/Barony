@@ -164,6 +164,8 @@ namespace MainMenu {
 		bool progression = true;
 		bool interaction = true;
 		bool inspection = true;
+		bool hint = true;
+		bool obituary = true;
 		inline void save();
 		static inline Messages load();
 		static inline Messages reset();
@@ -309,7 +311,7 @@ namespace MainMenu {
 	static void createInviteButton(int index);
 	static void createWaitingStone(int index);
 	static void createLobby(LobbyType);
-	static void createLobbyBrowser();
+	static void createLobbyBrowser(Button&);
 
 /******************************************************************************/
 
@@ -759,6 +761,8 @@ namespace MainMenu {
 	}
 
 	void InventorySorting::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("hotbarWeapons", hotbarWeapons);
 		file->property("hotbarArmor", hotbarArmor);
 		file->property("hotbarAmulets", hotbarAmulets);
@@ -835,6 +839,8 @@ namespace MainMenu {
 	}
 
 	void Bindings::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		Uint32 num_players = 4;
 		file->propertyName("players");
 		file->beginArray(num_players);
@@ -905,6 +911,8 @@ namespace MainMenu {
 	}
 
 	void Minimap::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("map_scale", map_scale);
 		file->property("icon_scale", icon_scale);
 		file->property("foreground_opacity", foreground_opacity);
@@ -914,12 +922,38 @@ namespace MainMenu {
 /******************************************************************************/
 
 	inline void Messages::save() {
-		// TODO record these message settings to some globally-accessible variables.
+		messagesEnabled = 0;
+		messagesEnabled |= combat ? MESSAGE_COMBAT : 0;
+		messagesEnabled |= status ? MESSAGE_STATUS : 0;
+		messagesEnabled |= inventory ? MESSAGE_INVENTORY : 0;
+		messagesEnabled |= equipment ? MESSAGE_EQUIPMENT : 0;
+		messagesEnabled |= world ? MESSAGE_WORLD : 0;
+		messagesEnabled |= chat ? MESSAGE_CHAT : 0;
+		messagesEnabled |= progression ? MESSAGE_PROGRESSION : 0;
+		messagesEnabled |= interaction ? MESSAGE_INTERACTION : 0;
+		messagesEnabled |= inspection ? MESSAGE_INSPECTION : 0;
+		messagesEnabled |= hint ? MESSAGE_HINT : 0;
+		messagesEnabled |= obituary ? MESSAGE_OBITUARY : 0;
+		messagesEnabled |= MESSAGE_MISC;
+#ifndef NDEBUG
+        messagesEnabled |= MESSAGE_DEBUG;
+#endif
 	}
 
 	inline Messages Messages::load() {
-		// TODO populate our variables with the values of some globally-accessed ones
-		return Messages::reset();
+		Messages messages;
+		messages.combat = messagesEnabled & MESSAGE_COMBAT;
+		messages.status = messagesEnabled & MESSAGE_STATUS;
+		messages.inventory = messagesEnabled & MESSAGE_INVENTORY;
+		messages.equipment = messagesEnabled & MESSAGE_EQUIPMENT;
+		messages.world = messagesEnabled & MESSAGE_WORLD;
+		messages.chat = messagesEnabled & MESSAGE_CHAT;
+		messages.progression = messagesEnabled & MESSAGE_PROGRESSION;
+		messages.interaction = messagesEnabled & MESSAGE_INTERACTION;
+		messages.inspection = messagesEnabled & MESSAGE_INSPECTION;
+		messages.hint = messagesEnabled & MESSAGE_HINT;
+		messages.obituary = messagesEnabled & MESSAGE_OBITUARY;
+		return messages;
 	}
 
 	inline Messages Messages::reset() {
@@ -927,6 +961,8 @@ namespace MainMenu {
 	}
 
 	void Messages::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("combat", combat);
 		file->property("status", status);
 		file->property("inventory", inventory);
@@ -936,6 +972,8 @@ namespace MainMenu {
 		file->property("progression", progression);
 		file->property("interaction", interaction);
 		file->property("inspection", inspection);
+		file->property("hint", hint);
+		file->property("obituary", obituary);
 	}
 
 	/******************************************************************************/
@@ -1023,8 +1061,30 @@ namespace MainMenu {
 		svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 		::skipintro = skipintro;
 
-		return result;
-	}
+        // TODO crossplay settings
+#ifdef USE_EOS
+        /*
+	    if ( LobbyHandler.settings_crossplayEnabled )
+	    {
+		    if ( !LobbyHandler.crossplayEnabled )
+		    {
+			    LobbyHandler.settings_crossplayEnabled = false;
+			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+		    }
+	    }
+	    else
+	    {
+		    if ( LobbyHandler.crossplayEnabled )
+		    {
+			    LobbyHandler.crossplayEnabled = false;
+			    EOS.CrossplayAccountManager.logOut = true;
+		    }
+	    }
+        */
+#endif
+
+	    return result;
+    }
 
 	inline AllSettings AllSettings::load() {
 		AllSettings settings;
@@ -1135,6 +1195,8 @@ namespace MainMenu {
 	}
 
 	void AllSettings::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);
@@ -1187,29 +1249,64 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static const char* intro_text =
-	u8"Long ago, the bustling town of Hamlet was the envy of all its neighbors,\nfor it was the most thriving city in all the land.#"
-	u8"Its prosperity was unmatched for generations until the evil Baron Herx came\nto power.#"
-	u8"The Baron, in his endless greed, forced the people to dig the hills for gold,\nthough the ground had never given such treasure before.#"
-	u8"Straining under the yoke of their master, the people planned his demise.\nThey tricked him with a promise of gold and sealed him within the mines.#"
-	u8"Free of their cruel master, the people returned to their old way of life.\nBut disasters shortly began to befall the village.#"
-	u8"Monsters and other evils erupted from the ground, transforming the village\ninto a ghost town.#"
-	u8"Many adventurers have descended into the mines to break the Baron's curse,\nbut none have returned.#"
-	u8"The town of Hamlet cries for redemption, and only a hero can save it\nfrom its curse...";
+	// Story text is formatted thus:
+	// carat ^ advances the image index
+	// pound # adds a pause
 
-	static void createStoryScreen() {
+	static void createStoryScreen(const char* file, void (*end_func)()) {
+	    char filename[PATH_MAX];
+	    (void)completePath(filename, file);
+
+        struct Story {
+            int version;
+            std::vector<std::string> text;
+            std::vector<std::string> images;
+
+            void serialize(FileInterface* file) {
+                if (file->isReading()) {
+                    text.clear();
+                    images.clear();
+                }
+                file->property("version", version);
+                file->property("text", text);
+                file->property("images", images);
+            }
+        };
+
+        static Story story;
+        static int story_text_chars;
+        static int story_text_lines;
+		static int story_text_pause;
+		static float story_text_scroll;
+		static float story_text_writer;
+		static bool story_text_end;
+		static int story_image_index;
+		static float story_image_fade;
+		static bool story_image_advanced;
+		static void (*story_end_func)();
+
+		bool read_result = FileHelper::readObject(filename, story);
+		if (!read_result) {
+		    assert(0 && "Story file not found!");
+		    return;
+		}
+		story_text_chars = 0;
+		story_text_lines = 0;
+		story_text_pause = 0;
+		story_text_scroll = 0.f;
+		story_text_writer = 0.f;
+		story_text_end = false;
+		story_image_index = 0;
+		story_image_fade = 0.f;
+		story_image_advanced = false;
+		story_end_func = end_func;
+
 		main_menu_frame->addImage(
 			main_menu_frame->getSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Story/intro1.png",
+			story.images[0].c_str(),
 			"backdrop"
 		);
-
-		static int story_text_pause = 0;
-		static int story_text_section = 0;
-		static float story_text_scroll = 0.f;
-		static float story_text_writer = 0.f;
-		static bool story_text_end = false;
 
 		auto back_button = main_menu_frame->addButton("back");
 		back_button->setHideSelectors(true);
@@ -1224,15 +1321,17 @@ namespace MainMenu {
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
 		back_button->setCallback([](Button&){
-			beginFade(MainMenu::FadeDestination::RootMainMenu);
+			story_end_func();
 			});
 		back_button->setWidgetBack("back");
 		back_button->select();
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
+		static const int text_box_lines = 2;
+
 		auto textbox1 = main_menu_frame->addFrame("story_text_box");
-		textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * 4, Frame::virtualScreenX - 240, font->height() * 3});
+		textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * (text_box_lines + 2), Frame::virtualScreenX - 240, font->height() * (text_box_lines + 1)});
 		textbox1->setActualSize(SDL_Rect{0, 0, textbox1->getSize().w, textbox1->getSize().h});
 		textbox1->setColor(makeColor(0, 0, 0, 127));
 		textbox1->setBorder(0);
@@ -1240,12 +1339,12 @@ namespace MainMenu {
 		auto textbox2 = textbox1->addFrame("story_text_box");
 		textbox2->setScrollBarsEnabled(false);
 		textbox2->setAllowScrollBinds(false);
-		textbox2->setSize(SDL_Rect{0, font->height() / 2, Frame::virtualScreenX - 240, font->height() * 2});
-		textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 16});
+		textbox2->setSize(SDL_Rect{font->height() / 2, font->height() / 2, Frame::virtualScreenX - 240 - font->height(), font->height() * text_box_lines});
+		textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 100});
 		textbox2->setHollow(true);
 		textbox2->setBorder(0);
 
-		auto field = textbox2->addField("text", 1024);
+		auto field = textbox2->addField("text", 1 << 16);
 		field->setFont(bigfont_outline);
 		field->setSize(textbox2->getActualSize());
 		field->setHJustify(Field::justify_t::CENTER);
@@ -1256,16 +1355,23 @@ namespace MainMenu {
 			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
 			auto textbox1 = static_cast<Frame*>(&widget);
 			auto story_font = Font::get(bigfont_outline); assert(story_font);
+			auto backdrop = main_menu_frame->findImage("backdrop"); assert(backdrop);
+			if (backdrop && !story_text_pause) {
+				story_image_fade = std::max(0.f, story_image_fade - inc);
+		        float factor = story_image_fade - story_font->height();
+		        Uint8 c = 255 * (fabs(factor) / story_font->height());
+		        backdrop->color = makeColor(c, c, c, 255);
+		        if (factor <= 0.f && story_image_advanced) {
+		            story_image_advanced = false;
+			        story_image_index = (story_image_index + 1) % story.images.size();
+			        backdrop->path = story.images[story_image_index];
+		        }
+			}
 			if (story_text_scroll > 0.f) {
 				int old_story_text_scroll = (int)story_text_scroll;
 				story_text_scroll -= inc;
 				if (story_text_scroll < 0.f) {
 					story_text_scroll = 0.f;
-				}
-				bool advanced_image = false;
-				if (old_story_text_scroll >= story_font->height() &&
-					story_text_scroll <= story_font->height()) {
-					advanced_image = true;
 				}
 				if ((int)story_text_scroll != old_story_text_scroll) {
 					auto textbox2 = textbox1->findFrame("story_text_box");
@@ -1274,25 +1380,14 @@ namespace MainMenu {
 					++size.y;
 					textbox2->setActualSize(size);
 				}
-				if (story_text_section % 2 == 0) {
-					auto backdrop = main_menu_frame->findImage("backdrop");
-					if (backdrop) {
-						Uint8 c = 255 * (fabs(story_text_scroll - story_font->height()) / story_font->height());
-						backdrop->color = makeColor(c, c, c, 255);
-						if (advanced_image) {
-							char c = backdrop->path[backdrop->path.size() - 5];
-							backdrop->path[backdrop->path.size() - 5] = c + 1;
-						}
-					}
-				}
 			} else {
 				if (story_text_pause > 0) {
 					--story_text_pause;
 					if (story_text_pause == 0) {
 						if (story_text_end == true) {
-							beginFade(MainMenu::FadeDestination::RootMainMenu);
+							story_end_func();
 						} else {
-							story_text_scroll = story_font->height() * 2;
+							story_text_scroll = story_font->height() * text_box_lines;
 						}
 					}
 				} else {
@@ -1303,25 +1398,42 @@ namespace MainMenu {
 						assert(textbox2);
 						auto text = textbox2->findField("text");
 						assert(text);
-						size_t len = strlen(text->getText());
-						if (len < strlen(intro_text)) {
-							char buf[1024] = { '\0' };
-							strcpy(buf, text->getText());
-							char c = intro_text[len];
-							if (c == '#') {
-								++story_text_section;
-								story_text_pause = fpsLimit * 5;
-								c = '\n';
-							} else if (c == ',') {
-								story_text_writer += fpsLimit / 5.f;
-							} else if (c == '.') {
-								story_text_writer += fpsLimit / 2.f;
+						size_t text_index = 0u;
+						char* buf = const_cast<char*>(text->getText());
+						int chars = story_text_chars;
+						size_t len = strlen(buf);
+					    for (;
+					        text_index < story.text.size() && chars >= story.text[text_index].size();
+					        chars -= story.text[text_index].size(), ++text_index);
+						if (text_index < story.text.size()) {
+							char pc = story.text[text_index][std::max(chars - 1, 0)];
+							char c = story.text[text_index][chars];
+							char nc = story.text[text_index][chars + 1];
+							++story_text_chars;
+							if (c == '\n') {
+							    ++story_text_lines;
+							    if (story_text_lines >= text_box_lines) {
+							        story_text_lines = 0;
+								    story_text_pause = fpsLimit * 5;
+							    }
+							    if (nc == '^') {
+							        story_image_advanced = true;
+							        story_image_fade = story_font->height() * 2;
+							    }
+							} else if (c == '^') {
+							    if (pc != '\n') {
+							        story_image_advanced = true;
+							        story_image_fade = story_font->height() * 2;
+							    }
+								return; // skip printing this character
+							} else if (c == '#') {
+								story_text_writer += fpsLimit / 10.f;
+								return; // skip printing this character
 							} else {
 								story_text_writer += fpsLimit / 30.f;
 							}
 							buf[len] = c;
 							buf[len + 1] = '\0';
-							text->setText(buf);
 						} else {
 							story_text_pause = fpsLimit * 5;
 							story_text_end = true;
@@ -1369,16 +1481,18 @@ namespace MainMenu {
 			strcpy((char*)net_packet->data, "SVFL");
 			SDLNet_Write32(svFlags, &net_packet->data[4]);
 			net_packet->len = 8;
-			for ( int c = 1; c < MAXPLAYERS; ++c ) {
-				if ( client_disconnected[c] ) {
-					continue;
-				}
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				messagePlayer(c, language[276]);
+			if (multiplayer == SERVER) {
+			    for ( int c = 1; c < MAXPLAYERS; ++c ) {
+				    if ( client_disconnected[c] ) {
+					    continue;
+				    }
+				    net_packet->address.host = net_clients[c - 1].host;
+				    net_packet->address.port = net_clients[c - 1].port;
+				    sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				    messagePlayer(c, MESSAGE_MISC, language[276]);
+			    }
 			}
-			messagePlayer(clientnum, language[276]);
+			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
 		}
 
 		// update volume for sound groups
@@ -2668,43 +2782,49 @@ namespace MainMenu {
 
 		y += settingsAddSubHeader(*subwindow, y, "categories_header", "Categories", true);
 
-		// TODO bind these to actual settings
-
 		y += settingsAddBooleanOption(*subwindow, y, "messages_combat", "Combat messages",
 			"Enable report of damage received or given in combat.",
-			true, nullptr);
+			allSettings.show_messages.combat, [](Button& button){allSettings.show_messages.combat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
 			"Enable report of player character status changes and other passive effects.",
-			true, nullptr);
+			allSettings.show_messages.status, [](Button& button){allSettings.show_messages.status = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
 			"Enable report of inventory and item appraisal messages.",
-			true, nullptr);
+			allSettings.show_messages.inventory, [](Button& button){allSettings.show_messages.inventory = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment", "Equipment messages",
 			"Enable report of player equipment changes.",
-			true, nullptr);
+			allSettings.show_messages.equipment, [](Button& button){allSettings.show_messages.equipment = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_world", "World messages",
 			"Enable report of diegetic messages, such as speech and text.",
-			true, nullptr);
+			allSettings.show_messages.world, [](Button& button){allSettings.show_messages.world = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_chat", "Player chat",
 			"Enable multiplayer chat.",
-			true, nullptr);
+			allSettings.show_messages.chat, [](Button& button){allSettings.show_messages.chat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", "Progression messages",
 			"Enable report of player character progression messages (ie level-ups).",
-			true, nullptr);
+			allSettings.show_messages.progression, [](Button& button){allSettings.show_messages.progression = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", "Interaction messages",
 			"Enable report of player interactions with the world.",
-			true, nullptr);
+			allSettings.show_messages.interaction, [](Button& button){allSettings.show_messages.interaction = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection", "Inspection messages",
 			"Enable player inspections of world objects.",
-			true, nullptr);
+			allSettings.show_messages.inspection, [](Button& button){allSettings.show_messages.inspection = button.isPressed();});
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_hint", "Hint messages",
+			"Enable cryptic hints for certain items, world events, etc.",
+			allSettings.show_messages.hint, [](Button& button){allSettings.show_messages.hint = button.isPressed();});
+
+		y += settingsAddBooleanOption(*subwindow, y, "messages_obituary", "Obituary messages",
+			"Enable obituary messages for player deaths.",
+			allSettings.show_messages.obituary, [](Button& button){allSettings.show_messages.obituary = button.isPressed();});
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Boolean, "messages_combat"},
@@ -2716,6 +2836,8 @@ namespace MainMenu {
 			{Setting::Type::Boolean, "messages_progression"},
 			{Setting::Type::Boolean, "messages_interaction"},
 			{Setting::Type::Boolean, "messages_inspection"},
+			{Setting::Type::Boolean, "messages_hint"},
+			{Setting::Type::Boolean, "messages_obituary"},
 			});
 		settingsSubwindowFinalize(*subwindow, y);
 		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});
@@ -3263,7 +3385,7 @@ bind_failed:
 
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-		// TODO
+		// TODO we need a special window just for Nintendo Switch joycons.
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controller bindings.",
 			nullptr);
@@ -3378,6 +3500,11 @@ bind_failed:
 
 	static void recordsDungeonCompendium(Button& button) {
 		soundActivate();
+
+		destroyMainMenu();
+		createDummyMainMenu();
+
+		beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
 	}
 
 	static void recordsStoryIntroduction(Button& button) {
@@ -4112,8 +4239,8 @@ bind_failed:
 			normal->select();
 		}
 
-		// TODO on non-english languages, normal text must be used
-
+		// TODO on non-english languages, normal text will need to be used.
+        // here's the code for that, but how to gate it?
 		/*auto hard_label = card->addField("hard_label", 64);
 		hard_label->setSize(SDL_Rect{68, 178, 144, 26});
 		hard_label->setFont(smallfont_outline);
@@ -4548,8 +4675,6 @@ bind_failed:
 		);
 		appearance_selected->disabled = true;
 		appearance_selected->ontop = true;
-
-		// TODO give these callbacks so they can be clicked:
 
 		auto appearance_uparrow = card->addButton("appearance_uparrow");
 		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
@@ -5748,10 +5873,6 @@ bind_failed:
 		}
 	}
 
-	static void createLobbyBrowser() {
-		// TODO
-	}
-
 /******************************************************************************/
 
 	static void createPlayWindow() {
@@ -5862,7 +5983,7 @@ bind_failed:
 		}
 	}
 
-	static void openLobbyBrowser(Button& button) {
+	static void createLobbyBrowser(Button& button) {
 		soundActivate();
 
 		enum class BrowserMode {
@@ -6194,7 +6315,7 @@ bind_failed:
 		join_button->setWidgetSearchParent(window->getName());
 		join_button->setWidgetBack("back_button");
 		join_button->setWidgetUp("host_online");
-		join_button->setCallback(openLobbyBrowser);
+		join_button->setCallback(createLobbyBrowser);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 324, 120, 68},
@@ -7434,9 +7555,15 @@ bind_failed:
 				    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
 					destroyMainMenu();
 					createDummyMainMenu();
-					createStoryScreen();
+					createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
 					playMusic(sounds[501], false,
 					    main_menu_fade_destination == FadeDestination::IntroStoryScreen, false);
+				}
+				if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
+					destroyMainMenu();
+					createDummyMainMenu();
+					createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
+					playMusic(intermissionmusic, false, false, false);
 				}
 				if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
 					destroyMainMenu();

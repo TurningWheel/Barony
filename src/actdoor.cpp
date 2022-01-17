@@ -145,27 +145,27 @@ void actDoor(Entity* my)
 								// open door
 								my->doorStatus = 1 + (players[i]->entity->x > my->x);
 								playSoundEntity(my, 21, 96);
-								messagePlayer(i, language[464]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[464]);
 							}
 							else if ( my->doorDir && !my->doorStatus )
 							{
 								// open door
 								my->doorStatus = 1 + (players[i]->entity->y < my->y);
 								playSoundEntity(my, 21, 96);
-								messagePlayer(i, language[464]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[464]);
 							}
 							else
 							{
 								// close door
 								my->doorStatus = 0;
 								playSoundEntity(my, 22, 96);
-								messagePlayer(i, language[465]);
+								messagePlayer(i, MESSAGE_INTERACTION, language[465]);
 							}
 						}
 						else
 						{
 							// door locked
-							messagePlayer(i, language[466]);
+							messagePlayer(i, MESSAGE_INTERACTION, language[466]);
 							playSoundEntity(my, 152, 64);
 						}
 					}
@@ -300,22 +300,22 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], language[3617], items[magicProjectile.skill[21]].name_identified, language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].name_identified, language[674]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[387]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[387]);
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], language[3618], items[magicProjectile.skill[21]].name_identified, language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].name_identified, language[674]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], language[378], language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[378], language[674]);
 				}
 			}
 			updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
