@@ -3518,7 +3518,7 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_timertestsdebug("/debugkeys", "", []CCMD{
+	static ConsoleCommand ccmd_debugkeys("/debugkeys", "", []CCMD{
 		enableDebugKeys = !enableDebugKeys;
 		messagePlayer(clientnum, MESSAGE_MISC, "Set enableDebugKeys to %d", enableDebugKeys);
 	});
