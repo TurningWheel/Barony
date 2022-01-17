@@ -3745,7 +3745,7 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 		{
 			// successfully loaded, do unpressed glyph
 			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(base->getSurf());
-			SDL_Rect pos{ 0, 0, base->getWidth(), base->getHeight() };
+			SDL_Rect pos{ 0, 0, (int)base->getWidth(), (int)base->getHeight() };
 			SDL_Surface* sprite = SDL_CreateRGBSurface(0, pos.w, pos.h, 32,
 				0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 			SDL_SetSurfaceAlphaMod(srcSurf, 255);
@@ -3762,7 +3762,7 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 			{
 				// successfully loaded
 				SDL_Surface* keySurf = const_cast<SDL_Surface*>(key->getSurf());
-				SDL_Rect keyPos{ 0, 0, key->getWidth(), key->getHeight() };
+				SDL_Rect keyPos{ 0, 0, (int)key->getWidth(), (int)key->getHeight() };
 				keyPos.x = pos.w / 2 - keyPos.w / 2;
 				keyPos.y = keyValue.second.render_offsety;
 
@@ -3805,7 +3805,7 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 		{
 			// successfully loaded, do pressed glyph
 			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(base->getSurf());
-			SDL_Rect pos{ 0, 0, base->getWidth(), base->getHeight() };
+			SDL_Rect pos{ 0, 0, (int)base->getWidth(), (int)base->getHeight() };
 			SDL_Surface* sprite = SDL_CreateRGBSurface(0, pos.w, pos.h, 32,
 				0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 			SDL_SetSurfaceAlphaMod(srcSurf, 255);
@@ -3822,7 +3822,7 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 			{
 				// successfully loaded
 				SDL_Surface* keySurf = const_cast<SDL_Surface*>(key->getSurf());
-				SDL_Rect keyPos{ 0, 0, key->getWidth(), key->getHeight() };
+				SDL_Rect keyPos{ 0, 0, (int)key->getWidth(), (int)key->getHeight() };
 				keyPos.x = pos.w / 2 - keyPos.w / 2;
 				keyPos.y = keyValue.second.render_offsety;
 
