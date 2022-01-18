@@ -4032,13 +4032,13 @@ void ingameHud()
 		// player not needed to be alive
 		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") && !gamePaused )   //TODO: Move to function in interface or something?
 		{
+			if ( input.input("Spell List").isBindingUsingGamepad() )
+			{
+				// no action, gamepad doesn't use this binding
+			}
 			// no dropdowns/no selected item, if controller, has to be in inventory/hotbar + !shootmode
-			if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
-				&& (!inputs.hasController(player) 
-					|| (inputs.hasController(player) && !players[player]->shootmode
-						&& (players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
-							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
-							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR))) )
+			else if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
+				&& !inputs.hasController(player) )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
 				if ( players[player]->shootmode )
