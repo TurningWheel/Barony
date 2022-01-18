@@ -384,90 +384,114 @@ void Widget::drawPost(const SDL_Rect size,
 	}
 
 	// button prompts
-#ifdef NINTENDO
-	int x = size.x + size.w + buttonsOffset.x;
-	int y = size.y + size.h + buttonsOffset.y;
-	auto& actions = selectedWidget->getWidgetActions();
-	auto action = actions.begin();
-	if ((action = actions.find("MenuConfirm")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	} else if (selectedWidget == this) {
-		auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
-		int w = image->getWidth();
-		int h = image->getHeight();
-		image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		x -= w;
-	}
-	if ((action = actions.find("MenuCancel")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
-	if ((action = actions.find("MenuAlt1")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
-	if ((action = actions.find("MenuAlt2")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
-	if ((action = actions.find("MenuStart")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_+00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
-	if ((action = actions.find("MenuSelect")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_-00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
-	if ((action = actions.find("MenuPageLeft")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
-	if ((action = actions.find("MenuPageRight")) != actions.end()) {
-		if (action->second == name) {
-			auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
-			int w = image->getWidth();
-			int h = image->getHeight();
-			image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			x -= w;
-		}
-	}
+#ifndef EDITOR
+    if (inputs.hasController(owner)) {
+#else
+    if (0) {
 #endif
+	    int x = size.x + size.w + buttonsOffset.x;
+	    int y = size.y + size.h + buttonsOffset.y;
+	    auto& actions = selectedWidget->getWidgetActions();
+	    auto action = actions.begin();
+	    if ((action = actions.find("MenuConfirm")) != actions.end()) {
+		    if (action->second == name) {
+#ifdef NINTENDO
+			    auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
+#else
+			    auto image = Image::get("images/ui/Glyphs/G_Xbox_A00.png");
+#endif
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    } else if (selectedWidget == this) {
+#ifdef NINTENDO
+		    auto image = Image::get("images/ui/Glyphs/G_Switch_A00.png");
+#else
+		    auto image = Image::get("images/ui/Glyphs/G_Xbox_A00.png");
+#endif
+		    int w = image->getWidth();
+		    int h = image->getHeight();
+		    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		    x -= w;
+	    }
+	    if ((action = actions.find("MenuCancel")) != actions.end()) {
+		    if (action->second == name) {
+#ifdef NINTENDO
+			    auto image = Image::get("images/ui/Glyphs/G_Switch_B00.png");
+#else
+			    auto image = Image::get("images/ui/Glyphs/G_Xbox_B00.png");
+#endif
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	    if ((action = actions.find("MenuAlt1")) != actions.end()) {
+		    if (action->second == name) {
+#ifdef NINTENDO
+			    auto image = Image::get("images/ui/Glyphs/G_Switch_Y00.png");
+#else
+			    auto image = Image::get("images/ui/Glyphs/G_Xbox_X00.png");
+#endif
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	    if ((action = actions.find("MenuAlt2")) != actions.end()) {
+		    if (action->second == name) {
+#ifdef NINTENDO
+			    auto image = Image::get("images/ui/Glyphs/G_Switch_X00.png");
+#else
+			    auto image = Image::get("images/ui/Glyphs/G_Xbox_Y00.png");
+#endif
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	    if ((action = actions.find("MenuStart")) != actions.end()) {
+		    if (action->second == name) {
+			    auto image = Image::get("images/ui/Glyphs/PlusMed00.png");
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	    if ((action = actions.find("MenuSelect")) != actions.end()) {
+		    if (action->second == name) {
+			    auto image = Image::get("images/ui/Glyphs/MinusMed00.png");
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	    if ((action = actions.find("MenuPageLeft")) != actions.end()) {
+		    if (action->second == name) {
+			    auto image = Image::get("images/ui/Glyphs/G_Switch_L00.png");
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	    if ((action = actions.find("MenuPageRight")) != actions.end()) {
+		    if (action->second == name) {
+			    auto image = Image::get("images/ui/Glyphs/G_Switch_R00.png");
+			    int w = image->getWidth();
+			    int h = image->getHeight();
+			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+			    x -= w;
+		    }
+	    }
+	}
 }
 
 void Widget::scrollParent() {

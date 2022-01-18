@@ -130,7 +130,7 @@ namespace MainMenu {
 		inline void save();
 		static inline InventorySorting load();
 		static inline InventorySorting reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // Binding options
@@ -142,7 +142,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Bindings load();
 		static inline Bindings reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // Minimap options
@@ -154,7 +154,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Minimap load();
 		static inline Minimap reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // Message options
@@ -173,7 +173,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Messages load();
 		static inline Messages reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // All menu options combined
@@ -230,7 +230,7 @@ namespace MainMenu {
 		inline bool save(); // true if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
 	static inline void soundToggleMenu() {
@@ -764,7 +764,7 @@ namespace MainMenu {
 		return InventorySorting();
 	}
 
-	void InventorySorting::serialize(FileInterface* file) {
+	bool InventorySorting::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("hotbarWeapons", hotbarWeapons);
@@ -791,6 +791,7 @@ namespace MainMenu {
 		file->property("sortStaves", sortStaves);
 		file->property("sortFood", sortFood);
 		file->property("sortEquipped", sortEquipped);
+		return true;
 	}
 
 /******************************************************************************/
@@ -829,7 +830,7 @@ namespace MainMenu {
 		return bindings;
 	}
 
-	void Bindings::serialize(FileInterface* file) {
+	bool Bindings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		Uint32 num_players = 4;
@@ -877,6 +878,7 @@ namespace MainMenu {
 			file->endObject();
 		}
 		file->endArray();
+		return true;
 	}
 
 /******************************************************************************/
@@ -901,13 +903,14 @@ namespace MainMenu {
 		return Minimap();
 	}
 
-	void Minimap::serialize(FileInterface* file) {
+	bool Minimap::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("map_scale", map_scale);
 		file->property("icon_scale", icon_scale);
 		file->property("foreground_opacity", foreground_opacity);
 		file->property("background_opacity", background_opacity);
+		return true;
 	}
 
 /******************************************************************************/
@@ -951,7 +954,7 @@ namespace MainMenu {
 		return Messages();
 	}
 
-	void Messages::serialize(FileInterface* file) {
+	bool Messages::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("combat", combat);
@@ -965,6 +968,7 @@ namespace MainMenu {
 		file->property("inspection", inspection);
 		file->property("hint", hint);
 		file->property("obituary", obituary);
+		return true;
 	}
 
 	/******************************************************************************/
@@ -1185,7 +1189,7 @@ namespace MainMenu {
 		return settings;
 	}
 
-	void AllSettings::serialize(FileInterface* file) {
+	bool AllSettings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
@@ -1236,6 +1240,7 @@ namespace MainMenu {
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
+		return true;
 	}
 
 /******************************************************************************/
@@ -1243,24 +1248,28 @@ namespace MainMenu {
 	// Story text is formatted thus:
 	// carat ^ advances the image index
 	// pound # adds a pause
+	// asterisk * followed by a single digit changes the text box size
 
 	static void createStoryScreen(const char* file, void (*end_func)()) {
 	    char filename[PATH_MAX];
 	    (void)completePath(filename, file);
 
         struct Story {
-            int version;
+            int version = 1;
+            bool press_a_to_advance = false;
             std::vector<std::string> text;
             std::vector<std::string> images;
 
-            void serialize(FileInterface* file) {
+            bool serialize(FileInterface* file) {
                 if (file->isReading()) {
                     text.clear();
                     images.clear();
                 }
                 file->property("version", version);
+                file->property("press_a_to_advance", press_a_to_advance);
                 file->property("text", text);
                 file->property("images", images);
+                return true;
             }
         };
 
@@ -1268,13 +1277,18 @@ namespace MainMenu {
         static int story_text_chars;
         static int story_text_lines;
 		static int story_text_pause;
+		static int story_text_box_size;
 		static float story_text_scroll;
 		static float story_text_writer;
+		static float story_text_box_scale;
+		static bool story_text_adjust_box;
 		static bool story_text_end;
 		static int story_image_index;
 		static float story_image_fade;
 		static bool story_image_advanced;
 		static void (*story_end_func)();
+		static int story_skip;
+		static float story_skip_timer;
 
 		bool read_result = FileHelper::readObject(filename, story);
 		if (!read_result) {
@@ -1284,13 +1298,18 @@ namespace MainMenu {
 		story_text_chars = 0;
 		story_text_lines = 0;
 		story_text_pause = 0;
+		story_text_box_size = 2;
 		story_text_scroll = 0.f;
 		story_text_writer = 0.f;
+		story_text_box_scale = -2.f;
+		story_text_adjust_box = false;
 		story_text_end = false;
 		story_image_index = 0;
 		story_image_fade = 0.f;
 		story_image_advanced = false;
 		story_end_func = end_func;
+		story_skip = 0;
+		story_skip_timer = 0.f;
 
 		main_menu_frame->addImage(
 			main_menu_frame->getSize(),
@@ -1311,29 +1330,120 @@ namespace MainMenu {
 		back_button->setHJustify(Button::justify_t::RIGHT);
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
-		back_button->setCallback([](Button&){
-			story_end_func();
+		back_button->setCallback([](Button& button){
+		    ++story_skip;
+		    story_skip_timer = (float)TICKS_PER_SECOND;
+		    switch (story_skip) {
+		    case 0: button.setText("Skip story"); break;
+		    case 1: button.setText("Confirm (1)?"); break;
+		    case 2: button.setText("Confirm (2)?"); break;
+		    }
+		    if (story_skip >= 3) {
+			    story_end_func();
+		    }
 			});
 		back_button->setWidgetBack("back");
-		back_button->select();
+		back_button->setButtonsOffset(SDL_Rect{-116, -25, 0, 0});
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
-		static const int text_box_lines = 2;
+		auto next_button_func = [](Button&){
+	        if (story_text_pause) {
+		        story_text_pause = 0;
+			    if (story_text_end == true) {
+				    story_end_func();
+			    } else {
+	                auto font = Font::get(bigfont_outline); assert(font);
+				    story_text_scroll = font->height() * story_text_box_size;
+			    }
+	        }
+	        };
 
 		auto textbox1 = main_menu_frame->addFrame("story_text_box");
-		textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * (text_box_lines + 2), Frame::virtualScreenX - 240, font->height() * (text_box_lines + 1)});
-		textbox1->setActualSize(SDL_Rect{0, 0, textbox1->getSize().w, textbox1->getSize().h});
 		textbox1->setColor(makeColor(0, 0, 0, 127));
 		textbox1->setBorder(0);
+		if (!story.press_a_to_advance) {
+		    textbox1->setHideSelectors(true);
+		    textbox1->setHideGlyphs(true);
+		    textbox1->select();
+		    textbox1->setWidgetBack("back");
+		} else {
+		    auto next = main_menu_frame->addButton("next");
+		    next->setHideSelectors(true);
+		    next->setColor(makeColor(0, 0, 0, 0));
+		    next->setHighlightColor(makeColor(0, 0, 0, 0));
+		    next->setBorderColor(makeColor(0, 0, 0, 0));
+		    next->setTextColor(0xffffffff);
+		    next->setTextHighlightColor(0xffffffff);
+		    next->setFont(smallfont_outline);
+		    next->setHJustify(Button::justify_t::CENTER);
+		    next->setVJustify(Button::justify_t::CENTER);
+		    auto font = Font::get(bigfont_outline); assert(font);
+		    next->setSize(SDL_Rect{
+		        (Frame::virtualScreenX - 160) / 2,
+		        (Frame::virtualScreenY - font->height()),
+		        160,
+		        font->height(),
+		        });
+		    next->setCallback(next_button_func);
+			next->setTickCallback([](Widget& widget){
+			    auto button = static_cast<Button*>(&widget);
+                button->setInvisible(story_text_pause == 0);
+		        button->setText(inputs.hasController(0) ? "" : "Continue...");
+			    });
+		    next->setWidgetBack("back");
+		    next->select();
+		    next->setButtonsOffset(SDL_Rect{-80, -font->height(), 0, 0});
+		}
 
 		auto textbox2 = textbox1->addFrame("story_text_box");
 		textbox2->setScrollBarsEnabled(false);
 		textbox2->setAllowScrollBinds(false);
-		textbox2->setSize(SDL_Rect{font->height() / 2, font->height() / 2, Frame::virtualScreenX - 240 - font->height(), font->height() * text_box_lines});
-		textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 100});
 		textbox2->setHollow(true);
 		textbox2->setBorder(0);
+
+		static auto change_box_size = [](float lines){
+		    assert(main_menu_frame);
+		    auto font = Font::get(bigfont_outline); assert(font);
+		    auto textbox1 = main_menu_frame->findFrame("story_text_box");
+		    textbox1->setSize(SDL_Rect{
+		        160,
+		        Frame::virtualScreenY - (int)(font->height() * std::max(lines + 2.f, 0.f)),
+		        Frame::virtualScreenX - 320,
+		        (int)(font->height() * std::max(lines + 1.f, 0.f)),
+		        });
+		    textbox1->setActualSize(SDL_Rect{
+		        0,
+		        0,
+		        textbox1->getSize().w,
+		        textbox1->getSize().h,
+		        });
+		    auto textbox2 = textbox1->findFrame("story_text_box");
+		    textbox2->setSize(SDL_Rect{
+		        font->height() / 2,
+		        font->height() / 2,
+		        Frame::virtualScreenX - 320 - font->height(),
+		        (int)(font->height() * std::max(lines, 0.f)),
+		        });
+		    textbox2->setActualSize(SDL_Rect{
+		        textbox2->getActualSize().x,
+		        textbox2->getActualSize().y,
+		        textbox2->getSize().w,
+		        font->height() * 100,
+		        });
+		    };
+		change_box_size(story_text_box_scale);
+
+		static auto adjust_box_size = [](){
+		    float f = story_text_box_size;
+		    float diff = story_text_box_scale - f;
+		    if (fabs(diff) < 0.1) {
+		        story_text_box_scale -= diff;
+		    } else {
+		        story_text_box_scale -= diff / TICKS_PER_SECOND;
+		    }
+            change_box_size(story_text_box_scale);
+		    };
 
 		auto field = textbox2->addField("text", 1 << 16);
 		field->setFont(bigfont_outline);
@@ -1373,12 +1483,14 @@ namespace MainMenu {
 				}
 			} else {
 				if (story_text_pause > 0) {
-					--story_text_pause;
+				    if (!story.press_a_to_advance) {
+					    --story_text_pause;
+				    }
 					if (story_text_pause == 0) {
 						if (story_text_end == true) {
 							story_end_func();
 						} else {
-							story_text_scroll = story_font->height() * text_box_lines;
+							story_text_scroll = story_font->height() * story_text_box_size;
 						}
 					}
 				} else {
@@ -1403,7 +1515,7 @@ namespace MainMenu {
 							++story_text_chars;
 							if (c == '\n') {
 							    ++story_text_lines;
-							    if (story_text_lines >= text_box_lines) {
+							    if (story_text_lines >= story_text_box_size) {
 							        story_text_lines = 0;
 								    story_text_pause = fpsLimit * 5;
 							    }
@@ -1420,6 +1532,18 @@ namespace MainMenu {
 							} else if (c == '#') {
 								story_text_writer += fpsLimit / 10.f;
 								return; // skip printing this character
+							} else if (c == '*') {
+								story_text_adjust_box = true;
+								return; // skip printing this character
+							} else if (story_text_adjust_box) {
+								story_text_adjust_box = false;
+								if (c >= '1' && c <= '9') {
+								    story_text_box_size = (int)(c - '0');
+								    return; // skip printing this character
+								} else if (c == '0') {
+								    story_text_box_size = -2;
+								    return; // skip printing this character
+								}
 							} else {
 								story_text_writer += fpsLimit / 30.f;
 							}
@@ -1432,6 +1556,16 @@ namespace MainMenu {
 					}
 				}
 			}
+		    adjust_box_size();
+		    if (story_skip_timer > 0.f) {
+		        story_skip_timer -= inc;
+		        if (story_skip_timer <= 0.f) {
+		            story_skip_timer = 0.f;
+		            story_skip = 0;
+		            auto back_button = main_menu_frame->findButton("back");
+		            back_button->setText("Skip story");
+		        }
+		    }
 			});
 	}
 
