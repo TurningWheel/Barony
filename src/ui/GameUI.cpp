@@ -622,7 +622,6 @@ void createUINavigation(const int player)
 	uiNavFrame->setDisabled(true);
 	{
 		const int glyphSize = 32;
-
 		const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
 		auto magicButton = uiNavFrame->addButton("magic button");
 		magicButton->setText("Magic");
@@ -700,6 +699,47 @@ void createUINavigation(const int player)
 		auto skillsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "skills button glyph")->disabled = true;
 	}
+	{
+		const int glyphSize = 32;
+		const char* navFont = "fonts/pixel_maz.ttf#32#2";
+		auto leftBumperNavigationTxt = uiNavFrame->addField("left bumper txt", 64);
+		leftBumperNavigationTxt->setFont(navFont);
+		leftBumperNavigationTxt->setHJustify(Field::justify_t::RIGHT);
+		leftBumperNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		leftBumperNavigationTxt->setDisabled(true);
+
+		auto leftBumperNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "left bumper img");
+		leftBumperNavigationImg->disabled = true;
+
+		auto rightBumperNavigationTxt = uiNavFrame->addField("right bumper txt", 64);
+		rightBumperNavigationTxt->setFont(navFont);
+		rightBumperNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		rightBumperNavigationTxt->setHJustify(Field::justify_t::LEFT);
+
+		auto rightBumperNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "right bumper img");
+		rightBumperNavigationImg->disabled = true;
+
+		auto leftTriggerNavigationTxt = uiNavFrame->addField("left trigger txt", 64);
+		leftTriggerNavigationTxt->setFont(navFont);
+		leftTriggerNavigationTxt->setHJustify(Field::justify_t::RIGHT);
+		leftTriggerNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		leftTriggerNavigationTxt->setDisabled(true);
+
+		auto leftTriggerNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "left trigger img");
+		leftTriggerNavigationImg->disabled = true;
+
+		auto rightTriggerNavigationTxt = uiNavFrame->addField("right trigger txt", 64);
+		rightTriggerNavigationTxt->setFont(navFont);
+		rightTriggerNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		rightTriggerNavigationTxt->setHJustify(Field::justify_t::LEFT);
+
+		auto rightTriggerNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "right trigger img");
+		rightTriggerNavigationImg->disabled = true;
+	}
 }
 
 void Player::HUD_t::updateUINavigation()
@@ -718,13 +758,17 @@ void Player::HUD_t::updateUINavigation()
 		}
 	}
 
+	bool leftTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavLeftTrigger");
+	bool rightTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavRightTrigger");
+
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE )
 	{
-		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
+		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
-		}
+		}*/
+		bShowUINavigation = true;
 	}
 
 	if ( !bShowUINavigation )
@@ -734,6 +778,290 @@ void Player::HUD_t::updateUINavigation()
 	}
 	uiNavFrame->setDisabled(false);
 	uiNavFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
+
+	auto leftBumperModule = player.GUI.handleModuleNavigation(true, true);
+	auto leftBumperTxt = uiNavFrame->findField("left bumper txt");
+	leftBumperTxt->setDisabled(true);
+	auto leftBumperGlyph = uiNavFrame->findImage("left bumper img");
+	leftBumperGlyph->disabled = true;
+	auto rightBumperModule = player.GUI.handleModuleNavigation(true, false);
+	auto rightBumperTxt = uiNavFrame->findField("right bumper txt");
+	rightBumperTxt->setDisabled(true);
+	auto rightBumperGlyph = uiNavFrame->findImage("right bumper img");
+	rightBumperGlyph->disabled = true;
+
+	auto leftTriggerTxt = uiNavFrame->findField("left trigger txt");
+	leftTriggerTxt->setDisabled(true);
+	auto leftTriggerGlyph = uiNavFrame->findImage("left trigger img");
+	leftTriggerGlyph->disabled = true;
+	auto rightTriggerTxt = uiNavFrame->findField("right trigger txt");
+	rightTriggerTxt->setDisabled(true);
+	auto rightTriggerGlyph = uiNavFrame->findImage("right trigger img");
+	rightTriggerGlyph->disabled = true;
+	if ( inputs.hasController(player.playernum) && leftBumperModule != Player::GUI_t::MODULE_NONE )
+	{
+		switch ( leftBumperModule )
+		{
+			case Player::GUI_t::MODULE_INVENTORY:
+				//leftBumperTxt->setText(language[4089]);
+				leftBumperTxt->setDisabled(false);
+				break;
+			case Player::GUI_t::MODULE_SPELLS:
+				//leftBumperTxt->setText(language[4090]);
+				leftBumperTxt->setDisabled(false);
+				break;
+			case Player::GUI_t::MODULE_HOTBAR:
+				//leftBumperTxt->setText(language[4091]);
+				leftBumperTxt->setDisabled(false);
+				break;
+			case Player::GUI_t::MODULE_CHARACTERSHEET:
+				//leftBumperTxt->setText(language[4092]);
+				leftBumperTxt->setDisabled(false);
+				break;
+			default:
+				break;
+		}
+		leftBumperTxt->setText("/");
+	}
+	if ( inputs.hasController(player.playernum) && rightBumperModule != Player::GUI_t::MODULE_NONE )
+	{
+		switch ( rightBumperModule )
+		{
+			case Player::GUI_t::MODULE_INVENTORY:
+				//rightBumperTxt->setText(language[4089]);
+				rightBumperTxt->setDisabled(false);
+				break;
+			case Player::GUI_t::MODULE_SPELLS:
+				//rightBumperTxt->setText(language[4090]);
+				rightBumperTxt->setDisabled(false);
+				break;
+			case Player::GUI_t::MODULE_HOTBAR:
+				//rightBumperTxt->setText(language[4091]);
+				rightBumperTxt->setDisabled(false);
+				break;
+			case Player::GUI_t::MODULE_CHARACTERSHEET:
+				//rightBumperTxt->setText(language[4092]);
+				rightBumperTxt->setDisabled(false);
+				break;
+			default:
+				break;
+		}
+		rightBumperTxt->setText(language[4089]);
+	}
+
+	int lowestLeftY = 0;
+
+	if ( inputs.hasController(player.playernum) )
+	{
+		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY && player.inventoryUI.frame)
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		{
+			int leftAnchorX = 0;
+			int rightAnchorX = 0;
+			PanelJustify_t justify = player.inventoryUI.inventoryPanelJustify;
+			auto inventoryBgFrame = player.inventoryUI.frame->findFrame("inventory base");
+
+			Frame::image_t* invBaseImg = inventoryBgFrame->findImage("inventory base img");
+
+			if ( justify == PANEL_JUSTIFY_LEFT )
+			{
+				leftAnchorX = inventoryBgFrame->getSize().x + 8;
+				leftAnchorX += invBaseImg->pos.w;
+
+				rightAnchorX = player.inventoryUI.frame->getSize().w - leftAnchorX;
+			}
+			else
+			{
+				rightAnchorX = inventoryBgFrame->getSize().x - 8;
+				rightAnchorX += invBaseImg->pos.x;
+
+				leftAnchorX = player.inventoryUI.frame->getSize().w - rightAnchorX;
+			}
+
+			{
+				justify = PANEL_JUSTIFY_LEFT;
+				leftTriggerGlyph->disabled = false;
+				leftTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavLeftTrigger");
+				SDL_Rect textPos;
+				textPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				textPos.y = 8;
+				textPos.w = leftTriggerTxt->getTextObject()->getWidth();
+				textPos.h = Font::get(leftTriggerTxt->getFont())->height() + 8;
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					leftTriggerTxt->setHJustify(Field::justify_t::LEFT);
+				}
+				else
+				{
+					leftTriggerTxt->setHJustify(Field::justify_t::RIGHT);
+				}
+
+				SDL_Rect imgPos;
+				if ( auto imgGet = Image::get(leftTriggerGlyph->path.c_str()) )
+				{
+					imgPos.w = imgGet->getWidth();
+					imgPos.h = imgGet->getHeight();
+				}
+				imgPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					leftTriggerGlyph->pos = imgPos;
+					textPos.x = leftTriggerGlyph->pos.x + leftTriggerGlyph->pos.w + 8;
+					leftTriggerTxt->setSize(textPos);
+				}
+				else
+				{
+					imgPos.x -= imgPos.w;
+					leftTriggerGlyph->pos = imgPos;
+					textPos.x = leftTriggerGlyph->pos.x - 8 - textPos.w;
+					leftTriggerTxt->setSize(textPos);
+				}
+				leftTriggerTxt->setDisabled(false);
+				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
+				{
+					leftTriggerTxt->setText(language[4093]);
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+				{
+					leftTriggerTxt->setText(language[4094]);
+				}
+			}
+			{
+				justify = PANEL_JUSTIFY_RIGHT;
+				rightTriggerGlyph->disabled = false;
+				rightTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavRightTrigger");
+				SDL_Rect textPos;
+				textPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				textPos.y = 8;
+				textPos.w = rightTriggerTxt->getTextObject()->getWidth();
+				textPos.h = Font::get(rightTriggerTxt->getFont())->height() + 8;
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					rightTriggerTxt->setHJustify(Field::justify_t::LEFT);
+				}
+				else
+				{
+					rightTriggerTxt->setHJustify(Field::justify_t::RIGHT);
+				}
+
+				SDL_Rect imgPos;
+				if ( auto imgGet = Image::get(rightTriggerGlyph->path.c_str()) )
+				{
+					imgPos.w = imgGet->getWidth();
+					imgPos.h = imgGet->getHeight();
+				}
+				imgPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					rightTriggerGlyph->pos = imgPos;
+					textPos.x = rightTriggerGlyph->pos.x + rightTriggerGlyph->pos.w + 8;
+					rightTriggerTxt->setSize(textPos);
+				}
+				else
+				{
+					imgPos.x -= imgPos.w;
+					rightTriggerGlyph->pos = imgPos;
+					textPos.x = rightTriggerGlyph->pos.x - 8 - textPos.w;
+					rightTriggerTxt->setSize(textPos);
+				}
+				rightTriggerTxt->setDisabled(false);
+				rightTriggerTxt->setText(language[4095]);
+			}
+		}
+
+		if ( leftTriggerPressed	&& !leftTriggerTxt->isDisabled() )
+		{
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem && !player.GUI.isDropdownActive()
+			&& (inputs.hasController(player.playernum) && !player.shootmode
+				&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)) )
+			{
+				player.gui_mode = GUI_MODE_INVENTORY;
+				if ( player.shootmode )
+				{
+					player.openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+				}
+				player.inventoryUI.cycleInventoryTab();
+			}
+		}
+
+		if ( rightTriggerPressed && !rightTriggerTxt->isDisabled() )
+		{
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem && !player.GUI.isDropdownActive()
+				&& (inputs.hasController(player.playernum) && !player.shootmode
+					&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+						|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+						|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+						|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)) )
+			{
+				if ( !player.skillSheet.bSkillSheetOpen )
+				{
+					player.skillSheet.openSkillSheet();
+				}
+			}
+		}
+
+		if ( !leftTriggerTxt->isDisabled() )
+		{
+			lowestLeftY = std::max(lowestLeftY, leftTriggerTxt->getSize().y + leftTriggerTxt->getSize().h);
+			lowestLeftY = std::max(lowestLeftY, leftTriggerGlyph->pos.y + leftTriggerGlyph->pos.h);
+		}
+
+		if ( !leftBumperTxt->isDisabled() )
+		{
+			leftBumperGlyph->disabled = false;
+			leftBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavLeftBumper");
+			SDL_Rect textPos;
+			textPos.x = leftTriggerGlyph->pos.x;
+			textPos.y = lowestLeftY;
+			textPos.w = leftBumperTxt->getTextObject()->getWidth();
+			textPos.h = Font::get(leftBumperTxt->getFont())->height() + 8;
+
+			SDL_Rect imgPos;
+			if ( auto imgGet = Image::get(leftBumperGlyph->path.c_str()) )
+			{
+				imgPos.w = imgGet->getWidth();
+				imgPos.h = imgGet->getHeight();
+			}
+			imgPos.x = textPos.x;
+			imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+			leftBumperGlyph->pos = imgPos;
+
+			textPos.x = imgPos.x + 4 + imgPos.w;
+			leftBumperTxt->setSize(textPos);
+		}
+		if ( !rightBumperTxt->isDisabled() )
+		{
+			rightBumperGlyph->disabled = false;
+			rightBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavRightBumper");
+			SDL_Rect textPos;
+			textPos.x = leftBumperTxt->getSize().x + leftBumperTxt->getSize().w + 8;
+			textPos.y = leftBumperTxt->getSize().y;
+			textPos.w = rightBumperTxt->getTextObject()->getWidth();
+			textPos.h = Font::get(rightBumperTxt->getFont())->height() + 8;
+
+			SDL_Rect imgPos;
+			if ( auto imgGet = Image::get(rightBumperGlyph->path.c_str()) )
+			{
+				imgPos.w = imgGet->getWidth();
+				imgPos.h = imgGet->getHeight();
+			}
+			imgPos.x = textPos.x;
+			imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+
+			textPos.x += imgPos.w + 4;
+			rightBumperTxt->setSize(textPos);
+			rightBumperGlyph->pos = imgPos;
+		}
+	}
 
 	auto magicButton = uiNavFrame->findButton("magic button");
 	auto magicButtonGlyph = uiNavFrame->findImage("magic button glyph");
@@ -14938,7 +15266,7 @@ void Player::SkillSheet_t::openSkillSheet()
 	else
 	{
 		players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
-			INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
+			players[player.playernum]->inventory_mode, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
 	}
 	bSkillSheetOpen = true;
 	openTick = ticks;
@@ -14958,6 +15286,19 @@ void Player::SkillSheet_t::openSkillSheet()
 	if ( !::inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
 		highlightedSkill = selectedSkill;
+	}
+	if ( bUseCompactSkillsView || bSlideWindowsOnly )
+	{
+		if ( selectedSkill >= 8 )
+		{
+			skillSlideAmount = 1.0;
+			skillSlideDirection = 1;
+		}
+		else
+		{
+			skillSlideAmount = -1.0;
+			skillSlideDirection = -1;
+		}
 	}
 }
 
@@ -16084,8 +16425,16 @@ void Player::SkillSheet_t::processSkillSheet()
 	if ( (oldCompactViewVal != bUseCompactSkillsView && bUseCompactSkillsView)
 		|| (oldSlideWindowsOnly != bSlideWindowsOnly && bSlideWindowsOnly) )
 	{
-		skillSlideAmount = 1.0;
-		skillSlideDirection = 1;
+		if ( selectedSkill >= 8 )
+		{
+			skillSlideAmount = 1.0;
+			skillSlideDirection = 1;
+		}
+		else
+		{
+			skillSlideAmount = -1.0;
+			skillSlideDirection = -1;
+		}
 	}
 	if ( !bUseCompactSkillsView && !bSlideWindowsOnly )
 	{
@@ -16193,6 +16542,10 @@ void Player::SkillSheet_t::processSkillSheet()
 	innerFrame->setSize(sheetSize);
 
 	auto slider = skillDescriptionFrame->findSlider("skill slider");
+	if ( slider->isSelected() )
+	{
+		slider->deselect();
+	}
 	bool sliderDisabled = slider->isDisabled();
 
 	auto titleText = innerFrame->findField("skill title txt");
@@ -16332,6 +16685,17 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		if ( dpad_moved )
 		{
+			if ( skillSlideDirection != 0 )
+			{
+				if ( highlightedSkill >= 8 )
+				{
+					skillSlideDirection = 1;
+				}
+				else
+				{
+					skillSlideDirection = -1;
+				}
+			}
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
