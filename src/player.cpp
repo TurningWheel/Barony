@@ -861,7 +861,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
 		|| (checkLeftNavigation && checkDestinationOnly) )
 	{
-		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		if ( activeModule == MODULE_INVENTORY 
+			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 			{
@@ -891,7 +892,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				return MODULE_CHARACTERSHEET;
 			}
 		}
-		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		else if ( activeModule == MODULE_SPELLS 
+			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
@@ -905,7 +907,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+				&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -916,7 +919,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 				return MODULE_SPELLS;
 			}
-			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+				&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -928,7 +932,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				return MODULE_INVENTORY;
 			}
 		}
-		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		else if ( activeModule == MODULE_CHARACTERSHEET 
+			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
@@ -950,7 +955,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
 		|| (!checkLeftNavigation && checkDestinationOnly) )
 	{
-		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		if ( activeModule == MODULE_INVENTORY 
+			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
@@ -962,7 +968,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			return MODULE_HOTBAR;
 		}
-		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		else if ( activeModule == MODULE_SPELLS 
+			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
 			if ( !checkDestinationOnly )
 			{
@@ -978,7 +985,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 			{
-				if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 				{
 					if ( !checkDestinationOnly )
 					{
@@ -989,7 +997,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					}
 					return MODULE_SPELLS;
 				}
-				else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+				else if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+					&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 				{
 					if ( !checkDestinationOnly )
 					{
@@ -1003,7 +1012,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
 			{
-				if ( player.inventoryUI.spellPanel.isInteractable )
+				if ( player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly )
 				{
 					if ( !checkDestinationOnly )
 					{
@@ -1031,9 +1040,11 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				return MODULE_CHARACTERSHEET;
 			}
 		}
-		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		else if ( activeModule == MODULE_CHARACTERSHEET 
+			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+				&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1044,7 +1055,8 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 				return MODULE_SPELLS;
 			}
-			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+				&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 			{
 				if ( !checkDestinationOnly )
 				{
