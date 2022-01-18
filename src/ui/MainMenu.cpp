@@ -1236,6 +1236,7 @@ namespace MainMenu {
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
+		file->property("use_model_cache", useModelCache);
 	}
 
 /******************************************************************************/
