@@ -2454,18 +2454,18 @@ void drawStatusNew(const int player)
 
 				if ( !shootmode && !hotbarSlotFrame->isDisabled() 
 					&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR)
+					&& !selectedItem
+					&& !players[player]->GUI.isDropdownActive()
 					&& hotbarSlotFrame->capturesMouse() )
 				{
-					if ( (inputs.bMouseLeft(player)
+					if ( (inputs.bMouseLeft(player) && inputs.bPlayerUsingKeyboardControl(player))
 						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str())
-							&& !openedChest[player]
-							&& gui_mode != (GUI_MODE_SHOP)
-							&& !GenericGUI[player].isGUIOpen()))
-						&& !selectedItem
-						&& players[player]->inventoryUI.isInteractable )
+							&& hotbarGamepadControlEnabled(player))
+						&& (players[player]->inventoryUI.bFirstTimeSnapCursor) )
 					{
 						inputs.getUIInteraction(player)->toggleclick = false;
-						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
+							&& inputs.bMouseLeft(player) && inputs.bPlayerUsingKeyboardControl(player) )
 						{
 							hotbar[num].item = 0;
 						}
@@ -2520,11 +2520,7 @@ void drawStatusNew(const int player)
 							}
 						}
 					}
-					if ( inputs.bMouseRight(player)
-						|| (inputs.bControllerInputPressed(player, INJOY_MENU_USE)
-							&& !openedChest[player]
-							&& gui_mode != (GUI_MODE_SHOP)
-							&& !GenericGUI[player].isGUIOpen()) )
+					if ( (inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)) )
 					{
 						//Use the item if right clicked.
 						inputs.mouseClearRight(player);
