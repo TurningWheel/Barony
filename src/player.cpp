@@ -1094,19 +1094,12 @@ bool Player::GUI_t::handleInventoryMovement()
 		return false;
 	}
 
-	//if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !hotbarGamepadControlEnabled(player) )
-	//{
-	//	players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-	//}
-
-	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") 
-		/*|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-
 			hotbar_t.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
 			auto slotFrame = hotbar_t.getHotbarSlotFrame(hotbar_t.current_hotbar);
 			if ( slotFrame && slotFrame->isDisabled() )
@@ -1132,13 +1125,11 @@ bool Player::GUI_t::handleInventoryMovement()
 				-1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
-		/*|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1169,13 +1160,11 @@ bool Player::GUI_t::handleInventoryMovement()
 				1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
-		/*|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1259,13 +1248,11 @@ bool Player::GUI_t::handleInventoryMovement()
 			//Will handle warping to hotbar.
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
-		/*|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1348,8 +1335,6 @@ bool Player::GUI_t::handleInventoryMovement()
 				0, 1);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
-
 		dpad_moved = true;
 	}
 

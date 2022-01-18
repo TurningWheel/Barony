@@ -976,6 +976,14 @@ Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoo
 	if ( player.inventoryUI.selectedSlotInPaperDoll() )
 	{
 		const int selectedSlotX = player.inventoryUI.getSelectedSlotX();
+		const int selectedSlotY = player.inventoryUI.getSelectedSlotY();
+
+		if ( player.inventoryUI.bCompactView
+			&& (x > Player::Inventory_t::DOLL_COLUMN_RIGHT || x < Player::Inventory_t::DOLL_COLUMN_LEFT) )
+		{
+			return SLOT_MAX; // off onto inventory
+		}
+
 		if ( x > selectedSlotX ) // moving right
 		{
 			if ( x > Player::Inventory_t::DOLL_COLUMN_RIGHT )
@@ -992,10 +1000,30 @@ Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoo
 		}
 		x = std::max(std::min(x, static_cast<int>(Player::Inventory_t::DOLL_COLUMN_RIGHT)), static_cast<int>(Player::Inventory_t::DOLL_COLUMN_LEFT));
 
-		if ( y < Player::Inventory_t::DOLL_ROW_1 || y > Player::Inventory_t::DOLL_ROW_5 )
+		if ( !player.inventoryUI.bCompactView )
 		{
-			// in inventory
-			return SLOT_MAX;
+			if ( y < Player::Inventory_t::DOLL_ROW_1 || y > Player::Inventory_t::DOLL_ROW_5 )
+			{
+				// in inventory
+				return SLOT_MAX;
+			}
+		}
+		else
+		{
+			if ( y > selectedSlotY ) // moving down
+			{
+				if ( y > Player::Inventory_t::DOLL_ROW_5 )
+				{
+					y = Player::Inventory_t::DOLL_ROW_1;
+				}
+			}
+			else if ( y < selectedSlotY ) // moving up
+			{
+				if ( y < Player::Inventory_t::DOLL_ROW_1 )
+				{
+					y = Player::Inventory_t::DOLL_ROW_5;
+				}
+			}
 		}
 
 		y = std::min(std::max(y, static_cast<int>(Player::Inventory_t::DOLL_ROW_1)), std::min(y, static_cast<int>(Player::Inventory_t::DOLL_ROW_5)));
@@ -1022,33 +1050,91 @@ Player::PaperDoll_t::PaperDollSlotType Player::PaperDoll_t::paperDollSlotFromCoo
 		return slot;
 	}
 
-	if ( y < 0 )
+	if ( player.inventoryUI.bCompactView )
 	{
-		if ( x <= (player.inventoryUI.getSizeX() / 2) )
-		{
-			// left half.
-			slot = SLOT_OFFHAND;
-		}
-		else
-		{
-			// right half.
-			slot = SLOT_WEAPON;
-		}
-		return slot;
-	}
-	else if ( y >= player.inventoryUI.getSizeY() )
-	{
-		if ( x <= (player.inventoryUI.getSizeX() / 2) )
-		{
-			// left half.
-			slot = SLOT_GLASSES;
-		}
-		else
+		if ( x < 0 )
 		{
 			// right half.
 			slot = SLOT_HELM;
+			if ( y == 0 )
+			{
+				slot = PaperDollSlotType((int)slot + 0);
+			}
+			else if ( y == 1 )
+			{
+				slot = PaperDollSlotType((int)slot + 1);
+			}
+			else if ( y == 2 )
+			{
+				slot = PaperDollSlotType((int)slot + 2);
+			}
+			else if ( y == 3 )
+			{
+				slot = PaperDollSlotType((int)slot + 3);
+			}
+			else
+			{
+				slot = PaperDollSlotType((int)slot + 4);
+			}
+			return slot;
 		}
-		return slot;
+		else if ( x >= player.inventoryUI.getSizeX() )
+		{
+			// left half.
+			slot = SLOT_GLASSES;
+			if ( y == 0 )
+			{
+				slot = PaperDollSlotType((int)slot + 0);
+			}
+			else if ( y == 1 )
+			{
+				slot = PaperDollSlotType((int)slot + 1);
+			}
+			else if ( y == 2 )
+			{
+				slot = PaperDollSlotType((int)slot + 2);
+			}
+			else if ( y == 3 )
+			{
+				slot = PaperDollSlotType((int)slot + 3);
+			}
+			else
+			{
+				slot = PaperDollSlotType((int)slot + 4);
+			}
+			return slot;
+		}
+	}
+	else
+	{
+		if ( y < 0 )
+		{
+			if ( x <= (player.inventoryUI.getSizeX() / 2) )
+			{
+				// left half.
+				slot = SLOT_OFFHAND;
+			}
+			else
+			{
+				// right half.
+				slot = SLOT_WEAPON;
+			}
+			return slot;
+		}
+		else if ( y >= player.inventoryUI.getSizeY() )
+		{
+			if ( x <= (player.inventoryUI.getSizeX() / 2) )
+			{
+				// left half.
+				slot = SLOT_GLASSES;
+			}
+			else
+			{
+				// right half.
+				slot = SLOT_HELM;
+			}
+			return slot;
+		}
 	}
 
 	// in inventory
@@ -1108,40 +1194,90 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	bool movingFromInventory = currenty >= 0;
 
-	if ( !movingFromInventory ) // if last position was in paper doll
+	if ( inventoryUI.bCompactView )
 	{
-		if ( x > Player::Inventory_t::DOLL_COLUMN_RIGHT )
+		if ( !movingFromInventory ) // if last position was in paper doll
 		{
-			x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+			if ( y > Player::Inventory_t::DOLL_ROW_5 )
+			{
+				y = Player::Inventory_t::DOLL_ROW_1;
+			}
+			else if ( y < Player::Inventory_t::DOLL_ROW_1 )
+			{
+				y = Player::Inventory_t::DOLL_ROW_5;
+			}
 		}
-		else if ( x < Player::Inventory_t::DOLL_COLUMN_LEFT )
+		else if ( movingFromInventory ) // if last position was in inventory
 		{
-			x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
-		}
-	}
-	else if ( movingFromInventory ) // if last position was in inventory
-	{
-		if ( x > inventoryUI.getSizeX() / 2 )
-		{
-			x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
-		}
-		else
-		{
-			x = Player::Inventory_t::DOLL_COLUMN_LEFT;
-		}
-	}
+			if ( y == 0 )
+			{
+				y = Player::Inventory_t::DOLL_ROW_1;
+			}
+			else if ( y == 1 )
+			{
+				y = Player::Inventory_t::DOLL_ROW_2;
+			}
+			else if ( y == 2 )
+			{
+				y = Player::Inventory_t::DOLL_ROW_3;
+			}
+			else if ( y == 3 )
+			{
+				y = Player::Inventory_t::DOLL_ROW_4;
+			}
+			else
+			{
+				y = Player::Inventory_t::DOLL_ROW_5;
+			}
 
-	if ( y < Player::Inventory_t::DOLL_ROW_1 )
-	{
-		y = inventoryUI.getSizeY() - 1;
+			if ( x >= inventoryUI.getSizeX() )
+			{
+				x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+			}
+			else if ( x >= 0 )
+			{
+				x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
+			}
+		}
+
 	}
-	else if ( y >= inventoryUI.getSizeY() )
+	else
 	{
-		y = Player::Inventory_t::DOLL_ROW_1;
-	}
-	else if ( y >= 0 )
-	{
-		y = Player::Inventory_t::DOLL_ROW_5;
+		if ( !movingFromInventory ) // if last position was in paper doll
+		{
+			if ( x > Player::Inventory_t::DOLL_COLUMN_RIGHT )
+			{
+				x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+			}
+			else if ( x < Player::Inventory_t::DOLL_COLUMN_LEFT )
+			{
+				x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
+			}
+		}
+		else if ( movingFromInventory ) // if last position was in inventory
+		{
+			if ( x > inventoryUI.getSizeX() / 2 )
+			{
+				x = Player::Inventory_t::DOLL_COLUMN_RIGHT;
+			}
+			else
+			{
+				x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+			}
+		}
+
+		if ( y < Player::Inventory_t::DOLL_ROW_1 )
+		{
+			y = inventoryUI.getSizeY() - 1;
+		}
+		else if ( y >= inventoryUI.getSizeY() )
+		{
+			y = Player::Inventory_t::DOLL_ROW_1;
+		}
+		else if ( y >= 0 )
+		{
+			y = Player::Inventory_t::DOLL_ROW_5;
+		}
 	}
 
 	if ( players[player]->paperDoll.dollSlots[paperDollSlot].item == 0 && y < 0 )
@@ -1156,26 +1292,65 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 			int slotx, sloty;
 			players[player]->paperDoll.getCoordinatesFromSlotType(slot.slotType, slotx, sloty);
 			int dist = abs(sloty - y);
-			if ( diffy != 0 )
+
+			if ( players[player]->inventoryUI.bCompactView )
 			{
-				if ( slotx != x ) 
-				{ 
-					if ( !movingFromInventory )
+				if ( diffy != 0 )
+				{
+					if ( slotx != x )
 					{
 						continue;
 					}
-					else if ( movingFromInventory )
-					{
+					if ( diffy > 0 && sloty < y ) 
+					{ 
 						// just in case this is the only available slot, add a distance penalty
-						dist += 10;
+						dist += 10 * (10 - (y - sloty));
+					}
+					if ( diffy < 0 && sloty > y ) 
+					{ 
+						// just in case this is the only available slot, add a distance penalty
+						dist += 10 * (10 - (sloty - y));
 					}
 				}
-				if ( diffy > 0 && sloty < y ) { continue; }
-				if ( diffy < 0 && sloty > y ) { continue; }
+				if ( diffx != 0 )
+				{
+					if ( slotx != x ) 
+					{ 
+						if ( !movingFromInventory )
+						{
+							continue;
+						}
+						else if ( movingFromInventory )
+						{
+							// just in case this is the only available slot, add a distance penalty
+							dist += 10;
+						}
+					}
+				}
 			}
-			if ( diffx != 0 )
+			else
 			{
-				if ( slotx != x ) { continue; }
+				if ( diffy != 0 )
+				{
+					if ( slotx != x ) 
+					{ 
+						if ( !movingFromInventory )
+						{
+							continue;
+						}
+						else if ( movingFromInventory )
+						{
+							// just in case this is the only available slot, add a distance penalty
+							dist += 10;
+						}
+					}
+					if ( diffy > 0 && sloty < y ) { continue; }
+					if ( diffy < 0 && sloty > y ) { continue; }
+				}
+				if ( diffx != 0 )
+				{
+					if ( slotx != x ) { continue; }
+				}
 			}
 			goodspots.push_back(std::make_pair(slot.slotType, dist));
 		}
@@ -1203,7 +1378,9 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 				return true;
 			}
 		}
-		else if ( !movingFromInventory && diffy == 0 && diffx != 0 )
+		else if ( !movingFromInventory 
+			&& ((!inventoryUI.bCompactView && diffy == 0 && diffx != 0) 
+				|| (inventoryUI.bCompactView && diffx == 0 && diffy != 0)) )
 		{
 			// no action, stay on the current slot
 			return true;
@@ -1215,13 +1392,27 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 		return true;
 	}
 
-	if ( diffy > 0 )
+	if ( !inventoryUI.bCompactView )
 	{
-		yout = 0;
+		if ( diffy > 0 )
+		{
+			yout = 0;
+		}
+		else if ( diffy < 0 )
+		{
+			yout = Player::Inventory_t::DOLL_ROW_1 - 1;
+		}
 	}
-	else if ( diffy < 0 )
+	else
 	{
-		yout = Player::Inventory_t::DOLL_ROW_1 - 1;
+		if ( diffx > 0 )
+		{
+			xout = 0;
+		}
+		else if ( diffx < 0 )
+		{
+			xout = inventoryUI.getSizeX() - 1;
+		}
 	}
 	return false;
 }
@@ -1279,42 +1470,101 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		{
 			if ( currenty < 0 ) // moving from doll
 			{
-				if ( diffy < 0 )
+				if ( inventoryUI.bCompactView )
 				{
-					y = inventoryUI.getSizeY() - 1;
-				}
-				else if ( diffy > 0 )
-				{
-					y = 0;
-				}
-
-				x = currentx; // x no effect.
-
-				if ( diffy != 0 )
-				{
-					if ( currentx == Player::Inventory_t::DOLL_COLUMN_LEFT )
-					{
-						x = 0;
-					}
-					else
+					if ( diffx < 0 )
 					{
 						x = inventoryUI.getSizeX() - 1;
 					}
+					else if ( diffx > 0 )
+					{
+						x = 0;
+					}
+					y = currenty; // y no effect.
+
+					if ( diffx != 0 )
+					{
+						if ( currenty == Player::Inventory_t::DOLL_ROW_1 )
+						{
+							y = 0;
+						}
+						else if ( currenty == Player::Inventory_t::DOLL_ROW_2 )
+						{
+							y = 1;
+						}
+						else if ( currenty == Player::Inventory_t::DOLL_ROW_3 )
+						{
+							y = 2;
+						}
+						else if ( currenty == Player::Inventory_t::DOLL_ROW_4 )
+						{
+							y = 3;
+						}
+						else if ( currenty == Player::Inventory_t::DOLL_ROW_5 )
+						{
+							y = 4;
+						}
+						else
+						{
+							y = 5;
+						}
+					}
 				}
+				else
+				{
+					if ( diffy < 0 )
+					{
+						y = inventoryUI.getSizeY() - 1;
+					}
+					else if ( diffy > 0 )
+					{
+						y = 0;
+					}
+					x = currentx; // x no effect.
+
+					if ( diffy != 0 )
+					{
+						if ( currentx == Player::Inventory_t::DOLL_COLUMN_LEFT )
+						{
+							x = 0;
+						}
+						else
+						{
+							x = inventoryUI.getSizeX() - 1;
+						}
+					}
+				}
+
 				inventoryUI.selectSlot(x, y);
 				return;
 			}
 			else
 			{
-				if ( y >= inventoryUI.getSizeY() )
+				if ( inventoryUI.bCompactView )
 				{
-					players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-					return;
+					if ( x >= inventoryUI.getSizeX() )
+					{
+						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+						return;
+					}
+					else if ( x < 0 )
+					{
+						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+						return;
+					}
 				}
-				else if ( y < 0 )
+				else
 				{
-					players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-					return;
+					if ( y >= inventoryUI.getSizeY() )
+					{
+						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+						return;
+					}
+					else if ( y < 0 )
+					{
+						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+						return;
+					}
 				}
 			}
 		}
@@ -1366,24 +1616,53 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	if ( inventoryUI.selectedSlotInPaperDoll() )
 	{
 		auto oldSlot = players[player]->paperDoll.paperDollSlotFromCoordinates(inventoryUI.getSelectedSlotX(), inventoryUI.getSelectedSlotY());
-		if ( oldSlot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_HELM )
+		if ( !inventoryUI.bCompactView )
 		{
-			// right column
-			x = inventoryUI.getSizeX() - 1;
+			if ( oldSlot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_HELM )
+			{
+				// right column
+				x = inventoryUI.getSizeX() - 1;
+			}
+			else
+			{
+				// left column
+				x = 0;
+			}
+		}
+		else if ( inventoryUI.bCompactView )
+		{
+			if ( diffx < 0 )
+			{
+				x = inventoryUI.getSizeX() - 1;
+			}
+			else if ( diffx > 0 )
+			{
+				x = 0;
+			}
+		}
+
+		if ( inventoryUI.bCompactView )
+		{
+			if ( oldSlot >= Player::PaperDoll_t::PaperDollSlotType::SLOT_HELM )
+			{
+				y = (int)(oldSlot - Player::PaperDoll_t::PaperDollSlotType::SLOT_HELM);
+			}
+			else
+			{
+				y = (int)oldSlot;
+			}
 		}
 		else
 		{
-			// left column
-			x = 0;
-		}
-		if ( y < Player::Inventory_t::DOLL_ROW_1 )
-		{
-			y = inventoryUI.getSizeY() - 1;
-		}
-		else if ( y >= Player::Inventory_t::DOLL_ROW_1 && y <= Player::Inventory_t::DOLL_ROW_5 )
-		{
-			// should not happen, failsafe.
-			y = 0;
+			if ( y < Player::Inventory_t::DOLL_ROW_1 )
+			{
+				y = inventoryUI.getSizeY() - 1;
+			}
+			else if ( y >= Player::Inventory_t::DOLL_ROW_1 && y <= Player::Inventory_t::DOLL_ROW_5 )
+			{
+				// should not happen, failsafe.
+				y = 0;
+			}
 		}
 	}
 
