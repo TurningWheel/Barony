@@ -310,6 +310,7 @@ namespace MainMenu {
 	static void characterCardRaceMenu(int index);
 	static void characterCardClassMenu(int index);
 
+    static void createControllerPrompt(int index);
 	static void createCharacterCard(int index);
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
@@ -1329,7 +1330,7 @@ namespace MainMenu {
 		back_button->setFont(smallfont_outline);
 		back_button->setHJustify(Button::justify_t::RIGHT);
 		back_button->setVJustify(Button::justify_t::CENTER);
-		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
+		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 416, Frame::virtualScreenY - 70, 380, 50});
 		back_button->setCallback([](Button& button){
 		    ++story_skip;
 		    story_skip_timer = (float)TICKS_PER_SECOND;
@@ -1343,7 +1344,7 @@ namespace MainMenu {
 		    }
 			});
 		back_button->setWidgetBack("back");
-		back_button->setButtonsOffset(SDL_Rect{-116, -25, 0, 0});
+		back_button->setButtonsOffset(SDL_Rect{16, -25, 0, 0});
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
@@ -1393,7 +1394,7 @@ namespace MainMenu {
 			    });
 		    next->setWidgetBack("back");
 		    next->select();
-		    next->setButtonsOffset(SDL_Rect{-80, -font->height(), 0, 0});
+		    next->setButtonsOffset(SDL_Rect{-80, -font->height() + 4, 0, 0});
 		}
 
 		auto textbox2 = textbox1->addFrame("story_text_box");
@@ -2033,8 +2034,6 @@ namespace MainMenu {
 		dropdown_list->setListOffset(SDL_Rect{0, 11, 0, 0});
 		dropdown_list->setListJustify(Frame::justify_t::CENTER);
 		dropdown_list->setScrollBarsEnabled(false);
-		dropdown_list->select();
-		dropdown_list->activate();
 
 		for (int i = 0;; ++i) {
 			auto str = std::string("__") + std::to_string(i);
@@ -2076,6 +2075,7 @@ namespace MainMenu {
 			}
 		}
 		dropdown_list->scrollToSelection(true);
+		dropdown_list->activate();
 
 		auto selection = dropdown_list->addImage(
 			SDL_Rect{8, 0, 158, 30},
@@ -2228,7 +2228,7 @@ namespace MainMenu {
 		auto device = allSettings.bindings.devices[player_index];
 		auto& bindings =
 			device == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
-			device >= 1 && device <= 4 ? allSettings.bindings.gamepad_bindings[player_index]:
+			device == 1 ? allSettings.bindings.gamepad_bindings[player_index]:
 			allSettings.bindings.joystick_bindings[player_index];
 		auto find = bindings.find(binding);
 		if (find != bindings.end()) {
@@ -2968,31 +2968,10 @@ namespace MainMenu {
 		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});
 	}
 
-	static const char* getDeviceNameForIndex(int index) {
-		switch (index) {
-		case 0: return "KB & Mouse";
-		case 1: return "Gamepad 1";
-		case 2: return "Gamepad 2";
-		case 3: return "Gamepad 3";
-		case 4: return "Gamepad 4";
-		case 5: return "Joystick 1";
-		case 6: return "Joystick 2";
-		case 7: return "Joystick 3";
-		case 8: return "Joystick 4";
-		default: return "Unknown";
-		}
-	}
-
 	static int getDeviceIndexForName(const char* name) {
 		if (strcmp(name, "KB & Mouse") == 0) { return 0; }
-		if (strcmp(name, "Gamepad 1") == 0) { return 1; }
-		if (strcmp(name, "Gamepad 2") == 0) { return 2; }
-		if (strcmp(name, "Gamepad 3") == 0) { return 3; }
-		if (strcmp(name, "Gamepad 4") == 0) { return 4; }
-		if (strcmp(name, "Joystick 1") == 0) { return 5; }
-		if (strcmp(name, "Joystick 2") == 0) { return 6; }
-		if (strcmp(name, "Joystick 3") == 0) { return 7; }
-		if (strcmp(name, "Joystick 4") == 0) { return 8; }
+		if (strcmp(name, "Gamepad") == 0) { return 1; }
+		if (strcmp(name, "Joystick") == 0) { return 2; }
 		else { return -1; }
 	}
 
@@ -3030,15 +3009,30 @@ namespace MainMenu {
 		}
 	}
 
-	static void settingsBindings(int player_index, Setting setting_to_select) {
+	static void settingsBindings(int player_index, int device_index, Setting setting_to_select) {
 		soundActivate();
+
+		static bool bind_mode;
+		static Button* bound_button;
+		static std::string bound_binding;
+		static std::string bound_input;
+		static int bound_player;
+		static int bound_device;
+
+		bind_mode = false;
+		bound_button = nullptr;
+		bound_binding = "";
+		bound_input = "";
+		bound_player = player_index;
+		bound_device = device_index;
+
 		auto window = settingsGenericWindow("bindings", "BINDINGS",
 			[](Button& button){ // restore defaults
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset();
-				settingsBindings(0, {Setting::Type::Dropdown, "player_dropdown_button"});
+				settingsBindings(0, 0, {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
 				soundCancel();
@@ -3056,24 +3050,16 @@ namespace MainMenu {
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-		int y = 0;
 
 		std::vector<Setting> bindings;
 		bindings.reserve(numBindings);
 		for (int c = 0; c < numBindings; ++c) {
-		    bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		    if (strcmp(defaultBindings[c][device_index], hiddenBinding)) {
+		        bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		    }
 		}
 
-		static bool bind_mode;
-		static Button* bound_button = nullptr;
-		static std::string bound_binding = "";
-		static std::string bound_input = "";
-		static int bound_player;
-		static int bound_device;
-		bound_player = player_index;
-		bound_device = allSettings.bindings.devices[bound_player];
-		bind_mode = false;
-
+		int y = 0;
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
 
 		std::string player_str = "Player " + std::to_string(player_index + 1);
@@ -3089,39 +3075,30 @@ namespace MainMenu {
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int player_index = (int)(entry.name.back() - '1');
-						settingsBindings(player_index, {Setting::Type::Dropdown, "player_dropdown_button"});
+						settingsBindings(player_index, bound_device, {Setting::Type::Dropdown, "player_dropdown_button"});
 					});
 			});
 
-		std::set<int> locked_controllers;
-		for (int i = 1 + Input::gameControllers.size(); i < 5; ++i) {
-			locked_controllers.emplace(i);
-		}
-		for (int i = 5 + Input::joysticks.size(); i < 9; ++i) {
-			locked_controllers.emplace(i);
-		}
-
-		std::vector<const char*> devices;
-		devices.reserve(9);
-		for (int i = 0; i < 9; ++i) {
-			devices.push_back(getDeviceNameForIndex(i));
-		}
+		std::vector<const char*> devices = {
+		    "KB & Mouse",
+		    "Gamepad",
+		    "Joystick",
+		};
 
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.", devices, getDeviceNameForIndex(allSettings.bindings.devices[player_index]),
+			"Select a controller for the given player.", devices, devices[0],
 			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "device_dropdown", false,
+				settingsOpenDropdown(button, "device_dropdown", true,
 					[](Frame::entry_t& entry){
 						soundActivate();
 						auto parent = main_menu_frame->findFrame("bindings");
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int device_index = getDeviceIndexForName(entry.text.c_str());
-						allSettings.bindings.devices[bound_player] = device_index;
-						settingsBindings(bound_player, {Setting::Type::Dropdown, "device_dropdown_button"});
+						settingsBindings(bound_player, device_index, {Setting::Type::Dropdown, "device_dropdown_button"});
 					});
-			}, locked_controllers);
+			});
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
 
@@ -3488,7 +3465,7 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
-			[](Button&){allSettings.bindings = Bindings::load(); settingsBindings(0, {Setting::Type::Dropdown, "player_dropdown_button"});});
+			[](Button&){allSettings.bindings = Bindings::load(); settingsBindings(0, 0, {Setting::Type::Dropdown, "player_dropdown_button"});});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
@@ -3702,7 +3679,7 @@ bind_failed:
 		text1->setColor(makeColor(255, 191, 32, 255));
 		text1->setHJustify(Field::justify_t::CENTER);
 		text1->setVJustify(Field::justify_t::TOP);
-		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 82});
+		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 90});
 		text1->setText(
 			u8"Project lead, programming, and design\n"
 			u8" \n"
@@ -3739,6 +3716,9 @@ bind_failed:
 			u8" \n \n \n \n \n"
 			u8"Barony is a product of Turning Wheel LLC\n"
 			u8" \n"
+#ifdef USE_FMOD
+			u8" \n"
+#endif
 			u8" \n"
 			u8" \n \n \n \n \n"
 			u8"This game is dedicated to all of our friends, family, and fans\n"
@@ -3753,7 +3733,7 @@ bind_failed:
 		text2->setColor(0xffffffff);
 		text2->setHJustify(Field::justify_t::CENTER);
 		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 82});
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 90});
 		text2->setText(
 			u8" \n"
 			u8"Sheridan Rathbun\n"
@@ -3790,6 +3770,9 @@ bind_failed:
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Copyright \u00A9 2021, all rights reserved\n"
+#ifdef USE_FMOD
+			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
+#endif
 			u8"http://www.baronygame.com/\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
@@ -5797,10 +5780,10 @@ bind_failed:
 		invite->setWidgetBack("back_button");
 		invite->addWidgetAction("MenuStart", "invite_button");
 		switch (index) {
-		case 0: invite->setCallback([](Button&){createCharacterCard(0);}); break;
-		case 1: invite->setCallback([](Button&){createCharacterCard(1);}); break;
-		case 2: invite->setCallback([](Button&){createCharacterCard(2);}); break;
-		case 3: invite->setCallback([](Button&){createCharacterCard(3);}); break;
+		case 0: invite->setCallback([](Button&){createControllerPrompt(0);}); break;
+		case 1: invite->setCallback([](Button&){createControllerPrompt(1);}); break;
+		case 2: invite->setCallback([](Button&){createControllerPrompt(2);}); break;
+		case 3: invite->setCallback([](Button&){createControllerPrompt(3);}); break;
 		}
 		invite->select();
 	}
@@ -5982,20 +5965,76 @@ bind_failed:
 			button->setDisabled(!allCardsClosed);
 			});
 
-		createCharacterCard(0);
 		if (type == LobbyType::LobbyLocal) {
+			createStartButton(0);
 			createStartButton(1);
 			createStartButton(2);
 			createStartButton(3);
 		} else if (type == LobbyType::LobbyLAN) {
+			createWaitingStone(0);
 			createWaitingStone(1);
 			createWaitingStone(2);
 			createWaitingStone(3);
 		} else if (type == LobbyType::LobbyOnline) {
+			createInviteButton(0);
 			createInviteButton(1);
 			createInviteButton(2);
 			createInviteButton(3);
 		}
+	}
+
+	static void createControllerPrompt(int index) {
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, Frame::virtualScreenY / 4, Frame::virtualScreenX, Frame::virtualScreenY / 2});
+		dimmer->setActualSize(SDL_Rect{0, 0, dimmer->getSize().w, dimmer->getSize().h});
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		static auto button_func = [](Button& button, int index) {
+		    if (Input::waitingToBindControllerForPlayer) {
+		        // this only happens if the mouse was used to click this button
+		        Input::waitingToBindControllerForPlayer = -1;
+		        inputs.setPlayerIDAllowedKeyboard(index);
+		        if (inputs.hasController(index)) {
+		            inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+		        }
+		    } else {
+		        // this happens if a controller was bound to the player
+		        if (inputs.bPlayerUsingKeyboardControl(index)) {
+		            // when other players get controllers, the mouse + keyboard go back to player 1
+		            inputs.setPlayerIDAllowedKeyboard(0);
+		        }
+		    }
+		    auto parent = static_cast<Frame*>(button.getParent());
+		    parent->removeSelf();
+		    createCharacterCard(index);
+		    };
+
+		char text[1024];
+		snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
+		    "or click here to assign only the mouse and keyboard", index);
+
+		auto button = dimmer->addButton("button");
+		button->setHideGlyphs(true);
+		button->setHideSelectors(true);
+		button->setColor(0);
+		button->setBorder(0);
+		button->setHighlightColor(0);
+		button->setTextColor(makeColor(255, 255, 255, 255));
+		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		button->setSize(dimmer->getActualSize());
+		button->setJustify(Field::justify_t::CENTER);
+		button->setFont(bigfont_outline);
+		button->setText(text);
+		switch (index) {
+		case 0: button->setCallback([](Button& button){button_func(button, 0);}); break;
+		case 1: button->setCallback([](Button& button){button_func(button, 1);}); break;
+		case 2: button->setCallback([](Button& button){button_func(button, 2);}); break;
+		case 3: button->setCallback([](Button& button){button_func(button, 3);}); break;
+		}
+		button->select();
+
+		Input::waitingToBindControllerForPlayer = index;
 	}
 
 /******************************************************************************/
