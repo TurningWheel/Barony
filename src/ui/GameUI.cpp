@@ -1116,7 +1116,7 @@ void Player::HUD_t::updateUINavigation()
 	int alignPaddingX = 2;
 	int leftAlignX = uiNavFrame->getSize().w / 2 - buttonWidth - alignPaddingX;
 	int rightAlignX = uiNavFrame->getSize().w / 2 + alignPaddingX;
-	int topAlignY = 26;
+	int topAlignY = 34;
 	int bottomAlignY = topAlignY + 52;
 
 	int numButtonsToShow = 2;
@@ -8253,6 +8253,12 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	assert(characterInnerFrame);
 
 	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& inputs.hasController(player.playernum)
+		&& !Input::inputs[player.playernum].binary("MenuConfirm") )
+	{
+		enableTooltips = false;
+	}
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -8479,6 +8485,12 @@ void Player::CharacterSheet_t::updateStats()
 	Button* chrButton = statsInnerFrame->findButton("chr button");
 
 	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor 
+		&& inputs.hasController(player.playernum)
+		&& !Input::inputs[player.playernum].binary("MenuConfirm") )
+	{
+		enableTooltips = false;
+	}
 
 	char buf[32] = "";
 	if ( auto field = statsInnerFrame->findField("str text stat") )
@@ -8692,6 +8704,12 @@ void Player::CharacterSheet_t::updateAttributes()
 	attributesInnerFrame->setSize(attributesInnerPos);
 
 	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& inputs.hasController(player.playernum)
+		&& !Input::inputs[player.playernum].binary("MenuConfirm") )
+	{
+		enableTooltips = false;
+	}
 
 	char buf[32] = "";
 
