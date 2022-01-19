@@ -4379,6 +4379,31 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		spellFramePos.y -= spellPanel.heightOffsetWhenNotCompact;
 	}
 	spellFrame->setSize(spellFramePos);
+
+
+	// mouse hovering over inventory frames in compact view - if we're on hotbar, refocus the inventory/spells panel
+	if ( player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+		&& inputs.bPlayerUsingKeyboardControl(player.playernum) && bCompactView )
+	{
+		if (player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
+			&& !isInteractable )
+		{
+			if ( (!invSlotsFrame->isDisabled() && invSlotsFrame->capturesMouseInRealtimeCoords()) 
+				|| (!dollSlotsFrame->isDisabled() && dollSlotsFrame->capturesMouseInRealtimeCoords())
+				|| (!backpackSlotsFrame->isDisabled() && backpackSlotsFrame->capturesMouseInRealtimeCoords())
+				|| (!spellFrame->isDisabled() && spellFrame->capturesMouseInRealtimeCoords()) )
+			{
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+				{
+					player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				}
+				else
+				{
+					player.GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				}
+			}
+		}
+	}
 }
 
 void Player::Inventory_t::openInventory()
