@@ -1678,7 +1678,7 @@ namespace ConsoleCommands {
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			players[i]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-
+			players[i]->messageZone.deleteAllNotificationMessages();
 			if ( !splitscreen )
 			{
 				players[i]->camera().winx = 0;
