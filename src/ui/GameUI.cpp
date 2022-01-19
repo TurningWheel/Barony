@@ -635,11 +635,13 @@ void createUINavigation(const int player)
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Magic button clicked", button.getOwner());
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
+				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 				players[button.getOwner()]->inventoryUI.spellPanel.openSpellPanel();
 			}
 			else if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
+				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 				players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 			}
@@ -662,6 +664,12 @@ void createUINavigation(const int player)
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
 			}
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_CHARSHEET;
+			players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+			if ( players[button.getOwner()]->characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+			{
+				players[button.getOwner()]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+			}
+			players[button.getOwner()]->GUI.warpControllerToModule(false);
 		});
 		auto statusButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "status button glyph")->disabled = true;
@@ -677,7 +685,15 @@ void createUINavigation(const int player)
 		itemsButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Item button clicked", button.getOwner());
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
-			players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
+			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL
+				&& players[button.getOwner()]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+			{
+				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+			}
+			else
+			{
+				players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
+			}
 		});
 
 		auto itemsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
@@ -762,7 +778,7 @@ void Player::HUD_t::updateUINavigation()
 	bool rightTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavRightTrigger");
 
 	bShowUINavigation = false;
-	if ( player.gui_mode != GUI_MODE_NONE )
+	if ( player.gui_mode != GUI_MODE_NONE && player.isLocalPlayer() && !player.shootmode )
 	{
 		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
@@ -798,88 +814,76 @@ void Player::HUD_t::updateUINavigation()
 	rightTriggerTxt->setDisabled(true);
 	auto rightTriggerGlyph = uiNavFrame->findImage("right trigger img");
 	rightTriggerGlyph->disabled = true;
-	if ( inputs.hasController(player.playernum) && leftBumperModule != Player::GUI_t::MODULE_NONE )
+	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.bUseCompactGUIWidth()
+		&& leftBumperModule != Player::GUI_t::MODULE_NONE )
 	{
 		switch ( leftBumperModule )
 		{
 			case Player::GUI_t::MODULE_INVENTORY:
-				//leftBumperTxt->setText(language[4089]);
-				leftBumperTxt->setDisabled(false);
-				break;
 			case Player::GUI_t::MODULE_SPELLS:
-				//leftBumperTxt->setText(language[4090]);
-				leftBumperTxt->setDisabled(false);
-				break;
 			case Player::GUI_t::MODULE_HOTBAR:
-				//leftBumperTxt->setText(language[4091]);
-				leftBumperTxt->setDisabled(false);
-				break;
 			case Player::GUI_t::MODULE_CHARACTERSHEET:
-				//leftBumperTxt->setText(language[4092]);
 				leftBumperTxt->setDisabled(false);
+				leftBumperTxt->setText("/");
 				break;
 			default:
 				break;
 		}
-		leftBumperTxt->setText("/");
 	}
-	if ( inputs.hasController(player.playernum) && rightBumperModule != Player::GUI_t::MODULE_NONE )
+	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.bUseCompactGUIWidth()
+		&& rightBumperModule != Player::GUI_t::MODULE_NONE )
 	{
 		switch ( rightBumperModule )
 		{
 			case Player::GUI_t::MODULE_INVENTORY:
-				//rightBumperTxt->setText(language[4089]);
-				rightBumperTxt->setDisabled(false);
-				break;
 			case Player::GUI_t::MODULE_SPELLS:
-				//rightBumperTxt->setText(language[4090]);
-				rightBumperTxt->setDisabled(false);
-				break;
 			case Player::GUI_t::MODULE_HOTBAR:
-				//rightBumperTxt->setText(language[4091]);
-				rightBumperTxt->setDisabled(false);
-				break;
 			case Player::GUI_t::MODULE_CHARACTERSHEET:
-				//rightBumperTxt->setText(language[4092]);
 				rightBumperTxt->setDisabled(false);
+				rightBumperTxt->setText(language[4089]);
 				break;
 			default:
 				break;
 		}
-		rightBumperTxt->setText(language[4089]);
 	}
 
 	int lowestLeftY = 0;
 
-	if ( inputs.hasController(player.playernum) )
+	int leftAnchorX = 0;
+	int rightAnchorX = 0;
+	PanelJustify_t justify = player.inventoryUI.inventoryPanelJustify;
+	if ( player.inventoryUI.frame )
 	{
-		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY && player.inventoryUI.frame)
+		auto inventoryBgFrame = player.inventoryUI.frame->findFrame("inventory base");
+
+		Frame::image_t* invBaseImg = inventoryBgFrame->findImage("inventory base img");
+
+		if ( justify == PANEL_JUSTIFY_LEFT )
+		{
+			leftAnchorX = inventoryBgFrame->getSize().x + 8;
+			leftAnchorX += invBaseImg->pos.w;
+
+			rightAnchorX = player.inventoryUI.frame->getSize().w - leftAnchorX;
+		}
+		else
+		{
+			rightAnchorX = inventoryBgFrame->getSize().x - 8;
+			rightAnchorX += invBaseImg->pos.x;
+
+			leftAnchorX = player.inventoryUI.frame->getSize().w - rightAnchorX;
+		}
+	}
+
+	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.bUseCompactGUIWidth() )
+	{
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
 		{
-			int leftAnchorX = 0;
-			int rightAnchorX = 0;
-			PanelJustify_t justify = player.inventoryUI.inventoryPanelJustify;
-			auto inventoryBgFrame = player.inventoryUI.frame->findFrame("inventory base");
-
-			Frame::image_t* invBaseImg = inventoryBgFrame->findImage("inventory base img");
-
-			if ( justify == PANEL_JUSTIFY_LEFT )
-			{
-				leftAnchorX = inventoryBgFrame->getSize().x + 8;
-				leftAnchorX += invBaseImg->pos.w;
-
-				rightAnchorX = player.inventoryUI.frame->getSize().w - leftAnchorX;
-			}
-			else
-			{
-				rightAnchorX = inventoryBgFrame->getSize().x - 8;
-				rightAnchorX += invBaseImg->pos.x;
-
-				leftAnchorX = player.inventoryUI.frame->getSize().w - rightAnchorX;
-			}
-
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -977,6 +981,7 @@ void Player::HUD_t::updateUINavigation()
 
 		if ( leftTriggerPressed	&& !leftTriggerTxt->isDisabled() )
 		{
+			leftTriggerPressed = false;
 			if ( !inputs.getUIInteraction(player.playernum)->selectedItem && !player.GUI.isDropdownActive()
 			&& (inputs.hasController(player.playernum) && !player.shootmode
 				&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
@@ -995,6 +1000,7 @@ void Player::HUD_t::updateUINavigation()
 
 		if ( rightTriggerPressed && !rightTriggerTxt->isDisabled() )
 		{
+			rightTriggerPressed = false;
 			if ( !inputs.getUIInteraction(player.playernum)->selectedItem && !player.GUI.isDropdownActive()
 				&& (inputs.hasController(player.playernum) && !player.shootmode
 					&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
@@ -1094,16 +1100,16 @@ void Player::HUD_t::updateUINavigation()
 	std::vector<ButtonsAndGlyphs> allButtonsAndGlyphs;
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "magic button", magicButton, magicButtonGlyph, 
-		"MenuPageLeftAlt", COMPACT_LAYOUT_INVENTORY });
+		"UINavLeftTrigger", COMPACT_LAYOUT_INVENTORY });
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "status button", statusButton, statusButtonGlyph, 
-		"MenuPageRightAlt", COMPACT_LAYOUT_INVENTORY });
+		"UINavRightTrigger", COMPACT_LAYOUT_INVENTORY });
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "items button", itemsButton, itemsButtonGlyph,
-		"MenuPageLeftAlt", COMPACT_LAYOUT_CHARSHEET });
+		"UINavLeftTrigger", COMPACT_LAYOUT_CHARSHEET });
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "skills button", skillsButton, skillsButtonGlyph,
-		"MenuPageRightAlt", COMPACT_LAYOUT_CHARSHEET });
+		"UINavRightTrigger", COMPACT_LAYOUT_CHARSHEET });
 
 	int buttonWidth = 98;
 	int buttonHeight = 38;
@@ -1113,7 +1119,7 @@ void Player::HUD_t::updateUINavigation()
 	int topAlignY = 26;
 	int bottomAlignY = topAlignY + 52;
 
-	int numButtonsToShow = 4;
+	int numButtonsToShow = 2;
 
 	for ( auto& buttonAndGlyph : allButtonsAndGlyphs )
 	{
@@ -1122,29 +1128,91 @@ void Player::HUD_t::updateUINavigation()
 		SDL_Rect buttonPos = button->getSize();
 		auto& glyph = buttonAndGlyph.glyph;
 		glyph->disabled = true;
+
+		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			button->setColor(makeColor(255, 255, 255, 255));
+		}
+		else
+		{
+			button->setColor(makeColor(255, 255, 255, 191));
+		}
+
 		if ( buttonAndGlyph.name == "magic button" || buttonAndGlyph.name == "items button" )
 		{
-			buttonPos.x = leftAlignX;
-			if ( numButtonsToShow < 4 )
+			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
+				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
+				&& !player.bUseCompactGUIWidth() )
 			{
-				buttonPos.y = topAlignY;
-				if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
+				{
+					if ( buttonAndGlyph.name == "magic button" )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+
+						buttonPos.x = leftAnchorX;
+						buttonPos.y = 8;
+						buttonAndGlyph.inputName = "Spell List";
+					}
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+				{
+					if ( buttonAndGlyph.name == "items button" )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+
+						buttonPos.x = leftAnchorX;
+						buttonPos.y = 8;
+						buttonAndGlyph.inputName = "Spell List";
+					}
+				}
+			}
+			else if ( player.bUseCompactGUIWidth() )
+			{
+				buttonPos.x = leftAlignX;
+				if ( numButtonsToShow < 4 )
+				{
+					buttonPos.y = topAlignY;
+					if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY )
+					{
+						if ( buttonAndGlyph.name == "items button" && player.inventory_mode == INVENTORY_MODE_ITEM )
+						{
+							// leave disabled
+							button->setDisabled(true);
+							glyph->disabled = true;
+						}
+						else if ( buttonAndGlyph.name == "magic button" && player.inventory_mode == INVENTORY_MODE_SPELL )
+						{
+							// leave disabled
+							button->setDisabled(true);
+							glyph->disabled = true;
+						}
+						else
+						{
+							button->setDisabled(false);
+							glyph->disabled = false;
+						}
+					}
+					else if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+					}
+				}
+				else
 				{
 					button->setDisabled(false);
 					glyph->disabled = false;
-				}
-			}
-			else
-			{
-				button->setDisabled(false);
-				glyph->disabled = false;
-				if ( buttonAndGlyph.name == "magic button" )
-				{
-					buttonPos.y = topAlignY;
-				}
-				else if ( buttonAndGlyph.name == "items button" )
-				{
-					buttonPos.y = bottomAlignY;
+					if ( buttonAndGlyph.name == "magic button" )
+					{
+						buttonPos.y = topAlignY;
+					}
+					else if ( buttonAndGlyph.name == "items button" )
+					{
+						buttonPos.y = bottomAlignY;
+					}
 				}
 			}
 			buttonPos.w = buttonWidth;
@@ -1153,27 +1221,36 @@ void Player::HUD_t::updateUINavigation()
 		}
 		if ( buttonAndGlyph.name == "status button" || buttonAndGlyph.name == "skills button" )
 		{
-			buttonPos.x = rightAlignX;
-			if ( numButtonsToShow < 4 )
+			if ( inputs.bPlayerUsingKeyboardControl(player.playernum)
+				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
+				&& !player.bUseCompactGUIWidth() )
 			{
-				buttonPos.y = topAlignY;
-				if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+				// leave disabled
+			}
+			else if ( player.bUseCompactGUIWidth() )
+			{
+				buttonPos.x = rightAlignX;
+				if ( numButtonsToShow < 4 )
+				{
+					buttonPos.y = topAlignY;
+					if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+					}
+				}
+				else
 				{
 					button->setDisabled(false);
 					glyph->disabled = false;
-				}
-			}
-			else
-			{
-				button->setDisabled(false);
-				glyph->disabled = false;
-				if ( buttonAndGlyph.name == "status button" )
-				{
-					buttonPos.y = topAlignY;
-				}
-				else if ( buttonAndGlyph.name == "skills button" )
-				{
-					buttonPos.y = bottomAlignY;
+					if ( buttonAndGlyph.name == "status button" )
+					{
+						buttonPos.y = topAlignY;
+					}
+					else if ( buttonAndGlyph.name == "skills button" )
+					{
+						buttonPos.y = bottomAlignY;
+					}
 				}
 			}
 			buttonPos.w = buttonWidth;
@@ -1187,7 +1264,7 @@ void Player::HUD_t::updateUINavigation()
 			glyph->ontop = true;
 			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 			{
-				glyph->disabled = false; // keyboard glyph support TODO
+				glyph->disabled = false;
 			}
 			else
 			{
@@ -1202,6 +1279,27 @@ void Player::HUD_t::updateUINavigation()
 			glyph->pos.x = button->getSize().x + button->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 8;
 			glyph->pos.y = button->getSize().y + button->getSize().h - glyphToImgPadY; // just below the button with some padding
+		}
+		button->setInvisible(button->isDisabled());
+	}
+
+	for ( auto& buttonAndGlyph : allButtonsAndGlyphs )
+	{
+		auto& button = buttonAndGlyph.button;
+		if ( !button->isDisabled() && !button->isInvisible() )
+		{
+			if ( buttonAndGlyph.inputName == "UINavLeftTrigger" && leftTriggerPressed
+				&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
+			{
+				leftTriggerPressed = false;
+				button->activate();
+			}
+			else if ( buttonAndGlyph.inputName == "UINavRightTrigger" && rightTriggerPressed
+				&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
+			{
+				rightTriggerPressed = false;
+				button->activate();
+			}
 		}
 	}
 }
