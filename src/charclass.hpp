@@ -25,7 +25,7 @@ public:
 		classStats = myStats;
 		characterClass = charClass;
 	};
-	void serialize(FileInterface* const file) {
+	bool serialize(FileInterface* const file) {
 		// recommend you start with this because it makes versioning way easier down the road
 		int version = 0;
 		file->property("version", version);
@@ -68,6 +68,7 @@ public:
 			file->property(str, classStats->PROFICIENCIES[i]);
 		}
 		file->endObject();
+		return true;
 	}
 
 	void writeToFile()

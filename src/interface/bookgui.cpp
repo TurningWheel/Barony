@@ -230,7 +230,7 @@ void Player::BookGUI_t::updateBookGUI()
 			promptBack->setSize(textPos);
 			glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
 		}
-		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuCancel");
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
 		Image* glyphImage = Image::get(promptImg->path.c_str());
 		if ( glyphImage )
 		{
@@ -254,7 +254,7 @@ void Player::BookGUI_t::updateBookGUI()
 		{
 			textPos.w = textGet->getWidth();
 		}
-		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuPageRight");
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageRight");
 		Image* glyphImage = Image::get(promptImg->path.c_str());
 		if ( glyphImage )
 		{
@@ -280,7 +280,7 @@ void Player::BookGUI_t::updateBookGUI()
 		{
 			textPos.w = textGet->getWidth();
 		}
-		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuPageLeft");
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageLeft");
 		Image* glyphImage = Image::get(promptImg->path.c_str());
 		if ( glyphImage )
 		{

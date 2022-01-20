@@ -44,7 +44,7 @@ namespace MainMenu {
 		{"Block", "Space", "LeftTrigger", emptyBinding},
 		{"Sneak", "Left Shift", "ButtonLeftBumper", emptyBinding},
 		{"Character Status", "Tab", "ButtonBack", emptyBinding},
-		{"Pause Game", emptyBinding, "ButtonStart", emptyBinding},
+		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
 		{"Spell List", "M", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", emptyBinding, emptyBinding},
 		{"Command NPC", "Q", "DpadY-", emptyBinding},
@@ -130,19 +130,18 @@ namespace MainMenu {
 		inline void save();
 		static inline InventorySorting load();
 		static inline InventorySorting reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // Binding options
 	struct Bindings {
-		int devices[4];
 		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
 		std::unordered_map<std::string, std::string> gamepad_bindings[4];
 		std::unordered_map<std::string, std::string> joystick_bindings[4];
 		inline void save();
 		static inline Bindings load();
 		static inline Bindings reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // Minimap options
@@ -154,7 +153,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Minimap load();
 		static inline Minimap reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // Message options
@@ -173,7 +172,7 @@ namespace MainMenu {
 		inline void save();
 		static inline Messages load();
 		static inline Messages reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
     // All menu options combined
@@ -230,7 +229,7 @@ namespace MainMenu {
 		inline bool save(); // true if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
-		void serialize(FileInterface*);
+		bool serialize(FileInterface*);
 	};
 
 	static inline void soundToggleMenu() {
@@ -310,6 +309,7 @@ namespace MainMenu {
 	static void characterCardRaceMenu(int index);
 	static void characterCardClassMenu(int index);
 
+    static void createControllerPrompt(int index);
 	static void createCharacterCard(int index);
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
@@ -764,7 +764,7 @@ namespace MainMenu {
 		return InventorySorting();
 	}
 
-	void InventorySorting::serialize(FileInterface* file) {
+	bool InventorySorting::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("hotbarWeapons", hotbarWeapons);
@@ -791,6 +791,7 @@ namespace MainMenu {
 		file->property("sortStaves", sortStaves);
 		file->property("sortFood", sortFood);
 		file->property("sortEquipped", sortEquipped);
+		return true;
 	}
 
 /******************************************************************************/
@@ -819,7 +820,6 @@ namespace MainMenu {
 	inline Bindings Bindings::reset() {
 		Bindings bindings;
 		for (int c = 0; c < 4; ++c) {
-			bindings.devices[c] = c;
             for (int i = 0; i < numBindings; ++i) {
 			    bindings.kb_mouse_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][1]);
 			    bindings.gamepad_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][2]);
@@ -829,7 +829,7 @@ namespace MainMenu {
 		return bindings;
 	}
 
-	void Bindings::serialize(FileInterface* file) {
+	bool Bindings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		Uint32 num_players = 4;
@@ -837,7 +837,6 @@ namespace MainMenu {
 		file->beginArray(num_players);
 		for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
 			file->beginObject();
-			file->property("device", devices[c]);
 			for (int j = 0; j < 3; ++j) {
 				auto& bindings =
 					j == 0 ? kb_mouse_bindings[c]:
@@ -877,6 +876,7 @@ namespace MainMenu {
 			file->endObject();
 		}
 		file->endArray();
+		return true;
 	}
 
 /******************************************************************************/
@@ -901,13 +901,14 @@ namespace MainMenu {
 		return Minimap();
 	}
 
-	void Minimap::serialize(FileInterface* file) {
+	bool Minimap::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("map_scale", map_scale);
 		file->property("icon_scale", icon_scale);
 		file->property("foreground_opacity", foreground_opacity);
 		file->property("background_opacity", background_opacity);
+		return true;
 	}
 
 /******************************************************************************/
@@ -951,7 +952,7 @@ namespace MainMenu {
 		return Messages();
 	}
 
-	void Messages::serialize(FileInterface* file) {
+	bool Messages::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("combat", combat);
@@ -965,6 +966,7 @@ namespace MainMenu {
 		file->property("inspection", inspection);
 		file->property("hint", hint);
 		file->property("obituary", obituary);
+		return true;
 	}
 
 	/******************************************************************************/
@@ -1185,7 +1187,7 @@ namespace MainMenu {
 		return settings;
 	}
 
-	void AllSettings::serialize(FileInterface* file) {
+	bool AllSettings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
@@ -1236,6 +1238,7 @@ namespace MainMenu {
 		file->property("extra_life_enabled", extra_life_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
+		return true;
 	}
 
 /******************************************************************************/
@@ -1243,24 +1246,28 @@ namespace MainMenu {
 	// Story text is formatted thus:
 	// carat ^ advances the image index
 	// pound # adds a pause
+	// asterisk * followed by a single digit changes the text box size
 
 	static void createStoryScreen(const char* file, void (*end_func)()) {
 	    char filename[PATH_MAX];
 	    (void)completePath(filename, file);
 
         struct Story {
-            int version;
+            int version = 1;
+            bool press_a_to_advance = false;
             std::vector<std::string> text;
             std::vector<std::string> images;
 
-            void serialize(FileInterface* file) {
+            bool serialize(FileInterface* file) {
                 if (file->isReading()) {
                     text.clear();
                     images.clear();
                 }
                 file->property("version", version);
+                file->property("press_a_to_advance", press_a_to_advance);
                 file->property("text", text);
                 file->property("images", images);
+                return true;
             }
         };
 
@@ -1268,13 +1275,18 @@ namespace MainMenu {
         static int story_text_chars;
         static int story_text_lines;
 		static int story_text_pause;
+		static int story_text_box_size;
 		static float story_text_scroll;
 		static float story_text_writer;
+		static float story_text_box_scale;
+		static bool story_text_adjust_box;
 		static bool story_text_end;
 		static int story_image_index;
 		static float story_image_fade;
 		static bool story_image_advanced;
 		static void (*story_end_func)();
+		static int story_skip;
+		static float story_skip_timer;
 
 		bool read_result = FileHelper::readObject(filename, story);
 		if (!read_result) {
@@ -1284,13 +1296,18 @@ namespace MainMenu {
 		story_text_chars = 0;
 		story_text_lines = 0;
 		story_text_pause = 0;
+		story_text_box_size = 2;
 		story_text_scroll = 0.f;
 		story_text_writer = 0.f;
+		story_text_box_scale = -2.f;
+		story_text_adjust_box = false;
 		story_text_end = false;
 		story_image_index = 0;
 		story_image_fade = 0.f;
 		story_image_advanced = false;
 		story_end_func = end_func;
+		story_skip = 0;
+		story_skip_timer = 0.f;
 
 		main_menu_frame->addImage(
 			main_menu_frame->getSize(),
@@ -1310,30 +1327,121 @@ namespace MainMenu {
 		back_button->setFont(smallfont_outline);
 		back_button->setHJustify(Button::justify_t::RIGHT);
 		back_button->setVJustify(Button::justify_t::CENTER);
-		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
-		back_button->setCallback([](Button&){
-			story_end_func();
+		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 416, Frame::virtualScreenY - 70, 380, 50});
+		back_button->setCallback([](Button& button){
+		    ++story_skip;
+		    story_skip_timer = (float)TICKS_PER_SECOND;
+		    switch (story_skip) {
+		    case 0: button.setText("Skip story"); break;
+		    case 1: button.setText("Confirm (1)?"); break;
+		    case 2: button.setText("Confirm (2)?"); break;
+		    }
+		    if (story_skip >= 3) {
+			    story_end_func();
+		    }
 			});
 		back_button->setWidgetBack("back");
-		back_button->select();
+		back_button->setButtonsOffset(SDL_Rect{16, -25, 0, 0});
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
-		static const int text_box_lines = 2;
+		auto next_button_func = [](Button&){
+	        if (story_text_pause) {
+		        story_text_pause = 0;
+			    if (story_text_end == true) {
+				    story_end_func();
+			    } else {
+	                auto font = Font::get(bigfont_outline); assert(font);
+				    story_text_scroll = font->height() * story_text_box_size;
+			    }
+	        }
+	        };
 
 		auto textbox1 = main_menu_frame->addFrame("story_text_box");
-		textbox1->setSize(SDL_Rect{120, Frame::virtualScreenY - font->height() * (text_box_lines + 2), Frame::virtualScreenX - 240, font->height() * (text_box_lines + 1)});
-		textbox1->setActualSize(SDL_Rect{0, 0, textbox1->getSize().w, textbox1->getSize().h});
 		textbox1->setColor(makeColor(0, 0, 0, 127));
 		textbox1->setBorder(0);
+		if (!story.press_a_to_advance) {
+		    textbox1->setHideSelectors(true);
+		    textbox1->setHideGlyphs(true);
+		    textbox1->select();
+		    textbox1->setWidgetBack("back");
+		} else {
+		    auto next = main_menu_frame->addButton("next");
+		    next->setHideSelectors(true);
+		    next->setColor(makeColor(0, 0, 0, 0));
+		    next->setHighlightColor(makeColor(0, 0, 0, 0));
+		    next->setBorderColor(makeColor(0, 0, 0, 0));
+		    next->setTextColor(0xffffffff);
+		    next->setTextHighlightColor(0xffffffff);
+		    next->setFont(smallfont_outline);
+		    next->setHJustify(Button::justify_t::CENTER);
+		    next->setVJustify(Button::justify_t::CENTER);
+		    auto font = Font::get(bigfont_outline); assert(font);
+		    next->setSize(SDL_Rect{
+		        (Frame::virtualScreenX - 160) / 2,
+		        (Frame::virtualScreenY - font->height()),
+		        160,
+		        font->height(),
+		        });
+		    next->setCallback(next_button_func);
+			next->setTickCallback([](Widget& widget){
+			    auto button = static_cast<Button*>(&widget);
+                button->setInvisible(story_text_pause == 0);
+		        button->setText(inputs.hasController(0) ? "" : "Continue...");
+			    });
+		    next->setWidgetBack("back");
+		    next->select();
+		    next->setButtonsOffset(SDL_Rect{-80, -font->height() + 4, 0, 0});
+		}
 
 		auto textbox2 = textbox1->addFrame("story_text_box");
 		textbox2->setScrollBarsEnabled(false);
 		textbox2->setAllowScrollBinds(false);
-		textbox2->setSize(SDL_Rect{font->height() / 2, font->height() / 2, Frame::virtualScreenX - 240 - font->height(), font->height() * text_box_lines});
-		textbox2->setActualSize(SDL_Rect{0, 0, textbox2->getSize().w, font->height() * 100});
 		textbox2->setHollow(true);
 		textbox2->setBorder(0);
+
+		static auto change_box_size = [](float lines){
+		    assert(main_menu_frame);
+		    auto font = Font::get(bigfont_outline); assert(font);
+		    auto textbox1 = main_menu_frame->findFrame("story_text_box");
+		    textbox1->setSize(SDL_Rect{
+		        160,
+		        Frame::virtualScreenY - (int)(font->height() * std::max(lines + 2.f, 0.f)),
+		        Frame::virtualScreenX - 320,
+		        (int)(font->height() * std::max(lines + 1.f, 0.f)),
+		        });
+		    textbox1->setActualSize(SDL_Rect{
+		        0,
+		        0,
+		        textbox1->getSize().w,
+		        textbox1->getSize().h,
+		        });
+		    auto textbox2 = textbox1->findFrame("story_text_box");
+		    textbox2->setSize(SDL_Rect{
+		        font->height() / 2,
+		        font->height() / 2,
+		        Frame::virtualScreenX - 320 - font->height(),
+		        (int)(font->height() * std::max(lines, 0.f)),
+		        });
+		    textbox2->setActualSize(SDL_Rect{
+		        textbox2->getActualSize().x,
+		        textbox2->getActualSize().y,
+		        textbox2->getSize().w,
+		        font->height() * 100,
+		        });
+		    };
+		change_box_size(story_text_box_scale);
+
+		static auto adjust_box_size = [](){
+		    float f = story_text_box_size;
+		    float diff = story_text_box_scale - f;
+		    if (fabs(diff) < 0.1) {
+		        story_text_box_scale -= diff;
+		    } else {
+		        story_text_box_scale -= diff / TICKS_PER_SECOND;
+		    }
+            change_box_size(story_text_box_scale);
+		    };
 
 		auto field = textbox2->addField("text", 1 << 16);
 		field->setFont(bigfont_outline);
@@ -1373,12 +1481,14 @@ namespace MainMenu {
 				}
 			} else {
 				if (story_text_pause > 0) {
-					--story_text_pause;
+				    if (!story.press_a_to_advance) {
+					    --story_text_pause;
+				    }
 					if (story_text_pause == 0) {
 						if (story_text_end == true) {
 							story_end_func();
 						} else {
-							story_text_scroll = story_font->height() * text_box_lines;
+							story_text_scroll = story_font->height() * story_text_box_size;
 						}
 					}
 				} else {
@@ -1403,7 +1513,7 @@ namespace MainMenu {
 							++story_text_chars;
 							if (c == '\n') {
 							    ++story_text_lines;
-							    if (story_text_lines >= text_box_lines) {
+							    if (story_text_lines >= story_text_box_size) {
 							        story_text_lines = 0;
 								    story_text_pause = fpsLimit * 5;
 							    }
@@ -1420,6 +1530,18 @@ namespace MainMenu {
 							} else if (c == '#') {
 								story_text_writer += fpsLimit / 10.f;
 								return; // skip printing this character
+							} else if (c == '*') {
+								story_text_adjust_box = true;
+								return; // skip printing this character
+							} else if (story_text_adjust_box) {
+								story_text_adjust_box = false;
+								if (c >= '1' && c <= '9') {
+								    story_text_box_size = (int)(c - '0');
+								    return; // skip printing this character
+								} else if (c == '0') {
+								    story_text_box_size = -2;
+								    return; // skip printing this character
+								}
 							} else {
 								story_text_writer += fpsLimit / 30.f;
 							}
@@ -1432,6 +1554,16 @@ namespace MainMenu {
 					}
 				}
 			}
+		    adjust_box_size();
+		    if (story_skip_timer > 0.f) {
+		        story_skip_timer -= inc;
+		        if (story_skip_timer <= 0.f) {
+		            story_skip_timer = 0.f;
+		            story_skip = 0;
+		            auto back_button = main_menu_frame->findButton("back");
+		            back_button->setText("Skip story");
+		        }
+		    }
 			});
 	}
 
@@ -1671,6 +1803,7 @@ namespace MainMenu {
 			button->setWidgetBack("Discard");
 			button->addWidgetAction("MenuAlt1", "Defaults");
 			button->addWidgetAction("MenuStart", "Confirm");
+			button->setHideKeyboardGlyphs(false);
 		}
 		auto first_button = window->findButton(options[0].name); assert(first_button);
 		first_button->select();
@@ -1899,8 +2032,6 @@ namespace MainMenu {
 		dropdown_list->setListOffset(SDL_Rect{0, 11, 0, 0});
 		dropdown_list->setListJustify(Frame::justify_t::CENTER);
 		dropdown_list->setScrollBarsEnabled(false);
-		dropdown_list->select();
-		dropdown_list->activate();
 
 		for (int i = 0;; ++i) {
 			auto str = std::string("__") + std::to_string(i);
@@ -1942,6 +2073,7 @@ namespace MainMenu {
 			}
 		}
 		dropdown_list->scrollToSelection(true);
+		dropdown_list->activate();
 
 		auto selection = dropdown_list->addImage(
 			SDL_Rect{8, 0, 158, 30},
@@ -2078,6 +2210,7 @@ namespace MainMenu {
 		Frame& frame,
 		int y,
 		int player_index,
+		int device_index,
 		const char* binding,
 		const char* tip,
 		void (*callback)(Button&))
@@ -2088,23 +2221,24 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y + 4,
-			158,
+			320,
 			44});
 		button->setFont(smallfont_outline);
-		auto device = allSettings.bindings.devices[player_index];
 		auto& bindings =
-			device == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
-			device >= 1 && device <= 4 ? allSettings.bindings.gamepad_bindings[player_index]:
+			device_index == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
+			device_index == 1 ? allSettings.bindings.gamepad_bindings[player_index]:
 			allSettings.bindings.joystick_bindings[player_index];
 		auto find = bindings.find(binding);
 		if (find != bindings.end()) {
-			button->setText(find->second.c_str());
+		    button->setText(find->second.c_str());
+		    auto glyph = Input::getGlyphPathForInput(button->getText());
+		    button->setIcon(glyph.c_str());
 		} else {
 			button->setText(emptyBinding);
 		}
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
-		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		button->setBackground("images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -2638,6 +2772,7 @@ namespace MainMenu {
 		defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		defaults->setWidgetRight("discard_and_exit");
 		defaults->setCallback(defaults_callback);
+		defaults->setHideKeyboardGlyphs(false);
 
 		auto discard = window->addButton("discard_and_exit");
 		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
@@ -2660,6 +2795,7 @@ namespace MainMenu {
 		discard->addWidgetAction("MenuAlt1", "restore_defaults");
 		discard->setWidgetLeft("restore_defaults");
 		discard->setWidgetRight("confirm_and_exit");
+		discard->setHideKeyboardGlyphs(false);
 
 		auto confirm = window->addButton("confirm_and_exit");
 		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
@@ -2676,6 +2812,7 @@ namespace MainMenu {
 		confirm->addWidgetAction("MenuStart", "confirm_and_exit");
 		confirm->addWidgetAction("MenuAlt1", "restore_defaults");
 		confirm->setWidgetLeft("discard_and_exit");
+		confirm->setHideKeyboardGlyphs(false);
 		confirm->select();
 
 		return window;
@@ -2697,6 +2834,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.minimap.load();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_minimap_settings_customize_button"); assert(previous);
+			    previous->select();
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -2704,6 +2845,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.minimap.save();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_minimap_settings_customize_button"); assert(previous);
+			    previous->select();
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
@@ -2759,6 +2904,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.show_messages.load();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_show_messages_customize_button"); assert(previous);
+			    previous->select();
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -2766,6 +2915,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.show_messages.save();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_show_messages_customize_button"); assert(previous);
+			    previous->select();
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
@@ -2834,31 +2987,10 @@ namespace MainMenu {
 		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});
 	}
 
-	static const char* getDeviceNameForIndex(int index) {
-		switch (index) {
-		case 0: return "KB & Mouse";
-		case 1: return "Gamepad 1";
-		case 2: return "Gamepad 2";
-		case 3: return "Gamepad 3";
-		case 4: return "Gamepad 4";
-		case 5: return "Joystick 1";
-		case 6: return "Joystick 2";
-		case 7: return "Joystick 3";
-		case 8: return "Joystick 4";
-		default: return "Unknown";
-		}
-	}
-
 	static int getDeviceIndexForName(const char* name) {
 		if (strcmp(name, "KB & Mouse") == 0) { return 0; }
-		if (strcmp(name, "Gamepad 1") == 0) { return 1; }
-		if (strcmp(name, "Gamepad 2") == 0) { return 2; }
-		if (strcmp(name, "Gamepad 3") == 0) { return 3; }
-		if (strcmp(name, "Gamepad 4") == 0) { return 4; }
-		if (strcmp(name, "Joystick 1") == 0) { return 5; }
-		if (strcmp(name, "Joystick 2") == 0) { return 6; }
-		if (strcmp(name, "Joystick 3") == 0) { return 7; }
-		if (strcmp(name, "Joystick 4") == 0) { return 8; }
+		if (strcmp(name, "Gamepad") == 0) { return 1; }
+		if (strcmp(name, "Joystick") == 0) { return 2; }
 		else { return -1; }
 	}
 
@@ -2896,15 +3028,30 @@ namespace MainMenu {
 		}
 	}
 
-	static void settingsBindings(int player_index, Setting setting_to_select) {
+	static void settingsBindings(int player_index, int device_index, Setting setting_to_select) {
 		soundActivate();
+
+		static bool bind_mode;
+		static Button* bound_button;
+		static std::string bound_binding;
+		static std::string bound_input;
+		static int bound_player;
+		static int bound_device;
+
+		bind_mode = false;
+		bound_button = nullptr;
+		bound_binding = "";
+		bound_input = "";
+		bound_player = player_index;
+		bound_device = device_index;
+
 		auto window = settingsGenericWindow("bindings", "BINDINGS",
 			[](Button& button){ // restore defaults
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset();
-				settingsBindings(0, {Setting::Type::Dropdown, "player_dropdown_button"});
+				settingsBindings(0, 0, {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
 				soundCancel();
@@ -2912,6 +3059,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings.load();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
+			    previous->select();
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -2919,27 +3070,23 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings.save();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
+			    previous->select();
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-		int y = 0;
 
 		std::vector<Setting> bindings;
 		bindings.reserve(numBindings);
 		for (int c = 0; c < numBindings; ++c) {
-		    bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		    if (strcmp(defaultBindings[c][device_index + 1], hiddenBinding)) {
+		        bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		    }
 		}
 
-		static bool bind_mode;
-		static Button* bound_button = nullptr;
-		static std::string bound_binding = "";
-		static std::string bound_input = "";
-		static int bound_player;
-		static int bound_device;
-		bound_player = player_index;
-		bound_device = allSettings.bindings.devices[bound_player];
-		bind_mode = false;
-
+		int y = 0;
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
 
 		std::string player_str = "Player " + std::to_string(player_index + 1);
@@ -2955,46 +3102,37 @@ namespace MainMenu {
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int player_index = (int)(entry.name.back() - '1');
-						settingsBindings(player_index, {Setting::Type::Dropdown, "player_dropdown_button"});
+						settingsBindings(player_index, bound_device, {Setting::Type::Dropdown, "player_dropdown_button"});
 					});
 			});
 
-		std::set<int> locked_controllers;
-		for (int i = 1 + Input::gameControllers.size(); i < 5; ++i) {
-			locked_controllers.emplace(i);
-		}
-		for (int i = 5 + Input::joysticks.size(); i < 9; ++i) {
-			locked_controllers.emplace(i);
-		}
-
-		std::vector<const char*> devices;
-		devices.reserve(9);
-		for (int i = 0; i < 9; ++i) {
-			devices.push_back(getDeviceNameForIndex(i));
-		}
+		std::vector<const char*> devices = {
+		    "KB & Mouse",
+		    "Gamepad",
+		    //"Joystick", // Maybe for the future.
+		};
 
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.", devices, getDeviceNameForIndex(allSettings.bindings.devices[player_index]),
+			"Select a controller for the given player.", devices, devices[device_index],
 			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "device_dropdown", false,
+				settingsOpenDropdown(button, "device_dropdown", true,
 					[](Frame::entry_t& entry){
 						soundActivate();
 						auto parent = main_menu_frame->findFrame("bindings");
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int device_index = getDeviceIndexForName(entry.text.c_str());
-						allSettings.bindings.devices[bound_player] = device_index;
-						settingsBindings(bound_player, {Setting::Type::Dropdown, "device_dropdown_button"});
+						settingsBindings(bound_player, device_index, {Setting::Type::Dropdown, "device_dropdown_button"});
 					});
-			}, locked_controllers);
+			});
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
 
 		for (auto& binding : bindings) {
 			char tip[256];
 			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
-			y += settingsAddBinding(*subwindow, y, player_index, binding.name, tip,
+			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
 					auto name = std::string(button.getName());
@@ -3034,12 +3172,15 @@ namespace MainMenu {
 					auto tooltip = bindings->findField("tooltip"); assert(tooltip);
 					if (Input::lastInputOfAnyKind == "Escape") {
 						bound_button->setText(bound_input.c_str());
+		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
+		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
 						tooltip->setText(buf);
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
 						bound_button->setText(emptyBinding);
+		                bound_button->setIcon("");
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
 						tooltip->setText(buf);
@@ -3052,6 +3193,8 @@ namespace MainMenu {
 						std:: string newinput = begin == "Pad" || begin == "Joy" ?
 								Input::lastInputOfAnyKind.substr(4) : Input::lastInputOfAnyKind;
 						bound_button->setText(newinput.c_str());
+		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
+		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), newinput.c_str());
 						tooltip->setText(buf);
@@ -3354,7 +3497,7 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
-			[](Button&){allSettings.bindings = Bindings::load(); settingsBindings(0, {Setting::Type::Dropdown, "player_dropdown_button"});});
+			[](Button&){allSettings.bindings = Bindings::load(); settingsBindings(0, 0, {Setting::Type::Dropdown, "player_dropdown_button"});});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
@@ -3568,7 +3711,7 @@ bind_failed:
 		text1->setColor(makeColor(255, 191, 32, 255));
 		text1->setHJustify(Field::justify_t::CENTER);
 		text1->setVJustify(Field::justify_t::TOP);
-		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 82});
+		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 90});
 		text1->setText(
 			u8"Project lead, programming, and design\n"
 			u8" \n"
@@ -3605,6 +3748,9 @@ bind_failed:
 			u8" \n \n \n \n \n"
 			u8"Barony is a product of Turning Wheel LLC\n"
 			u8" \n"
+#ifdef USE_FMOD
+			u8" \n"
+#endif
 			u8" \n"
 			u8" \n \n \n \n \n"
 			u8"This game is dedicated to all of our friends, family, and fans\n"
@@ -3619,7 +3765,7 @@ bind_failed:
 		text2->setColor(0xffffffff);
 		text2->setHJustify(Field::justify_t::CENTER);
 		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 82});
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 90});
 		text2->setText(
 			u8" \n"
 			u8"Sheridan Rathbun\n"
@@ -3656,6 +3802,9 @@ bind_failed:
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Copyright \u00A9 2021, all rights reserved\n"
+#ifdef USE_FMOD
+			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
+#endif
 			u8"http://www.baronygame.com/\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
@@ -5623,6 +5772,12 @@ bind_failed:
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
+		// release any controller assigned to this player
+        if (inputs.hasController(index)) {
+            inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+            Input::inputs[index].refresh();
+        }
+
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
 			card->removeSelf();
@@ -5663,10 +5818,10 @@ bind_failed:
 		invite->setWidgetBack("back_button");
 		invite->addWidgetAction("MenuStart", "invite_button");
 		switch (index) {
-		case 0: invite->setCallback([](Button&){createCharacterCard(0);}); break;
-		case 1: invite->setCallback([](Button&){createCharacterCard(1);}); break;
-		case 2: invite->setCallback([](Button&){createCharacterCard(2);}); break;
-		case 3: invite->setCallback([](Button&){createCharacterCard(3);}); break;
+		case 0: invite->setCallback([](Button&){createControllerPrompt(0);}); break;
+		case 1: invite->setCallback([](Button&){createControllerPrompt(1);}); break;
+		case 2: invite->setCallback([](Button&){createControllerPrompt(2);}); break;
+		case 3: invite->setCallback([](Button&){createControllerPrompt(3);}); break;
 		}
 		invite->select();
 	}
@@ -5848,20 +6003,92 @@ bind_failed:
 			button->setDisabled(!allCardsClosed);
 			});
 
-		createCharacterCard(0);
 		if (type == LobbyType::LobbyLocal) {
+			createStartButton(0);
 			createStartButton(1);
 			createStartButton(2);
 			createStartButton(3);
 		} else if (type == LobbyType::LobbyLAN) {
+			createWaitingStone(0);
 			createWaitingStone(1);
 			createWaitingStone(2);
 			createWaitingStone(3);
 		} else if (type == LobbyType::LobbyOnline) {
+			createInviteButton(0);
 			createInviteButton(1);
 			createInviteButton(2);
 			createInviteButton(3);
 		}
+	}
+
+	static void createControllerPrompt(int index) {
+		auto dimmer = main_menu_frame->addFrame("controller_dimmer");
+		dimmer->setOwner(index);
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(0);
+		dimmer->setBorder(0);
+
+		static bool clicked;
+		clicked = false;
+
+		static auto button_func = [](Button& button) {
+		    int index = button.getOwner();
+	        if (Input::waitingToBindControllerForPlayer >= 0) {
+	            // this only happens if the mouse was used to click this button
+	            Input::waitingToBindControllerForPlayer = -1;
+	            inputs.setPlayerIDAllowedKeyboard(index);
+	            inputs.getVirtualMouse(index)->draw_cursor = true;
+	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
+	            if (inputs.hasController(index)) {
+	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+	            }
+	        } else {
+	            // this happens if a controller was bound to the player
+	            inputs.getVirtualMouse(index)->draw_cursor = false;
+	            inputs.getVirtualMouse(index)->lastMovementFromController = true;
+	            if (inputs.bPlayerUsingKeyboardControl(index)) {
+	                inputs.setPlayerIDAllowedKeyboard(0);
+	            }
+	        }
+		    button.deselect();
+		    clicked = true;
+		    };
+
+		static auto button_tick_func = [](Widget& widget) {
+		    auto button = static_cast<Button*>(&widget);
+		    int index = button->getOwner();
+		    auto& input = Input::inputs[index];
+		    if (clicked && !input.binary("MenuConfirm")) {
+                input.refresh(); // this has to be deferred because it knocks out consumed statuses.
+		        auto parent = static_cast<Frame*>(button->getParent());
+	            parent->removeSelf();
+	            parent->setDisabled(true);
+	            createCharacterCard(index);
+		    }
+		    };
+
+		char text[1024];
+		snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
+		    "or click here to assign only the mouse and keyboard", index + 1);
+
+		auto button = dimmer->addButton("button");
+		button->setHideGlyphs(true);
+		button->setHideSelectors(true);
+		button->setBorder(0);
+		button->setColor(makeColor(0, 0, 0, 63));
+		button->setHighlightColor(makeColor(0, 0, 0, 63));
+		button->setTextColor(makeColor(255, 255, 255, 255));
+		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		button->setSize(SDL_Rect{0, Frame::virtualScreenY / 4, Frame::virtualScreenX, Frame::virtualScreenY / 2});
+		button->setJustify(Field::justify_t::CENTER);
+		button->setFont(bigfont_outline);
+		button->setText(text);
+		button->setCallback(button_func);
+		button->setTickCallback(button_tick_func);
+		button->select();
+
+		Input::waitingToBindControllerForPlayer = index;
 	}
 
 /******************************************************************************/
@@ -6556,6 +6783,7 @@ bind_failed:
                         auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
                         savegame_book->setWidgetRight(str.c_str());
 		            }
+		            savegame_book->setWidgetBack("back");
 
 		            first_savegame = first_savegame ? first_savegame : savegame_book;
 
@@ -7286,6 +7514,7 @@ bind_failed:
 		restore_defaults->setWidgetRight("discard_and_exit");
 		restore_defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
+		restore_defaults->setHideKeyboardGlyphs(false);
 		restore_defaults->setCallback([](Button& button){
 			soundActivate();
 			settingsReset();
@@ -7321,6 +7550,7 @@ bind_failed:
 		discard_and_exit->setWidgetRight("confirm_and_exit");
 		discard_and_exit->addWidgetAction("MenuAlt1", "restore_defaults");
 		discard_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
+		discard_and_exit->setHideKeyboardGlyphs(false);
 
 		auto confirm_and_exit = settings->addButton("confirm_and_exit");
 		confirm_and_exit->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
@@ -7353,6 +7583,7 @@ bind_failed:
 		confirm_and_exit->setWidgetLeft("discard_and_exit");
 		confirm_and_exit->addWidgetAction("MenuAlt1", "restore_defaults");
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
+		confirm_and_exit->setHideKeyboardGlyphs(false);
 	}
 
 	static void mainEditor(Button& button) {

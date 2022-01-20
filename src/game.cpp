@@ -3415,16 +3415,13 @@ void handleEvents(void)
 							if ( controller.isActive() && controller.getID() == id )
 							{
 								inputs.removeControllerWithDeviceID(id); // clear any other player using this
-								if ( inputs.bPlayerUsingKeyboardControl(Input::waitingToBindControllerForPlayer) )
-								{
-									inputs.setPlayerIDAllowedKeyboard(-1);
-								}
 								inputs.setControllerID(Input::waitingToBindControllerForPlayer, id);
 								printlog("(Device %d added to player %d", id, Input::waitingToBindControllerForPlayer);
-								for ( int c = 0; c < 4; ++c ) {
-									Input::inputs[c].refresh();
-								}
 								Input::waitingToBindControllerForPlayer = -1;
+								for (int c = 0; c < 4; ++c) {
+								    auto& input = Input::inputs[c];
+									input.refresh();
+								}
 								break;
 							}
 						}
@@ -5208,8 +5205,20 @@ int main(int argc, char** argv)
 						players[i]->hud.magicRightHand = nullptr;
 					}
 
-					// team splash
+					// black background
 					drawRect(NULL, 0, 255);
+
+#ifdef USE_FMOD
+					// fmod logo
+					auto fmod_logo = Image::get("images/system/fmod-logo.png");
+					int w = fmod_logo->getWidth() / 3;
+					int h = fmod_logo->getHeight() / 3;
+					fmod_logo->drawColor(nullptr,
+					    SDL_Rect{xres - w - 16, yres - h - 16, w, h},
+					    SDL_Rect{0, 0, xres, yres}, makeColor(150, 150, 150, 255));
+#endif
+
+					// team splash
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
 					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 255, 32, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
@@ -5239,8 +5248,8 @@ int main(int argc, char** argv)
 					}
 					if ( Input::keys[SDL_SCANCODE_ESCAPE] )
 					{
-						skipButtonPressed = true;
 						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+						skipButtonPressed = true;
 					}
 
 					if ( fadefinished || skipButtonPressed )

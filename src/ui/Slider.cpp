@@ -26,7 +26,8 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 #ifdef EDITOR
 	bool focused = highlighted || selected;
 #else
-	bool focused = highlighted || (selected && !inputs.getVirtualMouse(owner)->draw_cursor);
+	int mouseowner = intro ? 0 : owner;
+	bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor);
 #endif
 
 	auto white = Image::get("images/system/white.png");
@@ -229,7 +230,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 #endif
 
 #if !defined(NINTENDO) && !defined(EDITOR)
-	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(owner)->draw_cursor) {
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(mouseowner)->draw_cursor) {
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();
