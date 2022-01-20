@@ -1253,23 +1253,13 @@ namespace ConsoleCommands {
         if (argc < 2) {
             return;
         }
-		auto name = argv[1];
-		for ( int c = 0; name[c] != '\0'; c++ )
-		{
-			if ( name[c] == ' ' && startIndex == 0 )
-			{
-				startIndex = atoi(buf);
-				strcpy(buf, "");
-				i = 0;
-				continue;
-			}
-			buf[i] = name[c];
-			i++;
-		}
+		auto firstArg = argv[1];
+		auto secondArg = argv[2];
+		startIndex = atoi(firstArg);
 
 		if ( startIndex != 0 )
 		{
-			endIndex = atoi(buf);
+			endIndex = atoi(secondArg);
 			if ( endIndex > nummodels || endIndex < startIndex )
 			{
 				endIndex = nummodels;
@@ -1327,6 +1317,7 @@ namespace ConsoleCommands {
 		//messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, MESSAGE_MISC, language[2355], startIndex, endIndex);
 		generatePolyModels(startIndex, endIndex, true);
+		generateVBOs(startIndex, endIndex);
 		});
 
 	static ConsoleCommand ccmd_killmonsters("/killmonsters", "kill all monsters (cheat)", []CCMD{
