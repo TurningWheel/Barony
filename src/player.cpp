@@ -1132,18 +1132,19 @@ bool Player::GUI_t::returnToPreviousActiveModule()
 
 Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation)
 {
+	auto& input = Input::inputs[player.playernum];
 	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
 		|| nohud || !player.isLocalPlayer() )
 	{
 		if ( !checkDestinationOnly )
 		{
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			input.consumeBinaryToggle("UINavLeftBumper");
+			input.consumeBinaryToggle("UINavRightBumper");
 		}
 		return MODULE_NONE;
 	}
 
-	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
+	if ( input.binaryToggle("UINavLeftBumper")
 		|| (checkLeftNavigation && checkDestinationOnly) )
 	{
 		if ( activeModule == MODULE_INVENTORY 
@@ -1156,7 +1157,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					activateModule(MODULE_HOTBAR);
 					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_HOTBAR;
@@ -1166,12 +1167,13 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_CHARACTERSHEET);
-					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
 					{
 						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 					}
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_CHARACTERSHEET;
@@ -1185,21 +1187,37 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_SPELL 
 				&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_SPELLS);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_SPELLS;
@@ -1211,7 +1229,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_INVENTORY;
@@ -1220,12 +1238,28 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_CHARACTERSHEET 
 			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( !checkDestinationOnly )
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				// no action here
+				if ( !checkDestinationOnly )
+				{
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
@@ -1233,11 +1267,11 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 
 		if ( !checkDestinationOnly )
 		{
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			input.consumeBinaryToggle("UINavLeftBumper");
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 	}
-	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+	if ( input.binaryToggle("UINavRightBumper")
 		|| (!checkLeftNavigation && checkDestinationOnly) )
 	{
 		if ( activeModule == MODULE_INVENTORY 
@@ -1248,7 +1282,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
@@ -1261,14 +1295,30 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_SPELL 
 					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
@@ -1277,7 +1327,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					{
 						activateModule(MODULE_SPELLS);
 						warpControllerToModule(false);
-						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_SPELLS;
@@ -1289,7 +1339,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					{
 						activateModule(MODULE_INVENTORY);
 						warpControllerToModule(false);
-						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_INVENTORY;
@@ -1303,7 +1353,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					{
 						activateModule(MODULE_SPELLS);
 						warpControllerToModule(false);
-						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_SPELLS;
@@ -1314,12 +1364,13 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_CHARACTERSHEET);
-					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
 					{
 						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 					}
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_CHARACTERSHEET;
@@ -1328,14 +1379,30 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_CHARACTERSHEET 
 			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				// no action here
+				if ( !checkDestinationOnly )
+				{
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_SPELL 
 				&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_SPELLS);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_SPELLS;
@@ -1347,7 +1414,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_INVENTORY;
@@ -1356,7 +1423,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 
 		if ( !checkDestinationOnly )
 		{
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			input.consumeBinaryToggle("UINavRightBumper");
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 	}

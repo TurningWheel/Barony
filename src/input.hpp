@@ -82,6 +82,7 @@ public:
 
 		//! checks type is a gamepad-adjacent input (i.e not keyboard or mouse)
 		bool isBindingUsingGamepad() const { return (type != KEYBOARD && type != MOUSE_BUTTON && type != INVALID); }
+		bool isBindingUsingKeyboard() const { return (type == KEYBOARD || type == MOUSE_BUTTON); }
 	};
 
 	//! useful way to get direct access to bindings
