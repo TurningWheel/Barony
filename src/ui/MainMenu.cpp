@@ -44,7 +44,7 @@ namespace MainMenu {
 		{"Block", "Space", "LeftTrigger", emptyBinding},
 		{"Sneak", "Left Shift", "ButtonLeftBumper", emptyBinding},
 		{"Character Status", "Tab", "ButtonBack", emptyBinding},
-		{"Pause Game", emptyBinding, "ButtonStart", emptyBinding},
+		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
 		{"Spell List", "M", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", emptyBinding, emptyBinding},
 		{"Command NPC", "Q", "DpadY-", emptyBinding},
@@ -2830,6 +2830,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.minimap.load();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_minimap_settings_customize_button"); assert(previous);
+			    previous->select();
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -2837,6 +2841,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.minimap.save();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_minimap_settings_customize_button"); assert(previous);
+			    previous->select();
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
@@ -2892,6 +2900,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.show_messages.load();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_show_messages_customize_button"); assert(previous);
+			    previous->select();
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -2899,6 +2911,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.show_messages.save();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_show_messages_customize_button"); assert(previous);
+			    previous->select();
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
@@ -3039,6 +3055,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings.load();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
+			    previous->select();
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -3046,6 +3066,10 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings.save();
+			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
+			    previous->select();
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
