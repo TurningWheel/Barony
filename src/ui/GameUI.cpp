@@ -160,8 +160,8 @@ void imageSetWidthHeight9x9(Frame* container, const std::vector<std::string>& im
 		{
 			if ( auto imgGet = Image::get(i->path.c_str()) )
 			{
-				i->pos.w = imgGet->getWidth();
-				i->pos.h = imgGet->getHeight();
+				i->pos.w = (int)imgGet->getWidth();
+				i->pos.h = (int)imgGet->getHeight();
 			}
 		}
 	}
@@ -867,8 +867,8 @@ void Player::HUD_t::updateUINavigation()
 			}
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->pos.w = imgGet->getWidth();
-				glyph->pos.h = imgGet->getHeight();
+				glyph->pos.w = (int)imgGet->getWidth();
+				glyph->pos.h = (int)imgGet->getHeight();
 			}
 
 			glyph->pos.x = button->getSize().x + button->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
@@ -966,9 +966,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
-				promptPos.x -= imgGet->getWidth() / 2;
-				promptPos.y -= imgGet->getHeight() / 2;
-				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				promptPos.x -= (int)imgGet->getWidth() / 2;
+				promptPos.y -= (int)imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
 				cursor->color = makeColor(255, 255, 255, 191);
 			}
@@ -983,9 +983,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
 				{
 					cursor->disabled = false;
-					promptPos.x -= imgGet->getWidth() / 2;
-					promptPos.y -= imgGet->getHeight() / 2;
-					SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+					promptPos.x -= (int)imgGet->getWidth() / 2;
+					promptPos.y -= (int)imgGet->getHeight() / 2;
+					SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					cursor->pos = cursorPos;
 					cursor->color = makeColor(255, 255, 255, 191);
 				}
@@ -994,8 +994,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				textPos.y = cursor->pos.y + cursor->pos.h / 2;
 				if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
 				{
-					textPos.x -= imgGet->getWidth() / 2;
-					textPos.y -= imgGet->getHeight() / 2;
+					textPos.x -= (int)imgGet->getWidth() / 2;
+					textPos.y -= (int)imgGet->getHeight() / 2;
 				}
 
 				if ( textPos.x < 0 )
@@ -1021,9 +1021,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
-						promptPos.x -= imgGet->getWidth() / 2;
-						promptPos.y -= imgGet->getHeight() / 2;
-						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						promptPos.x -= (int)imgGet->getWidth() / 2;
+						promptPos.y -= (int)imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
 						cursor->color = makeColor(255, 255, 255, 128);
 					}
@@ -1032,8 +1032,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					textPos.y = cursor->pos.y + cursor->pos.h / 2;
 					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
 					{
-						textPos.x -= imgGet->getWidth() / 2;
-						textPos.y -= imgGet->getHeight() / 2;
+						textPos.x -= (int)imgGet->getWidth() / 2;
+						textPos.y -= (int)imgGet->getHeight() / 2;
 					}
 
 					if ( textPos.x < 0 )
@@ -1055,9 +1055,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
-						promptPos.x -= imgGet->getWidth() / 2;
-						promptPos.y -= imgGet->getHeight() / 2;
-						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						promptPos.x -= (int)imgGet->getWidth() / 2;
+						promptPos.y -= (int)imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
 						cursor->color = makeColor(255, 255, 255, 128);
 					}
@@ -1075,7 +1075,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 					{
@@ -1099,7 +1099,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					textPos.x += glyph->pos.w;
 
@@ -1130,7 +1130,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(icon->path.c_str()) )
 			{
 				icon->disabled = false;
-				SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+				SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				icon->pos = iconPos;
 				textPos.x += icon->pos.w + skillIconToGlyphPadding;
 			}
@@ -1203,9 +1203,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
-				promptPos.x -= imgGet->getWidth() / 2;
-				promptPos.y -= imgGet->getHeight() / 2;
-				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				promptPos.x -= (int)imgGet->getWidth() / 2;
+				promptPos.y -= (int)imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
 				cursor->color = makeColor(255, 255, 255, 128);
 			}
@@ -1221,7 +1221,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 					{
@@ -1245,7 +1245,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					textPos.x += glyph->pos.w;
 
@@ -1278,7 +1278,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(icon->path.c_str()) )
 				{
 					icon->disabled = false;
-					SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					icon->pos = iconPos;
 					textPos.x += icon->pos.w + skillIconToGlyphPadding;
 				}
@@ -1293,9 +1293,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
-				promptPos.x -= imgGet->getWidth() / 2;
-				promptPos.y -= imgGet->getHeight() / 2;
-				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				promptPos.x -= (int)imgGet->getWidth() / 2;
+				promptPos.y -= (int)imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
 				cursor->color = makeColor(255, 255, 255, 128);
 			}
@@ -1308,8 +1308,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					textPos.y = cursor->pos.y + cursor->pos.h / 2;
 					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
 					{
-						textPos.x -= imgGet->getWidth() / 2;
-						textPos.y -= imgGet->getHeight() / 2;
+						textPos.x -= (int)imgGet->getWidth() / 2;
+						textPos.y -= (int)imgGet->getHeight() / 2;
 					}
 
 					if ( textPos.x < 0 )
@@ -1338,7 +1338,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						if ( auto imgGet = Image::get(glyph->path.c_str()) )
 						{
 							glyph->disabled = false;
-							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 							glyph->pos = glyphPos;
 							if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 							{
@@ -1362,7 +1362,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						if ( auto imgGet = Image::get(glyph->path.c_str()) )
 						{
 							glyph->disabled = false;
-							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 							glyph->pos = glyphPos;
 							textPos.x += glyph->pos.w;
 
@@ -1393,7 +1393,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( auto imgGet = Image::get(icon->path.c_str()) )
 					{
 						icon->disabled = false;
-						SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+						SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						icon->pos = iconPos;
 						textPos.x += icon->pos.w + skillIconToGlyphPadding;
 					}
@@ -1808,8 +1808,8 @@ void Player::HUD_t::updateActionPrompts()
 			}
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->pos.w = imgGet->getWidth();
-				glyph->pos.h = imgGet->getHeight();
+				glyph->pos.w = (int)imgGet->getWidth();
+				glyph->pos.h = (int)imgGet->getHeight();
 			}
 			glyph->pos.x = prompt->getSize().x + prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 0;
@@ -1818,7 +1818,7 @@ void Player::HUD_t::updateActionPrompts()
 			{
 				if ( auto imgGet = Image::get(Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str()).c_str()) )
 				{
-					int unpressedHeight = imgGet->getHeight();
+					int unpressedHeight = (int)imgGet->getHeight();
 					if ( glyph->pos.h != unpressedHeight )
 					{
 						pressedOffset = (unpressedHeight - glyph->pos.h);
@@ -7688,8 +7688,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->pos.w = imgGet->getWidth();
-				glyph->pos.h = imgGet->getHeight();
+				glyph->pos.w = (int)imgGet->getWidth();
+				glyph->pos.h = (int)imgGet->getHeight();
 			}
 			SDL_Rect entryPos = entry->getSize();
 			entryPos.x = glyph->pos.x + glyph->pos.w + padxMid;
@@ -7953,8 +7953,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 			if ( auto imgGet = Image::get(sexImg->path.c_str()) )
 			{
-				sexImg->pos.w = imgGet->getWidth();
-				sexImg->pos.h = imgGet->getHeight();
+				sexImg->pos.w = (int)imgGet->getWidth();
+				sexImg->pos.h = (int)imgGet->getHeight();
 			}
 
 			SDL_Rect raceTextPos = raceText->getSize();
