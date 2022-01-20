@@ -1111,7 +1111,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			Field* field = fields[i];
 
 			// widget capture input
-			if (!destWidget) {
+			if (field->isActivated()) {
+			    if (input.consumeBinaryToggle("MenuConfirm") ||
+			        input.consumeBinaryToggle("MenuCancel")) {
+			        field->deactivate();
+		        }
+			}
+			else if (!destWidget) {
 				destWidget = field->handleInput();
 			}
 

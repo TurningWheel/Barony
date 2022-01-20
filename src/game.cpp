@@ -3415,16 +3415,13 @@ void handleEvents(void)
 							if ( controller.isActive() && controller.getID() == id )
 							{
 								inputs.removeControllerWithDeviceID(id); // clear any other player using this
-								if ( inputs.bPlayerUsingKeyboardControl(Input::waitingToBindControllerForPlayer) )
-								{
-									inputs.setPlayerIDAllowedKeyboard(-1);
-								}
 								inputs.setControllerID(Input::waitingToBindControllerForPlayer, id);
 								printlog("(Device %d added to player %d", id, Input::waitingToBindControllerForPlayer);
-								for ( int c = 0; c < 4; ++c ) {
-									Input::inputs[c].refresh();
-								}
 								Input::waitingToBindControllerForPlayer = -1;
+								for (int c = 0; c < 4; ++c) {
+								    auto& input = Input::inputs[c];
+									input.refresh();
+								}
 								break;
 							}
 						}

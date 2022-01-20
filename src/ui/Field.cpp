@@ -65,10 +65,14 @@ void Field::activate() {
 		setText(result.str.c_str());
 	}
 #else
-	activated = true;
-	inputstr = text;
-	inputlen = textlen;
-	SDL_StartTextInput();
+    if (activated) {
+        deactivate();
+    } else {
+	    activated = true;
+	    inputstr = text;
+	    inputlen = textlen;
+	    SDL_StartTextInput();
+	}
 #endif
 }
 
@@ -400,11 +404,13 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	}
 
 	if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
+	    mousestatus[SDL_BUTTON_LEFT] = 0;
 		if (activated) {
 			result.entered = true;
 			deactivate();
 		}
 	} else if (result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
+	    mousestatus[SDL_BUTTON_LEFT] = 0;
 		activate();
 		/*if (doubleclick_mousestatus[SDL_BUTTON_LEFT]) {
 			selectAll = true;

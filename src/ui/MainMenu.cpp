@@ -135,7 +135,6 @@ namespace MainMenu {
 
     // Binding options
 	struct Bindings {
-		int devices[4];
 		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
 		std::unordered_map<std::string, std::string> gamepad_bindings[4];
 		std::unordered_map<std::string, std::string> joystick_bindings[4];
@@ -821,7 +820,6 @@ namespace MainMenu {
 	inline Bindings Bindings::reset() {
 		Bindings bindings;
 		for (int c = 0; c < 4; ++c) {
-			bindings.devices[c] = c;
             for (int i = 0; i < numBindings; ++i) {
 			    bindings.kb_mouse_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][1]);
 			    bindings.gamepad_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][2]);
@@ -839,7 +837,6 @@ namespace MainMenu {
 		file->beginArray(num_players);
 		for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
 			file->beginObject();
-			file->property("device", devices[c]);
 			for (int j = 0; j < 3; ++j) {
 				auto& bindings =
 					j == 0 ? kb_mouse_bindings[c]:
@@ -2212,6 +2209,7 @@ namespace MainMenu {
 		Frame& frame,
 		int y,
 		int player_index,
+		int device_index,
 		const char* binding,
 		const char* tip,
 		void (*callback)(Button&))
@@ -2225,10 +2223,9 @@ namespace MainMenu {
 			158,
 			44});
 		button->setFont(smallfont_outline);
-		auto device = allSettings.bindings.devices[player_index];
 		auto& bindings =
-			device == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
-			device == 1 ? allSettings.bindings.gamepad_bindings[player_index]:
+			device_index == 0 ? allSettings.bindings.kb_mouse_bindings[player_index]:
+			device_index == 1 ? allSettings.bindings.gamepad_bindings[player_index]:
 			allSettings.bindings.joystick_bindings[player_index];
 		auto find = bindings.find(binding);
 		if (find != bindings.end()) {
@@ -3105,7 +3102,7 @@ namespace MainMenu {
 		for (auto& binding : bindings) {
 			char tip[256];
 			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
-			y += settingsAddBinding(*subwindow, y, player_index, binding.name, tip,
+			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
 					auto name = std::string(button.getName());
@@ -5740,6 +5737,12 @@ bind_failed:
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
+		// release any controller assigned to this player
+        if (inputs.hasController(index)) {
+            inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+            Input::inputs[index].refresh();
+        }
+
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
 			card->removeSelf();
@@ -5984,54 +5987,66 @@ bind_failed:
 	}
 
 	static void createControllerPrompt(int index) {
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, Frame::virtualScreenY / 4, Frame::virtualScreenX, Frame::virtualScreenY / 2});
-		dimmer->setActualSize(SDL_Rect{0, 0, dimmer->getSize().w, dimmer->getSize().h});
-		dimmer->setColor(makeColor(0, 0, 0, 63));
+		auto dimmer = main_menu_frame->addFrame("controller_dimmer");
+		dimmer->setOwner(index);
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(0);
 		dimmer->setBorder(0);
 
-		static auto button_func = [](Button& button, int index) {
-		    if (Input::waitingToBindControllerForPlayer) {
-		        // this only happens if the mouse was used to click this button
-		        Input::waitingToBindControllerForPlayer = -1;
-		        inputs.setPlayerIDAllowedKeyboard(index);
-		        if (inputs.hasController(index)) {
-		            inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-		        }
-		    } else {
-		        // this happens if a controller was bound to the player
-		        if (inputs.bPlayerUsingKeyboardControl(index)) {
-		            // when other players get controllers, the mouse + keyboard go back to player 1
-		            inputs.setPlayerIDAllowedKeyboard(0);
-		        }
+		static bool clicked;
+		clicked = false;
+
+		static auto button_func = [](Button& button) {
+		    int index = button.getOwner();
+	        if (Input::waitingToBindControllerForPlayer >= 0) {
+	            // this only happens if the mouse was used to click this button
+	            Input::waitingToBindControllerForPlayer = -1;
+	            inputs.setPlayerIDAllowedKeyboard(index);
+	            if (inputs.hasController(index)) {
+	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+	            }
+	        } else {
+	            // this happens if a controller was bound to the player
+	            if (inputs.bPlayerUsingKeyboardControl(index)) {
+	                inputs.setPlayerIDAllowedKeyboard(-1);
+	            }
+	        }
+		    button.deselect();
+		    clicked = true;
+		    };
+
+		static auto button_tick_func = [](Widget& widget) {
+		    auto button = static_cast<Button*>(&widget);
+		    int index = button->getOwner();
+		    auto& input = Input::inputs[index];
+		    if (clicked && !input.binary("MenuConfirm")) {
+                input.refresh(); // this has to be deferred because it knocks out consumed statuses.
+		        auto parent = static_cast<Frame*>(button->getParent());
+	            parent->removeSelf();
+	            parent->setDisabled(true);
+	            createCharacterCard(index);
 		    }
-		    auto parent = static_cast<Frame*>(button.getParent());
-		    parent->removeSelf();
-		    createCharacterCard(index);
 		    };
 
 		char text[1024];
 		snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		    "or click here to assign only the mouse and keyboard", index);
+		    "or click here to assign only the mouse and keyboard", index + 1);
 
 		auto button = dimmer->addButton("button");
 		button->setHideGlyphs(true);
 		button->setHideSelectors(true);
-		button->setColor(0);
 		button->setBorder(0);
-		button->setHighlightColor(0);
+		button->setColor(makeColor(0, 0, 0, 63));
+		button->setHighlightColor(makeColor(0, 0, 0, 63));
 		button->setTextColor(makeColor(255, 255, 255, 255));
 		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		button->setSize(dimmer->getActualSize());
+		button->setSize(SDL_Rect{0, Frame::virtualScreenY / 4, Frame::virtualScreenX, Frame::virtualScreenY / 2});
 		button->setJustify(Field::justify_t::CENTER);
 		button->setFont(bigfont_outline);
 		button->setText(text);
-		switch (index) {
-		case 0: button->setCallback([](Button& button){button_func(button, 0);}); break;
-		case 1: button->setCallback([](Button& button){button_func(button, 1);}); break;
-		case 2: button->setCallback([](Button& button){button_func(button, 2);}); break;
-		case 3: button->setCallback([](Button& button){button_func(button, 3);}); break;
-		}
+		button->setCallback(button_func);
+		button->setTickCallback(button_tick_func);
 		button->select();
 
 		Input::waitingToBindControllerForPlayer = index;
@@ -6729,6 +6744,7 @@ bind_failed:
                         auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
                         savegame_book->setWidgetRight(str.c_str());
 		            }
+		            savegame_book->setWidgetBack("back");
 
 		            first_savegame = first_savegame ? first_savegame : savegame_book;
 

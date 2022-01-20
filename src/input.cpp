@@ -202,6 +202,33 @@ bool Input::binaryReleaseToggle(const char* binding) const {
 	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
 }
 
+bool Input::consumeAnalog(const char* binding) {
+	auto b = bindings.find(binding);
+	if ( b != bindings.end() && !(*b).second.analogConsumed ) {
+		(*b).second.analogConsumed = true;
+		return disabled == false;
+	}
+	else {
+		return false;
+	}
+}
+
+bool Input::consumeBinary(const char* binding) {
+	auto b = bindings.find(binding);
+	if (b != bindings.end() && !(*b).second.consumed) {
+		(*b).second.consumed = true;
+		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
+			&& ((*b).second.mouseButton == MOUSE_WHEEL_DOWN
+				|| (*b).second.mouseButton == MOUSE_WHEEL_UP) )
+		{
+			mouseButtons[(*b).second.mouseButton] = false; // manually need to clear this
+		}
+		return disabled == false;
+	} else {
+		return false;
+	}
+}
+
 bool Input::consumeAnalogToggle(const char* binding) {
 	auto b = bindings.find(binding);
 #ifndef EDITOR
@@ -560,7 +587,6 @@ void Input::bind(const char* binding, const char* input) {
 		b = result.first;
 	}
 	(*b).second.input.assign(input);
-	(*b).second.consumed = true;
 	if (input == nullptr) {
 		(*b).second.type = binding_t::INVALID;
 		return;
@@ -856,7 +882,9 @@ void Input::update() {
 			}
 
 			binding.binaryReleaseConsumed = false;
-			binding.consumed = false;
+			if (!binding.binary) {
+			    binding.consumed = false;
+			}
 
 			if ( binding.binary && binding.binaryHeldTicks == 0 )
 			{
