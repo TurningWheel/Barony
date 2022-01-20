@@ -2237,7 +2237,7 @@ namespace MainMenu {
 		}
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
-		button->setBackground("images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		button->setBackground("images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
