@@ -2220,7 +2220,7 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y + 4,
-			158,
+			320,
 			44});
 		button->setFont(smallfont_outline);
 		auto& bindings =
@@ -3081,7 +3081,7 @@ namespace MainMenu {
 		std::vector<const char*> devices = {
 		    "KB & Mouse",
 		    "Gamepad",
-		    "Joystick",
+		    //"Joystick", // Maybe for the future.
 		};
 
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
