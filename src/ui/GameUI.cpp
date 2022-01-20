@@ -471,7 +471,7 @@ void createXPBar(const int player)
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 	endCapRight->ontop = true;
 
-	const int textWidth = 40;
+	const int textWidth = 48;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
 	textStatic->setText("/ 100");
