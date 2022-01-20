@@ -136,6 +136,17 @@ template<> void ConsoleVariable<float>::operator=(const char* arg)
         name + 1, data);
 }
 
+/*******************************************************************************
+    bool cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<bool>::operator=(const char* arg)
+{
+    data = !(arg[0] == '\0' || (!strcmp(arg, "false")));
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+        name + 1, data ? "true" : "false");
+}
+
 /*-------------------------------------------------------------------------------
 
 	consoleCommand
