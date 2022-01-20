@@ -812,6 +812,7 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 static const int NUM_STEAM_STATISTICS = 49;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+extern SteamGlobalStat_t g_SteamAPIGlobalStats[1];
 static const int NUM_GLOBAL_STEAM_STATISTICS = 66;
 extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 

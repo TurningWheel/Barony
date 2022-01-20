@@ -294,10 +294,13 @@ public:
 	bool RequestStats();
 	bool StoreStats();
 	bool ClearAllStats();
+	bool RequestGlobalStats();
 
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived);
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored);
 	//STEAM_CALLBACK(CSteamStatistics, OnGlobalStatsReceived, GlobalStatsReceived_t, m_CallbackGlobalStatsReceived);
+	CCallResult<CSteamStatistics, GlobalStatsReceived_t> m_CallbackGlobalStatsReceived;
+	void OnGlobalStatsReceived(GlobalStatsReceived_t *pCallback, bool bIOFailure);
 	//NOTE FOR FUTURE GLOBAL STATS NEEDS CCallResult NOT STEAM_CALLBACK!
 };
 

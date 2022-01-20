@@ -178,7 +178,7 @@ int initApp(char const * const title, int fullscreen)
 	steam_init = true;
 	g_SteamLeaderboards = new CSteamLeaderboards();
 	g_SteamWorkshop = new CSteamWorkshop();
-	g_SteamStatistics = new CSteamStatistics(g_SteamStats, nullptr, NUM_STEAM_STATISTICS);
+	g_SteamStatistics = new CSteamStatistics(g_SteamStats, g_SteamAPIGlobalStats, NUM_STEAM_STATISTICS);
 	// Preloads mod content from a workshop fileID
 	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
 #endif
