@@ -629,6 +629,9 @@ void createUINavigation(const int player)
 		magicButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		magicButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		magicButton->setHideGlyphs(true);
+		magicButton->setHideKeyboardGlyphs(true);
+		magicButton->setHideSelectors(true);
+		magicButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		magicButton->setColor(makeColor(255, 255, 255, 191));
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
@@ -655,6 +658,9 @@ void createUINavigation(const int player)
 		statusButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		statusButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		statusButton->setHideGlyphs(true);
+		statusButton->setHideKeyboardGlyphs(true);
+		statusButton->setHideSelectors(true);
+		statusButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		statusButton->setColor(makeColor(255, 255, 255, 191));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
@@ -680,6 +686,9 @@ void createUINavigation(const int player)
 		itemsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		itemsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		itemsButton->setHideGlyphs(true);
+		itemsButton->setHideKeyboardGlyphs(true);
+		itemsButton->setHideSelectors(true);
+		itemsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		itemsButton->setColor(makeColor(255, 255, 255, 191));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
@@ -705,6 +714,9 @@ void createUINavigation(const int player)
 		skillsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		skillsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		skillsButton->setHideGlyphs(true);
+		skillsButton->setHideKeyboardGlyphs(true);
+		skillsButton->setHideSelectors(true);
+		skillsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		skillsButton->setColor(makeColor(255, 255, 255, 191));
 		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		skillsButton->setCallback([](Button& button) {
@@ -887,7 +899,7 @@ void Player::HUD_t::updateUINavigation()
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
-				leftTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavLeftTrigger");
+				leftTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavLeftTrigger");
 				SDL_Rect textPos;
 				textPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
 				textPos.y = 8;
@@ -937,7 +949,7 @@ void Player::HUD_t::updateUINavigation()
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
-				rightTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavRightTrigger");
+				rightTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavRightTrigger");
 				SDL_Rect textPos;
 				textPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
 				textPos.y = 8;
@@ -1024,7 +1036,7 @@ void Player::HUD_t::updateUINavigation()
 		if ( !leftBumperTxt->isDisabled() )
 		{
 			leftBumperGlyph->disabled = false;
-			leftBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavLeftBumper");
+			leftBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavLeftBumper");
 			SDL_Rect textPos;
 			textPos.x = leftTriggerGlyph->pos.x;
 			textPos.y = lowestLeftY;
@@ -1047,7 +1059,7 @@ void Player::HUD_t::updateUINavigation()
 		if ( !rightBumperTxt->isDisabled() )
 		{
 			rightBumperGlyph->disabled = false;
-			rightBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForInput("UINavRightBumper");
+			rightBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavRightBumper");
 			SDL_Rect textPos;
 			textPos.x = leftBumperTxt->getSize().x + leftBumperTxt->getSize().w + 8;
 			textPos.y = leftBumperTxt->getSize().y;
@@ -2770,6 +2782,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			mapButton->setSize(buttonPos);
 			mapButton->setHideGlyphs(true);
+			mapButton->setHideKeyboardGlyphs(true);
+			mapButton->setHideSelectors(true);
+			mapButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
@@ -2796,6 +2811,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			logButton->setSize(buttonPos);
 			logButton->setHideGlyphs(true);
+			logButton->setHideKeyboardGlyphs(true);
+			logButton->setHideSelectors(true);
+			logButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			logButton->setCallback([](Button& button) {
@@ -2859,6 +2877,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			timerButton->setColor(makeColor(0, 0, 0, 0));
 			timerButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			timerButton->setHideGlyphs(true);
+			timerButton->setHideKeyboardGlyphs(true);
+			timerButton->setHideSelectors(true);
+			timerButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			timerButton->setCallback([](Button& button){
 				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
 				bShowTimer = !bShowTimer;
@@ -2891,6 +2912,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setBackground("images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
 			skillsButton->setSize(SDL_Rect{ 0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h });
 			skillsButton->setHideGlyphs(true);
+			skillsButton->setHideKeyboardGlyphs(true);
+			skillsButton->setHideSelectors(true);
+			skillsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			skillsButton->setColor(makeColor(255, 255, 255, 191));
 			skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			skillsButton->setCallback([](Button& button) {
@@ -2919,6 +2943,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			dungeonButton->setColor(makeColor(0, 0, 0, 0));
 			dungeonButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			dungeonButton->setHideGlyphs(true);
+			dungeonButton->setHideKeyboardGlyphs(true);
+			dungeonButton->setHideSelectors(true);
+			dungeonButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
@@ -2991,6 +3018,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classButton->setColor(makeColor(0, 0, 0, 0));
 			classButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			classButton->setHideGlyphs(true);
+			classButton->setHideKeyboardGlyphs(true);
+			classButton->setHideSelectors(true);
+			classButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
@@ -3033,6 +3063,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			raceButton->setColor(makeColor(0, 0, 0, 0));
 			raceButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			raceButton->setHideGlyphs(true);
+			raceButton->setHideKeyboardGlyphs(true);
+			raceButton->setHideSelectors(true);
+			raceButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -3063,6 +3096,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldButton->setColor(makeColor(0, 0, 0, 0));
 			goldButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			goldButton->setHideGlyphs(true);
+			goldButton->setHideKeyboardGlyphs(true);
+			goldButton->setHideSelectors(true);
+			goldButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		}
 
 		{
@@ -3115,6 +3151,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3150,6 +3189,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3185,6 +3227,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3220,6 +3265,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3255,6 +3303,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3290,6 +3341,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 		}
 
@@ -3334,6 +3388,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			const int rowSpacing = 4;
@@ -3362,6 +3419,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3389,6 +3449,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3416,6 +3479,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3464,6 +3530,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3491,6 +3560,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 		}
 
@@ -11127,6 +11199,9 @@ void createPlayerSpellList(const int player)
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 		slider->setHideGlyphs(true);
+		slider->setHideKeyboardGlyphs(true);
+		slider->setHideSelectors(true);
+		slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
@@ -11148,6 +11223,9 @@ void createPlayerSpellList(const int player)
 		closeBtn->setText(language[4053]);
 		closeBtn->setFont(font);
 		closeBtn->setHideGlyphs(true);
+		closeBtn->setHideKeyboardGlyphs(true);
+		closeBtn->setHideSelectors(true);
+		closeBtn->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
@@ -15082,6 +15160,9 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 	slider->setHideGlyphs(true);
+	slider->setHideKeyboardGlyphs(true);
+	slider->setHideSelectors(true);
+	slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 	Font* actualFont = Font::get(descFont);
 	int fontHeight;

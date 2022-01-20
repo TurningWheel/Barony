@@ -145,9 +145,24 @@ Widget* Widget::handleInput() {
 		}
 
 		// activate current selection
-		if (input.consumeBinaryToggle("MenuConfirm") && !disabled) {
-			activate();
-			return nullptr;
+		if ( !(menuConfirmControlType & MENU_CONFIRM_CONTROLLER) || !(menuConfirmControlType & MENU_CONFIRM_KEYBOARD) )
+		{
+			auto binding = input.input("MenuConfirm");
+			if ( (binding.isBindingUsingGamepad() && (menuConfirmControlType & MENU_CONFIRM_CONTROLLER))
+				|| (binding.isBindingUsingKeyboard() && (menuConfirmControlType & MENU_CONFIRM_KEYBOARD)) )
+			{
+				if ( input.consumeBinaryToggle("MenuConfirm") && !disabled ) {
+					activate();
+					return nullptr;
+				}
+			}
+		}
+		else
+		{
+			if (input.consumeBinaryToggle("MenuConfirm") && !disabled) {
+				activate();
+				return nullptr;
+			}
 		}
 	}
 	return nullptr;
@@ -316,7 +331,6 @@ void Widget::adoptWidget(Widget& widget) {
 void Widget::drawPost(const SDL_Rect size,
     const std::vector<const Widget*>& selectedWidgets,
     const std::vector<const Widget*>& searchParents) const {
-
 	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 	const Widget* selectedWidget = nullptr;
 	const Widget* searchParent = nullptr;
