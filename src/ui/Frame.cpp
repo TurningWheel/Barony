@@ -453,7 +453,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 #ifdef EDITOR
 	const bool mouseActive = true;
 #else
-	const bool mouseActive = inputs.getVirtualMouse(owner)->draw_cursor;
+	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor;
 #endif
 
 	// draw list entries
@@ -818,7 +818,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 #ifdef EDITOR
 	const bool mouseActive = true;
 #else
-	const bool mouseActive = inputs.getVirtualMouse(owner)->draw_cursor || mousexrel || mouseyrel;
+	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
 #endif
 
 	// scroll with mouse wheel

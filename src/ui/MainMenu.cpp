@@ -1803,6 +1803,7 @@ namespace MainMenu {
 			button->setWidgetBack("Discard");
 			button->addWidgetAction("MenuAlt1", "Defaults");
 			button->addWidgetAction("MenuStart", "Confirm");
+			button->setHideKeyboardGlyphs(false);
 		}
 		auto first_button = window->findButton(options[0].name); assert(first_button);
 		first_button->select();
@@ -2771,6 +2772,7 @@ namespace MainMenu {
 		defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		defaults->setWidgetRight("discard_and_exit");
 		defaults->setCallback(defaults_callback);
+		defaults->setHideKeyboardGlyphs(false);
 
 		auto discard = window->addButton("discard_and_exit");
 		discard->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
@@ -2793,6 +2795,7 @@ namespace MainMenu {
 		discard->addWidgetAction("MenuAlt1", "restore_defaults");
 		discard->setWidgetLeft("restore_defaults");
 		discard->setWidgetRight("confirm_and_exit");
+		discard->setHideKeyboardGlyphs(false);
 
 		auto confirm = window->addButton("confirm_and_exit");
 		confirm->setBackground("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
@@ -2809,6 +2812,7 @@ namespace MainMenu {
 		confirm->addWidgetAction("MenuStart", "confirm_and_exit");
 		confirm->addWidgetAction("MenuAlt1", "restore_defaults");
 		confirm->setWidgetLeft("discard_and_exit");
+		confirm->setHideKeyboardGlyphs(false);
 		confirm->select();
 
 		return window;
@@ -6034,13 +6038,17 @@ bind_failed:
 	            // this only happens if the mouse was used to click this button
 	            Input::waitingToBindControllerForPlayer = -1;
 	            inputs.setPlayerIDAllowedKeyboard(index);
+	            inputs.getVirtualMouse(index)->draw_cursor = true;
+	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	            if (inputs.hasController(index)) {
 	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
 	            }
 	        } else {
 	            // this happens if a controller was bound to the player
+	            inputs.getVirtualMouse(index)->draw_cursor = false;
+	            inputs.getVirtualMouse(index)->lastMovementFromController = true;
 	            if (inputs.bPlayerUsingKeyboardControl(index)) {
-	                inputs.setPlayerIDAllowedKeyboard(-1);
+	                inputs.setPlayerIDAllowedKeyboard(0);
 	            }
 	        }
 		    button.deselect();
@@ -7506,6 +7514,7 @@ bind_failed:
 		restore_defaults->setWidgetRight("discard_and_exit");
 		restore_defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
+		restore_defaults->setHideKeyboardGlyphs(false);
 		restore_defaults->setCallback([](Button& button){
 			soundActivate();
 			settingsReset();
@@ -7541,6 +7550,7 @@ bind_failed:
 		discard_and_exit->setWidgetRight("confirm_and_exit");
 		discard_and_exit->addWidgetAction("MenuAlt1", "restore_defaults");
 		discard_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
+		discard_and_exit->setHideKeyboardGlyphs(false);
 
 		auto confirm_and_exit = settings->addButton("confirm_and_exit");
 		confirm_and_exit->setBackground("images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
@@ -7573,6 +7583,7 @@ bind_failed:
 		confirm_and_exit->setWidgetLeft("discard_and_exit");
 		confirm_and_exit->addWidgetAction("MenuAlt1", "restore_defaults");
 		confirm_and_exit->addWidgetAction("MenuStart", "confirm_and_exit");
+		confirm_and_exit->setHideKeyboardGlyphs(false);
 	}
 
 	static void mainEditor(Button& button) {

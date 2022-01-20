@@ -27,7 +27,7 @@ bool Input::mouseButtons[18] = { false };
 const int Input::MOUSE_WHEEL_UP = 16;
 const int Input::MOUSE_WHEEL_DOWN = 17;
 std::string Input::lastInputOfAnyKind;
-int Input::waitingToBindControllerForPlayer = -1;
+int Input::waitingToBindControllerForPlayer = 0;
 
 void Input::defaultBindings() {
 	for (int i = 0; i < MAXPLAYERS; ++i) {

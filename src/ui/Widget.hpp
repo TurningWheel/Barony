@@ -33,6 +33,7 @@ public:
     bool			isDisabled() const { return disabled; }
     bool            isInvisible() const { return invisible; }
     bool            isHideGlyphs() const { return hideGlyphs; }
+    bool            isHideKeyboardGlyphs() const { return hideKeyboardGlyphs; }
     bool            isHideSelectors() const { return hideSelectors; }
     Uint32          getHighlightTime() const { return highlightTime; }
     Sint32          getOwner() const { return owner; }
@@ -52,6 +53,7 @@ public:
     void	setDisabled(bool _disabled) { disabled = _disabled; }
     void    setInvisible(bool _invisible) { invisible = _invisible; }
     void    setHideGlyphs(bool _hideGlyphs) { hideGlyphs = _hideGlyphs; }
+    void    setHideKeyboardGlyphs(bool _hideGlyphs) { hideKeyboardGlyphs = _hideGlyphs; }
     void    setHideSelectors(bool _hideSelectors) { hideSelectors = _hideSelectors; }
     void    setOwner(Sint32 _owner) { owner = _owner; }
     void	setTickCallback(void (*const fn)(Widget&)) { tickCallback = fn; }
@@ -145,7 +147,8 @@ protected:
     bool disabled = false;							                //!< if true, the widget is unusable and grayed out
     bool invisible = false;                                         //!< if true, widget is both unusable and invisible
 	bool toBeDeleted = false;						                //!< if true, the widget will be removed at the end of its process
-    bool hideGlyphs = false;                                        //!< true if you don't want to see button prompts or any other graphics on the widget
+    bool hideGlyphs = false;                                        //!< true if you don't want to see controller button glyphs on the widget
+    bool hideKeyboardGlyphs = true;                                 //!< true if you don't want to see keyboard glyphs on the widget
     bool hideSelectors = false;                                     //!< true if you don't want to see selectors on the borders of this widget
     Uint32 highlightTime = 0u;						                //!< records the time since the widget was highlighted
     Sint32 owner = 0;                                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)

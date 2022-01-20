@@ -316,9 +316,6 @@ void Widget::adoptWidget(Widget& widget) {
 void Widget::drawPost(const SDL_Rect size,
     const std::vector<const Widget*>& selectedWidgets,
     const std::vector<const Widget*>& searchParents) const {
-	if (hideGlyphs) {
-		return;
-	}
 
 	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 	const Widget* selectedWidget = nullptr;
@@ -385,100 +382,101 @@ void Widget::drawPost(const SDL_Rect size,
 
 	// button prompts
 #ifndef EDITOR
-    if (inputs.hasController(owner)) {
+    if ((inputs.hasController(owner) && !hideGlyphs) ||
+        (!inputs.hasController(owner) && !hideKeyboardGlyphs)) {
         Input& input = Input::inputs[owner];
-	    int x = size.x + size.w + buttonsOffset.x;
-	    int y = size.y + size.h + buttonsOffset.y;
-	    auto& actions = selectedWidget->getWidgetActions();
-	    auto action = actions.begin();
-	    if ((action = actions.find("MenuConfirm")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuConfirm", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    } else if (selectedWidget == this) {
-	        auto path = input.getGlyphPathForBinding("MenuConfirm", false);
-		    auto image = Image::get(path.c_str());
-		    int w = image->getWidth();
-		    int h = image->getHeight();
-		    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		    x -= w;
-	    }
-	    if ((action = actions.find("MenuCancel")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuCancel", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	    if ((action = actions.find("MenuAlt1")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuAlt1", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	    if ((action = actions.find("MenuAlt2")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuAlt2", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	    if ((action = actions.find("MenuStart")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuStart", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	    if ((action = actions.find("MenuBack")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuBack", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	    if ((action = actions.find("MenuPageLeft")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuPageLeft", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	    if ((action = actions.find("MenuPageRight")) != actions.end()) {
-		    if (action->second == name) {
-		        auto path = input.getGlyphPathForBinding("MenuPageRight", false);
-			    auto image = Image::get(path.c_str());
-			    int w = image->getWidth();
-			    int h = image->getHeight();
-			    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-			    x -= w;
-		    }
-	    }
-	}
+        int x = size.x + size.w + buttonsOffset.x;
+        int y = size.y + size.h + buttonsOffset.y;
+        auto& actions = selectedWidget->getWidgetActions();
+        auto action = actions.begin();
+        if ((action = actions.find("MenuConfirm")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuConfirm", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        } else if (selectedWidget == this) {
+            auto path = input.getGlyphPathForBinding("MenuConfirm", false);
+	        auto image = Image::get(path.c_str());
+	        int w = image->getWidth();
+	        int h = image->getHeight();
+	        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+	        x -= w;
+        }
+        if ((action = actions.find("MenuCancel")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuCancel", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+        if ((action = actions.find("MenuAlt1")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuAlt1", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+        if ((action = actions.find("MenuAlt2")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuAlt2", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+        if ((action = actions.find("MenuStart")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuStart", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+        if ((action = actions.find("MenuBack")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuBack", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+        if ((action = actions.find("MenuPageLeft")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuPageLeft", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+        if ((action = actions.find("MenuPageRight")) != actions.end()) {
+	        if (action->second == name) {
+	            auto path = input.getGlyphPathForBinding("MenuPageRight", false);
+		        auto image = Image::get(path.c_str());
+		        int w = image->getWidth();
+		        int h = image->getHeight();
+		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        x -= w;
+	        }
+        }
+    }
 #endif
 }
 

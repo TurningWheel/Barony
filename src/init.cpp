@@ -130,6 +130,7 @@ int initApp(char const * const title, int fullscreen)
 		printlog("[PhysFS]: successfully mounted output \"%s\" folder", outputdir);
 		if ( PHYSFS_setWriteDir(outputdir) )
 		{
+		    PHYSFS_mkdir("books");
 			PHYSFS_mkdir("savegames");
 			//TODO: Will these need special NINTENDO handling?
 			PHYSFS_mkdir("crashlogs");
