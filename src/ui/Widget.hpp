@@ -113,7 +113,7 @@ public:
     };
 
 	enum MenuConfirmTypes : int {
-		MENU_CONFIRM_KEYBOARD,
+		MENU_CONFIRM_KEYBOARD = 1,
 		MENU_CONFIRM_CONTROLLER
 	};
 
