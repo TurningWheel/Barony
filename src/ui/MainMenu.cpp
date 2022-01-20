@@ -2229,7 +2229,9 @@ namespace MainMenu {
 			allSettings.bindings.joystick_bindings[player_index];
 		auto find = bindings.find(binding);
 		if (find != bindings.end()) {
-			button->setText(find->second.c_str());
+		    button->setText(find->second.c_str());
+		    auto glyph = Input::getGlyphPathForInput(button->getText());
+		    button->setIcon(glyph.c_str());
 		} else {
 			button->setText(emptyBinding);
 		}
@@ -3051,7 +3053,7 @@ namespace MainMenu {
 		std::vector<Setting> bindings;
 		bindings.reserve(numBindings);
 		for (int c = 0; c < numBindings; ++c) {
-		    if (strcmp(defaultBindings[c][device_index], hiddenBinding)) {
+		    if (strcmp(defaultBindings[c][device_index + 1], hiddenBinding)) {
 		        bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
 		    }
 		}
@@ -3083,7 +3085,7 @@ namespace MainMenu {
 		};
 
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.", devices, devices[0],
+			"Select a controller for the given player.", devices, devices[device_index],
 			[](Button& button){
 				soundActivate();
 				settingsOpenDropdown(button, "device_dropdown", true,
@@ -3142,12 +3144,15 @@ namespace MainMenu {
 					auto tooltip = bindings->findField("tooltip"); assert(tooltip);
 					if (Input::lastInputOfAnyKind == "Escape") {
 						bound_button->setText(bound_input.c_str());
+		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
+		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
 						tooltip->setText(buf);
 					} else if (Input::lastInputOfAnyKind == "Delete") {
 						(void)settingsBind(bound_player, bound_device, bound_binding.c_str(), nullptr);
 						bound_button->setText(emptyBinding);
+		                bound_button->setIcon("");
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", bound_binding.c_str());
 						tooltip->setText(buf);
@@ -3160,6 +3165,8 @@ namespace MainMenu {
 						std:: string newinput = begin == "Pad" || begin == "Joy" ?
 								Input::lastInputOfAnyKind.substr(4) : Input::lastInputOfAnyKind;
 						bound_button->setText(newinput.c_str());
+		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
+		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), newinput.c_str());
 						tooltip->setText(buf);

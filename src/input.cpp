@@ -391,12 +391,172 @@ Input::binding_t Input::input(const char* binding) const {
 	return b != bindings.end() ? (*b).second : Input::binding_t();
 }
 
-std::string Input::getGlyphPathForInput(const char* binding, bool pressed) const
+std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 {
-	return getGlyphPathForInput(input(binding), pressed);
+    std::string in = input;
+	std::string rootPath = "images/ui/Glyphs/";
+#ifdef NINTENDO
+	if (in == "ButtonA")
+	{
+		return rootPath + "G_Switch_A00.png";
+    }
+	if (in == "ButtonB")
+	{
+		return rootPath + "G_Switch_B00.png";
+    }
+	if (in == "ButtonX")
+	{
+		return rootPath + "G_Switch_Y00.png";
+    }
+	if (in == "ButtonY")
+	{
+		return rootPath + "G_Switch_X00.png";
+    }
+#else
+	if (in == "ButtonA")
+	{
+		return rootPath + "G_Xbox_A00.png";
+    }
+	if (in == "ButtonB")
+	{
+		return rootPath + "G_Xbox_B00.png";
+    }
+	if (in == "ButtonX")
+	{
+		return rootPath + "G_Xbox_X00.png";
+    }
+	if (in == "ButtonY")
+	{
+		return rootPath + "G_Xbox_Y00.png";
+    }
+#endif
+	if (in == "ButtonLeftBumper")
+	{
+		return rootPath + "G_Switch_L00.png";
+    }
+	if (in == "ButtonRightBumper")
+	{
+		return rootPath + "G_Switch_R00.png";
+    }
+	if (in == "ButtonLeftStick")
+	{
+		return rootPath + "G_Switch_LStick00.png";
+    }
+	if (in == "ButtonRightStick")
+	{
+		return rootPath + "G_Switch_LStick00.png";
+    }
+	if (in == "ButtonStart")
+	{
+		return rootPath + "PlusMed00.png";
+    }
+	if (in == "ButtonBack")
+	{
+		return rootPath + "MinusMed00.png";
+    }
+	if (in == "DpadY-")
+	{
+		return rootPath + "G_Up00.png";
+    }
+	if (in == "DpadX-")
+	{
+		return rootPath + "G_Left00.png";
+    }
+	if (in == "DpadY+")
+	{
+		return rootPath + "G_Down00.png";
+    }
+	if (in == "DpadX+")
+	{
+		return rootPath + "G_Right00.png";
+    }
+	if (in == "StickLeftX+" ||
+	    in == "StickLeftX-" ||
+	    in == "StickLeftY+" ||
+	    in == "StickLeftY-" ||
+	    in == "StickRightX+" ||
+	    in == "StickRightX-" ||
+	    in == "StickRightY+" ||
+	    in == "StickRightY-")
+	{
+	    return rootPath + "G_Switch_LStick00.png";
+    }
+	if (in == "LeftTrigger")
+	{
+		return rootPath + "G_Switch_ZL00.png";
+	}
+	if (in == "RightTrigger")
+	{
+		return rootPath + "G_Switch_ZR00.png";
+	}
+	if (in == "Mouse1")
+	{
+		if ( pressed )
+		{
+			return rootPath + "Mouse/Mouse_LClick_Unpressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Mouse/Mouse_LClick_Pressed_00.png";
+		}
+	}
+	if (in == "Mouse2")
+	{
+		if ( pressed )
+		{
+			return rootPath + "Mouse/Mouse_MClick_Unpressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Mouse/Mouse_MClick_Pressed_00.png";
+		}
+	}
+	if (in == "Mouse3")
+	{
+		if ( pressed )
+		{
+			return rootPath + "Mouse/Mouse_RClick_Unpressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Mouse/Mouse_RClick_Pressed_00.png";
+		}
+	}
+	if (in == "MouseWheelDown")
+	{
+		if ( pressed )
+		{
+			return rootPath + "Mouse/Mouse_MWheelDown_Unpressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Mouse/Mouse_MWheelDown_Pressed_00.png";
+		}
+	}
+	if (in == "MouseWheelUp")
+	{
+		if ( pressed )
+		{
+			return rootPath + "Mouse/Mouse_MWheelUp_Unpressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Mouse/Mouse_MWheelUp_Pressed_00.png";
+		}
+	}
+	else
+	{
+	    auto scancode = getScancodeFromName(input);
+	    return GlyphHelper.getGlyphPath(scancode, pressed);
+	}
 }
 
-std::string Input::getGlyphPathForInput(binding_t binding, bool pressed) const
+std::string Input::getGlyphPathForBinding(const char* binding, bool pressed) const
+{
+	return getGlyphPathForBinding(input(binding), pressed);
+}
+
+std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed) const
 {
 	std::string rootPath = "images/ui/Glyphs/";
 	if ( binding.type == binding_t::bindtype_t::CONTROLLER_BUTTON )
@@ -409,9 +569,9 @@ std::string Input::getGlyphPathForInput(binding_t binding, bool pressed) const
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
 				return rootPath + "G_Switch_B00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-				return rootPath + "G_Switch_X00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
 				return rootPath + "G_Switch_Y00.png";
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
+				return rootPath + "G_Switch_X00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
 				return rootPath + "G_Switch_L00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
@@ -421,9 +581,9 @@ std::string Input::getGlyphPathForInput(binding_t binding, bool pressed) const
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
 				return rootPath + "G_Switch_LStick00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
-				return rootPath + "G_Switch_+00.png";
+				return rootPath + "PlusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
-				return rootPath + "G_Switch_-A00.png";
+				return rootPath + "MinusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
 				return rootPath + "G_Up00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
@@ -455,9 +615,9 @@ std::string Input::getGlyphPathForInput(binding_t binding, bool pressed) const
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
 				return rootPath + "G_Switch_LStick00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
-				return rootPath + "G_Switch_+00.png";
+				return rootPath + "PlusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
-				return rootPath + "G_Switch_-A00.png";
+				return rootPath + "MinusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
 				return rootPath + "G_Up00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:

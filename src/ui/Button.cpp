@@ -132,7 +132,42 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	}
 
 	if ((style != STYLE_CHECKBOX && style != STYLE_RADIO) || pressed) {
-		if (!text.empty()) {
+		if (!icon.empty()) {
+			Image* iconImg = Image::get(icon.c_str());
+			if (iconImg) {
+				int w = iconImg->getWidth();
+				int h = iconImg->getHeight();
+				int x = (style != STYLE_DROPDOWN) ?
+					(size.w - w) / 2 :
+					5 + border;
+				int y = (size.h - h) / 2;
+
+				SDL_Rect pos = _size;
+				pos.x += std::max(0, x - scroll.x);
+				pos.y += std::max(0, y - scroll.y);
+				pos.w = std::min(w, _size.w - x + scroll.x) + std::min(0, x - scroll.x);
+				pos.h = std::min(h, _size.h - y + scroll.y) + std::min(0, y - scroll.y);
+				if (pos.w <= 0 || pos.h <= 0) {
+					goto next;
+				}
+
+				SDL_Rect section;
+				section.x = x - scroll.x < 0 ? -(x - scroll.x) : 0;
+				section.y = y - scroll.y < 0 ? -(y - scroll.y) : 0;
+				section.w = pos.w;
+				section.h = pos.h;
+				if (section.w == 0 || section.h == 0) {
+					goto next;
+				}
+
+				SDL_Rect scaledPos;
+				scaledPos.x = pos.x;
+				scaledPos.y = pos.y;
+				scaledPos.w = pos.w;
+				scaledPos.h = pos.h;
+				iconImg->draw(&section, scaledPos, viewport);
+			}
+		} else if (!text.empty()) {
 			Font* _font = Font::get(font.c_str());
 
 			int lines = 1;
@@ -210,41 +245,6 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 				}
 			} while ((token = nexttoken) != NULL);
 			free(buf);
-		} else if (!icon.empty()) {
-			Image* iconImg = Image::get(icon.c_str());
-			if (iconImg) {
-				int w = iconImg->getWidth();
-				int h = iconImg->getHeight();
-				int x = (style != STYLE_DROPDOWN) ?
-					(size.w - w) / 2 :
-					5 + border;
-				int y = (size.h - h) / 2;
-
-				SDL_Rect pos = _size;
-				pos.x += std::max(0, x - scroll.x);
-				pos.y += std::max(0, y - scroll.y);
-				pos.w = std::min(w, _size.w - x + scroll.x) + std::min(0, x - scroll.x);
-				pos.h = std::min(h, _size.h - y + scroll.y) + std::min(0, y - scroll.y);
-				if (pos.w <= 0 || pos.h <= 0) {
-					goto next;
-				}
-
-				SDL_Rect section;
-				section.x = x - scroll.x < 0 ? -(x - scroll.x) : 0;
-				section.y = y - scroll.y < 0 ? -(y - scroll.y) : 0;
-				section.w = pos.w;
-				section.h = pos.h;
-				if (section.w == 0 || section.h == 0) {
-					goto next;
-				}
-
-				SDL_Rect scaledPos;
-				scaledPos.x = pos.x;
-				scaledPos.y = pos.y;
-				scaledPos.w = pos.w;
-				scaledPos.h = pos.h;
-				iconImg->draw(&section, scaledPos, viewport);
-			}
 		}
 	}
 next:
