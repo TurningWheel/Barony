@@ -1005,12 +1005,13 @@ void EOS_CALL EOSFuncs::ConnectAuthExpirationCallback(const EOS_Connect_AuthExpi
 	}
 }
 
-void EOSFuncs::serialize(void* file) {
+bool EOSFuncs::serialize(void* file) {
 	int version = 0;
 	FileInterface* fileInterface = static_cast<FileInterface*>(file);
 	fileInterface->property("version", version);
 	fileInterface->property("credentialhost", CredentialHost);
 	fileInterface->property("credentialname", CredentialName);
+	return true;
 }
 
 bool EOSFuncs::initPlatform(bool enableLogging)

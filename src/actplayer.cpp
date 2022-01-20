@@ -531,7 +531,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// rotate
-	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) && players[playernum]->shootmode )
+	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -2818,65 +2818,63 @@ void actPlayer(Entity* my)
 		consoleCommand("/facebaralternate");
 		keystatus[SDL_SCANCODE_O] = 0;
 	}*/
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_1] )
+	if (enableDebugKeys)
 	{
-		Input::waitingToBindControllerForPlayer = 0;
-		keystatus[SDL_SCANCODE_KP_1] = 0;
-		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 0");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_2] )
-	{
-		Input::waitingToBindControllerForPlayer = 1;
-		keystatus[SDL_SCANCODE_KP_2] = 0;
-		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 1");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_3] )
-	{
-		Input::waitingToBindControllerForPlayer = 2;
-		keystatus[SDL_SCANCODE_KP_3] = 0;
-		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 2");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_4] )
-	{
-		Input::waitingToBindControllerForPlayer = 3;
-		keystatus[SDL_SCANCODE_KP_4] = 0;
-		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 3");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_5] )
-	{
-		keystatus[SDL_SCANCODE_KP_5] = 0;
-		consoleCommand("/cyclekeyboard");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_0] )
-	{
-		keystatus[SDL_SCANCODE_KP_0] = 0;
-		inputs.setPlayerIDAllowedKeyboard(-1);
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			Input::inputs[i].refresh();
-		}
-		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed keyboard for any player");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_7] )
-	{
-		keystatus[SDL_SCANCODE_KP_7] = 0;
-		consoleCommand("/splitscreen");
-	}
-	if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
-	{
-		keystatus[SDL_SCANCODE_KP_9] = 0;
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.hasController(i) )
-			{
-				inputs.removeControllerWithDeviceID(inputs.getControllerID(i));
-			}
-		}
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			Input::inputs[i].refresh();
-		}
-		messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed gamepad for player: %d", PLAYER_NUM);
+		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_1] )
+	    {
+		    Input::waitingToBindControllerForPlayer = 0;
+		    keystatus[SDL_SCANCODE_KP_1] = 0;
+		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 0");
+	    }
+	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_2] )
+	    {
+		    Input::waitingToBindControllerForPlayer = 1;
+		    keystatus[SDL_SCANCODE_KP_2] = 0;
+		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 1");
+	    }
+	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_3] )
+	    {
+		    Input::waitingToBindControllerForPlayer = 2;
+		    keystatus[SDL_SCANCODE_KP_3] = 0;
+		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 2");
+	    }
+	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_4] )
+	    {
+		    Input::waitingToBindControllerForPlayer = 3;
+		    keystatus[SDL_SCANCODE_KP_4] = 0;
+		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 3");
+	    }
+	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_5] )
+	    {
+		    keystatus[SDL_SCANCODE_KP_5] = 0;
+		    consoleCommand("/cyclekeyboard");
+	    }
+	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_0] )
+	    {
+		    keystatus[SDL_SCANCODE_KP_0] = 0;
+		    inputs.setPlayerIDAllowedKeyboard(-1);
+		    for ( int i = 0; i < MAXPLAYERS; ++i )
+		    {
+			    Input::inputs[i].refresh();
+		    }
+		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed keyboard for any player");
+	    }
+	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
+	    {
+		    keystatus[SDL_SCANCODE_KP_9] = 0;
+		    for ( int i = 0; i < MAXPLAYERS; ++i )
+		    {
+			    if ( inputs.hasController(i) )
+			    {
+				    inputs.removeControllerWithDeviceID(inputs.getControllerID(i));
+			    }
+		    }
+		    for ( int i = 0; i < MAXPLAYERS; ++i )
+		    {
+			    Input::inputs[i].refresh();
+		    }
+		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed gamepad for player: %d", PLAYER_NUM);
+	    }
 	}
 	if ( inputs.hasController(PLAYER_NUM) )
 	{

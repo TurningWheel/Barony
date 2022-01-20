@@ -160,8 +160,8 @@ void imageSetWidthHeight9x9(Frame* container, const std::vector<std::string>& im
 		{
 			if ( auto imgGet = Image::get(i->path.c_str()) )
 			{
-				i->pos.w = imgGet->getWidth();
-				i->pos.h = imgGet->getHeight();
+				i->pos.w = (int)imgGet->getWidth();
+				i->pos.h = (int)imgGet->getHeight();
 			}
 		}
 	}
@@ -1260,7 +1260,7 @@ void Player::HUD_t::updateUINavigation()
 
 		if ( !button->isDisabled() )
 		{
-			glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(buttonAndGlyph.inputName.c_str());
+			glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(buttonAndGlyph.inputName.c_str());
 			glyph->ontop = true;
 			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 			{
@@ -1272,8 +1272,8 @@ void Player::HUD_t::updateUINavigation()
 			}
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->pos.w = imgGet->getWidth();
-				glyph->pos.h = imgGet->getHeight();
+				glyph->pos.w = (int)imgGet->getWidth();
+				glyph->pos.h = (int)imgGet->getHeight();
 			}
 
 			glyph->pos.x = button->getSize().x + button->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
@@ -1392,9 +1392,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
-				promptPos.x -= imgGet->getWidth() / 2;
-				promptPos.y -= imgGet->getHeight() / 2;
-				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				promptPos.x -= (int)imgGet->getWidth() / 2;
+				promptPos.y -= (int)imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
 				cursor->color = makeColor(255, 255, 255, 191);
 			}
@@ -1409,9 +1409,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
 				{
 					cursor->disabled = false;
-					promptPos.x -= imgGet->getWidth() / 2;
-					promptPos.y -= imgGet->getHeight() / 2;
-					SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+					promptPos.x -= (int)imgGet->getWidth() / 2;
+					promptPos.y -= (int)imgGet->getHeight() / 2;
+					SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					cursor->pos = cursorPos;
 					cursor->color = makeColor(255, 255, 255, 191);
 				}
@@ -1420,8 +1420,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				textPos.y = cursor->pos.y + cursor->pos.h / 2;
 				if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
 				{
-					textPos.x -= imgGet->getWidth() / 2;
-					textPos.y -= imgGet->getHeight() / 2;
+					textPos.x -= (int)imgGet->getWidth() / 2;
+					textPos.y -= (int)imgGet->getHeight() / 2;
 				}
 
 				if ( textPos.x < 0 )
@@ -1447,9 +1447,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
-						promptPos.x -= imgGet->getWidth() / 2;
-						promptPos.y -= imgGet->getHeight() / 2;
-						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						promptPos.x -= (int)imgGet->getWidth() / 2;
+						promptPos.y -= (int)imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
 						cursor->color = makeColor(255, 255, 255, 128);
 					}
@@ -1458,8 +1458,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					textPos.y = cursor->pos.y + cursor->pos.h / 2;
 					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
 					{
-						textPos.x -= imgGet->getWidth() / 2;
-						textPos.y -= imgGet->getHeight() / 2;
+						textPos.x -= (int)imgGet->getWidth() / 2;
+						textPos.y -= (int)imgGet->getHeight() / 2;
 					}
 
 					if ( textPos.x < 0 )
@@ -1481,9 +1481,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
-						promptPos.x -= imgGet->getWidth() / 2;
-						promptPos.y -= imgGet->getHeight() / 2;
-						SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+						promptPos.x -= (int)imgGet->getWidth() / 2;
+						promptPos.y -= (int)imgGet->getHeight() / 2;
+						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
 						cursor->color = makeColor(255, 255, 255, 128);
 					}
@@ -1493,15 +1493,15 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			textPos.x += 40;
 			textPos.y += 20;
 
-			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
-			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
 			if ( ticks % 50 < 25 )
 			{
 				glyph->path = glyphPathPressed;
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 					{
@@ -1525,7 +1525,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					textPos.x += glyph->pos.w;
 
@@ -1556,7 +1556,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(icon->path.c_str()) )
 			{
 				icon->disabled = false;
-				SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+				SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				icon->pos = iconPos;
 				textPos.x += icon->pos.w + skillIconToGlyphPadding;
 			}
@@ -1629,9 +1629,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
-				promptPos.x -= imgGet->getWidth() / 2;
-				promptPos.y -= imgGet->getHeight() / 2;
-				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				promptPos.x -= (int)imgGet->getWidth() / 2;
+				promptPos.y -= (int)imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
 				cursor->color = makeColor(255, 255, 255, 128);
 			}
@@ -1639,15 +1639,15 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			textPos.x += 40;
 			textPos.y += 20;
 
-			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
-			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
 			if ( ticks % 50 < 25 )
 			{
 				glyph->path = glyphPathPressed;
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 					{
@@ -1671,7 +1671,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(glyph->path.c_str()) )
 				{
 					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					glyph->pos = glyphPos;
 					textPos.x += glyph->pos.w;
 
@@ -1704,7 +1704,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				if ( auto imgGet = Image::get(icon->path.c_str()) )
 				{
 					icon->disabled = false;
-					SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+					SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 					icon->pos = iconPos;
 					textPos.x += icon->pos.w + skillIconToGlyphPadding;
 				}
@@ -1719,9 +1719,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
-				promptPos.x -= imgGet->getWidth() / 2;
-				promptPos.y -= imgGet->getHeight() / 2;
-				SDL_Rect cursorPos{ 0, 0, imgGet->getWidth(), imgGet->getHeight() };
+				promptPos.x -= (int)imgGet->getWidth() / 2;
+				promptPos.y -= (int)imgGet->getHeight() / 2;
+				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
 				cursor->color = makeColor(255, 255, 255, 128);
 			}
@@ -1734,8 +1734,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					textPos.y = cursor->pos.y + cursor->pos.h / 2;
 					if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
 					{
-						textPos.x -= imgGet->getWidth() / 2;
-						textPos.y -= imgGet->getHeight() / 2;
+						textPos.x -= (int)imgGet->getWidth() / 2;
+						textPos.y -= (int)imgGet->getHeight() / 2;
 					}
 
 					if ( textPos.x < 0 )
@@ -1756,15 +1756,15 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					textPos.x += 40;
 					textPos.y += 20;
 
-					auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", true);
-					auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForInput("Use", false);
+					auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
+					auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
 					if ( ticks % 50 < 25 )
 					{
 						glyph->path = glyphPathPressed;
 						if ( auto imgGet = Image::get(glyph->path.c_str()) )
 						{
 							glyph->disabled = false;
-							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 							glyph->pos = glyphPos;
 							if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 							{
@@ -1788,7 +1788,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						if ( auto imgGet = Image::get(glyph->path.c_str()) )
 						{
 							glyph->disabled = false;
-							SDL_Rect glyphPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+							SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 							glyph->pos = glyphPos;
 							textPos.x += glyph->pos.w;
 
@@ -1819,7 +1819,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( auto imgGet = Image::get(icon->path.c_str()) )
 					{
 						icon->disabled = false;
-						SDL_Rect iconPos{ textPos.x, textPos.y, imgGet->getWidth(), imgGet->getHeight() };
+						SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						icon->pos = iconPos;
 						textPos.x += icon->pos.w + skillIconToGlyphPadding;
 					}
@@ -2213,11 +2213,11 @@ void Player::HUD_t::updateActionPrompts()
 
 			if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
 			{
-				glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("Sneak", pressed);
+				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Sneak", pressed);
 			}
 			else
 			{
-				glyph->path = Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str(), pressed);
+				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str(), pressed);
 			}
 			glyph->disabled = prompt->isDisabled();
 			if ( !player.shootmode )
@@ -2234,17 +2234,17 @@ void Player::HUD_t::updateActionPrompts()
 			}
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->pos.w = imgGet->getWidth();
-				glyph->pos.h = imgGet->getHeight();
+				glyph->pos.w = (int)imgGet->getWidth();
+				glyph->pos.h = (int)imgGet->getHeight();
 			}
 			glyph->pos.x = prompt->getSize().x + prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 0;
 			int pressedOffset = 0;
 			/*if ( pressed )
 			{
-				if ( auto imgGet = Image::get(Input::inputs[player.playernum].getGlyphPathForInput(promptInfo.inputName.c_str()).c_str()) )
+				if ( auto imgGet = Image::get(Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str()).c_str()) )
 				{
-					int unpressedHeight = imgGet->getHeight();
+					int unpressedHeight = (int)imgGet->getHeight();
 					if ( glyph->pos.h != unpressedHeight )
 					{
 						pressedOffset = (unpressedHeight - glyph->pos.h);
@@ -4092,12 +4092,12 @@ void Player::GUIDropdown_t::process()
 
 		if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 		{
-			img->path = Input::inputs[player.playernum].getGlyphPathForInput(option.controllerGlyph.c_str());
+			img->path = Input::inputs[player.playernum].getGlyphPathForBinding(option.controllerGlyph.c_str());
 			img->disabled = false;
 		}
 		else if ( option.keyboardGlyph != "" && inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			img->path = Input::inputs[player.playernum].getGlyphPathForInput(option.keyboardGlyph.c_str());
+			img->path = Input::inputs[player.playernum].getGlyphPathForBinding(option.keyboardGlyph.c_str());
 			img->disabled = false;
 		}
 
@@ -8114,8 +8114,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->pos.w = imgGet->getWidth();
-				glyph->pos.h = imgGet->getHeight();
+				glyph->pos.w = (int)imgGet->getWidth();
+				glyph->pos.h = (int)imgGet->getHeight();
 			}
 			SDL_Rect entryPos = entry->getSize();
 			entryPos.x = glyph->pos.x + glyph->pos.w + padxMid;
@@ -8385,8 +8385,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 			if ( auto imgGet = Image::get(sexImg->path.c_str()) )
 			{
-				sexImg->pos.w = imgGet->getWidth();
-				sexImg->pos.h = imgGet->getHeight();
+				sexImg->pos.w = (int)imgGet->getWidth();
+				sexImg->pos.h = (int)imgGet->getHeight();
 			}
 
 			SDL_Rect raceTextPos = raceText->getSize();
@@ -11633,16 +11633,16 @@ void Player::Inventory_t::updateItemContextMenu()
 			case PROMPT_EQUIP:
 			case PROMPT_UNEQUIP:
 			case PROMPT_SPELL_EQUIP:
-				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuAlt1");
+				img->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuAlt1");
 				break;
 			case PROMPT_APPRAISE:
-				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuAlt2");
+				img->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuAlt2");
 				break;
 			case PROMPT_DROP:
-				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuCancel");
+				img->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
 				break;
 			default:
-				img->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuConfirm");
+				img->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuConfirm");
 				break;
 		}
 
@@ -14582,12 +14582,12 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarModifierLeft");
 					break;
 				case 1:
 					pos.x = centreXLeft - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarLeft");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarLeft");
 					break;
 				case 2:
 					pos.x = centreXLeft + (pos.w / 2 - 2) - compactViewOffset;
@@ -14600,7 +14600,7 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarModifierRight");
 					break;
 				// middle group
 				case 3:
@@ -14615,13 +14615,13 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarModifierLeft");
 					break;
 				case 4:
 					pos.y = hotbarStartY1;
 					pos.y -= slotYMovement;
 					pos.x = centreX - pos.w / 2;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarUp");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarUp");
 					break;
 				case 5:
 					pos.y = hotbarStartY1;
@@ -14635,7 +14635,7 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarModifierRight");
 					break;
 				// right group
 				case 6:
@@ -14649,12 +14649,12 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierLeft");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarModifierLeft");
 					break;
 				case 7:
 					pos.x = centreXRight - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarRight");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarRight");
 					break;
 				case 8:
 					pos.x = centreXRight + (pos.w / 2 - 2) - compactViewOffset;
@@ -14667,7 +14667,7 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						glyph->disabled = true;
 					}
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForInput("HotbarFacebarModifierRight");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarModifierRight");
 					break;
 				default:
 					break;
@@ -17562,7 +17562,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			promptBack->setSize(textPos);
 			glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
 		}
-		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuCancel");
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
 		Image* glyphImage = Image::get(promptImg->path.c_str());
 		if ( glyphImage )
 		{
@@ -17604,7 +17604,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 			promptScroll->setSize(textPos);
 		}
-		promptImg->path = Input::inputs[player.playernum].getGlyphPathForInput("MenuScrollDown");
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuScrollDown");
 		Image* glyphImage = Image::get(promptImg->path.c_str());
 		if ( glyphImage )
 		{

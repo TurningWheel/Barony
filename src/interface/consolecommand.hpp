@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include <string>
+#include <unordered_map>
 
 /*
  * How to define a console command:
@@ -48,43 +49,45 @@ private:
 
 /*
  * ConsoleVariables are defined just like console commands.
- * They automatically define the func to be a setter function,
- * And define a data member which is public.
- * Make SURE your ConsoleVariable is static so its data member
+ * They automatically define the func to be a setter function, and define a data
+ * member which is public. Make SURE your ConsoleVariable is static so its data
  * doesn't fall out of scope!!!
  *
- * ex:
- * static ConsoleVariable my_var("/my_var", "some value", "a variable players can mess with");
+ * ex (1):
+ * static ConsoleVariable<std::string> my_string("/my_string", "Hello world");
  *
- * Note: due to the way ConsoleCommands tokenize strings, using several successive
- * spaces in a ConsoleVariable value will result in just one space being recorded.
+ * ex (2):
+ * static ConsoleVariable<int> my_int("/my_int", 10);
+ *
+ * Note: due to the way ConsoleCommands tokenize strings, using several
+ * successive spaces in a ConsoleVariable<std::string> will result in just one
+ * space being recorded.
  *
  * ex:
  * /cvar Hello       World
- * =
- * Hello World
+ *
+ * becomes:
+ * "cvar" is "Hello World"
  */
 
+template<typename T = std::string>
 class ConsoleVariable : ConsoleCommand {
 public:
-    ConsoleVariable(const char* _name, const char* _default = "", const char* _desc = ""):
+    ConsoleVariable(const char* _name, const T& _default, const char* _desc = ""):
         ConsoleCommand(_name, _desc, &ConsoleVariable::setter)
     {
         add_to_map();
-        (*this)(_default);
+        data = _default;
     }
 
-    void operator()(const char* arg) {
-        const char* args[2] = {
-            name,
-            arg,
-        };
-        setter(2, args);
-    }
+    void operator=(const char* arg);
+    T& operator*();
 
-    std::string data;
+    T data;
 
 private:
     static void setter(int argc, const char** argv);
     void add_to_map();
+    using cvar_map_t = std::unordered_map<std::string, ConsoleVariable<T>&>;
+    static cvar_map_t& getConsoleVariables();
 };

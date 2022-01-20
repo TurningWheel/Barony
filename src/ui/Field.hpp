@@ -117,6 +117,7 @@ public:
 	void						(*getCallback() const)(Field&) { return callback; }
 	const char*					getGuide() const { return guide.c_str(); }
 	const bool					isOntop() const { return ontop; }
+	const bool                  isActivated() const { return activated; }
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }

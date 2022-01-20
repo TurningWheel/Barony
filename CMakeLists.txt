@@ -599,7 +599,6 @@ if (NOT APPLE AND UNIX)
 
   install(DIRECTORY
 	${CMAKE_SOURCE_DIR}/books
-	${CMAKE_SOURCE_DIR}/config
 	${CMAKE_SOURCE_DIR}/data
 	${CMAKE_SOURCE_DIR}/fonts
 	${CMAKE_SOURCE_DIR}/images

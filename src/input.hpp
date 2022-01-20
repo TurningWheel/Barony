@@ -131,7 +131,13 @@ public:
 	bool binaryToggle(const char* binding) const;
 	bool analogToggle(const char* binding) const;
 
-	//! consume an input action
+	//! consume an input action no matter what
+	//! @param binding the binding to be consumed
+	//! @return true if the toggle was consumed (ie the button was pressed)
+	bool consumeBinary(const char* binding);
+	bool consumeAnalog(const char* binding);
+
+	//! consume an input action, if it is being pressed
 	//! @param binding the binding to be consumed
 	//! @return true if the toggle was consumed (ie the button was pressed)
 	bool consumeBinaryToggle(const char* binding);
@@ -180,8 +186,9 @@ public:
 	//! return the binding_t struct for the input name
 	binding_t input(const char* binding) const;
 
-	std::string getGlyphPathForInput(binding_t binding, bool pressed = false) const;
-	std::string getGlyphPathForInput(const char* binding, bool pressed = false) const;
+	static std::string getGlyphPathForInput(const char* input, bool pressed = false);
+	std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false) const;
+	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;
 
 	static float getJoystickRebindingDeadzone() { return rebinding_deadzone; }
 

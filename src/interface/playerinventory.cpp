@@ -4061,7 +4061,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				a = 255;
 				img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
 				txt->setDisabled(false);
-				img->path = Input::inputs[player].getGlyphPathForInput(getContextMenuOptionBindingName(option).c_str());
+				img->path = Input::inputs[player].getGlyphPathForBinding(getContextMenuOptionBindingName(option).c_str());
 				txt->setText(getContextMenuLangEntry(player, option, *item));
 			}
 
@@ -4073,7 +4073,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				auto& txt = pair.second;
 				if ( img->path == "" )
 				{
-					img->path = Input::inputs[player].getGlyphPathForInput(getBindingNameForMissingTooltipPrompts(index).c_str());
+					img->path = Input::inputs[player].getGlyphPathForBinding(getBindingNameForMissingTooltipPrompts(index).c_str());
 				}
 				if ( !txt->isDisabled() )
 				{
