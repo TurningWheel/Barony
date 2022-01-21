@@ -38,8 +38,8 @@ void Input::defaultBindings() {
 	}
 
 	// these bindings should probably not be accessible to the player to change.
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuTab", "Tab"));
 	for (int c = 0; c < MAXPLAYERS; ++c) {
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Console Command", "/"));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuUp", (std::string("Pad") + std::to_string(c) + std::string("DpadY-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuLeft", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuRight", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str()));
@@ -103,6 +103,15 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftTrigger", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavRightTrigger", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Forward", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Left", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Backward", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Right", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Turn Left", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Turn Right", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Up", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Down", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
+
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));
@@ -131,9 +140,8 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuSelect", "Backspace"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuPageLeft", "["));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuPageRight", "]"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("Console Command", "/"));
 	}
-#ifndef NINTENDO
-#endif
 }
 
 float Input::analog(const char* binding) const {

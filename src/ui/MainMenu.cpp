@@ -59,15 +59,14 @@ namespace MainMenu {
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
 		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
 		{"Chat", "Return", hiddenBinding, emptyBinding},
-		{"Move Forward", "W", "StickLeftY-", emptyBinding},
-		{"Move Left", "A", "StickLeftX-", emptyBinding},
-		{"Move Backward", "S", "StickLeftY+", emptyBinding},
-		{"Move Right", "D", "StickLeftX+", emptyBinding},
-		{"Turn Left", "Left", "StickRightX-", emptyBinding},
-		{"Turn Right", "Right", "StickRightX+", emptyBinding},
-		{"Look Up", "Up", "StickRightY-", emptyBinding},
-		{"Look Down", "Down", "StickRightY+", emptyBinding},
-		{"Console Command", "/", hiddenBinding, emptyBinding}
+		{"Move Forward", "W", hiddenBinding, emptyBinding},
+		{"Move Left", "A", hiddenBinding, emptyBinding},
+		{"Move Backward", "S", hiddenBinding, emptyBinding},
+		{"Move Right", "D", hiddenBinding, emptyBinding},
+		{"Turn Left", "Left", hiddenBinding, emptyBinding},
+		{"Turn Right", "Right", hiddenBinding, emptyBinding},
+		{"Look Up", "Up", hiddenBinding, emptyBinding},
+		{"Look Down", "Down", hiddenBinding, emptyBinding}
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
@@ -7782,8 +7781,8 @@ bind_failed:
 					destroyMainMenu();
 					createDummyMainMenu();
 					createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
-					playMusic(sounds[501], false,
-					    main_menu_fade_destination == FadeDestination::IntroStoryScreen, false);
+					bool fadeMusic = main_menu_fade_destination == FadeDestination::IntroStoryScreen;
+					playMusic(sounds[501], false, fadeMusic, false);
 				}
 				if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
 					destroyMainMenu();

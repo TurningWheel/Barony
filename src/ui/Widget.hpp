@@ -58,7 +58,6 @@ public:
     void    setOwner(Sint32 _owner) { owner = _owner; }
     void	setTickCallback(void (*const fn)(Widget&)) { tickCallback = fn; }
     void	setDrawCallback(void (*const fn)(const Widget&, const SDL_Rect)) { drawCallback = fn; }
-    void    setWidgetTab(const char* s) { widgetMovements.emplace("MenuTab", s); }
     void    setWidgetRight(const char* s) { widgetMovements.emplace("MenuRight", s); widgetMovements.emplace("AltMenuRight", s); }
     void    setWidgetDown(const char* s) { widgetMovements.emplace("MenuDown", s); widgetMovements.emplace("AltMenuDown", s); }
     void    setWidgetLeft(const char* s) { widgetMovements.emplace("MenuLeft", s); widgetMovements.emplace("AltMenuLeft", s); }
