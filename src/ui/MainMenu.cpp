@@ -78,13 +78,14 @@ namespace MainMenu {
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 
 	enum class LobbyType {
+	    None,
 		LobbyLocal,
 		LobbyLAN,
 		LobbyOnline,
 		LobbyJoined
 	};
 
-	static LobbyType currentLobbyType;
+	static LobbyType currentLobbyType = LobbyType::None;
 	static bool playersInLobby[4];
 
 	void beginFade(FadeDestination fd) {
@@ -5985,6 +5986,7 @@ bind_failed:
 		auto back_button = createBackWidget(lobby, [](Button&){
 			soundCancel();
 			destroyMainMenu();
+			currentLobbyType = LobbyType::None;
 			createMainMenu(false);
 			});
 
@@ -7740,6 +7742,74 @@ bind_failed:
 
 /******************************************************************************/
 
+
+    static void handleFadeFinished(bool ingame) {
+		if (main_menu_fade_destination == FadeDestination::None) {
+			// generally speaking, this shouldn't ever happen. if it did: fix your shit!
+			// if for some reason this happens in release mode, just boot the player to the main menu.
+			assert(0 &&
+				"Set a FadeDestination so the new menu manager knows where to kick the player to."
+				"Don't know where? Try MainMenu::FadeDestination::RootMainMenu");
+			main_menu_fade_destination = FadeDestination::RootMainMenu;
+		} else {
+			if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
+				destroyMainMenu();
+				if (ingame) {
+				    victory = 0;
+				    doEndgame();
+				}
+	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				createMainMenu(false);
+			}
+			if (main_menu_fade_destination == FadeDestination::IntroStoryScreen
+			    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
+				bool fadeMusic = main_menu_fade_destination == FadeDestination::IntroStoryScreen;
+				playMusic(sounds[501], false, fadeMusic, false);
+			}
+			if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
+				playMusic(intermissionmusic, false, false, false);
+			}
+			if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+				destroyMainMenu();
+				multiplayer = SINGLE;
+				numplayers = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+				if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
+				{
+					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+					gameModeManager.Tutorial.writeToDocument();
+				}
+				gameModeManager.Tutorial.startTutorial("");
+				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+				doNewGame(false);
+			}
+			if (main_menu_fade_destination == FadeDestination::GameStart) {
+				multiplayer = SINGLE;
+				numplayers = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+				setupSplitscreen();
+				if (!loadingsavegame) {
+	                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                        if (!saveGameExists(multiplayer == SINGLE, i)) {
+                            savegameCurrentFileIndex = i;
+                            break;
+                        }
+                    }
+				}
+				doNewGame(false);
+				destroyMainMenu();
+			}
+			fadeout = false;
+			main_menu_fade_destination = FadeDestination::None;
+		}
+	}
+
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
 			createMainMenu(ingame);
@@ -7759,71 +7829,15 @@ bind_failed:
 #endif // STEAMWORKS
 
 		if (fadeout && fadealpha >= 255) {
-			if (main_menu_fade_destination == FadeDestination::None) {
-				// generally speaking, this shouldn't ever happen. if it did: fix your shit!
-				// if for some reason this happens in release mode, just boot the player to the main menu.
-				assert(0 &&
-					"Set a FadeDestination so the new menu manager knows where to kick the player to."
-					"Don't know where? Try MainMenu::FadeDestination::RootMainMenu");
-				main_menu_fade_destination = FadeDestination::RootMainMenu;
-			} else {
-				if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
-					destroyMainMenu();
-					if (ingame) {
-					    victory = 0;
-					    doEndgame();
-					}
-		            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
-					createMainMenu(false);
-				}
-				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen
-				    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
-					destroyMainMenu();
-					createDummyMainMenu();
-					createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
-					bool fadeMusic = main_menu_fade_destination == FadeDestination::IntroStoryScreen;
-					playMusic(sounds[501], false, fadeMusic, false);
-				}
-				if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
-					destroyMainMenu();
-					createDummyMainMenu();
-					createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
-					playMusic(intermissionmusic, false, false, false);
-				}
-				if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
-					destroyMainMenu();
-					multiplayer = SINGLE;
-					numplayers = 0;
-					gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-					if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
-					{
-						gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
-						gameModeManager.Tutorial.writeToDocument();
-					}
-					gameModeManager.Tutorial.startTutorial("");
-					steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
-					doNewGame(false);
-				}
-				if (main_menu_fade_destination == FadeDestination::GameStart) {
-					multiplayer = SINGLE;
-					numplayers = 0;
-					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
-					setupSplitscreen();
-					if (!loadingsavegame) {
-		                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
-                            if (!saveGameExists(multiplayer == SINGLE, i)) {
-                                savegameCurrentFileIndex = i;
-                                break;
-                            }
-                        }
-					}
-					doNewGame(false);
-					destroyMainMenu();
-				}
-				fadeout = false;
-				main_menu_fade_destination = FadeDestination::None;
-			}
-		}
+            handleFadeFinished(ingame);
+        }
+
+        // if no controller is connected, you can always connect one just for the main menu.
+        if (!ingame && currentLobbyType == LobbyType::None) {
+            if (!inputs.hasController(clientnum)) {
+                Input::waitingToBindControllerForPlayer = clientnum;
+            }
+        }
 	}
 
 	void createMainMenu(bool ingame) {
