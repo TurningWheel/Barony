@@ -1150,7 +1150,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1318,7 +1318,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 				return MODULE_CHARACTERSHEET;
 			}
-			else if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_SPELL 
 					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
@@ -3880,9 +3880,10 @@ void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 {
 	if ( bPlayerUsingKeyboardControl(player) 
-		&& (!getVirtualMouse(player)->lastMovementFromController 
-		|| (players[player]->shootmode && !gamePaused && !intro)
-		|| gamePaused
+		&& 
+		(!getVirtualMouse(player)->lastMovementFromController 
+			|| (players[player]->shootmode && !gamePaused && !intro)
+			|| gamePaused
 			) 
 		)
 	{

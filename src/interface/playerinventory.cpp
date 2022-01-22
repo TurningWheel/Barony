@@ -5144,7 +5144,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 				int tooltipCoordY = slotFrame->getAbsoluteSize().y;
-				tooltipCoordX -= players[player]->camera_virtualx1();
+				tooltipCoordX += players[player]->camera_virtualx1();
 				if ( !itemOnPaperDoll )
 				{
 				//	tooltipCoordY += invSlotsFrame->getSize().y;
