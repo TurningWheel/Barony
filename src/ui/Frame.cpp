@@ -345,7 +345,19 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
-	int mouseowner = intro ? 0 : owner;
+	int mouseowner_pausemenu = 0;
+	if ( gamePaused )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				mouseowner_pausemenu = i;
+				break;
+			}
+		}
+	}
+	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -677,7 +689,19 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	int mouseowner = intro ? 0 : owner;
+	int mouseowner_pausemenu = 0;
+	if ( gamePaused )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				mouseowner_pausemenu = i;
+				break;
+			}
+		}
+	}
+	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
