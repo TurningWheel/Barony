@@ -3896,6 +3896,14 @@ void pauseGame(int mode, int ignoreplayer)
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
 		gamePaused = true;
+		for (int c = 0; c < 4; ++c)
+		{
+		    auto& input = Input::inputs[c];
+			if (input.binary("Pause Game") || (inputs.bPlayerUsingKeyboardControl(c) && keystatus[SDL_SCANCODE_ESCAPE] && !input.isDisabled())) {
+			    MainMenu::pause_menu_owner = c;
+			    break;
+			}
+		}
 		if ( SDL_GetRelativeMouseMode() )
 		{
 			SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -5550,13 +5558,13 @@ int main(int argc, char** argv)
 				}
 				if ( doPause )
 				{
-					if ( !MainMenu::main_menu_frame || !gamePaused )
+					if ( !gamePaused )
 					{
 						pauseGame(0, MAXPLAYERS);
 					}
 					else 
 					{
-						if ( gamePaused && MainMenu::main_menu_frame )
+						if ( MainMenu::main_menu_frame )
 						{
 							int dimmers = 0;
 							for ( auto frame : MainMenu::main_menu_frame->getFrames() )

@@ -23,6 +23,8 @@
 #include <functional>
 
 namespace MainMenu {
+    int pause_menu_owner = 0;
+
 	// ALL NEW menu options:
 	bool arachnophobia_filter = false;
 	bool vertical_splitscreen = false;
@@ -296,6 +298,7 @@ namespace MainMenu {
 	static void mainPlayGame(Button&);
 	static void mainPlayModdedGame(Button&);
 	static void mainHallOfRecords(Button&);
+	static void mainAssignControllers(Button&);
 	static void mainSettings(Button&);
 	static void mainEditor(Button&);
 	static void mainClose(Button&);
@@ -309,7 +312,7 @@ namespace MainMenu {
 	static void characterCardRaceMenu(int index);
 	static void characterCardClassMenu(int index);
 
-    static void createControllerPrompt(int index);
+    static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
@@ -3826,96 +3829,10 @@ bind_failed:
 
 	static void recordsBackToMainMenu(Button& button) {
 		soundCancel();
-
-		assert(main_menu_frame);
-
-		// revert notification section
-		auto notification = main_menu_frame->findFrame("notification"); assert(notification);
-		auto image = notification->findImage("background"); assert(image);
-		image->path = "images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png";
-		notification->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 236 * 2) / 2,
-			notification->getSize().y,
-			236 * 2,
-			49 * 2
-			});
-		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-		image->pos = notification->getActualSize();
-		notification->remove("text");
-
-		// enable banners
-		for (int c = 0; c < 2; ++c) {
-			std::string name = std::string("banner") + std::to_string(c + 1);
-			auto banner = main_menu_frame->findFrame(name.c_str());
-			banner->setDisabled(false);
-		}
-
-		// delete existing buttons
-		auto old_buttons = main_menu_frame->findFrame("buttons");
-		old_buttons->removeSelf();
-
-		// put original options back
-		struct Option {
-			const char* name;
-			void (*callback)(Button&);
-		};
-#ifdef NINTENDO
-		Option options[] = {
-			{"PLAY GAME", mainPlayGame},
-			{"HALL OF RECORDS", mainHallOfRecords},
-			{"SETTINGS", mainSettings}
-		};
-#else
-		Option options[] = {
-			{"PLAY GAME", mainPlayGame},
-			{"PLAY MODDED GAME", mainPlayModdedGame},
-			{"HALL OF RECORDS", mainHallOfRecords},
-			{"SETTINGS", mainSettings},
-#ifndef NDEBUG
-			{"EDITOR", mainEditor},
-#endif
-			{"QUIT", mainQuitToDesktop}
-		};
-#endif
-		const int num_options = sizeof(options) / sizeof(options[0]);
-
-		int y = main_menu_buttons_height;
-
-		auto buttons = main_menu_frame->addFrame("buttons");
-		buttons->setTickCallback(updateMenuCursor);
-		buttons->setSize(SDL_Rect{0, y, Frame::virtualScreenX, 36 * num_options});
-		buttons->setActualSize(SDL_Rect{0, 0, buttons->getSize().w, buttons->getSize().h});
-		buttons->setHollow(true);
-		buttons->setBorder(0);
-		for (int c = 0; c < num_options; ++c) {
-			auto button = buttons->addButton(options[c].name);
-			button->setCallback(options[c].callback);
-			button->setBorder(8);
-			button->setHJustify(Button::justify_t::LEFT);
-			button->setVJustify(Button::justify_t::CENTER);
-			button->setText(options[c].name);
-			button->setFont(menu_option_font);
-			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 255));
-			button->setHighlightColor(makeColor(255, 255, 255, 255));
-			button->setTextColor(makeColor(180, 180, 180, 255));
-			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-			button->setSize(SDL_Rect{
-				(Frame::virtualScreenX - 164 * 2) / 2,
-				y - buttons->getSize().y,
-				164 * 2,
-				16 * 2
-				});
-			int back = c - 1 < 0 ? num_options - 1 : c - 1;
-			int forward = c + 1 >= num_options ? 0 : c + 1;
-			button->setWidgetDown(options[forward].name);
-			button->setWidgetUp(options[back].name);
-			y += button->getSize().h;
-			y += 4;
-		}
-		y += 16;
-
+        destroyMainMenu();
+        createMainMenu(false);
+        assert(main_menu_frame);
+		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 		auto records = buttons->findButton("HALL OF RECORDS");
 		if (records) {
 			records->select();
@@ -5833,10 +5750,10 @@ bind_failed:
 		invite->setWidgetBack("back_button");
 		invite->addWidgetAction("MenuStart", "invite_button");
 		switch (index) {
-		case 0: invite->setCallback([](Button&){createControllerPrompt(0);}); break;
-		case 1: invite->setCallback([](Button&){createControllerPrompt(1);}); break;
-		case 2: invite->setCallback([](Button&){createControllerPrompt(2);}); break;
-		case 3: invite->setCallback([](Button&){createControllerPrompt(3);}); break;
+		case 0: invite->setCallback([](Button&){createControllerPrompt(0, true, [](){createCharacterCard(0);});}); break;
+		case 1: invite->setCallback([](Button&){createControllerPrompt(1, true, [](){createCharacterCard(1);});}); break;
+		case 2: invite->setCallback([](Button&){createControllerPrompt(2, true, [](){createCharacterCard(2);});}); break;
+		case 3: invite->setCallback([](Button&){createControllerPrompt(3, true, [](){createCharacterCard(3);});}); break;
 		}
 		invite->select();
 	}
@@ -6037,7 +5954,7 @@ bind_failed:
 		}
 	}
 
-	static void createControllerPrompt(int index) {
+	static void createControllerPrompt(int index, bool show_player_text, void (*after_func)()) {
 		auto dimmer = main_menu_frame->addFrame("controller_dimmer");
 		dimmer->setOwner(index);
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -6045,8 +5962,10 @@ bind_failed:
 		dimmer->setColor(0);
 		dimmer->setBorder(0);
 
+        static void (*end_func)();
 		static bool clicked;
 		clicked = false;
+		end_func = after_func;
 
 		static auto button_func = [](Button& button) {
 		    int index = button.getOwner();
@@ -6080,13 +5999,19 @@ bind_failed:
 		        auto parent = static_cast<Frame*>(button->getParent());
 	            parent->removeSelf();
 	            parent->setDisabled(true);
-	            createCharacterCard(index);
+	            soundActivate();
+	            end_func();
 		    }
 		    };
 
 		char text[1024];
-		snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		    "or click here to assign only the mouse and keyboard", index + 1);
+        if (show_player_text) {
+		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
+		        "or click here to assign only the mouse and keyboard", index + 1);
+        } else {
+		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
+		        "or click here to use only the mouse and keyboard");
+        }
 
 		auto button = dimmer->addButton("button");
 		button->setHideSelectors(true);
@@ -7314,6 +7239,40 @@ bind_failed:
 		}
 	}
 
+	static void mainAssignControllers(Button& button) {
+	    soundActivate();
+        button.deselect();
+	    static auto return_to_main_menu = [](){
+            assert(main_menu_frame);
+	        auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+	        auto button = buttons->findButton("ASSIGN CONTROLLERS"); assert(button);
+	        button->select();
+	    };
+	    if (splitscreen) {
+	        static std::vector<int> players;
+	        players.clear();
+	        players.reserve(4);
+	        for (int c = 0; c < 4; ++c) {
+	            if (!client_disconnected[c]) {
+	                players.push_back(c);
+	            }
+	        }
+	        if (!players.empty()) {
+	            createControllerPrompt(players[0], true,
+	                [](){if (players.size() >= 2) createControllerPrompt(players[1], true,
+                    [](){if (players.size() >= 3) createControllerPrompt(players[2], true,
+                    [](){if (players.size() >= 4) createControllerPrompt(players[3], true,
+                    return_to_main_menu
+                    ); else return_to_main_menu();}
+                    ); else return_to_main_menu();}
+                    ); else return_to_main_menu();}
+                    );
+	        }
+	    } else {
+	        createControllerPrompt(clientnum, false, return_to_main_menu);
+	    }
+	}
+
 	static void mainSettings(Button& button) {
 		//soundActivate(); // not needed, activated tab will do this
 
@@ -7863,7 +7822,7 @@ bind_failed:
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(ingame ? clientnum : 0);
+        main_menu_frame->setOwner(ingame ? pause_menu_owner : 0);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -7909,6 +7868,7 @@ bind_failed:
 		if (ingame) {
 			options.insert(options.begin(), {
 				{"BACK TO GAME", mainClose},
+				{"ASSIGN CONTROLLERS", mainAssignControllers},
 				{"DUNGEON COMPENDIUM", recordsDungeonCompendium},
 				{"SETTINGS", mainSettings},
 				{"END LIFE", mainEndLife},
