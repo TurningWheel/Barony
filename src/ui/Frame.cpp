@@ -747,6 +747,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (dropDown) {
 				toBeDeleted = true;
 			}
+			// this special case is necessary for settings menu dropdowns...
+			auto fparent = static_cast<Frame*>(parent);
+			if (fparent && fparent->dropDown) {
+			    fparent->removeSelf();
+			}
 		}
 
 		// activate selection

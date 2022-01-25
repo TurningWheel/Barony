@@ -2040,6 +2040,7 @@ namespace MainMenu {
 		dropdown_list->setListOffset(SDL_Rect{0, 11, 0, 0});
 		dropdown_list->setListJustify(Frame::justify_t::CENTER);
 		dropdown_list->setScrollBarsEnabled(false);
+		dropdown_list->addWidgetMovement("MenuListCancel", button.getName());
 
 		for (int i = 0;; ++i) {
 			auto str = std::string("__") + std::to_string(i);
