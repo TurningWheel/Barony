@@ -262,11 +262,11 @@ void spiderDie(Entity* my)
 
     if (MainMenu::arachnophobia_filter)
     {
-	    playSoundEntity(my, 236 + rand() % 2, 128);
+	    playSoundEntity(my, 509 + rand() % 2, 128);
     }
     else
     {
-	    playSoundEntity(my, 509 + rand() % 2, 128);
+	    playSoundEntity(my, 236 + rand() % 2, 128);
     }
 	list_RemoveNode(my->mynode);
 	return;
