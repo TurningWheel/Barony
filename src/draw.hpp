@@ -64,6 +64,7 @@ Uint32 getPixel(SDL_Surface* surface, int x, int y);
 void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel);
 Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 bool behindCamera(const view_t& camera, real_t x, real_t y);
+void occlusionCulling(map_t& map, const view_t& camera);
 
 class TempTexture {
 public:

@@ -5074,6 +5074,7 @@ int main(int argc, char** argv)
 
 		// initialize map
 		map.tiles = nullptr;
+		map.vismap = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
 		map.entities->first = nullptr;
 		map.entities->last = nullptr;
@@ -5441,6 +5442,7 @@ int main(int argc, char** argv)
 							menucam.winw = xres;
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							occlusionCulling(map, menucam);
 							glDrawWorld(&menucam, REALCOLORS);
 							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
@@ -5682,6 +5684,9 @@ int main(int argc, char** argv)
 								}
 							}
 
+							// do occlusion culling from the perspective of this camera
+							occlusionCulling(map, camera);
+
 							if ( players[c] && players[c]->entity )
 							{
 								if ( players[c]->entity->isBlind() )
@@ -5748,7 +5753,7 @@ int main(int argc, char** argv)
 										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 									}
 								}
-								raycast(&camera, minimap);
+								raycast(&camera, minimap); // update minimap
 								glDrawWorld(&camera, REALCOLORS);
 
 								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -5774,6 +5779,7 @@ int main(int argc, char** argv)
 							}
 							else
 							{
+							    // player is dead, spectate
 								glDrawWorld(&camera, REALCOLORS);
 							}
 

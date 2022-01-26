@@ -17,6 +17,7 @@
 #include "ui/Text.hpp"
 #include "ui/GameUI.hpp"
 #include "interface/interface.hpp"
+#include "interface/consolecommand.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -1789,36 +1790,31 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 -------------------------------------------------------------------------------*/
 
-real_t getLightAt(int x, int y)
+static real_t getLightAtModifier = 1.0;
+static real_t getLightAt(const int x, const int y)
 {
-    static bool early_return = false;
-    if (keystatus[SDL_SCANCODE_L] && !command && enableDebugKeys) {
-        keystatus[SDL_SCANCODE_L] = 0;
-        early_return = (early_return==false);
+#if !defined(EDITOR) && !defined(NDEBUG)
+    static ConsoleVariable<bool> cvar_fullbright("/fullbright", false);
+    if (*cvar_fullbright)
+    {
+        return 1.0;
     }
-    if (early_return)
-	    return 1.f;
+#endif
+	const int index = y + x * map.height;
+    if (index < map.height + 1)
+    {
+        return 0.0;
+    }
 
-	real_t l = 0;
-	int u, v;
+	real_t l = 0.0;
+	l += lightmapSmoothed[index - 1 - map.height];
+	l += lightmapSmoothed[index - map.height];
+	l += lightmapSmoothed[index - 1];
+	l += lightmapSmoothed[index];
+	l *= getLightAtModifier;
+	l = std::min(std::max(0.0, l * 0.000980392), 1.0);
 
-	for ( u = x - 1; u < x + 1; u++ )
-	{
-		for ( v = y - 1; v < y + 1; v++ )
-		{
-			if ( u >= 0 && u < map.width && v >= 0 && v < map.height )
-			{
-				l += std::min(std::max(0, lightmapSmoothed[v + u * map.height]), 255) / 255.0;
-			}
-		}
-	}
-
-	if ( globalLightModifierActive )
-	{
-		l *= globalLightModifier;
-	}
-
-	return l / 4.f;
+	return l;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1839,6 +1835,15 @@ void glDrawWorld(view_t* camera, int mode)
 	bool clouds = false;
 	int cloudtile = 0;
 	int mapceilingtile = 50;
+
+	if ( globalLightModifierActive )
+	{
+		getLightAtModifier = globalLightModifier;
+	}
+	else
+	{
+	    getLightAtModifier = 1.0;
+	}
 
 	if ( softwaremode == true )
 	{

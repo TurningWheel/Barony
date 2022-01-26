@@ -2954,3 +2954,8 @@ bool behindCamera(const view_t& camera, real_t x, real_t y)
 
     return dot < c;
 }
+
+void occlusionCulling(map_t& map, const view_t& camera)
+{
+
+}

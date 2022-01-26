@@ -560,6 +560,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			fullMapPath = physfsFormatMapName(sublevelname);
 
 			shopmap.tiles = nullptr;
+			shopmap.vismap = nullptr;
 			shopmap.entities = (list_t*) malloc(sizeof(list_t));
 			shopmap.entities->first = nullptr;
 			shopmap.entities->last = nullptr;
@@ -712,6 +713,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			// allocate memory for the next subroom and attempt to load it
 			subRoomMap = (map_t*)malloc(sizeof(map_t));
 			subRoomMap->tiles = nullptr;
+			subRoomMap->vismap = nullptr;
 			subRoomMap->entities = (list_t*)malloc(sizeof(list_t));
 			subRoomMap->entities->first = nullptr;
 			subRoomMap->entities->last = nullptr;
@@ -852,6 +854,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			else if ( c == 1 && secretlevelexit )
 			{
 				secretlevelmap.tiles = nullptr;
+				secretlevelmap.vismap = nullptr;
 				secretlevelmap.entities = (list_t*) malloc(sizeof(list_t));
 				secretlevelmap.entities->first = nullptr;
 				secretlevelmap.entities->last = nullptr;

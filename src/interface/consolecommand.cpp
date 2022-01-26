@@ -97,12 +97,6 @@ typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables
     return cvar_map;
 }
 
-template <typename T>
-T& ConsoleVariable<T>::operator*()
-{
-    return data;
-}
-
 /*******************************************************************************
     std::string cvars
 *******************************************************************************/
@@ -198,35 +192,36 @@ void consoleCommand(char const * const command_str)
 	}
 }
 
+namespace Test {
+    static ConsoleVariable<bool> cvar_bool("/cvar_test_bool", true, "test bools in cvars");
+    static ConsoleVariable<float> cvar_float("/cvar_test_float", 1.f, "test floats in cvars");
+    static ConsoleVariable<int> cvar_int("/cvar_test_int", 1, "test ints in cvars");
+    static ConsoleVariable<std::string> cvar_string("/cvar_test_string", "Hello world", "test strings in cvars");
+
+    static ConsoleCommand print_bool("/test_print_bool", "print contents of cvar_test_bool",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_bool.data ? "true" : "false");
+        });
+
+    static ConsoleCommand print_float("/test_print_float", "print contents of cvar_test_float",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%f", cvar_float.data);
+        });
+
+    static ConsoleCommand print_int("/test_print_int", "print contents of cvar_test_int",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%d", cvar_int.data);
+        });
+
+    static ConsoleCommand print_string("/test_print_string", "print contents of cvar_test_string",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_string.data.c_str());
+        });
+}
+
 #define CCMD (int argc, const char **argv)
 
 namespace ConsoleCommands {
-    static ConsoleVariable<float> cvar_test_float("/cvar_test_float", 1.f, "test floats in cvars");
-    static ConsoleVariable<int> cvar_test_int("/cvar_test_int", 1, "test ints in cvars");
-    static ConsoleVariable<std::string> cvar_test_string("/cvar_test_string", "Hello world", "test strings in cvars");
-
-    static ConsoleCommand ccmd_test_print_float("/test_print_float", "print contents of cvar_test_float",
-        [](int argc, const char** argv){
-        messagePlayer(clientnum, MESSAGE_MISC, "%f", cvar_test_float.data);
-        });
-
-    static ConsoleCommand ccmd_test_print_int("/test_print_int", "print contents of cvar_test_int",
-        [](int argc, const char** argv){
-        messagePlayer(clientnum, MESSAGE_MISC, "%d", cvar_test_int.data);
-        });
-
-    static ConsoleCommand ccmd_test_print_string("/test_print_string", "print contents of cvar_test_string",
-        [](int argc, const char** argv){
-        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test_string.data.c_str());
-        });
-
-    static ConsoleCommand ccmd_test_cvars_reset("/test_cvars_reset", "reset test cvars",
-        [](int argc, const char** argv){
-        *cvar_test_float = 1.f;
-        *cvar_test_int = 1;
-        *cvar_test_string = "Hello world";
-        });
-
     static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help listcmds)", []CCMD{
         const char* cmd = argc == 1 ? "help" : argv[1];
         auto& map = getConsoleCommands();

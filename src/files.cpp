@@ -814,6 +814,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	{
 		free(destmap->tiles);
 	}
+	if ( destmap->vismap != NULL )
+	{
+		free(destmap->vismap);
+	}
 	fp->read(destmap->name, sizeof(char), 32); // map name
 	fp->read(destmap->author, sizeof(char), 32); // map author
 	fp->read(&destmap->width, sizeof(Uint32), 1); // map width
@@ -851,6 +855,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		fp->read(destmap->flags, sizeof(Sint32), MAPFLAGS); // map flags
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
+	destmap->vismap = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
 	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);
 	fp->read(&numentities, sizeof(Uint32), 1); // number of entities on the map
 

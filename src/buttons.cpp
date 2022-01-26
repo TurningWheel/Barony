@@ -439,6 +439,7 @@ void buttonNewConfirm(button_t* my)
 	int x, y, z, c;
 	clearUndos();
 	free(map.tiles);
+	free(map.vismap);
 	list_FreeAll(map.entities);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
@@ -524,6 +525,7 @@ void buttonNewConfirm(button_t* my)
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -1342,6 +1344,7 @@ void buttonAttributesConfirm(button_t* my)
 
 	// allocate memory for a new map
 	free(map.tiles);
+	free(map.vismap);
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -1451,6 +1454,7 @@ void buttonAttributesConfirm(button_t* my)
 	}
 
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
 	if ( lightmap != NULL )

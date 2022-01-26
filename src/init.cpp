@@ -2095,6 +2095,7 @@ int deinitApp()
 	if ( map.tiles != NULL )
 	{
 		free(map.tiles);
+	    free(map.vismap);
 	}
 	if ( lightmap != NULL )
 	{
