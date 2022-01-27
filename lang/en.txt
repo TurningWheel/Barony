@@ -6040,5 +6040,10 @@ Cast#
 4086 View item details#
 4087 Hide item details#
 4088 You found %d gold pieces in the chest!#
+# Nav Prompts
+4089 Move cursor#
+4093 View Spells#
+4094 View Items#
+4095 View Skills#
 
 4099 end#
