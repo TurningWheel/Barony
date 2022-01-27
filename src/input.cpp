@@ -261,9 +261,9 @@ const char* Input::binding(const char* binding) const {
 }
 
 void Input::refresh() {
-
 	bindings.clear();
 	defaultBindings();
+#ifndef EDITOR
 	for ( auto& binding : kb_system_bindings )
 	{
 		bind(binding.first.c_str(), binding.second.c_str());
@@ -275,7 +275,6 @@ void Input::refresh() {
 		    bind(binding.first.c_str(), binding.second.c_str());
 	    }
 	}
-#ifndef EDITOR
 	if ( ::inputs.hasController(player) )
 	{
 		for ( auto& binding : gamepad_system_bindings )
@@ -305,10 +304,6 @@ void Input::refresh() {
 		}
 	}
 #endif // !EDITOR
-
-	//for (auto& pair : bindings) {
-	//	bind(pair.first.c_str(), pair.second.input.c_str());
-	//}
 }
 
 Input::binding_t Input::input(const char* binding) const {
