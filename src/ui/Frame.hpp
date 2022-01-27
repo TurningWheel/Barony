@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "Font.hpp"
 #include "Widget.hpp"
 
@@ -123,6 +124,12 @@ public:
 	//! destroy ui engine
 	static void guiDestroy();
 	static void fboDestroy();
+
+	//! stuff to do before drawing anything
+	static void predraw();
+
+	//! stuff to do after drawing everything
+	static void postdraw();
 
 	//! draws the frame and all of its subelements
 	void draw() const;
@@ -387,3 +394,4 @@ private:
 // root frame object
 extern Frame* gui;
 void createTestUI();
+extern framebuffer gui_fb, gui4x_fb;

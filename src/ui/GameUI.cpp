@@ -14897,6 +14897,31 @@ Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
 	return hotbarSlotFrames[hotbarSlot];
 }
 
+static void drawConsoleCommandBuffer() {
+    if (!command) {
+        return;
+    }
+	int commandPlayer = clientnum;
+	for ( int i = 0; i < MAXPLAYERS; ++i ) {
+		if ( inputs.bPlayerUsingKeyboardControl(i) ) {
+			commandPlayer = i;
+			break;
+		}
+	}
+	char buf[1024];
+	if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+	    snprintf(buf, sizeof(buf), ">%s_", command_str);
+	} else {
+	    snprintf(buf, sizeof(buf), ">%s", command_str);
+	}
+	auto text = Text::get(buf, "fonts/pixelmix.ttf#16#2",
+	    0xffffffff, makeColor(0, 0, 0, 255));
+	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
+	const int printy = players[commandPlayer]->camera_virtualy2() - 192;
+	text->draw(SDL_Rect{0,0,0,0}, SDL_Rect{printx, printy, 0, 0},
+	    SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+}
+
 static Uint32 gui_ticks = 0u;
 void doFrames() {
 	if ( gui )
@@ -14906,7 +14931,11 @@ void doFrames() {
 			++gui_ticks;
 		}
 		(void)gui->process();
+
+		gui->predraw();
 		gui->draw();
+        drawConsoleCommandBuffer();
+		gui->postdraw();
 	}
 }
 

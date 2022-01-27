@@ -2997,7 +2997,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 
     // do line tests throughout the map
     constexpr int max_distance = CLIPFAR / 16.0;
-    constexpr int max_walls_hit = 1;
+    constexpr int max_walls_hit = 2;
     for (int foo = -1; foo <= 1; ++foo) {
         for (int bar = -1; bar <= 1; ++bar) {
             if (foo && bar) {

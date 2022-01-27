@@ -89,7 +89,9 @@ void doLoadingScreen() {
 		i = (i + 1) % 30;
 		spinning_widget->path = std::string(path) + std::to_string(i) + ".png";
 		drawClearBuffers();
+		gui->predraw();
 		gui->draw();
+		gui->postdraw();
 		GO_SwapBuffers(screen);
 	}
 }

@@ -4374,15 +4374,6 @@ void ingameHud()
 			}
 			chosen_command = NULL;
 		}
-		ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX(),
-			players[commandPlayer]->messageZone.getMessageZoneStartY(), ">%s", command_str);
-		if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
-		{
-			int x;
-			getSizeOfText(ttf16, command_str, &x, NULL);
-			ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX() + x + TTF16_WIDTH,
-				players[commandPlayer]->messageZone.getMessageZoneStartY(), "_");
-		}
 	}
 	else
 	{
@@ -5935,7 +5926,11 @@ int main(int argc, char** argv)
 			// fps counter
 			if ( showfps )
 			{
-				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
+			    char buf[16];
+			    snprintf(buf, sizeof(buf), "FPS = %3.1f", fps);
+			    auto text = Text::get(buf, "fonts/pixel_maz.ttf#64#2",
+			        0xffffffff, makeColor(0, 0, 0, 255));
+				text->draw(SDL_Rect{0, 0, 0, 0}, SDL_Rect{8, 8, 0, 0}, SDL_Rect{0, 0, xres, yres});
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
