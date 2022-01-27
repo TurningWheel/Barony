@@ -426,7 +426,8 @@ real_t getLightForEntity(real_t x, real_t y)
 	}
 	int u = x;
 	int v = y;
-	return std::min(std::max(0, lightmapSmoothed[v + u * map.height]), 255) / 255.0;
+	constexpr real_t div = 1.0 / 255.0;
+	return std::min(std::max(0, lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)]), 255) * div;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1800,15 +1801,11 @@ static real_t getLightAt(const int x, const int y)
         return 1.0;
     }
 #endif
-	const int index = y + x * map.height;
-    if (index < map.height + 1)
-    {
-        return 0.0;
-    }
+	const int index = (y + 1) + (x + 1) * (map.height + 2);
 
 	real_t l = 0.0;
-	l += lightmapSmoothed[index - 1 - map.height];
-	l += lightmapSmoothed[index - map.height];
+	l += lightmapSmoothed[index - 1 - (map.height + 2)];
+	l += lightmapSmoothed[index - (map.height + 2)];
 	l += lightmapSmoothed[index - 1];
 	l += lightmapSmoothed[index];
 	l *= getLightAtModifier;
@@ -1829,8 +1826,6 @@ static real_t getLightAt(const int x, const int y)
 
 void glDrawWorld(view_t* camera, int mode)
 {
-	int x, y, z;
-	int index;
 	real_t s;
 	bool clouds = false;
 	int cloudtile = 0;
@@ -1863,30 +1858,32 @@ void glDrawWorld(view_t* camera, int mode)
 		}
 	}
 
-	for ( int v = 0; v < map.height; v++ )
-	{
-		for ( int u = 0; u < map.width; u++ )
-		{
-			int smoothingRate = globalLightSmoothingRate;
-			int difference = abs(lightmapSmoothed[v + u * map.height] - lightmap[v + u * map.height]);
-			if ( difference > 64 )
-			{
-				smoothingRate *= 4;
-			}
-			else if ( difference > 32 )
-			{
-				smoothingRate *= 2;
-			}
-			if ( lightmapSmoothed[v + u * map.height] < lightmap[v + u * map.height] )
-			{
-				lightmapSmoothed[v + u * map.height] = std::min(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] + smoothingRate);
-			}
-			else if ( lightmapSmoothed[v + u * map.height] > lightmap[v + u * map.height] )
-			{
-				lightmapSmoothed[v + u * map.height] = std::max(lightmap[v + u * map.height], lightmapSmoothed[v + u * map.height] - smoothingRate);
-			}
-		}
-	}
+    for ( int u = 0; u < map.width; ++u )
+    {
+        for ( int v = 0; v < map.height; ++v )
+        {
+            const int index = v + u * map.height;
+            const int smoothindex = (v + 1) + (u + 1) * (map.height + 2);
+	        const int difference = abs(lightmapSmoothed[smoothindex] - lightmap[index]);
+	        int smoothingRate = globalLightSmoothingRate;
+	        if ( difference > 64 )
+	        {
+		        smoothingRate *= 4;
+	        }
+	        else if ( difference > 32 )
+	        {
+		        smoothingRate *= 2;
+	        }
+	        if ( lightmapSmoothed[smoothindex] < lightmap[index] )
+	        {
+		        lightmapSmoothed[smoothindex] = std::min(lightmap[index], lightmapSmoothed[smoothindex] + smoothingRate);
+	        }
+	        else if ( lightmapSmoothed[smoothindex] > lightmap[index] )
+	        {
+		        lightmapSmoothed[smoothindex] = std::max(lightmap[index], lightmapSmoothed[smoothindex] - smoothingRate);
+	        }
+	    }
+    }
 
 	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
 	{
@@ -1980,15 +1977,15 @@ void glDrawWorld(view_t* camera, int mode)
 	GLuint cur_tex = 0, new_tex = 0;
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBegin(GL_QUADS);
-	for ( x = 0; x < map.width; x++ )
+	for ( int x = 0; x < map.width; x++ )
 	{
-		for ( y = 0; y < map.height; y++ )
+		for ( int y = 0; y < map.height; y++ )
 		{
 		    if (!map.vismap[y + x * map.height])
 		    {
 		        continue;
 		    }
-			for ( z = 0; z < MAPLAYERS + 1; z++ )
+			for ( int z = 0; z < MAPLAYERS + 1; z++ )
 			{
 			    const real_t rx = (real_t)x + 0.5;
 			    const real_t ry = (real_t)y + 0.5;
@@ -1996,7 +1993,7 @@ void glDrawWorld(view_t* camera, int mode)
 			    {
 			        continue;
 			    }
-				index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
+				int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 
 				if ( z >= 0 && z < MAPLAYERS )
 				{
@@ -2044,7 +2041,7 @@ void glDrawWorld(view_t* camera, int mode)
 					int easter = index + MAPLAYERS * map.height;
 					if ( x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE )
 					{
-						if ( smoothlighting && mode == REALCOLORS )
+						if ( mode == REALCOLORS )
 						{
 							//glBegin( GL_QUADS );
 							if ( z )
@@ -2083,28 +2080,9 @@ void glDrawWorld(view_t* camera, int mode)
 						}
 						else
 						{
-							if ( mode == REALCOLORS )
-							{
-								if ( x < map.width - 1 )
-								{
-									s = std::min(std::max(0, lightmapSmoothed[y + (x + 1) * map.height]), 255) / 255.0;
-									if ( globalLightModifierActive )
-									{
-										s *= globalLightModifier;
-									}
-								}
-								else
-								{
-									s = .5;
-								}
-								glColor3f(s, s, s);
-							}
-							else
-							{
-								glColor4ub(0, 0, 0, 0);
-							}
 							if ( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 							{
+							    glColor4ub(0, 0, 0, 0);
 								//glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
@@ -2123,7 +2101,7 @@ void glDrawWorld(view_t* camera, int mode)
 					int souther = index + MAPLAYERS;
 					if ( y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE )
 					{
-						if ( smoothlighting && mode == REALCOLORS )
+						if ( mode == REALCOLORS )
 						{
 							//glBegin( GL_QUADS );
 							if ( z )
@@ -2162,24 +2140,9 @@ void glDrawWorld(view_t* camera, int mode)
 						}
 						else
 						{
-							if ( mode == REALCOLORS )
-							{
-								if ( y < map.height - 1 )
-								{
-									s = std::min(std::max(0, lightmapSmoothed[(y + 1) + x * map.height]), 255) / 255.0;
-									if ( globalLightModifierActive )
-									{
-										s *= globalLightModifier;
-									}
-								}
-								else
-								{
-									s = .5;
-								}
-								glColor3f(s, s, s);
-							}
 							if ( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 							{
+							    glColor4ub(0, 0, 0, 0);
 								//glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
@@ -2198,7 +2161,7 @@ void glDrawWorld(view_t* camera, int mode)
 					int wester = index - MAPLAYERS * map.height;
 					if ( x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE )
 					{
-						if ( smoothlighting && mode == REALCOLORS )
+						if ( mode == REALCOLORS )
 						{
 							//glBegin( GL_QUADS );
 							if ( z )
@@ -2237,24 +2200,9 @@ void glDrawWorld(view_t* camera, int mode)
 						}
 						else
 						{
-							if ( mode == REALCOLORS )
-							{
-								if ( x > 0 )
-								{
-									s = std::min(std::max(0, lightmapSmoothed[y + (x - 1) * map.height]), 255) / 255.0;
-									if ( globalLightModifierActive )
-									{
-										s *= globalLightModifier;
-									}
-								}
-								else
-								{
-									s = .5;
-								}
-								glColor3f(s, s, s);
-							}
 							if ( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
 							{
+							    glColor4ub(0, 0, 0, 0);
 								//glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
@@ -2273,7 +2221,7 @@ void glDrawWorld(view_t* camera, int mode)
 					int norther = index - MAPLAYERS;
 					if ( y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE )
 					{
-						if ( smoothlighting && mode == REALCOLORS )
+						if ( mode == REALCOLORS )
 						{
 							//glBegin( GL_QUADS );
 							if ( z )
@@ -2312,24 +2260,9 @@ void glDrawWorld(view_t* camera, int mode)
 						}
 						else
 						{
-							if ( mode == REALCOLORS )
-							{
-								if ( y > 0 )
-								{
-									s = std::min(std::max(0, lightmapSmoothed[(y - 1) + x * map.height]), 255) / 255.0;
-									if ( globalLightModifierActive )
-									{
-										s *= globalLightModifier;
-									}
-								}
-								else
-								{
-									s = .5;
-								}
-								glColor3f(s, s, s);
-							}
 							if ( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 							{
+							    glColor4ub(0, 0, 0, 0);
 								//glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
@@ -2365,7 +2298,7 @@ void glDrawWorld(view_t* camera, int mode)
 					}
 				}
 
-				if ( smoothlighting && mode == REALCOLORS )
+				if ( mode == REALCOLORS )
 				{
 					// draw floor
 					if ( z < OBSTACLELAYER )
@@ -2421,18 +2354,12 @@ void glDrawWorld(view_t* camera, int mode)
 				}
 				else
 				{
-					// unsmooth lighting
-					if ( mode == REALCOLORS )
-					{
-						s = std::min(std::max(0, lightmapSmoothed[y + x * map.height]), 255) / 255.0;
-						glColor3f(s, s, s);
-					}
-
 					// draw floor
 					if ( z < OBSTACLELAYER )
 					{
 						if ( !map.tiles[index + 1] )
 						{
+							glColor4ub(0, 0, 0, 0);
 							//glBegin( GL_QUADS );
 							glTexCoord2f(0, 0);
 							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
@@ -2451,6 +2378,7 @@ void glDrawWorld(view_t* camera, int mode)
 					{
 						if ( !map.tiles[index - 1] )
 						{
+							glColor4ub(0, 0, 0, 0);
 							//glBegin( GL_QUADS );
 							glTexCoord2f(0, 0);
 							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);

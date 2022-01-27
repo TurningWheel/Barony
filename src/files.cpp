@@ -1242,20 +1242,20 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 
 		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
-		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * destmap->width * destmap->height);
+		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (destmap->width + 2) * (destmap->height + 2));
 		if ( strncmp(map.name, "Hell", 4) )
 		{
-			for (c = 0; c < destmap->width * destmap->height; c++ )
-			{
-				lightmap[c] = 0;
-				lightmapSmoothed[c] = 0;
-			}
+	        memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	        memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 		}
 		else
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
+			}
+			for (c = 0; c < (destmap->width + 1) * (destmap->height + 1); c++ )
+			{
 				lightmapSmoothed[c] = 32;
 			}
 		}

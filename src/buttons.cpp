@@ -559,12 +559,9 @@ void buttonNewConfirm(button_t* my)
 		free(lightmapSmoothed);
 	}
 	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for (c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 	strcpy(message, "                             Created a new map.");
 	filename[0] = 0;
 	oldfilename[0] = 0;
@@ -1466,12 +1463,9 @@ void buttonAttributesConfirm(button_t* my)
 		free(lightmapSmoothed);
 	}
 	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for ( c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 
 	// transfer data from the new map to the old map and fill extra space with empty data
 	for ( z = 0; z < MAPLAYERS; z++ )

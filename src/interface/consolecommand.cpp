@@ -258,6 +258,17 @@ namespace ConsoleCommands {
         messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
         });
 
+    static ConsoleCommand ccmd_mousecapture("/mousecapture", "toggle mouse capture enabled", []CCMD{
+        if (EnableMouseCapture == SDL_TRUE) {
+            EnableMouseCapture = SDL_FALSE;
+            messagePlayer(clientnum, MESSAGE_MISC, "Mouse capture is disabled.");
+        }
+        else if (EnableMouseCapture == SDL_FALSE) {
+            EnableMouseCapture = SDL_TRUE;
+            messagePlayer(clientnum, MESSAGE_MISC, "Mouse capture is enabled.");
+        }
+        });
+
     static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
 	    if ( multiplayer != CLIENT )
 	    {
