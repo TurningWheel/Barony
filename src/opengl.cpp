@@ -1809,7 +1809,8 @@ static real_t getLightAt(const int x, const int y)
 	l += lightmapSmoothed[index - 1];
 	l += lightmapSmoothed[index];
 	l *= getLightAtModifier;
-	l = std::min(std::max(0.0, l * 0.000980392), 1.0); // l / (255.0 * 4)
+	real_t div = 1.0 / (255.0 * 4.0);
+	l = std::min(std::max(0.0, l * div), 1.0);
 
 	return l;
 }
