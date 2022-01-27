@@ -411,7 +411,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					}
 					break;
 				case SPIDER:
-				    if ( MainMenu::arachnophobia_filter )
+				    if ( arachnophobia_filter )
 				    {
 					    if ( rand() % 3 == 2 )
 					    {

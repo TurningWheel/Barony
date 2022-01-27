@@ -234,6 +234,7 @@ bool gameloopFreezeEntities = false;
 Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
+bool arachnophobia_filter = false;
 
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 

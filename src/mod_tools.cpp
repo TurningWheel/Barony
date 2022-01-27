@@ -1759,7 +1759,7 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 		spell_t* spell = getSpellFromItem(player, &item);
 		if ( spell )
 		{
-	        if (MainMenu::arachnophobia_filter)
+	        if (arachnophobia_filter)
 	        {
 	            if (spell->ID == SPELL_SPIDER_FORM)
 	            {

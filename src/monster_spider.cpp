@@ -28,10 +28,10 @@ void initSpider(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = MainMenu::arachnophobia_filter ? 997 : 267;
+	my->sprite = arachnophobia_filter ? 997 : 267;
 	if ( multiplayer != CLIENT )
 	{
-	    if (MainMenu::arachnophobia_filter)
+	    if (arachnophobia_filter)
 	    {
 		    MONSTER_SPOTSND = 502;
 		    MONSTER_SPOTVAR = 3;
@@ -126,7 +126,7 @@ void initSpider(Entity* my, Stat* myStats)
 	int model;
 
 	// right pedipalp
-	model = MainMenu::arachnophobia_filter ? 998 : 268;
+	model = arachnophobia_filter ? 998 : 268;
 	Entity* entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -134,7 +134,7 @@ void initSpider(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	if (MainMenu::arachnophobia_filter)
+	if (arachnophobia_filter)
 	{
 	    entity->focalx = limbs[CRAB][1][0];
 	    entity->focaly = limbs[CRAB][1][1];
@@ -155,7 +155,7 @@ void initSpider(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left pedipalp
-	model = MainMenu::arachnophobia_filter ? 998 : 268;
+	model = arachnophobia_filter ? 998 : 268;
 	entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -163,7 +163,7 @@ void initSpider(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	if (MainMenu::arachnophobia_filter)
+	if (arachnophobia_filter)
 	{
 	    entity->focalx = limbs[CRAB][2][0];
 	    entity->focaly = limbs[CRAB][2][1];
@@ -187,7 +187,7 @@ void initSpider(Entity* my, Stat* myStats)
 	for ( c = 0; c < 8; c++ )
 	{
 		// "thigh"
-	    model = MainMenu::arachnophobia_filter ? 999 : 269;
+	    model = arachnophobia_filter ? 999 : 269;
 		entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
@@ -196,7 +196,7 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	    if (MainMenu::arachnophobia_filter)
+	    if (arachnophobia_filter)
 	    {
 	        entity->focalx = limbs[CRAB][3][0];
 	        entity->focaly = limbs[CRAB][3][1];
@@ -217,7 +217,7 @@ void initSpider(Entity* my, Stat* myStats)
 	    my->bodyparts.push_back(entity);
 
 		// "shin"
-	    model = MainMenu::arachnophobia_filter ? 1000 : 270;
+	    model = arachnophobia_filter ? 1000 : 270;
 		entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
@@ -225,7 +225,7 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	    if (MainMenu::arachnophobia_filter)
+	    if (arachnophobia_filter)
 	    {
 	        entity->focalx = limbs[CRAB][4][0];
 	        entity->focaly = limbs[CRAB][4][1];
@@ -260,7 +260,7 @@ void spiderDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-    if (MainMenu::arachnophobia_filter)
+    if (arachnophobia_filter)
     {
 	    playSoundEntity(my, 509 + rand() % 2, 128);
     }

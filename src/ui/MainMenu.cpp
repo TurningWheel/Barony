@@ -3332,9 +3332,15 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
 			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
 			allSettings.colorblind_mode_enabled, [](Button& button){soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed();});
+		const char* arachnophobia_desc;
+		if (intro) {
+		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
+		} else {
+		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
+		}
 		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
-			"Replace all giant spiders in the game with hostile crustaceans.",
-			allSettings.arachnophobia_filter_enabled, [](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
+			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
+			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",

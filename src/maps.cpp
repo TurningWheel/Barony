@@ -2552,6 +2552,9 @@ void assignActions(map_t* map)
 		return;
 	}
 
+	// update arachnophobia filter
+	arachnophobia_filter = MainMenu::arachnophobia_filter;
+
 	// add lava lights
 	for ( y = 0; y < map->height; ++y )
 	{
@@ -3547,7 +3550,7 @@ void assignActions(map_t* map)
 						break;
 					case SPIDER:
 						entity->z = 4.5;
-						if (MainMenu::arachnophobia_filter)
+						if (arachnophobia_filter)
 						{
 						    entity->focalx = limbs[CRAB][0][0];
 						    entity->focaly = limbs[CRAB][0][1];

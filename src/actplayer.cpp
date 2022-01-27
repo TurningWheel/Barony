@@ -4765,7 +4765,7 @@ void actPlayer(Entity* my)
 			}
 			else if ( playerRace == SPIDER )
 			{
-				my->sprite = MainMenu::arachnophobia_filter ? 1001 : 823;
+				my->sprite = arachnophobia_filter ? 1001 : 823;
 			}
 			else if ( playerRace == CREATURE_IMP )
 			{
@@ -8051,7 +8051,7 @@ void playerAnimateSpider(Entity* my)
 			entity->pitch = std::max(-PI / 32, std::min(PI / 32, entity->pitch));
 			if ( bodypart % 2 == 0 )
 			{
-			    if (MainMenu::arachnophobia_filter)
+			    if (arachnophobia_filter)
 			    {
 				    entity->sprite = 1004;
 				    entity->focalx = limbs[CRAB][4][0];
@@ -8068,7 +8068,7 @@ void playerAnimateSpider(Entity* my)
 			}
 			else
 			{
-			    if (MainMenu::arachnophobia_filter)
+			    if (arachnophobia_filter)
 			    {
 				    entity->sprite = 1003;
 				    entity->focalx = limbs[CRAB][3][0];
@@ -8130,8 +8130,8 @@ void playerAnimateSpider(Entity* my)
 		{
 			// right pedipalp
 			case 11:
-				entity->sprite = MainMenu::arachnophobia_filter ? 1002 : 824;
-				if (MainMenu::arachnophobia_filter)
+				entity->sprite = arachnophobia_filter ? 1002 : 824;
+				if (arachnophobia_filter)
 				{
 				    entity->focalx = limbs[CRAB][1][0];
 				    entity->focaly = limbs[CRAB][1][1];
@@ -8154,8 +8154,8 @@ void playerAnimateSpider(Entity* my)
 				break;
 				// left pedipalp
 			case 12:
-				entity->sprite = MainMenu::arachnophobia_filter ? 1002 : 824;
-				if (MainMenu::arachnophobia_filter)
+				entity->sprite = arachnophobia_filter ? 1002 : 824;
+				if (arachnophobia_filter)
 				{
 				    entity->focalx = limbs[CRAB][2][0];
 				    entity->focaly = limbs[CRAB][2][1];

@@ -1896,7 +1896,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
-				sprite = MainMenu::arachnophobia_filter ? 996 : 861;
+				sprite = arachnophobia_filter ? 996 : 861;
 				angle = PI / 16;
 				baseSpeed = 3;
 				baseSideSpeed = 2;

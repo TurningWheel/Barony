@@ -164,7 +164,7 @@ std::string getMonsterLocalizedName(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-	    if (creature == SPIDER && MainMenu::arachnophobia_filter) {
+	    if (creature == SPIDER && arachnophobia_filter) {
 		    return language[102];
 	    } else {
 		    return language[90 + creature];
@@ -181,7 +181,7 @@ std::string getMonsterLocalizedPlural(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-	    if (creature == SPIDER && MainMenu::arachnophobia_filter) {
+	    if (creature == SPIDER && arachnophobia_filter) {
 		    return language[123];
 	    } else {
 		    return language[111 + creature];
@@ -197,7 +197,7 @@ std::string getMonsterLocalizedInjury(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-	    if (creature == SPIDER && MainMenu::arachnophobia_filter) {
+	    if (creature == SPIDER && arachnophobia_filter) {
 		    return language[144];
 	    } else {
 		    return language[132 + creature];
@@ -410,7 +410,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 				break;
 			case SPIDER:
 				entity->z = 4.5;
-				if (MainMenu::arachnophobia_filter)
+				if (arachnophobia_filter)
 				{
 				    entity->focalx = limbs[CRAB][0][0];
 				    entity->focaly = limbs[CRAB][0][1];

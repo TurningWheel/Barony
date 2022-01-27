@@ -687,16 +687,18 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (list.size()) {
 			if (selection == -1) {
 				if (input.consumeBinaryToggle("MenuUp") || 
-					input.consumeBinaryToggle("MenuDown")) {
+					input.consumeBinaryToggle("MenuDown") ||
+					input.consumeBinaryToggle("AltMenuUp") ||
+					input.consumeBinaryToggle("AltMenuUDown")) {
 					selection = 0;
 					scrollToSelection();
 				}
 			} else {
-				if (input.consumeBinaryToggle("MenuUp")) {
+				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp")) {
 					selection = std::max(0, selection - 1);
 					scrollToSelection();
 				}
-				if (input.consumeBinaryToggle("MenuDown")) {
+				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown")) {
 					selection = std::min((int)list.size() - 1, selection + 1);
 					scrollToSelection();
 				}

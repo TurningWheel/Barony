@@ -218,7 +218,7 @@ void actHudArm(Entity* my)
 				my->sprite = 855;
 				break;
 			case SPIDER:
-				my->sprite = MainMenu::arachnophobia_filter ? 1005 : 853;
+				my->sprite = arachnophobia_filter ? 1005 : 853;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 857;
@@ -3674,7 +3674,7 @@ void actHudShield(Entity* my)
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->sprite = MainMenu::arachnophobia_filter ? 1006 : 854;
+		my->sprite = arachnophobia_filter ? 1006 : 854;
 		my->x = hudarm->x;
 		my->y = -hudarm->y;
 		my->z = hudarm->z;

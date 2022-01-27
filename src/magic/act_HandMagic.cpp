@@ -344,7 +344,7 @@ void actLeftHandMagic(Entity* my)
 				my->sprite = 856;
 				break;
 			case SPIDER:
-				my->sprite = MainMenu::arachnophobia_filter ? 1006 : 854;
+				my->sprite = arachnophobia_filter ? 1006 : 854;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 858;
@@ -700,7 +700,7 @@ void actRightHandMagic(Entity* my)
 				my->sprite = 855;
 				break;
 			case SPIDER:
-				my->sprite = MainMenu::arachnophobia_filter ? 1005 : 853;
+				my->sprite = arachnophobia_filter ? 1005 : 853;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 857;

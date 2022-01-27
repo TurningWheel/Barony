@@ -268,9 +268,12 @@ void Input::refresh() {
 	{
 		bind(binding.first.c_str(), binding.second.c_str());
 	}
-	for (auto& binding : getKeyboardBindings() )
+	if ( ::inputs.bPlayerUsingKeyboardControl(player) )
 	{
-		bind(binding.first.c_str(), binding.second.c_str());
+	    for (auto& binding : getKeyboardBindings() )
+	    {
+		    bind(binding.first.c_str(), binding.second.c_str());
+	    }
 	}
 #ifndef EDITOR
 	if ( ::inputs.hasController(player) )
