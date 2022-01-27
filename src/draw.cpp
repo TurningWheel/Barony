@@ -20,8 +20,10 @@
 #include "editor.hpp"
 #endif
 #include "items.hpp"
-
 #include "ui/Image.hpp"
+#include "interface/consolecommand.hpp"
+
+#include <cassert>
 
 /*-------------------------------------------------------------------------------
 
@@ -1523,6 +1525,13 @@ void drawEntities3D(view_t* camera, int mode)
 		y = entity->y / 16;
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 		{
+		    if ( !entity->flags[OVERDRAW] )
+		    {
+		        if ( !map.vismap[y + x * map.height] )
+		        {
+		            continue;
+		        }
+		    }
 			if ( entity->flags[SPRITE] == false )
 			{
 				glDrawVoxel(camera, entity, mode);
@@ -2955,7 +2964,140 @@ bool behindCamera(const view_t& camera, real_t x, real_t y)
     return dot < c;
 }
 
+bool testTileOccludes(map_t& map, int index) {
+	for (int z = 0; z < MAPLAYERS; z++) {
+		if (!map.tiles[index + z]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void occlusionCulling(map_t& map, const view_t& camera)
 {
+	const int size = map.width * map.height;
 
+#if !defined(EDITOR) && !defined(NDEBUG)
+    static ConsoleVariable<bool> cvar("/skipculling", false);
+    if (*cvar)
+    {
+        memset(map.vismap, 1, sizeof(bool) * size);
+        return;
+    }
+#endif
+
+    // clear vismap
+    const int camx = std::min(std::max(0, (int)camera.x), (int)map.width - 1);
+    const int camy = std::min(std::max(0, (int)camera.y), (int)map.height - 1);
+    memset(map.vismap, 0, sizeof(bool) * size);
+    map.vismap[camy + camx * map.height] = true;
+
+    const int hoff = MAPLAYERS;
+    const int woff = MAPLAYERS * map.height;
+
+    // do line tests throughout the map
+    constexpr int max_distance = CLIPFAR / 16.0;
+    constexpr int max_walls_hit = 1;
+    for (int foo = -1; foo <= 1; ++foo) {
+        for (int bar = -1; bar <= 1; ++bar) {
+            if (foo && bar) {
+                continue;
+            }
+            const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
+            const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
+	        const int xyindex = y * hoff + x * woff;
+	        if (testTileOccludes(map, xyindex)) {
+	            continue;
+	        }
+            const int beginx = std::max(0, x - max_distance);
+            const int beginy = std::max(0, y - max_distance);
+            const int endx = std::min((int)map.width - 1, x + max_distance);
+            const int endy = std::max((int)map.height - 1, y + max_distance);
+	        for ( int v = beginy; v <= endy; v++ ) {
+		        for ( int u = beginx; u <= endx; u++ ) {
+			        const int uvindex = v * hoff + u * woff;
+			        if (map.vismap[v + u * map.height]) {
+			            continue;
+			        }
+			        if (testTileOccludes(map, uvindex)) {
+			            continue;
+			        }
+			        if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
+			            continue;
+			        }
+			        const int dx = u - x;
+			        const int dy = v - y;
+			        const int sdx = sgn(dx);
+			        const int sdy = sgn(dy);
+			        const int dxabs = abs(dx);
+			        const int dyabs = abs(dy);
+			        int wallshit = 0;
+			        if (dxabs >= dyabs) { // the line is more horizontal than vertical
+			            int a = dxabs >> 1;
+			            int index = uvindex;
+				        for (int i = 0; i < dxabs - 1; ++i) {
+					        index -= woff * sdx;
+					        a += dyabs;
+					        if (a >= dxabs) {
+						        a -= dxabs;
+						        index -= hoff * sdy;
+					        }
+					        if (testTileOccludes(map, index)) {
+						        ++wallshit;
+						        if (wallshit >= max_walls_hit) {
+						            break;
+						        }
+					        }
+				        }
+			        } else { // the line is more vertical than horizontal
+			            int a = dyabs >> 1;
+			            int index = uvindex;
+				        for (int i = 0; i < dyabs - 1; ++i) {
+					        index -= hoff * sdy;
+					        a += dxabs;
+					        if (a >= dyabs) {
+						        a -= dyabs;
+					            index -= woff * sdx;
+					        }
+					        if (testTileOccludes(map, index)) {
+						        ++wallshit;
+						        if (wallshit >= max_walls_hit) {
+						            break;
+						        }
+					        }
+				        }
+			        }
+			        if (wallshit < max_walls_hit) {
+                        map.vismap[v + u * map.height] = true;
+			        }
+		        }
+	        }
+        }
+    }
+
+	// expand vismap one tile in each direction
+	bool* vmap = (bool*)malloc(sizeof(bool) * size);
+	for ( int index = 0; index < size; ++index ) {
+	    vmap[index] = map.vismap[index];
+		if (!vmap[index]) {
+		    if (index >= 1 && map.vismap[index - 1]) {
+		        vmap[index] = true;
+		        continue;
+		    }
+		    if (index < size - 1 && map.vismap[index + 1]) {
+		        vmap[index] = true;
+		        continue;
+		    }
+		    if (index >= map.height && map.vismap[index - map.height]) {
+		        vmap[index] = true;
+		        continue;
+		    }
+		    if (index < size - map.height && map.vismap[index + map.height]) {
+		        vmap[index] = true;
+		        continue;
+		    }
+		}
+	}
+	free(map.vismap);
+	map.vismap = vmap;
 }

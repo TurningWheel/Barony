@@ -2951,7 +2951,7 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
+		if ( !command && Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{

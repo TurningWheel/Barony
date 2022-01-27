@@ -2571,7 +2571,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 	}
 
-	if ( Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
+	if ( !command && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
 		tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
 	}

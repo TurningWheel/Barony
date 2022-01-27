@@ -1542,6 +1542,7 @@ int main(int argc, char** argv)
 
 
 	copymap.tiles = nullptr;
+	copymap.vismap = nullptr;
 	copymap.entities = nullptr;
 	copymap.creatures = nullptr;
 	copymap.worldUI = nullptr;

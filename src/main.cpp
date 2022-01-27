@@ -14,9 +14,6 @@
 #include "entity.hpp"
 #include "prng.hpp"
 
-#include "interface/consolecommand.hpp"
-#include "net.hpp"
-
 // main definitions
 Sint32 xres = 1280;
 Sint32 yres = 720;

@@ -609,6 +609,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// allocate memory for the next sublevel and attempt to load it
 		tempMap = (map_t*) malloc(sizeof(map_t));
 		tempMap->tiles = nullptr;
+		tempMap->vismap = nullptr;
 		tempMap->entities = (list_t*) malloc(sizeof(list_t));
 		tempMap->entities->first = nullptr;
 		tempMap->entities->last = nullptr;

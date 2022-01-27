@@ -1794,8 +1794,8 @@ static real_t getLightAtModifier = 1.0;
 static real_t getLightAt(const int x, const int y)
 {
 #if !defined(EDITOR) && !defined(NDEBUG)
-    static ConsoleVariable<bool> cvar_fullbright("/fullbright", false);
-    if (*cvar_fullbright)
+    static ConsoleVariable<bool> cvar("/fullbright", false);
+    if (*cvar)
     {
         return 1.0;
     }
@@ -1984,6 +1984,10 @@ void glDrawWorld(view_t* camera, int mode)
 	{
 		for ( y = 0; y < map.height; y++ )
 		{
+		    if (!map.vismap[y + x * map.height])
+		    {
+		        continue;
+		    }
 			for ( z = 0; z < MAPLAYERS + 1; z++ )
 			{
 			    const real_t rx = (real_t)x + 0.5;

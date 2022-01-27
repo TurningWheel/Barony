@@ -2092,12 +2092,15 @@ int deinitApp()
 		delete map.worldUI;
 	}
 	list_FreeAll(&light_l);
-	if ( map.tiles != NULL )
+	if ( map.tiles != nullptr )
 	{
 		free(map.tiles);
+	}
+	if ( map.vismap != nullptr )
+	{
 	    free(map.vismap);
 	}
-	if ( lightmap != NULL )
+	if ( lightmap != nullptr )
 	{
 		free(lightmap);
 	}

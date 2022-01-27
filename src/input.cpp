@@ -153,64 +153,24 @@ float Input::analog(const char* binding) const {
 bool Input::binary(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.binary : false;
 }
 
 bool Input::binaryToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
 bool Input::analogToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed : false;
 }
 
 bool Input::binaryReleaseToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
 }
 
@@ -243,16 +203,6 @@ bool Input::consumeBinary(const char* binding) {
 
 bool Input::consumeAnalogToggle(const char* binding) {
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	if ( b != bindings.end() && (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed ) {
 		(*b).second.analogConsumed = true;
 		return disabled == false;
@@ -264,16 +214,6 @@ bool Input::consumeAnalogToggle(const char* binding) {
 
 bool Input::consumeBinaryToggle(const char* binding) {
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
 		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
@@ -290,16 +230,6 @@ bool Input::consumeBinaryToggle(const char* binding) {
 
 bool Input::consumeBinaryReleaseToggle(const char* binding) {
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	if ( b != bindings.end() && (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed ) {
 		(*b).second.binaryReleaseConsumed = true;
 		return disabled == false;
@@ -312,16 +242,6 @@ bool Input::consumeBinaryReleaseToggle(const char* binding) {
 bool Input::binaryHeldToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() 
 		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.binaryHeldTicks) > BUTTON_HELD_TICKS)
 		: false;
@@ -330,16 +250,6 @@ bool Input::binaryHeldToggle(const char* binding) const {
 bool Input::analogHeldToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end()
 		? ((*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed && (ticks - (*b).second.analogHeldTicks) > BUTTON_HELD_TICKS)
 		: false;

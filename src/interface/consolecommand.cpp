@@ -114,7 +114,9 @@ template<> void ConsoleVariable<std::string>::operator=(const char* arg)
 
 template<> void ConsoleVariable<int>::operator=(const char* arg)
 {
-    data = (int)strtol(arg, nullptr, 10);
+    if (arg && arg[0] != '\0') {
+        data = (int)strtol(arg, nullptr, 10);
+    }
     messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
         name + 1, data);
 }
@@ -125,7 +127,9 @@ template<> void ConsoleVariable<int>::operator=(const char* arg)
 
 template<> void ConsoleVariable<float>::operator=(const char* arg)
 {
-    data = strtof(arg, nullptr);
+    if (arg && arg[0] != '\0') {
+        data = strtof(arg, nullptr);
+    }
     messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
         name + 1, data);
 }
@@ -136,7 +140,9 @@ template<> void ConsoleVariable<float>::operator=(const char* arg)
 
 template<> void ConsoleVariable<bool>::operator=(const char* arg)
 {
-    data = !(arg[0] == '\0' || (!strcmp(arg, "false")));
+    if (arg && arg[0] != '\0') {
+        data = !(!strcmp(arg, "false") || !strcmp(arg, "0"));
+    }
     messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
         name + 1, data ? "true" : "false");
 }

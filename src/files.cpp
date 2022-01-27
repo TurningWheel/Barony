@@ -810,13 +810,15 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			list_FreeAll(map.worldUI);
 		}
 	}
-	if ( destmap->tiles != NULL )
+	if ( destmap->tiles != nullptr )
 	{
 		free(destmap->tiles);
+		destmap->tiles = nullptr;
 	}
-	if ( destmap->vismap != NULL )
+	if ( destmap->vismap != nullptr )
 	{
 		free(destmap->vismap);
+		destmap->vismap = nullptr;
 	}
 	fp->read(destmap->name, sizeof(char), 32); // map name
 	fp->read(destmap->author, sizeof(char), 32); // map author
