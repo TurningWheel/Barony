@@ -11,6 +11,7 @@
 #include "Field.hpp"
 #include "Slider.hpp"
 #include "Text.hpp"
+#include "../interface/consolecommand.hpp"
 #include <queue>
 
 const Sint32 Frame::sliderSize = 15;
@@ -1142,11 +1143,26 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 }
 
 void Frame::postprocess() {
-    //return; // Why is this function slow as balls
-	Widget::process();
+#if !defined(EDITOR) && !defined(NDEBUG)
+    static ConsoleVariable<bool> cvar("/disableframetick", false);
+    if (*cvar) {
+        return;
+    }
+#endif
 
-	// TODO: which player owns the mouse
-	if (dropDown && owner == 0) {
+	if (tickCallback) {
+		(*tickCallback)(*this);
+	}
+	if (!dontTickChildren) {
+	    for (auto frame : frames) {
+	        if (!frame->disabled) {
+		        frame->postprocess();
+	        }
+	    }
+	}
+
+#ifndef EDITOR
+	if (dropDown && inputs.bPlayerUsingKeyboardControl(owner)) {
 		if (!dropDownClicked) {
 			for (int c = 0; c < 3; ++c) {
 				if (mousestatus[c]) {
@@ -1164,9 +1180,7 @@ void Frame::postprocess() {
 			}
 		}
 	}
-	for (auto frame : frames) {
-		frame->postprocess();
-	}
+#endif
 }
 
 Frame* Frame::addFrame(const char* name) {

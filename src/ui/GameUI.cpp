@@ -14910,9 +14910,9 @@ static void drawConsoleCommandBuffer() {
 	}
 	char buf[1024];
 	if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
-	    snprintf(buf, sizeof(buf), ">%s_", command_str);
+	    snprintf(buf, sizeof(buf), "> %s_", command_str);
 	} else {
-	    snprintf(buf, sizeof(buf), ">%s", command_str);
+	    snprintf(buf, sizeof(buf), "> %s", command_str);
 	}
 	auto text = Text::get(buf, "fonts/pixelmix.ttf#16#2",
 	    0xffffffff, makeColor(0, 0, 0, 255));
