@@ -397,97 +397,77 @@ void Widget::drawPost(const SDL_Rect size,
 	// button prompts
 #ifndef EDITOR
     if (!hideGlyphs && (inputs.hasController(owner) || !hideKeyboardGlyphs)) {
-        Input& input = Input::inputs[owner];
-        int x = size.x + size.w + buttonsOffset.x;
-        int y = size.y + size.h + buttonsOffset.y;
         auto& actions = selectedWidget->getWidgetActions();
         auto action = actions.begin();
-        if ((action = actions.find("MenuConfirm")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuConfirm", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
-        } else if (selectedWidget == this) {
-            auto path = input.getGlyphPathForBinding("MenuConfirm", false);
-	        auto image = Image::get(path.c_str());
-	        int w = image->getWidth();
-	        int h = image->getHeight();
-	        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-	        x -= w;
+
+        const char* actionList[] = {
+            "MenuConfirm",
+            "MenuCancel",
+            "MenuAlt1",
+            "MenuAlt2",
+            "MenuStart",
+            "MenuBack",
+            "MenuPageLeft",
+            "MenuPageRight",
+        };
+        static const int actionListSize = sizeof(actionList) / sizeof(actionList[0]);
+
+        // set button position
+        int x = size.x + buttonsOffset.x;
+        int y = size.y + buttonsOffset.y;
+        if (glyphPosition == CENTERED ||
+            glyphPosition == CENTERED_TOP ||
+            glyphPosition == CENTERED_BOTTOM) {
+            x += size.w / 2;
         }
-        if ((action = actions.find("MenuCancel")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuCancel", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
+        if (glyphPosition == CENTERED_RIGHT ||
+            glyphPosition == UPPER_RIGHT ||
+            glyphPosition == BOTTOM_RIGHT) {
+            x += size.w;
         }
-        if ((action = actions.find("MenuAlt1")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuAlt1", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
+        if (glyphPosition == CENTERED_LEFT ||
+            glyphPosition == CENTERED ||
+            glyphPosition == CENTERED_RIGHT) {
+            y += size.h / 2;
         }
-        if ((action = actions.find("MenuAlt2")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuAlt2", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
+        if (glyphPosition == CENTERED_BOTTOM ||
+            glyphPosition == BOTTOM_LEFT ||
+            glyphPosition == BOTTOM_RIGHT) {
+            y += size.h;
         }
-        if ((action = actions.find("MenuStart")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuStart", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
-        }
-        if ((action = actions.find("MenuBack")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuBack", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
-        }
-        if ((action = actions.find("MenuPageLeft")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuPageLeft", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
-        }
-        if ((action = actions.find("MenuPageRight")) != actions.end()) {
-	        if (action->second == name) {
-	            auto path = input.getGlyphPathForBinding("MenuPageRight", false);
-		        auto image = Image::get(path.c_str());
-		        int w = image->getWidth();
-		        int h = image->getHeight();
-		        image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		        x -= w;
-	        }
+
+        // draw glyphs
+        Input& input = Input::inputs[owner];
+        for (int c = 0; c < actionListSize; ++c) {
+            if ((action = actions.find(actionList[c])) != actions.end()) {
+	            if (action->second == name) {
+	                auto path = input.getGlyphPathForBinding(actionList[c], false);
+		            auto image = Image::get(path.c_str());
+		            int w = image->getWidth();
+		            int h = image->getHeight();
+		            image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		            if (glyphPosition == UPPER_RIGHT ||
+		                glyphPosition == CENTERED_RIGHT ||
+		                glyphPosition == BOTTOM_RIGHT) {
+		                x -= w;
+		            } else {
+		                x += w;
+		            }
+	            }
+            } else if (c == 0 && selectedWidget == this) {
+                auto path = input.getGlyphPathForBinding(actionList[c], false);
+	            auto image = Image::get(path.c_str());
+	            int w = image->getWidth();
+	            int h = image->getHeight();
+	            image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+	            if (glyphPosition == UPPER_RIGHT ||
+	                glyphPosition == CENTERED_RIGHT ||
+	                glyphPosition == BOTTOM_RIGHT) {
+	                x -= w;
+	            } else {
+	                x += w;
+	            }
+            }
         }
     }
 #endif

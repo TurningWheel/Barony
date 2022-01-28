@@ -3418,12 +3418,15 @@ void handleEvents(void)
 								inputs.removeControllerWithDeviceID(id); // clear any other player using this
 								inputs.setControllerID(player, id);
 								inputs.getVirtualMouse(player)->draw_cursor = false;
+								inputs.getVirtualMouse(player)->lastMovementFromController = true;
 								printlog("(Device %d added to player %d", id, player);
 								Input::waitingToBindControllerForPlayer = -1;
 								for (int c = 0; c < 4; ++c) {
 								    auto& input = Input::inputs[c];
 									input.refresh();
 								}
+								auto& input = Input::inputs[player];
+								input.consumeBinary("MenuConfirm");
 								break;
 							}
 						}

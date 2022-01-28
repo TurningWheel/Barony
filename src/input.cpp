@@ -577,9 +577,9 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padButton )
 		{
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "G_Switch_A00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
 				return rootPath + "G_Switch_B00.png";
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+				return rootPath + "G_Switch_A00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
 				return rootPath + "G_Switch_Y00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:

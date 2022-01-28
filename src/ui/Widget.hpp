@@ -24,29 +24,43 @@ public:
         WIDGET_SLIDER
     };
 
-    virtual type_t  getType() const = 0;
-    Widget*         getParent() { return parent; }
-    const char*		getName() const { return name.c_str(); }
-    bool			isPressed() const { return reallyPressed; }
-    bool			isHighlighted() const { return highlighted; }
-    bool			isSelected() const { return selected; }
-    bool			isDisabled() const { return disabled; }
-    bool            isInvisible() const { return invisible; }
-    bool            isHideGlyphs() const { return hideGlyphs; }
-    bool            isHideKeyboardGlyphs() const { return hideKeyboardGlyphs; }
-    bool            isHideSelectors() const { return hideSelectors; }
-    Uint32          getHighlightTime() const { return highlightTime; }
-    Sint32          getOwner() const { return owner; }
-    void			(*getTickCallback() const)(Widget&) { return tickCallback; }
-    void			(*getDrawCallback() const)(const Widget&, const SDL_Rect) { return drawCallback; }
-    const char*     getWidgetSearchParent() const { return widgetSearchParent.c_str(); }
-    auto&           getWidgetActions() const { return widgetActions; }
-    auto&           getWidgetMovements() const { return widgetMovements; }
-    auto&           getWidgets() const { return widgets; }
-    const void*     getUserData() const { return userData; }
-    void*           getUserData() { return userData; }
-    SDL_Rect        getButtonsOffset() const { return buttonsOffset; }
-    SDL_Rect        getSelectorOffset() const { return selectorOffset; }
+    //! glyph position
+    enum glyph_position_t {
+        CENTERED,
+        CENTERED_RIGHT,
+        CENTERED_LEFT,
+        CENTERED_TOP,
+        CENTERED_BOTTOM,
+        BOTTOM_RIGHT,
+        BOTTOM_LEFT,
+        UPPER_RIGHT,
+        UPPER_LEFT,
+    };
+
+    virtual type_t      getType() const = 0;
+    Widget*             getParent() { return parent; }
+    const char*		    getName() const { return name.c_str(); }
+    bool			    isPressed() const { return reallyPressed; }
+    bool			    isHighlighted() const { return highlighted; }
+    bool			    isSelected() const { return selected; }
+    bool			    isDisabled() const { return disabled; }
+    bool                isInvisible() const { return invisible; }
+    bool                isHideGlyphs() const { return hideGlyphs; }
+    bool                isHideKeyboardGlyphs() const { return hideKeyboardGlyphs; }
+    bool                isHideSelectors() const { return hideSelectors; }
+    Uint32              getHighlightTime() const { return highlightTime; }
+    Sint32              getOwner() const { return owner; }
+    void			    (*getTickCallback() const)(Widget&) { return tickCallback; }
+    void			    (*getDrawCallback() const)(const Widget&, const SDL_Rect) { return drawCallback; }
+    const char*         getWidgetSearchParent() const { return widgetSearchParent.c_str(); }
+    auto&               getWidgetActions() const { return widgetActions; }
+    auto&               getWidgetMovements() const { return widgetMovements; }
+    auto&               getWidgets() const { return widgets; }
+    const void*         getUserData() const { return userData; }
+    void*               getUserData() { return userData; }
+    SDL_Rect            getButtonsOffset() const { return buttonsOffset; }
+    SDL_Rect            getSelectorOffset() const { return selectorOffset; }
+    glyph_position_t    getGlyphPosition() const { return glyphPosition; }
 
     void	setName(const char* _name) { name = _name; }
     void	setPressed(bool _pressed) { reallyPressed = pressed = _pressed; }
@@ -72,6 +86,7 @@ public:
     void    setButtonsOffset(SDL_Rect r) { buttonsOffset = r; }
     void    setSelectorOffset(SDL_Rect r) { selectorOffset = r; }
 	void	setMenuConfirmControlType(int flags) { menuConfirmControlType = flags; }
+    void    setGlyphPosition(glyph_position_t p) { glyphPosition = p; }
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
@@ -162,6 +177,7 @@ protected:
     Sint32 owner = 0;                                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
     SDL_Rect selectorOffset {0, 0, 0, 0};                           //!< offset for x, y, w, h in the selector box
     SDL_Rect buttonsOffset {0, 0, 0, 0};                            //!< offset for x, y in button prompts
+    glyph_position_t glyphPosition = CENTERED_BOTTOM;               //!< default button position
     void (*tickCallback)(Widget&) = nullptr;		                //!< the callback to run each frame for this widget
     void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;  //!< the callback to run after the widget is drawn
     void* userData = nullptr;                                       //!< user data
