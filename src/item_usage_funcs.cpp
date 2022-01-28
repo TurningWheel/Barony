@@ -4865,10 +4865,10 @@ void item_Spellbook(Item*& item, int player)
 				learned = addSpell(SPELL_SELF_POLYMORPH, player);
 				break;
 			case SPELLBOOK_9:
-				learned = addSpell(SPELL_9, player);
+				learned = addSpell(SPELL_CRAB_FORM, player);
 				break;
 			case SPELLBOOK_10:
-				learned = addSpell(SPELL_10, player);
+				learned = addSpell(SPELL_CRAB_WEB, player);
 				break;
 			default:
 				learned = addSpell(SPELL_FORCEBOLT, player);

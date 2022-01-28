@@ -18,6 +18,7 @@
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
 #include "../classdescriptions.hpp"
+#include "../lobbies.hpp"
 
 #include <cassert>
 #include <functional>
@@ -179,6 +180,8 @@ namespace MainMenu {
 
     // All menu options combined
 	struct AllSettings {
+	    std::vector<std::pair<std::string, std::string>> mods;
+	    bool crossplay_enabled;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
@@ -981,6 +984,8 @@ namespace MainMenu {
 	inline bool AllSettings::save() {
 	    bool result = false;
 
+        gamemods_mountedFilepaths = mods;
+        LobbyHandler.crossplayEnabled = crossplay_enabled;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -1025,8 +1030,8 @@ namespace MainMenu {
 		}
 		fullscreen = new_fullscreen;
 		borderless = new_borderless;
-		xres = resolution_x;
-		yres = resolution_y;
+		xres = std::max(resolution_x, 1280);
+		yres = std::max(resolution_y, 720);
 		verticalSync = vsync_enabled;
 		vertical_splitscreen = vertical_split_enabled;
 		vidgamma = gamma / 100.f;
@@ -1086,6 +1091,8 @@ namespace MainMenu {
 
 	inline AllSettings AllSettings::load() {
 		AllSettings settings;
+		settings.mods = gamemods_mountedFilepaths;
+		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
 		settings.use_on_release_enabled = !right_click_protect;
@@ -1140,6 +1147,8 @@ namespace MainMenu {
 
 	inline AllSettings AllSettings::reset() {
 		AllSettings settings;
+		settings.mods = gamemods_mountedFilepaths;
+		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
 		settings.use_on_release_enabled = true;
@@ -1195,6 +1204,8 @@ namespace MainMenu {
 	bool AllSettings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
+	    file->property("mods", mods);
+		file->property("crossplay_enabled", crossplay_enabled);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);
@@ -1598,7 +1609,9 @@ namespace MainMenu {
 
 		// change video mode
 		if (initialized && reset_video) {
-			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
+		    int x = std::max(allSettings.resolution_x, 1280);
+		    int y = std::max(allSettings.resolution_y, 720);
+			if (!changeVideoMode(x, y)) {
 				printlog("critical error! Attempting to abort safely...\n");
 				mainloop = 0;
 			}

@@ -5927,11 +5927,7 @@ int main(int argc, char** argv)
 			// fps counter
 			if ( showfps )
 			{
-			    char buf[16];
-			    snprintf(buf, sizeof(buf), "FPS = %3.1f", fps);
-			    auto text = Text::get(buf, "fonts/pixel_maz.ttf#64#2",
-			        0xffffffff, makeColor(0, 0, 0, 255));
-				text->draw(SDL_Rect{0, 0, 0, 0}, SDL_Rect{8, 8, 0, 0}, SDL_Rect{0, 0, xres, yres});
+			    printTextFormatted(font16x16_bmp, 8, 8, "fps = %3.1f", fps);
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
