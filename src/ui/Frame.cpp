@@ -346,6 +346,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	}
 
 	int mouseowner_pausemenu = 0;
+#ifndef EDITOR
 	if ( gamePaused )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -357,6 +358,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			}
 		}
 	}
+#endif
 	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
@@ -690,6 +692,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
 	int mouseowner_pausemenu = 0;
+#ifndef EDITOR
 	if ( gamePaused )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -701,6 +704,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			}
 		}
 	}
+#endif
 	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR

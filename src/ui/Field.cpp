@@ -355,6 +355,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	}
 
 	int mouseowner_pausemenu = 0;
+#ifndef EDITOR
 	if ( gamePaused )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -366,6 +367,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 			}
 		}
 	}
+#endif
 	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR

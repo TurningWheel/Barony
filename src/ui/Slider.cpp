@@ -228,6 +228,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	}
 
 	int mouseowner_pausemenu = 0;
+#ifndef EDITOR
 	if ( gamePaused )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -239,6 +240,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 			}
 		}
 	}
+#endif
 	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
