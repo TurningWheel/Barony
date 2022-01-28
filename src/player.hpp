@@ -1086,6 +1086,7 @@ public:
 			CHARSHEET_DISPLAY_NORMAL,
 			CHARSHEET_DISPLAY_COMPACT
 		};
+		bool isSheetElementAllowedToNavigateTo(SheetElements element);
 		SheetDisplay sheetDisplayType = CHARSHEET_DISPLAY_NORMAL;
 		Frame* sheetFrame = nullptr;
 		SheetElements selectedElement = SHEET_UNSELECTED;

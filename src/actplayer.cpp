@@ -531,7 +531,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// rotate
-	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) && players[playernum]->shootmode )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -2859,6 +2859,11 @@ void actPlayer(Entity* my)
 		    }
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed keyboard for any player");
 	    }
+		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_7] )
+		{
+			keystatus[SDL_SCANCODE_KP_7] = 0;
+			consoleCommand("/splitscreen");
+		}
 	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
 	    {
 		    keystatus[SDL_SCANCODE_KP_9] = 0;

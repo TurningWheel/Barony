@@ -72,6 +72,7 @@ public:
     void    setUserData(void* p) { userData = p; }
     void    setButtonsOffset(SDL_Rect r) { buttonsOffset = r; }
     void    setSelectorOffset(SDL_Rect r) { selectorOffset = r; }
+	void	setMenuConfirmControlType(int flags) { menuConfirmControlType = flags; }
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
@@ -110,6 +111,11 @@ public:
         DEPTH_FIRST,
         BREADTH_FIRST
     };
+
+	enum MenuConfirmTypes : int {
+		MENU_CONFIRM_KEYBOARD = 1,
+		MENU_CONFIRM_CONTROLLER
+	};
 
     //! find a widget amongst our children
     //! @param name the name of the widget to find
@@ -150,6 +156,9 @@ protected:
     bool hideGlyphs = false;                                        //!< true if you don't want to see controller button glyphs on the widget
     bool hideKeyboardGlyphs = true;                                 //!< true if you don't want to see keyboard glyphs on the widget
     bool hideSelectors = false;                                     //!< true if you don't want to see selectors on the borders of this widget
+	int menuConfirmControlType =									//!< which input types are allowed to 'activate' the widget via 'MenuConfirm'
+		MenuConfirmTypes::MENU_CONFIRM_KEYBOARD 
+		| MenuConfirmTypes::MENU_CONFIRM_CONTROLLER;
     Uint32 highlightTime = 0u;						                //!< records the time since the widget was highlighted
     Sint32 owner = 0;                                               //!< which player owns this widget (0 = player 1, 1 = player 2, etc)
     SDL_Rect selectorOffset {0, 0, 0, 0};                           //!< offset for x, y, w, h in the selector box

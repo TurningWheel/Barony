@@ -4029,13 +4029,13 @@ void ingameHud()
 		// player not needed to be alive
 		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") && !gamePaused )   //TODO: Move to function in interface or something?
 		{
+			if ( input.input("Spell List").isBindingUsingGamepad() )
+			{
+				// no action, gamepad doesn't use this binding
+			}
 			// no dropdowns/no selected item, if controller, has to be in inventory/hotbar + !shootmode
-			if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
-				&& (!inputs.hasController(player) 
-					|| (inputs.hasController(player) && !players[player]->shootmode
-						&& (players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
-							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
-							|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR))) )
+			else if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
+				&& !inputs.hasController(player) )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
 				if ( players[player]->shootmode )
@@ -4653,18 +4653,21 @@ void ingameHud()
 						}
 					}
 #ifndef NDEBUG
-					// debug for controllers
-					auto cursor = Image::get("images/system/cursor_hand.png");
-					if ( keystatus[SDL_SCANCODE_J] )
+					if ( enableDebugKeys )
 					{
-						cursor = Image::get("images/system/cursor.png");
-					}
+						// debug for controllers
+						auto cursor = Image::get("images/system/cursor_hand.png");
+						if ( keystatus[SDL_SCANCODE_J] )
+						{
+							cursor = Image::get("images/system/cursor.png");
+						}
 
-					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
-					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
-					pos.w = cursor->getWidth();
-					pos.h = cursor->getHeight();
-					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
+						pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
+						pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+						pos.w = cursor->getWidth();
+						pos.h = cursor->getHeight();
+						cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
+					}
 #endif // !NDEBUG
 				}
 				else
@@ -4789,16 +4792,19 @@ void ingameHud()
 			{
 #ifndef NDEBUG
 				// debug for controllers
-				auto cursor = Image::get("images/system/cursor_hand.png");
-				if ( keystatus[SDL_SCANCODE_J] )
+				if ( enableDebugKeys )
 				{
-					cursor = Image::get("images/system/cursor.png");
+					auto cursor = Image::get("images/system/cursor_hand.png");
+					if ( keystatus[SDL_SCANCODE_J] )
+					{
+						cursor = Image::get("images/system/cursor.png");
+					}
+					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
+					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+					pos.w = cursor->getWidth();
+					pos.h = cursor->getHeight();
+					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 				}
-				pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
-				pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
-				pos.w = cursor->getWidth();
-				pos.h = cursor->getHeight();
-				cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 #endif
 			}
 		}
@@ -5865,9 +5871,24 @@ int main(int argc, char** argv)
 					{
 						continue;
 					}
-					if ((subwindow && !players[i]->shootmode) || (gamePaused && i == clientnum))
+
+					if ( gamePaused )
 					{
-						if (inputs.getVirtualMouse(i)->draw_cursor || (inputs.getVirtualMouse(i)->draw_cursor && gamePaused && i == clientnum))
+						if ( inputs.bPlayerUsingKeyboardControl(i) )
+						{
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{ 0, 0, xres, yres });
+						}
+						continue;
+					}
+
+					if ((subwindow && !players[i]->shootmode))
+					{
+						if (inputs.getVirtualMouse(i)->draw_cursor)
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;

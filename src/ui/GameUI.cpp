@@ -471,7 +471,7 @@ void createXPBar(const int player)
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 	endCapRight->ontop = true;
 
-	const int textWidth = 40;
+	const int textWidth = 48;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
 	textStatic->setText("/ 100");
@@ -622,7 +622,6 @@ void createUINavigation(const int player)
 	uiNavFrame->setDisabled(true);
 	{
 		const int glyphSize = 32;
-
 		const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
 		auto magicButton = uiNavFrame->addButton("magic button");
 		magicButton->setText("Magic");
@@ -630,17 +629,22 @@ void createUINavigation(const int player)
 		magicButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		magicButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		magicButton->setHideGlyphs(true);
+		magicButton->setHideKeyboardGlyphs(true);
+		magicButton->setHideSelectors(true);
+		magicButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		magicButton->setColor(makeColor(255, 255, 255, 191));
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Magic button clicked", button.getOwner());
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
+				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 				players[button.getOwner()]->inventoryUI.spellPanel.openSpellPanel();
 			}
 			else if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
+				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 				players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 			}
@@ -654,6 +658,9 @@ void createUINavigation(const int player)
 		statusButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		statusButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		statusButton->setHideGlyphs(true);
+		statusButton->setHideKeyboardGlyphs(true);
+		statusButton->setHideSelectors(true);
+		statusButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		statusButton->setColor(makeColor(255, 255, 255, 191));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
@@ -663,6 +670,12 @@ void createUINavigation(const int player)
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
 			}
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_CHARSHEET;
+			players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
+			if ( players[button.getOwner()]->characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+			{
+				players[button.getOwner()]->characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+			}
+			players[button.getOwner()]->GUI.warpControllerToModule(false);
 		});
 		auto statusButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "status button glyph")->disabled = true;
@@ -673,12 +686,23 @@ void createUINavigation(const int player)
 		itemsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		itemsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		itemsButton->setHideGlyphs(true);
+		itemsButton->setHideKeyboardGlyphs(true);
+		itemsButton->setHideSelectors(true);
+		itemsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		itemsButton->setColor(makeColor(255, 255, 255, 191));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Item button clicked", button.getOwner());
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
-			players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
+			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL
+				&& players[button.getOwner()]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+			{
+				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+			}
+			else
+			{
+				players[button.getOwner()]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_INVENTORY);
+			}
 		});
 
 		auto itemsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
@@ -690,6 +714,9 @@ void createUINavigation(const int player)
 		skillsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		skillsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		skillsButton->setHideGlyphs(true);
+		skillsButton->setHideKeyboardGlyphs(true);
+		skillsButton->setHideSelectors(true);
+		skillsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		skillsButton->setColor(makeColor(255, 255, 255, 191));
 		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		skillsButton->setCallback([](Button& button) {
@@ -699,6 +726,47 @@ void createUINavigation(const int player)
 
 		auto skillsButtonGlyph = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "skills button glyph")->disabled = true;
+	}
+	{
+		const int glyphSize = 32;
+		const char* navFont = "fonts/pixel_maz.ttf#32#2";
+		auto leftBumperNavigationTxt = uiNavFrame->addField("left bumper txt", 64);
+		leftBumperNavigationTxt->setFont(navFont);
+		leftBumperNavigationTxt->setHJustify(Field::justify_t::RIGHT);
+		leftBumperNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		leftBumperNavigationTxt->setDisabled(true);
+
+		auto leftBumperNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "left bumper img");
+		leftBumperNavigationImg->disabled = true;
+
+		auto rightBumperNavigationTxt = uiNavFrame->addField("right bumper txt", 64);
+		rightBumperNavigationTxt->setFont(navFont);
+		rightBumperNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		rightBumperNavigationTxt->setHJustify(Field::justify_t::LEFT);
+
+		auto rightBumperNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "right bumper img");
+		rightBumperNavigationImg->disabled = true;
+
+		auto leftTriggerNavigationTxt = uiNavFrame->addField("left trigger txt", 64);
+		leftTriggerNavigationTxt->setFont(navFont);
+		leftTriggerNavigationTxt->setHJustify(Field::justify_t::RIGHT);
+		leftTriggerNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		leftTriggerNavigationTxt->setDisabled(true);
+
+		auto leftTriggerNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "left trigger img");
+		leftTriggerNavigationImg->disabled = true;
+
+		auto rightTriggerNavigationTxt = uiNavFrame->addField("right trigger txt", 64);
+		rightTriggerNavigationTxt->setFont(navFont);
+		rightTriggerNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		rightTriggerNavigationTxt->setHJustify(Field::justify_t::LEFT);
+
+		auto rightTriggerNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "right trigger img");
+		rightTriggerNavigationImg->disabled = true;
 	}
 }
 
@@ -718,13 +786,17 @@ void Player::HUD_t::updateUINavigation()
 		}
 	}
 
+	bool leftTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavLeftTrigger");
+	bool rightTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavRightTrigger");
+
 	bShowUINavigation = false;
-	if ( player.gui_mode != GUI_MODE_NONE )
+	if ( player.gui_mode != GUI_MODE_NONE && player.isLocalPlayer() && !player.shootmode )
 	{
-		if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
+		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
-		}
+		}*/
+		bShowUINavigation = true;
 	}
 
 	if ( !bShowUINavigation )
@@ -734,6 +806,280 @@ void Player::HUD_t::updateUINavigation()
 	}
 	uiNavFrame->setDisabled(false);
 	uiNavFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
+
+	auto leftBumperModule = player.GUI.handleModuleNavigation(true, true);
+	auto leftBumperTxt = uiNavFrame->findField("left bumper txt");
+	leftBumperTxt->setDisabled(true);
+	auto leftBumperGlyph = uiNavFrame->findImage("left bumper img");
+	leftBumperGlyph->disabled = true;
+	auto rightBumperModule = player.GUI.handleModuleNavigation(true, false);
+	auto rightBumperTxt = uiNavFrame->findField("right bumper txt");
+	rightBumperTxt->setDisabled(true);
+	auto rightBumperGlyph = uiNavFrame->findImage("right bumper img");
+	rightBumperGlyph->disabled = true;
+
+	auto leftTriggerTxt = uiNavFrame->findField("left trigger txt");
+	leftTriggerTxt->setDisabled(true);
+	auto leftTriggerGlyph = uiNavFrame->findImage("left trigger img");
+	leftTriggerGlyph->disabled = true;
+	auto rightTriggerTxt = uiNavFrame->findField("right trigger txt");
+	rightTriggerTxt->setDisabled(true);
+	auto rightTriggerGlyph = uiNavFrame->findImage("right trigger img");
+	rightTriggerGlyph->disabled = true;
+	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.bUseCompactGUIWidth()
+		&& leftBumperModule != Player::GUI_t::MODULE_NONE )
+	{
+		switch ( leftBumperModule )
+		{
+			case Player::GUI_t::MODULE_INVENTORY:
+			case Player::GUI_t::MODULE_SPELLS:
+			case Player::GUI_t::MODULE_HOTBAR:
+			case Player::GUI_t::MODULE_CHARACTERSHEET:
+				leftBumperTxt->setDisabled(false);
+				leftBumperTxt->setText("/");
+				break;
+			default:
+				break;
+		}
+	}
+	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.bUseCompactGUIWidth()
+		&& rightBumperModule != Player::GUI_t::MODULE_NONE )
+	{
+		switch ( rightBumperModule )
+		{
+			case Player::GUI_t::MODULE_INVENTORY:
+			case Player::GUI_t::MODULE_SPELLS:
+			case Player::GUI_t::MODULE_HOTBAR:
+			case Player::GUI_t::MODULE_CHARACTERSHEET:
+				rightBumperTxt->setDisabled(false);
+				rightBumperTxt->setText(language[4089]);
+				break;
+			default:
+				break;
+		}
+	}
+
+	int lowestLeftY = 0;
+
+	int leftAnchorX = 0;
+	int rightAnchorX = 0;
+	PanelJustify_t justify = player.inventoryUI.inventoryPanelJustify;
+	if ( player.inventoryUI.frame )
+	{
+		auto inventoryBgFrame = player.inventoryUI.frame->findFrame("inventory base");
+
+		Frame::image_t* invBaseImg = inventoryBgFrame->findImage("inventory base img");
+
+		if ( justify == PANEL_JUSTIFY_LEFT )
+		{
+			leftAnchorX = inventoryBgFrame->getSize().x + 8;
+			leftAnchorX += invBaseImg->pos.w;
+
+			rightAnchorX = player.inventoryUI.frame->getSize().w - leftAnchorX;
+		}
+		else
+		{
+			rightAnchorX = inventoryBgFrame->getSize().x - 8;
+			rightAnchorX += invBaseImg->pos.x;
+
+			leftAnchorX = player.inventoryUI.frame->getSize().w - rightAnchorX;
+		}
+	}
+
+	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& !player.bUseCompactGUIWidth() )
+	{
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		{
+			{
+				justify = PANEL_JUSTIFY_LEFT;
+				leftTriggerGlyph->disabled = false;
+				leftTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavLeftTrigger");
+				SDL_Rect textPos;
+				textPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				textPos.y = 8;
+				textPos.w = leftTriggerTxt->getTextObject()->getWidth();
+				textPos.h = Font::get(leftTriggerTxt->getFont())->height() + 8;
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					leftTriggerTxt->setHJustify(Field::justify_t::LEFT);
+				}
+				else
+				{
+					leftTriggerTxt->setHJustify(Field::justify_t::RIGHT);
+				}
+
+				SDL_Rect imgPos;
+				if ( auto imgGet = Image::get(leftTriggerGlyph->path.c_str()) )
+				{
+					imgPos.w = imgGet->getWidth();
+					imgPos.h = imgGet->getHeight();
+				}
+				imgPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					leftTriggerGlyph->pos = imgPos;
+					textPos.x = leftTriggerGlyph->pos.x + leftTriggerGlyph->pos.w + 8;
+					leftTriggerTxt->setSize(textPos);
+				}
+				else
+				{
+					imgPos.x -= imgPos.w;
+					leftTriggerGlyph->pos = imgPos;
+					textPos.x = leftTriggerGlyph->pos.x - 8 - textPos.w;
+					leftTriggerTxt->setSize(textPos);
+				}
+				leftTriggerTxt->setDisabled(false);
+				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
+				{
+					leftTriggerTxt->setText(language[4093]);
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+				{
+					leftTriggerTxt->setText(language[4094]);
+				}
+			}
+			{
+				justify = PANEL_JUSTIFY_RIGHT;
+				rightTriggerGlyph->disabled = false;
+				rightTriggerGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavRightTrigger");
+				SDL_Rect textPos;
+				textPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				textPos.y = 8;
+				textPos.w = rightTriggerTxt->getTextObject()->getWidth();
+				textPos.h = Font::get(rightTriggerTxt->getFont())->height() + 8;
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					rightTriggerTxt->setHJustify(Field::justify_t::LEFT);
+				}
+				else
+				{
+					rightTriggerTxt->setHJustify(Field::justify_t::RIGHT);
+				}
+
+				SDL_Rect imgPos;
+				if ( auto imgGet = Image::get(rightTriggerGlyph->path.c_str()) )
+				{
+					imgPos.w = imgGet->getWidth();
+					imgPos.h = imgGet->getHeight();
+				}
+				imgPos.x = (justify == PANEL_JUSTIFY_LEFT) ? leftAnchorX : rightAnchorX;
+				imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+
+				if ( justify == PANEL_JUSTIFY_LEFT )
+				{
+					rightTriggerGlyph->pos = imgPos;
+					textPos.x = rightTriggerGlyph->pos.x + rightTriggerGlyph->pos.w + 8;
+					rightTriggerTxt->setSize(textPos);
+				}
+				else
+				{
+					imgPos.x -= imgPos.w;
+					rightTriggerGlyph->pos = imgPos;
+					textPos.x = rightTriggerGlyph->pos.x - 8 - textPos.w;
+					rightTriggerTxt->setSize(textPos);
+				}
+				rightTriggerTxt->setDisabled(false);
+				rightTriggerTxt->setText(language[4095]);
+			}
+		}
+
+		if ( leftTriggerPressed	&& !leftTriggerTxt->isDisabled() )
+		{
+			leftTriggerPressed = false;
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem && !player.GUI.isDropdownActive()
+			&& (inputs.hasController(player.playernum) && !player.shootmode
+				&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)) )
+			{
+				player.gui_mode = GUI_MODE_INVENTORY;
+				if ( player.shootmode )
+				{
+					player.openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+				}
+				player.inventoryUI.cycleInventoryTab();
+			}
+		}
+
+		if ( rightTriggerPressed && !rightTriggerTxt->isDisabled() )
+		{
+			rightTriggerPressed = false;
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem && !player.GUI.isDropdownActive()
+				&& (inputs.hasController(player.playernum) && !player.shootmode
+					&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+						|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
+						|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+						|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)) )
+			{
+				if ( !player.skillSheet.bSkillSheetOpen )
+				{
+					player.skillSheet.openSkillSheet();
+				}
+			}
+		}
+
+		if ( !leftTriggerTxt->isDisabled() )
+		{
+			lowestLeftY = std::max(lowestLeftY, leftTriggerTxt->getSize().y + leftTriggerTxt->getSize().h);
+			lowestLeftY = std::max(lowestLeftY, leftTriggerGlyph->pos.y + leftTriggerGlyph->pos.h);
+		}
+
+		if ( !leftBumperTxt->isDisabled() )
+		{
+			leftBumperGlyph->disabled = false;
+			leftBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavLeftBumper");
+			SDL_Rect textPos;
+			textPos.x = leftTriggerGlyph->pos.x;
+			textPos.y = lowestLeftY;
+			textPos.w = leftBumperTxt->getTextObject()->getWidth();
+			textPos.h = Font::get(leftBumperTxt->getFont())->height() + 8;
+
+			SDL_Rect imgPos;
+			if ( auto imgGet = Image::get(leftBumperGlyph->path.c_str()) )
+			{
+				imgPos.w = imgGet->getWidth();
+				imgPos.h = imgGet->getHeight();
+			}
+			imgPos.x = textPos.x;
+			imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+			leftBumperGlyph->pos = imgPos;
+
+			textPos.x = imgPos.x + 4 + imgPos.w;
+			leftBumperTxt->setSize(textPos);
+		}
+		if ( !rightBumperTxt->isDisabled() )
+		{
+			rightBumperGlyph->disabled = false;
+			rightBumperGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("UINavRightBumper");
+			SDL_Rect textPos;
+			textPos.x = leftBumperTxt->getSize().x + leftBumperTxt->getSize().w + 8;
+			textPos.y = leftBumperTxt->getSize().y;
+			textPos.w = rightBumperTxt->getTextObject()->getWidth();
+			textPos.h = Font::get(rightBumperTxt->getFont())->height() + 8;
+
+			SDL_Rect imgPos;
+			if ( auto imgGet = Image::get(rightBumperGlyph->path.c_str()) )
+			{
+				imgPos.w = imgGet->getWidth();
+				imgPos.h = imgGet->getHeight();
+			}
+			imgPos.x = textPos.x;
+			imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+
+			textPos.x += imgPos.w + 4;
+			rightBumperTxt->setSize(textPos);
+			rightBumperGlyph->pos = imgPos;
+		}
+	}
 
 	auto magicButton = uiNavFrame->findButton("magic button");
 	auto magicButtonGlyph = uiNavFrame->findImage("magic button glyph");
@@ -766,26 +1112,26 @@ void Player::HUD_t::updateUINavigation()
 	std::vector<ButtonsAndGlyphs> allButtonsAndGlyphs;
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "magic button", magicButton, magicButtonGlyph, 
-		"MenuPageLeftAlt", COMPACT_LAYOUT_INVENTORY });
+		"UINavLeftTrigger", COMPACT_LAYOUT_INVENTORY });
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "status button", statusButton, statusButtonGlyph, 
-		"MenuPageRightAlt", COMPACT_LAYOUT_INVENTORY });
+		"UINavRightTrigger", COMPACT_LAYOUT_INVENTORY });
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "items button", itemsButton, itemsButtonGlyph,
-		"MenuPageLeftAlt", COMPACT_LAYOUT_CHARSHEET });
+		"UINavLeftTrigger", COMPACT_LAYOUT_CHARSHEET });
 	allButtonsAndGlyphs.emplace_back(
 		ButtonsAndGlyphs{ "skills button", skillsButton, skillsButtonGlyph,
-		"MenuPageRightAlt", COMPACT_LAYOUT_CHARSHEET });
+		"UINavRightTrigger", COMPACT_LAYOUT_CHARSHEET });
 
 	int buttonWidth = 98;
 	int buttonHeight = 38;
 	int alignPaddingX = 2;
 	int leftAlignX = uiNavFrame->getSize().w / 2 - buttonWidth - alignPaddingX;
 	int rightAlignX = uiNavFrame->getSize().w / 2 + alignPaddingX;
-	int topAlignY = 26;
+	int topAlignY = 34;
 	int bottomAlignY = topAlignY + 52;
 
-	int numButtonsToShow = 4;
+	int numButtonsToShow = 2;
 
 	for ( auto& buttonAndGlyph : allButtonsAndGlyphs )
 	{
@@ -794,29 +1140,91 @@ void Player::HUD_t::updateUINavigation()
 		SDL_Rect buttonPos = button->getSize();
 		auto& glyph = buttonAndGlyph.glyph;
 		glyph->disabled = true;
+
+		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			button->setColor(makeColor(255, 255, 255, 255));
+		}
+		else
+		{
+			button->setColor(makeColor(255, 255, 255, 191));
+		}
+
 		if ( buttonAndGlyph.name == "magic button" || buttonAndGlyph.name == "items button" )
 		{
-			buttonPos.x = leftAlignX;
-			if ( numButtonsToShow < 4 )
+			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
+				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
+				&& !player.bUseCompactGUIWidth() )
 			{
-				buttonPos.y = topAlignY;
-				if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
+				{
+					if ( buttonAndGlyph.name == "magic button" )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+
+						buttonPos.x = leftAnchorX;
+						buttonPos.y = 8;
+						buttonAndGlyph.inputName = "Spell List";
+					}
+				}
+				else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
+				{
+					if ( buttonAndGlyph.name == "items button" )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+
+						buttonPos.x = leftAnchorX;
+						buttonPos.y = 8;
+						buttonAndGlyph.inputName = "Spell List";
+					}
+				}
+			}
+			else if ( player.bUseCompactGUIWidth() )
+			{
+				buttonPos.x = leftAlignX;
+				if ( numButtonsToShow < 4 )
+				{
+					buttonPos.y = topAlignY;
+					if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY )
+					{
+						if ( buttonAndGlyph.name == "items button" && player.inventory_mode == INVENTORY_MODE_ITEM )
+						{
+							// leave disabled
+							button->setDisabled(true);
+							glyph->disabled = true;
+						}
+						else if ( buttonAndGlyph.name == "magic button" && player.inventory_mode == INVENTORY_MODE_SPELL )
+						{
+							// leave disabled
+							button->setDisabled(true);
+							glyph->disabled = true;
+						}
+						else
+						{
+							button->setDisabled(false);
+							glyph->disabled = false;
+						}
+					}
+					else if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+					}
+				}
+				else
 				{
 					button->setDisabled(false);
 					glyph->disabled = false;
-				}
-			}
-			else
-			{
-				button->setDisabled(false);
-				glyph->disabled = false;
-				if ( buttonAndGlyph.name == "magic button" )
-				{
-					buttonPos.y = topAlignY;
-				}
-				else if ( buttonAndGlyph.name == "items button" )
-				{
-					buttonPos.y = bottomAlignY;
+					if ( buttonAndGlyph.name == "magic button" )
+					{
+						buttonPos.y = topAlignY;
+					}
+					else if ( buttonAndGlyph.name == "items button" )
+					{
+						buttonPos.y = bottomAlignY;
+					}
 				}
 			}
 			buttonPos.w = buttonWidth;
@@ -825,27 +1233,36 @@ void Player::HUD_t::updateUINavigation()
 		}
 		if ( buttonAndGlyph.name == "status button" || buttonAndGlyph.name == "skills button" )
 		{
-			buttonPos.x = rightAlignX;
-			if ( numButtonsToShow < 4 )
+			if ( inputs.bPlayerUsingKeyboardControl(player.playernum)
+				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
+				&& !player.bUseCompactGUIWidth() )
 			{
-				buttonPos.y = topAlignY;
-				if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+				// leave disabled
+			}
+			else if ( player.bUseCompactGUIWidth() )
+			{
+				buttonPos.x = rightAlignX;
+				if ( numButtonsToShow < 4 )
+				{
+					buttonPos.y = topAlignY;
+					if ( buttonAndGlyph.layoutMode == compactLayoutMode )
+					{
+						button->setDisabled(false);
+						glyph->disabled = false;
+					}
+				}
+				else
 				{
 					button->setDisabled(false);
 					glyph->disabled = false;
-				}
-			}
-			else
-			{
-				button->setDisabled(false);
-				glyph->disabled = false;
-				if ( buttonAndGlyph.name == "status button" )
-				{
-					buttonPos.y = topAlignY;
-				}
-				else if ( buttonAndGlyph.name == "skills button" )
-				{
-					buttonPos.y = bottomAlignY;
+					if ( buttonAndGlyph.name == "status button" )
+					{
+						buttonPos.y = topAlignY;
+					}
+					else if ( buttonAndGlyph.name == "skills button" )
+					{
+						buttonPos.y = bottomAlignY;
+					}
 				}
 			}
 			buttonPos.w = buttonWidth;
@@ -859,7 +1276,7 @@ void Player::HUD_t::updateUINavigation()
 			glyph->ontop = true;
 			if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 			{
-				glyph->disabled = false; // keyboard glyph support TODO
+				glyph->disabled = false;
 			}
 			else
 			{
@@ -874,6 +1291,27 @@ void Player::HUD_t::updateUINavigation()
 			glyph->pos.x = button->getSize().x + button->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
 			const int glyphToImgPadY = 8;
 			glyph->pos.y = button->getSize().y + button->getSize().h - glyphToImgPadY; // just below the button with some padding
+		}
+		button->setInvisible(button->isDisabled());
+	}
+
+	for ( auto& buttonAndGlyph : allButtonsAndGlyphs )
+	{
+		auto& button = buttonAndGlyph.button;
+		if ( !button->isDisabled() && !button->isInvisible() )
+		{
+			if ( buttonAndGlyph.inputName == "UINavLeftTrigger" && leftTriggerPressed
+				&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
+			{
+				leftTriggerPressed = false;
+				button->activate();
+			}
+			else if ( buttonAndGlyph.inputName == "UINavRightTrigger" && rightTriggerPressed
+				&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
+			{
+				rightTriggerPressed = false;
+				button->activate();
+			}
 		}
 	}
 }
@@ -2344,6 +2782,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			mapButton->setSize(buttonPos);
 			mapButton->setHideGlyphs(true);
+			mapButton->setHideKeyboardGlyphs(true);
+			mapButton->setHideSelectors(true);
+			mapButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
@@ -2370,6 +2811,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			logButton->setSize(buttonPos);
 			logButton->setHideGlyphs(true);
+			logButton->setHideKeyboardGlyphs(true);
+			logButton->setHideSelectors(true);
+			logButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			logButton->setCallback([](Button& button) {
@@ -2433,6 +2877,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			timerButton->setColor(makeColor(0, 0, 0, 0));
 			timerButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			timerButton->setHideGlyphs(true);
+			timerButton->setHideKeyboardGlyphs(true);
+			timerButton->setHideSelectors(true);
+			timerButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			timerButton->setCallback([](Button& button){
 				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
 				bShowTimer = !bShowTimer;
@@ -2465,6 +2912,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setBackground("images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
 			skillsButton->setSize(SDL_Rect{ 0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h });
 			skillsButton->setHideGlyphs(true);
+			skillsButton->setHideKeyboardGlyphs(true);
+			skillsButton->setHideSelectors(true);
+			skillsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			skillsButton->setColor(makeColor(255, 255, 255, 191));
 			skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			skillsButton->setCallback([](Button& button) {
@@ -2493,6 +2943,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			dungeonButton->setColor(makeColor(0, 0, 0, 0));
 			dungeonButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			dungeonButton->setHideGlyphs(true);
+			dungeonButton->setHideKeyboardGlyphs(true);
+			dungeonButton->setHideSelectors(true);
+			dungeonButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
@@ -2565,6 +3018,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classButton->setColor(makeColor(0, 0, 0, 0));
 			classButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			classButton->setHideGlyphs(true);
+			classButton->setHideKeyboardGlyphs(true);
+			classButton->setHideSelectors(true);
+			classButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
@@ -2607,6 +3063,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			raceButton->setColor(makeColor(0, 0, 0, 0));
 			raceButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			raceButton->setHideGlyphs(true);
+			raceButton->setHideKeyboardGlyphs(true);
+			raceButton->setHideSelectors(true);
+			raceButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -2637,6 +3096,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldButton->setColor(makeColor(0, 0, 0, 0));
 			goldButton->setHighlightColor(makeColor(0, 0, 0, 0));
 			goldButton->setHideGlyphs(true);
+			goldButton->setHideKeyboardGlyphs(true);
+			goldButton->setHideSelectors(true);
+			goldButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		}
 
 		{
@@ -2689,6 +3151,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2724,6 +3189,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2759,6 +3227,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2794,6 +3265,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2829,6 +3303,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2864,6 +3341,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setColor(makeColor(0, 0, 0, 0));
 				statButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				statButton->setHideGlyphs(true);
+				statButton->setHideKeyboardGlyphs(true);
+				statButton->setHideSelectors(true);
+				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 		}
 
@@ -2908,6 +3388,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			const int rowSpacing = 4;
@@ -2936,6 +3419,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2963,6 +3449,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -2990,6 +3479,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3038,6 +3530,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3065,6 +3560,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
+				attributeButton->setHideKeyboardGlyphs(true);
+				attributeButton->setHideSelectors(true);
+				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 		}
 
@@ -7827,6 +8325,12 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	assert(characterInnerFrame);
 
 	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& inputs.hasController(player.playernum)
+		&& !Input::inputs[player.playernum].binary("MenuConfirm") )
+	{
+		enableTooltips = false;
+	}
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -8053,6 +8557,12 @@ void Player::CharacterSheet_t::updateStats()
 	Button* chrButton = statsInnerFrame->findButton("chr button");
 
 	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor 
+		&& inputs.hasController(player.playernum)
+		&& !Input::inputs[player.playernum].binary("MenuConfirm") )
+	{
+		enableTooltips = false;
+	}
 
 	char buf[32] = "";
 	if ( auto field = statsInnerFrame->findField("str text stat") )
@@ -8266,6 +8776,12 @@ void Player::CharacterSheet_t::updateAttributes()
 	attributesInnerFrame->setSize(attributesInnerPos);
 
 	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick;
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& inputs.hasController(player.playernum)
+		&& !Input::inputs[player.playernum].binary("MenuConfirm") )
+	{
+		enableTooltips = false;
+	}
 
 	char buf[32] = "";
 
@@ -10683,6 +11199,9 @@ void createPlayerSpellList(const int player)
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 		slider->setHideGlyphs(true);
+		slider->setHideKeyboardGlyphs(true);
+		slider->setHideSelectors(true);
+		slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
@@ -10704,6 +11223,9 @@ void createPlayerSpellList(const int player)
 		closeBtn->setText(language[4053]);
 		closeBtn->setFont(font);
 		closeBtn->setHideGlyphs(true);
+		closeBtn->setHideKeyboardGlyphs(true);
+		closeBtn->setHideSelectors(true);
+		closeBtn->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
@@ -14638,6 +15160,9 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 	slider->setHideGlyphs(true);
+	slider->setHideKeyboardGlyphs(true);
+	slider->setHideSelectors(true);
+	slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 
 	Font* actualFont = Font::get(descFont);
 	int fontHeight;
@@ -14938,7 +15463,7 @@ void Player::SkillSheet_t::openSkillSheet()
 	else
 	{
 		players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
-			INVENTORY_MODE_ITEM, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
+			players[player.playernum]->inventory_mode, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
 	}
 	bSkillSheetOpen = true;
 	openTick = ticks;
@@ -14958,6 +15483,19 @@ void Player::SkillSheet_t::openSkillSheet()
 	if ( !::inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
 		highlightedSkill = selectedSkill;
+	}
+	if ( bUseCompactSkillsView || bSlideWindowsOnly )
+	{
+		if ( selectedSkill >= 8 )
+		{
+			skillSlideAmount = 1.0;
+			skillSlideDirection = 1;
+		}
+		else
+		{
+			skillSlideAmount = -1.0;
+			skillSlideDirection = -1;
+		}
 	}
 }
 
@@ -16084,8 +16622,16 @@ void Player::SkillSheet_t::processSkillSheet()
 	if ( (oldCompactViewVal != bUseCompactSkillsView && bUseCompactSkillsView)
 		|| (oldSlideWindowsOnly != bSlideWindowsOnly && bSlideWindowsOnly) )
 	{
-		skillSlideAmount = 1.0;
-		skillSlideDirection = 1;
+		if ( selectedSkill >= 8 )
+		{
+			skillSlideAmount = 1.0;
+			skillSlideDirection = 1;
+		}
+		else
+		{
+			skillSlideAmount = -1.0;
+			skillSlideDirection = -1;
+		}
 	}
 	if ( !bUseCompactSkillsView && !bSlideWindowsOnly )
 	{
@@ -16193,6 +16739,10 @@ void Player::SkillSheet_t::processSkillSheet()
 	innerFrame->setSize(sheetSize);
 
 	auto slider = skillDescriptionFrame->findSlider("skill slider");
+	if ( slider->isSelected() )
+	{
+		slider->deselect();
+	}
 	bool sliderDisabled = slider->isDisabled();
 
 	auto titleText = innerFrame->findField("skill title txt");
@@ -16332,6 +16882,17 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		if ( dpad_moved )
 		{
+			if ( skillSlideDirection != 0 )
+			{
+				if ( highlightedSkill >= 8 )
+				{
+					skillSlideDirection = 1;
+				}
+				else
+				{
+					skillSlideDirection = -1;
+				}
+			}
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )

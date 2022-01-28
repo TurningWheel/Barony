@@ -53,6 +53,11 @@ Uint32 clientplayer = 0;
 int numplayers = 0;
 int clientnum = 0;
 int multiplayer = -1;
+SteamGlobalStat_t g_SteamAPIGlobalStats[1] =
+{
+	{ 57, STEAM_STAT_INT, "STAT_GLOBAL_GAME_STARTED" }
+};
+
 SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 {
 	{ 1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS" },

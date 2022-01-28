@@ -527,6 +527,7 @@ void IRCHandler_t::run()
 
 void IRCHandler_t::handleMessage(std::string& msg)
 {
+#ifndef EDITOR
 	if ( intro )
 	{
 		return;
@@ -556,6 +557,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 		}
 		return;
 	}
+#endif
 }
 #endif // !NINTENDO
 

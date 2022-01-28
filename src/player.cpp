@@ -714,6 +714,32 @@ const bool hotbarGamepadControlEnabled(const int player)
 		&& !GenericGUI[player].isGUIOpen());
 }
 
+bool Player::CharacterSheet_t::isSheetElementAllowedToNavigateTo(Player::CharacterSheet_t::SheetElements element)
+{
+	if ( element == SHEET_ENUM_END )
+	{
+		return false;
+	}
+
+	if ( player.bUseCompactGUIHeight() )
+	{
+		switch ( element )
+		{
+			case SHEET_SKILL_LIST:
+			case SHEET_TIMER:
+				return false;
+				break;
+			default:
+				return true;
+				break;
+		}
+	}
+	else
+	{
+		return true;
+	}
+}
+
 bool Player::GUI_t::handleCharacterSheetMovement()
 {
 	if ( activeModule != MODULE_CHARACTERSHEET )
@@ -723,55 +749,314 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	bool dpad_moved = false;
 	int player = this->player.playernum;
 
-	/*if ( Input::inputs[player].binaryToggle("InventoryMoveLeft")
-		|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog") )
+	if ( !Input::inputs[player].binaryToggle("InventoryMoveUp")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveLeft")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveRight")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
-
-		dpad_moved = true;
+		return false;
 	}
-
-	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
-		|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog") )
-	{
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
-
-		dpad_moved = true;
-	}*/
 
 	auto& characterSheet_t = players[player]->characterSheet;
 	int currentElement = characterSheet_t.selectedElement;
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
-		|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog") )
+	bool bCompactView = false;
+	if ( this->player.bUseCompactGUIHeight() )
 	{
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
+		bCompactView = true;
+	}
 
-		currentElement = currentElement - 1;
-		if ( currentElement <= Player::CharacterSheet_t::SHEET_UNSELECTED )
+	std::vector<int> elementSelectableList;
+	Player::CharacterSheet_t::SheetElements defaultElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
+
+	if ( !bCompactView )
+	{
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_OPEN_MAP);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_OPEN_LOG);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_TIMER);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_CHAR_CLASS);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_GOLD);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_SKILL_LIST);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_STR);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_DEX);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_CON);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_INT);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_PER);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_CHR);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_ATK);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_AC);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_POW);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_RES);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_RGN);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_RGN_MP);
+		elementSelectableList.push_back(Player::CharacterSheet_t::SHEET_WGT);
+	}
+	else
+	{
+		std::vector<int> elementSelectableList1;
+		elementSelectableList1.push_back(Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR);
+		elementSelectableList1.push_back(Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX);
+		elementSelectableList1.push_back(Player::CharacterSheet_t::SHEET_CHAR_CLASS);
+		elementSelectableList1.push_back(Player::CharacterSheet_t::SHEET_GOLD);
+		if ( currentElement == Player::CharacterSheet_t::SHEET_OPEN_LOG )
 		{
-			currentElement = Player::CharacterSheet_t::SHEET_ENUM_END - 1;
+			elementSelectableList1.push_back(Player::CharacterSheet_t::SHEET_OPEN_LOG);
+		}
+		else
+		{
+			elementSelectableList1.push_back(Player::CharacterSheet_t::SHEET_OPEN_MAP);
+		}
+
+		std::vector<int> elementSelectableList2;
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_STR);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_DEX);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_CON);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_INT);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_PER);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_CHR);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_ATK);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_AC);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_POW);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_RES);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_RGN);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_RGN_MP);
+		elementSelectableList2.push_back(Player::CharacterSheet_t::SHEET_WGT);
+
+		if ( std::find(elementSelectableList1.begin(), elementSelectableList1.end(), currentElement) != elementSelectableList1.end() )
+		{
+			for ( auto e : elementSelectableList1 )
+			{
+				elementSelectableList.push_back(e);
+			}
+
+			if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") || Input::inputs[player].binaryToggle("InventoryMoveRight") )
+			{
+				defaultElement = Player::CharacterSheet_t::SHEET_STR;
+			}
+			else
+			{
+				defaultElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
+			}
+		}
+		else if ( std::find(elementSelectableList2.begin(), elementSelectableList2.end(), currentElement) != elementSelectableList2.end() )
+		{
+			for ( auto e : elementSelectableList2 )
+			{
+				elementSelectableList.push_back(e);
+			}
+			if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") || Input::inputs[player].binaryToggle("InventoryMoveRight") )
+			{
+				defaultElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
+			}
+			else
+			{
+				defaultElement = Player::CharacterSheet_t::SHEET_STR;
+			}
+		}
+		else
+		{
+			for ( auto e : elementSelectableList1 )
+			{
+				elementSelectableList.push_back(e);
+			}
+			defaultElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
+		}
+	}
+
+	if ( elementSelectableList.empty() )
+	{
+		return false;
+	}
+
+
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
+	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
+		if ( bCompactView )
+		{
+			if ( currentElement == Player::CharacterSheet_t::SHEET_OPEN_LOG )
+			{
+				currentElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
+			}
+			else
+			{
+				switch ( currentElement )
+				{
+					case Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR:
+						currentElement = Player::CharacterSheet_t::SHEET_STR;
+						break;
+					case Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX:
+						currentElement = Player::CharacterSheet_t::SHEET_INT;
+						break;
+					case Player::CharacterSheet_t::SHEET_CHAR_CLASS:
+						currentElement = Player::CharacterSheet_t::SHEET_PER;
+						break;
+					case Player::CharacterSheet_t::SHEET_GOLD:
+						currentElement = Player::CharacterSheet_t::SHEET_CHR;
+						break;
+					case Player::CharacterSheet_t::SHEET_OPEN_MAP:
+						currentElement = Player::CharacterSheet_t::SHEET_ATK;
+						break;
+
+					case Player::CharacterSheet_t::SHEET_STR:
+						currentElement = Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR;
+						break;
+					case Player::CharacterSheet_t::SHEET_DEX:
+						currentElement = Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR;
+						break;
+					case Player::CharacterSheet_t::SHEET_CON:
+						currentElement = Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR;
+						break;
+					case Player::CharacterSheet_t::SHEET_INT:
+						currentElement = Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX;
+						break;
+					case Player::CharacterSheet_t::SHEET_PER:
+						currentElement = Player::CharacterSheet_t::SHEET_CHAR_CLASS;
+						break;
+					case Player::CharacterSheet_t::SHEET_CHR:
+						currentElement = Player::CharacterSheet_t::SHEET_GOLD;
+						break;
+					case Player::CharacterSheet_t::SHEET_ATK:
+					case Player::CharacterSheet_t::SHEET_AC:
+					case Player::CharacterSheet_t::SHEET_POW:
+					case Player::CharacterSheet_t::SHEET_RES:
+					case Player::CharacterSheet_t::SHEET_RGN:
+					case Player::CharacterSheet_t::SHEET_RGN_MP:
+					case Player::CharacterSheet_t::SHEET_WGT:
+						currentElement = Player::CharacterSheet_t::SHEET_OPEN_LOG;
+						break;
+					default:
+						currentElement = defaultElement;
+						break;
+				}
+			}
 		}
 		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
 	}
-
-	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
-		|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog") )
+	else if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
 	{
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
-		Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
-
-		currentElement = currentElement + 1;
-		if ( currentElement >= Player::CharacterSheet_t::SHEET_ENUM_END )
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
+		if ( bCompactView )
 		{
-			currentElement = Player::CharacterSheet_t::SHEET_UNSELECTED + 1;
+			if ( currentElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
+			{
+				currentElement = Player::CharacterSheet_t::SHEET_OPEN_LOG;
+			}
+			else
+			{
+				switch ( currentElement )
+				{
+					case Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR:
+						currentElement = Player::CharacterSheet_t::SHEET_STR;
+						break;
+					case Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX:
+						currentElement = Player::CharacterSheet_t::SHEET_INT;
+						break;
+					case Player::CharacterSheet_t::SHEET_CHAR_CLASS:
+						currentElement = Player::CharacterSheet_t::SHEET_PER;
+						break;
+					case Player::CharacterSheet_t::SHEET_GOLD:
+						currentElement = Player::CharacterSheet_t::SHEET_CHR;
+						break;
+					case Player::CharacterSheet_t::SHEET_OPEN_LOG:
+						currentElement = Player::CharacterSheet_t::SHEET_ATK;
+						break;
+
+					case Player::CharacterSheet_t::SHEET_STR:
+						currentElement = Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR;
+						break;
+					case Player::CharacterSheet_t::SHEET_DEX:
+						currentElement = Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR;
+						break;
+					case Player::CharacterSheet_t::SHEET_CON:
+						currentElement = Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR;
+						break;
+					case Player::CharacterSheet_t::SHEET_INT:
+						currentElement = Player::CharacterSheet_t::SHEET_CHAR_RACE_SEX;
+						break;
+					case Player::CharacterSheet_t::SHEET_PER:
+						currentElement = Player::CharacterSheet_t::SHEET_CHAR_CLASS;
+						break;
+					case Player::CharacterSheet_t::SHEET_CHR:
+						currentElement = Player::CharacterSheet_t::SHEET_GOLD;
+						break;
+					case Player::CharacterSheet_t::SHEET_ATK:
+					case Player::CharacterSheet_t::SHEET_AC:
+					case Player::CharacterSheet_t::SHEET_POW:
+					case Player::CharacterSheet_t::SHEET_RES:
+					case Player::CharacterSheet_t::SHEET_RGN:
+					case Player::CharacterSheet_t::SHEET_RGN_MP:
+					case Player::CharacterSheet_t::SHEET_WGT:
+						currentElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
+						break;
+					default:
+						currentElement = defaultElement;
+						break;
+				}
+			}
 		}
 		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
+	}
+	else
+	{
+		if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
+		{
+			Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
+
+			auto itr = std::find(elementSelectableList.begin(), elementSelectableList.end(), currentElement);
+			if ( itr == elementSelectableList.end() )
+			{
+				currentElement = defaultElement;
+			}
+			else if ( itr == elementSelectableList.begin() )
+			{
+				currentElement = elementSelectableList[elementSelectableList.size() - 1];
+			}
+			else
+			{
+				currentElement = *(std::prev(itr));
+			}
+			/*currentElement = currentElement - 1;
+			if ( currentElement <= Player::CharacterSheet_t::SHEET_UNSELECTED )
+			{
+				currentElement = Player::CharacterSheet_t::SHEET_ENUM_END - 1;
+			}*/
+			characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
+			dpad_moved = true;
+		}
+		if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
+		{
+			Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+
+			auto itr = std::find(elementSelectableList.begin(), elementSelectableList.end(), currentElement);
+			if ( itr == elementSelectableList.end() )
+			{
+				currentElement = defaultElement;
+			}
+			else
+			{
+				if ( std::next(itr) == elementSelectableList.end() )
+				{
+					currentElement = elementSelectableList[0];
+				}
+				else
+				{
+					currentElement = *(std::next(itr));
+				}
+			}
+
+			/*currentElement = currentElement + 1;
+			if ( currentElement >= Player::CharacterSheet_t::SHEET_ENUM_END )
+			{
+				currentElement = Player::CharacterSheet_t::SHEET_UNSELECTED + 1;
+			}*/
+			characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
+			dpad_moved = true;
+		}
 	}
 
 	if ( dpad_moved )
@@ -847,30 +1132,32 @@ bool Player::GUI_t::returnToPreviousActiveModule()
 
 Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation)
 {
+	auto& input = Input::inputs[player.playernum];
 	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
 		|| nohud || !player.isLocalPlayer() )
 	{
 		if ( !checkDestinationOnly )
 		{
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			input.consumeBinaryToggle("UINavLeftBumper");
+			input.consumeBinaryToggle("UINavRightBumper");
 		}
 		return MODULE_NONE;
 	}
 
-	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
+	if ( input.binaryToggle("UINavLeftBumper")
 		|| (checkLeftNavigation && checkDestinationOnly) )
 	{
-		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		if ( activeModule == MODULE_INVENTORY 
+			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_HOTBAR);
 					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_HOTBAR;
@@ -880,62 +1167,99 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_CHARACTERSHEET);
-					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
 					{
 						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 					}
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_CHARACTERSHEET;
 			}
 		}
-		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		else if ( activeModule == MODULE_SPELLS 
+			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+				&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_SPELLS);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_SPELLS;
 			}
-			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+				&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_INVENTORY;
 			}
 		}
-		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		else if ( activeModule == MODULE_CHARACTERSHEET 
+			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( !checkDestinationOnly )
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				// no action here
+				if ( !checkDestinationOnly )
+				{
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
@@ -943,59 +1267,79 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 
 		if ( !checkDestinationOnly )
 		{
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+			input.consumeBinaryToggle("UINavLeftBumper");
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 	}
-	if ( inputs.bControllerRawInputPressed(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+	if ( input.binaryToggle("UINavRightBumper")
 		|| (!checkLeftNavigation && checkDestinationOnly) )
 	{
-		if ( activeModule == MODULE_INVENTORY && player.inventoryUI.isInteractable )
+		if ( activeModule == MODULE_INVENTORY 
+			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
-		else if ( activeModule == MODULE_SPELLS && player.inventoryUI.spellPanel.isInteractable )
+		else if ( activeModule == MODULE_SPELLS 
+			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
 				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
 				warpControllerToModule(false);
-				inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
-				if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHARACTERSHEET);
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
+			{
+				if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 				{
 					if ( !checkDestinationOnly )
 					{
 						activateModule(MODULE_SPELLS);
 						warpControllerToModule(false);
-						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_SPELLS;
 				}
-				else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+				else if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+					&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 				{
 					if ( !checkDestinationOnly )
 					{
 						activateModule(MODULE_INVENTORY);
 						warpControllerToModule(false);
-						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_INVENTORY;
@@ -1003,13 +1347,13 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( player.inventory_mode == INVENTORY_MODE_SPELL )
 			{
-				if ( player.inventoryUI.spellPanel.isInteractable )
+				if ( player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly )
 				{
 					if ( !checkDestinationOnly )
 					{
 						activateModule(MODULE_SPELLS);
 						warpControllerToModule(false);
-						inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 					}
 					return MODULE_SPELLS;
@@ -1020,37 +1364,57 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_CHARACTERSHEET);
-					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
 					{
 						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
 					}
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_CHARACTERSHEET;
 			}
 		}
-		else if ( activeModule == MODULE_CHARACTERSHEET && player.characterSheet.isInteractable )
+		else if ( activeModule == MODULE_CHARACTERSHEET 
+			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( player.inventory_mode == INVENTORY_MODE_SPELL && player.inventoryUI.spellPanel.isInteractable )
+			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			{
+				// no action here
+				if ( !checkDestinationOnly )
+				{
+					if ( player.characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED
+						|| !player.characterSheet.isSheetElementAllowedToNavigateTo(player.characterSheet.selectedElement) )
+					{
+						player.characterSheet.selectElement(Player::CharacterSheet_t::SHEET_OPEN_MAP, false, false);
+					}
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHARACTERSHEET;
+			}
+			else if ( player.inventory_mode == INVENTORY_MODE_SPELL 
+				&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_SPELLS);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_SPELLS;
 			}
-			else if ( player.inventory_mode == INVENTORY_MODE_ITEM && player.inventoryUI.isInteractable )
+			else if ( player.inventory_mode == INVENTORY_MODE_ITEM 
+				&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 			{
 				if ( !checkDestinationOnly )
 				{
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
-					inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 				}
 				return MODULE_INVENTORY;
@@ -1059,7 +1423,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 
 		if ( !checkDestinationOnly )
 		{
-			inputs.controllerClearRawInput(player.playernum, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+			input.consumeBinaryToggle("UINavRightBumper");
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 	}
@@ -1082,19 +1446,12 @@ bool Player::GUI_t::handleInventoryMovement()
 		return false;
 	}
 
-	//if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !hotbarGamepadControlEnabled(player) )
-	//{
-	//	players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-	//}
-
-	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") 
-		/*|| Input::inputs[player].analogToggle("InventoryMoveLeftAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
 			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
-
 			hotbar_t.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
 			auto slotFrame = hotbar_t.getHotbarSlotFrame(hotbar_t.current_hotbar);
 			if ( slotFrame && slotFrame->isDisabled() )
@@ -1120,13 +1477,11 @@ bool Player::GUI_t::handleInventoryMovement()
 				-1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveLeftAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
-		/*|| Input::inputs[player].analogToggle("InventoryMoveRightAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1157,13 +1512,11 @@ bool Player::GUI_t::handleInventoryMovement()
 				1, 0);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveRightAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
-		/*|| Input::inputs[player].analogToggle("InventoryMoveUpAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1247,13 +1600,11 @@ bool Player::GUI_t::handleInventoryMovement()
 			//Will handle warping to hotbar.
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveUpAnalog");
 
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
-		/*|| Input::inputs[player].analogToggle("InventoryMoveDownAnalog")*/ )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
@@ -1336,8 +1687,6 @@ bool Player::GUI_t::handleInventoryMovement()
 				0, 1);
 		}
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
-		//Input::inputs[player].consumeAnalogToggle("InventoryMoveDownAnalog");
-
 		dpad_moved = true;
 	}
 
@@ -3531,9 +3880,10 @@ void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 {
 	if ( bPlayerUsingKeyboardControl(player) 
-		&& (!getVirtualMouse(player)->lastMovementFromController 
-		|| (players[player]->shootmode && !gamePaused && !intro)
-		|| gamePaused
+		&& 
+		(!getVirtualMouse(player)->lastMovementFromController 
+			|| (players[player]->shootmode && !gamePaused && !intro)
+			|| gamePaused
 			) 
 		)
 	{

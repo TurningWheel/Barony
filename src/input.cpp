@@ -98,6 +98,10 @@ void Input::defaultBindings() {
 
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("InventoryTooltipPromptAppraise", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Expand Inventory Tooltip", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftBumper", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavRightBumper", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftTrigger", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavRightTrigger", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str()));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
