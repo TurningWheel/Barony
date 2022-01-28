@@ -4095,6 +4095,7 @@ bind_failed:
 		card->setBorder(0);
 		card->setOwner(index);
 		card->setClickable(true);
+		card->setHideSelectors(true);
 		card->setHideGlyphs(true);
 
 		return card;
@@ -5816,6 +5817,7 @@ bind_failed:
 		invite->setColor(0);
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
+		invite->setHideSelectors(true);
 		invite->setHideGlyphs(true);
 		invite->setWidgetBack("back_button");
 		invite->addWidgetAction("MenuStart", "invite_button");

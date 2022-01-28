@@ -396,8 +396,7 @@ void Widget::drawPost(const SDL_Rect size,
 
 	// button prompts
 #ifndef EDITOR
-    if ((inputs.hasController(owner) && !hideGlyphs) ||
-        (!inputs.hasController(owner) && !hideKeyboardGlyphs)) {
+    if (!hideGlyphs && (inputs.hasController(owner) || !hideKeyboardGlyphs)) {
         Input& input = Input::inputs[owner];
         int x = size.x + size.w + buttonsOffset.x;
         int y = size.y + size.h + buttonsOffset.y;
