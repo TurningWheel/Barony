@@ -2905,6 +2905,13 @@ void clientHandlePacket()
 					case 329:
 					case 332:
 					case 333:
+					case 229:
+					case 230:
+					case 231:
+					case 232:
+					case 233:
+					case 234:
+					case 235:
 					case 291:
 					case 292:
 					case 293:
@@ -2917,6 +2924,13 @@ void clientHandlePacket()
 					case 276:
 					case 277:
 					case 278:
+					case 502:
+					case 503:
+					case 504:
+					case 505:
+					case 506:
+					case 507:
+					case 508:
 						// return early, don't play monster noises from players.
 						return;
 					default:

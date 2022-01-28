@@ -7,6 +7,8 @@
 #include "../ui/Frame.hpp"
 
 namespace MainMenu {
+    extern int pause_menu_owner;
+
 	// Here be new menu options:
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs

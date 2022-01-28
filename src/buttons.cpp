@@ -439,6 +439,7 @@ void buttonNewConfirm(button_t* my)
 	int x, y, z, c;
 	clearUndos();
 	free(map.tiles);
+	free(map.vismap);
 	list_FreeAll(map.entities);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
@@ -524,6 +525,7 @@ void buttonNewConfirm(button_t* my)
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -557,12 +559,9 @@ void buttonNewConfirm(button_t* my)
 		free(lightmapSmoothed);
 	}
 	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for (c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 	strcpy(message, "                             Created a new map.");
 	filename[0] = 0;
 	oldfilename[0] = 0;
@@ -1342,6 +1341,7 @@ void buttonAttributesConfirm(button_t* my)
 
 	// allocate memory for a new map
 	free(map.tiles);
+	free(map.vismap);
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -1451,6 +1451,7 @@ void buttonAttributesConfirm(button_t* my)
 	}
 
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
 	if ( lightmap != NULL )
@@ -1462,12 +1463,9 @@ void buttonAttributesConfirm(button_t* my)
 		free(lightmapSmoothed);
 	}
 	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for ( c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 
 	// transfer data from the new map to the old map and fill extra space with empty data
 	for ( z = 0; z < MAPLAYERS; z++ )

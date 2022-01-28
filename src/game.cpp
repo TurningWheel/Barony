@@ -234,6 +234,7 @@ bool gameloopFreezeEntities = false;
 Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
+bool arachnophobia_filter = false;
 
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 
@@ -3414,14 +3415,19 @@ void handleEvents(void)
 						{
 							if ( controller.isActive() && controller.getID() == id )
 							{
+							    int player = Input::waitingToBindControllerForPlayer;
 								inputs.removeControllerWithDeviceID(id); // clear any other player using this
-								inputs.setControllerID(Input::waitingToBindControllerForPlayer, id);
-								printlog("(Device %d added to player %d", id, Input::waitingToBindControllerForPlayer);
+								inputs.setControllerID(player, id);
+								inputs.getVirtualMouse(player)->draw_cursor = false;
+								inputs.getVirtualMouse(player)->lastMovementFromController = true;
+								printlog("(Device %d added to player %d", id, player);
 								Input::waitingToBindControllerForPlayer = -1;
 								for (int c = 0; c < 4; ++c) {
 								    auto& input = Input::inputs[c];
 									input.refresh();
 								}
+								auto& input = Input::inputs[player];
+								input.consumeBinary("MenuConfirm");
 								break;
 							}
 						}
@@ -3891,6 +3897,14 @@ void pauseGame(int mode, int ignoreplayer)
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
 		gamePaused = true;
+		for (int c = 0; c < 4; ++c)
+		{
+		    auto& input = Input::inputs[c];
+			if (input.binary("Pause Game") || (inputs.bPlayerUsingKeyboardControl(c) && keystatus[SDL_SCANCODE_ESCAPE] && !input.isDisabled())) {
+			    MainMenu::pause_menu_owner = c;
+			    break;
+			}
+		}
 		if ( SDL_GetRelativeMouseMode() )
 		{
 			SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -4360,15 +4374,6 @@ void ingameHud()
 				saveCommand(command_str);
 			}
 			chosen_command = NULL;
-		}
-		ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX(),
-			players[commandPlayer]->messageZone.getMessageZoneStartY(), ">%s", command_str);
-		if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
-		{
-			int x;
-			getSizeOfText(ttf16, command_str, &x, NULL);
-			ttfPrintTextFormatted(ttf16, players[commandPlayer]->messageZone.getMessageZoneStartX() + x + TTF16_WIDTH,
-				players[commandPlayer]->messageZone.getMessageZoneStartY(), "_");
 		}
 	}
 	else
@@ -5061,6 +5066,7 @@ int main(int argc, char** argv)
 
 		// initialize map
 		map.tiles = nullptr;
+		map.vismap = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
 		map.entities->first = nullptr;
 		map.entities->last = nullptr;
@@ -5428,6 +5434,7 @@ int main(int argc, char** argv)
 							menucam.winw = xres;
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							occlusionCulling(map, menucam);
 							glDrawWorld(&menucam, REALCOLORS);
 							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
@@ -5545,13 +5552,13 @@ int main(int argc, char** argv)
 				}
 				if ( doPause )
 				{
-					if ( !MainMenu::main_menu_frame || !gamePaused )
+					if ( !gamePaused )
 					{
 						pauseGame(0, MAXPLAYERS);
 					}
 					else 
 					{
-						if ( gamePaused && MainMenu::main_menu_frame )
+						if ( MainMenu::main_menu_frame )
 						{
 							int dimmers = 0;
 							for ( auto frame : MainMenu::main_menu_frame->getFrames() )
@@ -5669,6 +5676,9 @@ int main(int argc, char** argv)
 								}
 							}
 
+							// do occlusion culling from the perspective of this camera
+							occlusionCulling(map, camera);
+
 							if ( players[c] && players[c]->entity )
 							{
 								if ( players[c]->entity->isBlind() )
@@ -5735,7 +5745,7 @@ int main(int argc, char** argv)
 										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 									}
 								}
-								raycast(&camera, minimap);
+								raycast(&camera, minimap); // update minimap
 								glDrawWorld(&camera, REALCOLORS);
 
 								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -5761,6 +5771,7 @@ int main(int argc, char** argv)
 							}
 							else
 							{
+							    // player is dead, spectate
 								glDrawWorld(&camera, REALCOLORS);
 							}
 
@@ -5916,7 +5927,7 @@ int main(int argc, char** argv)
 			// fps counter
 			if ( showfps )
 			{
-				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
+			    printTextFormatted(font16x16_bmp, 8, 8, "fps = %3.1f", fps);
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();

@@ -86,6 +86,7 @@ extern bool loadingmap, loadingconfig;
 extern int startfloor;
 extern bool skipintro;
 extern Uint32 uniqueGameKey;
+extern bool arachnophobia_filter;
 
 // definitions
 extern bool showfps;

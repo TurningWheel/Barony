@@ -297,9 +297,11 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_SELF_POLYMORPH:
 			new_spell = copySpell(&spell_polymorph);
 			break;
-		case SPELL_9:
-		case SPELL_10:
-			new_spell = copySpell(&spell_weakness);
+		case SPELL_CRAB_FORM:
+		    new_spell = copySpell(&spell_spiderForm);
+		    break;
+		case SPELL_CRAB_WEB:
+			new_spell = copySpell(&spell_sprayWeb);
 			break;
 		default:
 			return false;
@@ -806,9 +808,11 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_SELF_POLYMORPH:
 			spell = &spell_polymorph;
 			break;
-		case SPELL_9:
-		case SPELL_10:
-			spell = &spell_weakness;
+		case SPELL_CRAB_FORM:
+		    spell = &spell_spiderForm;
+		    break;
+		case SPELL_CRAB_WEB:
+			spell = &spell_sprayWeb;
 			break;
 		default:
 			break;
@@ -978,10 +982,10 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_SELF_POLYMORPH:
 			itemType = SPELLBOOK_SELF_POLYMORPH;
 			break;
-		case SPELL_9:
+		case SPELL_CRAB_FORM:
 			itemType = SPELLBOOK_9;
 			break;
-		case SPELL_10:
+		case SPELL_CRAB_WEB:
 			itemType = SPELLBOOK_10;
 			break;
 		default:
@@ -1097,10 +1101,10 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_dash.ID;
 		case SPELLBOOK_SELF_POLYMORPH:
 			return spell_polymorph.ID;
-		case SPELL_9:
-			return spell_weakness.ID;
-		case SPELL_10:
-			return spell_weakness.ID;
+		case SPELLBOOK_9:
+			return spell_spiderForm.ID;
+		case SPELLBOOK_10:
+			return spell_sprayWeb.ID;
 		default:
 			return SPELL_NONE;
 	}

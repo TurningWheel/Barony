@@ -78,16 +78,21 @@ void actSummonTrap(Entity* my)
 				}
 				else
 				{
-					// pick a completely random monster (barring some exceptions).
-					SUMMONTRAP_MONSTER = rand() % NUMMONSTERS;
-					while ( SUMMONTRAP_MONSTER == LICH || SUMMONTRAP_MONSTER == SHOPKEEPER || SUMMONTRAP_MONSTER == DEVIL
-						|| SUMMONTRAP_MONSTER == MIMIC || SUMMONTRAP_MONSTER == BUGBEAR || SUMMONTRAP_MONSTER == OCTOPUS
-						|| SUMMONTRAP_MONSTER == MINOTAUR || SUMMONTRAP_MONSTER == LICH_FIRE || SUMMONTRAP_MONSTER == LICH_ICE
-						|| SUMMONTRAP_MONSTER == NOTHING || SUMMONTRAP_MONSTER == SENTRYBOT || SUMMONTRAP_MONSTER == SPELLBOT
-						|| SUMMONTRAP_MONSTER == GYROBOT || SUMMONTRAP_MONSTER == DUMMYBOT )
-					{
-						SUMMONTRAP_MONSTER = rand() % NUMMONSTERS;
-					}
+					// pick a completely random monster (barring some exceptions)
+	                constexpr Monster types_to_skip[] = {
+	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, OCTOPUS,
+	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
+	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
+	                };
+	                constexpr int num_to_skip = sizeof(types_to_skip) / sizeof(types_to_skip[0]);
+	                constexpr int num_monsters_to_pick = NUMMONSTERS - num_to_skip;
+	                int monsterIndex = rand() % num_monsters_to_pick;
+	                for (int c = 0; c < num_to_skip; ++c) {
+                        if (monsterIndex >= (int)types_to_skip[c]) {
+                            ++monsterIndex;
+                        }
+	                }
+	                SUMMONTRAP_MONSTER = monsterIndex;
 				}
 
 				int count = 0;

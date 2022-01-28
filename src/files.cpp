@@ -810,9 +810,15 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			list_FreeAll(map.worldUI);
 		}
 	}
-	if ( destmap->tiles != NULL )
+	if ( destmap->tiles != nullptr )
 	{
 		free(destmap->tiles);
+		destmap->tiles = nullptr;
+	}
+	if ( destmap->vismap != nullptr )
+	{
+		free(destmap->vismap);
+		destmap->vismap = nullptr;
 	}
 	fp->read(destmap->name, sizeof(char), 32); // map name
 	fp->read(destmap->author, sizeof(char), 32); // map author
@@ -851,6 +857,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		fp->read(destmap->flags, sizeof(Sint32), MAPFLAGS); // map flags
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
+	destmap->vismap = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
 	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);
 	fp->read(&numentities, sizeof(Uint32), 1); // number of entities on the map
 
@@ -1235,20 +1242,20 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 
 		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
-		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * destmap->width * destmap->height);
+		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (destmap->width + 2) * (destmap->height + 2));
 		if ( strncmp(map.name, "Hell", 4) )
 		{
-			for (c = 0; c < destmap->width * destmap->height; c++ )
-			{
-				lightmap[c] = 0;
-				lightmapSmoothed[c] = 0;
-			}
+	        memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	        memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 		}
 		else
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
+			}
+			for (c = 0; c < (destmap->width + 1) * (destmap->height + 1); c++ )
+			{
 				lightmapSmoothed[c] = 32;
 			}
 		}

@@ -3928,8 +3928,8 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 			snprintf(effectTextBuffer, 255, language[3886]);
 			*spellInfoLines = 2;
 			break;
-		case SPELL_9:
-		case SPELL_10:
+		case SPELL_CRAB_FORM:
+		case SPELL_CRAB_WEB:
 		default:
 			break;
 	}

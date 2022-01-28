@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "Font.hpp"
 #include "Widget.hpp"
 
@@ -123,6 +124,12 @@ public:
 	//! destroy ui engine
 	static void guiDestroy();
 	static void fboDestroy();
+
+	//! stuff to do before drawing anything
+	static void predraw();
+
+	//! stuff to do after drawing everything
+	static void postdraw();
 
 	//! draws the frame and all of its subelements
 	void draw() const;
@@ -297,6 +304,7 @@ public:
 	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
 	justify_t						getJustify() const { return justify; }
 	const bool						isClickable() const { return clickable; }
+	const bool                      isDontTickChildren() const { return dontTickChildren; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -317,6 +325,7 @@ public:
 	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
 	void	setListJustify(justify_t _justify) { justify = _justify; }
 	void	setClickable(const bool _clickable) { clickable = _clickable; }
+	void    setDontTickChildren(const bool b) { dontTickChildren = b; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -347,6 +356,7 @@ private:
 	bool clickable = false;								//!< if true, you can activate the frame by clicking on it (used for lists)
 	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
 	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
+	bool dontTickChildren = false;                      //!< enable to prevent children from running their tick functions
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -387,3 +397,4 @@ private:
 // root frame object
 extern Frame* gui;
 void createTestUI();
+extern framebuffer gui_fb, gui4x_fb;
