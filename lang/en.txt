@@ -166,7 +166,7 @@ Difficulty: Extreme#
 99 skeleton#
 100 scorpion#
 101 imp#
-102 bugbear#
+102 crab#
 103 gnome#
 104 demon#
 105 succubus#
@@ -191,7 +191,7 @@ Difficulty: Extreme#
 120 skeletons#
 121 scorpions#
 122 imps#
-123 bugbears#
+123 crabs#
 124 gnomes#
 125 demons#
 126 succubi#
@@ -216,7 +216,7 @@ Difficulty: Extreme#
 141 hits#
 142 stings#
 143 scratches#
-144 hits#
+144 pinches#
 145 strikes#
 146 mauls you#
 147 slaps you#
@@ -886,7 +886,7 @@ thou makest use of them.#
 "Rainbow Dash is best pony."
 "It's true!"#
 545 "Did you know?"
-"Spider poison wears off in ten seconds."
+"Spider venom fades in ten seconds."
 "It's true!"#
 546 "Did you know?"
 "You can find rings in sink drains."
@@ -1100,7 +1100,7 @@ You should call a plumber!#
 684 The scorpion has stung you!#
 685 The venom is paralyzing!#
 686 The spider injects venom into its bite!#
-687 The poison seeps through your veins!#
+687 The venom seeps through your veins!#
 688 Hey! That succubus stole your %s!#
 689 You critically hit the %s!#
 690 You hit the %s!#
@@ -3030,7 +3030,7 @@ been designed to contain them.#
 2329 spellbook#
 2330 spellbook of rat form#
 2331 spellbook#
-2332 spellbook of spider form#
+2332 spellbook of arthropod form#
 2333 spellbook#
 2334 spellbook of troll form#
 2335 spellbook#
@@ -4704,7 +4704,7 @@ Thank you for your support!#
 
 3407 Revert Form#
 3408 Rat Form#
-3409 Spider Form#
+3409 Arthropod Form#
 3410 Troll Form#
 3411 Imp Form#
 3412 Spray Web#
@@ -5670,7 +5670,7 @@ The caster's current stats are imbued into the demon#
  and magical scrap for crafting#
 3847 Shapeshift temporarily into a rat
 Grants bonus DEX, INT and PER while active#
-3848 Shapeshift temporarily into a spider
+3848 Shapeshift temporarily into an arthropod
 Grants bonus STR, CON and PER while active#
 3849 Shapeshift temporarily into a troll
 Grants bonus STR and CON, lowers DEX while active#
@@ -5689,7 +5689,7 @@ Access to spells [Detect Food] and [Speed]#
 - DEX
 Higher chance to gain STR/CON on level up
 Access to spells [Power Strike], [Fear] and [Troll's Blood]#
-3856 Spider Form
+3856 Arthropod Form
 + PER/STR/CON
 Higher chance to gain PER/CON on level up
 Access to spells [Spray Web] and [Poison]#
@@ -6040,6 +6040,9 @@ Cast#
 4086 View item details#
 4087 Hide item details#
 4088 You found %d gold pieces in the chest!#
+4089 The crab's pinching claws are poisonous!#
+4090 gets pinched to pieces by the clawing crab.#
+
 # Nav Prompts
 4092 Move cursor#
 4093 View Spells#

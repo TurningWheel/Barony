@@ -1466,7 +1466,7 @@ namespace ConsoleCommands {
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+				if ( strstr(monstertypename[i], name) )
 				{
 					creature = i;
 					found = true;
@@ -1509,7 +1509,7 @@ namespace ConsoleCommands {
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+				if ( strstr(monstertypename[i], name) )
 				{
 					creature = i;
 					found = true;
@@ -1524,7 +1524,7 @@ namespace ConsoleCommands {
 					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 					if ( monster )
 					{
-						messagePlayer(clientnum, MESSAGE_MISC, language[302], getMonsterLocalizedName(static_cast<Monster>(statEntry->type)).c_str());
+						messagePlayer(clientnum, MESSAGE_MISC, language[302], monstertypename[static_cast<Monster>(statEntry->type)]);
 						if ( monster->getStats() )
 						{
 							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
@@ -2978,7 +2978,7 @@ namespace ConsoleCommands {
 
 		for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
 		{
-			if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+			if ( strstr(monstertypename[i], name) )
 			{
 				creature = i;
 				break;

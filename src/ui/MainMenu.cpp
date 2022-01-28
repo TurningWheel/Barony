@@ -6017,11 +6017,11 @@ bind_failed:
 		auto button = dimmer->addButton("button");
 		button->setHideSelectors(true);
 		button->setBorder(0);
-		button->setColor(makeColor(0, 0, 0, 63));
-		button->setHighlightColor(makeColor(0, 0, 0, 63));
+		button->setColor(makeColor(0, 0, 0, 127));
+		button->setHighlightColor(makeColor(0, 0, 0, 127));
 		button->setTextColor(makeColor(255, 255, 255, 255));
 		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		button->setSize(SDL_Rect{0, Frame::virtualScreenY / 4, Frame::virtualScreenX, Frame::virtualScreenY / 2});
+		button->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		button->setJustify(Field::justify_t::CENTER);
 		button->setFont(bigfont_outline);
 		button->setText(text);
@@ -7795,6 +7795,12 @@ bind_failed:
 			createMainMenu(ingame);
 			assert(main_menu_frame);
 		}
+
+        // just always enable DLC in debug. saves headaches
+#ifndef NDEBUG
+		enabledDLCPack1 = true;
+		enabledDLCPack2 = true;
+#endif
 
 #ifdef STEAMWORKS
 		if ( SteamApps()->BIsDlcInstalled(1010820) )

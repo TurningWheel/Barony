@@ -27,6 +27,7 @@
 #include "scores.hpp"
 #include "mod_tools.hpp"
 #include "menu.hpp"
+#include "ui/MainMenu.hpp"
 
 int startfloor = 0;
 
@@ -3542,9 +3543,18 @@ void assignActions(map_t* map)
 						break;
 					case SPIDER:
 						entity->z = 4.5;
-						entity->focalx = limbs[SPIDER][0][0]; // -3
-						entity->focaly = limbs[SPIDER][0][1]; // 0
-						entity->focalz = limbs[SPIDER][0][2]; // -1
+						if (MainMenu::arachnophobia_filter)
+						{
+						    entity->focalx = limbs[CRAB][0][0];
+						    entity->focaly = limbs[CRAB][0][1];
+						    entity->focalz = limbs[CRAB][0][2];
+						}
+						else
+						{
+						    entity->focalx = limbs[SPIDER][0][0]; // -3
+						    entity->focaly = limbs[SPIDER][0][1]; // 0
+						    entity->focalz = limbs[SPIDER][0][2]; // -1
+						}
 						break;
 					case LICH:
 						entity->focalx = limbs[LICH][0][0]; // -0.75

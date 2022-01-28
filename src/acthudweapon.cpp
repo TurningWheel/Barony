@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "ui/MainMenu.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -217,7 +218,7 @@ void actHudArm(Entity* my)
 				my->sprite = 855;
 				break;
 			case SPIDER:
-				my->sprite = 853;
+				my->sprite = MainMenu::arachnophobia_filter ? 1005 : 853;
 				break;
 			case CREATURE_IMP:
 				my->sprite = 857;
@@ -3673,7 +3674,7 @@ void actHudShield(Entity* my)
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
 	{
-		my->sprite = 854;
+		my->sprite = MainMenu::arachnophobia_filter ? 1006 : 854;
 		my->x = hudarm->x;
 		my->y = -hudarm->y;
 		my->z = hudarm->z;
@@ -3788,7 +3789,8 @@ void actHudAdditional(Entity* my)
 
 	if ( !players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)
 		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->flags[INVISIBLE]
-		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 854 )
+		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 854
+		|| players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(2)->sprite == 1006 )
 	{
 		// if shield invisible or spider arm we're invis.
 		my->flags[INVISIBLE] = true;

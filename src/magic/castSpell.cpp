@@ -22,6 +22,7 @@
 #include "magic.hpp"
 #include "../scores.hpp"
 #include "../colors.hpp"
+#include "../ui/MainMenu.hpp"
 
 bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
 
@@ -1895,7 +1896,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
-				sprite = 861;
+				sprite = MainMenu::arachnophobia_filter ? 996 : 861;
 				angle = PI / 16;
 				baseSpeed = 3;
 				baseSideSpeed = 2;

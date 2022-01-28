@@ -33,6 +33,7 @@ See LICENSE for details.
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
+#include "ui/MainMenu.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -652,7 +653,11 @@ void Entity::killedByMonsterObituary(Entity* victim)
 				victim->setObituary(language[1515]);
 				break;
 			case SPIDER:
-				victim->setObituary(language[1516]);
+			    if (MainMenu::arachnophobia_filter) {
+				    victim->setObituary(language[4090]);
+			    } else {
+				    victim->setObituary(language[1516]);
+			    }
 				break;
 			case GHOUL:
 				victim->setObituary(language[1517]);
@@ -8462,7 +8467,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									playerPoisonedTarget = true;
 									hitstats->EFFECTS[EFF_POISONED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+									if (MainMenu::arachnophobia_filter) {
+									    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+									} else {
+									    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+									}
 									messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
 									serverUpdateEffects(playerhit);
 									for ( int tmp = 0; tmp < 3; ++tmp )
@@ -8585,7 +8594,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										hitstats->EFFECTS[EFF_POISONED] = true;
 										hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
-										messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+										if (MainMenu::arachnophobia_filter) {
+										    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+										} else {
+										    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+										}
 										messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
 										serverUpdateEffects(playerhit);
 										statusInflicted = true;

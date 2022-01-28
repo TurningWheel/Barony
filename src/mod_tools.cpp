@@ -17,6 +17,7 @@ See LICENSE for details.
 #include "scores.hpp"
 #include "ui/Field.hpp"
 #include "ui/Image.hpp"
+#include "ui/MainMenu.hpp"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -1758,7 +1759,25 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 		spell_t* spell = getSpellFromItem(player, &item);
 		if ( spell )
 		{
-			spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
+	        if (MainMenu::arachnophobia_filter)
+	        {
+	            if (spell->ID == SPELL_SPIDER_FORM)
+	            {
+                    spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_FORM);
+	            }
+	            else if (spell->ID == SPELL_SPRAY_WEB)
+	            {
+                    spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_WEB);
+	            }
+	            else
+	            {
+                    spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
+	            }
+	        }
+	        else
+	        {
+	            spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
+	        }
 		}
 		else
 		{

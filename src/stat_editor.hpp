@@ -36,7 +36,7 @@ typedef enum
 	SKELETON,
 	SCORPION,
 	CREATURE_IMP, //Because Apple so unkindly is already using the IMP keyword.
-	BUGBEAR,
+	CRAB,
 	GNOME,
 	DEMON,
 	SUCCUBUS,

@@ -26,6 +26,7 @@
 #include "../ui/Image.hpp"
 #include "../ui/Field.hpp"
 #include "../ui/Text.hpp"
+#include "../ui/MainMenu.hpp"
 #include "../mod_tools.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
@@ -1734,7 +1735,9 @@ std::string getItemSpritePath(const int player, Item& item)
 	}
 	else
 	{
-		node_t* imagePathsNode = list_Node(&items[item.type].images, item.appearance % items[item.type].variations);
+	    node_t* imagePathsNode = nullptr;
+	    Uint32 index = item.appearance % items[item.type].variations;
+		imagePathsNode = list_Node(&items[item.type].images, index);
 		if ( imagePathsNode )
 		{
 			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);

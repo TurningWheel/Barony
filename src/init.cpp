@@ -944,7 +944,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
 		if ( useModelCache )
 		{
-			model_cache = openDataFile("models.cache", "rb");
+            std::string cache_path = std::string(outputdir) + "models.cache";
+			model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
 				char polymodelsVersionStr[7] = "v0.0.0";
@@ -1904,7 +1905,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
+    std::string cache_path = std::string(outputdir) + "models.cache";
+	if (useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")))
 	{
 		char modelCacheHeader[32] = "BARONY";
 		strcat(modelCacheHeader, VERSION);
