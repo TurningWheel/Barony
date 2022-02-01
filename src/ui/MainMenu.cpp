@@ -54,7 +54,7 @@ namespace MainMenu {
 		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
 		{"Cycle NPCs", "E", "DpadX-", emptyBinding},
 		{"Minimap Scale", "=", emptyBinding, emptyBinding},
-		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
+		{"Toggle Minimap", "`", "DpadY+", emptyBinding},
 		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
 		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
 		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
