@@ -2566,7 +2566,7 @@ static Frame* createMinimap(int player) {
         auto player = widget.getOwner();
         auto& minimap = players[player]->minimap;
         auto& input = Input::inputs[player];
-        if (input.consumeBinaryToggle("Minimap Scale")) {
+        if (!gamePaused && !command && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
             if (minimap.real_scale > 75) {
                 minimap.real_scale = 75;
             }

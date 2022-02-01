@@ -4021,7 +4021,7 @@ void ingameHud()
 
 	    // toggle minimap
 		// player not needed to be alive
-        if ( input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
+        if ( players[player]->shootmode && !command && input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
             openMinimap(player);
         }
 
