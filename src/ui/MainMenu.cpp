@@ -707,7 +707,6 @@ namespace MainMenu {
 		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setFont(smallfont_outline);
 		okay->setText(okay_text);
-		okay->setWidgetBack("okay");
 		okay->setCallback(okay_callback);
 		okay->select();
 	}
