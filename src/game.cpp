@@ -5242,7 +5242,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
+							MainMenu::beginFade(MainMenu::FadeDestination::TitleScreen);
 						}
 					}
 
@@ -5292,7 +5292,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
+							MainMenu::beginFade(MainMenu::FadeDestination::TitleScreen);
 						}
 					}
 				}

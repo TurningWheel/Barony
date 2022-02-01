@@ -320,6 +320,8 @@ namespace MainMenu {
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
 	static void createWaitingStone(int index);
+	static void createReadyStone(int index);
+	static void createCountdownTimer();
 	static void createLobby(LobbyType);
 	static void createLobbyBrowser(Button&);
 
@@ -3834,7 +3836,7 @@ bind_failed:
 			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Copyright \u00A9 2021, all rights reserved\n"
+			u8"Copyright \u00A9 2022, all rights reserved\n"
 #ifdef USE_FMOD
 			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
 #endif
@@ -5295,6 +5297,11 @@ bind_failed:
 
 		auto card = initCharacterCard(index, 346);
 
+		auto countdown = lobby->findFrame("countdown");
+		if (countdown) {
+		    countdown->removeSelf();
+		}
+
 		if (currentLobbyType == LobbyType::LobbyLocal) {
 			switch (index) {
 			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
@@ -5394,7 +5401,6 @@ bind_failed:
 				});
 			break;
 		}
-		name_field->select();
 
 		auto randomize_name = card->addButton("randomize_name");
 		randomize_name->setColor(makeColor(255, 255, 255, 255));
@@ -5689,6 +5695,29 @@ bind_failed:
 		}
 		(*class_button->getTickCallback())(*class_button);
 
+		static auto ready_button_fn = [](Button& button, int index) {
+			soundActivate();
+			createReadyStone(index);
+
+			bool allReady = true;
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			for (int c = 0; c < 4; ++c) {
+				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+				auto backdrop = card->findImage("backdrop"); assert(backdrop);
+				if (backdrop->path == "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+					playersInLobby[c] = false;
+				} else if (backdrop->path == "images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
+					playersInLobby[c] = true;
+				} else {
+				    allReady = false;
+				}
+			}
+
+			if (allReady) {
+			    createCountdownTimer();
+			}
+		};
+
 		auto ready_button = card->addButton("ready");
 		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
 		ready_button->setColor(makeColor(255, 255, 255, 255));
@@ -5697,25 +5726,15 @@ bind_failed:
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-		ready_button->addWidgetAction("MenuStart", "ready");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
-		ready_button->setCallback([](Button& button){
-			soundActivate();
-			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
-			for (int c = 0; c < 4; ++c) {
-				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
-				auto backdrop = card->findImage("backdrop"); assert(backdrop);
-				if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-					playersInLobby[c] = true;
-				} else {
-					playersInLobby[c] = false;
-				}
-			}
-			destroyMainMenu();
-			createDummyMainMenu();
-			beginFade(MainMenu::FadeDestination::GameStart);
-			});
+		switch (index) {
+	    case 0: ready_button->setCallback([](Button& button){ready_button_fn(button, 0);}); break;
+	    case 1: ready_button->setCallback([](Button& button){ready_button_fn(button, 1);}); break;
+	    case 2: ready_button->setCallback([](Button& button){ready_button_fn(button, 2);}); break;
+	    case 3: ready_button->setCallback([](Button& button){ready_button_fn(button, 3);}); break;
+		}
+		ready_button->select();
 	}
 
 	static void createStartButton(int index) {
@@ -5757,7 +5776,7 @@ bind_failed:
 		banner->setHJustify(Field::justify_t::CENTER);
 
 		auto invite = card->addButton("invite_button");
-		invite->setText("Press Start");
+		invite->setText("Press to Start");
 		invite->setHideSelectors(true);
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
@@ -5768,7 +5787,6 @@ bind_failed:
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
 		invite->setWidgetBack("back_button");
-		invite->addWidgetAction("MenuStart", "invite_button");
 		switch (index) {
 		case 0: invite->setCallback([](Button&){createControllerPrompt(0, true, [](){createCharacterCard(0);});}); break;
 		case 1: invite->setCallback([](Button&){createControllerPrompt(1, true, [](){createCharacterCard(1);});}); break;
@@ -5856,6 +5874,124 @@ bind_failed:
 		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		text->setVJustify(Field::justify_t::TOP);
 		text->setHJustify(Field::justify_t::CENTER);
+	}
+
+	static void createReadyStone(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+		card->setOwner(index);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png",
+			"backdrop"
+		);
+
+		auto banner = card->addField("banner", 64);
+		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto cancel = card->addButton("cancel_button");
+		cancel->setText("Ready!");
+		cancel->setButtonsOffset(SDL_Rect{-12, 0, 0, 0,});
+		cancel->setHideSelectors(true);
+		cancel->setFont(smallfont_outline);
+		cancel->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		cancel->setVJustify(Button::justify_t::TOP);
+		cancel->setHJustify(Button::justify_t::CENTER);
+		cancel->setBorder(0);
+		cancel->setColor(0);
+		cancel->setBorderColor(0);
+		cancel->setHighlightColor(0);
+		cancel->setWidgetBack("cancel_button");
+		switch (index) {
+		case 0: cancel->setCallback([](Button&){createCharacterCard(0);}); break;
+		case 1: cancel->setCallback([](Button&){createCharacterCard(1);}); break;
+		case 2: cancel->setCallback([](Button&){createCharacterCard(2);}); break;
+		case 3: cancel->setCallback([](Button&){createCharacterCard(3);}); break;
+		}
+		cancel->select();
+	}
+
+	static void createCountdownTimer() {
+		static const char* timer_font = "fonts/pixelmix_bold.ttf#64#2";
+		static float countdown_timer;
+
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto frame = lobby->addFrame("countdown");
+		frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		frame->setHollow(true);
+
+		countdown_timer = 3.f;
+		auto countdown = frame->addField("timer", 8);
+		countdown->setHJustify(Field::justify_t::LEFT);
+		countdown->setVJustify(Field::justify_t::TOP);
+		countdown->setFont(timer_font);
+		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 0, 300, 200});
+		countdown->setTickCallback([](Widget& widget){
+		    auto countdown = static_cast<Field*>(&widget);
+			const float inc = 1.f / fpsLimit;
+		    countdown_timer -= inc;
+		    if (countdown_timer <= 0.f) {
+		        destroyMainMenu();
+		        createDummyMainMenu();
+		        beginFade(MainMenu::FadeDestination::GameStart);
+		    } else {
+		        if (countdown_timer < 0.25f) {
+		            countdown->setText("1...");
+		        }
+		        else if (countdown_timer < 0.5f) {
+		            countdown->setText("1..");
+		        }
+		        else if (countdown_timer < 0.75f) {
+		            countdown->setText("1.");
+		        }
+		        else if (countdown_timer < 1.f) {
+		            countdown->setText("1");
+		        }
+		        else if (countdown_timer < 1.25f) {
+		            countdown->setText("2...");
+		        }
+		        else if (countdown_timer < 1.5f) {
+		            countdown->setText("2..");
+		        }
+		        else if (countdown_timer < 1.75f) {
+		            countdown->setText("2.");
+		        }
+		        else if (countdown_timer < 2.f) {
+		            countdown->setText("2");
+		        }
+		        else if (countdown_timer < 2.25f) {
+		            countdown->setText("3...");
+		        }
+		        else if (countdown_timer < 2.5f) {
+		            countdown->setText("3..");
+		        }
+		        else if (countdown_timer < 2.75f) {
+		            countdown->setText("3.");
+		        }
+		        else {
+		            countdown->setText("3");
+		        }
+		    }
+		    });
 	}
 
 	static void createLobby(LobbyType type) {
@@ -5981,6 +6117,10 @@ bind_failed:
 		dimmer->setActualSize(dimmer->getSize());
 		dimmer->setColor(0);
 		dimmer->setBorder(0);
+
+        if (inputs.hasController(index)) {
+            inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+        }
 
         static void (*end_func)();
 		static bool clicked;
@@ -6720,12 +6860,13 @@ bind_failed:
 		                }
 		                });
 		            savegame_book->setCallback([](Button& button){
-		                if (savegame_selected != &button) {
+		                if (savegame_selected != &button && inputs.getVirtualMouse(clientnum)->draw_cursor) {
 		                    soundCheckmark();
-		                    savegame_selected = &button;
+	                        savegame_selected = &button;
 		                    return;
 		                } else {
 		                    soundActivate();
+	                        savegame_selected = &button;
 		                    int save_index = -1;
 	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
 	                        size_t name_len = strlen(name);
@@ -6749,7 +6890,12 @@ bind_failed:
                         auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
                         savegame_book->setWidgetRight(str.c_str());
 		            }
-		            savegame_book->setWidgetBack("back");
+		            savegame_book->setWidgetBack("back_button");
+		            savegame_book->addWidgetAction("MenuAlt1", "delete");
+		            savegame_book->addWidgetAction("MenuConfirm", "enter");
+		            savegame_book->addWidgetAction("MenuPageLeft", "singleplayer");
+		            savegame_book->addWidgetAction("MenuPageRight", "multiplayer");
+		            savegame_book->setWidgetSearchParent("continue_window");
 
 		            first_savegame = first_savegame ? first_savegame : savegame_book;
 
@@ -6890,9 +7036,9 @@ bind_failed:
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png" :
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
 		singleplayer->setGlyphPosition(Button::glyph_position_t::CENTERED_LEFT);
-		singleplayer->setWidgetRight("multiplayer");
-		singleplayer->setWidgetBack("back");
-		singleplayer->addWidgetAction("MenuAlt2", "delete");
+		singleplayer->setWidgetSearchParent("continue_window");
+		singleplayer->setWidgetBack("back_button");
+		singleplayer->addWidgetAction("MenuAlt1", "delete");
 		singleplayer->addWidgetAction("MenuConfirm", "enter");
 		singleplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		singleplayer->addWidgetAction("MenuPageRight", "multiplayer");
@@ -6911,6 +7057,8 @@ bind_failed:
 		    if (first_savegame) {
 		        first_savegame->select();
 		        savegame_selected = first_savegame;
+		    } else {
+		        button.select();
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -6938,9 +7086,9 @@ bind_failed:
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png" :
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
 		multiplayer->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
-		multiplayer->setWidgetLeft("singleplayer");
-		multiplayer->setWidgetBack("back");
-		multiplayer->addWidgetAction("MenuAlt2", "delete");
+		multiplayer->setWidgetSearchParent("continue_window");
+		multiplayer->setWidgetBack("back_button");
+		multiplayer->addWidgetAction("MenuAlt1", "delete");
 		multiplayer->addWidgetAction("MenuConfirm", "enter");
 		multiplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		multiplayer->addWidgetAction("MenuPageRight", "multiplayer");
@@ -6959,6 +7107,8 @@ bind_failed:
 		    if (first_savegame) {
 		        first_savegame->select();
 		        savegame_selected = first_savegame;
+		    } else {
+		        button.select();
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -6978,8 +7128,9 @@ bind_failed:
 		delete_button->setColor(makeColor(255, 255, 255, 255));
 		delete_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		delete_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
-		delete_button->setWidgetBack("back");
-		delete_button->addWidgetAction("MenuAlt2", "delete");
+		delete_button->setWidgetSearchParent("continue_window");
+		delete_button->setWidgetBack("back_button");
+		delete_button->addWidgetAction("MenuAlt1", "delete");
 		delete_button->addWidgetAction("MenuConfirm", "enter");
 		delete_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		delete_button->addWidgetAction("MenuPageRight", "multiplayer");
@@ -7031,8 +7182,9 @@ bind_failed:
 		enter_button->setColor(makeColor(255, 255, 255, 255));
 		enter_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		enter_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
-		enter_button->setWidgetBack("back");
-		enter_button->addWidgetAction("MenuAlt2", "delete");
+		enter_button->setWidgetSearchParent("continue_window");
+		enter_button->setWidgetBack("back_button");
+		enter_button->addWidgetAction("MenuAlt1", "delete");
 		enter_button->addWidgetAction("MenuConfirm", "enter");
 		enter_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		enter_button->addWidgetAction("MenuPageRight", "multiplayer");
@@ -7751,7 +7903,16 @@ bind_failed:
 				"Don't know where? Try MainMenu::FadeDestination::RootMainMenu");
 			main_menu_fade_destination = FadeDestination::RootMainMenu;
 		} else {
-			if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
+		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
+		        destroyMainMenu();
+				if (ingame) {
+				    victory = 0;
+				    doEndgame();
+				}
+	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				createTitleScreen();
+		    }
+			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
 				if (ingame) {
 				    victory = 0;
@@ -7760,21 +7921,25 @@ bind_failed:
 	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
 				createMainMenu(false);
 			}
-			if (main_menu_fade_destination == FadeDestination::IntroStoryScreen
-			    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
+			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				destroyMainMenu();
 				createDummyMainMenu();
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
-				bool fadeMusic = main_menu_fade_destination == FadeDestination::IntroStoryScreen;
-				playMusic(sounds[501], false, fadeMusic, false);
+				playMusic(sounds[501], false, true, false);
 			}
-			if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
+			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::TitleScreen);});
+				playMusic(sounds[501], false, false, false);
+			}
+			else if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
 				destroyMainMenu();
 				createDummyMainMenu();
 				createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
 				playMusic(intermissionmusic, false, false, false);
 			}
-			if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
 				destroyMainMenu();
 				multiplayer = SINGLE;
 				numplayers = 0;
@@ -7788,7 +7953,7 @@ bind_failed:
 				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
 				doNewGame(false);
 			}
-			if (main_menu_fade_destination == FadeDestination::GameStart) {
+			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				multiplayer = SINGLE;
 				numplayers = 0;
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
@@ -7811,7 +7976,11 @@ bind_failed:
 
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
-			createMainMenu(ingame);
+		    if (ingame) {
+		        createMainMenu(ingame);
+		    } else {
+			    createTitleScreen();
+			}
 			assert(main_menu_frame);
 		}
 
@@ -7845,6 +8014,76 @@ bind_failed:
         }
 	}
 
+	void createTitleScreen() {
+		main_menu_frame = gui->addFrame("main_menu");
+
+        main_menu_frame->setOwner(0);
+		main_menu_frame->setBorder(0);
+		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
+		main_menu_frame->setColor(0);
+		main_menu_frame->setTickCallback(tickMainMenu);
+
+		auto title_img = Image::get("images/system/title.png");
+		auto title = main_menu_frame->addImage(
+			SDL_Rect{
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth()) / 2,
+				Frame::virtualScreenY / 4,
+				(int)(title_img->getWidth()),
+				(int)(title_img->getHeight())
+			},
+			makeColor(255, 255, 255, 255),
+			title_img->getName(),
+			"title"
+		);
+
+		auto copyright = main_menu_frame->addField("copyright", 64);
+		copyright->setFont(bigfont_outline);
+		copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
+		copyright->setJustify(Field::justify_t::CENTER);
+		copyright->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 512) / 2,
+			Frame::virtualScreenY - 50,
+			512,
+			50
+			});
+		copyright->setColor(0xffffffff);
+
+		auto version = main_menu_frame->addField("version", 32);
+		version->setFont(smallfont_outline);
+		version->setText(VERSION);
+		version->setHJustify(Field::justify_t::RIGHT);
+		version->setVJustify(Field::justify_t::BOTTOM);
+		version->setSize(SDL_Rect{
+			Frame::virtualScreenX - 200,
+			Frame::virtualScreenY - 54,
+			200,
+			50
+			});
+		version->setColor(0xffffffff);
+
+		auto start = main_menu_frame->addButton("start");
+		start->setSize(SDL_Rect{
+		    (Frame::virtualScreenX - 320) / 2,
+		    (Frame::virtualScreenY + 200) / 2,
+		    320,
+		    100,
+		    });
+		start->setBorder(0);
+		start->setColor(makeColor(0, 0, 0, 127));
+		start->setHighlightColor(makeColor(0, 0, 0, 127));
+		start->setFont(bigfont_outline);
+		start->setText("Press to Start\n ");
+		start->setButtonsOffset(SDL_Rect{0, 16, 0, 0});
+		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		start->addWidgetAction("MenuConfirm", "start");
+		start->select();
+		start->setCallback([](Button&){
+		    destroyMainMenu();
+		    createMainMenu(false);
+		    });
+	}
+
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
@@ -7854,6 +8093,11 @@ bind_failed:
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setColor(ingame ? makeColor(0, 0, 0, 63) : 0);
 		main_menu_frame->setTickCallback(tickMainMenu);
+
+        if (!ingame) {
+		    (void)createBackWidget(main_menu_frame,
+		        [](Button&){soundCancel(); destroyMainMenu(); createTitleScreen();});
+		};
 
 		int y = 16;
 
@@ -7960,6 +8204,9 @@ bind_failed:
 			int forward = c + 1 >= num_options ? 0 : c + 1;
 			button->setWidgetDown(options[forward].name);
 			button->setWidgetUp(options[back].name);
+			if (!ingame) {
+			    button->setWidgetBack("back_button");
+			}
 			y += button->getSize().h;
 			y += 4;
 		}
@@ -8005,7 +8252,7 @@ bind_failed:
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
-			copyright->setText(u8"Copyright \u00A9 2021, Turning Wheel LLC");
+			copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
 			copyright->setJustify(Field::justify_t::CENTER);
 			copyright->setSize(SDL_Rect{
 				(Frame::virtualScreenX - 512) / 2,
