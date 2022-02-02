@@ -344,8 +344,8 @@ void CSteamStatistics::OnGlobalStatsReceived(GlobalStatsReceived_t *pCallback, b
 						SteamUserStats()->GetGlobalStat(stat.m_pchStatName, &stat.m_iValue);
 						int32 newValue = (int32)stat.m_iValue + 1;
 						SteamUserStats()->SetStat(stat.m_pchStatName, newValue);
-						int64_t history[1] = { 0 };
-						auto result = SteamUserStats()->GetGlobalStatHistory(stat.m_pchStatName, history, sizeof(int64_t));
+						int64 history[1] = { 0 };
+						auto result = SteamUserStats()->GetGlobalStatHistory(stat.m_pchStatName, history, sizeof(int64));
 						//printlog("%s: %d | %d", stat.m_pchStatName, stat.m_iValue, history[0]);
 						auto storeStatResult = SteamUserStats()->StoreStats();
 					}
