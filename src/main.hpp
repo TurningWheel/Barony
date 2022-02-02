@@ -64,7 +64,12 @@ struct SteamGlobalStat_t
 	int m_ID;
 	ESteamStatTypes m_eStatType;
 	const char *m_pchStatName;
-	int64_t m_iValue;
+
+#ifdef STEAMWORKS
+	int64 m_iValue;
+#else
+	long long m_iValue;
+#endif
 	float m_flValue;
 	float m_flAvgNumerator;
 	float m_flAvgDenominator;
