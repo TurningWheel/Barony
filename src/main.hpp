@@ -59,17 +59,6 @@ struct SteamStat_t
 	float m_flAvgDenominator;
 };
 
-struct SteamGlobalStat_t
-{
-	int m_ID;
-	ESteamStatTypes m_eStatType;
-	const char *m_pchStatName;
-	int64_t m_iValue;
-	float m_flValue;
-	float m_flAvgNumerator;
-	float m_flAvgDenominator;
-};
-
 extern bool spamming;
 extern bool showfirst;
 extern bool logCheckObstacle;
@@ -812,17 +801,39 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 static const int NUM_STEAM_STATISTICS = 49;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
-extern SteamGlobalStat_t g_SteamAPIGlobalStats[1];
 static const int NUM_GLOBAL_STEAM_STATISTICS = 66;
 extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 
 #ifdef STEAMWORKS
  #include <steam/steam_api.h>
  #include "steam.hpp"
+ struct SteamGlobalStat_t
+ {
+	 int m_ID;
+	 ESteamStatTypes m_eStatType;
+	 const char *m_pchStatName;
+	 int64 m_iValue;
+	 float m_flValue;
+	 float m_flAvgNumerator;
+	 float m_flAvgDenominator;
+ };
  extern CSteamLeaderboards* g_SteamLeaderboards;
  extern CSteamWorkshop* g_SteamWorkshop;
  extern CSteamStatistics* g_SteamStatistics;
+#else
+struct SteamGlobalStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+
+	long long m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
 #endif // STEAMWORKS
+extern SteamGlobalStat_t g_SteamAPIGlobalStats[1];
 
 #ifdef USE_EOS
  #include "eos.hpp"
