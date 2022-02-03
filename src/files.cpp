@@ -1254,7 +1254,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			{
 				lightmap[c] = 32;
 			}
-			for (c = 0; c < (destmap->width + 1) * (destmap->height + 1); c++ )
+			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
 				lightmapSmoothed[c] = 32;
 			}
@@ -1340,7 +1340,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 	}
 
-	destmap->filename = mapShortName;
+    size_t size = std::min(mapShortName.size(), sizeof(destmap->filename) - 1);
+    memcpy(destmap->filename, mapShortName.c_str(), size);
+    destmap->filename[size] = '\0';
 
 	return numentities;
 }

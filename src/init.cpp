@@ -71,7 +71,7 @@ bool steam_init = false;
 
 int initApp(char const * const title, int fullscreen)
 {
-	char name[128];
+	char name[128] = { '\0' };
 	File* fp;
 	Uint32 x, c;
 
@@ -451,7 +451,7 @@ int initApp(char const * const title, int fullscreen)
 	fp = openDataFile("images/sprites.txt", "r");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		char name[128];
+		char name[128] = { '\0' };
 		fp->gets2(name, 128);
 		sprites[c] = loadImage(name);
 		if ( sprites[c] == NULL )

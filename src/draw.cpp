@@ -2965,6 +2965,7 @@ bool behindCamera(const view_t& camera, real_t x, real_t y)
 }
 
 bool testTileOccludes(map_t& map, int index) {
+    assert(index >= 0 && index <= map.width * map.height * MAPLAYERS - MAPLAYERS);
 	for (int z = 0; z < MAPLAYERS; z++) {
 		if (!map.tiles[index + z]) {
 			return false;
@@ -3012,9 +3013,9 @@ void occlusionCulling(map_t& map, const view_t& camera)
             const int beginx = std::max(0, x - max_distance);
             const int beginy = std::max(0, y - max_distance);
             const int endx = std::min((int)map.width - 1, x + max_distance);
-            const int endy = std::max((int)map.height - 1, y + max_distance);
-	        for ( int v = beginy; v <= endy; v++ ) {
-		        for ( int u = beginx; u <= endx; u++ ) {
+            const int endy = std::min((int)map.height - 1, y + max_distance);
+	        for ( int u = beginx; u <= endx; u++ ) {
+	            for ( int v = beginy; v <= endy; v++ ) {
 			        const int uvindex = v * hoff + u * woff;
 			        if (map.vismap[v + u * map.height]) {
 			            continue;
@@ -3077,24 +3078,27 @@ void occlusionCulling(map_t& map, const view_t& camera)
 
 	// expand vismap one tile in each direction
 	bool* vmap = (bool*)malloc(sizeof(bool) * size);
-	for ( int index = 0; index < size; ++index ) {
-	    vmap[index] = map.vismap[index];
-		if (!vmap[index]) {
-		    if (index >= 1 && map.vismap[index - 1]) {
-		        vmap[index] = true;
-		        continue;
-		    }
-		    if (index < size - 1 && map.vismap[index + 1]) {
-		        vmap[index] = true;
-		        continue;
-		    }
-		    if (index >= map.height && map.vismap[index - map.height]) {
-		        vmap[index] = true;
-		        continue;
-		    }
-		    if (index < size - map.height && map.vismap[index + map.height]) {
-		        vmap[index] = true;
-		        continue;
+    for ( int u = 0; u < map.width; u++ ) {
+        for ( int v = 0; v < map.height; v++ ) {
+            const int index = v + u * map.height;
+	        vmap[index] = map.vismap[index];
+		    if (!vmap[index]) {
+		        if (v > 0 && map.vismap[index - 1]) {
+		            vmap[index] = true;
+		            continue;
+		        }
+		        if (v < map.height - 1 && map.vismap[index + 1]) {
+		            vmap[index] = true;
+		            continue;
+		        }
+		        if (u > 0 && map.vismap[index - map.height]) {
+		            vmap[index] = true;
+		            continue;
+		        }
+		        if (u < map.width - 1 && map.vismap[index + map.height]) {
+		            vmap[index] = true;
+		            continue;
+		        }
 		    }
 		}
 	}

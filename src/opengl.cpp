@@ -1859,12 +1859,17 @@ void glDrawWorld(view_t* camera, int mode)
 		}
 	}
 
-    for ( int u = 0; u < map.width; ++u )
     {
-        for ( int v = 0; v < map.height; ++v )
-        {
-            const int index = v + u * map.height;
-            const int smoothindex = (v + 1) + (u + 1) * (map.height + 2);
+	    int v = 0;
+	    int index = 0;
+	    int smoothindex = 2 + map.height + 1;
+	    const int size = map.width * map.height;
+	    for ( ; index < size; ++index, ++v, ++smoothindex )
+	    {
+	        if ( v == map.height ) {
+	            smoothindex += 2;
+	            v = 0;
+	        }
 	        const int difference = abs(lightmapSmoothed[smoothindex] - lightmap[index]);
 	        int smoothingRate = globalLightSmoothingRate;
 	        if ( difference > 64 )
@@ -1884,7 +1889,7 @@ void glDrawWorld(view_t* camera, int mode)
 		        lightmapSmoothed[smoothindex] = std::max(lightmap[index], lightmapSmoothed[smoothindex] - smoothingRate);
 	        }
 	    }
-    }
+	}
 
 	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
 	{
