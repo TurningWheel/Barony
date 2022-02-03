@@ -806,7 +806,6 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 
 #ifdef STEAMWORKS
  #include <steam/steam_api.h>
- #include "steam.hpp"
  struct SteamGlobalStat_t
  {
 	 int m_ID;
@@ -817,6 +816,7 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 	 float m_flAvgNumerator;
 	 float m_flAvgDenominator;
  };
+ #include "steam.hpp"
  extern CSteamLeaderboards* g_SteamLeaderboards;
  extern CSteamWorkshop* g_SteamWorkshop;
  extern CSteamStatistics* g_SteamStatistics;
