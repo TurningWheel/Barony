@@ -79,6 +79,7 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
+	static std::string tutorial_map_destination;
 
 	enum class LobbyType {
 	    None,
@@ -462,6 +463,10 @@ namespace MainMenu {
 
 	static void tickMainMenu(Widget& widget) {
 		++main_menu_ticks;
+		auto back = widget.findWidget("back", false);
+		if (back) {
+		    back->setDisabled(widget.findWidget("dimmer", false) != nullptr);
+		}
 	}
 
 	static void updateSliderArrows(Frame& frame) {
@@ -6194,6 +6199,272 @@ bind_failed:
 
 /******************************************************************************/
 
+    static void createHallofTrialsMenu() {
+        assert(main_menu_frame);
+
+        tutorial_map_destination = "tutorial_hub";
+
+		auto window = main_menu_frame->addFrame("hall_of_trials_menu");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1164) / 2,
+			(Frame::virtualScreenY - 716) / 2,
+			1164,
+			716});
+		window->setActualSize(SDL_Rect{0, 0, 1164, 716});
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto background = window->addImage(
+			SDL_Rect{16, 0, 1130, 714},
+			0xffffffff,
+			"images/ui/Main Menus/Play/HallofTrials/HoT_Window_00.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			SDL_Rect{0, 716 - 586, 1164, 586},
+			0xffffffff,
+			"images/ui/Main Menus/Play/HallofTrials/HoT_Window_OverlayScaffold_00.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{22, 142, 1164, 476}); // 1118
+		subwindow->setActualSize(SDL_Rect{0, 0, 1164, 774});
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+
+		auto rock_background_dimmer = subwindow->addImage(
+			subwindow->getActualSize(),
+			0xffffffff,
+			"images/system/white.png",
+			"rock_background_dimmer"
+		);
+
+		auto rock_background = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(127, 127, 127, 251),
+			"images/ui/Main Menus/Play/HallofTrials/HoT_Background_00.png",
+			"rock_background"
+		);
+		rock_background->tiled = true;
+
+		auto window_title = window->addField("title", 64);
+		window_title->setFont(banner_font);
+		window_title->setSize(SDL_Rect{412, 24, 338, 24});
+		window_title->setJustify(Field::justify_t::CENTER);
+		window_title->setText("HALL OF TRIALS");
+
+		auto subtitle = window->addField("subtitle", 1024);
+		subtitle->setFont(bigfont_no_outline);
+		subtitle->setColor(makeColor(170, 134, 102, 255));
+		subtitle->setSize(SDL_Rect{242, 74, 684, 50});
+		subtitle->setJustify(Field::justify_t::CENTER);
+		subtitle->setText(
+		    u8"Take on 10 challenges that teach and test your adventuring\n"
+		    u8"skills, preparing you to take on the dungeon");
+
+		(void)createBackWidget(window, [](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+			auto dimmer = main_menu_frame->findFrame("dimmer"); assert(dimmer);
+			auto window = dimmer->findFrame("play_game_window"); assert(window);
+		    auto hall_of_trials_button = window->findButton("hall_of_trials"); assert(hall_of_trials_button);
+			hall_of_trials_button->select();
+			});
+
+		auto banner = subwindow->addImage(
+		    SDL_Rect{0, 88, 1118, 42},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_BGRed_00.png",
+		    "banner"
+		);
+
+		auto slider = subwindow->addSlider("scroll_slider");
+		slider->setBorder(24);
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setRailSize(SDL_Rect{1072, 8, 30, 440});
+		slider->setRailImage("images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_00.png");
+		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+		slider->setHandleImage("images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			auto actualSize = frame->getActualSize();
+			actualSize.y = slider.getValue();
+			frame->setActualSize(actualSize);
+			auto railSize = slider.getRailSize();
+			railSize.y = 8 + actualSize.y;
+			slider.setRailSize(railSize);
+			slider.updateHandlePosition();
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			auto actualSize = frame->getActualSize();
+			slider->setValue(actualSize.y);
+			auto railSize = slider->getRailSize();
+			railSize.y = 8 + actualSize.y;
+			slider->setRailSize(railSize);
+			slider->updateHandlePosition();
+			});
+		slider->setValue(0.f);
+		slider->setMinValue(0.f);
+		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
+
+        static auto make_button = [](Frame& subwindow, int y, const char* name, const char* label, const char* sublabel){
+            auto button = subwindow.addButton(name);
+            button->setSize(SDL_Rect{8, y, 884, 52});
+            button->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+            button->setBackgroundHighlighted("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+            button->setHighlightColor(0xffffffff);
+            button->setColor(0xffffffff);
+            button->setVJustify(Button::justify_t::CENTER);
+            button->setHJustify(Button::justify_t::LEFT);
+            button->setFont(bigfont_no_outline);
+            button->setText(label);
+            button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+            button->setCallback([](Button& button){
+                soundActivate();
+                if (tutorial_map_destination != button.getName()) {
+                    tutorial_map_destination = button.getName();
+                } else {
+                    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+                    frame = static_cast<Frame*>(frame->getParent()); assert(frame);
+                    auto enter = frame->findButton("enter"); assert(enter);
+                    enter->activate();
+                }
+                });
+            button->setTickCallback([](Widget& widget){
+                std::string sublabel_name = widget.getName();
+                sublabel_name.append("_sublabel_background");
+                auto frame = static_cast<Frame*>(widget.getParent()); assert(frame);
+                auto button = static_cast<Button*>(&widget); assert(button);
+                auto sublabel_background = frame->findImage(sublabel_name.c_str());
+                if (sublabel_background) {
+                    if (button->isSelected() || tutorial_map_destination == widget.getName()) {
+                        sublabel_background->path = "images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeSelected_00.png";
+                        button->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+                    } else {
+                        sublabel_background->path = "images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png";
+                        button->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+                    }
+                }
+                });
+            button->setWidgetSearchParent(subwindow.getParent()->getName());
+            button->addWidgetAction("MenuStart", "enter");
+            button->addWidgetAction("MenuAlt1", "reset");
+            button->addWidgetAction("MenuCancel", "back_button");
+
+            std::string sublabel_name = name;
+            auto sublabel_background = subwindow.addImage(
+                SDL_Rect{938, y + 4, 98, 44},
+                0xffffffff,
+                "images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png",
+                (sublabel_name + "_sublabel_background").c_str()
+            );
+
+            auto sublabel_text = subwindow.addField((sublabel_name + "_sublabel").c_str(), 16);
+            sublabel_text->setJustify(Field::justify_t::CENTER);
+            sublabel_text->setFont(bigfont_no_outline);
+            sublabel_text->setSize(sublabel_background->pos);
+            sublabel_text->setText(sublabel);
+
+            return button;
+        };
+
+        // create buttons
+        Button* tutorials[11];
+        constexpr int num_tutorials = sizeof(tutorials) / sizeof(tutorials[0]);
+        tutorials[0]  = make_button(*subwindow,  24, "tutorial_hub", " The Hall of Trials", "Hub");
+        tutorials[1]  = make_button(*subwindow, 140, "tutorial1",    " Trial 1: Dungeon Basics and Melee Fighting", "00:00:00");
+        tutorials[2]  = make_button(*subwindow, 202, "tutorial2",    " Trial 2: Bows, Arrows, and Throwing Weapons", "00:00:00");
+        tutorials[3]  = make_button(*subwindow, 264, "tutorial3",    " Trial 3: Dungeon Traps, Spikes, and Boulders", "00:00:00");
+        tutorials[4]  = make_button(*subwindow, 326, "tutorial4",    " Trial 4: Food, Appraisal, and Curses", "00:00:00");
+        tutorials[5]  = make_button(*subwindow, 388, "tutorial5",    " Trial 5: Magic, Spellbooks, and Casting", "00:00:00");
+        tutorials[6]  = make_button(*subwindow, 450, "tutorial6",    " Trial 6: Stealth and Sneak Attacks", "00:00:00");
+        tutorials[7]  = make_button(*subwindow, 512, "tutorial7",    " Trial 7: Follower Recruiting and Commands", "00:00:00");
+        tutorials[8]  = make_button(*subwindow, 574, "tutorial8",    " Trial 8: Potions and Alchemy", "00:00:00");
+        tutorials[9]  = make_button(*subwindow, 636, "tutorial9",    " Trial 9: Tinkering", "00:00:00");
+        tutorials[10] = make_button(*subwindow, 698, "tutorial10",   " Trial 10: Merchants and Shops", "00:00:00");
+        tutorials[0]->select();
+
+        // link buttons
+        for (int c = 0; c < num_tutorials; ++c) {
+            if (c > 0) {
+                tutorials[c]->setWidgetUp(tutorials[c - 1]->getName());
+            } else {
+                tutorials[c]->setWidgetUp(tutorials[num_tutorials - 1]->getName());
+            }
+            if (c < num_tutorials - 1) {
+                tutorials[c]->setWidgetDown(tutorials[c + 1]->getName());
+            } else {
+                tutorials[c]->setWidgetDown(tutorials[0]->getName());
+            }
+        }
+
+        // total clear time
+        auto total_time_label = window->addField("total_time_label", 128);
+        total_time_label->setFont(bigfont_no_outline);
+        total_time_label->setSize(SDL_Rect{540, 646, 340, 30});
+        total_time_label->setText(" Total Clear Time");
+        total_time_label->setHJustify(Field::justify_t::LEFT);
+        total_time_label->setVJustify(Field::justify_t::CENTER);
+
+        auto total_time = window->addField("total_time", 16);
+        total_time->setFont(bigfont_no_outline);
+        total_time->setSize(SDL_Rect{540, 646, 340, 30});
+        total_time->setText("00:00:00 ");
+        total_time->setHJustify(Field::justify_t::RIGHT);
+        total_time->setVJustify(Field::justify_t::CENTER);
+
+        // buttons at bottom
+        auto reset = window->addButton("reset");
+        reset->setText("Reset Trial\nProgress");
+        reset->setSize(SDL_Rect{152, 630, 164, 62});
+        reset->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+        reset->setFont(smallfont_outline);
+        reset->setHighlightColor(0xffffffff);
+        reset->setColor(0xffffffff);
+
+        auto enter = window->addButton("enter");
+        enter->setText("Enter Level");
+        enter->setSize(SDL_Rect{902, 630, 164, 62});
+        enter->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+        enter->setFont(smallfont_outline);
+        enter->setHighlightColor(0xffffffff);
+        enter->setColor(0xffffffff);
+        enter->setCallback([](Button& button){
+            if (!tutorial_map_destination.empty()) {
+		        destroyMainMenu();
+		        createDummyMainMenu();
+		        beginFade(MainMenu::FadeDestination::HallOfTrials);
+		    } else {
+                monoPrompt(
+	                "Select a level to start first.",
+	                "Okay",
+	                [](Button& button){
+			            soundCancel();
+			            assert(main_menu_frame);
+			            auto hall_of_trials = main_menu_frame->findFrame("hall_of_trials_menu"); assert(hall_of_trials);
+			            auto subwindow = hall_of_trials->findFrame("subwindow"); assert(subwindow);
+			            auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+			            tutorial->select();
+			            auto prompt = main_menu_frame->findFrame("mono_prompt");
+			            if (prompt) {
+				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				            dimmer->removeSelf();
+			            }
+	                }
+	            );
+		    }
+            });
+    }
+
 	static void createPlayWindow() {
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -6242,9 +6513,7 @@ bind_failed:
 		hall_of_trials_button->setWidgetBack("back_button");
 		hall_of_trials_button->setCallback([](Button&){
 			soundActivate();
-			destroyMainMenu();
-			createDummyMainMenu();
-			beginFade(MainMenu::FadeDestination::HallOfTrials);
+			createHallofTrialsMenu();
 			});
 
 		(void)createBackWidget(window, [](Button& button){
@@ -7793,6 +8062,7 @@ bind_failed:
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
+				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
 			},
@@ -7938,20 +8208,6 @@ bind_failed:
 				createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
 				playMusic(intermissionmusic, false, false, false);
 			}
-			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
-				destroyMainMenu();
-				multiplayer = SINGLE;
-				numplayers = 0;
-				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-				if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
-				{
-					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
-					gameModeManager.Tutorial.writeToDocument();
-				}
-				gameModeManager.Tutorial.startTutorial("");
-				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
-				doNewGame(false);
-			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				multiplayer = SINGLE;
 				numplayers = 0;
@@ -7967,6 +8223,20 @@ bind_failed:
 				}
 				doNewGame(false);
 				destroyMainMenu();
+			}
+			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+				destroyMainMenu();
+				multiplayer = SINGLE;
+				numplayers = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+				if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
+				{
+					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+					gameModeManager.Tutorial.writeToDocument();
+				}
+				gameModeManager.Tutorial.startTutorial(tutorial_map_destination);
+				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+				doNewGame(false);
 			}
 			fadeout = false;
 			main_menu_fade_destination = FadeDestination::None;

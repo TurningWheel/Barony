@@ -53,8 +53,8 @@ namespace MainMenu {
 
         // Game starts:
 
-		HallOfTrials,
 		GameStart,
+		HallOfTrials,
 	};
 
 	void beginFade(FadeDestination);
