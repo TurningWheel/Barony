@@ -266,7 +266,11 @@ namespace MainMenu {
 	    if (inputs.getVirtualMouse(clientnum)->draw_cursor && deafen_unless_gamepad) {
 	        return;
 	    }
-	    playSound(497, 48);
+	    static Uint32 timeSinceLastTick = 0;
+	    if (main_menu_ticks - timeSinceLastTick >= fpsLimit / 10) {
+	        timeSinceLastTick = main_menu_ticks;
+	        playSound(497, 48);
+	    }
 	}
 
 	static inline void soundWarning() {
