@@ -2573,6 +2573,12 @@ namespace MainMenu {
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
 			});
+		slider->setWidgetSearchParent("settings");
+		slider->setWidgetBack("discard_and_exit");
+		slider->addWidgetAction("MenuStart", "confirm_and_exit");
+		slider->addWidgetAction("MenuAlt1", "restore_defaults");
+		slider->setWidgetPageLeft("tab_left");
+		slider->setWidgetPageRight("tab_right");
 		auto sliderLeft = settings_subwindow->addImage(
 			SDL_Rect{0, 0, 30, 44},
 			0xffffffff,
@@ -2629,7 +2635,7 @@ namespace MainMenu {
 		widget->select();
 	}
 
-	static void settingsSubwindowFinalize(Frame& frame, int y) {
+	static void settingsSubwindowFinalize(Frame& frame, int y, const Setting& setting) {
 		auto size = frame.getActualSize();
 		const int height = std::max(size.h, y);
 		frame.setActualSize(SDL_Rect{0, 0, size.w, height});
@@ -2639,6 +2645,8 @@ namespace MainMenu {
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
 		slider->setMaxValue(height - size.h);
+		auto names = getFullSettingNames(setting);
+		slider->setWidgetLeft(names.first.c_str());
 	}
 
 	static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {
@@ -2770,6 +2778,10 @@ namespace MainMenu {
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
 			});
+		slider->setWidgetSearchParent(subwindow->getName());
+		slider->setWidgetBack("discard_and_exit");
+		slider->addWidgetAction("MenuStart", "confirm_and_exit");
+		slider->addWidgetAction("MenuAlt1", "restore_defaults");
 
 		auto sliderLeft = subwindow->addImage(
 			SDL_Rect{0, 0, 30, 44},
@@ -2916,7 +2928,7 @@ namespace MainMenu {
 			{Setting::Type::Slider, "foreground_opacity"},
 			{Setting::Type::Slider, "background_opacity"},
 			});
-		settingsSubwindowFinalize(*subwindow, y);
+		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Slider, "map_scale"});
 		settingsSelect(*subwindow, {Setting::Type::Slider, "map_scale"});
 	}
 
@@ -3015,7 +3027,7 @@ namespace MainMenu {
 			{Setting::Type::Boolean, "messages_hint"},
 			{Setting::Type::Boolean, "messages_obituary"},
 			});
-		settingsSubwindowFinalize(*subwindow, y);
+		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Boolean, "messages_combat"});
 		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});
 	}
 
@@ -3263,7 +3275,7 @@ bind_failed:
 			bindings[0],
 			});
 		hookSettings(*subwindow, bindings);
-		settingsSubwindowFinalize(*subwindow, y);
+		settingsSubwindowFinalize(*subwindow, y, setting_to_select);
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
@@ -3330,7 +3342,7 @@ bind_failed:
 			{Setting::Type::Boolean, "show_hud"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "add_items_to_hotbar"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
 	}
 
@@ -3452,7 +3464,7 @@ bind_failed:
 			{Setting::Type::Slider, "fov"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "content_control"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
 	}
 
@@ -3517,7 +3529,7 @@ bind_failed:
 			{Setting::Type::Boolean, "player_monster_sounds"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "master_volume"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
 	}
 
@@ -3588,7 +3600,7 @@ bind_failed:
 			{Setting::Type::Slider, "turn_sensitivity_y"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
 	}
 
@@ -3656,7 +3668,7 @@ bind_failed:
 			{Setting::Type::Boolean, "extra_life"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "classic_mode"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
 	}
 
@@ -5168,7 +5180,7 @@ bind_failed:
 		subframe->setBorder(0);
 
 		if (subframe->getActualSize().h > 258) {
-			auto slider = card->addSlider("slider");
+			auto slider = card->addSlider("scroll_slider");
 			slider->setRailSize(SDL_Rect{260, 160, 30, 266});
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 			slider->setRailImage("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
@@ -5191,6 +5203,9 @@ bind_failed:
 				auto actualSize = subframe->getActualSize();
 				slider->setValue(actualSize.y);
 				});
+			slider->setWidgetSearchParent(card->getName());
+			slider->setWidgetLeft(reduced_class_list[0]);
+		    slider->setWidgetBack("back_button");
 		}
 
 		auto class_info = card->addButton("class_info");
@@ -6343,6 +6358,11 @@ bind_failed:
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
 		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
+		slider->setWidgetSearchParent("hall_of_trials_menu");
+		slider->setWidgetLeft("tutorial_hub");
+        slider->addWidgetAction("MenuStart", "enter");
+        slider->addWidgetAction("MenuAlt1", "reset");
+        slider->addWidgetAction("MenuCancel", "back_button");
 
         static auto make_button = [](Frame& subwindow, int y, const char* name, const char* label, const char* sublabel){
             auto button = subwindow.addButton(name);
