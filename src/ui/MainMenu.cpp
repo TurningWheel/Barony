@@ -6284,6 +6284,34 @@ bind_failed:
 		    "banner"
 		);
 
+		auto banner_trial = subwindow->addField("banner_trial", 32);
+		banner_trial->setSize(SDL_Rect{48, 88, 66, 42});
+		banner_trial->setJustify(Field::justify_t::CENTER);
+		banner_trial->setFont(bigfont_outline);
+		banner_trial->setText("Trial");
+
+		auto banner_time = subwindow->addField("banner_trial", 32);
+		banner_time->setSize(SDL_Rect{920, 88, 116, 42});
+		banner_time->setJustify(Field::justify_t::CENTER);
+		banner_time->setFont(bigfont_outline);
+		banner_time->setText("Best Time");
+
+		SDL_Rect fleur_positions[4] = {
+		    { 22, 94, 26, 30 },
+		    { 114, 94, 26, 30 },
+		    { 894, 94, 26, 30 },
+		    { 1036, 94, 26, 30 },
+		};
+		constexpr int num_fleurs = sizeof(fleur_positions) / sizeof(fleur_positions[0]);
+		for (int c = 0; c < num_fleurs; ++c) {
+		    (void)subwindow->addImage(
+		        fleur_positions[c],
+		        0xffffffff,
+		        "images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_Flower_00.png",
+		        (std::string("fleur") + std::to_string(c)).c_str()
+		    );
+		}
+
 		auto slider = subwindow->addSlider("scroll_slider");
 		slider->setBorder(24);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
@@ -6377,20 +6405,45 @@ bind_failed:
             return button;
         };
 
+        // collect best times
+        const auto& levels = gameModeManager.Tutorial.levels;
+        std::string times[11];
+        std::string total_time_str;
+        Uint64 total_time = 0;
+        times[0] = "Hub";
+        for (int c = 1; c < 11; ++c) {
+            const Uint32 time = levels[c - 1].completionTime;
+            const Uint32 hour = time / 3600;
+            const Uint32 min = (time / 60) % 60;
+            const Uint32 sec = time % 60;
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.2u:%.2u:%.2u", hour, min, sec);
+            times[c] = buf;
+            total_time += time;
+        }
+        {
+            const Uint32 hour = total_time / 3600;
+            const Uint32 min = (total_time / 60) % 60;
+            const Uint32 sec = total_time % 60;
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.2u:%.2u:%.2u ", hour, min, sec);
+            total_time_str = buf;
+        }
+
         // create buttons
         Button* tutorials[11];
         constexpr int num_tutorials = sizeof(tutorials) / sizeof(tutorials[0]);
-        tutorials[0]  = make_button(*subwindow,  24, "tutorial_hub", " The Hall of Trials", "Hub");
-        tutorials[1]  = make_button(*subwindow, 140, "tutorial1",    " Trial 1: Dungeon Basics and Melee Fighting", "00:00:00");
-        tutorials[2]  = make_button(*subwindow, 202, "tutorial2",    " Trial 2: Bows, Arrows, and Throwing Weapons", "00:00:00");
-        tutorials[3]  = make_button(*subwindow, 264, "tutorial3",    " Trial 3: Dungeon Traps, Spikes, and Boulders", "00:00:00");
-        tutorials[4]  = make_button(*subwindow, 326, "tutorial4",    " Trial 4: Food, Appraisal, and Curses", "00:00:00");
-        tutorials[5]  = make_button(*subwindow, 388, "tutorial5",    " Trial 5: Magic, Spellbooks, and Casting", "00:00:00");
-        tutorials[6]  = make_button(*subwindow, 450, "tutorial6",    " Trial 6: Stealth and Sneak Attacks", "00:00:00");
-        tutorials[7]  = make_button(*subwindow, 512, "tutorial7",    " Trial 7: Follower Recruiting and Commands", "00:00:00");
-        tutorials[8]  = make_button(*subwindow, 574, "tutorial8",    " Trial 8: Potions and Alchemy", "00:00:00");
-        tutorials[9]  = make_button(*subwindow, 636, "tutorial9",    " Trial 9: Tinkering", "00:00:00");
-        tutorials[10] = make_button(*subwindow, 698, "tutorial10",   " Trial 10: Merchants and Shops", "00:00:00");
+        tutorials[0]  = make_button(*subwindow,  24, "tutorial_hub", " The Hall of Trials", times[0].c_str());
+        tutorials[1]  = make_button(*subwindow, 140, "tutorial1",    " Trial 1: Dungeon Basics and Melee Fighting", times[1].c_str());
+        tutorials[2]  = make_button(*subwindow, 202, "tutorial2",    " Trial 2: Bows, Arrows, and Throwing Weapons", times[2].c_str());
+        tutorials[3]  = make_button(*subwindow, 264, "tutorial3",    " Trial 3: Dungeon Traps, Spikes, and Boulders", times[3].c_str());
+        tutorials[4]  = make_button(*subwindow, 326, "tutorial4",    " Trial 4: Food, Appraisal, and Curses", times[4].c_str());
+        tutorials[5]  = make_button(*subwindow, 388, "tutorial5",    " Trial 5: Magic, Spellbooks, and Casting", times[5].c_str());
+        tutorials[6]  = make_button(*subwindow, 450, "tutorial6",    " Trial 6: Stealth and Sneak Attacks", times[6].c_str());
+        tutorials[7]  = make_button(*subwindow, 512, "tutorial7",    " Trial 7: Follower Recruiting and Commands", times[7].c_str());
+        tutorials[8]  = make_button(*subwindow, 574, "tutorial8",    " Trial 8: Potions and Alchemy", times[8].c_str());
+        tutorials[9]  = make_button(*subwindow, 636, "tutorial9",    " Trial 9: Tinkering", times[9].c_str());
+        tutorials[10] = make_button(*subwindow, 698, "tutorial10",   " Trial 10: Merchants and Shops", times[10].c_str());
         tutorials[0]->select();
 
         // link buttons
@@ -6415,12 +6468,12 @@ bind_failed:
         total_time_label->setHJustify(Field::justify_t::LEFT);
         total_time_label->setVJustify(Field::justify_t::CENTER);
 
-        auto total_time = window->addField("total_time", 16);
-        total_time->setFont(bigfont_no_outline);
-        total_time->setSize(SDL_Rect{540, 646, 340, 30});
-        total_time->setText("00:00:00 ");
-        total_time->setHJustify(Field::justify_t::RIGHT);
-        total_time->setVJustify(Field::justify_t::CENTER);
+        auto total_time_field = window->addField("total_time", 16);
+        total_time_field->setFont(bigfont_no_outline);
+        total_time_field->setSize(SDL_Rect{540, 646, 340, 30});
+        total_time_field->setText(total_time_str.c_str());
+        total_time_field->setHJustify(Field::justify_t::RIGHT);
+        total_time_field->setVJustify(Field::justify_t::CENTER);
 
         // buttons at bottom
         auto reset = window->addButton("reset");
@@ -6430,6 +6483,51 @@ bind_failed:
         reset->setFont(smallfont_outline);
         reset->setHighlightColor(0xffffffff);
         reset->setColor(0xffffffff);
+        reset->setCallback([](Button&){
+	        binaryPrompt(
+	            "Are you sure you want to reset\nyour best times?", "Yes", "No",
+	            [](Button& button) { // Yes button
+			        soundActivate();
+			        soundDeleteSave();
+
+                    // delete best times
+                    for (auto& it : gameModeManager.Tutorial.levels) {
+                        it.completionTime = 0;
+                    }
+                    gameModeManager.Tutorial.writeToDocument();
+
+                    // update window
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
+		            window->removeSelf();
+		            createHallofTrialsMenu();
+
+                    // remove prompt
+			        auto prompt = main_menu_frame->findFrame("binary_prompt");
+			        if (prompt) {
+				        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				        dimmer->removeSelf();
+			        }
+	            },
+	            [](Button& button) { // No button
+			        soundCancel();
+
+                    // select another button
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
+		            auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+                    auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+                    tutorial->select();
+
+                    // remove prompt
+			        auto prompt = main_menu_frame->findFrame("binary_prompt");
+			        if (prompt) {
+				        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				        dimmer->removeSelf();
+			        }
+	            }
+	        );
+            });
 
         auto enter = window->addButton("enter");
         enter->setText("Enter Level");
