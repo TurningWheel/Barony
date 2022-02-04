@@ -307,10 +307,10 @@ void Slider::fireCallback() {
 	}
 }
 
-void Slider::control() {
+bool Slider::control() {
 	if (!activated) {
 		moveStartTime = ticks;
-		return;
+		return true;
 	}
 	Input& input = Input::inputs[owner];
 	if (input.consumeBinaryToggle("MenuCancel") ||
@@ -360,6 +360,7 @@ void Slider::control() {
 			moveStartTime = ticks;
 		}
 	}
+	return false;
 }
 
 void Slider::deselect() {

@@ -2778,7 +2778,7 @@ namespace MainMenu {
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
 			});
-		slider->setWidgetSearchParent(subwindow->getName());
+		slider->setWidgetSearchParent(name);
 		slider->setWidgetBack("discard_and_exit");
 		slider->addWidgetAction("MenuStart", "confirm_and_exit");
 		slider->addWidgetAction("MenuAlt1", "restore_defaults");
@@ -7927,7 +7927,7 @@ bind_failed:
 			button->setWidgetPageRight("tab_right");
 			button->addWidgetAction("MenuAlt1", "restore_defaults");
 			button->addWidgetAction("MenuStart", "confirm_and_exit");
-			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 			if (c > 0) {
 				button->setWidgetLeft(tabs[c - 1].name);
 			} else {

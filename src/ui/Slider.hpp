@@ -60,7 +60,7 @@ public:
     virtual void activate() override;
 
     //! control slider with keyboard/gamepad inputs
-    void control();
+    bool control();
 
     //! trigger callback
     void fireCallback();

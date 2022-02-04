@@ -976,7 +976,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (!destWidget && !slider->isActivated()) {
 				destWidget = slider->handleInput();
 			} else {
-				slider->control();
+				result.usable = usable = slider->control() ? usable : false;
 			}
 
 			Slider::result_t sliderResult = slider->process(_size, actualSize, usable);
@@ -1098,11 +1098,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 		// x scroll
 		if (this->actualSize.w > size.w) {
-			if (input.binaryToggle("MenuRight")) {
+			if (input.binaryToggle("MenuRight") || input.binaryToggle("AltMenuRight")) {
 				scrollInertiaX += .15;
 				usable = result.usable = false;
 			}
-			else if (input.binaryToggle("MenuLeft")) {
+			else if (input.binaryToggle("MenuLeft") || input.binaryToggle("AltMenuLeft")) {
 				scrollInertiaX -= .15;
 				usable = result.usable = false;
 			}
@@ -1110,11 +1110,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 		// y scroll
 		if (this->actualSize.h > size.h) {
-			if (input.binaryToggle("MenuDown")) {
+			if (input.binaryToggle("MenuDown") || input.binaryToggle("AltMenuDown")) {
 				scrollInertiaY += .15;
 				usable = result.usable = false;
 			}
-			else if (input.binaryToggle("MenuUp")) {
+			else if (input.binaryToggle("MenuUp") || input.binaryToggle("AltMenuUp")) {
 				scrollInertiaY -= .15;
 				usable = result.usable = false;
 			}
