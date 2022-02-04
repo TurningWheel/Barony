@@ -1950,10 +1950,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_leftx_sensitivity = atoi(argv[1]);
+		gamepad_leftx_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_leftx_sensitivity = std::max(gamepad_leftx_sensitivity, 1);
-		printlog("Controller leftx sensitivity is %d.", gamepad_leftx_sensitivity);
+		gamepad_leftx_sensitivity = std::max(gamepad_leftx_sensitivity, 1.0);
+		printlog("Controller leftx sensitivity is %.1f.", gamepad_leftx_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_lefty_sensitivity("/gamepad_lefty_sensitivity", "", []CCMD{
@@ -1961,10 +1961,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_lefty_sensitivity = atoi(argv[1]);
+		gamepad_lefty_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_lefty_sensitivity = std::max(gamepad_lefty_sensitivity, 1);
-		printlog("Controller lefty sensitivity is %d.", gamepad_lefty_sensitivity);
+		gamepad_lefty_sensitivity = std::max(gamepad_lefty_sensitivity, 1.0);
+		printlog("Controller lefty sensitivity is %.1f.", gamepad_lefty_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_rightx_sensitivity("/gamepad_rightx_sensitivity", "", []CCMD{
@@ -1972,10 +1972,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_rightx_sensitivity = atoi(argv[1]);
+		gamepad_rightx_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_rightx_sensitivity = std::max(gamepad_rightx_sensitivity, 1);
-		printlog("Controller rightx sensitivity is %d.", gamepad_rightx_sensitivity);
+		gamepad_rightx_sensitivity = std::max(gamepad_rightx_sensitivity, 1.0);
+		printlog("Controller rightx sensitivity is %.1f.", gamepad_rightx_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_righty_sensitivity("/gamepad_righty_sensitivity", "", []CCMD{
@@ -1983,10 +1983,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_righty_sensitivity = atoi(argv[1]);
+		gamepad_righty_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1);
-		printlog("Controller righty sensitivity is %d.", gamepad_righty_sensitivity);
+		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1.0);
+		printlog("Controller righty sensitivity is %.1f.", gamepad_righty_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_menux_sensitivity("/gamepad_menux_sensitivity", "", []CCMD{
@@ -1994,10 +1994,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_menux_sensitivity = atoi(argv[1]);
+		gamepad_menux_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_menux_sensitivity = std::max(gamepad_menux_sensitivity, 1);
-		printlog("Controller menux sensitivity is %d.", gamepad_menux_sensitivity);
+		gamepad_menux_sensitivity = std::max(gamepad_menux_sensitivity, 1.0);
+		printlog("Controller menux sensitivity is %.1f.", gamepad_menux_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_menuy_sensitivity("/gamepad_menuy_sensitivity", "", []CCMD{
@@ -2005,10 +2005,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_menuy_sensitivity = atoi(argv[1]);
+		gamepad_menuy_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_menuy_sensitivity = std::max(gamepad_menuy_sensitivity, 1);
-		printlog("Controller menuy sensitivity is %d.", gamepad_menuy_sensitivity);
+		gamepad_menuy_sensitivity = std::max(gamepad_menuy_sensitivity, 1.0);
+		printlog("Controller menuy sensitivity is %.1f.", gamepad_menuy_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_leftx_invert("/gamepad_leftx_invert", "", []CCMD{

@@ -1057,8 +1057,8 @@ namespace MainMenu {
 		reversemouse = reverse_mouse_enabled;
 		smoothmouse = smooth_mouse_enabled;
 		disablemouserotationlimit = !rotation_speed_limit_enabled;
-		gamepad_rightx_sensitivity = turn_sensitivity_x * 10.f;
-		gamepad_righty_sensitivity = turn_sensitivity_y * 10.f;
+		gamepad_rightx_sensitivity = turn_sensitivity_x / 32768.0;
+		gamepad_righty_sensitivity = turn_sensitivity_y / 32768.0;
 		svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 		svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
 		svFlags = friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
@@ -1136,8 +1136,8 @@ namespace MainMenu {
 		settings.reverse_mouse_enabled = reversemouse;
 		settings.smooth_mouse_enabled = smoothmouse;
 		settings.rotation_speed_limit_enabled = !disablemouserotationlimit;
-		settings.turn_sensitivity_x = gamepad_rightx_sensitivity / 10;
-		settings.turn_sensitivity_y = gamepad_righty_sensitivity / 10;
+		settings.turn_sensitivity_x = gamepad_rightx_sensitivity * 32768.0;
+		settings.turn_sensitivity_y = gamepad_righty_sensitivity * 32768.0;
 		settings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		settings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		settings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -3578,10 +3578,10 @@ bind_failed:
 #endif
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 1.f, 100.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 1.f, 100.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
