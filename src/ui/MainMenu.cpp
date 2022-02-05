@@ -6436,7 +6436,7 @@ bind_failed:
         Uint64 total_time = 0;
         times[0] = "Hub";
         for (int c = 1; c < 11; ++c) {
-            const Uint32 time = levels[c - 1].completionTime;
+            const Uint32 time = levels[c].completionTime / TICKS_PER_SECOND;
             const Uint32 hour = time / 3600;
             const Uint32 min = (time / 60) % 60;
             const Uint32 sec = time % 60;
