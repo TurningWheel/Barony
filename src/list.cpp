@@ -62,6 +62,29 @@ void list_RemoveNode(node_t* node)
 		{
 			continue;
 		}
+		if ( openedChest[i] && inputs.getUIInteraction(i)->selectedItem )
+		{
+			list_t* chest_inventory = nullptr;
+			if ( multiplayer == CLIENT )
+			{
+				chest_inventory = &chestInv[i];
+			}
+			else if ( openedChest[i]->children.first && openedChest[i]->children.first->element )
+			{
+				chest_inventory = (list_t*)openedChest[i]->children.first->element;
+			}
+
+			if ( chest_inventory )
+			{
+				Item* tmp = ((Item*)node->element);
+				if ( tmp == inputs.getUIInteraction(i)->selectedItem )
+				{
+					// important! crashes occur when deleting items you've selected...
+					inputs.getUIInteraction(i)->selectedItem = nullptr;
+					inputs.getUIInteraction(i)->selectedItemFromChest = 0;
+				}
+			}
+		}
 		if ( stats[i] && node->list && node->list == &stats[i]->inventory )
 		{
 			Item* tmp = ((Item*)node->element);
@@ -71,6 +94,7 @@ void list_RemoveNode(node_t* node)
 				{
 					// important! crashes occur when deleting items you've selected...
 					inputs.getUIInteraction(i)->selectedItem = nullptr; 
+					inputs.getUIInteraction(i)->selectedItemFromChest = 0;
 					// printlog("Reset selectedItem");
 				}
 				if ( GenericGUI[i].isItemUsedForCurrentGUI(*tmp) )

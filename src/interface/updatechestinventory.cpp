@@ -97,6 +97,7 @@ const int getChestGUIStartY(const int player)
 
 void warpMouseToSelectedChestSlot(const int player)
 {
+	return;
 	int x = getChestGUIStartX(player) + (inventoryoptionChest_bmp->w / 2);
 	int y = getChestGUIStartY(player) + 16 + (inventoryoptionChest_bmp->h * selectedChestSlot[player]) + (inventoryoptionChest_bmp->h / 2);
 
@@ -120,6 +121,7 @@ inline void drawChestSlots(const int player)
 	{
 		return;
 	}
+	return;
 
 	SDL_Rect pos;
 	Item* item = nullptr;
@@ -152,6 +154,8 @@ inline void drawChestSlots(const int player)
 
 					bool grabbedItem = false;
 
+					if ( false )
+					{
 					if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
 					{
 						inputs.mouseClearLeft(player);
@@ -170,6 +174,7 @@ inline void drawChestSlots(const int player)
 						itemPickup(player, item); //Grab all of that item from the chest.
 						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
+					}
 					}
 
 					if ( grabbedItem )
@@ -229,6 +234,66 @@ void updateChestInventory(const int player)
 			invitemschest[player][c] = nullptr;
 		}
 		return;
+	}
+
+	list_t* chest_inventory = NULL;
+	if ( multiplayer == CLIENT )
+	{
+		chest_inventory = &chestInv[player];
+	}
+	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	{
+		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+	}
+
+	if ( chest_inventory )
+	{
+		std::unordered_set<int> takenSlots;
+		std::vector<Item*> itemsToRearrange;
+		for ( node_t* node = chest_inventory->first; node != NULL; node = node->next )
+		{
+			if ( node->element )
+			{
+				Item* item = (Item*)node->element;
+				if ( item )
+				{
+					int key = item->x + 100 * item->y;
+					if ( item->x >= 0 && item->x < players[player]->inventoryUI.MAX_CHEST_X
+						&& item->y >= 0 && item->y < players[player]->inventoryUI.MAX_CHEST_Y
+						&& takenSlots.find(key) == takenSlots.end() )
+					{
+						takenSlots.insert(key);
+					}
+					else
+					{
+						itemsToRearrange.push_back(item);
+					}
+				}
+			}
+		}
+		for ( auto item : itemsToRearrange )
+		{
+			bool foundSlot = false;
+			for ( int y = 0; y < players[player]->inventoryUI.MAX_CHEST_Y && !foundSlot; ++y )
+			{
+				for ( int x = 0; x < players[player]->inventoryUI.MAX_CHEST_X && !foundSlot; ++x )
+				{
+					int key = x + 100 * y;
+					if ( takenSlots.find(key) == takenSlots.end() )
+					{
+						foundSlot = true;
+						takenSlots.insert(key);
+						item->x = x;
+						item->y = y;
+					}
+				}
+			}
+			if ( !foundSlot )
+			{
+				item->x = players[player]->inventoryUI.MAX_CHEST_X;
+				item->y = players[player]->inventoryUI.MAX_CHEST_Y;
+			}
+		}
 	}
 
 	SDL_Rect pos;
@@ -358,7 +423,7 @@ void updateChestInventory(const int player)
 		}
 	}
 
-	list_t* chest_inventory = NULL;
+	/*list_t* chest_inventory = NULL;
 	if ( multiplayer == CLIENT )
 	{
 		chest_inventory = &chestInv[player];
@@ -366,7 +431,7 @@ void updateChestInventory(const int player)
 	else if (openedChest[player]->children.first && openedChest[player]->children.first->element)
 	{
 		chest_inventory = (list_t*)openedChest[player]->children.first->element;
-	}
+	}*/
 
 	if (!chest_inventory)
 	{

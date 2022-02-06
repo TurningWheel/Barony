@@ -1502,15 +1502,31 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 		}
 		if ( hudCursor && player.inventoryUI.selectedItemCursorFrame )
 		{
-			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS)
-				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR || activeModule == MODULE_SPELLS)
+			if ( (oldModule == MODULE_INVENTORY 
+					|| oldModule == MODULE_HOTBAR 
+					|| oldModule == MODULE_SPELLS
+					|| oldModule == MODULE_CHEST 
+					|| oldModule == MODULE_SHOP )
+				&& !(activeModule == MODULE_INVENTORY 
+					|| activeModule == MODULE_HOTBAR 
+					|| activeModule == MODULE_SPELLS
+					|| activeModule == MODULE_CHEST
+					|| activeModule == MODULE_SHOP)
 				&& !bActiveModuleHasNoCursor() )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
 				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
 			}
-			else if ( (activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR || activeModule == MODULE_SPELLS)
-				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS) )
+			else if ( (activeModule == MODULE_INVENTORY 
+				|| activeModule == MODULE_HOTBAR 
+				|| activeModule == MODULE_SPELLS
+				|| oldModule == MODULE_CHEST
+				|| oldModule == MODULE_SHOP)
+				&& !(oldModule == MODULE_INVENTORY 
+					|| oldModule == MODULE_HOTBAR 
+					|| oldModule == MODULE_SPELLS
+					|| activeModule == MODULE_CHEST
+					|| activeModule == MODULE_SHOP) )
 			{
 				SDL_Rect size = hudCursor->getSize();
 				if ( !player.hud.cursorFrame->isDisabled() )
@@ -1562,6 +1578,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	int oldmodule = GUI.activeModule;
 	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
 	GUI.closeDropdowns();
 
@@ -1659,6 +1676,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{
 		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
 		inputs.getUIInteraction(playernum)->toggleclick = false;
 		GUI.closeDropdowns();
 		shootmode = true;

@@ -1224,6 +1224,18 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		if ( item == inputs.getUIInteraction(monster->skill[2])->selectedItem )
 		{
 			inputs.getUIInteraction(monster->skill[2])->selectedItem = nullptr;
+			inputs.getUIInteraction(monster->skill[2])->selectedItemFromChest = 0;
+		}
+	}
+	else if ( monster->behavior == &actChest )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( item == inputs.getUIInteraction(i)->selectedItem )
+			{
+				inputs.getUIInteraction(i)->selectedItem = nullptr;
+				inputs.getUIInteraction(i)->selectedItemFromChest = 0;
+			}
 		}
 	}
 

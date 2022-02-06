@@ -191,6 +191,7 @@ extern real_t camera_charsheet_offsetyaw;
 
 void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_chest_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -222,6 +223,7 @@ int loadConfig(char* filename);
 int saveConfig(char const * const filename);
 void defaultConfig();
 void updateChestInventory(const int player);
+Item* takeItemFromChest(int player, Item* item, bool all = false);
 void updateAppraisalItemBox(const int player);
 void updateShopWindow(const int player);
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
@@ -836,6 +838,8 @@ enum ItemContextMenuPrompts {
 	PROMPT_BUY,
 	PROMPT_STORE_CHEST,
 	PROMPT_RETRIEVE_CHEST,
+	PROMPT_RETRIEVE_CHEST_ALL,
+	PROMPT_STORE_CHEST_ALL,
 	PROMPT_DROP,
 	PROMPT_TINKER,
 	PROMPT_GRAB,

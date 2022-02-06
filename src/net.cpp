@@ -3066,6 +3066,7 @@ void clientHandlePacket()
 		if ( *armor == inputs.getUIInteraction(clientnum)->selectedItem )
 		{
 			inputs.getUIInteraction(clientnum)->selectedItem = nullptr;
+			inputs.getUIInteraction(clientnum)->selectedItemFromChest = 0;
 		}
 
 		if ( (*armor)->count > 1 )

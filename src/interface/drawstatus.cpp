@@ -2491,6 +2491,7 @@ void drawStatusNew(const int player)
 								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
 								inputs.getUIInteraction(player)->toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
+								inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 
