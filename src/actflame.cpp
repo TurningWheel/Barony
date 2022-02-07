@@ -24,10 +24,13 @@
 -------------------------------------------------------------------------------*/
 
 #define FLAME_LIFE my->skill[0]
-#define FLAME_ANG my->fskill[0]
 #define FLAME_VELX my->vel_x
 #define FLAME_VELY my->vel_y
 #define FLAME_VELZ my->vel_z
+#define FLAME_ANG my->fskill[0]
+#define FLAME_DIFFX my->fskill[1]
+#define FLAME_DIFFY my->fskill[2]
+#define FLAME_DIFFZ my->fskill[3]
 
 void actFlame(Entity* my)
 {
@@ -40,7 +43,9 @@ void actFlame(Entity* my)
 		    return;
 	    }
     }
-    if ( !flickerLights )
+    if ( !flickerLights &&
+        my->sprite == SPRITE_FLAME ||
+        my->sprite == SPRITE_CRYSTALFLAME )
     {
         FLAME_ANG += PI / TICKS_PER_SECOND * 2.0;
         if (FLAME_ANG > PI * 2.0)
@@ -49,10 +54,14 @@ void actFlame(Entity* my)
         }
         FLAME_VELZ = -sin(FLAME_ANG) * 0.02;
         Entity* parent = uidToEntity(my->parent);
-        if ( parent && parent->behavior == &actHudWeapon )
+        if ( parent )
         {
-	        my->x = parent->x;
-	        my->y = parent->y;
+	        my->x += parent->x - FLAME_DIFFX;
+	        my->y += parent->y - FLAME_DIFFY;
+	        my->z += parent->z - FLAME_DIFFZ;
+	        FLAME_DIFFX = parent->x;
+	        FLAME_DIFFY = parent->y;
+	        FLAME_DIFFZ = parent->z;
 	        my->flags[INVISIBLE] = parent->flags[INVISIBLE];
         }
     }
@@ -83,6 +92,9 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
+	entity->fskill[1] = parentent->x;
+	entity->fskill[2] = parentent->y;
+	entity->fskill[3] = parentent->z;
 	entity->sizex = 6;
 	entity->sizey = 6;
 	entity->yaw = (rand() % 360) * PI / 180.0;
