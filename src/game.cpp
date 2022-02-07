@@ -905,13 +905,16 @@ void gameLogic(void)
 					entity->flags[BURNING] = false;
 					continue;
 				}
-				j = 1 + rand() % 4;
-				for ( c = 0; c < j; ++c )
-				{
-					Entity* flame = spawnFlame(entity, SPRITE_FLAME);
-					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
-					flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
-					flame->z += rand() % 5 - 2;
+	            if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
+	            {
+				    j = 1 + rand() % 4;
+				    for ( c = 0; c < j; ++c )
+				    {
+					    Entity* flame = spawnFlame(entity, SPRITE_FLAME);
+					    flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
+					    flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
+					    flame->z += rand() % 5 - 2;
+				    }
 				}
 			}
 		}

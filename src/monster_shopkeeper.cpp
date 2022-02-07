@@ -1416,27 +1416,30 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
-				if ( entity->sprite == items[TOOL_TORCH].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
-					entity2->z += 1;
+	            if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+	            {
+				    if ( entity->sprite == items[TOOL_TORCH].index )
+				    {
+					    entity2 = spawnFlame(entity, SPRITE_FLAME);
+					    entity2->x += 2 * cos(my->yaw);
+					    entity2->y += 2 * sin(my->yaw);
+					    entity2->z -= 2;
+				    }
+				    else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				    {
+					    entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
+					    entity2->x += 2 * cos(my->yaw);
+					    entity2->y += 2 * sin(my->yaw);
+					    entity2->z -= 2;
+				    }
+				    else if ( entity->sprite == items[TOOL_LANTERN].index )
+				    {
+					    entity->z += 2;
+					    entity2 = spawnFlame(entity, SPRITE_FLAME);
+					    entity2->x += 2 * cos(my->yaw);
+					    entity2->y += 2 * sin(my->yaw);
+					    entity2->z += 1;
+				    }
 				}
 				break;
 				// cloak

@@ -18143,27 +18143,30 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->roll = 0;
 			shieldLimb->pitch = 0;
 
-			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
-			{
-				shieldLimb->z += 2;
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				flameEntity->z += 1;
+	        if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+	        {
+			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			    {
+				    shieldLimb->z += 2;
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				    flameEntity->z += 1;
+			    }
 			}
 			else if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 			{
@@ -18254,27 +18257,30 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				}
 			}
 
-			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
-			{
-				shieldLimb->z += 2;
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
-				flameEntity->z += 1;
+	        if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+	        {
+			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+				    flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				    flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+				    flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			    {
+				    shieldLimb->z += 2;
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				    flameEntity->z += 1;
+			    }
 			}
 			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
@@ -18369,27 +18375,30 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->focalz = limbs[race][7][2];
 			}*/
 
-			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldLimb->yaw);
-				flameEntity->y += 2 * sin(shieldLimb->yaw);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2 * cos(shieldLimb->yaw);
-				flameEntity->y += 2 * sin(shieldLimb->yaw);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
-			{
-				shieldLimb->z += 2;
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldLimb->yaw);
-				flameEntity->y += 2 * sin(shieldLimb->yaw);
-				flameEntity->z += 1;
+	        if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+	        {
+		        if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				    flameEntity->x += 2 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			    {
+				    shieldLimb->z += 2;
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldLimb->yaw);
+				    flameEntity->z += 1;
+			    }
 			}
 			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
