@@ -2459,7 +2459,7 @@ void actPlayer(Entity* my)
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
-			if ( PLAYER_ALIVETIME == 300 )
+			if ( PLAYER_ALIVETIME == 300 && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT )
 			{
 				// take a screenshot to be associated with the current save game
 				auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);

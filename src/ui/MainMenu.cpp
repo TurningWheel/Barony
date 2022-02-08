@@ -312,6 +312,7 @@ namespace MainMenu {
 	static void mainClose(Button&);
 	static void mainEndLife(Button&);
 	static void mainRestartGame(Button&);
+	static void mainReturnToHallofTrials(Button&);
 	static void mainQuitToMainMenu(Button&);
 	static void mainQuitToDesktop(Button&);
 
@@ -592,17 +593,14 @@ namespace MainMenu {
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setCallback(callback);
 		back_button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		back_button->setButtonsOffset(SDL_Rect{8, 0, 0, 0,});
-		/*back_button->setTickCallback([](Widget& widget) {
-			auto button = static_cast<Button*>(&widget);
-			auto frame = static_cast<Frame*>(button->getParent());
-			auto backdrop = frame->findImage("backdrop");
-			if (button->isSelected()) {
-				backdrop->color = makeColor(255, 255, 255, 255);
+		back_button->setWidgetBack("back_button");
+		back_button->setTickCallback([](Widget& widget) {
+			if (widget.isSelected()) {
+			    widget.setButtonsOffset(SDL_Rect{32, 0, 0, 0,});
 			} else {
-				backdrop->color = makeColor(127, 127, 127, 255);
+			    widget.setButtonsOffset(SDL_Rect{8, 0, 0, 0,});
 			}
-			});*/
+			});
 
 		return back_button;
 	}
@@ -1327,7 +1325,7 @@ namespace MainMenu {
 		story_text_box_size = 2;
 		story_text_scroll = 0.f;
 		story_text_writer = 0.f;
-		story_text_box_scale = -2.f;
+		story_text_box_scale = 1.f;
 		story_text_adjust_box = false;
 		story_text_end = false;
 		story_image_index = 0;
@@ -1369,7 +1367,12 @@ namespace MainMenu {
 		    }
 			});
 		back_button->setWidgetBack("back");
-		back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
+		back_button->setHideKeyboardGlyphs(false);
+		if (inputs.hasController(clientnum)) {
+		    back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
+		} else {
+		    back_button->setGlyphPosition(Button::glyph_position_t::BOTTOM_RIGHT);
+		}
 		back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
 
 		auto font = Font::get(bigfont_outline); assert(font);
@@ -1408,19 +1411,20 @@ namespace MainMenu {
 		    auto font = Font::get(bigfont_outline); assert(font);
 		    next->setSize(SDL_Rect{
 		        (Frame::virtualScreenX - 160) / 2,
-		        (Frame::virtualScreenY - font->height()),
+		        (Frame::virtualScreenY - font->height() + 4),
 		        160,
-		        font->height(),
+		        font->height() - 4,
 		        });
 		    next->setCallback(next_button_func);
 			next->setTickCallback([](Widget& widget){
 			    auto button = static_cast<Button*>(&widget);
                 button->setInvisible(story_text_pause == 0);
-		        button->setText(inputs.hasController(0) ? "" : "Continue...");
+		        //button->setText(inputs.hasController(0) ? "" : "Continue...");
 			    });
 		    next->setWidgetBack("back");
 		    next->select();
 		    next->setGlyphPosition(Button::glyph_position_t::CENTERED_TOP);
+		    next->setHideKeyboardGlyphs(false);
 		}
 
 		auto textbox2 = textbox1->addFrame("story_text_box");
@@ -1448,7 +1452,7 @@ namespace MainMenu {
 		    auto textbox2 = textbox1->findFrame("story_text_box");
 		    textbox2->setSize(SDL_Rect{
 		        font->height() / 2,
-		        font->height() / 2,
+		        font->height() / 2 - 2,
 		        Frame::virtualScreenX - 320 - font->height(),
 		        (int)(font->height() * std::max(lines, 0.f)),
 		        });
@@ -1464,10 +1468,13 @@ namespace MainMenu {
 		static auto adjust_box_size = [](){
 		    float f = story_text_box_size;
 		    float diff = story_text_box_scale - f;
-		    if (fabs(diff) < 0.1) {
+			const float inc = (1.f / fpsLimit) * 8.f;
+		    if (fabs(diff) < inc) {
 		        story_text_box_scale -= diff;
+		    } else if (signbit(diff)) {
+		        story_text_box_scale += inc;
 		    } else {
-		        story_text_box_scale -= diff / TICKS_PER_SECOND;
+		        story_text_box_scale -= inc;
 		    }
             change_box_size(story_text_box_scale);
 		    };
@@ -1577,6 +1584,9 @@ namespace MainMenu {
 							buf[len] = c;
 							buf[len + 1] = '\0';
 						} else {
+						    auto back = main_menu_frame->findButton("back"); assert(back);
+						    back->setDisabled(true);
+						    back->setInvisible(true);
 							story_text_pause = fpsLimit * 5;
 							story_text_end = true;
 						}
@@ -3692,7 +3702,7 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
+		beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
 	}
 
 	static void recordsStoryIntroduction(Button& button) {
@@ -3710,7 +3720,7 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		auto back_button = main_menu_frame->addButton("back");
+		/*auto back_button = main_menu_frame->addButton("back");
 		back_button->setHideSelectors(true);
 		back_button->setText("Return to Main Menu");
 		back_button->setColor(makeColor(0, 0, 0, 0));
@@ -3732,7 +3742,18 @@ bind_failed:
 			credits->select();
 			});
 		back_button->setWidgetBack("back");
-		back_button->select();
+	    back_button->setHideKeyboardGlyphs(false);
+		back_button->select();*/
+
+		auto back = createBackWidget(main_menu_frame,
+		    [](Button& b){
+			destroyMainMenu();
+			createMainMenu(false);
+			mainHallOfRecords(b);
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			auto credits = buttons->findButton("CREDITS"); assert(credits);
+			credits->select();});
+		back->select();
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
@@ -3835,7 +3856,7 @@ bind_failed:
 			u8"Josiah Colborn\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Benjamin Potter\n"
+			u8"Ben Potter\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Matthew Griebner\n"
@@ -5141,12 +5162,12 @@ bind_failed:
 		header->setText("CLASS SELECTION");
 		header->setJustify(Field::justify_t::CENTER);
 
-		auto class_name_header = card->addField("class_name_header", 64);
+		/*auto class_name_header = card->addField("class_name_header", 64);
 		class_name_header->setSize(SDL_Rect{98, 70, 128, 26});
 		class_name_header->setFont(smallfont_outline);
 		class_name_header->setText("Fix this");
 		class_name_header->setHJustify(Field::justify_t::CENTER);
-		class_name_header->setVJustify(Field::justify_t::BOTTOM);
+		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
 		auto textbox = card->addImage(
 			SDL_Rect{46, 116, 186, 36},
@@ -8173,8 +8194,14 @@ bind_failed:
 	}
 
 	static void mainRestartGame(Button& button) {
+	    const char* prompt;
+	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	        prompt = "Are you sure you want to restart?\nThis adventure will be lost forever.";
+	    } else {
+	        prompt = "Are you sure you want to restart\nthe current trial?";
+	    }
 		binaryPrompt(
-			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
+			prompt, // window text
 			"Restart", // okay text
 			"Cancel", // cancel text
 			[](Button&){ // okay
@@ -8192,7 +8219,49 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
+				Button* quit_button;
+				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				    quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
+				} else {
+				    quit_button = buttons->findButton("RESTART TRIAL"); assert(quit_button);
+				}
+				quit_button->select();
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
+				if (quit_confirm) {
+					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+			});
+	}
+
+	static void mainReturnToHallofTrials(Button& button) {
+	    const char* prompt;
+	    if (strcmp(map.filename, "tutorial_hub.lmp")) {
+	        prompt = "Are you sure you want to return\nto the Hall of Trials?";
+	    } else {
+	        prompt = "Are you sure you want to reset\nthe Hall of Trials level?";
+	    }
+		binaryPrompt(
+			prompt, // window text
+			"Okay", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				soundActivate();
+				destroyMainMenu();
+				createDummyMainMenu();
+				tutorial_map_destination = "tutorial_hub";
+				beginFade(MainMenu::FadeDestination::HallOfTrials);
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				Button* quit_button;
+	            if (strcmp(map.filename, "tutorial_hub.lmp")) {
+				    quit_button = buttons->findButton("RETURN TO HALL OF TRIALS"); assert(quit_button);
+				} else {
+				    quit_button = buttons->findButton("RESET HALL OF TRIALS"); assert(quit_button);
+				}
 				quit_button->select();
 				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
@@ -8203,8 +8272,14 @@ bind_failed:
 	}
 
 	static void mainQuitToMainMenu(Button& button) {
+	    const char* prompt;
+	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	        prompt = "All progress before the current\ndungeon level will be saved.";
+	    } else {
+	        prompt = "Are you sure you want to return\nto the main menu?";
+	    }
 		binaryPrompt(
-			"All progress before the current\ndungeon level will be saved.", // window text
+			prompt, // window text
 			"Quit to Menu", // okay text
 			"Cancel", // cancel text
 			[](Button&){ // okay
@@ -8324,10 +8399,45 @@ bind_failed:
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::TitleScreen);});
 				playMusic(sounds[501], false, false, false);
 			}
-			else if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
+			else if (main_menu_fade_destination >= FadeDestination::HerxMidpointHuman ||
+			    main_menu_fade_destination <= FadeDestination::ClassicBaphometEndingEvil) {
 				destroyMainMenu();
 				createDummyMainMenu();
-				createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
+				struct Scene {
+				    const char* filename;
+				    void (*end_func)();
+				};
+				auto returnToMainMenu = [](){(void)beginFade(FadeDestination::RootMainMenu);};
+				Scene scenes[] = {
+				    {"data/story/HerxMidpointHuman.json", returnToMainMenu},
+				    {"data/story/HerxMidpointAutomaton.json", returnToMainMenu},
+				    {"data/story/HerxMidpointBeast.json", returnToMainMenu},
+				    {"data/story/HerxMidpointEvil.json", returnToMainMenu},
+
+				    {"data/story/BaphometMidpointHuman.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointAutomaton.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointBeast.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointEvil.json", returnToMainMenu},
+
+				    {"data/story/EndingHuman.json", returnToMainMenu},
+				    {"data/story/EndingAutomaton.json", returnToMainMenu},
+				    {"data/story/EndingBeast.json", returnToMainMenu},
+				    {"data/story/EndingEvil.json", returnToMainMenu},
+
+				    {"data/story/ClassicEndingHuman.json", returnToMainMenu},
+				    {"data/story/ClassicEndingAutomaton.json", returnToMainMenu},
+				    {"data/story/ClassicEndingBeast.json", returnToMainMenu},
+				    {"data/story/ClassicEndingEvil.json", returnToMainMenu},
+
+				    {"data/story/ClassicBaphometEndingHuman.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingAutomaton.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingBeast.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingEvil.json", returnToMainMenu},
+				};
+				constexpr int num_scenes = sizeof(scenes) / sizeof(scenes[0]);
+				int scene = (int)main_menu_fade_destination - (int)FadeDestination::HerxMidpointHuman;
+				assert(scene >= 0 && scene < num_scenes);
+				createStoryScreen(scenes[scene].filename, scenes[scene].end_func);
 				playMusic(intermissionmusic, false, false, false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
@@ -8351,11 +8461,27 @@ bind_failed:
 				multiplayer = SINGLE;
 				numplayers = 0;
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-				if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
-				{
+
+                // don't show the first time prompt anymore
+				if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
 					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
 					gameModeManager.Tutorial.writeToDocument();
 				}
+
+                // if restarting, be sure to call gameModeManager.Tutorial.onMapRestart()
+				if (ingame) {
+				    int tutorialNum = -1;
+		            for (int i = 0; tutorial_map_destination[i]; ++i) {
+		                auto c = tutorial_map_destination[i];
+		                if (c >= '0' && c <= '9') {
+		                    tutorialNum = (int)strtol(tutorial_map_destination.c_str() + i, nullptr, 10);
+		                }
+		            }
+		            if (tutorialNum > 0 && tutorialNum <= gameModeManager.Tutorial.getNumTutorialLevels()) {
+				        gameModeManager.Tutorial.onMapRestart(tutorialNum);
+				    }
+				}
+
 				gameModeManager.Tutorial.startTutorial(tutorial_map_destination);
 				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
 				doNewGame(false);
@@ -8527,16 +8653,41 @@ bind_failed:
 		};
 		std::vector<Option> options;
 		if (ingame) {
-			options.insert(options.begin(), {
-				{"BACK TO GAME", mainClose},
-				{"ASSIGN CONTROLLERS", mainAssignControllers},
-				{"DUNGEON COMPENDIUM", recordsDungeonCompendium},
-				{"SETTINGS", mainSettings},
-				{"END LIFE", mainEndLife},
-				{"RESTART GAME", mainRestartGame},
-				{"QUIT TO MAIN MENU", mainQuitToMainMenu},
-				{"QUIT TO DESKTOP", mainQuitToDesktop},
-				});
+			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+			    options.insert(options.begin(), {
+				    {"BACK TO GAME", mainClose},
+				    {"ASSIGN CONTROLLERS", mainAssignControllers},
+				    {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				    {"SETTINGS", mainSettings},
+				    {"END LIFE", mainEndLife},
+				    {"RESTART GAME", mainRestartGame},
+				    {"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				    //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				    });
+			} else {
+			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
+			        options.insert(options.begin(), {
+				        {"BACK TO GAME", mainClose},
+				        {"ASSIGN CONTROLLERS", mainAssignControllers},
+				        {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				        {"SETTINGS", mainSettings},
+				        {"RESTART TRIAL", mainRestartGame},
+				        {"RETURN TO HALL OF TRIALS", mainReturnToHallofTrials},
+				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				        //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				        });
+				} else {
+			        options.insert(options.begin(), {
+				        {"BACK TO GAME", mainClose},
+				        {"ASSIGN CONTROLLERS", mainAssignControllers},
+				        {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				        {"SETTINGS", mainSettings},
+				        {"RESET HALL OF TRIALS", mainReturnToHallofTrials},
+				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				        //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				        });
+				}
+			}
 		} else {
 #ifdef NINTENDO
 			options.insert(options.begin(), {

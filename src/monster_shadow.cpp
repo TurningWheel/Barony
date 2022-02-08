@@ -1065,6 +1065,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw = shieldarm->yaw;
 				entity->roll = 0;
 				entity->pitch = 0;
+				if ( entity->sprite == items[TOOL_LANTERN].index )
+				{
+				    entity->z += 2;
+				}
 	            if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
 	            {
 				    if ( entity->sprite == items[TOOL_TORCH].index )
@@ -1083,7 +1087,6 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				    }
 				    else if ( entity->sprite == items[TOOL_LANTERN].index )
 				    {
-					    entity->z += 2;
 					    entity2 = spawnFlame(entity, SPRITE_FLAME);
 					    entity2->x += 2 * cos(entity->yaw);
 					    entity2->y += 2 * sin(entity->yaw);
