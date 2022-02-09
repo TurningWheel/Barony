@@ -1411,7 +1411,8 @@ namespace MainMenu {
 		auto backdrop = main_menu_frame->addFrame("backdrop");
 		backdrop->setSize(main_menu_frame->getActualSize());
 		backdrop->setTickCallback([](Widget& widget){
-			const float inc = (1.f / fpsLimit) * TICKS_PER_SECOND;
+		    constexpr float ticks_per_second = 20.f;
+			const float inc = ticks_per_second / fpsLimit;
 			firetimer += inc;
 			if (firetimer >= 1.f) {
 			    firetimer -= 1.f;
