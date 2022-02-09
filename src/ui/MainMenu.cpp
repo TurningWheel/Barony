@@ -333,6 +333,74 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+    static constexpr int firePixelSize = 4;
+    static constexpr int fireSize = (Frame::virtualScreenX * Frame::virtualScreenY) / (firePixelSize * firePixelSize);
+    static Uint8 firePixels[fireSize];
+    static Uint8 fireDefault = 63;
+
+    static SDL_Surface* fireSurface = nullptr;
+    static TempTexture* fireTexture = nullptr;
+
+    static void fireStart() {
+        assert(!fireSurface);
+        assert(!fireTexture);
+	    fireSurface = SDL_CreateRGBSurface(0,
+	        Frame::virtualScreenX / firePixelSize,
+	        Frame::virtualScreenY / firePixelSize,
+	        32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	    for (int c = 0; c < fireSize; ++c) {
+            firePixels[c] = fireDefault;
+        }
+    }
+
+    static void fireStop() {
+	    if (fireTexture) {
+	        delete fireTexture;
+	        fireTexture = nullptr;
+	    }
+	    if (fireSurface) {
+            SDL_FreeSurface(fireSurface);
+            fireSurface = nullptr;
+	    }
+    }
+
+    static inline Uint8 fireIntensity(int index) {
+        constexpr int w = Frame::virtualScreenX / firePixelSize;
+	    const int below = index + w;
+	    const int decay = std::max(0, rand() % 5 - 3);
+	    const int belowIntensity = firePixels[below] - decay;
+	    const int newIntensity =
+		    belowIntensity >= 0 ?
+		    belowIntensity : 0;
+	    const int pos = (index - decay >= 0) ?
+	        index - decay : 0;
+	    firePixels[pos] = newIntensity;
+	    return newIntensity;
+    }
+
+    static void fire() {
+	    SDL_LockSurface(fireSurface);
+        constexpr int w = Frame::virtualScreenX / firePixelSize;
+        constexpr int size = fireSize - w;
+	    for (int index = 0; index < size; ++index) {
+		    const Uint8 intensity = fireIntensity(index);
+            Uint32* const p = (Uint32*)fireSurface->pixels + index;
+            *p = makeColor(0, 0, 0, intensity);
+	    }
+	    for (int index = size; index < size + w; ++index) {
+            Uint32* const p = (Uint32*)fireSurface->pixels + index;
+            *p = makeColor(0, 0, 0, fireDefault);
+	    }
+	    SDL_UnlockSurface(fireSurface);
+	    if (fireTexture) {
+	        delete fireTexture;
+	    }
+	    fireTexture = new TempTexture();
+	    fireTexture->load(fireSurface, false, false);
+    }
+
+/******************************************************************************/
+
 	static void setupSplitscreen() {
 		if (multiplayer != SINGLE) {
 			splitscreen = false;
@@ -1335,11 +1403,48 @@ namespace MainMenu {
 		story_skip = 0;
 		story_skip_timer = 0.f;
 
-		main_menu_frame->addImage(
+        // fire effect
+		static float firetimer;
+		firetimer = 0.f;
+        fireStop();
+		fireStart();
+		auto backdrop = main_menu_frame->addFrame("backdrop");
+		backdrop->setSize(main_menu_frame->getActualSize());
+		backdrop->setTickCallback([](Widget& widget){
+			const float inc = (1.f / fpsLimit) * TICKS_PER_SECOND;
+			firetimer += inc;
+			if (firetimer >= 1.f) {
+			    firetimer -= 1.f;
+                fire();
+			}
+		    });
+		backdrop->setDrawCallback([](const Widget& widget, const SDL_Rect rect){
+		    if (fireTexture) {
+                fireTexture->bind();
+                glColor4f(1, 1, 1, 1);
+	            glBegin(GL_QUADS);
+	            glTexCoord2f(0, 0);
+	            glVertex2f(rect.x, Frame::virtualScreenY - rect.y);
+	            glTexCoord2f(0, 1);
+	            glVertex2f(rect.x, Frame::virtualScreenY - (rect.y + rect.h));
+	            glTexCoord2f(1, 1);
+	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - (rect.y + rect.h));
+	            glTexCoord2f(1, 0);
+	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
+	            glEnd();
+	            glBindTexture(GL_TEXTURE_2D, 0);
+	        }
+		    });
+		backdrop->setBorder(0);
+		backdrop->setColor(0);
+		backdrop->setHollow(true);
+
+        // story image
+		(void)main_menu_frame->addImage(
 			main_menu_frame->getSize(),
 			0xffffffff,
 			story.images[0].c_str(),
-			"backdrop"
+			"storyboard"
 		);
 
 		auto back_button = main_menu_frame->addButton("back");
@@ -1490,16 +1595,16 @@ namespace MainMenu {
 			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
 			auto textbox1 = static_cast<Frame*>(&widget);
 			auto story_font = Font::get(bigfont_outline); assert(story_font);
-			auto backdrop = main_menu_frame->findImage("backdrop"); assert(backdrop);
-			if (backdrop && !story_text_pause) {
+			auto storyboard = main_menu_frame->findImage("storyboard"); assert(storyboard);
+			if (storyboard && !story_text_pause) {
 				story_image_fade = std::max(0.f, story_image_fade - inc);
 		        float factor = story_image_fade - story_font->height();
 		        Uint8 c = 255 * (fabs(factor) / story_font->height());
-		        backdrop->color = makeColor(c, c, c, 255);
+		        storyboard->color = makeColor(c, c, c, 255);
 		        if (factor <= 0.f && story_image_advanced) {
 		            story_image_advanced = false;
 			        story_image_index = (story_image_index + 1) % story.images.size();
-			        backdrop->path = story.images[story_image_index];
+			        storyboard->path = story.images[story_image_index];
 		        }
 			}
 			if (story_text_scroll > 0.f) {
@@ -3702,7 +3807,7 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
+		beginFade(MainMenu::FadeDestination::EndingEvil);
 	}
 
 	static void recordsStoryIntroduction(Button& button) {
@@ -8399,7 +8504,7 @@ bind_failed:
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::TitleScreen);});
 				playMusic(sounds[501], false, false, false);
 			}
-			else if (main_menu_fade_destination >= FadeDestination::HerxMidpointHuman ||
+			else if (main_menu_fade_destination >= FadeDestination::HerxMidpointHuman &&
 			    main_menu_fade_destination <= FadeDestination::ClassicBaphometEndingEvil) {
 				destroyMainMenu();
 				createDummyMainMenu();
