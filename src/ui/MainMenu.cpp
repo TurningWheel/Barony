@@ -333,8 +333,7 @@ namespace MainMenu {
 
     static constexpr int firePixelSize = 4;
     static constexpr int fireSize = (Frame::virtualScreenX * Frame::virtualScreenY) / (firePixelSize * firePixelSize);
-    static Uint8 firePixels[fireSize];
-    static Uint8 fireDefault = 63;
+    static constexpr Uint8 fireDefault = 63;
 
     static SDL_Surface* fireSurface = nullptr;
     static TempTexture* fireTexture = nullptr;
@@ -346,9 +345,14 @@ namespace MainMenu {
 	        Frame::virtualScreenX / firePixelSize,
 	        Frame::virtualScreenY / firePixelSize,
 	        32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	    for (int c = 0; c < fireSize; ++c) {
-            firePixels[c] = fireDefault;
+	    const Uint32 defaultColor = makeColor(0, 0, 0, fireDefault);
+	    SDL_LockSurface(fireSurface);
+	    Uint32* const sp = (Uint32*)fireSurface->pixels;
+	    Uint32* const ep = (Uint32*)fireSurface->pixels + fireSize;
+	    for (Uint32* p = sp; p < ep; ++p) {
+            *p = defaultColor;
         }
+	    SDL_UnlockSurface(fireSurface);
     }
 
     static void fireStop() {
@@ -362,32 +366,29 @@ namespace MainMenu {
 	    }
     }
 
-    static inline Uint8 fireIntensity(int index) {
+    static inline void fireUpdate(Uint32* p) {
         constexpr int w = Frame::virtualScreenX / firePixelSize;
-	    const int below = index + w;
-	    const int decay = std::max(0, rand() % 5 - 3);
-	    const int belowIntensity = firePixels[below] - decay;
-	    const int newIntensity =
-		    belowIntensity >= 0 ?
-		    belowIntensity : 0;
-	    const int pos = (index - decay >= 0) ?
-	        index - decay : 0;
-	    firePixels[pos] = newIntensity;
-	    return newIntensity;
+	    const int diff = std::max(0, rand() % 5 - 3);
+	    const SDL_PixelFormat* const fmt = mainsurface->format;
+	    const int oldIntensity = ((p[w] & fmt->Amask) >> fmt->Ashift) << fmt->Aloss;
+	    const int intensity = std::max(oldIntensity - diff, 0);
+	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
+	    *newPixel = makeColor(0, 0, 0, intensity);
     }
 
     static void fire() {
 	    SDL_LockSurface(fireSurface);
         constexpr int w = Frame::virtualScreenX / firePixelSize;
         constexpr int size = fireSize - w;
-	    for (int index = 0; index < size; ++index) {
-		    const Uint8 intensity = fireIntensity(index);
-            Uint32* const p = (Uint32*)fireSurface->pixels + index;
-            *p = makeColor(0, 0, 0, intensity);
+	    Uint32* const sp = (Uint32*)fireSurface->pixels;
+	    Uint32* const mp = (Uint32*)fireSurface->pixels + size;
+	    Uint32* const ep = (Uint32*)fireSurface->pixels + fireSize;
+	    for (Uint32* p = sp; p < mp; ++p) {
+            fireUpdate(p);
 	    }
-	    for (int index = size; index < size + w; ++index) {
-            Uint32* const p = (Uint32*)fireSurface->pixels + index;
-            *p = makeColor(0, 0, 0, fireDefault);
+	    const Uint32 defaultColor = makeColor(0, 0, 0, fireDefault);
+	    for (Uint32* p = mp; p < ep; ++p) {
+            *p = defaultColor;
 	    }
 	    SDL_UnlockSurface(fireSurface);
 	    if (fireTexture) {
