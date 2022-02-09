@@ -692,15 +692,27 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					input.consumeBinaryToggle("AltMenuUDown")) {
 					selection = 0;
 					scrollToSelection();
+					auto entry = list[selection];
+					if (entry->selected) {
+						(*entry->selected)(*entry);
+					}
 				}
 			} else {
 				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp")) {
 					selection = std::max(0, selection - 1);
 					scrollToSelection();
+					auto entry = list[selection];
+					if (entry->selected) {
+						(*entry->selected)(*entry);
+					}
 				}
 				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown")) {
 					selection = std::min((int)list.size() - 1, selection + 1);
 					scrollToSelection();
+					auto entry = list[selection];
+					if (entry->selected) {
+						(*entry->selected)(*entry);
+					}
 				}
 			}
 		}

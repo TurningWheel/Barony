@@ -370,8 +370,8 @@ namespace MainMenu {
         constexpr int w = Frame::virtualScreenX / firePixelSize;
 	    const int diff = std::max(0, rand() % 5 - 3);
 	    const SDL_PixelFormat* const fmt = mainsurface->format;
-	    const int oldIntensity = ((p[w] & fmt->Amask) >> fmt->Ashift) << fmt->Aloss;
-	    const int intensity = std::max(oldIntensity - diff, 0);
+	    const int below = ((p[w] & fmt->Amask) >> fmt->Ashift) << fmt->Aloss;
+	    const int intensity = std::max(below - diff, 0);
 	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
 	    *newPixel = makeColor(0, 0, 0, intensity);
     }
@@ -1475,10 +1475,10 @@ namespace MainMenu {
 		back_button->setHideKeyboardGlyphs(false);
 		if (inputs.hasController(clientnum)) {
 		    back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
+		    back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
 		} else {
 		    back_button->setGlyphPosition(Button::glyph_position_t::BOTTOM_RIGHT);
 		}
-		back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
@@ -4789,6 +4789,9 @@ bind_failed:
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
 						stats[index]->appearance = rand() % NUMAPPEARANCES;
+			            auto appearances = frame->findFrame("appearances"); assert(appearances);
+			            appearances->setSelection(stats[index]->appearance);
+			            appearances->scrollToSelection();
 					}
 					else {
 						stats[index]->appearance = 0;
@@ -4851,7 +4854,7 @@ bind_failed:
 		auto appearances = card->addFrame("appearances");
 		appearances->setSize(SDL_Rect{152, 78, 122, 36});
 		appearances->setActualSize(SDL_Rect{0, 4, 122, 36});
-		appearances->setFont(smallfont_outline);
+		appearances->setFont("fonts/pixel_maz.ttf#32#2");
 		appearances->setBorder(0);
 		appearances->setListOffset(SDL_Rect{12, 8, 0, 0});
 		appearances->setScrollBarsEnabled(false);
@@ -4923,7 +4926,7 @@ bind_failed:
 		appearance_uparrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-			int selection = std::max(appearances->getSelection() - 1, 0);
+			int selection = std::max((int)stats[button.getOwner()]->appearance - 1, 0);
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
@@ -4940,7 +4943,7 @@ bind_failed:
 		appearance_downarrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-			int selection = std::min(appearances->getSelection() + 1,
+			int selection = std::min((int)stats[button.getOwner()]->appearance + 1,
 				(int)appearances->getEntries().size() - 1);
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
@@ -4976,7 +4979,8 @@ bind_failed:
 			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2); entry.parent.activate();}; break;
 			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3); entry.parent.activate();}; break;
 			}
-			if (stats[index]->appearance == c) {
+			entry->selected = entry->click;
+			if (stats[index]->appearance == c && stats[index]->playerRace == RACE_HUMAN) {
 				appearances->setSelection(c);
 				appearances->scrollToSelection();
 			}
@@ -5924,6 +5928,18 @@ bind_failed:
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 
+		static auto invite_func = [](Button& button){
+		    auto controller_prompt = main_menu_frame->findWidget("controller_dimmer", false);
+		    if (!controller_prompt) {
+		        switch (button.getOwner()) {
+		        case 0: createControllerPrompt(0, true, [](){createCharacterCard(0);}); break;
+		        case 1: createControllerPrompt(1, true, [](){createCharacterCard(1);}); break;
+		        case 2: createControllerPrompt(2, true, [](){createCharacterCard(2);}); break;
+		        case 3: createControllerPrompt(3, true, [](){createCharacterCard(3);}); break;
+		        }
+		    }
+		    };
+
 		auto invite = card->addButton("invite_button");
 		invite->setText("Press to Start");
 		invite->setHideSelectors(true);
@@ -5936,12 +5952,8 @@ bind_failed:
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
 		invite->setWidgetBack("back_button");
-		switch (index) {
-		case 0: invite->setCallback([](Button&){createControllerPrompt(0, true, [](){createCharacterCard(0);});}); break;
-		case 1: invite->setCallback([](Button&){createControllerPrompt(1, true, [](){createCharacterCard(1);});}); break;
-		case 2: invite->setCallback([](Button&){createControllerPrompt(2, true, [](){createCharacterCard(2);});}); break;
-		case 3: invite->setCallback([](Button&){createControllerPrompt(3, true, [](){createCharacterCard(3);});}); break;
-		}
+		invite->setHideKeyboardGlyphs(false);
+		invite->setCallback(invite_func);
 		invite->select();
 	}
 
@@ -8698,6 +8710,7 @@ bind_failed:
 		start->setText("Press to Start\n ");
 		start->setButtonsOffset(SDL_Rect{0, 16, 0, 0});
 		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		start->setHideKeyboardGlyphs(false);
 		start->addWidgetAction("MenuConfirm", "start");
 		start->select();
 		start->setCallback([](Button&){

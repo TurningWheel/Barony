@@ -95,6 +95,7 @@ public:
 		void (*ctrlClick)(entry_t&) = nullptr;
 		void (*highlight)(entry_t&) = nullptr;
 		void (*highlighting)(entry_t&) = nullptr;
+		void (*selected)(entry_t&) = nullptr;
 
 		std::shared_ptr<listener_t> listener;
 	};
