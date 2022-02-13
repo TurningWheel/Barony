@@ -854,7 +854,7 @@ void Player::HUD_t::updateUINavigation()
 			case Player::GUI_t::MODULE_HOTBAR:
 			case Player::GUI_t::MODULE_CHARACTERSHEET:
 				rightBumperTxt->setDisabled(false);
-				rightBumperTxt->setText(language[4089]);
+				rightBumperTxt->setText(language[4092]);
 				break;
 			default:
 				break;
@@ -9352,6 +9352,17 @@ void resetInventorySlotFrames(const int player)
 			}
 		}
 	}
+
+	for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+	{
+		for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y; ++y )
+		{
+			if ( auto slotFrame = players[player]->inventoryUI.getChestSlotFrame(x, y) )
+			{
+				slotFrame->setDisabled(true);
+			}
+		}
+	}
 }
 
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells)
@@ -9359,6 +9370,33 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	if ( !gui )
 	{
 		return false;
+	}
+	if ( players[player]->inventoryUI.chestFrame && !spells
+		&& !players[player]->inventoryUI.chestFrame->isDisabled() )
+	{
+		for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+		{
+			for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y; ++y )
+			{
+				auto slotFrame = players[player]->inventoryUI.getChestSlotFrame(x, y);
+				if ( !slotFrame )
+				{
+					continue;
+				}
+
+				if ( !players[player]->inventoryUI.chestGUI.isSlotVisible(x, y) )
+				{
+					continue;
+				}
+
+				if ( slotFrame->capturesMouseInRealtimeCoords() )
+				{
+					outx = x;
+					outy = y;
+					return true;
+				}
+			}
+		}
 	}
 	if ( players[player]->inventoryUI.frame && !spells 
 		&& players[player]->inventory_mode == INVENTORY_MODE_ITEM )
@@ -9430,6 +9468,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 
 	spriteImage->path = getItemSpritePath(player, *item);
 	bool disableBackgrounds = false;
+	bool isHotbarIcon = false;
 	if ( spriteImage->path != "" )
 	{
 		spriteImageFrame->setDisabled(false);
@@ -9440,10 +9479,12 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 				// fade this icon
 				spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
 				disableBackgrounds = true;
+				isHotbarIcon = true;
 			}
 		}
 		else if ( !strcmp(slotFrame->getName(), "hotbar slot item") ) // hotbar slots
 		{
+			isHotbarIcon = true;
 			auto& hotbar_t = players[player]->hotbar;
 			bool tryDimHotbarSlot = false;
 			if ( hotbar_t.useHotbarFaceMenu && hotbar_t.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
@@ -9474,14 +9515,51 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
 	{
 		qtyFrame->setDisabled(true);
-		if ( item->count > 1 )
+		bool drawQty = (item->count > 1) ? true : false;
+		Uint32 qtyColor = 0xFFFFFFFF;
+		bool stackable = false;
+		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+		if ( selectedItem && !isHotbarIcon )
+		{
+			if ( item != selectedItem 
+				&& !itemIsEquipped(selectedItem, player)
+				&& !itemIsEquipped(item, player) )
+			{
+				int selectedItemQty;
+				int destItemQty;
+				auto result = getItemStackingBehavior(player, selectedItem, item, selectedItemQty, destItemQty);
+				if ( result == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK
+					|| result == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+				{
+					drawQty = true;
+					qtyColor = makeColor(0, 192, 255, 255);
+					stackable = true;
+				}
+			}
+		}
+		if ( drawQty )
 		{
 			qtyFrame->setDisabled(false);
 			if ( auto qtyText = qtyFrame->findField("quantity text") )
 			{
 				char qtybuf[32] = "";
-				snprintf(qtybuf, sizeof(qtybuf), "%d", item->count);
+				if ( stackable )
+				{
+					if ( item->count == 1 )
+					{
+						snprintf(qtybuf, sizeof(qtybuf), "+");
+					}
+					else if ( item->count > 1 )
+					{
+						snprintf(qtybuf, sizeof(qtybuf), "%d+", item->count);
+					}
+				}
+				else
+				{
+					snprintf(qtybuf, sizeof(qtybuf), "%d", item->count);
+				}
 				qtyText->setText(qtybuf);
+				qtyText->setColor(qtyColor);
 			}
 		}
 	}
@@ -11283,6 +11361,169 @@ void createPlayerSpellList(const int player)
 	}
 }
 
+void createChestGUI(const int player)
+{
+	if ( !gui )
+	{
+		return;
+	}
+
+	if ( players[player]->inventoryUI.chestFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+
+	Frame* frame = players[player]->inventoryUI.frame->addFrame("chest");
+	players[player]->inventoryUI.chestFrame = frame;
+
+	frame->setSize(SDL_Rect{ 0,
+		0,
+		210,
+		250 });
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player);
+	frame->setInheritParentFrameOpacity(false);
+
+	SDL_Rect basePos{ 0, 0, 210, 130 };
+	{
+		auto bgFrame = frame->addFrame("chest base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
+		const auto bgSize = bgFrame->getSize();
+		//auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 170, 130 },
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 190, 190 },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Chest4x3_BaseTest.png", "chest base img");
+		//bg->disabled = false;
+
+		//auto slider = bgFrame->addSlider("chest slider");
+		//slider->setBorder(24);
+		//slider->setMinValue(0);
+		//slider->setMaxValue(100);
+		//slider->setValue(0);
+		//SDL_Rect sliderPos{ basePos.w - 38, 8, 30, 234 };
+		//slider->setRailSize(sliderPos);
+		//slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+		//slider->setOrientation(Slider::SLIDER_VERTICAL);
+		////slider->setCallback(callback);
+		//slider->setColor(makeColor(255, 255, 255, 255));
+		//slider->setHighlightColor(makeColor(255, 255, 255, 255));
+		//slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+		//slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+		//slider->setHideGlyphs(true);
+		//slider->setHideKeyboardGlyphs(true);
+		//slider->setHideSelectors(true);
+		//slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+
+		const char* font = "fonts/pixel_maz.ttf#32#2";
+		auto titleText = bgFrame->addField("title txt", 64);
+		titleText->setFont(font);
+		titleText->setText("Chest");
+		titleText->setHJustify(Field::justify_t::CENTER);
+		titleText->setVJustify(Field::justify_t::CENTER);
+		titleText->setSize(SDL_Rect{ basePos.x + 4, 0, 162, 32 });
+		titleText->setColor(makeColor(188, 154, 114, 255));
+
+		auto closeBtn = bgFrame->addButton("close chest button");
+		SDL_Rect closeBtnPos = titleText->getSize();
+		closeBtnPos.x = closeBtnPos.x + closeBtnPos.w - 98;
+		closeBtnPos.w = 38;
+		closeBtnPos.h = 38;
+		closeBtn->setSize(closeBtnPos);
+		closeBtn->setColor(makeColor(255, 255, 255, 255));
+		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		closeBtn->setText("X");
+		closeBtn->setFont(font);
+		closeBtn->setHideGlyphs(true);
+		closeBtn->setHideKeyboardGlyphs(true);
+		closeBtn->setHideSelectors(true);
+		closeBtn->setMenuConfirmControlType(0);
+		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
+		closeBtn->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close chest button clicked", button.getOwner());
+			//if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
+			//{
+			//	players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+			//}
+			//players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
+		});
+
+		auto grabAllBtn = bgFrame->addButton("grab all button");
+		SDL_Rect grabBtnPos = titleText->getSize();
+		grabBtnPos.x = closeBtnPos.x + closeBtnPos.w - 98;
+		grabBtnPos.w = 98;
+		grabBtnPos.h = 38;
+		grabAllBtn->setSize(grabBtnPos);
+		grabAllBtn->setColor(makeColor(255, 255, 255, 255));
+		grabAllBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		grabAllBtn->setText("Take All");
+		grabAllBtn->setFont(font);
+		grabAllBtn->setHideGlyphs(true);
+		grabAllBtn->setHideKeyboardGlyphs(true);
+		grabAllBtn->setHideSelectors(true);
+		grabAllBtn->setMenuConfirmControlType(0);
+		grabAllBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
+		grabAllBtn->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Grab All button clicked", button.getOwner());
+			//if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
+			//{
+			//	players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+			//}
+			//players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
+		});
+	}
+
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	players[player]->inventoryUI.chestSlotFrames.clear();
+
+	const int baseSlotOffsetX = 0;
+	const int baseSlotOffsetY = 0;
+
+	const int baseImgBorderWidth = 10;
+	const int baseImgBorderTopHeight = 20;
+
+	const int gridHeight = 120 + 2; // 120px is grid img, plus 2px to tile the image for bottom border.
+	SDL_Rect invSlotsPos{ basePos.x + 4 + baseImgBorderWidth, basePos.y + 4 + baseImgBorderTopHeight, basePos.w, gridHeight };
+	{
+		int numGrids = (players[player]->inventoryUI.MAX_CHEST_Y / players[player]->inventoryUI.chestGUI.kNumItemsToDisplayVertical) + 1;
+
+		const auto chestSlotsFrame = frame->addFrame("chest slots");
+		chestSlotsFrame->setSize(invSlotsPos);
+		chestSlotsFrame->setActualSize(SDL_Rect{ 0, 0, basePos.w, gridHeight * numGrids });
+		chestSlotsFrame->setHollow(true);
+		chestSlotsFrame->setAllowScrollBinds(false);
+
+		auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
+			0xFFFFFFFF, "images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
+		gridImg->tiled = true;
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+		const int maxChestX = Player::Inventory_t::MAX_CHEST_X;
+		const int maxChestY = Player::Inventory_t::MAX_CHEST_Y;
+
+		for ( int x = 0; x < maxChestX; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			for ( int y = 0; y < maxChestY; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "chest %d %d", x, y);
+
+				auto slotFrame = chestSlotsFrame->addFrame(slotname);
+				players[player]->inventoryUI.chestSlotFrames[x + y * 100] = slotFrame;
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+	}
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -11477,6 +11718,7 @@ void createPlayerInventory(const int player)
 	}
 
 	createPlayerSpellList(player);
+	createChestGUI(player);
 
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
@@ -11616,6 +11858,37 @@ void Player::Inventory_t::updateItemContextMenu()
 	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 
 	Item* item = uidToItem(itemMenuItem);
+	if ( itemMenuItem != 0 && !item )
+	{
+		if ( chestGUI.bOpen && openedChest[player.playernum] )
+		{
+			list_t* chest_inventory = nullptr;
+			if ( multiplayer == CLIENT )
+			{
+				chest_inventory = &chestInv[player.playernum];
+			}
+			else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+			{
+				chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+			}
+			if ( chest_inventory )
+			{
+				node_t* nextnode = nullptr;
+				for ( node_t* node = chest_inventory->first; node != NULL; node = nextnode )
+				{
+					nextnode = node->next;
+					Item* chestItem = (Item*)node->element;
+					if ( !chestItem ) { continue; }
+					if ( chestItem->uid == itemMenuItem )
+					{
+						item = chestItem;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	if ( !interactFrame )
 	{
 		itemMenuOpen = false;
@@ -11949,6 +12222,10 @@ void Player::Inventory_t::updateItemContextMenu()
 
 void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextMenuPrompts prompt)
 {
+	if ( !item )
+	{
+		return;
+	}
 	const int player = this->player.playernum;
 	bool disableItemUsage = false;
 	if ( players[player] && players[player]->entity )
@@ -12012,12 +12289,36 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	else if ( prompt == PROMPT_SELL )
 	{
 	}
-	else if ( prompt == PROMPT_STORE_CHEST )
+	else if ( prompt == PROMPT_RETRIEVE_CHEST || prompt == PROMPT_RETRIEVE_CHEST_ALL )
 	{
+		takeItemFromChest(player, item, ((prompt == PROMPT_RETRIEVE_CHEST_ALL) ? item->count : 1), nullptr, false);
+		return;
+	}
+	else if ( prompt == PROMPT_STORE_CHEST || prompt == PROMPT_STORE_CHEST_ALL )
+	{
+		if ( !disableItemUsage )
+		{
+			if ( openedChest[player] )
+			{
+				if ( Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, ((prompt == PROMPT_STORE_CHEST_ALL) ? item->count : 1), false, nullptr) )
+				{
+					// added to chest.
+				}
+			}
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+		}
+		return;
 	}
 	else if ( prompt == PROMPT_GRAB )
 	{
 		inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
+		if ( this->player.inventoryUI.isItemFromChest(item) )
+		{
+			inputs.getUIInteraction(player)->selectedItemFromChest = item->uid;
+		}
 		inputs.getUIInteraction(player)->selectedItem = item;
 		playSound(139, 64); // click sound
 		inputs.getUIInteraction(player)->toggleclick = true;
@@ -12441,6 +12742,22 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 			else if ( spellPanel.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_CHEST )
+		{
+			if ( !chestFrame 
+				|| chestFrame->isDisabled()
+				|| player.inventory_mode != INVENTORY_MODE_ITEM
+				|| !openedChest[player.playernum] )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( chestGUI.isInteractable )
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
@@ -18032,6 +18349,411 @@ void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantl
 	if ( y < lowerY )
 	{
 		scrollAmount = (y) * player.inventoryUI.getSlotSize();
+		//scrollAmount += scrollSetpoint;
+	}
+	else if ( y > upperY )
+	{
+		scrollAmount = (y - upperY) * player.inventoryUI.getSlotSize();
+		scrollAmount += scrollSetpoint;
+	}
+	scrollAmount = std::min(scrollAmount, maxScroll);
+
+	scrollSetpoint = scrollAmount;
+	if ( instantly )
+	{
+		scrollAnimateX = scrollSetpoint;
+	}
+	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+	if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+	{
+		isInteractable = false;
+	}
+}
+
+void Player::Inventory_t::ChestGUI_t::openChest()
+{
+	if ( player.inventoryUI.chestFrame )
+	{
+		bool wasDisabled = player.inventoryUI.chestFrame->isDisabled();
+		player.inventoryUI.chestFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			isInteractable = false;
+			currentScrollRow = 0;
+			scrollPercent = 0.0;
+			scrollInertia = 0.0;
+			bFirstTimeSnapCursor = false;
+		}
+		bOpen = true;
+	}
+	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = -1;
+}
+
+bool Player::Inventory_t::ChestGUI_t::isChestSelected()
+{
+	if ( !bOpen )
+	{
+		return false;
+	}
+
+	if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+	{
+		if ( selectedChestSlotX >= 0 && selectedChestSlotX < MAX_CHEST_X
+			&& selectedChestSlotY >= 0 && selectedChestSlotY < MAX_CHEST_Y )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Player::Inventory_t::ChestGUI_t::closeChest()
+{
+	if ( player.inventoryUI.chestFrame )
+	{
+		player.inventoryUI.chestFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	isInteractable = false;
+	currentScrollRow = 0;
+	scrollPercent = 0.0;
+	scrollInertia = 0.0;
+	scrollAnimateX = scrollSetpoint;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	selectedChestSlotX = -1;
+	selectedChestSlotY = -1;
+	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = -1;
+}
+
+int Player::Inventory_t::ChestGUI_t::getNumItemsToDisplayVertical() const
+{
+	return kNumItemsToDisplayVertical;
+}
+
+void Player::Inventory_t::selectChestSlot(const int x, const int y)
+{
+	chestGUI.selectedChestSlotX = x;
+	chestGUI.selectedChestSlotY = y;
+}
+
+const bool Player::Inventory_t::isItemFromChest(Item* item) const
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( !openedChest[player.playernum] || !chestGUI.bOpen )
+	{
+		return false;
+	}
+
+	list_t* chest_inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		chest_inventory = &chestInv[player.playernum];
+	}
+	else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+	{
+		chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+	}
+
+	if ( item->node && item->node->list == chest_inventory )
+	{
+		return true;
+	}
+	return false;
+}
+
+int Player::Inventory_t::ChestGUI_t::heightOffsetWhenNotCompact = 178;
+void Player::Inventory_t::ChestGUI_t::updateChest()
+{
+	Frame* chestFrame = player.inventoryUI.chestFrame;
+	if ( !chestFrame ) { return; }
+
+	if ( !chestFrame->isDisabled() && bOpen )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			if ( !bFirstTimeSnapCursor )
+			{
+				bFirstTimeSnapCursor = true;
+				if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+					&& player.GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+				{
+					player.inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
+				}
+			}
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		isInteractable = false;
+		scrollInertia = 0.0;
+	}
+	auto chestFramePos = chestFrame->getSize();
+	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w * 2;
+		if ( player.bUseCompactGUIWidth() )
+		{
+			if ( player.inventoryUI.slideOutPercent >= .0001 )
+			{
+				isInteractable = false;
+			}
+			chestFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+		}
+	}
+	else
+	{
+		chestFramePos.x = player.camera_virtualWidth() - animx * chestFramePos.w;
+		if ( player.bUseCompactGUIWidth() )
+		{
+			if ( player.inventoryUI.slideOutPercent >= .0001 )
+			{
+				isInteractable = false;
+			}
+			chestFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+		}
+	}
+	chestFrame->setSize(chestFramePos);
+
+	auto baseFrame = chestFrame->findFrame("chest base");
+	//auto slider = baseFrame->findSlider("chest slider");
+	auto chestSlotsFrame = chestFrame->findFrame("chest slots");
+	auto baseBackgroundImg = baseFrame->findImage("chest base img");
+	// handle height changing..
+	{
+		const int baseImgBorderWidth = 10;
+		const int baseImgBorderTopHeight = 20;
+		int frameHeight = 250;
+		int totalFrameHeightChange = 0;
+		if ( !player.bUseCompactGUIHeight() )
+		{
+			totalFrameHeightChange = heightOffsetWhenNotCompact;
+		}
+		chestFramePos.h = frameHeight + totalFrameHeightChange;
+		chestFrame->setSize(chestFramePos);
+		baseBackgroundImg->pos.y = totalFrameHeightChange;
+		SDL_Rect chestBasePos = baseFrame->getSize();
+		chestBasePos.h = chestFramePos.h;
+		baseFrame->setSize(chestBasePos);
+
+		int numGrids = (players[player.playernum]->inventoryUI.MAX_CHEST_Y / getNumItemsToDisplayVertical()) + 1;
+		SDL_Rect chestSlotsFramePos = chestSlotsFrame->getSize();
+
+		const int gridHeight = 120 + 2; // 120px is grid img, plus 2px to tile the image for bottom border.
+
+		int heightChange = 0;
+		if ( getNumItemsToDisplayVertical() < kNumItemsToDisplayVertical )
+		{
+			heightChange = player.inventoryUI.getSlotSize() * (kNumItemsToDisplayVertical - getNumItemsToDisplayVertical());
+		}
+		chestSlotsFramePos.y = 4 + baseImgBorderTopHeight + heightChange + totalFrameHeightChange;
+		chestSlotsFramePos.h = gridHeight - heightChange;
+		chestSlotsFrame->setActualSize(SDL_Rect{ chestSlotsFrame->getActualSize().x,
+			chestSlotsFrame->getActualSize().y,
+			chestSlotsFrame->getActualSize().w,
+			(chestSlotsFramePos.h) * numGrids });
+		chestSlotsFrame->setSize(chestSlotsFramePos);
+		auto gridImg = chestSlotsFrame->findImage("grid img");
+		gridImg->pos.y = 0;
+		gridImg->pos.h = (chestSlotsFramePos.h) * numGrids;
+
+		/*SDL_Rect sliderPos = slider->getRailSize();
+		sliderPos.y = 8 + heightChange + totalFrameHeightChange;
+		sliderPos.h = 234 - heightChange;
+		slider->setRailSize(sliderPos);*/
+
+		// align title
+		auto titleText = baseFrame->findField("title txt");
+		auto titlePos = titleText->getSize();
+		titlePos.y = baseBackgroundImg->pos.y - 4;
+		titlePos.x = baseBackgroundImg->pos.x + baseBackgroundImg->pos.w / 2 - titlePos.w / 2;
+		titleText->setSize(titlePos);
+
+		// align buttons
+		auto grabAllBtn = baseFrame->findButton("grab all button");
+		auto grabAllBtnPos = grabAllBtn->getSize();
+		chestFramePos.h += grabAllBtnPos.h + 8;
+		chestFrame->setSize(chestFramePos);
+		chestBasePos.h += grabAllBtnPos.h + 8;
+		baseFrame->setSize(chestBasePos);
+		auto bg = baseFrame->findImage("chest base img");
+		grabAllBtnPos.y = bg->pos.y + bg->pos.h + 4;
+
+		auto closeBtn = baseFrame->findButton("close chest button");
+		auto closeBtnPos = closeBtn->getSize();
+		closeBtnPos.y = grabAllBtnPos.y;
+		closeBtnPos.x = bg->pos.x + bg->pos.w - closeBtnPos.w;
+		closeBtn->setSize(closeBtnPos);
+
+		grabAllBtnPos.x = closeBtnPos.x - 2 - grabAllBtnPos.w;
+		grabAllBtn->setSize(grabAllBtnPos);
+	}
+
+	int lowestItemY = getNumItemsToDisplayVertical() - 1;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item ) { continue; }
+		if ( itemCategory(item) == SPELL_CAT ) { continue; }
+
+		lowestItemY = std::max(lowestItemY, item->y);
+	}
+
+	/*int scrollAmount = std::max((lowestItemY + 1) - (getNumItemsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
+	if ( scrollAmount == 0 )
+	{
+		slider->setDisabled(true);
+	}
+	else
+	{
+		slider->setDisabled(false);
+	}
+
+	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+
+	if ( bOpen && isInteractable )
+	{
+		// do sliders
+		if ( !slider->isDisabled() )
+		{
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+				{
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
+					{
+						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
+						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+					}
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
+					{
+						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
+						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+					}
+				}
+				if ( Input::inputs[player.playernum].analogToggle("MenuScrollDown") )
+				{
+					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollDown");
+					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+				}
+				else if ( Input::inputs[player.playernum].analogToggle("MenuScrollUp") )
+				{
+					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollUp");
+					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+				}
+			}
+		}
+
+		scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
+		currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+
+		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+		{
+			isInteractable = false;
+			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			real_t setpointDiff = 0.0;
+			if ( scrollSetpoint - scrollAnimateX > 0.0 )
+			{
+				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			else
+			{
+				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			scrollAnimateX += setpointDiff;
+			if ( setpointDiff > 0.0 )
+			{
+				scrollAnimateX = std::min((real_t)scrollSetpoint, scrollAnimateX);
+			}
+			else
+			{
+				scrollAnimateX = std::max((real_t)scrollSetpoint, scrollAnimateX);
+			}
+		}
+		else
+		{
+			scrollAnimateX = scrollSetpoint;
+		}
+	}
+
+	if ( scrollAmount > 0 )
+	{
+		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+	}
+	else
+	{
+		slider->setValue(0.0);
+	}*/
+
+	SDL_Rect actualSize = chestSlotsFrame->getActualSize();
+	actualSize.y = scrollAnimateX;
+	chestSlotsFrame->setActualSize(actualSize);
+}
+
+bool Player::Inventory_t::ChestGUI_t::isSlotVisible(int x, int y) const
+{
+	if ( player.inventoryUI.chestFrame )
+	{
+		if ( player.inventoryUI.chestFrame->isDisabled() )
+		{
+			return false;
+		}
+	}
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + getNumItemsToDisplayVertical() - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Player::Inventory_t::ChestGUI_t::isItemVisible(Item* item) const
+{
+	if ( !item ) { return false; }
+	return isSlotVisible(item->x, item->y);
+}
+
+void Player::Inventory_t::ChestGUI_t::scrollToSlot(int x, int y, bool instantly)
+{
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + getNumItemsToDisplayVertical() - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		// no work to do.
+		return;
+	}
+
+	int lowestItemY = getNumItemsToDisplayVertical() - 1;
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item ) { continue; }
+		if ( itemCategory(item) != SPELL_CAT ) { continue; }
+
+		lowestItemY = std::max(lowestItemY, item->y);
+	}
+	int maxScroll = std::max((lowestItemY + 1) - (getNumItemsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
+
+	int scrollAmount = 0;
+	if ( y < lowerY )
+	{
+		scrollAmount = (y)* player.inventoryUI.getSlotSize();
 		//scrollAmount += scrollSetpoint;
 	}
 	else if ( y > upperY )

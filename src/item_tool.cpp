@@ -161,7 +161,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					if ( rand() % 2 == 0 )
 					{
 						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600), static_cast<Status>(SERVICABLE + rand() % 2), 0 + rand() % 2, 1, rand(), false, nullptr);
-						entity.addItemToChest(generated);
+						entity.addItemToChest(generated, true, nullptr);
 						messagePlayer(player, MESSAGE_INTERACTION, language[3897]);
 					}
 					else

@@ -4139,6 +4139,8 @@ void clientHandlePacket()
 			chestInv[clientnum].first = nullptr;
 			chestInv[clientnum].last = nullptr;
 			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+			players[clientnum]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+			players[clientnum]->inventoryUI.chestGUI.openChest();
 		}
 		return;
 	}
@@ -4166,8 +4168,9 @@ void clientHandlePacket()
 		{
 			newitem->identified = false;
 		}
+		bool forceNewStack = net_packet->data[25] ? true : false;
 
-		addItemToChestClientside(clientnum, newitem);
+		addItemToChestClientside(clientnum, newitem, forceNewStack, nullptr);
 		return;
 	}
 
@@ -5390,9 +5393,8 @@ void serverHandlePacket()
 		{
 			newitem->identified = false;
 		}
-
-		openedChest[the_client]->addItemToChestServer(newitem);
-
+		bool forceNewStack = net_packet->data[26] ? true : false;
+		openedChest[the_client]->addItemToChestServer(newitem, forceNewStack, nullptr);
 		return;
 	}
 

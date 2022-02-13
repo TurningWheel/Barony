@@ -2864,6 +2864,19 @@ void actPlayer(Entity* my)
 			keystatus[SDL_SCANCODE_KP_7] = 0;
 			consoleCommand("/splitscreen");
 		}
+		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_8] )
+		{
+			keystatus[SDL_SCANCODE_KP_8] = 0;
+			if ( !players[PLAYER_NUM]->inventoryUI.chestGUI.bOpen )
+			{
+				players[PLAYER_NUM]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+				players[PLAYER_NUM]->inventoryUI.chestGUI.openChest();
+			}
+			else
+			{
+				players[PLAYER_NUM]->inventoryUI.chestGUI.closeChest();
+			}
+		}
 	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
 	    {
 		    keystatus[SDL_SCANCODE_KP_9] = 0;

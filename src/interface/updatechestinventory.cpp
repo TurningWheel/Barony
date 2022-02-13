@@ -296,6 +296,8 @@ void updateChestInventory(const int player)
 		}
 	}
 
+	return;
+
 	SDL_Rect pos;
 	node_t* node, *nextnode;
 	int y, c;

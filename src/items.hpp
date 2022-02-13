@@ -446,7 +446,8 @@ public:
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
 	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
-	bool shouldItemStack(int player) const;
+	bool shouldItemStack(int player, bool ignoreStackLimit = false) const;
+	int getMaxStackLimit(int player) const;
 
 	bool isShield() const;
 	bool doesItemProvideBeatitudeAC() const;
@@ -621,7 +622,18 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 EquipItemResult equipItem(Item* item, Item** slot, int player, bool checkInventorySpaceForPaperDoll);
-Item* itemPickup(int player, Item* item);
+enum ItemStackResult : int
+{
+	ITEM_STACKING_ERROR,
+	ITEM_DESTINATION_NOT_SAME_ITEM,
+	ITEM_DESTINATION_STACK_IS_FULL,
+	ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK,
+	ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK,
+	ITEM_ADDED_WITHOUT_NEEDING_STACK
+};
+ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
+void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem);
+Item* itemPickup(int player, Item* item, Item* addToSpecificInventoryItem = nullptr, bool forceNewStack = false);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(const Stat* wielder);
 bool isItemEquippableInShieldSlot(const Item* item);
@@ -662,6 +674,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
 static const int QUIVER_MAX_AMMO_QTY = 51;
 static const int SCRAP_MAX_STACK_QTY = 101;
+static const int THROWN_GEM_MAX_STACK_QTY = 9;
 
 //-----ITEM COMPARISON FUNCS-----
 /*
