@@ -1152,7 +1152,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
+			if ( player.inventoryUI.chestGUI.bOpen )
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHEST);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHEST;
+			}
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1193,6 +1204,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_CHEST
+			&& (player.inventoryUI.chestGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_INVENTORY);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavLeftBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_INVENTORY;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
@@ -1279,15 +1302,29 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
-			if ( !checkDestinationOnly )
+			if ( player.inventoryUI.chestGUI.bOpen )
 			{
-				activateModule(MODULE_HOTBAR);
-				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-				warpControllerToModule(false);
-				input.consumeBinaryToggle("UINavRightBumper");
-				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_CHEST);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHEST;
 			}
-			return MODULE_HOTBAR;
+			else
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_HOTBAR);
+					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_HOTBAR;
+			}
 		}
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
@@ -1301,6 +1338,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_CHEST
+			&& (player.inventoryUI.chestGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_INVENTORY);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavRightBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_INVENTORY;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{

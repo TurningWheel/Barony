@@ -836,6 +836,7 @@ void Player::HUD_t::updateUINavigation()
 			case Player::GUI_t::MODULE_SPELLS:
 			case Player::GUI_t::MODULE_HOTBAR:
 			case Player::GUI_t::MODULE_CHARACTERSHEET:
+			case Player::GUI_t::MODULE_CHEST:
 				leftBumperTxt->setDisabled(false);
 				leftBumperTxt->setText("/");
 				break;
@@ -853,6 +854,7 @@ void Player::HUD_t::updateUINavigation()
 			case Player::GUI_t::MODULE_SPELLS:
 			case Player::GUI_t::MODULE_HOTBAR:
 			case Player::GUI_t::MODULE_CHARACTERSHEET:
+			case Player::GUI_t::MODULE_CHEST:
 				rightBumperTxt->setDisabled(false);
 				rightBumperTxt->setText(language[4092]);
 				break;
@@ -861,7 +863,7 @@ void Player::HUD_t::updateUINavigation()
 		}
 	}
 
-	int lowestLeftY = 0;
+	int lowestLeftY = 8;
 
 	int leftAnchorX = 0;
 	int rightAnchorX = 0;
@@ -18385,9 +18387,14 @@ void Player::Inventory_t::ChestGUI_t::openChest()
 			scrollInertia = 0.0;
 			bFirstTimeSnapCursor = false;
 		}
+		if ( player.inventoryUI.getSelectedChestX() < 0 || player.inventoryUI.getSelectedChestX() >= MAX_CHEST_X
+			|| player.inventoryUI.getSelectedChestY() < 0 || player.inventoryUI.getSelectedChestY() >= MAX_CHEST_Y )
+		{
+			player.inventoryUI.selectChestSlot(0, 0);
+		}
 		bOpen = true;
 	}
-	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = -1;
+	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
 }
 
 bool Player::Inventory_t::ChestGUI_t::isChestSelected()
@@ -18423,9 +18430,7 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 	scrollAnimateX = scrollSetpoint;
 	bOpen = false;
 	bFirstTimeSnapCursor = false;
-	selectedChestSlotX = -1;
-	selectedChestSlotY = -1;
-	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = -1;
+	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
 }
 
 int Player::Inventory_t::ChestGUI_t::getNumItemsToDisplayVertical() const
@@ -18488,7 +18493,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				if ( !inputs.getUIInteraction(player.playernum)->selectedItem
 					&& player.GUI.activeModule == Player::GUI_t::MODULE_CHEST )
 				{
-					player.inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
+					player.inventoryUI.warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER));
 				}
 			}
 			isInteractable = true;

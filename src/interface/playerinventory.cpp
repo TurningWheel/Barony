@@ -1656,29 +1656,56 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 							return;
 						}
 					}
-
-					if ( x >= inventoryUI.getSizeX() )
+					else
 					{
-						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-						return;
-					}
-					else if ( x < 0 )
-					{
-						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-						return;
+						if ( x >= inventoryUI.getSizeX() )
+						{
+							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+							return;
+						}
+						else if ( x < 0 )
+						{
+							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+							return;
+						}
 					}
 				}
 				else
 				{
-					if ( y >= inventoryUI.getSizeY() )
+					bool skipPaperDollSelection = false;
+					if ( players[player]->inventoryUI.isItemFromChest(selectedItem) )
 					{
-						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-						return;
+						for ( auto& slot : players[player]->paperDoll.dollSlots )
+						{
+							if ( slot.slotType == selectedItemDollSlot && slot.item != 0 )
+							{
+								// disallow navigation to taken paper doll slots
+								skipPaperDollSelection = true;
+								if ( y < 0 )
+								{
+									y = inventoryUI.getSizeY() - 1;
+								}
+								if ( y >= inventoryUI.getSizeY() )
+								{
+									y = 0;
+								}
+								break;
+							}
+						}
 					}
-					else if ( y < 0 )
+
+					if ( !skipPaperDollSelection )
 					{
-						players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-						return;
+						if ( y >= inventoryUI.getSizeY() )
+						{
+							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+							return;
+						}
+						else if ( y < 0 )
+						{
+							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+							return;
+						}
 					}
 				}
 			}
@@ -2229,6 +2256,7 @@ void releaseChestItem(const int player)
 									selectedItem->x = oldx;
 									selectedItem->y = oldy;
 									toggleclick = true;
+									inputs.getUIInteraction(player)->selectedItemFromChest = selectedItem->uid;
 								}
 								else
 								{
@@ -2280,11 +2308,18 @@ void releaseChestItem(const int player)
 								{
 									chestItem->x = oldx;
 									chestItem->y = oldy;
-								}
 
-								selectedItem = nullptr;
-								inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-								toggleclick = false;
+									// toggleclick when swapping items
+									selectedItem = chestItem;
+									toggleclick = true;
+									inputs.getUIInteraction(player)->selectedItemFromChest = selectedItem->uid;
+								}
+								else
+								{
+									selectedItem = nullptr;
+									inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+									toggleclick = false;
+								}
 
 								if ( swappedItem )
 								{
@@ -2357,6 +2392,7 @@ void releaseChestItem(const int player)
 						selectedItem->x = oldx;
 						selectedItem->y = oldy;
 						toggleclick = true;
+						inputs.getUIInteraction(player)->selectedItemFromChest = selectedItem->uid;
 					}
 				}
 				else
@@ -2442,6 +2478,13 @@ void releaseChestItem(const int player)
 						inputs.getUIInteraction(player)->selectedItemFromChest = selectedItem->uid;
 						toggleclick = true;
 					}
+					else if ( stackedItems && selectedItem )
+					{
+						// stacked partially, swappedItem keeps the animation
+						swappedItem = selectedItem;
+						inputs.getUIInteraction(player)->selectedItemFromChest = selectedItem->uid;
+						toggleclick = true;
+					}
 					break;
 				}
 			}
@@ -2496,6 +2539,7 @@ void releaseChestItem(const int player)
 			// get coordinates of doll slot
 			players[player]->paperDoll.getCoordinatesFromSlotType(dollSlot, slotFrameX, slotFrameY);
 
+			Item* swappedItem = nullptr;
 			node_t* nextnode = nullptr;
 			for ( node_t* node = stats[player]->inventory.first; node != NULL; node = nextnode )
 			{
@@ -2585,6 +2629,20 @@ void releaseChestItem(const int player)
 				}
 			}
 
+			if ( swappedItem && selectedItem )
+			{
+				players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+				players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+				if ( bUseSelectedSlotCycleAnimation )
+				{
+					if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+					{
+						oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+					}
+				}
+			}
+
 			if ( !toggleclick )
 			{
 				selectedItem = nullptr;
@@ -2612,91 +2670,6 @@ void releaseChestItem(const int player)
 		inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 		toggleclick = false;
 		return;
-
-		//int slotNum = 0;
-		//hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
-		//if ( slot )
-		//{
-		//	//Add item to hotbar.
-		//	Item* tempItem = uidToItem(slot->item);
-		//	if ( tempItem && tempItem != selectedItem )
-		//	{
-		//		slot->item = selectedItem->uid;
-		//		selectedItem = tempItem;
-		//		toggleclick = true;
-		//	}
-		//	else
-		//	{
-		//		slot->item = selectedItem->uid;
-		//		selectedItem = nullptr;
-		//		inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		//		toggleclick = false;
-		//	}
-
-		//	// empty out duplicate slots that match this item uid.
-		//	int i = 0;
-		//	for ( auto& s : players[player]->hotbar.slots() )
-		//	{
-		//		if ( i != slotNum && s.item == slot->item )
-		//		{
-		//			s.item = 0;
-		//		}
-		//		++i;
-		//	}
-		//	playSound(139, 64); // click sound
-		//}
-		//else
-		//{
-		//	if ( bPaperDollItem )
-		//	{
-		//		bool unequipped = executeItemMenuOption0ForPaperDoll(player, selectedItem, true); // unequip item
-		//		if ( !unequipped )
-		//		{
-		//			selectedItem = nullptr;
-		//			inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		//			toggleclick = false;
-		//		}
-		//		else
-		//		{
-		//			bool droppedAll = false;
-		//			while ( selectedItem && selectedItem->count > 1 )
-		//			{
-		//				droppedAll = dropItem(selectedItem, player);
-		//				if ( droppedAll )
-		//				{
-		//					selectedItem = nullptr;
-		//					inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		//				}
-		//			}
-		//			if ( !droppedAll )
-		//			{
-		//				dropItem(selectedItem, player);
-		//			}
-		//			selectedItem = nullptr;
-		//			inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		//			toggleclick = false;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		if ( selectedItem->count > 1 ) // drop item
-		//		{
-		//			if ( dropItem(selectedItem, player) )
-		//			{
-		//				selectedItem = nullptr;
-		//				inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		//			}
-		//			toggleclick = true;
-		//		}
-		//		else
-		//		{
-		//			dropItem(selectedItem, player);
-		//			selectedItem = nullptr;
-		//			inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		//			toggleclick = false;
-		//		}
-		//	}
-		//}
 	}
 }
 
@@ -3064,6 +3037,12 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 									selectedItem = tempItem;
 									toggleclick = true;
 								}
+								else if ( stackedItems && selectedItem )
+								{
+									// stacked partially, swappedItem keeps the animation
+									swappedItem = selectedItem;
+									toggleclick = true;
+								}
 							}
 							break;
 						}
@@ -3204,6 +3183,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 										chestItem->y = newy;
 										if ( selectedItem )
 										{
+											swappedItem = chestItem;
 											selectedItem->x = oldx;
 											selectedItem->y = oldy;
 											toggleclick = true;
@@ -3255,9 +3235,10 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 										itemFromChest->y = oldy;
 
 										// success swapping items
-										selectedItem = nullptr;
+										swappedItem = chestItem;
+										selectedItem = itemFromChest;
 										inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-										toggleclick = false;
+										toggleclick = true;
 									}
 									else
 									{
@@ -3283,6 +3264,19 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 							if ( inputs.bMouseLeft(player) )
 							{
 								inputs.mouseClearLeft(player);
+							}
+							if ( swappedItem && selectedItem )
+							{
+								players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+								players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+								if ( bUseSelectedSlotCycleAnimation )
+								{
+									if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+									{
+										oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+									}
+								}
 							}
 							return;
 						}
@@ -6432,60 +6426,53 @@ void Player::Inventory_t::updateInventory()
 		Item* item = (Item*)node->element;
 		if ( !item ) { continue; }
 
-		if ( item == selectedItem
-			/*|| (players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-			|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT)*/ )
+		if ( item == selectedItem )
 		{
-			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
-			/*if ( !(players[player]->inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT)
-				|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )*/
+			bool interactable = true;
+			if ( itemCategory(item) == SPELL_CAT )
 			{
-				bool interactable = true;
-				if ( itemCategory(item) == SPELL_CAT )
+				if ( !spellPanel.isItemVisible(item) )
 				{
-					if ( !spellPanel.isItemVisible(item) )
+					interactable = false;
+				}
+			}
+
+			if ( interactable )
+			{
+				//Draw blue border around the slot if it's the currently grabbed item.
+				//drawBlueInventoryBorder(player, *item, x, y);
+				Frame* slotFrame = nullptr;
+
+				SDL_Rect borderPos{ 0, 0, oldSelectedSlotFrame->getSize().w, oldSelectedSlotFrame->getSize().h };
+				if ( players[player]->paperDoll.getSlotForItem(*item) != Player::PaperDoll_t::SLOT_MAX )
+				{
+					int slotx, sloty;
+					this->player.paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), slotx, sloty);
+					if ( slotFrame = getItemSlotFrame(item, slotx, sloty) )
 					{
-						interactable = false;
+						borderPos.x = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
+						borderPos.y = dollSlotsFrame->getSize().y + slotFrame->getSize().y;
 					}
 				}
-
-				if ( interactable )
+				else
 				{
-					//Draw blue border around the slot if it's the currently grabbed item.
-					//drawBlueInventoryBorder(player, *item, x, y);
-					Frame* slotFrame = nullptr;
-
-					SDL_Rect borderPos{ 0, 0, oldSelectedSlotFrame->getSize().w, oldSelectedSlotFrame->getSize().h };
-					if ( players[player]->paperDoll.getSlotForItem(*item) != Player::PaperDoll_t::SLOT_MAX )
+					if ( slotFrame = getItemSlotFrame(selectedItem, selectedItem->x, selectedItem->y) )
 					{
-						int slotx, sloty;
-						this->player.paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), slotx, sloty);
-						if ( slotFrame = getItemSlotFrame(item, slotx, sloty) )
-						{
-							borderPos.x = dollSlotsFrame->getSize().x + slotFrame->getSize().x;
-							borderPos.y = dollSlotsFrame->getSize().y + slotFrame->getSize().y;
-						}
+						borderPos.x = slotFrame->getAbsoluteSize().x;
+						borderPos.y = slotFrame->getAbsoluteSize().y;
 					}
-					else
-					{
-						if ( slotFrame = getItemSlotFrame(selectedItem, selectedItem->x, selectedItem->y) )
-						{
-							borderPos.x = slotFrame->getAbsoluteSize().x;
-							borderPos.y = slotFrame->getAbsoluteSize().y;
-						}
-					}
-					if ( slotFrame )
-					{
-						++borderPos.x;
-						++borderPos.y;
+				}
+				if ( slotFrame )
+				{
+					++borderPos.x;
+					++borderPos.y;
 
-						oldSelectedSlotFrame->setDisabled(false);
-						oldSelectedSlotFrame->setSize(borderPos);
+					oldSelectedSlotFrame->setDisabled(false);
+					oldSelectedSlotFrame->setSize(borderPos);
 
-						auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
-						oldSelectedSlotItem->disabled = false;
-						oldSelectedSlotItem->path = getItemSpritePath(player, *item);
-					}
+					auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
+					oldSelectedSlotItem->disabled = false;
+					oldSelectedSlotItem->path = getItemSpritePath(player, *item);
 				}
 			}
 			continue;

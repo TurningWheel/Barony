@@ -1422,7 +1422,7 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	{
 		auto& inventoryUI = player.inventoryUI;
 		Item* selectedItem = inputs.getUIInteraction(player.playernum)->selectedItem;
-		if ( selectedItem)
+		if ( selectedItem && !player.inventoryUI.isItemFromChest(selectedItem) )
 		{
 			// we're holding an item, move to the selected item's slot
 			auto slot = player.paperDoll.getSlotForItem(*selectedItem);
@@ -1463,6 +1463,23 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
 		{
 			if ( auto slot = inventoryUI.getSpellSlotFrame(inventoryUI.getSelectedSpellX(), inventoryUI.getSelectedSpellY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
+		return true;
+	}
+	else if ( activeModule == MODULE_CHEST )
+	{
+		auto& inventoryUI = player.inventoryUI;
+		if ( inventoryUI.warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = inventoryUI.getChestSlotFrame(inventoryUI.getSelectedChestX(), inventoryUI.getSelectedChestY()) )
 			{
 				SDL_Rect pos = slot->getAbsoluteSize();
 				pos.x -= player.camera_virtualx1();
