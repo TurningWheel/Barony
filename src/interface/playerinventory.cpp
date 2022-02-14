@@ -1979,7 +1979,7 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 		int selectedItemQty = 0;
 		int destItemQty = 0;
 		auto stackingResult = getItemStackingBehavior(player, selectedItem, tempItem, selectedItemQty, destItemQty);
-		if ( stackingResult == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
+		if ( stackingResult.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
 		{
 			// items have stacked entirely
 			Item* itemCopyToTake = openedChest[player]->getItemFromChest(selectedItem, selectedItem->count);
@@ -2003,7 +2003,7 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 			toggleclick = false;
 			stackedItems = true;
 		}
-		else if ( stackingResult == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+		else if ( stackingResult.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
 		{
 			int qtyToTake = selectedItem->count - selectedItemQty;
 			int oldQty = selectedItem->count;
@@ -2035,7 +2035,7 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 			free(itemCopyToTake);
 			itemCopyToTake = nullptr;
 		}
-		else if ( stackingResult == ITEM_DESTINATION_STACK_IS_FULL )
+		else if ( stackingResult.resultType == ITEM_DESTINATION_STACK_IS_FULL )
 		{
 			/*selectedItem->x = oldx;
 			selectedItem->y = oldy;
@@ -2058,7 +2058,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 		int selectedItemQty = 0;
 		int destItemQty = 0;
 		auto stackingResult = getItemStackingBehavior(player, selectedItem, tempItem, selectedItemQty, destItemQty);
-		if ( stackingResult == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
+		if ( stackingResult.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
 		{
 			// items have stacked entirely
 			Item* pickedUp = itemPickup(player, selectedItem, tempItem, false);
@@ -2079,7 +2079,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 			toggleclick = false;
 			stackedItems = true;
 		}
-		else if ( stackingResult == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+		else if ( stackingResult.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
 		{
 			int qtyToTake = selectedItem->count - selectedItemQty;
 			int oldQty = selectedItem->count;
@@ -2107,7 +2107,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 				toggleclick = false;
 			}
 		}
-		else if ( stackingResult == ITEM_DESTINATION_STACK_IS_FULL )
+		else if ( stackingResult.resultType == ITEM_DESTINATION_STACK_IS_FULL )
 		{
 			/*selectedItem->x = oldx;
 			selectedItem->y = oldy;
@@ -2215,7 +2215,7 @@ void releaseChestItem(const int player)
 						int selectedItemQty = 0;
 						int destItemQty = 0;
 						auto stackingResult = getItemStackingBehavior(player, selectedItem, tempItem, selectedItemQty, destItemQty);
-						if ( stackingResult == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
+						if ( stackingResult.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
 						{
 							// items have stacked entirely
 							if ( Item* itemFromChest = takeItemFromChest(player, selectedItem, selectedItem->count, tempItem, false) )
@@ -2229,7 +2229,7 @@ void releaseChestItem(const int player)
 							inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 							toggleclick = false;
 						}
-						else if ( stackingResult == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+						else if ( stackingResult.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
 						{
 							int qtyToTake = selectedItem->count - selectedItemQty;
 							if ( Item* itemFromChest = takeItemFromChest(player, selectedItem, qtyToTake, tempItem, false) )
@@ -3144,7 +3144,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 								int selectedItemQty = 0;
 								int destItemQty = 0;
 								auto stackingResult = getItemStackingBehavior(player, selectedItem, tempItem, selectedItemQty, destItemQty);
-								if ( stackingResult == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
+								if ( stackingResult.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK )
 								{
 									if ( Item* chestItem = openedChest[player]->addItemToChestFromInventory(
 										player, selectedItem, selectedItem->count, false, tempItem) )
@@ -3157,7 +3157,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 									inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 									toggleclick = false;
 								}
-								else if ( stackingResult == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+								else if ( stackingResult.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
 								{
 									int qtyToStash = selectedItem->count - selectedItemQty;
 									if ( Item* chestItem = openedChest[player]->addItemToChestFromInventory(

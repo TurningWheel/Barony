@@ -9530,8 +9530,8 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 				int selectedItemQty;
 				int destItemQty;
 				auto result = getItemStackingBehavior(player, selectedItem, item, selectedItemQty, destItemQty);
-				if ( result == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK
-					|| result == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+				if ( result.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK
+					|| result.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
 				{
 					drawQty = true;
 					qtyColor = makeColor(0, 192, 255, 255);
@@ -11441,11 +11441,11 @@ bool takeAllChestGUIAction(const int player)
 			{
 				break;
 			}
-			switch ( result )
+			switch ( result.resultType )
 			{
 				case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
 				{
-					if ( Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false, false) )
+					if ( Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, result.itemToStackInto, false, false) )
 					{
 						// need to do another place operation.
 					}
@@ -11462,7 +11462,7 @@ bool takeAllChestGUIAction(const int player)
 				case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
 				{
 					// operation success, can finish here.
-					Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false, false);
+					Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, result.itemToStackInto, false, false);
 					tryAddToInventory = false;
 					if ( loops == 1 )
 					{
@@ -12454,13 +12454,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 					item->count = oldQty;
 
 					int amountToPlace = 1;
-					switch ( result )
+					switch ( result.resultType )
 					{
 						case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
 						case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
 						{
 							// operation success, can finish here.
-							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false);
+							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, result.itemToStackInto, false);
 							tryAddToInventory = false;
 							break;
 						}
@@ -12506,11 +12506,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 					{
 						break;
 					}
-					switch ( result )
+					switch ( result.resultType )
 					{
 						case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
 						{
-							if ( Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false) )
+							if ( Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, result.itemToStackInto, false) )
 							{
 								// need to do another place operation.
 							}
@@ -12522,7 +12522,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 						}
 						case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
 						{
-							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false);
+							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, result.itemToStackInto, false);
 							if ( oldItemQty > 0 )
 							{
 								// more work to do (unusually large stacks exceeding normal limits)
@@ -12581,13 +12581,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 						item->count = oldQty;
 						
 						int amountToPlace = 1;
-						switch ( result )
+						switch ( result.resultType )
 						{
 							case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
 							case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
 							{
 								// operation success, can finish here.
-								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, nullptr);
+								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, result.itemToStackInto);
 								tryAddToChest = false;
 								break;
 							}
@@ -12633,11 +12633,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 						{
 							break;
 						}
-						switch ( result )
+						switch ( result.resultType )
 						{
 							case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
 							{
-								if ( Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, nullptr) )
+								if ( Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, result.itemToStackInto) )
 								{
 									// need to do another place operation.
 								}
@@ -12650,7 +12650,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
 							{
 								// operation success, can finish here.
-								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, nullptr);
+								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, result.itemToStackInto);
 								tryAddToChest = false;
 								break;
 							}

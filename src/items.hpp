@@ -622,7 +622,7 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 EquipItemResult equipItem(Item* item, Item** slot, int player, bool checkInventorySpaceForPaperDoll);
-enum ItemStackResult : int
+enum ItemStackResults : int
 {
 	ITEM_STACKING_ERROR,
 	ITEM_DESTINATION_NOT_SAME_ITEM,
@@ -631,7 +631,15 @@ enum ItemStackResult : int
 	ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK,
 	ITEM_ADDED_WITHOUT_NEEDING_STACK
 };
+struct ItemStackResult
+{
+	ItemStackResults resultType = ITEM_STACKING_ERROR;
+	Item* itemToStackInto = nullptr;
+};
+// checks inventory order for stacking items (the first item in the list that is stackable will be returned)
 ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
+// checks chest inventory order for dropping all items into (the first item in the list that is stackable will be returned)
+ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
 void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem);
 Item* itemPickup(int player, Item* item, Item* addToSpecificInventoryItem = nullptr, bool forceNewStack = false);
 bool itemIsEquipped(const Item* item, int player);

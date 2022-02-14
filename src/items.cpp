@@ -2927,9 +2927,12 @@ int Item::getMaxStackLimit(int player) const
 
 ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
 {
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
 	if ( !itemToCheck || !itemDestinationStack )
 	{
-		return ITEM_STACKING_ERROR;
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
 	}
 
 	if ( !itemCompare(itemToCheck, itemDestinationStack, false) )
@@ -2949,7 +2952,9 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 				// can't add anymore to this stack, let's skip over this.
 				newQtyForDestItem = itemDestinationStack->count;
 				newQtyForCheckedItem = itemToCheck->count;
-				return ITEM_DESTINATION_STACK_IS_FULL;
+				itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
 			}
 
 			// too many arrows, split off into a new stack with reduced qty.
@@ -2960,11 +2965,15 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 
 			if ( newQtyForCheckedItem <= 0 )
 			{
-				return ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
 			}
 			else
 			{
-				return ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+				itemStackResult.resultType = ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
 			}
 		}
 		// if items are the same, check to see if they should stack
@@ -2979,30 +2988,38 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 				newQtyForCheckedItem = total - newQtyForDestItem;
 				if ( newQtyForCheckedItem <= 0 )
 				{
-					return ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+					itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+					itemStackResult.itemToStackInto = itemDestinationStack;
+					return itemStackResult;
 				}
 				else
 				{
-					return ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+					itemStackResult.resultType = ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+					itemStackResult.itemToStackInto = itemDestinationStack;
+					return itemStackResult;
 				}
 			}
 			else
 			{
 				newQtyForCheckedItem = 0;
 				newQtyForDestItem = total;
-				return ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
 			}
 		}
 		else if ( !itemCompare(itemToCheck, itemDestinationStack, true) )
 		{
 			newQtyForCheckedItem = itemToCheck->count;
 			newQtyForDestItem = itemDestinationStack->count;
-			return ITEM_DESTINATION_STACK_IS_FULL;
+			itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+			return itemStackResult;
 		}
 	}
 	newQtyForCheckedItem = itemToCheck->count;
 	newQtyForDestItem = itemDestinationStack->count;
-	return ITEM_DESTINATION_NOT_SAME_ITEM;
+	itemStackResult.resultType = ITEM_DESTINATION_NOT_SAME_ITEM;
+	return itemStackResult;
 }
 
 void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem)
@@ -3020,11 +3037,30 @@ void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& 
 	}
 }
 
-ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
 {
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
 	if ( !itemToCheck )
 	{
-		return ITEM_STACKING_ERROR;
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	list_t* chest_inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		chest_inventory = &chestInv[player];
+	}
+	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	{
+		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+	}
+	if ( !chest_inventory )
+	{
+		// no chest inventory available
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
 	}
 
 	if ( itemDestinationStack )
@@ -3032,7 +3068,116 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 		return getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, itemDestinationStack, newQtyForCheckedItem, newQtyForDestItem);
 	}
 
-	ItemStackResult result = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = 0;
+
+	for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( item2 )
+		{
+			int tmpQtyCheckedItem = newQtyForCheckedItem;
+			int tmpQtyDestItem = newQtyForDestItem;
+			auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+			bool skipResult = false;
+			switch ( res.resultType )
+			{
+				case ITEM_DESTINATION_NOT_SAME_ITEM:
+				case ITEM_STACKING_ERROR:
+				case ITEM_DESTINATION_STACK_IS_FULL:
+					skipResult = true;
+					break;
+				default:
+					break;
+			}
+			if ( skipResult )
+			{
+				continue;
+			}
+
+			// found a stack to add this item to
+			newQtyForCheckedItem = tmpQtyCheckedItem;
+			newQtyForDestItem = tmpQtyDestItem;
+			res.itemToStackInto = item2;
+			return res;
+		}
+	}
+
+	//std::vector<std::pair<int, Item*>> chestSlotOrder;
+	//for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	//{
+	//	Item* item2 = static_cast<Item*>(node->element);
+	//	if ( item2 )
+	//	{
+	//		int key = item2->x + item2->y * 100;
+	//		chestSlotOrder.push_back(std::make_pair(key, item2));
+	//	}
+	//}
+	//std::sort(chestSlotOrder.begin(), chestSlotOrder.end()); // sort ascending by position, left to right, then down
+	//for ( auto& keyValue : chestSlotOrder )
+	//{
+	//	Item* item2 = keyValue.second;
+	//	if ( item2 )
+	//	{
+	//		int tmpQtyCheckedItem = newQtyForCheckedItem;
+	//		int tmpQtyDestItem = newQtyForDestItem;
+	//		auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+	//		bool skipResult = false;
+	//		switch ( res )
+	//		{
+	//			case ITEM_DESTINATION_NOT_SAME_ITEM:
+	//			case ITEM_STACKING_ERROR:
+	//			case ITEM_DESTINATION_STACK_IS_FULL:
+	//				skipResult = true;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		if ( skipResult )
+	//		{
+	//			continue;
+	//		}
+
+	//		// found a stack to add this item to
+	//		result = res;
+	//		newQtyForCheckedItem = tmpQtyCheckedItem;
+	//		newQtyForDestItem = tmpQtyDestItem;
+	//		return result;
+	//	}
+	//}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	int maxStack = itemToCheck->getMaxStackLimit(player);
+	if ( itemToCheck->count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck->count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck->count;
+	}
+	return itemStackResult;
+}
+
+ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( itemDestinationStack )
+	{
+		return getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, itemDestinationStack, newQtyForCheckedItem, newQtyForDestItem);
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
 	newQtyForCheckedItem = itemToCheck->count;
 	newQtyForDestItem = 0;
 
@@ -3045,7 +3190,7 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 			int tmpQtyDestItem = newQtyForDestItem;
 			auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
 			bool skipResult = false;
-			switch ( res )
+			switch ( res.resultType )
 			{
 				case ITEM_DESTINATION_NOT_SAME_ITEM:
 				case ITEM_STACKING_ERROR:
@@ -3061,14 +3206,14 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 			}
 			
 			// found a stack to add this item to
-			result = res;
 			newQtyForCheckedItem = tmpQtyCheckedItem;
 			newQtyForDestItem = tmpQtyDestItem;
-			return result;
+			res.itemToStackInto = item2;
+			return res;
 		}
 	}
 
-	result = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
 	int maxStack = itemToCheck->getMaxStackLimit(player);
 	if ( itemToCheck->count > maxStack )
 	{
@@ -3080,7 +3225,7 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 		newQtyForCheckedItem = 0;
 		newQtyForDestItem = itemToCheck->count;
 	}
-	return result;
+	return itemStackResult;
 }
 
 /*-------------------------------------------------------------------------------
