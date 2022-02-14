@@ -735,10 +735,6 @@ void Entity::actChest()
 				openedChest[chestclicked] = this;
 
 				chestOpener = chestclicked;
-				if ( players[chestclicked]->isLocalPlayer() ) // i.e host opened the chest, close GUIs
-				{
-					players[chestclicked]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
-				}
 				if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
 				{
 					//Send all of the items to the client.
@@ -775,7 +771,7 @@ void Entity::actChest()
 			}
 			else
 			{
-				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]);
+				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]); // slam the chest shut
 				if ( !players[chestOpener]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -790,6 +786,19 @@ void Entity::actChest()
 				}
 				closeChestServer();
 			}
+		}
+		else if ( !chestLocked && chestStatus && openedChest[chestclicked] && chestOpener == chestclicked )
+		{
+			messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]); // slam the chest shut
+			if ( !players[chestOpener]->isLocalPlayer() )
+			{
+				strcpy((char*)net_packet->data, "CCLS");  //Chest close.
+				net_packet->address.host = net_clients[chestOpener - 1].host;
+				net_packet->address.port = net_clients[chestOpener - 1].port;
+				net_packet->len = 4;
+				sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
+			}
+			closeChestServer();
 		}
 		else if ( chestLocked )
 		{
