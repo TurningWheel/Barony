@@ -784,10 +784,6 @@ void Entity::actChest()
 					net_packet->len = 4;
 					sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
 				}
-				else
-				{
-					chestitemscroll[chestclicked] = 0;
-				}
 				if (chestOpener != chestclicked)
 				{
 					messagePlayer(chestOpener, MESSAGE_HINT, language[461]);
@@ -946,16 +942,7 @@ void Entity::closeChest()
 		}
 		else
 		{
-			if ( players[chestOpener]->isLocalPlayer() )
-			{
-				for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-				{
-					invitemschest[chestOpener][c] = nullptr;
-				}
-			}
-			chestitemscroll[chestOpener] = 0;
 			//Reset chest-gamepad related stuff here.
-			selectedChestSlot[chestOpener] = -1;
 			players[chestOpener]->inventoryUI.chestGUI.closeChest();
 		}
 	}
@@ -967,13 +954,6 @@ void Entity::closeChestServer()
 	{
 		chestStatus = 0;
 		openedChest[chestOpener] = NULL;
-		if ( players[chestOpener]->isLocalPlayer() )
-		{
-			for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-			{
-				invitemschest[chestOpener][c] = nullptr;
-			}
-		}
 		players[chestOpener]->inventoryUI.chestGUI.closeChest();
 	}
 }
@@ -1340,21 +1320,11 @@ void closeChestClientside(const int player)
 	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
 	{
 		//Only called for the client.
-
 		list_FreeAll(&chestInv[player]);
 
 		openedChest[player] = NULL;
 
-		chestitemscroll[player] = 0;
-
-		for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-		{
-			invitemschest[player][c] = nullptr;
-		}
-
 		//Reset chest-gamepad related stuff here.
-		selectedChestSlot[player] = -1;
-
 		players[player]->inventoryUI.chestGUI.closeChest();
 	}
 }

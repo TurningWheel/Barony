@@ -57,14 +57,17 @@ void clickDescription(int player, Entity* entity)
 		{
 			return;
 		}
-		if (openedChest[player])
-			if ( mx > getChestGUIStartX(player) 
-				&& mx < getChestGUIStartX(player) + inventoryChest_bmp->w 
-				&& my > getChestGUIStartY(player) 
-				&& my < getChestGUIStartY(player) + inventoryChest_bmp->h)
-			{
-				return;    //Click falls inside the chest inventory GUI.
-			}
+		if ( openedChest[player] )
+		{
+			// TODO UI: REPLACE
+			//if ( mx > getChestGUIStartX(player)
+			//	&& mx < getChestGUIStartX(player) + inventoryChest_bmp->w
+			//	&& my > getChestGUIStartY(player)
+			//	&& my < getChestGUIStartY(player) + inventoryChest_bmp->h )
+			//{
+			//	return;    //Click falls inside the chest inventory GUI.
+			//}
+		}
 		SDL_Rect guiBox;
 		GenericGUI[player].getDimensions(guiBox);
 		if ( GenericGUI[player].isGUIOpen() )

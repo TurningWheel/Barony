@@ -1851,24 +1851,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
-		if ( false && openedChest[player] )
-		{
-			//Do not want to wrap around if opened chest or shop.
-			warpInv = false;
-			y = inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
-
-			if ( numItemsInChest(player) > 0 )   //If chest even has an item...
-			{
-				//Then warp cursor to chest.
-				selectedChestSlot[player] = 0; //Warp to first chest slot.
-				int warpX = getChestGUIStartX(player) + (inventoryoptionChest_bmp->w / 2);
-				int warpY = getChestGUIStartY(player) + (inventoryoptionChest_bmp->h / 2)  + 16;
-				//SDL_WarpMouseInWindow(screen, warpX, warpY);
-				Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
-				inputs.warpMouse(player, warpX, warpY, flags);
-			}
-		}
-		else if ( players[player]->gui_mode == GUI_MODE_SHOP )
+		if ( players[player]->gui_mode == GUI_MODE_SHOP )
 		{
 			warpInv = false;
 			y = inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.

@@ -11363,6 +11363,28 @@ void createPlayerSpellList(const int player)
 	}
 }
 
+void closeChestGUIAction(const int player)
+{
+	players[player]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+	players[player]->inventory_mode = INVENTORY_MODE_ITEM;
+	if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_INVENTORY )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(player)->draw_cursor )
+		{
+			players[player]->GUI.warpControllerToModule(false);
+		}
+	}
+	if ( openedChest[player] )
+	{
+		openedChest[player]->closeChest();
+	}
+	else
+	{
+		players[player]->inventoryUI.chestGUI.closeChest();
+	}
+}
+
 void createChestGUI(const int player)
 {
 	if ( !gui )
@@ -11444,6 +11466,7 @@ void createChestGUI(const int player)
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close chest button clicked", button.getOwner());
+			closeChestGUIAction(button.getOwner());
 			//if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
 			//{
 			//	players[button.getOwner()]->inventoryUI.cycleInventoryTab();
@@ -15278,6 +15301,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
 	a = 0;
 	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	fade->disabled = true;
 
 	Frame* skillBackground = frame->addFrame("skills frame");
 	skillBackground->setHollow(true);
@@ -16910,6 +16934,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
 		a = 0;
 		fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		fade->disabled = true;
 		return;
 	}
 
@@ -17052,6 +17077,7 @@ void Player::SkillSheet_t::processSkillSheet()
 	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
 	a = 128 * skillsFadeInAnimationY;
 	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	fade->disabled = false;
 
 	int baseY = (skillFrame->getSize().h / 2 - sheetSize.h / 2);
 	sheetSize.y = -sheetSize.h + skillsFadeInAnimationY * (baseY + sheetSize.h);
@@ -18483,6 +18509,8 @@ const bool Player::Inventory_t::isItemFromChest(Item* item) const
 int Player::Inventory_t::ChestGUI_t::heightOffsetWhenNotCompact = 178;
 void Player::Inventory_t::ChestGUI_t::updateChest()
 {
+	updateChestInventory(player.playernum);
+
 	Frame* chestFrame = player.inventoryUI.chestFrame;
 	if ( !chestFrame ) { return; }
 
@@ -18613,7 +18641,17 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		grabAllBtn->setSize(grabAllBtnPos);
 	}
 
-	int lowestItemY = getNumItemsToDisplayVertical() - 1;
+	bool closeChestAction = false;
+	if ( openedChest[player.playernum] || bOpen )
+	{
+		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+			closeChestAction = true;
+		}
+	}
+
+	/*int lowestItemY = getNumItemsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -18623,7 +18661,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		lowestItemY = std::max(lowestItemY, item->y);
 	}
 
-	/*int scrollAmount = std::max((lowestItemY + 1) - (getNumItemsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
+	int scrollAmount = std::max((lowestItemY + 1) - (getNumItemsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
 	if ( scrollAmount == 0 )
 	{
 		slider->setDisabled(true);
@@ -18713,6 +18751,12 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	SDL_Rect actualSize = chestSlotsFrame->getActualSize();
 	actualSize.y = scrollAnimateX;
 	chestSlotsFrame->setActualSize(actualSize);
+
+	if ( closeChestAction )
+	{
+		closeChestGUIAction(player.playernum);
+		return;
+	}
 }
 
 bool Player::Inventory_t::ChestGUI_t::isSlotVisible(int x, int y) const

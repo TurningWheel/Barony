@@ -47,7 +47,6 @@ SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
 SDL_Surface* hunger_boiler_flame_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
-Item* invitemschest[MAXPLAYERS][kNumChestItemsToDisplay];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
@@ -63,11 +62,6 @@ int dragoffset_x[MAXPLAYERS] = { 0 };
 int dragoffset_y[MAXPLAYERS] = { 0 };
 
 list_t chestInv[MAXPLAYERS];
-int chestitemscroll[MAXPLAYERS] = { 0 };
-int chestgui_offset_x[MAXPLAYERS] = { 0 };
-int chestgui_offset_y[MAXPLAYERS] = { 0 };
-bool dragging_chestGUI[MAXPLAYERS] = { 0 };
-int selectedChestSlot[MAXPLAYERS];
 
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
