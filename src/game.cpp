@@ -5972,9 +5972,8 @@ int main(int argc, char** argv)
 			GO_SwapBuffers(screen);
 
 			// screenshots
-			if ( Input::keys[SDL_SCANCODE_F6] )
+			if ( Input::inputs[clientnum].consumeBinaryToggle("Screenshot") )
 			{
-				Input::keys[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
 

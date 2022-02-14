@@ -67,7 +67,8 @@ namespace MainMenu {
 		{"Turn Left", "Left", hiddenBinding, emptyBinding},
 		{"Turn Right", "Right", hiddenBinding, emptyBinding},
 		{"Look Up", "Up", hiddenBinding, emptyBinding},
-		{"Look Down", "Down", hiddenBinding, emptyBinding}
+		{"Look Down", "Down", hiddenBinding, emptyBinding},
+		{"Screenshot", "F6", hiddenBinding, hiddenBinding},
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
