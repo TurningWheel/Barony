@@ -18392,7 +18392,14 @@ void Player::Inventory_t::ChestGUI_t::openChest()
 		{
 			player.inventoryUI.selectChestSlot(0, 0);
 		}
+		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		player.inventory_mode = INVENTORY_MODE_ITEM;
 		bOpen = true;
+	}
+	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+	{
+		inputs.getUIInteraction(player.playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(player.playernum)->toggleclick = false;
 	}
 	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
 }

@@ -770,16 +770,6 @@ void Entity::actChest()
 					players[chestclicked]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 					players[chestclicked]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 					players[chestclicked]->inventoryUI.chestGUI.openChest();
-					if ( numItemsInChest(chestclicked) > 0 )   //Warp mouse to first item in chest only if there are any items!
-					{
-						selectedChestSlot[chestclicked] = 0;
-						warpMouseToSelectedChestSlot(chestclicked);
-					}
-					else
-					{
-						selectedChestSlot[chestclicked] = -1;
-						players[chestclicked]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)); //Because setting shootmode to false tends to start the mouse in the middle of the screen. Which is not nice.
-					}
 				}
 				chestStatus = 1; //Toggle chest open/closed.
 			}
