@@ -1903,7 +1903,7 @@ std::string getItemSpritePath(const int player, Item& item)
 	return "";
 }
 
-Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack)
+Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack, bool bDoPickupMessage)
 {
 	if ( !openedChest[player] || !item )
 	{
@@ -1937,10 +1937,12 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	// deletes 'item' from the chest inventory, if remaining qty is 0
 	int oldcount = item->count;
 	Item* itemCopyToTake = openedChest[player]->getItemFromChest(item, amount); 
-
-	messagePlayer(player, MESSAGE_INVENTORY, language[374], itemCopyToTake->description());
+	if ( bDoPickupMessage )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[374], itemCopyToTake->description());
+		playSound(35 + rand() % 3, 64);
+	}
 	Item* pickedUp = itemPickup(player, itemCopyToTake, addToSpecificInventoryItem, forceNewStack);
-	playSound(35 + rand() % 3, 64);
 	free(itemCopyToTake);
 	itemCopyToTake = nullptr;
 	

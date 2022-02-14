@@ -220,7 +220,7 @@ int loadConfig(char* filename);
 int saveConfig(char const * const filename);
 void defaultConfig();
 void updateChestInventory(const int player);
-Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack);
+Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack, bool bDoPickupMessage = true);
 void updateAppraisalItemBox(const int player);
 void updateShopWindow(const int player);
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);

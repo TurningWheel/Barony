@@ -11366,7 +11366,7 @@ void createPlayerSpellList(const int player)
 void closeChestGUIAction(const int player)
 {
 	players[player]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
-	players[player]->inventory_mode = INVENTORY_MODE_ITEM;
+	//players[player]->inventory_mode = INVENTORY_MODE_ITEM;
 	if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_INVENTORY )
 	{
 		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
@@ -11383,6 +11383,136 @@ void closeChestGUIAction(const int player)
 	{
 		players[player]->inventoryUI.chestGUI.closeChest();
 	}
+}
+
+bool takeAllChestGUIAction(const int player)
+{
+	if ( !openedChest[player] )
+	{
+		return false;
+	}
+
+	list_t* chest_inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		chest_inventory = &chestInv[player];
+	}
+	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	{
+		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+	}
+	if ( !chest_inventory )
+	{
+		// no chest inventory available
+		return false;
+	}
+
+	std::vector<std::pair<int, Item*>> chestSlotOrder;
+	for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( item2 )
+		{
+			int key = item2->x + item2->y * 100;
+			chestSlotOrder.push_back(std::make_pair(key, item2));
+		}
+	}
+	int numItems = (int)chestSlotOrder.size();
+	std::sort(chestSlotOrder.begin(), chestSlotOrder.end()); // sort ascending by position, left to right, then down
+	int pickedUpItems = 0;
+	for ( auto& keyValue : chestSlotOrder )
+	{
+		Item* item = keyValue.second;
+		bool tryAddToInventory = true;
+		int loops = 0;
+		while ( tryAddToInventory )
+		{
+			++loops;
+			if ( item->count <= 0 )
+			{
+				break;
+			}
+			int oldItemQty = 0;
+			int destItemQty = 0;
+			auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+			int amountToPlace = item->count - oldItemQty;
+			assert(amountToPlace > 0);
+			if ( amountToPlace <= 0 )
+			{
+				break;
+			}
+			switch ( result )
+			{
+				case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
+				{
+					if ( Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false, false) )
+					{
+						// need to do another place operation.
+					}
+					else
+					{
+						tryAddToInventory = false;
+					}
+					if ( loops == 1 )
+					{
+						++pickedUpItems;
+					}
+					break;
+				}
+				case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
+				{
+					// operation success, can finish here.
+					Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false, false);
+					tryAddToInventory = false;
+					if ( loops == 1 )
+					{
+						++pickedUpItems;
+					}
+					break;
+				}
+				case ITEM_ADDED_WITHOUT_NEEDING_STACK:
+				{
+					// check for inventory space
+					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+					{
+						// no space
+						tryAddToInventory = false;
+						break;
+					}
+					Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true, false);
+					if ( oldItemQty > 0 )
+					{
+						// more work to do (unusually large stacks exceeding normal limits)
+					}
+					else
+					{
+						tryAddToInventory = false;
+					}
+					if ( loops == 1 )
+					{
+						++pickedUpItems;
+					}
+					break;
+				}
+				default:
+					// error out
+					tryAddToInventory = false;
+					break;
+			}
+		}
+	}
+
+	if ( pickedUpItems > 0 )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[4099], pickedUpItems);
+		playSound(35 + rand() % 3, 64);
+	}
+	else if ( pickedUpItems == 0 && numItems > 0 )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[4100]);
+	}
+
+	return true;
 }
 
 void createChestGUI(const int player)
@@ -11465,13 +11595,7 @@ void createChestGUI(const int player)
 		closeBtn->setMenuConfirmControlType(0);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close chest button clicked", button.getOwner());
 			closeChestGUIAction(button.getOwner());
-			//if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
-			//{
-			//	players[button.getOwner()]->inventoryUI.cycleInventoryTab();
-			//}
-			//players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 		});
 
 		auto grabAllBtn = bgFrame->addButton("grab all button");
@@ -11490,12 +11614,7 @@ void createChestGUI(const int player)
 		grabAllBtn->setMenuConfirmControlType(0);
 		grabAllBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		grabAllBtn->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Grab All button clicked", button.getOwner());
-			//if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
-			//{
-			//	players[button.getOwner()]->inventoryUI.cycleInventoryTab();
-			//}
-			//players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
+			takeAllChestGUIAction(button.getOwner());
 		});
 	}
 
@@ -12316,7 +12435,127 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_RETRIEVE_CHEST || prompt == PROMPT_RETRIEVE_CHEST_ALL )
 	{
-		takeItemFromChest(player, item, ((prompt == PROMPT_RETRIEVE_CHEST_ALL) ? item->count : 1), nullptr, false);
+		if ( openedChest[player] )
+		{
+			if ( prompt == PROMPT_RETRIEVE_CHEST )
+			{
+				bool tryAddToInventory = true;
+				while ( tryAddToInventory )
+				{
+					if ( item->count <= 0 )
+					{
+						break;
+					}
+					int oldItemQty = 0;
+					int destItemQty = 0;
+					int oldQty = item->count;
+					item->count = 1;
+					auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+					item->count = oldQty;
+
+					int amountToPlace = 1;
+					switch ( result )
+					{
+						case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
+						case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
+						{
+							// operation success, can finish here.
+							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false);
+							tryAddToInventory = false;
+							break;
+						}
+						case ITEM_ADDED_WITHOUT_NEEDING_STACK:
+						{
+							// check for inventory space
+							if ( !bItemInventoryHasFreeSlot() )
+							{
+								// no space
+								tryAddToInventory = false;
+								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								break;
+							}
+
+							// operation success, can finish here.
+							int amountToPlace = 1;
+							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true);
+							tryAddToInventory = false;
+							break;
+						}
+						default:
+							// error out
+							tryAddToInventory = false;
+							break;
+					}
+				}
+			}
+			else if ( prompt == PROMPT_RETRIEVE_CHEST_ALL )
+			{
+				bool tryAddToInventory = true;
+				while ( tryAddToInventory )
+				{
+					if ( item->count <= 0 )
+					{
+						break;
+					}
+					int oldItemQty = 0;
+					int destItemQty = 0;
+					auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+					int amountToPlace = item->count - oldItemQty;
+					assert(amountToPlace > 0);
+					if ( amountToPlace <= 0 )
+					{
+						break;
+					}
+					switch ( result )
+					{
+						case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
+						{
+							if ( Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false) )
+							{
+								// need to do another place operation.
+							}
+							else
+							{
+								tryAddToInventory = false;
+							}
+							break;
+						}
+						case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
+						{
+							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, false);
+							if ( oldItemQty > 0 )
+							{
+								// more work to do (unusually large stacks exceeding normal limits)
+							}
+							else
+							{
+								// operation success, can finish here.
+								tryAddToInventory = false;
+							}
+							break;
+						}
+						case ITEM_ADDED_WITHOUT_NEEDING_STACK:
+						{
+							// check for inventory space
+							if ( !bItemInventoryHasFreeSlot() )
+							{
+								// no space
+								tryAddToInventory = false;
+								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								break;
+							}
+							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true);
+							tryAddToInventory = false;
+							break;
+						}
+						default:
+							// error out
+							tryAddToInventory = false;
+							break;
+					}
+				}
+			}
+		}
 		return;
 	}
 	else if ( prompt == PROMPT_STORE_CHEST || prompt == PROMPT_STORE_CHEST_ALL )
@@ -12325,9 +12564,123 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( openedChest[player] )
 			{
-				if ( Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, ((prompt == PROMPT_STORE_CHEST_ALL) ? item->count : 1), false, nullptr) )
+				if ( prompt == PROMPT_STORE_CHEST )
 				{
-					// added to chest.
+					bool tryAddToChest = true;
+					while ( tryAddToChest )
+					{
+						if ( item->count <= 0 )
+						{
+							break;
+						}
+						int oldItemQty = 0;
+						int destItemQty = 0;
+						int oldQty = item->count;
+						item->count = 1;
+						auto result = getItemStackingBehaviorIntoChest(player, item, nullptr, oldItemQty, destItemQty);
+						item->count = oldQty;
+						
+						int amountToPlace = 1;
+						switch ( result )
+						{
+							case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
+							case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
+							{
+								// operation success, can finish here.
+								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, nullptr);
+								tryAddToChest = false;
+								break;
+							}
+							case ITEM_ADDED_WITHOUT_NEEDING_STACK:
+							{
+								// check for chest space
+								if ( numItemsInChest(player) + 1 > (players[player]->inventoryUI.MAX_CHEST_X * players[player]->inventoryUI.MAX_CHEST_Y) )
+								{
+									// no space
+									tryAddToChest = false;
+									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									break;
+								}
+
+								// operation success, can finish here.
+								int amountToPlace = 1;
+								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, true, nullptr);
+								tryAddToChest = false;
+								break;
+							}
+							default:
+								// error out
+								tryAddToChest = false;
+								break;
+						}
+					}
+				}
+				else if ( prompt == PROMPT_STORE_CHEST_ALL )
+				{
+					bool tryAddToChest = true;
+					while ( tryAddToChest )
+					{
+						if ( item->count <= 0 )
+						{
+							break;
+						}
+						int oldItemQty = 0;
+						int destItemQty = 0;
+						auto result = getItemStackingBehaviorIntoChest(player, item, nullptr, oldItemQty, destItemQty);
+						int amountToPlace = item->count - oldItemQty;
+						assert(amountToPlace > 0);
+						if ( amountToPlace <= 0 )
+						{
+							break;
+						}
+						switch ( result )
+						{
+							case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
+							{
+								if ( Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, nullptr) )
+								{
+									// need to do another place operation.
+								}
+								else
+								{
+									tryAddToChest = false;
+								}
+								break;
+							}
+							case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
+							{
+								// operation success, can finish here.
+								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, nullptr);
+								tryAddToChest = false;
+								break;
+							}
+							case ITEM_ADDED_WITHOUT_NEEDING_STACK:
+							{
+								// check for chest space
+								if ( numItemsInChest(player) + 1 > (players[player]->inventoryUI.MAX_CHEST_X * players[player]->inventoryUI.MAX_CHEST_Y) )
+								{
+									// no space
+									tryAddToChest = false;
+									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									break;
+								}
+								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, true, nullptr);
+								if ( oldItemQty > 0 )
+								{
+									// more work to do (unusually large stacks exceeding normal limits)
+								}
+								else
+								{
+									tryAddToChest = false;
+								}
+								break;
+							}
+							default:
+								// error out
+								tryAddToChest = false;
+								break;
+						}
+					}
 				}
 			}
 		}
