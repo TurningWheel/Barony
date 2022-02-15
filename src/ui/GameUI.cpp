@@ -12560,7 +12560,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_STORE_CHEST || prompt == PROMPT_STORE_CHEST_ALL )
 	{
-		if ( !disableItemUsage )
+		if ( !disableItemUsage || (disableItemUsage && !players[player]->paperDoll.isItemOnDoll(*item)) )
 		{
 			if ( openedChest[player] )
 			{
@@ -12665,7 +12665,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 									break;
 								}
 								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, true, nullptr);
-								if ( oldItemQty > 0 )
+								if ( !itemInChest )
+								{
+									tryAddToChest = false; // failure adding to chest
+								}
+								else if ( oldItemQty > 0 )
 								{
 									// more work to do (unusually large stacks exceeding normal limits)
 								}
