@@ -369,6 +369,7 @@ class Inputs
 		Item* selectedItem = nullptr;
 		bool toggleclick = false;
 		bool itemMenuOpen = false;
+		bool itemMenuFromHotbar = false;
 		int itemMenuX = 0;
 		int itemMenuY = 0;
 		int itemMenuSelected = 0;

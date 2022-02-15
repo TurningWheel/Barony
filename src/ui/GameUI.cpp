@@ -11998,6 +11998,7 @@ void Player::Inventory_t::updateItemContextMenu()
 	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
 	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
 	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
+	bool& itemMenuFromHotbar = inputs.getUIInteraction(player.playernum)->itemMenuFromHotbar;
 	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 
@@ -12053,6 +12054,7 @@ void Player::Inventory_t::updateItemContextMenu()
 	{
 		itemMenuOpen = false;
 		itemMenuSelected = 0;
+		itemMenuFromHotbar = false;
 		interactFrame->setDisabled(true);
 		return;
 	}
@@ -12176,7 +12178,11 @@ void Player::Inventory_t::updateItemContextMenu()
 	const int rightClickProtectBuffer = (right_click_protect ? 0 : 10);
 
 	bool alignRight = true;
-	if ( bCompactView )
+	if ( itemMenuFromHotbar )
+	{
+		alignRight = true;
+	}
+	else if ( bCompactView )
 	{
 		if ( player.paperDoll.isItemOnDoll(*item) )
 		{
@@ -15512,7 +15518,12 @@ void Player::Hotbar_t::updateHotbar()
 					bool showCursor = true;
 					if ( !player.shootmode )
 					{
-						if ( inputs.getUIInteraction(player.playernum)->selectedItem 
+						if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen &&
+							inputs.getUIInteraction(player.playernum)->itemMenuFromHotbar )
+						{
+							showCursor = true;
+						}
+						else if ( inputs.getUIInteraction(player.playernum)->selectedItem 
 							&& !highlightSlot->capturesMouseInRealtimeCoords() )
 						{
 							showCursor = false;
@@ -15557,6 +15568,8 @@ void Player::Hotbar_t::updateHotbar()
 					else
 					{
 						highlightSlotImg->disabled = true;
+						highlightSlotItem->setDisabled(true);
+						updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
 					}
 				}
 			}

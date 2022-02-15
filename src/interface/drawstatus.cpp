@@ -2399,6 +2399,14 @@ void drawStatusNew(const int player)
 		players[player]->hotbar.initFaceButtonHotbar();
 	}
 
+	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
+	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
+	Uint32& itemMenuItem = inputs.getUIInteraction(player)->itemMenuItem;
+	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
+	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
+	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
+	bool& itemMenuFromHotbar = inputs.getUIInteraction(player)->itemMenuFromHotbar;
+
 	//Now the hotbar.
 	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
@@ -2455,6 +2463,8 @@ void drawStatusNew(const int player)
 				if ( !shootmode && !hotbarSlotFrame->isDisabled() 
 					&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR)
 					&& !selectedItem
+					&& players[player]->hotbar.current_hotbar == num
+					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 					&& !players[player]->GUI.isDropdownActive()
 					&& hotbarSlotFrame->capturesMouse() )
 				{
@@ -2463,7 +2473,7 @@ void drawStatusNew(const int player)
 							&& hotbarGamepadControlEnabled(player))
 						&& (players[player]->inventoryUI.bFirstTimeSnapCursor) )
 					{
-						inputs.getUIInteraction(player)->toggleclick = false;
+						toggleclick = false;
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
 							&& inputs.bMouseLeft(player) && inputs.bPlayerUsingKeyboardControl(player) )
 						{
@@ -2489,7 +2499,7 @@ void drawStatusNew(const int player)
 								&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
 								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
-								inputs.getUIInteraction(player)->toggleclick = true;
+								toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 								//TODO: Change the mouse cursor to THE HAND.
@@ -2521,137 +2531,195 @@ void drawStatusNew(const int player)
 							}
 						}
 					}
-					if ( (inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)) )
+					if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
+						&& !itemMenuOpen && !selectedItem )
 					{
-						//Use the item if right clicked.
-						inputs.mouseClearRight(player);
-						inputs.controllerClearInput(player, INJOY_MENU_USE);
-						bool badpotion = false;
-						bool learnedSpell = false;
-
-						if ( itemCategory(item) == POTION && item->identified )
+						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 						{
-							badpotion = isPotionBad(*item); //So that you wield empty potions be default.
-						}
-						if ( item->type == POTION_EMPTY )
-						{
-							badpotion = true;
-						}
-						if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
-						{
-							// equipped spellbook will unequip on use.
-							learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
-						}
-
-						if ( inputs.bPlayerUsingKeyboardControl(player)
-							&& (Input::keys[SDL_SCANCODE_LSHIFT] || Input::keys[SDL_SCANCODE_RSHIFT]) )
-						{
+							// auto-appraise the item
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
+							inputs.mouseClearRight(player);
+						}
+						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
+							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
+						{
+							inputs.mouseClearRight(player);
+							// force equip potion/spellbook
+							playerTryEquipItemAndUpdateServer(player, item, false);
 						}
 						else
 						{
-							if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE)
-								&& (inputs.bPlayerUsingKeyboardControl(player)
-									&& (Input::keys[SDL_SCANCODE_LALT] || Input::keys[SDL_SCANCODE_RALT])) )
+							// open a drop-down menu of options for "using" the item
+							itemMenuOpen = true;
+							itemMenuFromHotbar = true;
+							itemMenuX = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + 8;
+							itemMenuY = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+							auto interactFrame = players[player]->inventoryUI.interactFrame;
+							if ( interactFrame )
 							{
-								badpotion = true;
-								learnedSpell = true;
+								if ( auto interactMenuTop = interactFrame->findImage("interact top background") )
+								{
+									// 10px is slot half height, minus the top interact text height
+									// mouse will be situated halfway in first menu option
+									itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
+								}
 							}
+							itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
 
-							if ( !learnedSpell && item->identified
-								&& itemCategory(item) == SPELLBOOK && players[player] && players[player]->entity )
+							bool alignRight = true;
+							if ( !alignRight )
 							{
-								learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
-								spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-								if ( currentSpell )
+								itemMenuX -= 16;
+							}
+							if ( interactFrame )
+							{
+								if ( auto highlightImage = interactFrame->findImage("interact selected highlight") )
 								{
-									int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-									if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
-									{
-										skillLVL = 100;
-									}
-									if ( skillLVL >= currentSpell->difficulty )
-									{
-										// can learn spell, try that instead.
-										learnedSpell = false;
-									}
+									highlightImage->disabled = true;
 								}
 							}
+							itemMenuSelected = 0;
+							itemMenuItem = item->uid;
 
-							if ( itemCategory(item) == SPELLBOOK && stats[player] && stats[player]->type == GOBLIN )
-							{
-								learnedSpell = true; // goblinos can't learn spells but always equip books.
-							}
+							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
-							if ( !badpotion && !learnedSpell )
+							if ( inputs.getVirtualMouse(player)->draw_cursor )
 							{
-								if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
-								{
-									if ( !disableItemUsage )
-									{
-										if ( stats[player] && stats[player]->type == AUTOMATON
-											&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-										{
-											// consume item
-											if ( multiplayer == CLIENT )
-											{
-												strcpy((char*)net_packet->data, "FODA");
-												SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-												SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-												SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-												SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-												SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-												net_packet->data[24] = item->identified;
-												net_packet->data[25] = player;
-												net_packet->address.host = net_server.host;
-												net_packet->address.port = net_server.port;
-												net_packet->len = 26;
-												sendPacketSafe(net_sock, -1, net_packet, 0);
-											}
-											item_FoodAutomaton(item, player);
-										}
-										else
-										{
-											useItem(item, player);
-										}
-									}
-									else
-									{
-										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-										{
-											messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
-										}
-										else
-										{
-											messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
-										}
-									}
-								}
-							}
-							else
-							{
-								if ( !disableItemUsage )
-								{
-									playerTryEquipItemAndUpdateServer(player, item, false);
-								}
-								else
-								{
-									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-									{
-										messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
-									}
-									else
-									{
-										messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
-									}
-								}
-							}
-							used = true;
-							if ( disableItemUsage )
-							{
-								used = false;
+								players[player]->inventoryUI.cursor.lastUpdateTick = ticks;
 							}
 						}
+
+						//Use the item if right clicked.
+						//if ( false )
+						//{
+						//	inputs.mouseClearRight(player);
+						//	bool badpotion = false;
+						//	bool learnedSpell = false;
+
+						//	if ( itemCategory(item) == POTION && item->identified )
+						//	{
+						//		badpotion = isPotionBad(*item); //So that you wield empty potions be default.
+						//	}
+						//	if ( item->type == POTION_EMPTY )
+						//	{
+						//		badpotion = true;
+						//	}
+						//	if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
+						//	{
+						//		// equipped spellbook will unequip on use.
+						//		learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
+						//	}
+
+						//	if ( inputs.bPlayerUsingKeyboardControl(player)
+						//		&& (Input::keys[SDL_SCANCODE_LSHIFT] || Input::keys[SDL_SCANCODE_RSHIFT]) )
+						//	{
+						//		players[player]->inventoryUI.appraisal.appraiseItem(item);
+						//	}
+						//	else
+						//	{
+						//		if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE)
+						//			&& (inputs.bPlayerUsingKeyboardControl(player)
+						//				&& (Input::keys[SDL_SCANCODE_LALT] || Input::keys[SDL_SCANCODE_RALT])) )
+						//		{
+						//			badpotion = true;
+						//			learnedSpell = true;
+						//		}
+
+						//		if ( !learnedSpell && item->identified
+						//			&& itemCategory(item) == SPELLBOOK && players[player] && players[player]->entity )
+						//		{
+						//			learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
+						//			spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+						//			if ( currentSpell )
+						//			{
+						//				int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
+						//				if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+						//				{
+						//					skillLVL = 100;
+						//				}
+						//				if ( skillLVL >= currentSpell->difficulty )
+						//				{
+						//					// can learn spell, try that instead.
+						//					learnedSpell = false;
+						//				}
+						//			}
+						//		}
+
+						//		if ( itemCategory(item) == SPELLBOOK && stats[player] && stats[player]->type == GOBLIN )
+						//		{
+						//			learnedSpell = true; // goblinos can't learn spells but always equip books.
+						//		}
+
+						//		if ( !badpotion && !learnedSpell )
+						//		{
+						//			if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
+						//			{
+						//				if ( !disableItemUsage )
+						//				{
+						//					if ( stats[player] && stats[player]->type == AUTOMATON
+						//						&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+						//					{
+						//						// consume item
+						//						if ( multiplayer == CLIENT )
+						//						{
+						//							strcpy((char*)net_packet->data, "FODA");
+						//							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+						//							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+						//							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+						//							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+						//							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+						//							net_packet->data[24] = item->identified;
+						//							net_packet->data[25] = player;
+						//							net_packet->address.host = net_server.host;
+						//							net_packet->address.port = net_server.port;
+						//							net_packet->len = 26;
+						//							sendPacketSafe(net_sock, -1, net_packet, 0);
+						//						}
+						//						item_FoodAutomaton(item, player);
+						//					}
+						//					else
+						//					{
+						//						useItem(item, player);
+						//					}
+						//				}
+						//				else
+						//				{
+						//					if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+						//					{
+						//						messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+						//					}
+						//					else
+						//					{
+						//						messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+						//					}
+						//				}
+						//			}
+						//		}
+						//		else
+						//		{
+						//			if ( !disableItemUsage )
+						//			{
+						//				playerTryEquipItemAndUpdateServer(player, item, false);
+						//			}
+						//			else
+						//			{
+						//				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+						//				{
+						//					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+						//				}
+						//				else
+						//				{
+						//					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+						//				}
+						//			}
+						//		}
+						//		used = true;
+						//		if ( disableItemUsage )
+						//		{
+						//			used = false;
+						//		}
+						//	}
+						//}
 					}
 				}
 			}
@@ -2741,7 +2809,9 @@ void drawStatusNew(const int player)
 						}
 					}
 
-					if ( hotbar_t.hotbarFrame && players[player]->inventoryUI.tooltipFrame && !inputs.getUIInteraction(player)->selectedItem )
+					if ( hotbar_t.hotbarFrame && players[player]->inventoryUI.tooltipFrame 
+						&& !inputs.getUIInteraction(player)->selectedItem
+						&& !itemMenuOpen )
 					{
 						src.x = hotbarSlotFrame->getSize().x + hotbarSlotFrame->getSize().w / 2;
 						src.y = hotbarSlotFrame->getSize().y - 16;
@@ -3068,6 +3138,7 @@ void drawStatusNew(const int player)
 		//Moving the cursor changes the currently selected hotbar slot.
 		if ( (mousexrel || mouseyrel) 
 			&& !shootmode
+			&& !itemMenuOpen
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 		{
 			if ( hotbar_t.hotbarFrame )

@@ -5989,6 +5989,7 @@ void Player::Inventory_t::updateInventory()
 	int& itemMenuX = inputs.getUIInteraction(player)->itemMenuX;
 	int& itemMenuY = inputs.getUIInteraction(player)->itemMenuY;
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
+	bool& itemMenuFromHotbar = inputs.getUIInteraction(player)->itemMenuFromHotbar;
 
 	if ( inputs.hasController(player) )
 	{
@@ -6202,8 +6203,9 @@ void Player::Inventory_t::updateInventory()
 
 		if ( slotFrameToHighlight )
 		{
-			if ( itemMenuOpen || // if item menu open, then always draw cursor on current item.
+			if ( (itemMenuOpen && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
 				(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
+					&& !(itemMenuOpen && itemMenuFromHotbar)
 					&& (!inputs.getVirtualMouse(player)->draw_cursor
 						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
 			{
@@ -6794,6 +6796,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
+						itemMenuFromHotbar = false;
 						itemMenuX = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + 8;
 						itemMenuY = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 						if ( auto interactMenuTop = interactFrame->findImage("interact top background") )
@@ -6884,7 +6887,7 @@ void Player::Inventory_t::updateInventory()
 			mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
 				&& slotFrame->capturesMouse();
 
-			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
+			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor && !(itemMenuOpen && itemMenuFromHotbar) )
 			{
 				// mouse movement captures the inventory
 				if ( itemCategory(item) == SPELL_CAT )
@@ -7118,6 +7121,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
+						itemMenuFromHotbar = false;
 						itemMenuX = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + 8;
 						itemMenuY = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 						if ( auto interactMenuTop = interactFrame->findImage("interact top background") )
