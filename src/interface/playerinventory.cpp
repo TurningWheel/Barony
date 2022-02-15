@@ -2650,10 +2650,77 @@ void releaseChestItem(const int player)
 	else
 	{
 		// outside inventory
+		int slotNum = 0;
+		hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
+		if ( slot )
+		{
+			//Add item to hotbar.
+			int oldItemQty = 0;
+			int destItemQty = 0;
+			ItemStackResult result;
+			if ( !itemCompare(selectedItem, uidToItem(slot->item), false) )
+			{
+				result = getItemStackingBehavior(player, selectedItem, uidToItem(slot->item), oldItemQty, destItemQty);
+			}
+			else
+			{
+				result = getItemStackingBehavior(player, selectedItem, nullptr, oldItemQty, destItemQty);
+			}
+			int amountToPlace = selectedItem->count - oldItemQty;
+			Item* newInventoryItem = nullptr;
+			if ( amountToPlace > 0 )
+			{
+				switch ( result.resultType )
+				{
+					case ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK:
+					case ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK:
+					{
+						newInventoryItem = takeItemFromChest(player, selectedItem, amountToPlace, result.itemToStackInto, false);
+						break;
+					}
+					case ITEM_ADDED_WITHOUT_NEEDING_STACK:
+					{
+						// check for inventory space
+						if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+						{
+							// no space
+							messagePlayer(player, MESSAGE_INVENTORY, language[727], selectedItem->getName()); // no room
+							break;
+						}
+						newInventoryItem = takeItemFromChest(player, selectedItem, amountToPlace, nullptr, true);
+						break;
+					}
+					default:
+						// error out
+						break;
+				}
+			}
 
-		selectedItem = nullptr;
-		inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-		toggleclick = false;
+			if ( newInventoryItem )
+			{
+				slot->item = newInventoryItem->uid;
+				// empty out duplicate slots that match this item uid.
+				int i = 0;
+				for ( auto& s : players[player]->hotbar.slots() )
+				{
+					if ( i != slotNum && s.item == slot->item )
+					{
+						s.item = 0;
+					}
+					++i;
+				}
+				playSound(139, 64); // click sound
+			}
+			selectedItem = nullptr;
+			inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+			toggleclick = false;
+		}
+		else
+		{
+			selectedItem = nullptr;
+			inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+			toggleclick = false;
+		}
 		return;
 	}
 }
