@@ -7645,7 +7645,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 	}
 
-	if ( openedChest[player] )
+	if ( openedChest[player] && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
 		{
@@ -7659,7 +7659,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		return options;
 	}
-	if ( players[player]->gui_mode == GUI_MODE_SHOP )
+	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
 		{
