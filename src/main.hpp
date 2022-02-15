@@ -621,7 +621,7 @@ extern int minotaurlevel;
 #define SPLITSCREEN 6
 
 // language stuff
-#define NUMLANGENTRIES 4100
+#define NUMLANGENTRIES 4200
 extern char languageCode[32];
 extern char** language;
 
