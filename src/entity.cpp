@@ -11707,15 +11707,15 @@ void createMonsterEquipment(Stat* stats)
 				itemCount = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 3];
 				if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 1 )
 				{
-					itemIdentified = false;
+					itemIdentified = true;
 				}
 				else if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 2 )
 				{
-					itemIdentified = true;
+					itemIdentified = rand() % 2;
 				}
 				else
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = false;
 				}
 				itemAppearance = rand();
 				chance = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 5];

@@ -4698,15 +4698,15 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
 				{
-					itemIdentified = false;
+					itemIdentified = true;
 				}
 				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
 				{
-					itemIdentified = true;
+					itemIdentified = rand() % 2;
 				}
 				else
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = false;
 				}
 				itemAppearance = rand();
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
