@@ -4343,6 +4343,7 @@ void actPlayer(Entity* my)
 				else
 				{
 					input.consumeBinaryToggle("Use");
+					selectedEntity[PLAYER_NUM] = nullptr;
 				}
 			}
 			else
