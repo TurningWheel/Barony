@@ -5767,9 +5767,24 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		hideFrameAmount = slideOutWidth * slideOutPercent;
 	}
 	invSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
-	dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	if ( bCompactView )
+	{
+		int paperDollHideFrameAmount = hideFrameAmount;
+		dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? paperDollHideFrameAmount : -paperDollHideFrameAmount);
+		compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? paperDollHideFrameAmount : -paperDollHideFrameAmount);
+		if ( chestGUI.animx2 > 0.01 )
+		{
+			int chestHideAmount = chestGUI.animx2 * compactCharImg->pos.w;
+			dollSlotsPos.x += ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? -chestHideAmount : chestHideAmount);
+			compactCharImg->pos.x += ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? -chestHideAmount : chestHideAmount);
+		}
+	}
+	else
+	{
+		dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+		compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
+	}
 	backpackSlotsPos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
-	compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	compactInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 	defaultInvImg->pos.x -= ((inventoryPanelJustify == PANEL_JUSTIFY_LEFT) ? hideFrameAmount : -hideFrameAmount);
 
@@ -5845,6 +5860,19 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	}
 }
 
+bool Player::Inventory_t::bIsTooltipDelayed()
+{
+	 if ( tooltipDelayTick > 0 ) 
+	 { 
+		 if ( tooltipDelayTick > ticks )
+		 {
+			 return true;
+		 }
+		 return ((ticks - tooltipDelayTick) < (TICKS_PER_SECOND / 25)); 
+	 }
+	 return false;
+}
+
 void Player::Inventory_t::openInventory()
 {
 	bool wasDisabled = true;
@@ -5872,6 +5900,7 @@ void Player::Inventory_t::closeInventory()
 	updateItemContextMenu(); // process + close the item context menu
 	bFirstTimeSnapCursor = false;
 	isInteractable = false;
+	tooltipDelayTick = 0;
 	itemTooltipDisplay.expanded = false;
 	itemTooltipDisplay.expandSetpoint = 0;
 	itemTooltipDisplay.expandCurrent = 0;
@@ -5934,6 +5963,7 @@ void Player::Inventory_t::updateInventory()
 	else
 	{
 		isInteractable = false;
+		tooltipDelayTick = ticks;
 	}
 
 	if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL )
@@ -6675,6 +6705,10 @@ void Player::Inventory_t::updateInventory()
 					auto chestBgFrame = chestFrame->findFrame("chest base");
 					int tooltipCoordX = 0;
 					PanelJustify_t justify = inventoryPanelJustify;
+					if ( bCompactView && justify == PANEL_JUSTIFY_LEFT )
+					{
+						justify = PANEL_JUSTIFY_RIGHT;
+					}
 					if ( !bCompactView )
 					{
 						Frame::image_t* chestBaseImg = chestBgFrame->findImage("chest base img");
@@ -6694,7 +6728,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						Frame::image_t* compactImg = chestBgFrame->findImage("chest base img");
 
-						if ( justify == PANEL_JUSTIFY_RIGHT )
+						if ( justify == PANEL_JUSTIFY_LEFT )
 						{
 							tooltipCoordX = chestFrame->getSize().x + chestBgFrame->getSize().x + 8;
 							tooltipCoordX += compactImg->pos.w;
@@ -6709,7 +6743,7 @@ void Player::Inventory_t::updateInventory()
 					tooltipCoordX += players[player]->camera_virtualx1();
 
 					bool tooltipOpen = false;
-					if ( !itemMenuOpen )
+					if ( !itemMenuOpen && !bIsTooltipDelayed() )
 					{
 						tooltipOpen = true;
 						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
@@ -6720,7 +6754,7 @@ void Player::Inventory_t::updateInventory()
 						break;
 					}
 
-					if ( tooltipOpen && !tooltipPromptFrame->isDisabled()
+					if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
 						&& !itemMenuOpen && !selectedItem
 						&& selectedShopSlot[player] < 0
 						&& GenericGUI[player].selectedSlot < 0 )
@@ -6732,6 +6766,7 @@ void Player::Inventory_t::updateInventory()
 							if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
 							{
 								bindingPressed = true;
+
 								if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
 								{
 									// need to unequip
@@ -6912,6 +6947,12 @@ void Player::Inventory_t::updateInventory()
 				// don't do anything while in motion
 				break;
 			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST
+				&& !chestGUI.isInteractable )
+			{
+				// don't do anything while in motion
+				break;
+			}
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS
 				&& itemCategory(item) == SPELL_CAT && !spellPanel.isItemVisible(item) )
 			{
@@ -6988,7 +7029,7 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				bool tooltipOpen = false;
-				if ( !itemMenuOpen )
+				if ( !itemMenuOpen && !bIsTooltipDelayed() )
 				{
 					tooltipOpen = true;
 					players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
@@ -6999,7 +7040,7 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( tooltipOpen && !tooltipPromptFrame->isDisabled() 
+				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
 					&& !itemMenuOpen && !selectedItem
 					&& selectedShopSlot[player] < 0
 					&& GenericGUI[player].selectedSlot < 0 )
@@ -7011,6 +7052,7 @@ void Player::Inventory_t::updateInventory()
 						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
 						{
 							bindingPressed = true;
+
 							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
 							{
 								// need to unequip

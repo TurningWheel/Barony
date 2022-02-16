@@ -11684,6 +11684,7 @@ void createPlayerInventory(const int player)
 	frame->setInheritParentFrameOpacity(false);
 
 	createInventoryTooltipFrame(player);
+	createChestGUI(player);
 
 	SDL_Rect basePos{ 0, 0, 210, 448 };
 	{
@@ -11862,7 +11863,6 @@ void createPlayerInventory(const int player)
 	}
 
 	createPlayerSpellList(player);
-	createChestGUI(player);
 
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
@@ -12441,6 +12441,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_RETRIEVE_CHEST || prompt == PROMPT_RETRIEVE_CHEST_ALL )
 	{
+		bool emptiedSlot = false;
 		if ( openedChest[player] )
 		{
 			if ( prompt == PROMPT_RETRIEVE_CHEST )
@@ -12468,6 +12469,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							// operation success, can finish here.
 							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, result.itemToStackInto, false);
 							tryAddToInventory = false;
+							if ( oldQty == 1 )
+							{
+								emptiedSlot = true;
+							}
 							break;
 						}
 						case ITEM_ADDED_WITHOUT_NEEDING_STACK:
@@ -12485,6 +12490,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							int amountToPlace = 1;
 							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true);
 							tryAddToInventory = false;
+							if ( oldQty == 1 )
+							{
+								emptiedSlot = true;
+							}
 							break;
 						}
 						default:
@@ -12537,6 +12546,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							{
 								// operation success, can finish here.
 								tryAddToInventory = false;
+								if ( oldItemQty == 0 )
+								{
+									emptiedSlot = true;
+								}
 							}
 							break;
 						}
@@ -12552,6 +12565,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 							}
 							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true);
 							tryAddToInventory = false;
+							if ( oldItemQty == 0 )
+							{
+								emptiedSlot = true;
+							}
 							break;
 						}
 						default:
@@ -12562,10 +12579,15 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				}
 			}
 		}
+		if ( !emptiedSlot && (inputs.getUIInteraction(player)->itemMenuOpen || players[player]->inventoryUI.bCompactView) )
+		{
+			tooltipDelayTick = ticks + TICKS_PER_SECOND / 2;
+		}
 		return;
 	}
 	else if ( prompt == PROMPT_STORE_CHEST || prompt == PROMPT_STORE_CHEST_ALL )
 	{
+		bool emptiedSlot = false;
 		if ( !disableItemUsage || (disableItemUsage && !players[player]->paperDoll.isItemOnDoll(*item)) )
 		{
 			if ( openedChest[player] )
@@ -12595,6 +12617,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								// operation success, can finish here.
 								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, result.itemToStackInto);
 								tryAddToChest = false;
+								if ( oldQty == 1 )
+								{
+									emptiedSlot = true;
+								}
 								break;
 							}
 							case ITEM_ADDED_WITHOUT_NEEDING_STACK:
@@ -12612,6 +12638,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								int amountToPlace = 1;
 								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, true, nullptr);
 								tryAddToChest = false;
+								if ( oldQty == 1 )
+								{
+									emptiedSlot = true;
+								}
 								break;
 							}
 							default:
@@ -12658,6 +12688,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								// operation success, can finish here.
 								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, false, result.itemToStackInto);
 								tryAddToChest = false;
+								if ( oldItemQty == 0 )
+								{
+									emptiedSlot = true;
+								}
 								break;
 							}
 							case ITEM_ADDED_WITHOUT_NEEDING_STACK:
@@ -12682,6 +12716,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								else
 								{
 									tryAddToChest = false;
+									if ( oldItemQty == 0 )
+									{
+										emptiedSlot = true;
+									}
 								}
 								break;
 							}
@@ -12697,6 +12735,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		else
 		{
 			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+		}
+		if ( !emptiedSlot && (inputs.getUIInteraction(player)->itemMenuOpen || players[player]->inventoryUI.bCompactView) )
+		{
+			tooltipDelayTick = ticks + TICKS_PER_SECOND / 2;
 		}
 		return;
 	}
@@ -18826,6 +18868,7 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 		player.inventoryUI.chestFrame->setDisabled(true);
 	}
 	animx = 0.0;
+	animx2 = 1.0;
 	isInteractable = false;
 	currentScrollRow = 0;
 	scrollPercent = 0.0;
@@ -18833,7 +18876,23 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 	scrollAnimateX = scrollSetpoint;
 	bOpen = false;
 	bFirstTimeSnapCursor = false;
+	if ( inputs.getUIInteraction(player.playernum)->selectedItemFromChest > 0 )
+	{
+		inputs.getUIInteraction(player.playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(player.playernum)->toggleclick = false;
+	}
 	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
+	if ( players[player.playernum]->GUI.activeModule == Player::GUI_t::MODULE_CHEST
+		&& !players[player.playernum]->shootmode )
+	{
+		// reset to inventory mode if still hanging in chest GUI
+		players[player.playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[player.playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			players[player.playernum]->GUI.warpControllerToModule(false);
+		}
+	}
 }
 
 int Player::Inventory_t::ChestGUI_t::getNumItemsToDisplayVertical() const
@@ -18903,44 +18962,90 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			}
 			isInteractable = true;
 		}
+
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx2)) / 2.0;
+			animx2 += setpointDiffX;
+			animx2 = std::min(1.0, animx2);
+		}
 	}
 	else
 	{
 		animx = 0.0;
 		isInteractable = false;
 		scrollInertia = 0.0;
-	}
-	auto chestFramePos = chestFrame->getSize();
-	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
-	{
-		chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w * 2;
-		if ( player.bUseCompactGUIWidth() )
+
 		{
-			if ( player.inventoryUI.slideOutPercent >= .0001 )
-			{
-				isInteractable = false;
-			}
-			chestFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animx2)) / 2.0;
+			animx2 -= setpointDiffX;
+			animx2 = std::max(0.0, animx2);
 		}
 	}
-	else
+	auto chestFramePos = chestFrame->getSize();
+
+	auto baseFrame = chestFrame->findFrame("chest base");
+	auto baseBackgroundImg = baseFrame->findImage("chest base img");
+
+	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
-		chestFramePos.x = player.camera_virtualWidth() - animx * chestFramePos.w;
-		if ( player.bUseCompactGUIWidth() )
+		if ( !player.inventoryUI.bCompactView )
 		{
-			if ( player.inventoryUI.slideOutPercent >= .0001 )
+			chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w * 2;
+			if ( player.bUseCompactGUIWidth() )
 			{
-				isInteractable = false;
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				chestFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
 			}
-			chestFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+		}
+		else
+		{
+			chestFramePos.x = player.camera_virtualWidth() - animx * chestFramePos.w;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				chestFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+	{
+		if ( !player.inventoryUI.bCompactView )
+		{
+			chestFramePos.x = player.camera_virtualWidth() - animx * chestFramePos.w * 2;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				chestFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				chestFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
 		}
 	}
 	chestFrame->setSize(chestFramePos);
 
-	auto baseFrame = chestFrame->findFrame("chest base");
 	//auto slider = baseFrame->findSlider("chest slider");
 	auto chestSlotsFrame = chestFrame->findFrame("chest slots");
-	auto baseBackgroundImg = baseFrame->findImage("chest base img");
 	// handle height changing..
 	{
 		const int baseImgBorderWidth = 10;
@@ -19012,12 +19117,15 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	}
 
 	bool closeChestAction = false;
-	if ( openedChest[player.playernum] || bOpen )
+	if ( !inputs.getUIInteraction(player.playernum)->selectedItem && player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST) )
 	{
-		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+		if ( openedChest[player.playernum] || bOpen )
 		{
-			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
-			closeChestAction = true;
+			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+				closeChestAction = true;
+			}
 		}
 	}
 
