@@ -631,7 +631,7 @@ void createUINavigation(const int player)
 		magicButton->setHideGlyphs(true);
 		magicButton->setHideKeyboardGlyphs(true);
 		magicButton->setHideSelectors(true);
-		magicButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		magicButton->setMenuConfirmControlType(0);
 		magicButton->setColor(makeColor(255, 255, 255, 191));
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
@@ -660,7 +660,7 @@ void createUINavigation(const int player)
 		statusButton->setHideGlyphs(true);
 		statusButton->setHideKeyboardGlyphs(true);
 		statusButton->setHideSelectors(true);
-		statusButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		statusButton->setMenuConfirmControlType(0);
 		statusButton->setColor(makeColor(255, 255, 255, 191));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
@@ -688,7 +688,7 @@ void createUINavigation(const int player)
 		itemsButton->setHideGlyphs(true);
 		itemsButton->setHideKeyboardGlyphs(true);
 		itemsButton->setHideSelectors(true);
-		itemsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		itemsButton->setMenuConfirmControlType(0);
 		itemsButton->setColor(makeColor(255, 255, 255, 191));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
@@ -716,7 +716,7 @@ void createUINavigation(const int player)
 		skillsButton->setHideGlyphs(true);
 		skillsButton->setHideKeyboardGlyphs(true);
 		skillsButton->setHideSelectors(true);
-		skillsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		skillsButton->setMenuConfirmControlType(0);
 		skillsButton->setColor(makeColor(255, 255, 255, 191));
 		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		skillsButton->setCallback([](Button& button) {
@@ -893,10 +893,11 @@ void Player::HUD_t::updateUINavigation()
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
 		&& !player.bUseCompactGUIWidth() )
 	{
-		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
-			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)
+			&& !player.inventoryUI.chestGUI.bOpen )
 		{
 			{
 				justify = PANEL_JUSTIFY_LEFT;
@@ -1152,6 +1153,12 @@ void Player::HUD_t::updateUINavigation()
 			button->setColor(makeColor(255, 255, 255, 191));
 		}
 
+		if ( player.bUseCompactGUIWidth() && player.inventoryUI.chestGUI.bOpen )
+		{
+			button->setInvisible(true);
+			continue;
+		}
+
 		if ( buttonAndGlyph.name == "magic button" || buttonAndGlyph.name == "items button" )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
@@ -1302,6 +1309,19 @@ void Player::HUD_t::updateUINavigation()
 		auto& button = buttonAndGlyph.button;
 		if ( !button->isDisabled() && !button->isInvisible() )
 		{
+			if ( player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
+				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
+				&& button->isHighlighted() )
+			{
+				player.GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+				SDL_Rect pos = button->getAbsoluteSize();
+				// make sure to adjust absolute size to camera viewport
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				player.hud.setCursorDisabled(false);
+				player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+			}
+
 			if ( buttonAndGlyph.inputName == "UINavLeftTrigger" && leftTriggerPressed
 				&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 			{
@@ -11281,7 +11301,7 @@ void createPlayerSpellList(const int player)
 		slider->setHideGlyphs(true);
 		slider->setHideKeyboardGlyphs(true);
 		slider->setHideSelectors(true);
-		slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		slider->setMenuConfirmControlType(0);
 
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
@@ -11305,7 +11325,7 @@ void createPlayerSpellList(const int player)
 		closeBtn->setHideGlyphs(true);
 		closeBtn->setHideKeyboardGlyphs(true);
 		closeBtn->setHideSelectors(true);
-		closeBtn->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		closeBtn->setMenuConfirmControlType(0);
 		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
@@ -11568,7 +11588,7 @@ void createChestGUI(const int player)
 		//slider->setHideGlyphs(true);
 		//slider->setHideKeyboardGlyphs(true);
 		//slider->setHideSelectors(true);
-		//slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+		//slider->setMenuConfirmControlType(0);
 
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
@@ -11616,6 +11636,35 @@ void createChestGUI(const int player)
 		grabAllBtn->setCallback([](Button& button) {
 			takeAllChestGUIAction(button.getOwner());
 		});
+
+		std::string promptFont = "fonts/pixel_maz.ttf#32#2";
+		const int promptWidth = 60;
+		const int promptHeight = 27;
+		auto promptBack = bgFrame->addField("prompt back txt", 16);
+		promptBack->setSize(SDL_Rect{ 0, 0, promptWidth, promptHeight });
+		promptBack->setFont(promptFont.c_str());
+		promptBack->setHJustify(Field::justify_t::RIGHT);
+		promptBack->setVJustify(Field::justify_t::CENTER);
+		promptBack->setText(language[4053]);
+		//promptBack->setOntop(true);
+		promptBack->setColor(makeColor(201, 162, 100, 255));
+
+		auto promptBackImg = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"", "prompt back img");
+		promptBackImg->disabled = true;
+
+		auto promptGrabAll = bgFrame->addField("prompt grab txt", 16);
+		promptGrabAll->setSize(SDL_Rect{ 0, 0, promptWidth, promptHeight });
+		promptGrabAll->setFont(promptFont.c_str());
+		promptGrabAll->setHJustify(Field::justify_t::RIGHT);
+		promptGrabAll->setVJustify(Field::justify_t::CENTER);
+		promptGrabAll->setText(language[4091]);
+		//promptBack->setOntop(true);
+		promptGrabAll->setColor(makeColor(201, 162, 100, 255));
+
+		auto promptGrabImg = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"", "prompt grab img");
+		promptBackImg->disabled = true;
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
@@ -15918,7 +15967,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	slider->setHideGlyphs(true);
 	slider->setHideKeyboardGlyphs(true);
 	slider->setHideSelectors(true);
-	slider->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+	slider->setMenuConfirmControlType(0);
 
 	Font* actualFont = Font::get(descFont);
 	int fontHeight;
@@ -18723,6 +18772,20 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		{
 			scrollAnimateX = scrollSetpoint;
 		}
+
+		if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
+			&& !player.GUI.isDropdownActive()
+			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS)
+			&& !player.inventoryUI.chestGUI.bOpen )
+		{
+			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+				player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				player.inventoryUI.cycleInventoryTab();
+				player.inventoryUI.spellPanel.closeSpellPanel();
+			}
+		}
 	}
 
 	if ( scrollAmount > 0 )
@@ -19048,11 +19111,33 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	}
 	chestFrame->setSize(chestFramePos);
 
-	grabAllBtn->setDisabled(!isInteractable);
-	closeBtn->setDisabled(!isInteractable);
+	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor;
+	if ( !drawGlyphs )
+	{
+		closeBtn->setInvisible(false);
+		grabAllBtn->setInvisible(false);
+		grabAllBtn->setDisabled(!isInteractable);
+		closeBtn->setDisabled(!isInteractable);
+	}
+	else
+	{
+		closeBtn->setInvisible(true);
+		grabAllBtn->setInvisible(true);
+		grabAllBtn->setDisabled(true);
+		closeBtn->setDisabled(true);
+	}
 
 	//auto slider = baseFrame->findSlider("chest slider");
 	auto chestSlotsFrame = chestFrame->findFrame("chest slots");
+
+	auto promptBack = baseFrame->findField("prompt back txt");
+	promptBack->setDisabled(!drawGlyphs);
+	auto promptBackImg = baseFrame->findImage("prompt back img");
+	promptBackImg->disabled = !drawGlyphs;
+	auto promptGrab = baseFrame->findField("prompt grab txt");
+	promptGrab->setDisabled(!drawGlyphs);
+	auto promptGrabImg = baseFrame->findImage("prompt grab img");
+	promptGrabImg->disabled = !drawGlyphs;
 	// handle height changing..
 	{
 		const int baseImgBorderWidth = 10;
@@ -19121,7 +19206,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		grabAllBtn->setSize(grabAllBtnPos);
 
 		if ( player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
-			&& inputs.getVirtualMouse(player.playernum)->draw_cursor )
+			&& inputs.getVirtualMouse(player.playernum)->draw_cursor && !drawGlyphs )
 		{
 			if ( !grabAllBtn->isDisabled() && grabAllBtn->isHighlighted() )
 			{
@@ -19152,6 +19237,81 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player.playernum)->draw_cursor);
 			}
 		}
+
+		int furthestLeftPrompt = xres;
+		if ( !promptBack->isDisabled() )
+		{
+			promptBack->setText(language[4053]);
+			SDL_Rect glyphPos = promptBackImg->pos;
+			if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont(),
+				promptBack->getTextColor(), promptBack->getOutlineColor()) )
+			{
+				SDL_Rect textPos = promptBack->getSize();
+				textPos.w = textGet->getWidth();
+				textPos.x = bg->pos.x + bg->pos.w - textPos.w - 4;
+				textPos.y = bg->pos.y + bg->pos.h - textPos.h + 8;
+				promptBack->setSize(textPos);
+				glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
+			}
+			promptBackImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+			Image* glyphImage = Image::get(promptBackImg->path.c_str());
+			if ( glyphImage )
+			{
+				glyphPos.w = glyphImage->getWidth();
+				glyphPos.h = glyphImage->getHeight();
+				glyphPos.x -= glyphPos.w;
+				furthestLeftPrompt = std::min(glyphPos.x + glyphPos.w / 2, furthestLeftPrompt);
+				glyphPos.y = promptBack->getSize().y + promptBack->getSize().h / 2 - glyphPos.h / 2;
+				promptBackImg->pos = glyphPos;
+			}
+		}
+		if ( !promptGrab->isDisabled() )
+		{
+			promptGrab->setText(language[4091]);
+			auto promptGrabImg = baseFrame->findImage("prompt grab img");
+			SDL_Rect glyphPos = promptGrabImg->pos;
+			if ( auto textGet = Text::get(promptGrab->getText(), promptGrab->getFont(),
+				promptGrab->getTextColor(), promptGrab->getOutlineColor()) )
+			{
+				SDL_Rect textPos = promptGrab->getSize();
+				textPos.w = textGet->getWidth();
+				textPos.x = bg->pos.x + bg->pos.w - textPos.w - 4;
+				textPos.y = promptBack->getSize().y - textPos.h + 2;
+				promptGrab->setSize(textPos);
+				glyphPos.x = promptGrab->getSize().x + promptGrab->getSize().w - textGet->getWidth() - 4;
+			}
+			promptGrabImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+			Image* glyphImage = Image::get(promptGrabImg->path.c_str());
+			if ( glyphImage )
+			{
+				glyphPos.w = glyphImage->getWidth();
+				glyphPos.h = glyphImage->getHeight();
+				glyphPos.x -= glyphPos.w;
+				furthestLeftPrompt = std::min(glyphPos.x + glyphPos.w / 2, furthestLeftPrompt);
+				glyphPos.y = promptGrab->getSize().y + promptGrab->getSize().h / 2 - glyphPos.h / 2;
+				promptGrabImg->pos = glyphPos;
+
+				if ( furthestLeftPrompt < promptGrabImg->pos.x + promptGrabImg->pos.w / 2 )
+				{
+					int offset = (promptGrabImg->pos.x + promptGrabImg->pos.w / 2) - furthestLeftPrompt;
+					promptGrabImg->pos.x -= offset;
+					auto pos = promptGrab->getSize();
+					pos.x -= offset;
+					promptGrab->setSize(pos);
+				}
+			}
+		}
+		if ( !promptBack->isDisabled() )
+		{
+			if ( furthestLeftPrompt < promptBackImg->pos.x + promptBackImg->pos.w / 2 )
+			{
+				int offset = (promptBackImg->pos.x + promptBackImg->pos.w / 2) - furthestLeftPrompt;
+				promptBackImg->pos.x -= offset;
+				auto pos = promptBack->getSize();
+				pos.x = promptGrab->getSize().x;
+				promptBack->setSize(pos);
+			}
+		}
 	}
 
 	bool closeChestAction = false;
@@ -19163,6 +19323,10 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			{
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 				closeChestAction = true;
+			}
+			else if ( !promptGrab->isDisabled() && Input::inputs[player.playernum].consumeBinaryToggle("MenuPageLeftAlt") )
+			{
+				takeAllChestGUIAction(player.playernum);
 			}
 		}
 	}
