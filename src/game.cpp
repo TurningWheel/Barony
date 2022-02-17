@@ -4785,6 +4785,11 @@ void ingameHud()
 				pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * cursor->getHeight() / 7) - cursor->getHeight() / 2;
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
+				if ( inputs.getUIInteraction(player)->itemMenuOpen && inputs.getUIInteraction(player)->itemMenuFromHotbar )
+				{
+					// adjust cursor to match selection
+					pos.y -= inputs.getUIInteraction(player)->itemMenuOffsetDetectionY;
+				}
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 			}
 			else
@@ -5993,6 +5998,8 @@ int main(int argc, char** argv)
 					    input.consumeBinaryToggle("Use");
 					}
 				}
+
+				players[i]->GUI.clearHoveringOverModuleButton();
 			}
 
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();

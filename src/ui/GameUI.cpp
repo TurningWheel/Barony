@@ -11585,7 +11585,7 @@ void createChestGUI(const int player)
 		closeBtnPos.w = 38;
 		closeBtnPos.h = 38;
 		closeBtn->setSize(closeBtnPos);
-		closeBtn->setColor(makeColor(255, 255, 255, 255));
+		closeBtn->setColor(makeColor(255, 255, 255, 191));
 		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
 		closeBtn->setText("X");
 		closeBtn->setFont(font);
@@ -11604,7 +11604,7 @@ void createChestGUI(const int player)
 		grabBtnPos.w = 98;
 		grabBtnPos.h = 38;
 		grabAllBtn->setSize(grabBtnPos);
-		grabAllBtn->setColor(makeColor(255, 255, 255, 255));
+		grabAllBtn->setColor(makeColor(255, 255, 255, 191));
 		grabAllBtn->setHighlightColor(makeColor(255, 255, 255, 255));
 		grabAllBtn->setText("Take All");
 		grabAllBtn->setFont(font);
@@ -11999,6 +11999,8 @@ void Player::Inventory_t::updateItemContextMenu()
 	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
 	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
 	bool& itemMenuFromHotbar = inputs.getUIInteraction(player.playernum)->itemMenuFromHotbar;
+	int& itemMenuOffsetDetectionY = inputs.getUIInteraction(player.playernum)->itemMenuOffsetDetectionY;
+	itemMenuOffsetDetectionY = 0;
 	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 
@@ -12279,12 +12281,11 @@ void Player::Inventory_t::updateItemContextMenu()
 		frameSize.x -= frameSize.w;
 	}
 
-	int mouseDetectionOffsetY = 0;
 	if ( (frameSize.y + frameSize.h) > player.camera_virtualy2() )
 	{
 		int yoffset = (frameSize.y + frameSize.h) - player.camera_virtualy2();
 		frameSize.y -= yoffset;
-		mouseDetectionOffsetY = yoffset;
+		itemMenuOffsetDetectionY = yoffset;
 	}
 	interactFrame->setSize(frameSize);
 
@@ -12309,7 +12310,7 @@ void Player::Inventory_t::updateItemContextMenu()
 			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
 			absoluteSize.y += 4;
 			absoluteSize.h -= 4;
-			absoluteSize.y += mouseDetectionOffsetY;
+			absoluteSize.y += itemMenuOffsetDetectionY;
 			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
 				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
 			{
@@ -12323,7 +12324,7 @@ void Player::Inventory_t::updateItemContextMenu()
 	// right click protect uses exact border, else there is 10 px buffer
 	absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
 	absoluteSize.w += rightClickProtectBuffer;
-	absoluteSize.y += mouseDetectionOffsetY;
+	absoluteSize.y += itemMenuOffsetDetectionY;
 	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
 		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
 	{
@@ -18943,6 +18944,10 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	Frame* chestFrame = player.inventoryUI.chestFrame;
 	if ( !chestFrame ) { return; }
 
+	auto baseFrame = chestFrame->findFrame("chest base");
+	auto grabAllBtn = baseFrame->findButton("grab all button");
+	auto closeBtn = baseFrame->findButton("close chest button");
+
 	if ( !chestFrame->isDisabled() && bOpen )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -18983,9 +18988,8 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			animx2 = std::max(0.0, animx2);
 		}
 	}
-	auto chestFramePos = chestFrame->getSize();
 
-	auto baseFrame = chestFrame->findFrame("chest base");
+	auto chestFramePos = chestFrame->getSize();
 	auto baseBackgroundImg = baseFrame->findImage("chest base img");
 
 	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
@@ -19044,6 +19048,9 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	}
 	chestFrame->setSize(chestFramePos);
 
+	grabAllBtn->setDisabled(!isInteractable);
+	closeBtn->setDisabled(!isInteractable);
+
 	//auto slider = baseFrame->findSlider("chest slider");
 	auto chestSlotsFrame = chestFrame->findFrame("chest slots");
 	// handle height changing..
@@ -19097,7 +19104,6 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		titleText->setSize(titlePos);
 
 		// align buttons
-		auto grabAllBtn = baseFrame->findButton("grab all button");
 		auto grabAllBtnPos = grabAllBtn->getSize();
 		chestFramePos.h += grabAllBtnPos.h + 8;
 		chestFrame->setSize(chestFramePos);
@@ -19106,7 +19112,6 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		auto bg = baseFrame->findImage("chest base img");
 		grabAllBtnPos.y = bg->pos.y + bg->pos.h + 4;
 
-		auto closeBtn = baseFrame->findButton("close chest button");
 		auto closeBtnPos = closeBtn->getSize();
 		closeBtnPos.y = grabAllBtnPos.y;
 		closeBtnPos.x = bg->pos.x + bg->pos.w - closeBtnPos.w;
@@ -19114,6 +19119,39 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 
 		grabAllBtnPos.x = closeBtnPos.x - 2 - grabAllBtnPos.w;
 		grabAllBtn->setSize(grabAllBtnPos);
+
+		if ( player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
+			&& inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( !grabAllBtn->isDisabled() && grabAllBtn->isHighlighted() )
+			{
+				player.GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_CHEST);
+				if ( player.GUI.activeModule != Player::GUI_t::MODULE_CHEST )
+				{
+					player.GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+				}
+				SDL_Rect pos = grabAllBtn->getAbsoluteSize();
+				// make sure to adjust absolute size to camera viewport
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				player.hud.setCursorDisabled(false);
+				player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+			}
+			if ( !closeBtn->isDisabled() && closeBtn->isHighlighted() )
+			{
+				player.GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_CHEST);
+				if ( player.GUI.activeModule != Player::GUI_t::MODULE_CHEST )
+				{
+					player.GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+				}
+				SDL_Rect pos = closeBtn->getAbsoluteSize();
+				// make sure to adjust absolute size to camera viewport
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				player.hud.setCursorDisabled(false);
+				player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+			}
+		}
 	}
 
 	bool closeChestAction = false;

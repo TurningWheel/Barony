@@ -1367,6 +1367,24 @@ Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 	}
 }
 
+void Player::GUI_t::setHoveringOverModuleButton(Player::GUI_t::GUIModules moduleOfButton)
+{
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		hoveringButtonModule = MODULE_NONE;
+		return;
+	}
+	hoveringButtonModule = moduleOfButton;
+}
+void Player::GUI_t::clearHoveringOverModuleButton()
+{
+	hoveringButtonModule = MODULE_NONE;
+}
+Player::GUI_t::GUIModules Player::GUI_t::hoveringOverModuleButton()
+{
+	return hoveringButtonModule;
+}
+
 bool Player::GUI_t::bActiveModuleHasNoCursor()
 {
 	switch ( activeModule )
@@ -1383,6 +1401,10 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 
 bool Player::GUI_t::bActiveModuleUsesInventory()
 {
+	if ( hoveringOverModuleButton() != MODULE_NONE )
+	{
+		return false;
+	}
 	switch ( activeModule )
 	{
 		case MODULE_INVENTORY:
@@ -1523,12 +1545,13 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| activeModule == MODULE_SPELLS
 					|| activeModule == MODULE_CHEST
 					|| activeModule == MODULE_SHOP)
-				&& !bActiveModuleHasNoCursor() )
+				&& !bActiveModuleHasNoCursor()
+				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
 				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
 			}
-			else if ( (activeModule == MODULE_INVENTORY 
+			else if ( ((activeModule == MODULE_INVENTORY 
 				|| activeModule == MODULE_HOTBAR 
 				|| activeModule == MODULE_SPELLS
 				|| oldModule == MODULE_CHEST
@@ -1537,7 +1560,8 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| oldModule == MODULE_HOTBAR 
 					|| oldModule == MODULE_SPELLS
 					|| activeModule == MODULE_CHEST
-					|| activeModule == MODULE_SHOP) )
+					|| activeModule == MODULE_SHOP))
+				|| hoveringOverModuleButton() != MODULE_NONE )
 			{
 				SDL_Rect size = hudCursor->getSize();
 				if ( !player.hud.cursorFrame->isDisabled() )

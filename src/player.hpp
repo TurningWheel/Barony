@@ -370,6 +370,7 @@ class Inputs
 		bool toggleclick = false;
 		bool itemMenuOpen = false;
 		bool itemMenuFromHotbar = false;
+		int itemMenuOffsetDetectionY = 0;
 		int itemMenuX = 0;
 		int itemMenuY = 0;
 		int itemMenuSelected = 0;
@@ -719,10 +720,14 @@ public:
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
+		GUIModules hoveringButtonModule = MODULE_NONE;
 		void activateModule(GUIModules module);
 		bool warpControllerToModule(bool moveCursorInstantly);
 		bool bActiveModuleUsesInventory();
 		bool bActiveModuleHasNoCursor();
+		void setHoveringOverModuleButton(GUIModules moduleOfButton);
+		void clearHoveringOverModuleButton();
+		GUIModules hoveringOverModuleButton();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
