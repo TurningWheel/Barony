@@ -4484,7 +4484,6 @@ void ingameHud()
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
 				//updateCharacterSheet(player);
-				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
 				//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D
@@ -5917,6 +5916,10 @@ int main(int argc, char** argv)
 			if ( showfps )
 			{
 				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
+			}
+			if ( enableDebugKeys )
+			{
+				printTextFormatted(font8x8_bmp, 8, 20, "gui mode: %d", players[0]->GUI.activeModule);
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
