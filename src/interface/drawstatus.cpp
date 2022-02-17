@@ -3224,7 +3224,7 @@ void drawStatusNew(const int player)
 		{
 			if ( input.consumeBinaryToggle("Hotbar Select") 
 				&& shootmode 
-				&& !hotbar_t.useHotbarFaceMenu
+				&& (!hotbar_t.useHotbarFaceMenu || (hotbar_t.useHotbarFaceMenu && !inputs.hasController(player)))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
