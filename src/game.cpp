@@ -905,13 +905,16 @@ void gameLogic(void)
 					entity->flags[BURNING] = false;
 					continue;
 				}
-				j = 1 + rand() % 4;
-				for ( c = 0; c < j; ++c )
-				{
-					Entity* flame = spawnFlame(entity, SPRITE_FLAME);
-					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
-					flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
-					flame->z += rand() % 5 - 2;
+	            if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
+	            {
+				    j = 1 + rand() % 4;
+				    for ( c = 0; c < j; ++c )
+				    {
+					    Entity* flame = spawnFlame(entity, SPRITE_FLAME);
+					    flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
+					    flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
+					    flame->z += rand() % 5 - 2;
+				    }
 				}
 			}
 		}
@@ -4021,7 +4024,7 @@ void ingameHud()
 
 	    // toggle minimap
 		// player not needed to be alive
-        if ( input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
+        if ( players[player]->shootmode && !command && input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
             openMinimap(player);
         }
 
@@ -5242,7 +5245,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
+							MainMenu::beginFade(MainMenu::FadeDestination::TitleScreen);
 						}
 					}
 
@@ -5292,7 +5295,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							MainMenu::beginFade(MainMenu::FadeDestination::RootMainMenu);
+							MainMenu::beginFade(MainMenu::FadeDestination::TitleScreen);
 						}
 					}
 				}

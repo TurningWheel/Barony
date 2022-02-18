@@ -1254,7 +1254,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			{
 				lightmap[c] = 32;
 			}
-			for (c = 0; c < (destmap->width + 1) * (destmap->height + 1); c++ )
+			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
 				lightmapSmoothed[c] = 32;
 			}
@@ -1297,10 +1297,27 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 		shoparea = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
 		for ( x = 0; x < destmap->width; x++ )
+		{
 			for ( y = 0; y < destmap->height; y++ )
 			{
 				shoparea[y + x * destmap->height] = false;
 			}
+		}
+	}
+
+	std::string mapShortName = filename2;
+	size_t found = mapShortName.rfind("/");
+	if ( found != std::string::npos )
+	{
+		mapShortName = mapShortName.substr(found + 1);
+	}
+	else
+	{
+		found = mapShortName.rfind("\\");
+		if ( found != std::string::npos )
+		{
+			mapShortName = mapShortName.substr(found + 1);
+		}
 	}
 
 	for ( c = 0; c < 512; c++ )
@@ -1308,48 +1325,24 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		keystatus[c] = 0;
 	}
 
-
 	if ( checkMapHash != nullptr )
 	{
-		std::string mapShortName = filename2;
-		size_t found = mapShortName.rfind("/");
-		if ( found != std::string::npos )
+		auto it = mapHashes.find(mapShortName);
+		if ( it != mapHashes.end() && ((*it).second == mapHashData || (*it).second == -1) )
 		{
-			mapShortName = mapShortName.substr(found + 1);
-			std::unordered_map<std::string, int>::iterator it;
-			it = mapHashes.find(mapShortName);
-			if ( it != mapHashes.end() && ((*it).second == mapHashData || (*it).second == -1) )
-			{
-				//printlog("MAP HASH SUCCESS");
-				*checkMapHash = 1;
-			}
-			else
-			{
-				printlog("Notice: Unable to verify map %s hash %d.", filename2, mapHashData);
-				*checkMapHash = 0;
-			}
+			//printlog("MAP HASH SUCCESS");
+			*checkMapHash = 1;
 		}
 		else
 		{
-			size_t found2 = mapShortName.rfind("\\");
-			if ( found2 != std::string::npos )
-			{
-				mapShortName = mapShortName.substr(found2 + 1);
-				std::unordered_map<std::string, int>::iterator it;
-				it = mapHashes.find(mapShortName);
-				if ( it != mapHashes.end() && ((*it).second == mapHashData || (*it).second == -1) )
-				{
-					//printlog("MAP HASH SUCCESS");
-					*checkMapHash = 1;
-				}
-				else
-				{
-					printlog("Notice: Unable to verify map %s hash %d.", filename2, mapHashData);
-					*checkMapHash = 0;
-				}
-			}
+			printlog("Notice: Unable to verify map %s hash %d.", filename2, mapHashData);
+			*checkMapHash = 0;
 		}
 	}
+
+    size_t size = std::min(mapShortName.size(), sizeof(destmap->filename) - 1);
+    memcpy(destmap->filename, mapShortName.c_str(), size);
+    destmap->filename[size] = '\0';
 
 	return numentities;
 }

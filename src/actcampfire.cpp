@@ -56,15 +56,26 @@ void actCampfire(Entity* my)
 		}
 
 		// spew flame particles
-		for ( i = 0; i < 3; i++ )
+		if ( flickerLights )
 		{
-			entity = spawnFlame(my, SPRITE_FLAME);
-			entity->x += ((rand() % 30) - 10) / 10.f;
-			entity->y += ((rand() % 30) - 10) / 10.f;
-			entity->z -= 1;
+		    for ( i = 0; i < 3; i++ )
+		    {
+			    entity = spawnFlame(my, SPRITE_FLAME);
+			    entity->x += ((rand() % 30) - 10) / 10.f;
+			    entity->y += ((rand() % 30) - 10) / 10.f;
+			    entity->z -= 1;
+		    }
+		    entity = spawnFlame(my, SPRITE_FLAME);
+		    entity->z -= 2;
 		}
-		entity = spawnFlame(my, SPRITE_FLAME);
-		entity->z -= 2;
+		else
+		{
+		    if ( ticks % TICKS_PER_SECOND == 0 )
+		    {
+		        entity = spawnFlame(my, SPRITE_FLAME);
+		        entity->z -= 2;
+		    }
+		}
 
 		// light environment
 		if ( !CAMPFIRE_LIGHTING )

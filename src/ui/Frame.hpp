@@ -331,11 +331,11 @@ private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
 	std::string font = Font::defaultFont;				//!< name of the font to use for frame entries
 	int border = 2;										//!< size of the frame's border
-	SDL_Rect size;										//!< size and position of the frame in its parent frame
-	SDL_Rect actualSize;								//!< size of the frame's whole contents. when larger than size, activates sliders
+    SDL_Rect size{0, 0, 0, 0};							//!< size and position of the frame in its parent frame
+	SDL_Rect actualSize{0, 0, 0, 0};					//!< size of the frame's whole contents. when larger than size, activates sliders
 	border_style_t borderStyle = BORDER_BEVEL_HIGH;		//!< border style
-	Uint32 color;										//!< the frame's color
-	Uint32 borderColor;									//!< the frame's border color (only used for flat border)
+	Uint32 color = 0;									//!< the frame's color
+	Uint32 borderColor = 0;								//!< the frame's border color (only used for flat border)
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame doesn't have a solid background
 	bool draggingHSlider = false;						//!< if true, we are dragging the horizontal slider

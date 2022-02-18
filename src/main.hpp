@@ -377,6 +377,7 @@ typedef struct map_t
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
 	list_t* worldUI; //A list of Entity* pointers.
+	char filename[256];
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map

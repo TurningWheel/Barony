@@ -129,12 +129,12 @@ private:
 	std::string icon;								//!< icon, if any (supersedes text content)
 	std::string tooltip;							//!< if empty, button has no tooltip; otherwise, it does
 	int border = 2;									//!< size of the button border in pixels
-	SDL_Rect size;									//!< size and position of the button within its parent frame
-	Uint32 color;									//!< the button's color
-	Uint32 highlightColor;							//!< color used when the button is selected/highlighted
-	Uint32 textColor;								//!< text color
-	Uint32 textHighlightColor;						//!< text color used when the button is selected/highlighted
-	Uint32 borderColor;								//!< (optional) border color
+	SDL_Rect size{0,0,0,0};							//!< size and position of the button within its parent frame
+	Uint32 color = 0;								//!< the button's color
+	Uint32 highlightColor = 0;						//!< color used when the button is selected/highlighted
+	Uint32 textColor = 0;							//!< text color
+	Uint32 textHighlightColor = 0;					//!< text color used when the button is selected/highlighted
+	Uint32 borderColor = 0;							//!< (optional) border color
 	style_t style = STYLE_NORMAL;					//!< button style
 	justify_t hjustify = CENTER;					//!< horizontal text justification
 	justify_t vjustify = CENTER;					//!< vertical text justification
