@@ -307,10 +307,10 @@ void Slider::fireCallback() {
 	}
 }
 
-void Slider::control() {
+bool Slider::control() {
 	if (!activated) {
 		moveStartTime = ticks;
-		return;
+		return true;
 	}
 	Input& input = Input::inputs[owner];
 	if (input.consumeBinaryToggle("MenuCancel") ||
@@ -328,29 +328,25 @@ void Slider::control() {
 		if (movePositive || moveNegative) {
 			Uint32 timeMoved = ticks - moveStartTime;
 			Uint32 lastMove = ticks - lastMoveTime;
-			Uint32 sec = TICKS_PER_SECOND;
+			Uint32 sec = TICKS_PER_SECOND / 2;
 			float inc = movePositive ? 1.f : -1.f;
 			float ovalue = value;
 			if (timeMoved < sec) {
-				if (lastMove > sec / (5.f * valueSpeed)) {
-					value += inc;
-				}
-			}
-			else if (timeMoved < sec * 2) {
 				if (lastMove > sec / (10.f * valueSpeed)) {
 					value += inc;
 				}
 			}
-			else if (timeMoved < sec * 3) {
+			else if (timeMoved < sec * 2) {
 				if (lastMove > sec / (20.f * valueSpeed)) {
 					value += inc;
 				}
 			}
-			else if (timeMoved < sec * 4) {
+			else if (timeMoved < sec * 3) {
 				if (lastMove > sec / (40.f * valueSpeed)) {
 					value += inc;
 				}
-			} else {
+			}
+			else {
 				if (lastMove > sec / (80.f * valueSpeed)) {
 					value += inc;
 				}
@@ -364,6 +360,7 @@ void Slider::control() {
 			moveStartTime = ticks;
 		}
 	}
+	return false;
 }
 
 void Slider::deselect() {

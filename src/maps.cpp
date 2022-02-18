@@ -27,6 +27,7 @@
 #include "scores.hpp"
 #include "mod_tools.hpp"
 #include "menu.hpp"
+#include "ui/MainMenu.hpp"
 
 int startfloor = 0;
 
@@ -559,6 +560,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			fullMapPath = physfsFormatMapName(sublevelname);
 
 			shopmap.tiles = nullptr;
+			shopmap.vismap = nullptr;
 			shopmap.entities = (list_t*) malloc(sizeof(list_t));
 			shopmap.entities->first = nullptr;
 			shopmap.entities->last = nullptr;
@@ -607,6 +609,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// allocate memory for the next sublevel and attempt to load it
 		tempMap = (map_t*) malloc(sizeof(map_t));
 		tempMap->tiles = nullptr;
+		tempMap->vismap = nullptr;
 		tempMap->entities = (list_t*) malloc(sizeof(list_t));
 		tempMap->entities->first = nullptr;
 		tempMap->entities->last = nullptr;
@@ -711,6 +714,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			// allocate memory for the next subroom and attempt to load it
 			subRoomMap = (map_t*)malloc(sizeof(map_t));
 			subRoomMap->tiles = nullptr;
+			subRoomMap->vismap = nullptr;
 			subRoomMap->entities = (list_t*)malloc(sizeof(list_t));
 			subRoomMap->entities->first = nullptr;
 			subRoomMap->entities->last = nullptr;
@@ -851,6 +855,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			else if ( c == 1 && secretlevelexit )
 			{
 				secretlevelmap.tiles = nullptr;
+				secretlevelmap.vismap = nullptr;
 				secretlevelmap.entities = (list_t*) malloc(sizeof(list_t));
 				secretlevelmap.entities->first = nullptr;
 				secretlevelmap.entities->last = nullptr;
@@ -2547,6 +2552,9 @@ void assignActions(map_t* map)
 		return;
 	}
 
+	// update arachnophobia filter
+	arachnophobia_filter = MainMenu::arachnophobia_filter;
+
 	// add lava lights
 	for ( y = 0; y < map->height; ++y )
 	{
@@ -3542,9 +3550,18 @@ void assignActions(map_t* map)
 						break;
 					case SPIDER:
 						entity->z = 4.5;
-						entity->focalx = limbs[SPIDER][0][0]; // -3
-						entity->focaly = limbs[SPIDER][0][1]; // 0
-						entity->focalz = limbs[SPIDER][0][2]; // -1
+						if (arachnophobia_filter)
+						{
+						    entity->focalx = limbs[CRAB][0][0];
+						    entity->focaly = limbs[CRAB][0][1];
+						    entity->focalz = limbs[CRAB][0][2];
+						}
+						else
+						{
+						    entity->focalx = limbs[SPIDER][0][0]; // -3
+						    entity->focaly = limbs[SPIDER][0][1]; // 0
+						    entity->focalz = limbs[SPIDER][0][2]; // -1
+						}
 						break;
 					case LICH:
 						entity->focalx = limbs[LICH][0][0]; // -0.75

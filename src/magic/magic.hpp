@@ -71,8 +71,8 @@ static const int SPELL_SALVAGE = 49;
 static const int SPELL_FLUTTER = 50;
 static const int SPELL_DASH = 51;
 static const int SPELL_SELF_POLYMORPH = 52;
-static const int SPELL_9 = 53;
-static const int SPELL_10 = 54;
+static const int SPELL_CRAB_FORM = 53;
+static const int SPELL_CRAB_WEB = 54;
 static const int NUM_SPELLS = 55;
 
 

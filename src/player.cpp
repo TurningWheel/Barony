@@ -37,12 +37,12 @@ bool splitscreen = false;
 
 int gamepad_deadzone = 8000;
 int gamepad_trigger_deadzone = 18000;
-int gamepad_leftx_sensitivity = 1400;
-int gamepad_lefty_sensitivity = 1400;
-int gamepad_rightx_sensitivity = 500;
-int gamepad_righty_sensitivity = 600;
-int gamepad_menux_sensitivity = 1400;
-int gamepad_menuy_sensitivity = 1400;
+real_t gamepad_leftx_sensitivity = 1.0;
+real_t gamepad_lefty_sensitivity = 1.0;
+real_t gamepad_rightx_sensitivity = 1.0;
+real_t gamepad_righty_sensitivity = 1.0;
+real_t gamepad_menux_sensitivity = 1.0;
+real_t gamepad_menuy_sensitivity = 1.0;
 
 bool gamepad_leftx_invert = false;
 bool gamepad_lefty_invert = false;
@@ -216,8 +216,8 @@ void GameController::handleAnalog(int player)
 
 	if (!players[player]->shootmode || gamePaused)
 	{
-		int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
-		int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
+		int rightx = getRawRightXMove() * gamepad_menux_sensitivity;
+		int righty = getRawRightYMove() * gamepad_menuy_sensitivity;
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
 		if (gamepad_rightx_invert)
@@ -302,8 +302,8 @@ void GameController::handleAnalog(int player)
 				const real_t angle = atan2(righty, rightx);
 				real_t newMagnitude = 0.0;
 				newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
-				rightx = newMagnitude * cos(angle) / gamepad_menux_sensitivity;
-				righty = newMagnitude * sin(angle) / gamepad_menuy_sensitivity;
+				rightx = newMagnitude * cos(angle) * gamepad_menux_sensitivity;
+				righty = newMagnitude * sin(angle) * gamepad_menuy_sensitivity;
 
 				//rightx = oldFloatRightX;
 				//righty = oldFloatRightY;
@@ -422,8 +422,8 @@ void GameController::handleAnalog(int player)
 				{
 					newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
 				}
-				floatx = newMagnitude * cos(angle) / gamepad_rightx_sensitivity;
-				floaty = newMagnitude * sin(angle) / gamepad_righty_sensitivity;
+				floatx = newMagnitude * cos(angle) * gamepad_rightx_sensitivity;
+				floaty = newMagnitude * sin(angle) * gamepad_righty_sensitivity;
 
 				//rightx = oldFloatRightX;
 				//righty = oldFloatRightY;
@@ -495,7 +495,7 @@ int GameController::getLeftXMove() // with sensitivity
 		return 0;
 	}
 	int x = getRawLeftXMove();
-	x /= gamepad_leftx_sensitivity;
+	x *= gamepad_leftx_sensitivity;
 	return x;
 }
 
@@ -506,7 +506,7 @@ int GameController::getLeftYMove() // with sensitivity
 		return 0;
 	}
 	int y = -getRawLeftYMove();
-	y /= gamepad_lefty_sensitivity;
+	y *= gamepad_lefty_sensitivity;
 	return y;
 }
 
@@ -517,7 +517,7 @@ int GameController::getRightXMove() // with sensitivity
 		return 0;
 	}
 	int x = getRawRightXMove();
-	x /= gamepad_rightx_sensitivity;
+	x *= gamepad_rightx_sensitivity;
 	return x;
 }
 
@@ -528,7 +528,7 @@ int GameController::getRightYMove() // with sensitivity
 		return 0;
 	}
 	int y = getRawRightYMove();
-	y /= gamepad_righty_sensitivity;
+	y *= gamepad_righty_sensitivity;
 	return y;
 }
 
@@ -2993,7 +2993,7 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
+		if ( !command && Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{

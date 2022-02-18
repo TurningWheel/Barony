@@ -27,7 +27,7 @@ enum Monster : int
 	SKELETON,
 	SCORPION,
 	CREATURE_IMP, //Because Apple so unkindly is already using the IMP keyword.
-	BUGBEAR,
+	CRAB,
 	GNOME,
 	DEMON,
 	SUCCUBUS,
@@ -70,7 +70,7 @@ static char monstertypename[][15] =
 	"skeleton",
 	"scorpion",
 	"imp",
-	"bugbear",
+	"crab",
 	"gnome",
 	"demon",
 	"succubus",
@@ -111,7 +111,7 @@ static char monstertypenamecapitalized[][15] =
 	"Skeleton",
 	"Scorpion",
 	"Imp",
-	"Bugbear",
+	"Crab",
 	"Gnome",
 	"Demon",
 	"Succubus",
@@ -159,7 +159,7 @@ static char gibtype[NUMMONSTERS] =
 	0,	//SKELETON,
 	2,	//SCORPION,
 	1,	//CREATURE_IMP
-	1,	//BUGBEAR,
+	2,	//CRAB,
 	1,	//GNOME,
 	1,	//DEMON,
 	1,	//SUCCUBUS,
@@ -203,7 +203,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // skeleton
 	{ 0.9, 1.1, 1.f, 1.3, 1.f, 1.f, 1.2 }, // scorpion
 	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2, 1.f }, // imp
-	{ 1.1, 1.f, 1.1, 0.9, 1.1, 1.f, 1.f }, // bugbear
+	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f, 1.1 }, // crab
 	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1, 1.f }, // gnome
 	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus

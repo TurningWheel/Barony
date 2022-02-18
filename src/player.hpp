@@ -37,12 +37,12 @@ extern bool splitscreen;
 
 extern int gamepad_deadzone;
 extern int gamepad_trigger_deadzone;
-extern int gamepad_leftx_sensitivity;
-extern int gamepad_lefty_sensitivity;
-extern int gamepad_rightx_sensitivity;
-extern int gamepad_righty_sensitivity;
-extern int gamepad_menux_sensitivity;
-extern int gamepad_menuy_sensitivity;
+extern real_t gamepad_leftx_sensitivity;
+extern real_t gamepad_lefty_sensitivity;
+extern real_t gamepad_rightx_sensitivity;
+extern real_t gamepad_righty_sensitivity;
+extern real_t gamepad_menux_sensitivity;
+extern real_t gamepad_menuy_sensitivity;
 
 extern bool gamepad_leftx_invert;
 extern bool gamepad_lefty_invert;

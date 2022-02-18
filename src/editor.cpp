@@ -1045,6 +1045,7 @@ void makeUndo()
 		undomap->flags[c] = map.flags[c];
 	}
 	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
+	undomap->vismap = nullptr;
 	memcpy(undomap->tiles, map.tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	undomap->entities = (list_t*) malloc(sizeof(list_t));
 	undomap->entities->first = nullptr;
@@ -1100,10 +1101,12 @@ void undo()
 		undospot = tempnode;
 	}
 	free(map.tiles);
+	free(map.vismap);
 	map_t* undomap = (map_t*)undospot->element;
 	map.width = undomap->width;
 	map.height = undomap->height;
 	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
@@ -1133,10 +1136,12 @@ void redo()
 	}
 	selectedEntity[0] = NULL;
 	free(map.tiles);
+	free(map.vismap);
 	map_t* undomap = (map_t*)redospot->element;
 	map.width = undomap->width;
 	map.height = undomap->height;
 	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
@@ -1537,6 +1542,7 @@ int main(int argc, char** argv)
 
 
 	copymap.tiles = nullptr;
+	copymap.vismap = nullptr;
 	copymap.entities = nullptr;
 	copymap.creatures = nullptr;
 	copymap.worldUI = nullptr;
@@ -1563,6 +1569,7 @@ int main(int argc, char** argv)
 	map.entities->first = nullptr;
 	map.entities->last = nullptr;
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
+	map.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
 	map.skybox = 0;
@@ -1595,12 +1602,9 @@ int main(int argc, char** argv)
 		}
 	}
 	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	for ( c = 0; c < map.width * map.height; c++ )
-	{
-		lightmap[c] = 0;
-		lightmapSmoothed[c] = 0;
-	}
+	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
+	memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
 
 	// initialize camera position
 	camera.x = 4;
@@ -2378,6 +2382,7 @@ int main(int argc, char** argv)
 					entity->x += 8;
 					entity->y += 8;
 				}
+				occlusionCulling(map, camera);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);

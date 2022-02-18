@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "Font.hpp"
 #include "Widget.hpp"
 
@@ -123,6 +124,12 @@ public:
 	//! destroy ui engine
 	static void guiDestroy();
 	static void fboDestroy();
+
+	//! stuff to do before drawing anything
+	static void predraw();
+
+	//! stuff to do after drawing everything
+	static void postdraw();
 
 	//! draws the frame and all of its subelements
 	void draw() const;
@@ -297,6 +304,7 @@ public:
 	const bool						getInheritParentFrameOpacity() const { return inheritParentFrameOpacity; }
 	justify_t						getJustify() const { return justify; }
 	const bool						isClickable() const { return clickable; }
+	const bool                      isDontTickChildren() const { return dontTickChildren; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -317,16 +325,17 @@ public:
 	void	setOpacity(const real_t _opacity) { opacity = _opacity; }
 	void	setListJustify(justify_t _justify) { justify = _justify; }
 	void	setClickable(const bool _clickable) { clickable = _clickable; }
+	void    setDontTickChildren(const bool b) { dontTickChildren = b; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
 	std::string font = Font::defaultFont;				//!< name of the font to use for frame entries
 	int border = 2;										//!< size of the frame's border
-	SDL_Rect size;										//!< size and position of the frame in its parent frame
-	SDL_Rect actualSize;								//!< size of the frame's whole contents. when larger than size, activates sliders
+    SDL_Rect size{0, 0, 0, 0};							//!< size and position of the frame in its parent frame
+	SDL_Rect actualSize{0, 0, 0, 0};					//!< size of the frame's whole contents. when larger than size, activates sliders
 	border_style_t borderStyle = BORDER_BEVEL_HIGH;		//!< border style
-	Uint32 color;										//!< the frame's color
-	Uint32 borderColor;									//!< the frame's border color (only used for flat border)
+	Uint32 color = 0;									//!< the frame's color
+	Uint32 borderColor = 0;								//!< the frame's border color (only used for flat border)
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame doesn't have a solid background
 	bool draggingHSlider = false;						//!< if true, we are dragging the horizontal slider
@@ -347,6 +356,7 @@ private:
 	bool clickable = false;								//!< if true, you can activate the frame by clicking on it (used for lists)
 	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
 	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
+	bool dontTickChildren = false;                      //!< enable to prevent children from running their tick functions
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -387,3 +397,4 @@ private:
 // root frame object
 extern Frame* gui;
 void createTestUI();
+extern framebuffer gui_fb, gui4x_fb;

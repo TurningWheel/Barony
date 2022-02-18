@@ -146,13 +146,13 @@ private:
 	std::string guide;									//!< string to use as a descriptive guide for the field (eg "Enter character's name");
 	char* text = nullptr;								//!< internal text buffer
 	size_t textlen = 0;									//!< length of internal text buffer
-	Uint32 color;										//!< color mixed w/ final rendered text
-	Uint32 textColor;									//!< text color
-	Uint32 outlineColor;								//!< outline color
+	Uint32 color = 0;									//!< color mixed w/ final rendered text
+	Uint32 textColor = 0;								//!< text color
+	Uint32 outlineColor = 0;							//!< outline color
 	Uint32 backgroundColor = 0;							//!< background color
 	Uint32 backgroundActivatedColor = 0;				//!< background color (when activated)
 	Uint32 backgroundSelectAllColor = 0;				//!< background color (when activated and all text selected)
-	SDL_Rect size;										//!< size of the field in pixels
+	SDL_Rect size{0, 0, 0, 0};							//!< size of the field in pixels
 	justify_t hjustify = LEFT;							//!< horizontal text justification
 	justify_t vjustify = TOP;							//!< vertical text justification
 	bool editable = false;								//!< whether the field is read-only

@@ -14,6 +14,7 @@
 #define BUILD_ENV_GSE STRINGIZE(BUILD_GSE)
 #endif
 
+#include <cassert>
 #include "main.hpp"
 #include "menu.hpp"
 #include "game.hpp"

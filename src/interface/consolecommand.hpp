@@ -81,7 +81,9 @@ public:
     }
 
     void operator=(const char* arg);
-    T& operator*();
+    T& operator*() {
+        return data;
+    }
 
     T data;
 

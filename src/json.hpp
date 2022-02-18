@@ -20,7 +20,6 @@
 #pragma once
 
 #include <functional>
-#include <assert.h>
 
 enum class EFileFormat {
 	Json,
@@ -35,13 +34,13 @@ public:
 	virtual bool isReading() const = 0;
 
 	// Signals the beginning of an object in the file
-	virtual void beginObject() = 0;
+	virtual bool beginObject() = 0;
 	// Signals the end of an object in the file
 	virtual void endObject() = 0;
 
 	// Signals the beginning of an array in the file
 	// @param size number of items in the array
-	virtual void beginArray(Uint32 & size) = 0;
+	virtual bool beginArray(Uint32 & size) = 0;
 	// Signals the end of an array in the file
 	virtual void endArray() = 0;
 
@@ -69,15 +68,31 @@ public:
 	template<typename T, typename... Args>
 	bool value(std::vector<T>& v, Uint32 maxLength = 0, Args ... args) {
 		Uint32 size = (Uint32)v.size();
-		beginArray(size);
-		assert(maxLength == 0 || size <= maxLength);
-		v.resize(size);
-		bool result = true;
-		for (Uint32 index = 0; index < size; ++index) {
-			result = value(v[index], args...) ? result : false;
+		if (beginArray(size) && maxLength == 0 || size <= maxLength) {
+		    v.resize(size);
+		    bool result = true;
+		    for (Uint32 index = 0; index < size; ++index) {
+			    result = value(v[index], args...) ? result : false;
+		    }
+		    endArray();
+		    return result;
+		} else {
+		    return false;
 		}
-		endArray();
-		return result;
+	}
+
+	// Serialize a pair
+	// @param v the pair to serialize
+	template<typename T1, typename T2>
+	bool value(std::pair<T1, T2>& v) {
+	    bool result = false;
+	    if (beginObject()) {
+	        result = true;
+	        result = property("first", v.first) ? result : false;
+	        result = property("second", v.second) ? result : false;
+	        endObject();
+	    }
+	    return result;
 	}
 
 	// Serialize a pointer by dereferencing it
@@ -105,9 +120,11 @@ public:
 	template<typename T>
 	typename std::enable_if<std::is_class<T>::value, bool>::type
 	value(T& v) {
-		beginObject();
-		bool result = v.serialize(this);
-		endObject();
+	    bool result = false;
+		if (beginObject()) {
+		    result = v.serialize(this);
+		    endObject();
+		}
 		return result;
 	}
 	
@@ -116,14 +133,16 @@ public:
 	template<typename T, Uint32 Size, typename... Args>
 	bool value(T (&v)[Size], Args ... args) {
 		Uint32 size = Size;
-		beginArray(size);
-		assert(size == Size);
-		bool result = true;
-		for (Uint32 index = 0; index < size; ++index) {
-			result = value(v[index], args...) ? result : false;
+		if (beginArray(size) && size == Size) {
+		    bool result = true;
+		    for (Uint32 index = 0; index < size; ++index) {
+			    result = value(v[index], args...) ? result : false;
+		    }
+		    endArray();
+		    return result;
+		} else {
+		    return false;
 		}
-		endArray();
-		return result;
 	}
 
 	// Helper function to serialize a property name and value at the same time 
