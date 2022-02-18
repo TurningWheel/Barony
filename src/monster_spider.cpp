@@ -19,6 +19,7 @@
 #include "items.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "ui/MainMenu.hpp"
 
 void initSpider(Entity* my, Stat* myStats)
 {
@@ -27,13 +28,23 @@ void initSpider(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = 267;
+	my->sprite = arachnophobia_filter ? 997 : 267;
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 229;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 232;
-		MONSTER_IDLEVAR = 4;
+	    if (arachnophobia_filter)
+	    {
+		    MONSTER_SPOTSND = 502;
+		    MONSTER_SPOTVAR = 3;
+		    MONSTER_IDLESND = 506;
+		    MONSTER_IDLEVAR = 4;
+	    }
+	    else
+	    {
+		    MONSTER_SPOTSND = 229;
+		    MONSTER_SPOTVAR = 3;
+		    MONSTER_IDLESND = 232;
+		    MONSTER_IDLEVAR = 4;
+	    }
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -112,17 +123,29 @@ void initSpider(Entity* my, Stat* myStats)
 		}
 	}
 
+	int model;
+
 	// right pedipalp
-	Entity* entity = newEntity(268, 1, map.entities, nullptr); //Limb entity.
+	model = arachnophobia_filter ? 998 : 268;
+	Entity* entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SPIDER][1][0]; // 1
-	entity->focaly = limbs[SPIDER][1][1]; // 0
-	entity->focalz = limbs[SPIDER][1][2]; // 1
+	if (arachnophobia_filter)
+	{
+	    entity->focalx = limbs[CRAB][1][0];
+	    entity->focaly = limbs[CRAB][1][1];
+	    entity->focalz = limbs[CRAB][1][2];
+	}
+	else
+	{
+	    entity->focalx = limbs[SPIDER][1][0]; // 1
+	    entity->focaly = limbs[SPIDER][1][1]; // 0
+	    entity->focalz = limbs[SPIDER][1][2]; // 1
+	}
 	entity->behavior = &actSpiderLimb;
 	entity->parent = my->getUID();
 	node_t* node = list_AddNodeLast(&my->children);
@@ -132,16 +155,26 @@ void initSpider(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left pedipalp
-	entity = newEntity(268, 1, map.entities, nullptr); //Limb entity.
+	model = arachnophobia_filter ? 998 : 268;
+	entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SPIDER][2][0]; // 1
-	entity->focaly = limbs[SPIDER][2][1]; // 0
-	entity->focalz = limbs[SPIDER][2][2]; // 1
+	if (arachnophobia_filter)
+	{
+	    entity->focalx = limbs[CRAB][2][0];
+	    entity->focaly = limbs[CRAB][2][1];
+	    entity->focalz = limbs[CRAB][2][2];
+	}
+	else
+	{
+	    entity->focalx = limbs[SPIDER][2][0]; // 1
+	    entity->focaly = limbs[SPIDER][2][1]; // 0
+	    entity->focalz = limbs[SPIDER][2][2]; // 1
+	}
 	entity->behavior = &actSpiderLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -154,7 +187,8 @@ void initSpider(Entity* my, Stat* myStats)
 	for ( c = 0; c < 8; c++ )
 	{
 		// "thigh"
-		entity = newEntity(269, 1, map.entities, nullptr); //Limb entity.
+	    model = arachnophobia_filter ? 999 : 269;
+		entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = my->getUID();
@@ -162,35 +196,54 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-		entity->focalx = limbs[SPIDER][3][0]; // 1
-		entity->focaly = limbs[SPIDER][3][1]; // 0
-		entity->focalz = limbs[SPIDER][3][2]; // -1
+	    if (arachnophobia_filter)
+	    {
+	        entity->focalx = limbs[CRAB][3][0];
+	        entity->focaly = limbs[CRAB][3][1];
+	        entity->focalz = limbs[CRAB][3][2];
+	    }
+	    else
+	    {
+	        entity->focalx = limbs[SPIDER][3][0]; // 1
+	        entity->focaly = limbs[SPIDER][3][1]; // 0
+	        entity->focalz = limbs[SPIDER][3][2]; // -1
+	    }
 		entity->behavior = &actSpiderLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
-	my->bodyparts.push_back(entity);
+	    my->bodyparts.push_back(entity);
 
 		// "shin"
-		entity = newEntity(270, 1, map.entities, nullptr); //Limb entity.
+	    model = arachnophobia_filter ? 1000 : 270;
+		entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = my->getUID();
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-		entity->focalx = limbs[SPIDER][4][0]; // 3
-		entity->focaly = limbs[SPIDER][4][1]; // 0
-		entity->focalz = limbs[SPIDER][4][2]; // 0
+	    if (arachnophobia_filter)
+	    {
+	        entity->focalx = limbs[CRAB][4][0];
+	        entity->focaly = limbs[CRAB][4][1];
+	        entity->focalz = limbs[CRAB][4][2];
+	    }
+	    else
+	    {
+	        entity->focalx = limbs[SPIDER][4][0]; // 3
+	        entity->focaly = limbs[SPIDER][4][1]; // 0
+	        entity->focalz = limbs[SPIDER][4][2]; // 0
+	    }
 		entity->behavior = &actSpiderLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
-	my->bodyparts.push_back(entity);
+	    my->bodyparts.push_back(entity);
 	}
 }
 
@@ -207,7 +260,14 @@ void spiderDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 236 + rand() % 2, 128);
+    if (arachnophobia_filter)
+    {
+	    playSoundEntity(my, 509 + rand() % 2, 128);
+    }
+    else
+    {
+	    playSoundEntity(my, 236 + rand() % 2, 128);
+    }
 	list_RemoveNode(my->mynode);
 	return;
 }

@@ -372,10 +372,12 @@ typedef struct map_t
 	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32 flags[16];
 	Sint32* tiles;
+	bool* vismap;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
 	list_t* worldUI; //A list of Entity* pointers.
+	char filename[256];
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
@@ -769,7 +771,6 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
-real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for cursors.c:
@@ -806,7 +807,6 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 
 #ifdef STEAMWORKS
  #include <steam/steam_api.h>
- #include "steam.hpp"
  struct SteamGlobalStat_t
  {
 	 int m_ID;
@@ -817,6 +817,7 @@ extern SteamStat_t g_SteamGlobalStats[NUM_GLOBAL_STEAM_STATISTICS];
 	 float m_flAvgNumerator;
 	 float m_flAvgDenominator;
  };
+ #include "steam.hpp"
  extern CSteamLeaderboards* g_SteamLeaderboards;
  extern CSteamWorkshop* g_SteamWorkshop;
  extern CSteamStatistics* g_SteamStatistics;

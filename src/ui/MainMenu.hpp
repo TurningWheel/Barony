@@ -7,6 +7,8 @@
 #include "../ui/Frame.hpp"
 
 namespace MainMenu {
+    extern int pause_menu_owner;
+
 	// Here be new menu options:
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
@@ -16,6 +18,7 @@ namespace MainMenu {
 
 	enum class FadeDestination : Uint8 {
 		None,
+		TitleScreen,
 		RootMainMenu,
 
 		// Story scenes:
@@ -50,8 +53,8 @@ namespace MainMenu {
 
         // Game starts:
 
-		HallOfTrials,
 		GameStart,
+		HallOfTrials,
 	};
 
 	void beginFade(FadeDestination);
@@ -62,11 +65,12 @@ namespace MainMenu {
 	bool settingsLoad();	// read settings from disk
 	void settingsReset();	// default settings
 
-	void doMainMenu(bool ingame);       // call in a loop to update the menu
-	void createMainMenu(bool ingame);   // creates a fresh main menu
-	void destroyMainMenu();             // destroys the main menu tree
-	void createDummyMainMenu();         // creates a main menu devoid of widgets
-	void closeMainMenu();               // closes the menu and unpauses the game
+	void doMainMenu(bool ingame);           // call in a loop to update the menu
+	void createTitleScreen();               // creates a fresh title screen
+	void createMainMenu(bool ingame);       // creates a fresh main menu
+	void destroyMainMenu();                 // destroys the main menu tree
+	void createDummyMainMenu();             // creates a main menu devoid of widgets
+	void closeMainMenu();                   // closes the menu and unpauses the game
 
 	// special events:
 

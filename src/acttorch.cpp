@@ -50,12 +50,15 @@ void actTorch(Entity* my)
 		TORCH_FIRE = 480;
 		playSoundEntityLocal( my, 133, 32 );
 	}
-	Entity* entity = spawnFlame(my, SPRITE_FLAME);
-	entity->x += .25 * cos(my->yaw);
-	entity->y += .25 * sin(my->yaw);
-	entity->z -= 2.5;
-	entity->flags[GENIUS] = false;
-	entity->setUID(-3);
+	if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+	{
+	    Entity* entity = spawnFlame(my, SPRITE_FLAME);
+	    entity->x += .25 * cos(my->yaw);
+	    entity->y += .25 * sin(my->yaw);
+	    entity->z -= 2.5;
+	    entity->flags[GENIUS] = false;
+	    entity->setUID(-3);
+	}
 
 	// check wall behind me. (e.g mined or destroyed then remove torch)
 	int checkx = my->x - cos(my->yaw) * 8;
@@ -198,12 +201,15 @@ void actCrystalShard(Entity* my)
 		TORCH_FIRE = 480;
 		playSoundEntityLocal(my, 133, 32);
 	}
-	Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
-	entity->x += .25 * cos(my->yaw);
-	entity->y += .25 * sin(my->yaw);
-	entity->z -= 2.5;
-	entity->flags[GENIUS] = false;
-	entity->setUID(-3);
+	if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+	{
+	    Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
+	    entity->x += .25 * cos(my->yaw);
+	    entity->y += .25 * sin(my->yaw);
+	    entity->z -= 2.5;
+	    entity->flags[GENIUS] = false;
+	    entity->setUID(-3);
+	}
 
 	// check wall behind me. (e.g mined or destroyed then remove torch)
 	int checkx = my->x - cos(my->yaw) * 8;

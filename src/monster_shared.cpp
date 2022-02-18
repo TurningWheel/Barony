@@ -79,7 +79,7 @@ void Entity::initMonster(int mySprite)
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
-		case BUGBEAR:
+		case CRAB:
 			// unused
 			break;
 		case DEMON:
@@ -222,7 +222,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return DEMON;
 	}
-	else if ( mySprite == 267 || mySprite == 823 )     // spider body
+	else if ( mySprite == 267 || mySprite == 997 || mySprite == 823 || mySprite == 1001 )     // spider body
 	{
 		return SPIDER;
 	}

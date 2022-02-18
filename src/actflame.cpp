@@ -27,18 +27,47 @@
 #define FLAME_VELX my->vel_x
 #define FLAME_VELY my->vel_y
 #define FLAME_VELZ my->vel_z
+#define FLAME_ANG my->fskill[0]
+#define FLAME_DIFFX my->fskill[1]
+#define FLAME_DIFFY my->fskill[2]
+#define FLAME_DIFFZ my->fskill[3]
 
 void actFlame(Entity* my)
 {
-	if ( FLAME_LIFE <= 0 )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
+    if ( FLAME_LIFE > 0 )
+    {
+	    FLAME_LIFE--;
+	    if ( FLAME_LIFE <= 0 )
+	    {
+		    list_RemoveNode(my->mynode);
+		    return;
+	    }
+    }
+    if ( !flickerLights &&
+        my->sprite == SPRITE_FLAME ||
+        my->sprite == SPRITE_CRYSTALFLAME )
+    {
+        FLAME_ANG += PI / TICKS_PER_SECOND * 2.0;
+        if (FLAME_ANG > PI * 2.0)
+        {
+            FLAME_ANG -= PI * 2.0;
+        }
+        FLAME_VELZ = -sin(FLAME_ANG) * 0.02;
+        Entity* parent = uidToEntity(my->parent);
+        if ( parent )
+        {
+	        my->x += parent->x - FLAME_DIFFX;
+	        my->y += parent->y - FLAME_DIFFY;
+	        my->z += parent->z - FLAME_DIFFZ;
+	        FLAME_DIFFX = parent->x;
+	        FLAME_DIFFY = parent->y;
+	        FLAME_DIFFZ = parent->z;
+	        my->flags[INVISIBLE] = parent->flags[INVISIBLE];
+        }
+    }
 	my->x += FLAME_VELX;
 	my->y += FLAME_VELY;
 	my->z += FLAME_VELZ;
-	FLAME_LIFE--;
 }
 
 /*-------------------------------------------------------------------------------
@@ -59,19 +88,34 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	{
 		entity->setUID(0);
 	}
+	entity->parent = parentent->getUID();
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
+	entity->fskill[1] = parentent->x;
+	entity->fskill[2] = parentent->y;
+	entity->fskill[3] = parentent->z;
 	entity->sizex = 6;
 	entity->sizey = 6;
 	entity->yaw = (rand() % 360) * PI / 180.0;
 	entity->pitch = (rand() % 360) * PI / 180.0;
 	entity->roll = (rand() % 360) * PI / 180.0;
 	vel = (rand() % 10) / 10.0;
-	entity->vel_x = vel * cos(entity->yaw) * .1;
-	entity->vel_y = vel * sin(entity->yaw) * .1;
-	entity->vel_z = -.25;
-	entity->skill[0] = 5;
+	if (flickerLights)
+	{
+	    entity->skill[0] = 5; // life-span
+	    entity->vel_x = vel * cos(entity->yaw) * .1;
+	    entity->vel_y = vel * sin(entity->yaw) * .1;
+	    entity->vel_z = -.25;
+	}
+	else
+	{
+	    entity->skill[0] = TICKS_PER_SECOND + 1;
+	    entity->vel_x = 0.0;
+	    entity->vel_y = 0.0;
+	    entity->vel_z = 0.0;
+	    entity->z -= 0.5;
+	}
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[SPRITE] = true;

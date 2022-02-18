@@ -27,6 +27,7 @@
 #include "colors.hpp"
 #include "scores.hpp"
 #include "mod_tools.hpp"
+#include "ui/MainMenu.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -40,12 +41,12 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // SLIME
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1 }, // TROLL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // OCTOPUS
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SPIDER
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SPIDER
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // GHOUL
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SKELETON
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // SCORPION
 	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // IMP
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 }, // BUGBEAR
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1 }, // CRAB
 	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 }, // GNOME
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1 }, // DEMON
 	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1 }, // SUCCUBUS
@@ -82,12 +83,12 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 }, // SLIME
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
 	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // OCTOPUS
-	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
+	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0 }, // GHOUL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // SKELETON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCORPION
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // IMP
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
+	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRAB
 	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // DEMON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0 }, // SUCCUBUS
@@ -129,7 +130,7 @@ double sightranges[NUMMONSTERS] =
 	192,  // SKELETON
 	96,   // SCORPION
 	256,  // IMP
-	0,    // BUGBEAR
+	96,   // CRAB
 	128,  // GNOME
 	256,  // DEMON
 	256,  // SUCCUBUS
@@ -140,7 +141,7 @@ double sightranges[NUMMONSTERS] =
 	256,  // SHOPKEEPER
 	192,  // KOBOLD
 	512,  // SCARAB
-	192,   // CRYSTALGOLEM
+	192,  // CRYSTALGOLEM
 	256,  // INCUBUS
 	192,  // VAMPIRE
 	768,  // SHADOW
@@ -163,7 +164,11 @@ std::string getMonsterLocalizedName(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-		return language[90 + creature];
+	    if (creature == SPIDER && arachnophobia_filter) {
+		    return language[102];
+	    } else {
+		    return language[90 + creature];
+	    }
 	}
 	else
 	{
@@ -176,7 +181,11 @@ std::string getMonsterLocalizedPlural(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-		return language[111 + creature];
+	    if (creature == SPIDER && arachnophobia_filter) {
+		    return language[123];
+	    } else {
+		    return language[111 + creature];
+	    }
 	}
 	else
 	{
@@ -188,7 +197,11 @@ std::string getMonsterLocalizedInjury(Monster creature)
 {
 	if ( creature < KOBOLD )
 	{
-		return language[132 + creature];
+	    if (creature == SPIDER && arachnophobia_filter) {
+		    return language[144];
+	    } else {
+		    return language[132 + creature];
+	    }
 	}
 	else
 	{
@@ -397,9 +410,18 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 				break;
 			case SPIDER:
 				entity->z = 4.5;
-				entity->focalx = limbs[SPIDER][0][0]; // -3
-				entity->focaly = limbs[SPIDER][0][1]; // 0
-				entity->focalz = limbs[SPIDER][0][2]; // -1
+				if (arachnophobia_filter)
+				{
+				    entity->focalx = limbs[CRAB][0][0];
+				    entity->focaly = limbs[CRAB][0][1];
+				    entity->focalz = limbs[CRAB][0][2];
+				}
+				else
+				{
+				    entity->focalx = limbs[SPIDER][0][0]; // -3
+				    entity->focaly = limbs[SPIDER][0][1]; // 0
+				    entity->focalz = limbs[SPIDER][0][2]; // -1
+				}
 				break;
 			case LICH:
 				entity->focalx = limbs[LICH][0][0]; // -0.75
@@ -1504,7 +1526,7 @@ void actMonster(Entity* my)
 			{
 				initDemon(my, nullptr);
 			}
-			else if ( my->sprite == 267 )     // spider body
+			else if ( my->sprite == 267 || my->sprite == 997 )     // spider body
 			{
 				initSpider(my, nullptr);
 			}
@@ -1636,7 +1658,7 @@ void actMonster(Entity* my)
 				demonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 				actDemonCeilingBuster(my);
 			}
-			else if ( my->sprite == 267 )     // spider body
+			else if ( my->sprite == 267 || my->sprite == 997 )     // spider body
 			{
 				spiderMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}

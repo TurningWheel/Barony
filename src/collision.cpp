@@ -25,6 +25,7 @@
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
+#include "ui/MainMenu.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -411,14 +412,28 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					}
 					break;
 				case SPIDER:
-					if ( rand() % 3 == 2 )
-					{
-						sfx = 235;
-					}
-					else
-					{
-						sfx = 230 + rand() % 2;
-					}
+				    if ( arachnophobia_filter )
+				    {
+					    if ( rand() % 3 == 2 )
+					    {
+						    sfx = 508;
+					    }
+					    else
+					    {
+						    sfx = 503 + rand() % 2;
+					    }
+				    }
+				    else
+				    {
+					    if ( rand() % 3 == 2 )
+					    {
+						    sfx = 235;
+					    }
+					    else
+					    {
+						    sfx = 230 + rand() % 2;
+					    }
+				    }
 					break;
 				case CREATURE_IMP:
 					sfx = 198 + rand() % 3;

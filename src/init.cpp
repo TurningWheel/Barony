@@ -71,7 +71,7 @@ bool steam_init = false;
 
 int initApp(char const * const title, int fullscreen)
 {
-	char name[128];
+	char name[128] = { '\0' };
 	File* fp;
 	Uint32 x, c;
 
@@ -451,7 +451,7 @@ int initApp(char const * const title, int fullscreen)
 	fp = openDataFile("images/sprites.txt", "r");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
-		char name[128];
+		char name[128] = { '\0' };
 		fp->gets2(name, 128);
 		sprites[c] = loadImage(name);
 		if ( sprites[c] == NULL )
@@ -944,7 +944,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
 		if ( useModelCache )
 		{
-			model_cache = openDataFile("models.cache", "rb");
+            std::string cache_path = std::string(outputdir) + "models.cache";
+			model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
 				char polymodelsVersionStr[7] = "v0.0.0";
@@ -1904,7 +1905,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) 
+    std::string cache_path = std::string(outputdir) + "models.cache";
+	if (useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")))
 	{
 		char modelCacheHeader[32] = "BARONY";
 		strcat(modelCacheHeader, VERSION);
@@ -2090,11 +2092,15 @@ int deinitApp()
 		delete map.worldUI;
 	}
 	list_FreeAll(&light_l);
-	if ( map.tiles != NULL )
+	if ( map.tiles != nullptr )
 	{
 		free(map.tiles);
 	}
-	if ( lightmap != NULL )
+	if ( map.vismap != nullptr )
+	{
+	    free(map.vismap);
+	}
+	if ( lightmap != nullptr )
 	{
 		free(lightmap);
 	}

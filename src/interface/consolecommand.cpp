@@ -97,12 +97,6 @@ typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables
     return cvar_map;
 }
 
-template <typename T>
-T& ConsoleVariable<T>::operator*()
-{
-    return data;
-}
-
 /*******************************************************************************
     std::string cvars
 *******************************************************************************/
@@ -120,7 +114,9 @@ template<> void ConsoleVariable<std::string>::operator=(const char* arg)
 
 template<> void ConsoleVariable<int>::operator=(const char* arg)
 {
-    data = (int)strtol(arg, nullptr, 10);
+    if (arg && arg[0] != '\0') {
+        data = (int)strtol(arg, nullptr, 10);
+    }
     messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
         name + 1, data);
 }
@@ -131,9 +127,24 @@ template<> void ConsoleVariable<int>::operator=(const char* arg)
 
 template<> void ConsoleVariable<float>::operator=(const char* arg)
 {
-    data = strtof(arg, nullptr);
+    if (arg && arg[0] != '\0') {
+        data = strtof(arg, nullptr);
+    }
     messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
         name + 1, data);
+}
+
+/*******************************************************************************
+    bool cvars
+*******************************************************************************/
+
+template<> void ConsoleVariable<bool>::operator=(const char* arg)
+{
+    if (arg && arg[0] != '\0') {
+        data = !(!strcmp(arg, "false") || !strcmp(arg, "0"));
+    }
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+        name + 1, data ? "true" : "false");
 }
 
 /*-------------------------------------------------------------------------------
@@ -187,35 +198,36 @@ void consoleCommand(char const * const command_str)
 	}
 }
 
+namespace Test {
+    static ConsoleVariable<bool> cvar_bool("/cvar_test_bool", true, "test bools in cvars");
+    static ConsoleVariable<float> cvar_float("/cvar_test_float", 1.f, "test floats in cvars");
+    static ConsoleVariable<int> cvar_int("/cvar_test_int", 1, "test ints in cvars");
+    static ConsoleVariable<std::string> cvar_string("/cvar_test_string", "Hello world", "test strings in cvars");
+
+    static ConsoleCommand print_bool("/test_print_bool", "print contents of cvar_test_bool",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_bool.data ? "true" : "false");
+        });
+
+    static ConsoleCommand print_float("/test_print_float", "print contents of cvar_test_float",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%f", cvar_float.data);
+        });
+
+    static ConsoleCommand print_int("/test_print_int", "print contents of cvar_test_int",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%d", cvar_int.data);
+        });
+
+    static ConsoleCommand print_string("/test_print_string", "print contents of cvar_test_string",
+        [](int argc, const char** argv){
+        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_string.data.c_str());
+        });
+}
+
 #define CCMD (int argc, const char **argv)
 
 namespace ConsoleCommands {
-    static ConsoleVariable<float> cvar_test_float("/cvar_test_float", 1.f, "test floats in cvars");
-    static ConsoleVariable<int> cvar_test_int("/cvar_test_int", 1, "test ints in cvars");
-    static ConsoleVariable<std::string> cvar_test_string("/cvar_test_string", "Hello world", "test strings in cvars");
-
-    static ConsoleCommand ccmd_test_print_float("/test_print_float", "print contents of cvar_test_float",
-        [](int argc, const char** argv){
-        messagePlayer(clientnum, MESSAGE_MISC, "%f", cvar_test_float.data);
-        });
-
-    static ConsoleCommand ccmd_test_print_int("/test_print_int", "print contents of cvar_test_int",
-        [](int argc, const char** argv){
-        messagePlayer(clientnum, MESSAGE_MISC, "%d", cvar_test_int.data);
-        });
-
-    static ConsoleCommand ccmd_test_print_string("/test_print_string", "print contents of cvar_test_string",
-        [](int argc, const char** argv){
-        messagePlayer(clientnum, MESSAGE_MISC, "%s", cvar_test_string.data.c_str());
-        });
-
-    static ConsoleCommand ccmd_test_cvars_reset("/test_cvars_reset", "reset test cvars",
-        [](int argc, const char** argv){
-        *cvar_test_float = 1.f;
-        *cvar_test_int = 1;
-        *cvar_test_string = "Hello world";
-        });
-
     static ConsoleCommand ccmd_help("/help", "get help for a command (eg: /help listcmds)", []CCMD{
         const char* cmd = argc == 1 ? "help" : argv[1];
         auto& map = getConsoleCommands();
@@ -244,6 +256,17 @@ namespace ConsoleCommands {
             }
         }
         messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
+        });
+
+    static ConsoleCommand ccmd_mousecapture("/mousecapture", "toggle mouse capture enabled", []CCMD{
+        if (EnableMouseCapture == SDL_TRUE) {
+            EnableMouseCapture = SDL_FALSE;
+            messagePlayer(clientnum, MESSAGE_MISC, "Mouse capture is disabled.");
+        }
+        else if (EnableMouseCapture == SDL_FALSE) {
+            EnableMouseCapture = SDL_TRUE;
+            messagePlayer(clientnum, MESSAGE_MISC, "Mouse capture is enabled.");
+        }
         });
 
     static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
@@ -328,7 +351,12 @@ namespace ConsoleCommands {
         {
             return;
         }
-		lastname = argv[1];
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
+		lastname = name.c_str();
 		});
 
     static ConsoleCommand ccmd_lastchar("/lastcharacter", "set last character attribute", []CCMD{
@@ -364,12 +392,16 @@ namespace ConsoleCommands {
 		{
 		    return;
 		}
-		auto name = argv[1];
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
 
         int c;
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strcmp(items[c].name_identified, name) == 0 )
+			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
 			{
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
@@ -379,7 +411,7 @@ namespace ConsoleCommands {
 		{
 			for ( c = 0; c < NUMITEMS; c++ )
 			{
-				if ( strstr(items[c].name_identified, name) )
+				if ( strstr(items[c].name_identified, name.c_str()) )
 				{
 					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 					break;
@@ -388,7 +420,7 @@ namespace ConsoleCommands {
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name);
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
 		}
 	    });
 
@@ -402,12 +434,16 @@ namespace ConsoleCommands {
 		{
 		    return;
 		}
-		auto name = argv[1];
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
 
 		int c;
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strcmp(items[c].name_identified, name) == 0 )
+			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
 			{
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
@@ -417,7 +453,7 @@ namespace ConsoleCommands {
 		{
 			for ( c = 0; c < NUMITEMS; c++ )
 			{
-				if ( strstr(items[c].name_identified, name) )
+				if ( strstr(items[c].name_identified, name.c_str()) )
 				{
 					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 					break;
@@ -426,7 +462,7 @@ namespace ConsoleCommands {
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name);
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
 		}
 	    });
 
@@ -440,12 +476,16 @@ namespace ConsoleCommands {
 		{
 		    return;
 		}
-		auto name = argv[1];
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
 
 		int c;
 		for ( c = 0; c < NUMITEMS; ++c )
 		{
-			if ( strcmp(items[c].name_identified, name) == 0 )
+			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
 			{
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
@@ -455,7 +495,7 @@ namespace ConsoleCommands {
 		{
 			for ( c = 0; c < NUMITEMS; ++c )
 			{
-				if ( strstr(items[c].name_identified, name) )
+				if ( strstr(items[c].name_identified, name.c_str()) )
 				{
 					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 					break;
@@ -464,7 +504,7 @@ namespace ConsoleCommands {
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name);
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
 		}
 	    });
 
@@ -473,13 +513,17 @@ namespace ConsoleCommands {
 		{
 		    return;
 		}
-		auto name = argv[1];
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
 		if ( multiplayer == SERVER )
 		{
 		    int c;
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) && !players[c]->isLocalPlayer() )
+				if ( !client_disconnected[c] && !strncmp(name.c_str(), stats[c]->name, 128) && !players[c]->isLocalPlayer() )
 				{
 					client_disconnected[c] = true;
 					strcpy((char*)net_packet->data, "KICK");
@@ -520,8 +564,12 @@ namespace ConsoleCommands {
         {
             return;
         }
-		auto name = argv[1];
-		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), true, &stats[clientnum]->inventory), 0);
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
+		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name.c_str()), true, &stats[clientnum]->inventory), 0);
 	    });
 
 	static ConsoleCommand ccmd_savemap("/savemap", "save the current level to disk", []CCMD{
@@ -1449,13 +1497,17 @@ namespace ConsoleCommands {
             if (argc < 2) {
                 return;
             }
-			auto name = argv[1];
+		    std::string name = argv[1];
+		    for (int arg = 2; arg < argc; ++arg) {
+		        name.append(" ");
+		        name.append(argv[arg]);
+		    }
 			int i, creature;
 			bool found = false;
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+				if ( strstr(monstertypename[i], name.c_str()) )
 				{
 					creature = i;
 					found = true;
@@ -1472,7 +1524,7 @@ namespace ConsoleCommands {
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[304], name);
+				messagePlayer(clientnum, MESSAGE_MISC, language[304], name.c_str());
 			}
 		}
 		});
@@ -1492,13 +1544,17 @@ namespace ConsoleCommands {
             if (argc < 2) {
                 return;
             }
-			auto name = argv[1];
+		    std::string name = argv[1];
+		    for (int arg = 2; arg < argc; ++arg) {
+		        name.append(" ");
+		        name.append(argv[arg]);
+		    }
 			int i, creature;
 			bool found = false;
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+				if ( strstr(monstertypename[i], name.c_str()) )
 				{
 					creature = i;
 					found = true;
@@ -1507,13 +1563,13 @@ namespace ConsoleCommands {
 			}
 			if ( !found )
 			{
-				MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(name);
+				MonsterStatCustomManager::StatEntry* statEntry = monsterStatCustomManager.readFromFile(name.c_str());
 				if ( statEntry )
 				{
 					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 					if ( monster )
 					{
-						messagePlayer(clientnum, MESSAGE_MISC, language[302], getMonsterLocalizedName(static_cast<Monster>(statEntry->type)).c_str());
+						messagePlayer(clientnum, MESSAGE_MISC, language[302], monstertypename[static_cast<Monster>(statEntry->type)]);
 						if ( monster->getStats() )
 						{
 							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
@@ -1574,7 +1630,7 @@ namespace ConsoleCommands {
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[304], name);
+				messagePlayer(clientnum, MESSAGE_MISC, language[304], name.c_str());
 			}
 		}
 		});
@@ -1894,10 +1950,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_leftx_sensitivity = atoi(argv[1]);
+		gamepad_leftx_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_leftx_sensitivity = std::max(gamepad_leftx_sensitivity, 1);
-		printlog("Controller leftx sensitivity is %d.", gamepad_leftx_sensitivity);
+		gamepad_leftx_sensitivity = std::max(gamepad_leftx_sensitivity, 1.0);
+		printlog("Controller leftx sensitivity is %.1f.", gamepad_leftx_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_lefty_sensitivity("/gamepad_lefty_sensitivity", "", []CCMD{
@@ -1905,10 +1961,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_lefty_sensitivity = atoi(argv[1]);
+		gamepad_lefty_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_lefty_sensitivity = std::max(gamepad_lefty_sensitivity, 1);
-		printlog("Controller lefty sensitivity is %d.", gamepad_lefty_sensitivity);
+		gamepad_lefty_sensitivity = std::max(gamepad_lefty_sensitivity, 1.0);
+		printlog("Controller lefty sensitivity is %.1f.", gamepad_lefty_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_rightx_sensitivity("/gamepad_rightx_sensitivity", "", []CCMD{
@@ -1916,10 +1972,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_rightx_sensitivity = atoi(argv[1]);
+		gamepad_rightx_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_rightx_sensitivity = std::max(gamepad_rightx_sensitivity, 1);
-		printlog("Controller rightx sensitivity is %d.", gamepad_rightx_sensitivity);
+		gamepad_rightx_sensitivity = std::max(gamepad_rightx_sensitivity, 1.0);
+		printlog("Controller rightx sensitivity is %.1f.", gamepad_rightx_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_righty_sensitivity("/gamepad_righty_sensitivity", "", []CCMD{
@@ -1927,10 +1983,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_righty_sensitivity = atoi(argv[1]);
+		gamepad_righty_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1);
-		printlog("Controller righty sensitivity is %d.", gamepad_righty_sensitivity);
+		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1.0);
+		printlog("Controller righty sensitivity is %.1f.", gamepad_righty_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_menux_sensitivity("/gamepad_menux_sensitivity", "", []CCMD{
@@ -1938,10 +1994,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_menux_sensitivity = atoi(argv[1]);
+		gamepad_menux_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_menux_sensitivity = std::max(gamepad_menux_sensitivity, 1);
-		printlog("Controller menux sensitivity is %d.", gamepad_menux_sensitivity);
+		gamepad_menux_sensitivity = std::max(gamepad_menux_sensitivity, 1.0);
+		printlog("Controller menux sensitivity is %.1f.", gamepad_menux_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_menuy_sensitivity("/gamepad_menuy_sensitivity", "", []CCMD{
@@ -1949,10 +2005,10 @@ namespace ConsoleCommands {
 	    {
 	        return;
 	    }
-		gamepad_menuy_sensitivity = atoi(argv[1]);
+		gamepad_menuy_sensitivity = strtof(argv[1], nullptr);
 		//Ensure its value is in range.
-		gamepad_menuy_sensitivity = std::max(gamepad_menuy_sensitivity, 1);
-		printlog("Controller menuy sensitivity is %d.", gamepad_menuy_sensitivity);
+		gamepad_menuy_sensitivity = std::max(gamepad_menuy_sensitivity, 1.0);
+		printlog("Controller menuy sensitivity is %.1f.", gamepad_menuy_sensitivity);
 		});
 
 	static ConsoleCommand ccmd_gamepad_leftx_invert("/gamepad_leftx_invert", "", []CCMD{
@@ -2962,12 +3018,16 @@ namespace ConsoleCommands {
         {
             return;
         }
-		auto name = argv[1];
+	    std::string name = argv[1];
+	    for (int arg = 2; arg < argc; ++arg) {
+	        name.append(" ");
+	        name.append(argv[arg]);
+	    }
 		int creature = NOTHING;
 
 		for ( int i = 1; i < NUMMONSTERS; ++i )   //Start at 1 because 0 is a nothing.
 		{
-			if ( strstr(getMonsterLocalizedName((Monster)i).c_str(), name) )
+			if ( strstr(monstertypename[i], name.c_str()) )
 			{
 				creature = i;
 				break;

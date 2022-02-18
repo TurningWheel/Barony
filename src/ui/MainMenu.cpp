@@ -18,11 +18,14 @@
 #include "../draw.hpp"
 #include "../engine/audio/sound.hpp"
 #include "../classdescriptions.hpp"
+#include "../lobbies.hpp"
 
 #include <cassert>
 #include <functional>
 
 namespace MainMenu {
+    int pause_menu_owner = 0;
+
 	// ALL NEW menu options:
 	bool arachnophobia_filter = false;
 	bool vertical_splitscreen = false;
@@ -51,23 +54,22 @@ namespace MainMenu {
 		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
 		{"Cycle NPCs", "E", "DpadX-", emptyBinding},
 		{"Minimap Scale", "=", emptyBinding, emptyBinding},
-		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
-		{"Hotbar Scroll Left", "MouseWheelDown", "ButtonX", emptyBinding},
-		{"Hotbar Scroll Right", "MouseWheelUp", "ButtonB", emptyBinding},
+		{"Toggle Minimap", "`", "DpadY+", emptyBinding},
+		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
+		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
 		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
 		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
 		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
 		{"Chat", "Return", hiddenBinding, emptyBinding},
-		{"Move Forward", "W", "StickLeftY-", emptyBinding},
-		{"Move Left", "A", "StickLeftX-", emptyBinding},
-		{"Move Backward", "S", "StickLeftY+", emptyBinding},
-		{"Move Right", "D", "StickLeftX+", emptyBinding},
-		{"Turn Left", "Left", "StickRightX-", emptyBinding},
-		{"Turn Right", "Right", "StickRightX+", emptyBinding},
-		{"Look Up", "Up", "StickRightY-", emptyBinding},
-		{"Look Down", "Down", "StickRightY+", emptyBinding},
-		{"Console Command", "/", hiddenBinding, emptyBinding}
+		{"Move Forward", "W", hiddenBinding, emptyBinding},
+		{"Move Left", "A", hiddenBinding, emptyBinding},
+		{"Move Backward", "S", hiddenBinding, emptyBinding},
+		{"Move Right", "D", hiddenBinding, emptyBinding},
+		{"Turn Left", "Left", hiddenBinding, emptyBinding},
+		{"Turn Right", "Right", hiddenBinding, emptyBinding},
+		{"Look Up", "Up", hiddenBinding, emptyBinding},
+		{"Look Down", "Down", hiddenBinding, emptyBinding}
 	};
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
@@ -77,15 +79,17 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
+	static std::string tutorial_map_destination;
 
 	enum class LobbyType {
+	    None,
 		LobbyLocal,
 		LobbyLAN,
 		LobbyOnline,
 		LobbyJoined
 	};
 
-	static LobbyType currentLobbyType;
+	static LobbyType currentLobbyType = LobbyType::None;
 	static bool playersInLobby[4];
 
 	void beginFade(FadeDestination fd) {
@@ -177,6 +181,8 @@ namespace MainMenu {
 
     // All menu options combined
 	struct AllSettings {
+	    std::vector<std::pair<std::string, std::string>> mods;
+	    bool crossplay_enabled;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
@@ -260,7 +266,11 @@ namespace MainMenu {
 	    if (inputs.getVirtualMouse(clientnum)->draw_cursor && deafen_unless_gamepad) {
 	        return;
 	    }
-	    playSound(497, 48);
+	    static Uint32 timeSinceLastTick = 0;
+	    if (main_menu_ticks - timeSinceLastTick >= fpsLimit / 10) {
+	        timeSinceLastTick = main_menu_ticks;
+	        playSound(497, 48);
+	    }
 	}
 
 	static inline void soundWarning() {
@@ -296,11 +306,13 @@ namespace MainMenu {
 	static void mainPlayGame(Button&);
 	static void mainPlayModdedGame(Button&);
 	static void mainHallOfRecords(Button&);
+	static void mainAssignControllers(Button&);
 	static void mainSettings(Button&);
 	static void mainEditor(Button&);
 	static void mainClose(Button&);
 	static void mainEndLife(Button&);
 	static void mainRestartGame(Button&);
+	static void mainReturnToHallofTrials(Button&);
 	static void mainQuitToMainMenu(Button&);
 	static void mainQuitToDesktop(Button&);
 
@@ -309,13 +321,83 @@ namespace MainMenu {
 	static void characterCardRaceMenu(int index);
 	static void characterCardClassMenu(int index);
 
-    static void createControllerPrompt(int index);
+    static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
 	static void createWaitingStone(int index);
+	static void createReadyStone(int index);
+	static void createCountdownTimer();
 	static void createLobby(LobbyType);
 	static void createLobbyBrowser(Button&);
+
+/******************************************************************************/
+
+    static constexpr int firePixelSize = 4;
+    static constexpr int fireSize = (Frame::virtualScreenX * Frame::virtualScreenY) / (firePixelSize * firePixelSize);
+    static Uint8 firePixels[fireSize];
+    static Uint8 fireDefault = 63;
+
+    static SDL_Surface* fireSurface = nullptr;
+    static TempTexture* fireTexture = nullptr;
+
+    static void fireStart() {
+        assert(!fireSurface);
+        assert(!fireTexture);
+	    fireSurface = SDL_CreateRGBSurface(0,
+	        Frame::virtualScreenX / firePixelSize,
+	        Frame::virtualScreenY / firePixelSize,
+	        32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	    for (int c = 0; c < fireSize; ++c) {
+            firePixels[c] = fireDefault;
+        }
+    }
+
+    static void fireStop() {
+	    if (fireTexture) {
+	        delete fireTexture;
+	        fireTexture = nullptr;
+	    }
+	    if (fireSurface) {
+            SDL_FreeSurface(fireSurface);
+            fireSurface = nullptr;
+	    }
+    }
+
+    static inline Uint8 fireIntensity(int index) {
+        constexpr int w = Frame::virtualScreenX / firePixelSize;
+	    const int below = index + w;
+	    const int decay = std::max(0, rand() % 5 - 3);
+	    const int belowIntensity = firePixels[below] - decay;
+	    const int newIntensity =
+		    belowIntensity >= 0 ?
+		    belowIntensity : 0;
+	    const int pos = (index - decay >= 0) ?
+	        index - decay : 0;
+	    firePixels[pos] = newIntensity;
+	    return newIntensity;
+    }
+
+    static void fire() {
+	    SDL_LockSurface(fireSurface);
+        constexpr int w = Frame::virtualScreenX / firePixelSize;
+        constexpr int size = fireSize - w;
+	    for (int index = 0; index < size; ++index) {
+		    const Uint8 intensity = fireIntensity(index);
+            Uint32* const p = (Uint32*)fireSurface->pixels + index;
+            *p = makeColor(0, 0, 0, intensity);
+	    }
+	    for (int index = size; index < size + w; ++index) {
+            Uint32* const p = (Uint32*)fireSurface->pixels + index;
+            *p = makeColor(0, 0, 0, fireDefault);
+	    }
+	    SDL_UnlockSurface(fireSurface);
+	    if (fireTexture) {
+	        delete fireTexture;
+	    }
+	    fireTexture = new TempTexture();
+	    fireTexture->load(fireSurface, false, false);
+    }
 
 /******************************************************************************/
 
@@ -454,6 +536,10 @@ namespace MainMenu {
 
 	static void tickMainMenu(Widget& widget) {
 		++main_menu_ticks;
+		auto back = widget.findWidget("back", false);
+		if (back) {
+		    back->setDisabled(widget.findWidget("dimmer", false) != nullptr);
+		}
 	}
 
 	static void updateSliderArrows(Frame& frame) {
@@ -574,16 +660,15 @@ namespace MainMenu {
 		back_button->setHJustify(Button::justify_t::LEFT);
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setCallback(callback);
-		/*back_button->setTickCallback([](Widget& widget) {
-			auto button = static_cast<Button*>(&widget);
-			auto frame = static_cast<Frame*>(button->getParent());
-			auto backdrop = frame->findImage("backdrop");
-			if (button->isSelected()) {
-				backdrop->color = makeColor(255, 255, 255, 255);
+		back_button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		back_button->setWidgetBack("back_button");
+		back_button->setTickCallback([](Widget& widget) {
+			if (widget.isSelected()) {
+			    widget.setButtonsOffset(SDL_Rect{32, 0, 0, 0,});
 			} else {
-				backdrop->color = makeColor(127, 127, 127, 255);
+			    widget.setButtonsOffset(SDL_Rect{8, 0, 0, 0,});
 			}
-			});*/
+			});
 
 		return back_button;
 	}
@@ -697,7 +782,6 @@ namespace MainMenu {
 		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setFont(smallfont_outline);
 		okay->setText(okay_text);
-		okay->setWidgetBack("okay");
 		okay->setCallback(okay_callback);
 		okay->select();
 	}
@@ -976,6 +1060,8 @@ namespace MainMenu {
 	inline bool AllSettings::save() {
 	    bool result = false;
 
+        gamemods_mountedFilepaths = mods;
+        LobbyHandler.crossplayEnabled = crossplay_enabled;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -1020,8 +1106,8 @@ namespace MainMenu {
 		}
 		fullscreen = new_fullscreen;
 		borderless = new_borderless;
-		xres = resolution_x;
-		yres = resolution_y;
+		xres = std::max(resolution_x, 1280);
+		yres = std::max(resolution_y, 720);
 		verticalSync = vsync_enabled;
 		vertical_splitscreen = vertical_split_enabled;
 		vidgamma = gamma / 100.f;
@@ -1041,8 +1127,8 @@ namespace MainMenu {
 		reversemouse = reverse_mouse_enabled;
 		smoothmouse = smooth_mouse_enabled;
 		disablemouserotationlimit = !rotation_speed_limit_enabled;
-		gamepad_rightx_sensitivity = turn_sensitivity_x * 10.f;
-		gamepad_righty_sensitivity = turn_sensitivity_y * 10.f;
+		gamepad_rightx_sensitivity = turn_sensitivity_x / 32768.0;
+		gamepad_righty_sensitivity = turn_sensitivity_y / 32768.0;
 		svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 		svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
 		svFlags = friendly_fire_enabled ? svFlags | SV_FLAG_FRIENDLYFIRE : svFlags & ~(SV_FLAG_FRIENDLYFIRE);
@@ -1081,6 +1167,8 @@ namespace MainMenu {
 
 	inline AllSettings AllSettings::load() {
 		AllSettings settings;
+		settings.mods = gamemods_mountedFilepaths;
+		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
 		settings.use_on_release_enabled = !right_click_protect;
@@ -1118,8 +1206,8 @@ namespace MainMenu {
 		settings.reverse_mouse_enabled = reversemouse;
 		settings.smooth_mouse_enabled = smoothmouse;
 		settings.rotation_speed_limit_enabled = !disablemouserotationlimit;
-		settings.turn_sensitivity_x = gamepad_rightx_sensitivity / 10;
-		settings.turn_sensitivity_y = gamepad_righty_sensitivity / 10;
+		settings.turn_sensitivity_x = gamepad_rightx_sensitivity * 32768.0;
+		settings.turn_sensitivity_y = gamepad_righty_sensitivity * 32768.0;
 		settings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		settings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		settings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -1135,6 +1223,8 @@ namespace MainMenu {
 
 	inline AllSettings AllSettings::reset() {
 		AllSettings settings;
+		settings.mods = gamemods_mountedFilepaths;
+		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
 		settings.use_on_release_enabled = true;
@@ -1190,6 +1280,8 @@ namespace MainMenu {
 	bool AllSettings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
+	    file->property("mods", mods);
+		file->property("crossplay_enabled", crossplay_enabled);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);
@@ -1301,7 +1393,7 @@ namespace MainMenu {
 		story_text_box_size = 2;
 		story_text_scroll = 0.f;
 		story_text_writer = 0.f;
-		story_text_box_scale = -2.f;
+		story_text_box_scale = 1.f;
 		story_text_adjust_box = false;
 		story_text_end = false;
 		story_image_index = 0;
@@ -1311,11 +1403,49 @@ namespace MainMenu {
 		story_skip = 0;
 		story_skip_timer = 0.f;
 
-		main_menu_frame->addImage(
+        // fire effect
+		static float firetimer;
+		firetimer = 0.f;
+        fireStop();
+		fireStart();
+		auto backdrop = main_menu_frame->addFrame("backdrop");
+		backdrop->setSize(main_menu_frame->getActualSize());
+		backdrop->setTickCallback([](Widget& widget){
+		    constexpr float ticks_per_second = 20.f;
+			const float inc = ticks_per_second / fpsLimit;
+			firetimer += inc;
+			if (firetimer >= 1.f) {
+			    firetimer -= 1.f;
+                fire();
+			}
+		    });
+		backdrop->setDrawCallback([](const Widget& widget, const SDL_Rect rect){
+		    if (fireTexture) {
+                fireTexture->bind();
+                glColor4f(1, 1, 1, 1);
+	            glBegin(GL_QUADS);
+	            glTexCoord2f(0, 0);
+	            glVertex2f(rect.x, Frame::virtualScreenY - rect.y);
+	            glTexCoord2f(0, 1);
+	            glVertex2f(rect.x, Frame::virtualScreenY - (rect.y + rect.h));
+	            glTexCoord2f(1, 1);
+	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - (rect.y + rect.h));
+	            glTexCoord2f(1, 0);
+	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
+	            glEnd();
+	            glBindTexture(GL_TEXTURE_2D, 0);
+	        }
+		    });
+		backdrop->setBorder(0);
+		backdrop->setColor(0);
+		backdrop->setHollow(true);
+
+        // story image
+		(void)main_menu_frame->addImage(
 			main_menu_frame->getSize(),
 			0xffffffff,
 			story.images[0].c_str(),
-			"backdrop"
+			"storyboard"
 		);
 
 		auto back_button = main_menu_frame->addButton("back");
@@ -1343,7 +1473,13 @@ namespace MainMenu {
 		    }
 			});
 		back_button->setWidgetBack("back");
-		back_button->setButtonsOffset(SDL_Rect{16, -25, 0, 0});
+		back_button->setHideKeyboardGlyphs(false);
+		if (inputs.hasController(clientnum)) {
+		    back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
+		} else {
+		    back_button->setGlyphPosition(Button::glyph_position_t::BOTTOM_RIGHT);
+		}
+		back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
@@ -1381,19 +1517,20 @@ namespace MainMenu {
 		    auto font = Font::get(bigfont_outline); assert(font);
 		    next->setSize(SDL_Rect{
 		        (Frame::virtualScreenX - 160) / 2,
-		        (Frame::virtualScreenY - font->height()),
+		        (Frame::virtualScreenY - font->height() + 4),
 		        160,
-		        font->height(),
+		        font->height() - 4,
 		        });
 		    next->setCallback(next_button_func);
 			next->setTickCallback([](Widget& widget){
 			    auto button = static_cast<Button*>(&widget);
                 button->setInvisible(story_text_pause == 0);
-		        button->setText(inputs.hasController(0) ? "" : "Continue...");
+		        //button->setText(inputs.hasController(0) ? "" : "Continue...");
 			    });
 		    next->setWidgetBack("back");
 		    next->select();
-		    next->setButtonsOffset(SDL_Rect{-80, -font->height() + 4, 0, 0});
+		    next->setGlyphPosition(Button::glyph_position_t::CENTERED_TOP);
+		    next->setHideKeyboardGlyphs(false);
 		}
 
 		auto textbox2 = textbox1->addFrame("story_text_box");
@@ -1421,7 +1558,7 @@ namespace MainMenu {
 		    auto textbox2 = textbox1->findFrame("story_text_box");
 		    textbox2->setSize(SDL_Rect{
 		        font->height() / 2,
-		        font->height() / 2,
+		        font->height() / 2 - 2,
 		        Frame::virtualScreenX - 320 - font->height(),
 		        (int)(font->height() * std::max(lines, 0.f)),
 		        });
@@ -1437,10 +1574,13 @@ namespace MainMenu {
 		static auto adjust_box_size = [](){
 		    float f = story_text_box_size;
 		    float diff = story_text_box_scale - f;
-		    if (fabs(diff) < 0.1) {
+			const float inc = (1.f / fpsLimit) * 8.f;
+		    if (fabs(diff) < inc) {
 		        story_text_box_scale -= diff;
+		    } else if (signbit(diff)) {
+		        story_text_box_scale += inc;
 		    } else {
-		        story_text_box_scale -= diff / TICKS_PER_SECOND;
+		        story_text_box_scale -= inc;
 		    }
             change_box_size(story_text_box_scale);
 		    };
@@ -1456,16 +1596,16 @@ namespace MainMenu {
 			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
 			auto textbox1 = static_cast<Frame*>(&widget);
 			auto story_font = Font::get(bigfont_outline); assert(story_font);
-			auto backdrop = main_menu_frame->findImage("backdrop"); assert(backdrop);
-			if (backdrop && !story_text_pause) {
+			auto storyboard = main_menu_frame->findImage("storyboard"); assert(storyboard);
+			if (storyboard && !story_text_pause) {
 				story_image_fade = std::max(0.f, story_image_fade - inc);
 		        float factor = story_image_fade - story_font->height();
 		        Uint8 c = 255 * (fabs(factor) / story_font->height());
-		        backdrop->color = makeColor(c, c, c, 255);
+		        storyboard->color = makeColor(c, c, c, 255);
 		        if (factor <= 0.f && story_image_advanced) {
 		            story_image_advanced = false;
 			        story_image_index = (story_image_index + 1) % story.images.size();
-			        backdrop->path = story.images[story_image_index];
+			        storyboard->path = story.images[story_image_index];
 		        }
 			}
 			if (story_text_scroll > 0.f) {
@@ -1550,6 +1690,9 @@ namespace MainMenu {
 							buf[len] = c;
 							buf[len + 1] = '\0';
 						} else {
+						    auto back = main_menu_frame->findButton("back"); assert(back);
+						    back->setDisabled(true);
+						    back->setInvisible(true);
 							story_text_pause = fpsLimit * 5;
 							story_text_end = true;
 						}
@@ -1592,7 +1735,9 @@ namespace MainMenu {
 
 		// change video mode
 		if (initialized && reset_video) {
-			if (!changeVideoMode(allSettings.resolution_x, allSettings.resolution_y)) {
+		    int x = std::max(allSettings.resolution_x, 1280);
+		    int y = std::max(allSettings.resolution_y, 720);
+			if (!changeVideoMode(x, y)) {
 				printlog("critical error! Attempting to abort safely...\n");
 				mainloop = 0;
 			}
@@ -2034,6 +2179,7 @@ namespace MainMenu {
 		dropdown_list->setListOffset(SDL_Rect{0, 11, 0, 0});
 		dropdown_list->setListJustify(Frame::justify_t::CENTER);
 		dropdown_list->setScrollBarsEnabled(false);
+		dropdown_list->addWidgetMovement("MenuListCancel", button.getName());
 
 		for (int i = 0;; ++i) {
 			auto str = std::string("__") + std::to_string(i);
@@ -2249,6 +2395,7 @@ namespace MainMenu {
 		button->setWidgetBack("discard_and_exit");
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
+		button->setGlyphPosition(Button::glyph_position_t::CENTERED_BOTTOM);
 		return result;
 	}
 
@@ -2483,6 +2630,7 @@ namespace MainMenu {
 		slider->setWidgetPageRight("tab_right");
 		slider->addWidgetAction("MenuAlt1", "restore_defaults");
 		slider->addWidgetAction("MenuStart", "confirm_and_exit");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
 		return result;
 	}
 
@@ -2524,6 +2672,7 @@ namespace MainMenu {
 		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
 		slider->setCallback([](Slider& slider){
 			Frame* frame = static_cast<Frame*>(slider.getParent());
 			auto actualSize = frame->getActualSize();
@@ -2544,6 +2693,12 @@ namespace MainMenu {
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
 			});
+		slider->setWidgetSearchParent("settings");
+		slider->setWidgetBack("discard_and_exit");
+		slider->addWidgetAction("MenuStart", "confirm_and_exit");
+		slider->addWidgetAction("MenuAlt1", "restore_defaults");
+		slider->setWidgetPageLeft("tab_left");
+		slider->setWidgetPageRight("tab_right");
 		auto sliderLeft = settings_subwindow->addImage(
 			SDL_Rect{0, 0, 30, 44},
 			0xffffffff,
@@ -2600,7 +2755,7 @@ namespace MainMenu {
 		widget->select();
 	}
 
-	static void settingsSubwindowFinalize(Frame& frame, int y) {
+	static void settingsSubwindowFinalize(Frame& frame, int y, const Setting& setting) {
 		auto size = frame.getActualSize();
 		const int height = std::max(size.h, y);
 		frame.setActualSize(SDL_Rect{0, 0, size.w, height});
@@ -2610,6 +2765,8 @@ namespace MainMenu {
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
 		slider->setMaxValue(height - size.h);
+		auto names = getFullSettingNames(setting);
+		slider->setWidgetLeft(names.first.c_str());
 	}
 
 	static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {
@@ -2720,6 +2877,7 @@ namespace MainMenu {
 		slider->setRailImage("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar00.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
 		slider->setCallback([](Slider& slider){
 			Frame* frame = static_cast<Frame*>(slider.getParent());
 			auto actualSize = frame->getActualSize();
@@ -2740,6 +2898,10 @@ namespace MainMenu {
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
 			});
+		slider->setWidgetSearchParent(name);
+		slider->setWidgetBack("discard_and_exit");
+		slider->addWidgetAction("MenuStart", "confirm_and_exit");
+		slider->addWidgetAction("MenuAlt1", "restore_defaults");
 
 		auto sliderLeft = subwindow->addImage(
 			SDL_Rect{0, 0, 30, 44},
@@ -2886,7 +3048,7 @@ namespace MainMenu {
 			{Setting::Type::Slider, "foreground_opacity"},
 			{Setting::Type::Slider, "background_opacity"},
 			});
-		settingsSubwindowFinalize(*subwindow, y);
+		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Slider, "map_scale"});
 		settingsSelect(*subwindow, {Setting::Type::Slider, "map_scale"});
 	}
 
@@ -2985,7 +3147,7 @@ namespace MainMenu {
 			{Setting::Type::Boolean, "messages_hint"},
 			{Setting::Type::Boolean, "messages_obituary"},
 			});
-		settingsSubwindowFinalize(*subwindow, y);
+		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Boolean, "messages_combat"});
 		settingsSelect(*subwindow, {Setting::Type::Boolean, "messages_combat"});
 	}
 
@@ -3233,7 +3395,7 @@ bind_failed:
 			bindings[0],
 			});
 		hookSettings(*subwindow, bindings);
-		settingsSubwindowFinalize(*subwindow, y);
+		settingsSubwindowFinalize(*subwindow, y, setting_to_select);
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
@@ -3276,7 +3438,7 @@ bind_failed:
 			allSettings.show_hud_enabled, [](Button& button){soundToggle(); allSettings.show_hud_enabled = button.isPressed();});
 #ifndef NINTENDO
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Streamer Mode",
-			"If you're a streamer and know what doxxing is, definitely press this button.",
+			"If you're a streamer and know what doxxing is, definitely switch this on.",
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggle(); allSettings.show_ip_address_enabled = button.isPressed();});
 #endif
 
@@ -3300,7 +3462,7 @@ bind_failed:
 			{Setting::Type::Boolean, "show_hud"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "add_items_to_hotbar"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
 	}
 
@@ -3321,9 +3483,15 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
 			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
 			allSettings.colorblind_mode_enabled, [](Button& button){soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed();});
+		const char* arachnophobia_desc;
+		if (intro) {
+		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
+		} else {
+		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
+		}
 		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
-			"Replace all giant spiders in the game with hostile crustaceans.",
-			allSettings.arachnophobia_filter_enabled, [](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
+			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
+			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
@@ -3416,7 +3584,7 @@ bind_failed:
 			{Setting::Type::Slider, "fov"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "content_control"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
 	}
 
@@ -3481,7 +3649,7 @@ bind_failed:
 			{Setting::Type::Boolean, "player_monster_sounds"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "master_volume"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
 	}
 
@@ -3530,10 +3698,10 @@ bind_failed:
 #endif
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 1.f, 100.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 1.f, 100.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
@@ -3552,7 +3720,7 @@ bind_failed:
 			{Setting::Type::Slider, "turn_sensitivity_y"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
 	}
 
@@ -3620,7 +3788,7 @@ bind_failed:
 			{Setting::Type::Boolean, "extra_life"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y);
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "classic_mode"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
 	}
 
@@ -3640,7 +3808,7 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
+		beginFade(MainMenu::FadeDestination::EndingEvil);
 	}
 
 	static void recordsStoryIntroduction(Button& button) {
@@ -3658,7 +3826,7 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		auto back_button = main_menu_frame->addButton("back");
+		/*auto back_button = main_menu_frame->addButton("back");
 		back_button->setHideSelectors(true);
 		back_button->setText("Return to Main Menu");
 		back_button->setColor(makeColor(0, 0, 0, 0));
@@ -3670,6 +3838,7 @@ bind_failed:
 		back_button->setHJustify(Button::justify_t::RIGHT);
 		back_button->setVJustify(Button::justify_t::CENTER);
 		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
+		back_button->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
 		back_button->setCallback([](Button& b){
 			destroyMainMenu();
 			createMainMenu(false);
@@ -3679,7 +3848,18 @@ bind_failed:
 			credits->select();
 			});
 		back_button->setWidgetBack("back");
-		back_button->select();
+	    back_button->setHideKeyboardGlyphs(false);
+		back_button->select();*/
+
+		auto back = createBackWidget(main_menu_frame,
+		    [](Button& b){
+			destroyMainMenu();
+			createMainMenu(false);
+			mainHallOfRecords(b);
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			auto credits = buttons->findButton("CREDITS"); assert(credits);
+			credits->select();});
+		back->select();
 
 		auto font = Font::get(bigfont_outline); assert(font);
 
@@ -3782,7 +3962,7 @@ bind_failed:
 			u8"Josiah Colborn\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Benjamin Potter\n"
+			u8"Ben Potter\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Matthew Griebner\n"
@@ -3803,7 +3983,7 @@ bind_failed:
 			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Copyright \u00A9 2021, all rights reserved\n"
+			u8"Copyright \u00A9 2022, all rights reserved\n"
 #ifdef USE_FMOD
 			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
 #endif
@@ -3818,95 +3998,10 @@ bind_failed:
 
 	static void recordsBackToMainMenu(Button& button) {
 		soundCancel();
-
-		assert(main_menu_frame);
-
-		// revert notification section
-		auto notification = main_menu_frame->findFrame("notification"); assert(notification);
-		auto image = notification->findImage("background"); assert(image);
-		image->path = "images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png";
-		notification->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 236 * 2) / 2,
-			notification->getSize().y,
-			236 * 2,
-			49 * 2
-			});
-		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-		image->pos = notification->getActualSize();
-		notification->remove("text");
-
-		// enable banners
-		for (int c = 0; c < 2; ++c) {
-			std::string name = std::string("banner") + std::to_string(c + 1);
-			auto banner = main_menu_frame->findFrame(name.c_str());
-			banner->setDisabled(false);
-		}
-
-		// delete existing buttons
-		auto old_buttons = main_menu_frame->findFrame("buttons");
-		old_buttons->removeSelf();
-
-		// put original options back
-		struct Option {
-			const char* name;
-			void (*callback)(Button&);
-		};
-#ifdef NINTENDO
-		Option options[] = {
-			{"PLAY GAME", mainPlayGame},
-			{"HALL OF RECORDS", mainHallOfRecords},
-			{"SETTINGS", mainSettings}
-		};
-#else
-		Option options[] = {
-			{"PLAY GAME", mainPlayGame},
-			{"PLAY MODDED GAME", mainPlayModdedGame},
-			{"HALL OF RECORDS", mainHallOfRecords},
-			{"SETTINGS", mainSettings},
-#ifndef NDEBUG
-			{"EDITOR", mainEditor},
-#endif
-			{"QUIT", mainQuitToDesktop}
-		};
-#endif
-		const int num_options = sizeof(options) / sizeof(options[0]);
-
-		int y = main_menu_buttons_height;
-
-		auto buttons = main_menu_frame->addFrame("buttons");
-		buttons->setTickCallback(updateMenuCursor);
-		buttons->setSize(SDL_Rect{0, y, Frame::virtualScreenX, 36 * num_options});
-		buttons->setActualSize(SDL_Rect{0, 0, buttons->getSize().w, buttons->getSize().h});
-		buttons->setHollow(true);
-		buttons->setBorder(0);
-		for (int c = 0; c < num_options; ++c) {
-			auto button = buttons->addButton(options[c].name);
-			button->setCallback(options[c].callback);
-			button->setBorder(8);
-			button->setHJustify(Button::justify_t::LEFT);
-			button->setVJustify(Button::justify_t::CENTER);
-			button->setText(options[c].name);
-			button->setFont(menu_option_font);
-			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
-			button->setColor(makeColor(255, 255, 255, 255));
-			button->setHighlightColor(makeColor(255, 255, 255, 255));
-			button->setTextColor(makeColor(180, 180, 180, 255));
-			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
-			button->setSize(SDL_Rect{
-				(Frame::virtualScreenX - 164 * 2) / 2,
-				y - buttons->getSize().y,
-				164 * 2,
-				16 * 2
-				});
-			int back = c - 1 < 0 ? num_options - 1 : c - 1;
-			int forward = c + 1 >= num_options ? 0 : c + 1;
-			button->setWidgetDown(options[forward].name);
-			button->setWidgetUp(options[back].name);
-			y += button->getSize().h;
-			y += 4;
-		}
-		y += 16;
-
+        destroyMainMenu();
+        createMainMenu(false);
+        assert(main_menu_frame);
+		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 		auto records = buttons->findButton("HALL OF RECORDS");
 		if (records) {
 			records->select();
@@ -4095,6 +4190,7 @@ bind_failed:
 		card->setBorder(0);
 		card->setOwner(index);
 		card->setClickable(true);
+		card->setHideSelectors(true);
 		card->setHideGlyphs(true);
 
 		return card;
@@ -5172,12 +5268,12 @@ bind_failed:
 		header->setText("CLASS SELECTION");
 		header->setJustify(Field::justify_t::CENTER);
 
-		auto class_name_header = card->addField("class_name_header", 64);
+		/*auto class_name_header = card->addField("class_name_header", 64);
 		class_name_header->setSize(SDL_Rect{98, 70, 128, 26});
 		class_name_header->setFont(smallfont_outline);
 		class_name_header->setText("Fix this");
 		class_name_header->setHJustify(Field::justify_t::CENTER);
-		class_name_header->setVJustify(Field::justify_t::BOTTOM);
+		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
 		auto textbox = card->addImage(
 			SDL_Rect{46, 116, 186, 36},
@@ -5215,7 +5311,7 @@ bind_failed:
 		subframe->setBorder(0);
 
 		if (subframe->getActualSize().h > 258) {
-			auto slider = card->addSlider("slider");
+			auto slider = card->addSlider("scroll_slider");
 			slider->setRailSize(SDL_Rect{260, 160, 30, 266});
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 			slider->setRailImage("images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
@@ -5238,6 +5334,9 @@ bind_failed:
 				auto actualSize = subframe->getActualSize();
 				slider->setValue(actualSize.y);
 				});
+			slider->setWidgetSearchParent(card->getName());
+			slider->setWidgetLeft(reduced_class_list[0]);
+		    slider->setWidgetBack("back_button");
 		}
 
 		auto class_info = card->addButton("class_info");
@@ -5348,6 +5447,11 @@ bind_failed:
 
 		auto card = initCharacterCard(index, 346);
 
+		auto countdown = lobby->findFrame("countdown");
+		if (countdown) {
+		    countdown->removeSelf();
+		}
+
 		if (currentLobbyType == LobbyType::LobbyLocal) {
 			switch (index) {
 			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
@@ -5394,6 +5498,7 @@ bind_failed:
 		);
 
 		auto name_field = card->addField("name", 128);
+		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
@@ -5446,7 +5551,6 @@ bind_failed:
 				});
 			break;
 		}
-		name_field->select();
 
 		auto randomize_name = card->addButton("randomize_name");
 		randomize_name->setColor(makeColor(255, 255, 255, 255));
@@ -5741,6 +5845,29 @@ bind_failed:
 		}
 		(*class_button->getTickCallback())(*class_button);
 
+		static auto ready_button_fn = [](Button& button, int index) {
+			soundActivate();
+			createReadyStone(index);
+
+			bool allReady = true;
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			for (int c = 0; c < 4; ++c) {
+				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+				auto backdrop = card->findImage("backdrop"); assert(backdrop);
+				if (backdrop->path == "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+					playersInLobby[c] = false;
+				} else if (backdrop->path == "images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
+					playersInLobby[c] = true;
+				} else {
+				    allReady = false;
+				}
+			}
+
+			if (allReady) {
+			    createCountdownTimer();
+			}
+		};
+
 		auto ready_button = card->addButton("ready");
 		ready_button->setSize(SDL_Rect{62, 288, 202, 52});
 		ready_button->setColor(makeColor(255, 255, 255, 255));
@@ -5749,25 +5876,15 @@ bind_failed:
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-		ready_button->addWidgetAction("MenuStart", "ready");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
-		ready_button->setCallback([](Button& button){
-			soundActivate();
-			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
-			for (int c = 0; c < 4; ++c) {
-				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
-				auto backdrop = card->findImage("backdrop"); assert(backdrop);
-				if (backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-					playersInLobby[c] = true;
-				} else {
-					playersInLobby[c] = false;
-				}
-			}
-			destroyMainMenu();
-			createDummyMainMenu();
-			beginFade(MainMenu::FadeDestination::GameStart);
-			});
+		switch (index) {
+	    case 0: ready_button->setCallback([](Button& button){ready_button_fn(button, 0);}); break;
+	    case 1: ready_button->setCallback([](Button& button){ready_button_fn(button, 1);}); break;
+	    case 2: ready_button->setCallback([](Button& button){ready_button_fn(button, 2);}); break;
+	    case 3: ready_button->setCallback([](Button& button){ready_button_fn(button, 3);}); break;
+		}
+		ready_button->select();
 	}
 
 	static void createStartButton(int index) {
@@ -5775,10 +5892,12 @@ bind_failed:
 		assert(lobby);
 
 		// release any controller assigned to this player
-        if (inputs.hasController(index)) {
+#ifndef NINTENDO
+        if (inputs.hasController(index) && index != 0) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
             Input::inputs[index].refresh();
         }
+#endif
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
@@ -5807,7 +5926,8 @@ bind_failed:
 		banner->setHJustify(Field::justify_t::CENTER);
 
 		auto invite = card->addButton("invite_button");
-		invite->setText("Press Start");
+		invite->setText("Press to Start");
+		invite->setHideSelectors(true);
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		invite->setVJustify(Button::justify_t::TOP);
@@ -5816,14 +5936,12 @@ bind_failed:
 		invite->setColor(0);
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
-		invite->setHideGlyphs(true);
 		invite->setWidgetBack("back_button");
-		invite->addWidgetAction("MenuStart", "invite_button");
 		switch (index) {
-		case 0: invite->setCallback([](Button&){createControllerPrompt(0);}); break;
-		case 1: invite->setCallback([](Button&){createControllerPrompt(1);}); break;
-		case 2: invite->setCallback([](Button&){createControllerPrompt(2);}); break;
-		case 3: invite->setCallback([](Button&){createControllerPrompt(3);}); break;
+		case 0: invite->setCallback([](Button&){createControllerPrompt(0, true, [](){createCharacterCard(0);});}); break;
+		case 1: invite->setCallback([](Button&){createControllerPrompt(1, true, [](){createCharacterCard(1);});}); break;
+		case 2: invite->setCallback([](Button&){createControllerPrompt(2, true, [](){createCharacterCard(2);});}); break;
+		case 3: invite->setCallback([](Button&){createControllerPrompt(3, true, [](){createCharacterCard(3);});}); break;
 		}
 		invite->select();
 	}
@@ -5908,6 +6026,124 @@ bind_failed:
 		text->setHJustify(Field::justify_t::CENTER);
 	}
 
+	static void createReadyStone(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+		card->setOwner(index);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png",
+			"backdrop"
+		);
+
+		auto banner = card->addField("banner", 64);
+		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto cancel = card->addButton("cancel_button");
+		cancel->setText("Ready!");
+		cancel->setButtonsOffset(SDL_Rect{-12, 0, 0, 0,});
+		cancel->setHideSelectors(true);
+		cancel->setFont(smallfont_outline);
+		cancel->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		cancel->setVJustify(Button::justify_t::TOP);
+		cancel->setHJustify(Button::justify_t::CENTER);
+		cancel->setBorder(0);
+		cancel->setColor(0);
+		cancel->setBorderColor(0);
+		cancel->setHighlightColor(0);
+		cancel->setWidgetBack("cancel_button");
+		switch (index) {
+		case 0: cancel->setCallback([](Button&){createCharacterCard(0);}); break;
+		case 1: cancel->setCallback([](Button&){createCharacterCard(1);}); break;
+		case 2: cancel->setCallback([](Button&){createCharacterCard(2);}); break;
+		case 3: cancel->setCallback([](Button&){createCharacterCard(3);}); break;
+		}
+		cancel->select();
+	}
+
+	static void createCountdownTimer() {
+		static const char* timer_font = "fonts/pixelmix_bold.ttf#64#2";
+		static float countdown_timer;
+
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto frame = lobby->addFrame("countdown");
+		frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		frame->setHollow(true);
+
+		countdown_timer = 3.f;
+		auto countdown = frame->addField("timer", 8);
+		countdown->setHJustify(Field::justify_t::LEFT);
+		countdown->setVJustify(Field::justify_t::TOP);
+		countdown->setFont(timer_font);
+		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 0, 300, 200});
+		countdown->setTickCallback([](Widget& widget){
+		    auto countdown = static_cast<Field*>(&widget);
+			const float inc = 1.f / fpsLimit;
+		    countdown_timer -= inc;
+		    if (countdown_timer <= 0.f) {
+		        destroyMainMenu();
+		        createDummyMainMenu();
+		        beginFade(MainMenu::FadeDestination::GameStart);
+		    } else {
+		        if (countdown_timer < 0.25f) {
+		            countdown->setText("1...");
+		        }
+		        else if (countdown_timer < 0.5f) {
+		            countdown->setText("1..");
+		        }
+		        else if (countdown_timer < 0.75f) {
+		            countdown->setText("1.");
+		        }
+		        else if (countdown_timer < 1.f) {
+		            countdown->setText("1");
+		        }
+		        else if (countdown_timer < 1.25f) {
+		            countdown->setText("2...");
+		        }
+		        else if (countdown_timer < 1.5f) {
+		            countdown->setText("2..");
+		        }
+		        else if (countdown_timer < 1.75f) {
+		            countdown->setText("2.");
+		        }
+		        else if (countdown_timer < 2.f) {
+		            countdown->setText("2");
+		        }
+		        else if (countdown_timer < 2.25f) {
+		            countdown->setText("3...");
+		        }
+		        else if (countdown_timer < 2.5f) {
+		            countdown->setText("3..");
+		        }
+		        else if (countdown_timer < 2.75f) {
+		            countdown->setText("3.");
+		        }
+		        else {
+		            countdown->setText("3");
+		        }
+		    }
+		    });
+	}
+
 	static void createLobby(LobbyType type) {
 		destroyMainMenu();
 		createDummyMainMenu();
@@ -5984,6 +6220,7 @@ bind_failed:
 		auto back_button = createBackWidget(lobby, [](Button&){
 			soundCancel();
 			destroyMainMenu();
+			currentLobbyType = LobbyType::None;
 			createMainMenu(false);
 			});
 
@@ -6023,7 +6260,7 @@ bind_failed:
 		}
 	}
 
-	static void createControllerPrompt(int index) {
+	static void createControllerPrompt(int index, bool show_player_text, void (*after_func)()) {
 		auto dimmer = main_menu_frame->addFrame("controller_dimmer");
 		dimmer->setOwner(index);
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -6031,8 +6268,14 @@ bind_failed:
 		dimmer->setColor(0);
 		dimmer->setBorder(0);
 
+        if (inputs.hasController(index)) {
+            inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+        }
+
+        static void (*end_func)();
 		static bool clicked;
 		clicked = false;
+		end_func = after_func;
 
 		static auto button_func = [](Button& button) {
 		    int index = button.getOwner();
@@ -6047,8 +6290,8 @@ bind_failed:
 	            }
 	        } else {
 	            // this happens if a controller was bound to the player
-	            inputs.getVirtualMouse(index)->draw_cursor = false;
-	            inputs.getVirtualMouse(index)->lastMovementFromController = true;
+				inputs.getVirtualMouse(index)->draw_cursor = false;
+				inputs.getVirtualMouse(index)->lastMovementFromController = true;
 	            if (inputs.bPlayerUsingKeyboardControl(index)) {
 	                inputs.setPlayerIDAllowedKeyboard(0);
 	            }
@@ -6066,34 +6309,410 @@ bind_failed:
 		        auto parent = static_cast<Frame*>(button->getParent());
 	            parent->removeSelf();
 	            parent->setDisabled(true);
-	            createCharacterCard(index);
+	            soundActivate();
+	            end_func();
 		    }
 		    };
 
 		char text[1024];
-		snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		    "or click here to assign only the mouse and keyboard", index + 1);
+        if (show_player_text) {
+		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
+		        "or click here to assign only the mouse and keyboard", index + 1);
+        } else {
+		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
+		        "or click here to use only the mouse and keyboard");
+        }
 
 		auto button = dimmer->addButton("button");
-		button->setHideGlyphs(true);
 		button->setHideSelectors(true);
 		button->setBorder(0);
-		button->setColor(makeColor(0, 0, 0, 63));
-		button->setHighlightColor(makeColor(0, 0, 0, 63));
+		button->setColor(makeColor(0, 0, 0, 127));
+		button->setHighlightColor(makeColor(0, 0, 0, 127));
 		button->setTextColor(makeColor(255, 255, 255, 255));
 		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		button->setSize(SDL_Rect{0, Frame::virtualScreenY / 4, Frame::virtualScreenX, Frame::virtualScreenY / 2});
+		button->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		button->setJustify(Field::justify_t::CENTER);
 		button->setFont(bigfont_outline);
 		button->setText(text);
 		button->setCallback(button_func);
 		button->setTickCallback(button_tick_func);
+		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0,});
 		button->select();
 
 		Input::waitingToBindControllerForPlayer = index;
 	}
 
 /******************************************************************************/
+
+    static void createHallofTrialsMenu() {
+        assert(main_menu_frame);
+
+        tutorial_map_destination = "tutorial_hub";
+
+		auto window = main_menu_frame->addFrame("hall_of_trials_menu");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1164) / 2,
+			(Frame::virtualScreenY - 716) / 2,
+			1164,
+			716});
+		window->setActualSize(SDL_Rect{0, 0, 1164, 716});
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto background = window->addImage(
+			SDL_Rect{16, 0, 1130, 714},
+			0xffffffff,
+			"images/ui/Main Menus/Play/HallofTrials/HoT_Window_00.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			SDL_Rect{0, 716 - 586, 1164, 586},
+			0xffffffff,
+			"images/ui/Main Menus/Play/HallofTrials/HoT_Window_OverlayScaffold_00.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{22, 142, 1164, 476}); // 1118
+		subwindow->setActualSize(SDL_Rect{0, 0, 1164, 774});
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+
+		auto rock_background_dimmer = subwindow->addImage(
+			subwindow->getActualSize(),
+			0xffffffff,
+			"images/system/white.png",
+			"rock_background_dimmer"
+		);
+
+		auto rock_background = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(127, 127, 127, 251),
+			"images/ui/Main Menus/Play/HallofTrials/HoT_Background_00.png",
+			"rock_background"
+		);
+		rock_background->tiled = true;
+
+		auto window_title = window->addField("title", 64);
+		window_title->setFont(banner_font);
+		window_title->setSize(SDL_Rect{412, 24, 338, 24});
+		window_title->setJustify(Field::justify_t::CENTER);
+		window_title->setText("HALL OF TRIALS");
+
+		auto subtitle = window->addField("subtitle", 1024);
+		subtitle->setFont(bigfont_no_outline);
+		subtitle->setColor(makeColor(170, 134, 102, 255));
+		subtitle->setSize(SDL_Rect{242, 74, 684, 50});
+		subtitle->setJustify(Field::justify_t::CENTER);
+		subtitle->setText(
+		    u8"Take on 10 challenges that teach and test your adventuring\n"
+		    u8"skills, preparing you to take on the dungeon");
+
+		(void)createBackWidget(window, [](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+			auto dimmer = main_menu_frame->findFrame("dimmer"); assert(dimmer);
+			auto window = dimmer->findFrame("play_game_window"); assert(window);
+		    auto hall_of_trials_button = window->findButton("hall_of_trials"); assert(hall_of_trials_button);
+			hall_of_trials_button->select();
+			});
+
+		auto banner = subwindow->addImage(
+		    SDL_Rect{0, 88, 1118, 42},
+		    0xffffffff,
+		    "images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_BGRed_00.png",
+		    "banner"
+		);
+
+		auto banner_trial = subwindow->addField("banner_trial", 32);
+		banner_trial->setSize(SDL_Rect{48, 88, 66, 42});
+		banner_trial->setJustify(Field::justify_t::CENTER);
+		banner_trial->setFont(bigfont_outline);
+		banner_trial->setText("Trial");
+
+		auto banner_time = subwindow->addField("banner_trial", 32);
+		banner_time->setSize(SDL_Rect{920, 88, 116, 42});
+		banner_time->setJustify(Field::justify_t::CENTER);
+		banner_time->setFont(bigfont_outline);
+		banner_time->setText("Best Time");
+
+		SDL_Rect fleur_positions[4] = {
+		    { 22, 94, 26, 30 },
+		    { 114, 94, 26, 30 },
+		    { 894, 94, 26, 30 },
+		    { 1036, 94, 26, 30 },
+		};
+		constexpr int num_fleurs = sizeof(fleur_positions) / sizeof(fleur_positions[0]);
+		for (int c = 0; c < num_fleurs; ++c) {
+		    (void)subwindow->addImage(
+		        fleur_positions[c],
+		        0xffffffff,
+		        "images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_Flower_00.png",
+		        (std::string("fleur") + std::to_string(c)).c_str()
+		    );
+		}
+
+		auto slider = subwindow->addSlider("scroll_slider");
+		slider->setBorder(24);
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setRailSize(SDL_Rect{1072, 8, 30, 440});
+		slider->setRailImage("images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_00.png");
+		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+		slider->setHandleImage("images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			auto actualSize = frame->getActualSize();
+			actualSize.y = slider.getValue();
+			frame->setActualSize(actualSize);
+			auto railSize = slider.getRailSize();
+			railSize.y = 8 + actualSize.y;
+			slider.setRailSize(railSize);
+			slider.updateHandlePosition();
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			auto actualSize = frame->getActualSize();
+			slider->setValue(actualSize.y);
+			auto railSize = slider->getRailSize();
+			railSize.y = 8 + actualSize.y;
+			slider->setRailSize(railSize);
+			slider->updateHandlePosition();
+			});
+		slider->setValue(0.f);
+		slider->setMinValue(0.f);
+		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
+		slider->setWidgetSearchParent("hall_of_trials_menu");
+		slider->setWidgetLeft("tutorial_hub");
+        slider->addWidgetAction("MenuStart", "enter");
+        slider->addWidgetAction("MenuAlt1", "reset");
+        slider->addWidgetAction("MenuCancel", "back_button");
+
+        static auto make_button = [](Frame& subwindow, int y, const char* name, const char* label, const char* sublabel){
+            auto button = subwindow.addButton(name);
+            button->setSize(SDL_Rect{8, y, 884, 52});
+            button->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+            button->setBackgroundHighlighted("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+            button->setHighlightColor(0xffffffff);
+            button->setColor(0xffffffff);
+            button->setVJustify(Button::justify_t::CENTER);
+            button->setHJustify(Button::justify_t::LEFT);
+            button->setFont(bigfont_no_outline);
+            button->setText(label);
+            button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+            button->setCallback([](Button& button){
+                soundActivate();
+                if (tutorial_map_destination != button.getName()) {
+                    tutorial_map_destination = button.getName();
+                } else {
+                    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+                    frame = static_cast<Frame*>(frame->getParent()); assert(frame);
+                    auto enter = frame->findButton("enter"); assert(enter);
+                    enter->activate();
+                }
+                });
+            button->setTickCallback([](Widget& widget){
+                std::string sublabel_name = widget.getName();
+                sublabel_name.append("_sublabel_background");
+                auto frame = static_cast<Frame*>(widget.getParent()); assert(frame);
+                auto button = static_cast<Button*>(&widget); assert(button);
+                auto sublabel_background = frame->findImage(sublabel_name.c_str());
+                if (sublabel_background) {
+                    if (button->isSelected() || tutorial_map_destination == widget.getName()) {
+                        sublabel_background->path = "images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeSelected_00.png";
+                        button->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+                    } else {
+                        sublabel_background->path = "images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png";
+                        button->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+                    }
+                }
+                });
+            button->setWidgetSearchParent(subwindow.getParent()->getName());
+            button->addWidgetAction("MenuStart", "enter");
+            button->addWidgetAction("MenuAlt1", "reset");
+            button->addWidgetAction("MenuCancel", "back_button");
+
+            std::string sublabel_name = name;
+            auto sublabel_background = subwindow.addImage(
+                SDL_Rect{938, y + 4, 98, 44},
+                0xffffffff,
+                "images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png",
+                (sublabel_name + "_sublabel_background").c_str()
+            );
+
+            auto sublabel_text = subwindow.addField((sublabel_name + "_sublabel").c_str(), 16);
+            sublabel_text->setJustify(Field::justify_t::CENTER);
+            sublabel_text->setFont(bigfont_no_outline);
+            sublabel_text->setSize(sublabel_background->pos);
+            sublabel_text->setText(sublabel);
+
+            return button;
+        };
+
+        // collect best times
+        const auto& levels = gameModeManager.Tutorial.levels;
+        std::string times[11];
+        std::string total_time_str;
+        Uint64 total_time = 0;
+        times[0] = "Hub";
+        for (int c = 1; c < 11; ++c) {
+            const Uint32 time = levels[c].completionTime / TICKS_PER_SECOND;
+            const Uint32 hour = time / 3600;
+            const Uint32 min = (time / 60) % 60;
+            const Uint32 sec = time % 60;
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.2u:%.2u:%.2u", hour, min, sec);
+            times[c] = buf;
+            total_time += time;
+        }
+        {
+            const Uint32 hour = total_time / 3600;
+            const Uint32 min = (total_time / 60) % 60;
+            const Uint32 sec = total_time % 60;
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.2u:%.2u:%.2u ", hour, min, sec);
+            total_time_str = buf;
+        }
+
+        // create buttons
+        Button* tutorials[11];
+        constexpr int num_tutorials = sizeof(tutorials) / sizeof(tutorials[0]);
+        tutorials[0]  = make_button(*subwindow,  24, "tutorial_hub", " The Hall of Trials", times[0].c_str());
+        tutorials[1]  = make_button(*subwindow, 140, "tutorial1",    " Trial 1: Dungeon Basics and Melee Fighting", times[1].c_str());
+        tutorials[2]  = make_button(*subwindow, 202, "tutorial2",    " Trial 2: Bows, Arrows, and Throwing Weapons", times[2].c_str());
+        tutorials[3]  = make_button(*subwindow, 264, "tutorial3",    " Trial 3: Dungeon Traps, Spikes, and Boulders", times[3].c_str());
+        tutorials[4]  = make_button(*subwindow, 326, "tutorial4",    " Trial 4: Food, Appraisal, and Curses", times[4].c_str());
+        tutorials[5]  = make_button(*subwindow, 388, "tutorial5",    " Trial 5: Magic, Spellbooks, and Casting", times[5].c_str());
+        tutorials[6]  = make_button(*subwindow, 450, "tutorial6",    " Trial 6: Stealth and Sneak Attacks", times[6].c_str());
+        tutorials[7]  = make_button(*subwindow, 512, "tutorial7",    " Trial 7: Follower Recruiting and Commands", times[7].c_str());
+        tutorials[8]  = make_button(*subwindow, 574, "tutorial8",    " Trial 8: Potions and Alchemy", times[8].c_str());
+        tutorials[9]  = make_button(*subwindow, 636, "tutorial9",    " Trial 9: Tinkering", times[9].c_str());
+        tutorials[10] = make_button(*subwindow, 698, "tutorial10",   " Trial 10: Merchants and Shops", times[10].c_str());
+        tutorials[0]->select();
+
+        // link buttons
+        for (int c = 0; c < num_tutorials; ++c) {
+            if (c > 0) {
+                tutorials[c]->setWidgetUp(tutorials[c - 1]->getName());
+            } else {
+                tutorials[c]->setWidgetUp(tutorials[num_tutorials - 1]->getName());
+            }
+            if (c < num_tutorials - 1) {
+                tutorials[c]->setWidgetDown(tutorials[c + 1]->getName());
+            } else {
+                tutorials[c]->setWidgetDown(tutorials[0]->getName());
+            }
+        }
+
+        // total clear time
+        auto total_time_label = window->addField("total_time_label", 128);
+        total_time_label->setFont(bigfont_no_outline);
+        total_time_label->setSize(SDL_Rect{540, 646, 340, 30});
+        total_time_label->setText(" Total Clear Time");
+        total_time_label->setHJustify(Field::justify_t::LEFT);
+        total_time_label->setVJustify(Field::justify_t::CENTER);
+
+        auto total_time_field = window->addField("total_time", 16);
+        total_time_field->setFont(bigfont_no_outline);
+        total_time_field->setSize(SDL_Rect{540, 646, 340, 30});
+        total_time_field->setText(total_time_str.c_str());
+        total_time_field->setHJustify(Field::justify_t::RIGHT);
+        total_time_field->setVJustify(Field::justify_t::CENTER);
+
+        // buttons at bottom
+        auto reset = window->addButton("reset");
+        reset->setText("Reset Trial\nProgress");
+        reset->setSize(SDL_Rect{152, 630, 164, 62});
+        reset->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+        reset->setFont(smallfont_outline);
+        reset->setHighlightColor(0xffffffff);
+        reset->setColor(0xffffffff);
+        reset->setCallback([](Button&){
+	        binaryPrompt(
+	            "Are you sure you want to reset\nyour best times?", "Yes", "No",
+	            [](Button& button) { // Yes button
+			        soundActivate();
+			        soundDeleteSave();
+
+                    // delete best times
+                    for (auto& it : gameModeManager.Tutorial.levels) {
+                        it.completionTime = 0;
+                    }
+                    gameModeManager.Tutorial.writeToDocument();
+
+                    // update window
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
+		            window->removeSelf();
+		            createHallofTrialsMenu();
+
+                    // remove prompt
+			        auto prompt = main_menu_frame->findFrame("binary_prompt");
+			        if (prompt) {
+				        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				        dimmer->removeSelf();
+			        }
+	            },
+	            [](Button& button) { // No button
+			        soundCancel();
+
+                    // select another button
+			        assert(main_menu_frame);
+		            auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
+		            auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+                    auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+                    tutorial->select();
+
+                    // remove prompt
+			        auto prompt = main_menu_frame->findFrame("binary_prompt");
+			        if (prompt) {
+				        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				        dimmer->removeSelf();
+			        }
+	            }
+	        );
+            });
+
+        auto enter = window->addButton("enter");
+        enter->setText("Enter Level");
+        enter->setSize(SDL_Rect{902, 630, 164, 62});
+        enter->setBackground("images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+        enter->setFont(smallfont_outline);
+        enter->setHighlightColor(0xffffffff);
+        enter->setColor(0xffffffff);
+        enter->setCallback([](Button& button){
+            if (!tutorial_map_destination.empty()) {
+		        destroyMainMenu();
+		        createDummyMainMenu();
+		        beginFade(MainMenu::FadeDestination::HallOfTrials);
+		    } else {
+                monoPrompt(
+	                "Select a level to start first.",
+	                "Okay",
+	                [](Button& button){
+			            soundCancel();
+			            assert(main_menu_frame);
+			            auto hall_of_trials = main_menu_frame->findFrame("hall_of_trials_menu"); assert(hall_of_trials);
+			            auto subwindow = hall_of_trials->findFrame("subwindow"); assert(subwindow);
+			            auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+			            tutorial->select();
+			            auto prompt = main_menu_frame->findFrame("mono_prompt");
+			            if (prompt) {
+				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				            dimmer->removeSelf();
+			            }
+	                }
+	            );
+		    }
+            });
+    }
 
 	static void createPlayWindow() {
 		auto dimmer = main_menu_frame->addFrame("dimmer");
@@ -6143,9 +6762,7 @@ bind_failed:
 		hall_of_trials_button->setWidgetBack("back_button");
 		hall_of_trials_button->setCallback([](Button&){
 			soundActivate();
-			destroyMainMenu();
-			createDummyMainMenu();
-			beginFade(MainMenu::FadeDestination::HallOfTrials);
+			createHallofTrialsMenu();
 			});
 
 		(void)createBackWidget(window, [](Button& button){
@@ -6177,6 +6794,8 @@ bind_failed:
 		continue_button->setWidgetRight("new");
 		continue_button->setWidgetDown("hall_of_trials");
 		continue_button->setWidgetBack("back_button");
+		continue_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		continue_button->setButtonsOffset(SDL_Rect{0, 29, 0, 0,});
 
 		auto new_button = window->addButton("new");
 		new_button->setSize(SDL_Rect{114 * 2, 36 * 2, 68 * 2, 56 * 2});
@@ -6191,6 +6810,8 @@ bind_failed:
 		new_button->setWidgetLeft("continue");
 		new_button->setWidgetDown("hall_of_trials");
 		new_button->setWidgetBack("back_button");
+		new_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		new_button->setButtonsOffset(SDL_Rect{0, 29, 0, 0,});
 
 		if (skipintro) {
 			if (continueAvailable) {
@@ -6756,12 +7377,13 @@ bind_failed:
 		                }
 		                });
 		            savegame_book->setCallback([](Button& button){
-		                if (savegame_selected != &button) {
+		                if (savegame_selected != &button && inputs.getVirtualMouse(clientnum)->draw_cursor) {
 		                    soundCheckmark();
-		                    savegame_selected = &button;
+	                        savegame_selected = &button;
 		                    return;
 		                } else {
 		                    soundActivate();
+	                        savegame_selected = &button;
 		                    int save_index = -1;
 	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
 	                        size_t name_len = strlen(name);
@@ -6785,7 +7407,12 @@ bind_failed:
                         auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
                         savegame_book->setWidgetRight(str.c_str());
 		            }
-		            savegame_book->setWidgetBack("back");
+		            savegame_book->setWidgetBack("back_button");
+		            savegame_book->addWidgetAction("MenuAlt1", "delete");
+		            savegame_book->addWidgetAction("MenuConfirm", "enter");
+		            savegame_book->addWidgetAction("MenuPageLeft", "singleplayer");
+		            savegame_book->addWidgetAction("MenuPageRight", "multiplayer");
+		            savegame_book->setWidgetSearchParent("continue_window");
 
 		            first_savegame = first_savegame ? first_savegame : savegame_book;
 
@@ -6925,10 +7552,10 @@ bind_failed:
 		    continueSingleplayer ?
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_ON_00.png" :
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Single_OFF_00.png");
-		singleplayer->setButtonsOffset(SDL_Rect{-singleplayer->getSize().w, -singleplayer->getSize().h/2, 0, 0});
-		singleplayer->setWidgetRight("multiplayer");
-		singleplayer->setWidgetBack("back");
-		singleplayer->addWidgetAction("MenuAlt2", "delete");
+		singleplayer->setGlyphPosition(Button::glyph_position_t::CENTERED_LEFT);
+		singleplayer->setWidgetSearchParent("continue_window");
+		singleplayer->setWidgetBack("back_button");
+		singleplayer->addWidgetAction("MenuAlt1", "delete");
 		singleplayer->addWidgetAction("MenuConfirm", "enter");
 		singleplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		singleplayer->addWidgetAction("MenuPageRight", "multiplayer");
@@ -6947,6 +7574,8 @@ bind_failed:
 		    if (first_savegame) {
 		        first_savegame->select();
 		        savegame_selected = first_savegame;
+		    } else {
+		        button.select();
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -6973,10 +7602,10 @@ bind_failed:
 		    continueSingleplayer ?
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_OFF_00.png" :
 		    "images/ui/Main Menus/ContinueGame/UI_Cont_Tab_Multi_ON_00.png");
-		multiplayer->setButtonsOffset(SDL_Rect{0, -singleplayer->getSize().h/2, 0, 0});
-		multiplayer->setWidgetLeft("singleplayer");
-		multiplayer->setWidgetBack("back");
-		multiplayer->addWidgetAction("MenuAlt2", "delete");
+		multiplayer->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
+		multiplayer->setWidgetSearchParent("continue_window");
+		multiplayer->setWidgetBack("back_button");
+		multiplayer->addWidgetAction("MenuAlt1", "delete");
 		multiplayer->addWidgetAction("MenuConfirm", "enter");
 		multiplayer->addWidgetAction("MenuPageLeft", "singleplayer");
 		multiplayer->addWidgetAction("MenuPageRight", "multiplayer");
@@ -6995,6 +7624,8 @@ bind_failed:
 		    if (first_savegame) {
 		        first_savegame->select();
 		        savegame_selected = first_savegame;
+		    } else {
+		        button.select();
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -7014,8 +7645,9 @@ bind_failed:
 		delete_button->setColor(makeColor(255, 255, 255, 255));
 		delete_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		delete_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
-		delete_button->setWidgetBack("back");
-		delete_button->addWidgetAction("MenuAlt2", "delete");
+		delete_button->setWidgetSearchParent("continue_window");
+		delete_button->setWidgetBack("back_button");
+		delete_button->addWidgetAction("MenuAlt1", "delete");
 		delete_button->addWidgetAction("MenuConfirm", "enter");
 		delete_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		delete_button->addWidgetAction("MenuPageRight", "multiplayer");
@@ -7067,8 +7699,9 @@ bind_failed:
 		enter_button->setColor(makeColor(255, 255, 255, 255));
 		enter_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		enter_button->setBackground("images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
-		enter_button->setWidgetBack("back");
-		enter_button->addWidgetAction("MenuAlt2", "delete");
+		enter_button->setWidgetSearchParent("continue_window");
+		enter_button->setWidgetBack("back_button");
+		enter_button->addWidgetAction("MenuAlt1", "delete");
 		enter_button->addWidgetAction("MenuConfirm", "enter");
 		enter_button->addWidgetAction("MenuPageLeft", "singleplayer");
 		enter_button->addWidgetAction("MenuPageRight", "multiplayer");
@@ -7268,6 +7901,7 @@ bind_failed:
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 			button->setSize(SDL_Rect{
 				(Frame::virtualScreenX - 164 * 2) / 2,
 				y - buttons->getSize().y,
@@ -7292,6 +7926,40 @@ bind_failed:
 		if (archives) {
 			archives->select();
 		}
+	}
+
+	static void mainAssignControllers(Button& button) {
+	    soundActivate();
+        button.deselect();
+	    static auto return_to_main_menu = [](){
+            assert(main_menu_frame);
+	        auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+	        auto button = buttons->findButton("ASSIGN CONTROLLERS"); assert(button);
+	        button->select();
+	    };
+	    if (splitscreen) {
+	        static std::vector<int> players;
+	        players.clear();
+	        players.reserve(4);
+	        for (int c = 0; c < 4; ++c) {
+	            if (!client_disconnected[c]) {
+	                players.push_back(c);
+	            }
+	        }
+	        if (!players.empty()) {
+	            createControllerPrompt(players[0], true,
+	                [](){if (players.size() >= 2) createControllerPrompt(players[1], true,
+                    [](){if (players.size() >= 3) createControllerPrompt(players[2], true,
+                    [](){if (players.size() >= 4) createControllerPrompt(players[3], true,
+                    return_to_main_menu
+                    ); else return_to_main_menu();}
+                    ); else return_to_main_menu();}
+                    ); else return_to_main_menu();}
+                    );
+	        }
+	    } else {
+	        createControllerPrompt(clientnum, false, return_to_main_menu);
+	    }
 	}
 
 	static void mainSettings(Button& button) {
@@ -7390,6 +8058,7 @@ bind_failed:
 			button->setWidgetPageRight("tab_right");
 			button->addWidgetAction("MenuAlt1", "restore_defaults");
 			button->addWidgetAction("MenuStart", "confirm_and_exit");
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 			if (c > 0) {
 				button->setWidgetLeft(tabs[c - 1].name);
 			} else {
@@ -7454,6 +8123,7 @@ bind_failed:
 				prevtab = tab;
 			}
 			});
+		tab_left->setGlyphPosition(Button::glyph_position_t::CENTERED);
 
 		auto tab_right = settings->addButton("tab_right");
 		tab_right->setBackground("images/ui/Main Menus/Settings/Settings_Button_R00.png");
@@ -7494,6 +8164,7 @@ bind_failed:
 				nexttab = tab;
 			}
 			});
+		tab_right->setGlyphPosition(Button::glyph_position_t::CENTERED);
 
 		auto tooltip = settings->addField("tooltip", 256);
 		tooltip->setSize(SDL_Rect{92, 590, 948, 32});
@@ -7629,8 +8300,14 @@ bind_failed:
 	}
 
 	static void mainRestartGame(Button& button) {
+	    const char* prompt;
+	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	        prompt = "Are you sure you want to restart?\nThis adventure will be lost forever.";
+	    } else {
+	        prompt = "Are you sure you want to restart\nthe current trial?";
+	    }
 		binaryPrompt(
-			"Are you sure you want to restart?\nThis adventure will be lost forever.", // window text
+			prompt, // window text
 			"Restart", // okay text
 			"Cancel", // cancel text
 			[](Button&){ // okay
@@ -7640,6 +8317,7 @@ bind_failed:
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
+				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
 			},
@@ -7647,7 +8325,49 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
+				Button* quit_button;
+				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				    quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
+				} else {
+				    quit_button = buttons->findButton("RESTART TRIAL"); assert(quit_button);
+				}
+				quit_button->select();
+				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
+				if (quit_confirm) {
+					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+			});
+	}
+
+	static void mainReturnToHallofTrials(Button& button) {
+	    const char* prompt;
+	    if (strcmp(map.filename, "tutorial_hub.lmp")) {
+	        prompt = "Are you sure you want to return\nto the Hall of Trials?";
+	    } else {
+	        prompt = "Are you sure you want to reset\nthe Hall of Trials level?";
+	    }
+		binaryPrompt(
+			prompt, // window text
+			"Okay", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				soundActivate();
+				destroyMainMenu();
+				createDummyMainMenu();
+				tutorial_map_destination = "tutorial_hub";
+				beginFade(MainMenu::FadeDestination::HallOfTrials);
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				Button* quit_button;
+	            if (strcmp(map.filename, "tutorial_hub.lmp")) {
+				    quit_button = buttons->findButton("RETURN TO HALL OF TRIALS"); assert(quit_button);
+				} else {
+				    quit_button = buttons->findButton("RESET HALL OF TRIALS"); assert(quit_button);
+				}
 				quit_button->select();
 				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
 				if (quit_confirm) {
@@ -7658,8 +8378,14 @@ bind_failed:
 	}
 
 	static void mainQuitToMainMenu(Button& button) {
+	    const char* prompt;
+	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+	        prompt = "All progress before the current\ndungeon level will be saved.";
+	    } else {
+	        prompt = "Are you sure you want to return\nto the main menu?";
+	    }
 		binaryPrompt(
-			"All progress before the current\ndungeon level will be saved.", // window text
+			prompt, // window text
 			"Quit to Menu", // okay text
 			"Cancel", // cancel text
 			[](Button&){ // okay
@@ -7739,11 +8465,153 @@ bind_failed:
 
 /******************************************************************************/
 
+
+    static void handleFadeFinished(bool ingame) {
+		if (main_menu_fade_destination == FadeDestination::None) {
+			// generally speaking, this shouldn't ever happen. if it did: fix your shit!
+			// if for some reason this happens in release mode, just boot the player to the main menu.
+			assert(0 &&
+				"Set a FadeDestination so the new menu manager knows where to kick the player to."
+				"Don't know where? Try MainMenu::FadeDestination::RootMainMenu");
+			main_menu_fade_destination = FadeDestination::RootMainMenu;
+		} else {
+		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
+		        destroyMainMenu();
+				if (ingame) {
+				    victory = 0;
+				    doEndgame();
+				}
+	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				createTitleScreen();
+		    }
+			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
+				destroyMainMenu();
+				if (ingame) {
+				    victory = 0;
+				    doEndgame();
+				}
+	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				createMainMenu(false);
+			}
+			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
+				playMusic(sounds[501], false, true, false);
+			}
+			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::TitleScreen);});
+				playMusic(sounds[501], false, false, false);
+			}
+			else if (main_menu_fade_destination >= FadeDestination::HerxMidpointHuman &&
+			    main_menu_fade_destination <= FadeDestination::ClassicBaphometEndingEvil) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				struct Scene {
+				    const char* filename;
+				    void (*end_func)();
+				};
+				auto returnToMainMenu = [](){(void)beginFade(FadeDestination::RootMainMenu);};
+				Scene scenes[] = {
+				    {"data/story/HerxMidpointHuman.json", returnToMainMenu},
+				    {"data/story/HerxMidpointAutomaton.json", returnToMainMenu},
+				    {"data/story/HerxMidpointBeast.json", returnToMainMenu},
+				    {"data/story/HerxMidpointEvil.json", returnToMainMenu},
+
+				    {"data/story/BaphometMidpointHuman.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointAutomaton.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointBeast.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointEvil.json", returnToMainMenu},
+
+				    {"data/story/EndingHuman.json", returnToMainMenu},
+				    {"data/story/EndingAutomaton.json", returnToMainMenu},
+				    {"data/story/EndingBeast.json", returnToMainMenu},
+				    {"data/story/EndingEvil.json", returnToMainMenu},
+
+				    {"data/story/ClassicEndingHuman.json", returnToMainMenu},
+				    {"data/story/ClassicEndingAutomaton.json", returnToMainMenu},
+				    {"data/story/ClassicEndingBeast.json", returnToMainMenu},
+				    {"data/story/ClassicEndingEvil.json", returnToMainMenu},
+
+				    {"data/story/ClassicBaphometEndingHuman.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingAutomaton.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingBeast.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingEvil.json", returnToMainMenu},
+				};
+				constexpr int num_scenes = sizeof(scenes) / sizeof(scenes[0]);
+				int scene = (int)main_menu_fade_destination - (int)FadeDestination::HerxMidpointHuman;
+				assert(scene >= 0 && scene < num_scenes);
+				createStoryScreen(scenes[scene].filename, scenes[scene].end_func);
+				playMusic(intermissionmusic, false, false, false);
+			}
+			else if (main_menu_fade_destination == FadeDestination::GameStart) {
+				multiplayer = SINGLE;
+				numplayers = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+				setupSplitscreen();
+				if (!loadingsavegame) {
+	                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+                        if (!saveGameExists(multiplayer == SINGLE, i)) {
+                            savegameCurrentFileIndex = i;
+                            break;
+                        }
+                    }
+				}
+				doNewGame(false);
+				destroyMainMenu();
+			}
+			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+				destroyMainMenu();
+				multiplayer = SINGLE;
+				numplayers = 0;
+				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
+
+                // don't show the first time prompt anymore
+				if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
+					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+					gameModeManager.Tutorial.writeToDocument();
+				}
+
+                // if restarting, be sure to call gameModeManager.Tutorial.onMapRestart()
+				if (ingame) {
+				    int tutorialNum = -1;
+		            for (int i = 0; tutorial_map_destination[i]; ++i) {
+		                auto c = tutorial_map_destination[i];
+		                if (c >= '0' && c <= '9') {
+		                    tutorialNum = (int)strtol(tutorial_map_destination.c_str() + i, nullptr, 10);
+		                }
+		            }
+		            if (tutorialNum > 0 && tutorialNum <= gameModeManager.Tutorial.getNumTutorialLevels()) {
+				        gameModeManager.Tutorial.onMapRestart(tutorialNum);
+				    }
+				}
+
+				gameModeManager.Tutorial.startTutorial(tutorial_map_destination);
+				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
+				doNewGame(false);
+			}
+			fadeout = false;
+			main_menu_fade_destination = FadeDestination::None;
+		}
+	}
+
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
-			createMainMenu(ingame);
+		    if (ingame) {
+		        createMainMenu(ingame);
+		    } else {
+			    createTitleScreen();
+			}
 			assert(main_menu_frame);
 		}
+
+        // just always enable DLC in debug. saves headaches
+#ifndef NDEBUG
+		enabledDLCPack1 = true;
+		enabledDLCPack2 = true;
+#endif
 
 #ifdef STEAMWORKS
 		if ( SteamApps()->BIsDlcInstalled(1010820) )
@@ -7758,82 +8626,101 @@ bind_failed:
 #endif // STEAMWORKS
 
 		if (fadeout && fadealpha >= 255) {
-			if (main_menu_fade_destination == FadeDestination::None) {
-				// generally speaking, this shouldn't ever happen. if it did: fix your shit!
-				// if for some reason this happens in release mode, just boot the player to the main menu.
-				assert(0 &&
-					"Set a FadeDestination so the new menu manager knows where to kick the player to."
-					"Don't know where? Try MainMenu::FadeDestination::RootMainMenu");
-				main_menu_fade_destination = FadeDestination::RootMainMenu;
-			} else {
-				if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
-					destroyMainMenu();
-					if (ingame) {
-					    victory = 0;
-					    doEndgame();
-					}
-		            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
-					createMainMenu(false);
-				}
-				if (main_menu_fade_destination == FadeDestination::IntroStoryScreen
-				    || main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
-					destroyMainMenu();
-					createDummyMainMenu();
-					createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
-					playMusic(sounds[501], false,
-					    main_menu_fade_destination == FadeDestination::IntroStoryScreen, false);
-				}
-				if (main_menu_fade_destination == FadeDestination::HerxMidpointHuman) {
-					destroyMainMenu();
-					createDummyMainMenu();
-					createStoryScreen("data/story/HerxMidpointHuman.json", [](){beginFade(FadeDestination::RootMainMenu);});
-					playMusic(intermissionmusic, false, false, false);
-				}
-				if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
-					destroyMainMenu();
-					multiplayer = SINGLE;
-					numplayers = 0;
-					gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
-					if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
-					{
-						gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
-						gameModeManager.Tutorial.writeToDocument();
-					}
-					gameModeManager.Tutorial.startTutorial("");
-					steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
-					doNewGame(false);
-				}
-				if (main_menu_fade_destination == FadeDestination::GameStart) {
-					multiplayer = SINGLE;
-					numplayers = 0;
-					gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
-					setupSplitscreen();
-					if (!loadingsavegame) {
-		                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
-                            if (!saveGameExists(multiplayer == SINGLE, i)) {
-                                savegameCurrentFileIndex = i;
-                                break;
-                            }
-                        }
-					}
-					doNewGame(false);
-					destroyMainMenu();
-				}
-				fadeout = false;
-				main_menu_fade_destination = FadeDestination::None;
-			}
-		}
+            handleFadeFinished(ingame);
+        }
+
+        // if no controller is connected, you can always connect one just for the main menu.
+        if (!ingame && currentLobbyType == LobbyType::None) {
+            if (!inputs.hasController(clientnum)) {
+                Input::waitingToBindControllerForPlayer = clientnum;
+            }
+        }
+	}
+
+	void createTitleScreen() {
+		main_menu_frame = gui->addFrame("main_menu");
+
+        main_menu_frame->setOwner(0);
+		main_menu_frame->setBorder(0);
+		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
+		main_menu_frame->setColor(0);
+		main_menu_frame->setTickCallback(tickMainMenu);
+
+		auto title_img = Image::get("images/system/title.png");
+		auto title = main_menu_frame->addImage(
+			SDL_Rect{
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth()) / 2,
+				Frame::virtualScreenY / 4,
+				(int)(title_img->getWidth()),
+				(int)(title_img->getHeight())
+			},
+			makeColor(255, 255, 255, 255),
+			title_img->getName(),
+			"title"
+		);
+
+		auto copyright = main_menu_frame->addField("copyright", 64);
+		copyright->setFont(bigfont_outline);
+		copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
+		copyright->setJustify(Field::justify_t::CENTER);
+		copyright->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 512) / 2,
+			Frame::virtualScreenY - 50,
+			512,
+			50
+			});
+		copyright->setColor(0xffffffff);
+
+		auto version = main_menu_frame->addField("version", 32);
+		version->setFont(smallfont_outline);
+		version->setText(VERSION);
+		version->setHJustify(Field::justify_t::RIGHT);
+		version->setVJustify(Field::justify_t::BOTTOM);
+		version->setSize(SDL_Rect{
+			Frame::virtualScreenX - 200,
+			Frame::virtualScreenY - 54,
+			200,
+			50
+			});
+		version->setColor(0xffffffff);
+
+		auto start = main_menu_frame->addButton("start");
+		start->setSize(SDL_Rect{
+		    (Frame::virtualScreenX - 320) / 2,
+		    (Frame::virtualScreenY + 200) / 2,
+		    320,
+		    100,
+		    });
+		start->setBorder(0);
+		start->setColor(makeColor(0, 0, 0, 127));
+		start->setHighlightColor(makeColor(0, 0, 0, 127));
+		start->setFont(bigfont_outline);
+		start->setText("Press to Start\n ");
+		start->setButtonsOffset(SDL_Rect{0, 16, 0, 0});
+		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		start->addWidgetAction("MenuConfirm", "start");
+		start->select();
+		start->setCallback([](Button&){
+		    destroyMainMenu();
+		    createMainMenu(false);
+		    });
 	}
 
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(ingame ? clientnum : 0);
+        main_menu_frame->setOwner(ingame ? pause_menu_owner : 0);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setColor(ingame ? makeColor(0, 0, 0, 63) : 0);
 		main_menu_frame->setTickCallback(tickMainMenu);
+
+        if (!ingame) {
+		    (void)createBackWidget(main_menu_frame,
+		        [](Button&){soundCancel(); destroyMainMenu(); createTitleScreen();});
+		};
 
 		int y = 16;
 
@@ -7872,15 +8759,41 @@ bind_failed:
 		};
 		std::vector<Option> options;
 		if (ingame) {
-			options.insert(options.begin(), {
-				{"BACK TO GAME", mainClose},
-				{"DUNGEON COMPENDIUM", recordsDungeonCompendium},
-				{"SETTINGS", mainSettings},
-				{"END LIFE", mainEndLife},
-				{"RESTART GAME", mainRestartGame},
-				{"QUIT TO MAIN MENU", mainQuitToMainMenu},
-				{"QUIT TO DESKTOP", mainQuitToDesktop},
-				});
+			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+			    options.insert(options.begin(), {
+				    {"BACK TO GAME", mainClose},
+				    {"ASSIGN CONTROLLERS", mainAssignControllers},
+				    {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				    {"SETTINGS", mainSettings},
+				    {"END LIFE", mainEndLife},
+				    {"RESTART GAME", mainRestartGame},
+				    {"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				    //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				    });
+			} else {
+			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
+			        options.insert(options.begin(), {
+				        {"BACK TO GAME", mainClose},
+				        {"ASSIGN CONTROLLERS", mainAssignControllers},
+				        {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				        {"SETTINGS", mainSettings},
+				        {"RESTART TRIAL", mainRestartGame},
+				        {"RETURN TO HALL OF TRIALS", mainReturnToHallofTrials},
+				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				        //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				        });
+				} else {
+			        options.insert(options.begin(), {
+				        {"BACK TO GAME", mainClose},
+				        {"ASSIGN CONTROLLERS", mainAssignControllers},
+				        {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				        {"SETTINGS", mainSettings},
+				        {"RESET HALL OF TRIALS", mainReturnToHallofTrials},
+				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
+				        //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				        });
+				}
+			}
 		} else {
 #ifdef NINTENDO
 			options.insert(options.begin(), {
@@ -7928,6 +8841,7 @@ bind_failed:
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
 			button->setTextHighlightColor(makeColor(180, 133, 13, 255));
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 			button->setSize(SDL_Rect{
 				(Frame::virtualScreenX - 164 * 2) / 2,
 				y - buttons->getSize().y,
@@ -7938,6 +8852,9 @@ bind_failed:
 			int forward = c + 1 >= num_options ? 0 : c + 1;
 			button->setWidgetDown(options[forward].name);
 			button->setWidgetUp(options[back].name);
+			if (!ingame) {
+			    button->setWidgetBack("back_button");
+			}
 			y += button->getSize().h;
 			y += 4;
 		}
@@ -7983,7 +8900,7 @@ bind_failed:
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
-			copyright->setText(u8"Copyright \u00A9 2021, Turning Wheel LLC");
+			copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
 			copyright->setJustify(Field::justify_t::CENTER);
 			copyright->setSize(SDL_Rect{
 				(Frame::virtualScreenX - 512) / 2,

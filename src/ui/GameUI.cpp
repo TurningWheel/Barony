@@ -515,7 +515,8 @@ void createHotbar(const int player)
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
-		auto glyph = hotbar_t.hotbarFrame->addImage(slotPos, 0xFFFFFFFF, "images/ui/Glyphs/G_Switch_A00.png", glyphname);
+		auto path = Input::getGlyphPathForInput("ButtonA", false);
+		auto glyph = hotbar_t.hotbarFrame->addImage(slotPos, 0xFFFFFFFF, path.c_str(), glyphname);
 		glyph->disabled = true;
 	}
 
@@ -2587,7 +2588,7 @@ static Frame* createMinimap(int player) {
         auto player = widget.getOwner();
         auto& minimap = players[player]->minimap;
         auto& input = Input::inputs[player];
-        if (input.consumeBinaryToggle("Minimap Scale")) {
+        if (!gamePaused && !command && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
             if (minimap.real_scale > 75) {
                 minimap.real_scale = 75;
             }
@@ -8185,27 +8186,54 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entry->setDisabled(false);
 			glyph->pos.x = padx;
 			glyph->pos.y = currentHeight;
+            // The A/B/X/Y buttons are arranged differently on Nintendo.
+            // So, we have a separate layout in that case.
+            // TODO @wallofjustice check on this
+#ifdef NINTENDO
 			switch ( i )
 			{
 				case 1:
-					glyph->path = "images/ui/Glyphs/G_Switch_A00.png";
+					glyph->path = Input::getGlyphPathForInput("ButtonB");
 					entry->setText(getHoverTextString("gold_option_10").c_str());
 					break;
 				case 2:
-					glyph->path = "images/ui/Glyphs/G_Switch_B00.png";
+					glyph->path = Input::getGlyphPathForInput("ButtonA");
 					entry->setText(getHoverTextString("gold_option_100").c_str());
 					break;
 				case 3:
-					glyph->path = "images/ui/Glyphs/G_Switch_Y00.png";
+					glyph->path = Input::getGlyphPathForInput("ButtonY");
 					entry->setText(getHoverTextString("gold_option_1000").c_str());
 					break;
 				case 4:
-					glyph->path = "images/ui/Glyphs/G_Switch_X00.png";
+					glyph->path = Input::getGlyphPathForInput("ButtonX");
 					entry->setText(getHoverTextString("gold_option_all").c_str());
 					break;
 				default:
 					break;
 			}
+#else
+			switch ( i )
+			{
+				case 1:
+					glyph->path = Input::getGlyphPathForInput("ButtonA");
+					entry->setText(getHoverTextString("gold_option_10").c_str());
+					break;
+				case 2:
+					glyph->path = Input::getGlyphPathForInput("ButtonB");
+					entry->setText(getHoverTextString("gold_option_100").c_str());
+					break;
+				case 3:
+					glyph->path = Input::getGlyphPathForInput("ButtonX");
+					entry->setText(getHoverTextString("gold_option_1000").c_str());
+					break;
+				case 4:
+					glyph->path = Input::getGlyphPathForInput("ButtonY");
+					entry->setText(getHoverTextString("gold_option_all").c_str());
+					break;
+				default:
+					break;
+			}
+#endif
 			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
 				glyph->pos.w = (int)imgGet->getWidth();
@@ -15701,6 +15729,31 @@ Frame* Player::Hotbar_t::getHotbarSlotFrame(const int hotbarSlot)
 	return hotbarSlotFrames[hotbarSlot];
 }
 
+static void drawConsoleCommandBuffer() {
+    if (!command) {
+        return;
+    }
+	int commandPlayer = clientnum;
+	for ( int i = 0; i < MAXPLAYERS; ++i ) {
+		if ( inputs.bPlayerUsingKeyboardControl(i) ) {
+			commandPlayer = i;
+			break;
+		}
+	}
+	char buf[1024];
+	if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+	    snprintf(buf, sizeof(buf), "> %s_", command_str);
+	} else {
+	    snprintf(buf, sizeof(buf), "> %s", command_str);
+	}
+	auto text = Text::get(buf, "fonts/pixelmix.ttf#16#2",
+	    0xffffffff, makeColor(0, 0, 0, 255));
+	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
+	const int printy = players[commandPlayer]->camera_virtualy2() - 192;
+	text->draw(SDL_Rect{0,0,0,0}, SDL_Rect{printx, printy, 0, 0},
+	    SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+}
+
 static Uint32 gui_ticks = 0u;
 void doFrames() {
 	if ( gui )
@@ -15710,7 +15763,11 @@ void doFrames() {
 			++gui_ticks;
 		}
 		(void)gui->process();
+
+		gui->predraw();
 		gui->draw();
+        drawConsoleCommandBuffer();
+		gui->postdraw();
 	}
 }
 

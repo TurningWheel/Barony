@@ -28,6 +28,7 @@
 #include "draw.hpp"
 #include "mod_tools.hpp"
 #include "classdescriptions.hpp"
+#include "ui/MainMenu.hpp"
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
@@ -2458,7 +2459,7 @@ void actPlayer(Entity* my)
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
-			if ( PLAYER_ALIVETIME == 300 )
+			if ( PLAYER_ALIVETIME == 300 && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT )
 			{
 				// take a screenshot to be associated with the current save game
 				auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
@@ -3089,7 +3090,7 @@ void actPlayer(Entity* my)
 	//		Monster type = static_cast<Monster>(rand() % NUMMONSTERS);
 	//		while ( type == DEVIL || type == LICH || type == LICH_FIRE || type == LICH_ICE || type == COCKATRICE || type == SPIDER || type == CRYSTALGOLEM
 	//			|| type == SCARAB || type == SPELLBOT || type == SENTRYBOT
-	//			|| type == MIMIC || type == BUGBEAR || type == OCTOPUS || type == MINOTAUR || type == GHOUL || type == DEMON || type == CREATURE_IMP
+	//			|| type == MIMIC || type == CRAB || type == OCTOPUS || type == MINOTAUR || type == GHOUL || type == DEMON || type == CREATURE_IMP
 	//			|| type == NOTHING )
 	//		{
 	//			type = static_cast<Monster>(rand() % NUMMONSTERS);
@@ -4778,7 +4779,7 @@ void actPlayer(Entity* my)
 			}
 			else if ( playerRace == SPIDER )
 			{
-				my->sprite = 823;
+				my->sprite = arachnophobia_filter ? 1001 : 823;
 			}
 			else if ( playerRace == CREATURE_IMP )
 			{
@@ -7476,7 +7477,7 @@ bool Entity::isPlayerHeadSprite()
 		case 817:
 		case 823:
 		case 827:
-			// TODO
+		case 1001:
 			return true;
 			break;
 		default:
@@ -8064,17 +8065,37 @@ void playerAnimateSpider(Entity* my)
 			entity->pitch = std::max(-PI / 32, std::min(PI / 32, entity->pitch));
 			if ( bodypart % 2 == 0 )
 			{
-				entity->sprite = 826;
-				entity->focalx = limbs[SPIDER][4][0]; // 3
-				entity->focaly = limbs[SPIDER][4][1]; // 0
-				entity->focalz = limbs[SPIDER][4][2]; // 0
+			    if (arachnophobia_filter)
+			    {
+				    entity->sprite = 1004;
+				    entity->focalx = limbs[CRAB][4][0];
+				    entity->focaly = limbs[CRAB][4][1];
+				    entity->focalz = limbs[CRAB][4][2];
+			    }
+			    else
+			    {
+				    entity->sprite = 826;
+				    entity->focalx = limbs[SPIDER][4][0]; // 3
+				    entity->focaly = limbs[SPIDER][4][1]; // 0
+				    entity->focalz = limbs[SPIDER][4][2]; // 0
+			    }
 			}
 			else
 			{
-				entity->sprite = 825;
-				entity->focalx = limbs[SPIDER][3][0]; // 1
-				entity->focaly = limbs[SPIDER][3][1]; // 0
-				entity->focalz = limbs[SPIDER][3][2]; // -1
+			    if (arachnophobia_filter)
+			    {
+				    entity->sprite = 1003;
+				    entity->focalx = limbs[CRAB][3][0];
+				    entity->focaly = limbs[CRAB][3][1];
+				    entity->focalz = limbs[CRAB][3][2];
+			    }
+			    else
+			    {
+				    entity->sprite = 825;
+				    entity->focalx = limbs[SPIDER][3][0]; // 1
+				    entity->focaly = limbs[SPIDER][3][1]; // 0
+				    entity->focalz = limbs[SPIDER][3][2]; // -1
+			    }
 			}
 		}
 
@@ -8123,10 +8144,19 @@ void playerAnimateSpider(Entity* my)
 		{
 			// right pedipalp
 			case 11:
-				entity->sprite = 824;
-				entity->focalx = limbs[SPIDER][1][0]; // 1
-				entity->focaly = limbs[SPIDER][1][1]; // 0
-				entity->focalz = limbs[SPIDER][1][2]; // 1
+				entity->sprite = arachnophobia_filter ? 1002 : 824;
+				if (arachnophobia_filter)
+				{
+				    entity->focalx = limbs[CRAB][1][0];
+				    entity->focaly = limbs[CRAB][1][1];
+				    entity->focalz = limbs[CRAB][1][2];
+				}
+				else
+				{
+				    entity->focalx = limbs[SPIDER][1][0]; // 1
+				    entity->focaly = limbs[SPIDER][1][1]; // 0
+				    entity->focalz = limbs[SPIDER][1][2]; // 1
+				}
 				entity->x += cos(my->yaw) * 2 + cos(my->yaw + PI / 2) * 2;
 				entity->y += sin(my->yaw) * 2 + sin(my->yaw + PI / 2) * 2;
 				entity->yaw += PI / 10;
@@ -8138,10 +8168,19 @@ void playerAnimateSpider(Entity* my)
 				break;
 				// left pedipalp
 			case 12:
-				entity->sprite = 824;
-				entity->focalx = limbs[SPIDER][2][0]; // 1
-				entity->focaly = limbs[SPIDER][2][1]; // 0
-				entity->focalz = limbs[SPIDER][2][2]; // 1
+				entity->sprite = arachnophobia_filter ? 1002 : 824;
+				if (arachnophobia_filter)
+				{
+				    entity->focalx = limbs[CRAB][2][0];
+				    entity->focaly = limbs[CRAB][2][1];
+				    entity->focalz = limbs[CRAB][2][2];
+				}
+				else
+				{
+				    entity->focalx = limbs[SPIDER][2][0]; // 1
+				    entity->focaly = limbs[SPIDER][2][1]; // 0
+				    entity->focalz = limbs[SPIDER][2][2]; // 1
+				}
 				entity->x += cos(my->yaw) * 2 - cos(my->yaw + PI / 2) * 2;
 				entity->y += sin(my->yaw) * 2 - sin(my->yaw + PI / 2) * 2;
 				entity->yaw -= PI / 10;

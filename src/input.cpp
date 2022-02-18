@@ -38,8 +38,8 @@ void Input::defaultBindings() {
 	}
 
 	// these bindings should probably not be accessible to the player to change.
-	inputs[0].kb_system_bindings.insert(std::make_pair("MenuTab", "Tab"));
 	for (int c = 0; c < MAXPLAYERS; ++c) {
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Console Command", "/"));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuUp", (std::string("Pad") + std::to_string(c) + std::string("DpadY-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuLeft", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuRight", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str()));
@@ -103,6 +103,15 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftTrigger", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavRightTrigger", (std::string("Pad") + std::to_string(c) + std::string("RightTrigger")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Forward", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Left", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Backward", (std::string("Pad") + std::to_string(c) + std::string("StickLeftY+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Move Right", (std::string("Pad") + std::to_string(c) + std::string("StickLeftX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Turn Left", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Turn Right", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Up", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Down", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
+
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));
@@ -131,9 +140,8 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuSelect", "Backspace"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuPageLeft", "["));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuPageRight", "]"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("Console Command", "/"));
 	}
-#ifndef NINTENDO
-#endif
 }
 
 float Input::analog(const char* binding) const {
@@ -145,64 +153,24 @@ float Input::analog(const char* binding) const {
 bool Input::binary(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.binary : false;
 }
 
 bool Input::binaryToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
 bool Input::analogToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed : false;
 }
 
 bool Input::binaryReleaseToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON )
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
 }
 
@@ -235,16 +203,6 @@ bool Input::consumeBinary(const char* binding) {
 
 bool Input::consumeAnalogToggle(const char* binding) {
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	if ( b != bindings.end() && (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed ) {
 		(*b).second.analogConsumed = true;
 		return disabled == false;
@@ -256,16 +214,6 @@ bool Input::consumeAnalogToggle(const char* binding) {
 
 bool Input::consumeBinaryToggle(const char* binding) {
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
 		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
@@ -282,16 +230,6 @@ bool Input::consumeBinaryToggle(const char* binding) {
 
 bool Input::consumeBinaryReleaseToggle(const char* binding) {
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	if ( b != bindings.end() && (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed ) {
 		(*b).second.binaryReleaseConsumed = true;
 		return disabled == false;
@@ -304,16 +242,6 @@ bool Input::consumeBinaryReleaseToggle(const char* binding) {
 bool Input::binaryHeldToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end() 
 		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.binaryHeldTicks) > BUTTON_HELD_TICKS)
 		: false;
@@ -322,16 +250,6 @@ bool Input::binaryHeldToggle(const char* binding) const {
 bool Input::analogHeldToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-#ifndef EDITOR
-	if ( b != bindings.end() )
-	{
-		if ( ((*b).second.type == binding_t::bindtype_t::KEYBOARD || (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON)
-			&& ::inputs.bPlayerUsingKeyboardControl(player) == false )
-		{
-			return false;
-		}
-	}
-#endif
 	return b != bindings.end()
 		? ((*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed && (ticks - (*b).second.analogHeldTicks) > BUTTON_HELD_TICKS)
 		: false;
@@ -343,18 +261,20 @@ const char* Input::binding(const char* binding) const {
 }
 
 void Input::refresh() {
-
 	bindings.clear();
 	defaultBindings();
+#ifndef EDITOR
 	for ( auto& binding : kb_system_bindings )
 	{
 		bind(binding.first.c_str(), binding.second.c_str());
 	}
-	for (auto& binding : getKeyboardBindings() )
+	if ( ::inputs.bPlayerUsingKeyboardControl(player) )
 	{
-		bind(binding.first.c_str(), binding.second.c_str());
+	    for (auto& binding : getKeyboardBindings() )
+	    {
+		    bind(binding.first.c_str(), binding.second.c_str());
+	    }
 	}
-#ifndef EDITOR
 	if ( ::inputs.hasController(player) )
 	{
 		for ( auto& binding : gamepad_system_bindings )
@@ -384,10 +304,6 @@ void Input::refresh() {
 		}
 	}
 #endif // !EDITOR
-
-	//for (auto& pair : bindings) {
-	//	bind(pair.first.c_str(), pair.second.input.c_str());
-	//}
 }
 
 Input::binding_t Input::input(const char* binding) const {
@@ -416,24 +332,6 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	{
 		return rootPath + "G_Switch_X00.png";
     }
-#else
-	if (in == "ButtonA")
-	{
-		return rootPath + "G_Xbox_A00.png";
-    }
-	if (in == "ButtonB")
-	{
-		return rootPath + "G_Xbox_B00.png";
-    }
-	if (in == "ButtonX")
-	{
-		return rootPath + "G_Xbox_X00.png";
-    }
-	if (in == "ButtonY")
-	{
-		return rootPath + "G_Xbox_Y00.png";
-    }
-#endif
 	if (in == "ButtonLeftBumper")
 	{
 		return rootPath + "G_Switch_L00.png";
@@ -444,11 +342,11 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
     }
 	if (in == "ButtonLeftStick")
 	{
-		return rootPath + "G_Switch_LStick00.png";
+		return rootPath + "Stick_Switch_00B.png";
     }
 	if (in == "ButtonRightStick")
 	{
-		return rootPath + "G_Switch_LStick00.png";
+		return rootPath + "Stick_Switch_00B.png";
     }
 	if (in == "ButtonStart")
 	{
@@ -458,6 +356,25 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	{
 		return rootPath + "MinusMed00.png";
     }
+	if (in == "StickLeftX+" ||
+	    in == "StickLeftX-" ||
+	    in == "StickLeftY+" ||
+	    in == "StickLeftY-" ||
+	    in == "StickRightX+" ||
+	    in == "StickRightX-" ||
+	    in == "StickRightY+" ||
+	    in == "StickRightY-")
+	{
+	    return rootPath + "Stick_Switch_00B.png";
+    }
+	if (in == "LeftTrigger")
+	{
+		return rootPath + "G_Switch_ZL00.png";
+	}
+	if (in == "RightTrigger")
+	{
+		return rootPath + "G_Switch_ZR00.png";
+	}
 	if (in == "DpadY-")
 	{
 		return rootPath + "G_Up00.png";
@@ -474,6 +391,47 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	{
 		return rootPath + "G_Right00.png";
     }
+#else
+	if (in == "ButtonA")
+	{
+		return rootPath + "Button_Xbox_DarkA_00.png";
+    }
+	if (in == "ButtonB")
+	{
+		return rootPath + "Button_Xbox_DarkB_00.png";
+    }
+	if (in == "ButtonX")
+	{
+		return rootPath + "Button_Xbox_DarkX_00.png";
+    }
+	if (in == "ButtonY")
+	{
+		return rootPath + "Button_Xbox_DarkY_00.png";
+    }
+	if (in == "ButtonLeftBumper")
+	{
+		return rootPath + "Button_Xbox_LB_00.png";
+    }
+	if (in == "ButtonRightBumper")
+	{
+		return rootPath + "Button_Xbox_RB_00.png";
+    }
+	if (in == "ButtonLeftStick")
+	{
+		return rootPath + "Stick_Xbox_00.png";
+    }
+	if (in == "ButtonRightStick")
+	{
+		return rootPath + "Stick_Xbox_00.png";
+    }
+	if (in == "ButtonStart")
+	{
+		return rootPath + "Button_Xbox_Menu_00.png";
+    }
+	if (in == "ButtonBack")
+	{
+		return rootPath + "Button_Xbox_View_00.png";
+    }
 	if (in == "StickLeftX+" ||
 	    in == "StickLeftX-" ||
 	    in == "StickLeftY+" ||
@@ -483,16 +441,33 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	    in == "StickRightY+" ||
 	    in == "StickRightY-")
 	{
-	    return rootPath + "G_Switch_LStick00.png";
+	    return rootPath + "Stick_Xbox_00.png";
     }
 	if (in == "LeftTrigger")
 	{
-		return rootPath + "G_Switch_ZL00.png";
+		return rootPath + "Button_Xbox_LT_00.png";
 	}
 	if (in == "RightTrigger")
 	{
-		return rootPath + "G_Switch_ZR00.png";
+		return rootPath + "Button_Xbox_RT_00.png";
 	}
+	if (in == "DpadY-")
+	{
+		return rootPath + "G_Up00.png";
+    }
+	if (in == "DpadX-")
+	{
+		return rootPath + "G_Left00.png";
+    }
+	if (in == "DpadY+")
+	{
+		return rootPath + "G_Down00.png";
+    }
+	if (in == "DpadX+")
+	{
+		return rootPath + "G_Right00.png";
+    }
+#endif
 	if (in == "Mouse1")
 	{
 		if ( pressed )
@@ -569,9 +544,9 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padButton )
 		{
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "G_Switch_A00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
 				return rootPath + "G_Switch_B00.png";
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+				return rootPath + "G_Switch_A00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
 				return rootPath + "G_Switch_Y00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
@@ -581,9 +556,9 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 				return rootPath + "G_Switch_R00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Switch_00B.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Switch_00B.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
 				return rootPath + "PlusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
@@ -603,25 +578,25 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padButton )
 		{
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "G_Xbox_A00.png";
+				return rootPath + "Button_Xbox_DarkA_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-				return rootPath + "G_Xbox_B00.png";
+				return rootPath + "Button_Xbox_DarkB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-				return rootPath + "G_Xbox_X00.png";
+				return rootPath + "Button_Xbox_DarkX_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
-				return rootPath + "G_Xbox_Y00.png";
+				return rootPath + "Button_Xbox_DarkY_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-				return rootPath + "G_Switch_L00.png";
+				return rootPath + "Button_Xbox_LB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-				return rootPath + "G_Switch_R00.png";
+				return rootPath + "Button_Xbox_RB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Xbox_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Xbox_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
-				return rootPath + "PlusMed00.png";
+				return rootPath + "Button_Xbox_Menu_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
-				return rootPath + "MinusMed00.png";
+				return rootPath + "Button_Xbox_View_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
 				return rootPath + "G_Up00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
@@ -641,13 +616,13 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padAxis )
 		{
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Switch_00B.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Switch_00B.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Switch_00B.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Switch_00B.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
 				return rootPath + "G_Switch_ZL00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
@@ -659,17 +634,17 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padAxis )
 		{
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Xbox_00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Xbox_00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Xbox_00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
-				return rootPath + "G_Switch_LStick00.png";
+				return rootPath + "Stick_Xbox_00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-				return rootPath + "G_Switch_ZL00.png";
+				return rootPath + "Button_Xbox_LT_00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-				return rootPath + "G_Switch_ZR00.png";
+				return rootPath + "Button_Xbox_RT_00.png";
 			default:
 				return "";
 		}

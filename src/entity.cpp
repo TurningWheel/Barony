@@ -33,6 +33,7 @@ See LICENSE for details.
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
+#include "ui/MainMenu.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -652,7 +653,11 @@ void Entity::killedByMonsterObituary(Entity* victim)
 				victim->setObituary(language[1515]);
 				break;
 			case SPIDER:
-				victim->setObituary(language[1516]);
+			    if (arachnophobia_filter) {
+				    victim->setObituary(language[4090]);
+			    } else {
+				    victim->setObituary(language[1516]);
+			    }
 				break;
 			case GHOUL:
 				victim->setObituary(language[1517]);
@@ -8462,7 +8467,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									playerPoisonedTarget = true;
 									hitstats->EFFECTS[EFF_POISONED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+									if (arachnophobia_filter) {
+									    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+									} else {
+									    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+									}
 									messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
 									serverUpdateEffects(playerhit);
 									for ( int tmp = 0; tmp < 3; ++tmp )
@@ -8585,7 +8594,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										hitstats->EFFECTS[EFF_POISONED] = true;
 										hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
-										messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+										if (arachnophobia_filter) {
+										    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+										} else {
+										    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+										}
 										messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
 										serverUpdateEffects(playerhit);
 										statusInflicted = true;
@@ -18130,29 +18143,35 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->roll = 0;
 			shieldLimb->pitch = 0;
 
-			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				flameEntity->z -= 2;
+			    shieldLimb->z += 2;
 			}
-			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				flameEntity->z -= 2;
+	        if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+	        {
+			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				    flameEntity->z += 1;
+			    }
 			}
-			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
-			{
-				shieldLimb->z += 2;
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				flameEntity->z += 1;
-			}
-			else if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
+			if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 			{
 				shieldLimb->focalz += 3;
 				shieldLimb->scalex = 1.05;
@@ -18241,29 +18260,35 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				}
 			}
 
-			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
-				flameEntity->z -= 2;
-			}
-			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+            if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			{
 				shieldLimb->z += 2;
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
-				flameEntity->z += 1;
 			}
-			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+	        if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+	        {
+			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+				    flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				    flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+				    flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				    flameEntity->z += 1;
+			    }
+			}
+			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
 			{
 				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;
@@ -18356,29 +18381,35 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->focalz = limbs[race][7][2];
 			}*/
 
-			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+            if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldLimb->yaw);
-				flameEntity->y += 2 * sin(shieldLimb->yaw);
-				flameEntity->z -= 2;
+			    shieldLimb->z += 2;
 			}
-			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
-			{
-				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2 * cos(shieldLimb->yaw);
-				flameEntity->y += 2 * sin(shieldLimb->yaw);
-				flameEntity->z -= 2;
+	        if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+	        {
+		        if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				    flameEntity->x += 2 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldLimb->yaw);
+				    flameEntity->z -= 2;
+			    }
+			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			    {
+				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				    flameEntity->x += 2 * cos(shieldLimb->yaw);
+				    flameEntity->y += 2 * sin(shieldLimb->yaw);
+				    flameEntity->z += 1;
+			    }
 			}
-			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
-			{
-				shieldLimb->z += 2;
-				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2 * cos(shieldLimb->yaw);
-				flameEntity->y += 2 * sin(shieldLimb->yaw);
-				flameEntity->z += 1;
-			}
-			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
 			{
 				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;

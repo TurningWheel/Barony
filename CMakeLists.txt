@@ -615,6 +615,7 @@ if (NOT APPLE AND UNIX)
   	${CMAKE_SOURCE_DIR}/gamecontrollerdb.txt
   	${CMAKE_SOURCE_DIR}/playernames-female.txt
   	${CMAKE_SOURCE_DIR}/playernames-male.txt
+	#TYPE INCLUDE # If your CMAKE is stupid like mine and it complains about "install FILES given no DESTINATION!", you can tell it to shove it by uncommenting this line.
   	DESTINATION "${CMAKE_INSTALL_PREFIX}"
   )
 endif()
