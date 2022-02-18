@@ -526,11 +526,11 @@ void deinitGame()
 	// send disconnect messages
 	if ( multiplayer == CLIENT )
 	{
-		strcpy((char*)net_packet->data, "DISCONNECT");
-		net_packet->data[10] = clientnum;
+		strcpy((char*)net_packet->data, "DISC");
+		net_packet->data[4] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 11;
+		net_packet->len = 5;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		printlog("disconnected from server.\n");
 	}
@@ -542,11 +542,11 @@ void deinitGame()
 			{
 				continue;
 			}
-			strcpy((char*)net_packet->data, "DISCONNECT");
-			net_packet->data[10] = clientnum;
+			strcpy((char*)net_packet->data, "DISC");
+			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_clients[x - 1].host;
 			net_packet->address.port = net_clients[x - 1].port;
-			net_packet->len = 11;
+			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, x - 1);
 
 			stats[x]->freePlayerEquipment();
