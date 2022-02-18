@@ -6041,9 +6041,16 @@ Cast#
 4087 Hide item details#
 4088 You found %d gold pieces in the chest!#
 # Nav Prompts
+4091 Take All#
 4092 Move cursor#
 4093 View Spells#
 4094 View Items#
 4095 View Skills#
+4096 Take#
+4097 Store All#
+4098 There is no room left in the chest for a
+ %s!#
+4099 Took %d items from the chest.#
+4100 You have no room left in your pack!#
 
-4099 end#
+4199 end#
