@@ -1068,10 +1068,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			// widget capture input
 			if (field->isActivated()) {
-			    if (input.consumeBinaryToggle("MenuConfirm") ||
-			        input.consumeBinaryToggle("MenuCancel")) {
-			        field->deactivate();
+#ifndef EDITOR
+			    if (inputs.hasController(field->getOwner())) {
+			        if (input.consumeBinaryToggle("MenuConfirm") ||
+			            input.consumeBinaryToggle("MenuCancel")) {
+			            field->deactivate();
+		            }
 		        }
+#endif
 			}
 			else if (!destWidget) {
 				destWidget = field->handleInput();
