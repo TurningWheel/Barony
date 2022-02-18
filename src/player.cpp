@@ -198,6 +198,46 @@ const bool GameController::isActive()
 	return (sdl_device != nullptr);
 }
 
+real_t getGamepadMenuXSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_menux_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_menux_sensitivity * fpsScale;
+}
+
+real_t getGamepadMenuYSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_menuy_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_menuy_sensitivity * fpsScale;
+}
+
+real_t getGamepadRightXSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_rightx_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_rightx_sensitivity * fpsScale;
+}
+
+real_t getGamepadRightYSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_righty_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_righty_sensitivity * fpsScale;
+}
+
 void GameController::handleAnalog(int player)
 {
 	if (!isActive())
@@ -216,8 +256,8 @@ void GameController::handleAnalog(int player)
 
 	if (!players[player]->shootmode || gamePaused)
 	{
-		int rightx = getRawRightXMove() * gamepad_menux_sensitivity;
-		int righty = getRawRightYMove() * gamepad_menuy_sensitivity;
+		int rightx = getRawRightXMove() * getGamepadMenuXSensitivity(player);
+		int righty = getRawRightYMove() * getGamepadMenuYSensitivity(player);
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
 		if (gamepad_rightx_invert)
@@ -422,8 +462,8 @@ void GameController::handleAnalog(int player)
 				{
 					newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
 				}
-				floatx = newMagnitude * cos(angle) * gamepad_rightx_sensitivity;
-				floaty = newMagnitude * sin(angle) * gamepad_righty_sensitivity;
+				floatx = newMagnitude * cos(angle) * getGamepadRightXSensitivity(player);
+				floaty = newMagnitude * sin(angle) * getGamepadRightYSensitivity(player);
 
 				//rightx = oldFloatRightX;
 				//righty = oldFloatRightY;
@@ -488,28 +528,6 @@ void GameController::handleAnalog(int player)
 	}
 }
 
-int GameController::getLeftXMove() // with sensitivity
-{
-	if (!isActive())
-	{
-		return 0;
-	}
-	int x = getRawLeftXMove();
-	x *= gamepad_leftx_sensitivity;
-	return x;
-}
-
-int GameController::getLeftYMove() // with sensitivity
-{
-	if (!isActive())
-	{
-		return 0;
-	}
-	int y = -getRawLeftYMove();
-	y *= gamepad_lefty_sensitivity;
-	return y;
-}
-
 int GameController::getRightXMove() // with sensitivity
 {
 	if (!isActive())
@@ -517,7 +535,7 @@ int GameController::getRightXMove() // with sensitivity
 		return 0;
 	}
 	int x = getRawRightXMove();
-	x *= gamepad_rightx_sensitivity;
+	x *= getGamepadRightXSensitivity(0);
 	return x;
 }
 
@@ -528,7 +546,7 @@ int GameController::getRightYMove() // with sensitivity
 		return 0;
 	}
 	int y = getRawRightYMove();
-	y *= gamepad_righty_sensitivity;
+	y *= getGamepadRightYSensitivity(0);
 	return y;
 }
 

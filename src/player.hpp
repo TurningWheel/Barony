@@ -219,10 +219,6 @@ public:
 	 */
 	void handleAnalog(int player);
 
-	//Left analog stick movement along the x axis.
-	int getLeftXMove();
-	//...along the y axis.
-	int getLeftYMove();
 	//Right analog stick movement along the x axis.
 	int getRightXMove();
 	//...along the y axis.
