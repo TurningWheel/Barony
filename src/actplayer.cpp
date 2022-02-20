@@ -4306,9 +4306,14 @@ void actPlayer(Entity* my)
 				EntityClickType clickType = ENTITY_CLICK_USE;
 
 				bool skipUse = false;
-				if ( players[PLAYER_NUM]->worldUI.isEnabled() && !players[PLAYER_NUM]->shootmode )
+				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
-					skipUse = true;
+					if ( (!players[PLAYER_NUM]->shootmode)
+						|| (players[PLAYER_NUM]->hotbar.useHotbarFaceMenu
+							&& players[PLAYER_NUM]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE) )
+					{
+						skipUse = true;
+					}
 				}
 				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && inputs.hasController(PLAYER_NUM) 
 					&& !players[PLAYER_NUM]->shootmode )
