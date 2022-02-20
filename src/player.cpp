@@ -400,8 +400,7 @@ void GameController::handleAnalog(int player)
 	}
 	else
 	{
-		bool debugMouse = true;
-		if ( debugMouse )
+		if ( enableDebugKeys )
 		{
 			if ( keystatus[SDL_SCANCODE_F1] && keystatus[SDL_SCANCODE_EQUALS] )
 			{
