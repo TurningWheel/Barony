@@ -3604,9 +3604,11 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				{
 					//Add item to hotbar.
 					Item* tempItem = uidToItem(slot->item);
+					Item* swappedItem = nullptr;
 					if (tempItem && tempItem != selectedItem)
 					{
 						slot->item = selectedItem->uid;
+						swappedItem = selectedItem;
 						selectedItem = tempItem;
 						toggleclick = true;
 					}
@@ -3616,6 +3618,21 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						selectedItem = nullptr;
 						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 						toggleclick = false;
+					}
+
+					if ( swappedItem && selectedItem )
+					{
+						players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+						players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+						// unused for now
+						if ( bUseSelectedSlotCycleAnimation )
+						{
+							if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+							{
+								oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+							}
+						}
 					}
 
 					// empty out duplicate slots that match this item uid.
