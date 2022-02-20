@@ -2135,12 +2135,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 							Sint32 DEXComponent = oldDEX / 4;
 							if ( itemCategory(stats[player]->weapon) == THROWN )
 							{
-								stats[player]->DEX -= oldDEX;
-								if ( entity )
-								{
-									output.mainAttributeBonus = DEXComponent; //(output.totalAttack - entity->getThrownAttack());
-								}
-								stats[player]->DEX = oldDEX;
+								output.mainAttributeBonus = DEXComponent; //(output.totalAttack - entity->getThrownAttack());
 
 								stats[player]->PROFICIENCIES[PRO_RANGED] = 0;
 								output.proficiencyBonus = output.totalAttack - (entity ? entity->getThrownAttack() : 0);
@@ -2153,13 +2148,14 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 									output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM; // thrown
 								}
 								// gems etc.
+								Sint32 tmpDEX = stats[player]->DEX;
 								stats[player]->DEX -= oldDEX;
 								if ( entity )
 								{
 									output.mainAttributeBonus = (output.totalAttack - (entity ? entity->getThrownAttack() : 0));
 								}
 								output.proficiencyBonus = skillLVL / 10;
-								stats[player]->DEX = oldDEX;
+								stats[player]->DEX = tmpDEX;
 							}
 							output.proficiency = weaponskill;
 						}
