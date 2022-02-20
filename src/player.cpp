@@ -1174,6 +1174,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				if ( !checkDestinationOnly )
 				{
+					player.inventory_mode = INVENTORY_MODE_ITEM;
 					activateModule(MODULE_CHEST);
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
@@ -1228,6 +1229,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		{
 			if ( !checkDestinationOnly )
 			{
+				player.inventory_mode = INVENTORY_MODE_ITEM;
 				activateModule(MODULE_INVENTORY);
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavLeftBumper");
@@ -1324,6 +1326,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				if ( !checkDestinationOnly )
 				{
+					player.inventory_mode = INVENTORY_MODE_ITEM;
 					activateModule(MODULE_CHEST);
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
@@ -1362,6 +1365,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		{
 			if ( !checkDestinationOnly )
 			{
+				player.inventory_mode = INVENTORY_MODE_ITEM;
 				activateModule(MODULE_INVENTORY);
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavRightBumper");
