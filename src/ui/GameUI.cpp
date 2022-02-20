@@ -3549,13 +3549,24 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				textRegenMP->setColor(statTextColor);
 
 				auto attributeButton = attributesInnerFrame->addButton("rgn button");
-				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34, iconPos.h - 2 });
+				const int fullWidth = attributesFrame->getSize().w - 34 + 12;
+				attributeButton->setSize(SDL_Rect{ 12, iconPos.y + 2, attributesFrame->getSize().w - 34 - 50, iconPos.h - 2 });
 				attributeButton->setColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHighlightColor(makeColor(0, 0, 0, 0));
 				attributeButton->setHideGlyphs(true);
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+
+				auto attributeButton2 = attributesInnerFrame->addButton("rgn mp button");
+				attributeButton2->setSize(SDL_Rect{ attributeButton->getSize().x + attributeButton->getSize().w,
+					iconPos.y + 2, fullWidth - (attributeButton->getSize().x + attributeButton->getSize().w), iconPos.h - 2 });
+				attributeButton2->setColor(makeColor(0, 0, 0, 0));
+				attributeButton2->setHighlightColor(makeColor(0, 0, 0, 0));
+				attributeButton2->setHideGlyphs(true);
+				attributeButton2->setHideKeyboardGlyphs(true);
+				attributeButton2->setHideSelectors(true);
+				attributeButton2->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3978,6 +3989,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		Button* powButton = attributesInnerFrame->findButton("pow button");
 		Button* resButton = attributesInnerFrame->findButton("res button");
 		Button* rgnButton = attributesInnerFrame->findButton("rgn button");
+		Button* rgnMpButton = attributesInnerFrame->findButton("rgn mp button");
 		Button* wgtButton = attributesInnerFrame->findButton("wgt button");
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor
 			&& (!player.GUI.isDropdownActive())
@@ -4056,6 +4068,10 @@ void Player::CharacterSheet_t::processCharacterSheet()
 				targetElement = SHEET_RES;
 			}
 			else if ( rgnButton->isHighlighted() )
+			{
+				targetElement = SHEET_RGN;
+			}
+			else if ( rgnMpButton->isHighlighted() )
 			{
 				targetElement = SHEET_RGN_MP;
 			}
@@ -4773,12 +4789,20 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 			}
 			break;
 		case SHEET_RGN:
-		case SHEET_RGN_MP:
 			if ( elementFrame = sheetFrame->findFrame("attributes") )
 			{
 				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
 				{
 					elementButton = elementFrame->findButton("rgn button");
+				}
+			}
+			break;
+		case SHEET_RGN_MP:
+			if ( elementFrame = sheetFrame->findFrame("attributes") )
+			{
+				if ( elementFrame = elementFrame->findFrame("attributes inner frame") )
+				{
+					elementButton = elementFrame->findButton("rgn mp button");
 				}
 			}
 			break;
@@ -8922,6 +8946,13 @@ void Player::CharacterSheet_t::updateAttributes()
 		getDisplayedHPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
 		field->setText(buf);
 		field->setColor(color);
+
+		if ( selectedElement == SHEET_RGN && enableTooltips )
+		{
+			SDL_Rect tooltipPos = attributesFrame->getSize();
+			tooltipPos.y += attributesInnerFrame->getSize().y;
+			updateCharacterSheetTooltip(selectedElement, tooltipPos);
+		}
 	}
 
 	if ( auto field = attributesInnerFrame->findField("regen text mp") )
