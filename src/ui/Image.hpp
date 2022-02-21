@@ -52,6 +52,8 @@ public:
 	virtual const bool		isStreamable() const { return true; }
 	const GLuint			getTexID() const { return texid; }
 	const SDL_Surface*		getSurf() const { return surf; }
+	const SDL_Surface*		getOutlineSurf() const { return outlineSurf; }
+	const void				setOutlineSurf(SDL_Surface* toSet) { outlineSurf = toSet; }
 	const unsigned int		getWidth() const { return surf ? surf->w : 0U; }
 	const unsigned int		getHeight()	const { return surf ? surf->h : 0U; }
 
@@ -59,6 +61,7 @@ private:
 	std::string name;
 	GLuint texid = 0;
 	SDL_Surface* surf = nullptr;
+	SDL_Surface* outlineSurf = nullptr;
 
 	bool clamp = false;
 	bool point = false;

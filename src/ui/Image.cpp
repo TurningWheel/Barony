@@ -100,6 +100,11 @@ Image::~Image() {
 		glDeleteTextures(1, &texid);
 		texid = 0;
 	}
+	if ( outlineSurf )
+	{
+		SDL_FreeSurface(outlineSurf);
+		outlineSurf = nullptr;
+	}
 }
 
 void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport) const {
@@ -158,6 +163,10 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 
 void Image::drawSurface(SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color)
 {
+	if ( !surf )
+	{
+		return;
+	}
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
