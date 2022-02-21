@@ -9526,7 +9526,7 @@ void createInventoryTooltipFrame(const int player)
 
 	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
 	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
-	const std::string headerFont = "fonts/pixelmix.ttf#16#2";
+	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);

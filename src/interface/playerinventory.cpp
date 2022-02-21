@@ -4322,7 +4322,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			headerMax->disabled = true;
 		}
 	
-		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 0, textx + 3 * padx, imgTopBackground->pos.h});
+		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 1, textx + 3 * padx, imgTopBackground->pos.h});
 		txtHeader->setVJustify(Field::justify_t::CENTER);
 		int totalHeight = txtHeader->getSize().h;
 
