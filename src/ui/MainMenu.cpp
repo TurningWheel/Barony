@@ -38,8 +38,6 @@ namespace MainMenu {
 	// The second is the default Keyboard input.
     // The third is the default Gamepad input.
     // The fourth is the default Joystick input.
-    static const char* emptyBinding = "[unbound]";
-	static const char* hiddenBinding = "[hidden]";
 	static const char* defaultBindings[][4] = {
 		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
 		{"Use", "Mouse3", "ButtonA", emptyBinding},

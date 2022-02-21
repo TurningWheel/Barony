@@ -4029,7 +4029,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 
 	if ( !command && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
-		tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
+		if ( !players[player]->shootmode )
+		{
+			tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
+		}
 	}
 
 	if ( bUpdateDisplayedTooltip )

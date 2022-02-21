@@ -8,6 +8,7 @@
 #include "player.hpp"
 #endif
 #include "mod_tools.hpp"
+#include "ui/MainMenu.hpp"
 
 #include <algorithm>
 
@@ -288,7 +289,16 @@ void Input::refresh() {
 		prefix.append("Pad");
 		prefix.append(std::to_string(player));
 		for (auto& binding : getGamepadBindings()) {
-		    bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			if ( binding.second == MainMenu::hiddenBinding )
+			{
+				auto b = bindings.find(binding.first);
+				if ( b != bindings.end() && b->second.isBindingUsingGamepad() )
+				{
+					// hidden binding, don't override existing bind by the defaults.
+					continue;
+				}
+			}
+			bind(binding.first.c_str(), (prefix + binding.second).c_str());
 		}
 	}
 	if ( false /*::inputs.hasJoystick(player)*/ )
