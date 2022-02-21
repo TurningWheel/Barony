@@ -3045,7 +3045,11 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
+		if ( !players[player]->shootmode )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		else if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
 		{
 			bDoingActionHideTooltips = true;
 		}
@@ -3095,18 +3099,18 @@ void Player::WorldUI_t::handleTooltips()
 			hit.entity = ohitentity;
 		}
 
-		if ( players[player]->worldUI.tooltipsInRange.size() > 1 )
+		bool cycleNext = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipNext");
+		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipPrev");
+		if ( !bDoingActionHideTooltips && players[player]->worldUI.tooltipsInRange.size() > 1 )
 		{
-			if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT) )
+			if ( cyclePrev )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
-				inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT);
 				players[player]->worldUI.cycleToPreviousTooltip();
 			}
-			if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT) )
+			if ( cycleNext )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
-				inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
 				players[player]->worldUI.cycleToNextTooltip();
 			}
 		}
