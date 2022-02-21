@@ -9976,29 +9976,30 @@ void createInventoryTooltipFrame(const int player)
 
 		const int interactOptionStartX = 60;
 		const int interactOptionStartY = 8;
-		const int glyphSize = 20;
+		const int glyphSizeH = 24;
+		const int glyphSizeW = 22;
 
 		auto interactGlyph1 = promptFrame->addImage(
-			SDL_Rect{ interactOptionStartX, interactOptionStartY, glyphSize, glyphSize },
+			SDL_Rect{ interactOptionStartX, interactOptionStartY, glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 1");
 
 		auto interactGlyph2 = promptFrame->addImage(
-			SDL_Rect{ interactGlyph1->pos.x - (glyphSize / 2), 
-			interactGlyph1->pos.y + glyphSize,
-			glyphSize, glyphSize },
+			SDL_Rect{ interactGlyph1->pos.x - (glyphSizeW / 2),
+			interactGlyph1->pos.y + glyphSizeH,
+			glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 2");
 
 		auto interactGlyph3 = promptFrame->addImage(
-			SDL_Rect{ interactGlyph1->pos.x + (glyphSize + glyphSize / 4), interactGlyph1->pos.y, glyphSize, glyphSize },
+			SDL_Rect{ interactGlyph1->pos.x + (glyphSizeW + glyphSizeW / 4), interactGlyph1->pos.y, glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 3");
 
 		auto interactGlyph4 = promptFrame->addImage(
-			SDL_Rect{ interactGlyph3->pos.x - (glyphSize / 2), interactGlyph2->pos.y,
-			glyphSize, glyphSize },
+			SDL_Rect{ interactGlyph3->pos.x - (glyphSizeW / 2), interactGlyph2->pos.y,
+			glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 4");
 
 		const int textWidth = 80;
-		const int textHeight = glyphSize + 8;
+		const int textHeight = glyphSizeH + 8;
 
 		Uint32 promptTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
 		const char * promptFont = "fonts/pixel_maz.ttf#32#2";
