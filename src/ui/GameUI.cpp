@@ -12649,6 +12649,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 
 		if ( !disableItemUsage )
 		{
+			if ( item->status == BROKEN 
+				&& (prompt == PROMPT_EQUIP || prompt == PROMPT_SPELL_EQUIP) )
+			{
+				messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // don't try equip broken stuff
+				return;
+			}
+
 			if ( prompt == PROMPT_EQUIP
 				|| prompt == PROMPT_UNEQUIP
 				|| prompt == PROMPT_UNEQUIP_FOR_DROP )

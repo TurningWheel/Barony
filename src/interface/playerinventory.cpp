@@ -2565,7 +2565,12 @@ void releaseChestItem(const int player)
 					}
 				}
 
-				if ( !disableItemUsage )
+				if ( selectedItem->status == BROKEN )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], selectedItem->getName()); // don't try equip broken stuff
+					toggleclick = false;
+				}
+				else if ( !disableItemUsage )
 				{
 					int oldx = selectedItem->x;
 					int oldy = selectedItem->y;
@@ -2614,6 +2619,13 @@ void releaseChestItem(const int player)
 						}
 						toggleclick = false;
 					}
+				}
+				else
+				{
+					messagePlayer(player, 
+						MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, 
+						language[3432]); // unable to use in current form message.
+					toggleclick = false;
 				}
 			}
 
