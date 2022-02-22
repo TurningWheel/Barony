@@ -3692,7 +3692,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
 		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 150) )
+			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10500) )
 			{
 				this->char_torchtime = 0;
 				if ( player >= 0 && players[player]->isLocalPlayer() )
