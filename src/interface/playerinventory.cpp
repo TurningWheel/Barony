@@ -8197,7 +8197,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 		if ( tmpPair.first > 0 )
 		{
 			//messagePlayer(0, "priority %d, category: %d", tmpPair.first, tmpPair.second);
-			bool invertSortDirection = false;
+			bool invertSortDirection = true;
 			switch ( tmpPair.second )
 			{
 				case 0: // weapons
@@ -8251,7 +8251,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 		if ( tmpPair.first < 0 )
 		{
 			//messagePlayer(0, "priority %d, category: %d", tmpPair.first, tmpPair.second);
-			bool invertSortDirection = true;
+			bool invertSortDirection = false;
 			switch ( tmpPair.second )
 			{
 				case 0: // weapons
