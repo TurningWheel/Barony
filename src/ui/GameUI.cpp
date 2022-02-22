@@ -9403,6 +9403,15 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 			if ( item->status == BROKEN )
 			{
 				brokenStatusFrame->setDisabled(false);
+				auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
+				if ( isHotbarIcon )
+				{
+					brokenStatusImg->path = "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+				}
+				else
+				{
+					brokenStatusImg->path = "images/system/white.png";
+				}
 			}
 		}
 	}
