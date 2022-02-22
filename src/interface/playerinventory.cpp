@@ -8432,6 +8432,8 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 
 		if ( foundaspot && x < getSizeX() && y < getSizeY() )
 		{
+			item->x = -1;
+			autosortInventory(player.playernum, true);
 			return true;
 		}
 
@@ -8479,6 +8481,8 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 				}
 				if ( foundaspot )
 				{
+					item->x = -1;
+					autosortInventory(player.playernum, true);
 					return true;
 					break;
 				}
