@@ -2719,6 +2719,29 @@ void clientHandlePacket()
 		return;
 	}
 
+	// a torch burns out
+	else if ( !strncmp((char*)net_packet->data, "TORC", 4) )
+	{
+		ItemType itemType = static_cast<ItemType>(SDLNet_Read16(&net_packet->data[4]));
+		Status itemStatus = static_cast<Status>(net_packet->data[6]);
+		int qty = static_cast<int>(net_packet->data[7]);
+		if ( stats[clientnum]->shield && stats[clientnum]->shield->type == itemType )
+		{
+			stats[clientnum]->shield->status = itemStatus;
+			stats[clientnum]->shield->count = qty;
+			if ( stats[clientnum]->shield->count <= 0 )
+			{
+				Item* item = stats[clientnum]->shield;
+				consumeItem(item, clientnum);
+			}
+			else
+			{
+				players[clientnum]->hud.shieldSwitch = true;
+			}
+		}
+		return;
+	}
+
 	// update armor quality
 	else if (!strncmp((char*)net_packet->data, "ARMR", 4))
 	{

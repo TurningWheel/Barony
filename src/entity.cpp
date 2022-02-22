@@ -3695,81 +3695,82 @@ void Entity::handleEffects(Stat* myStats)
 			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10500) )
 			{
 				this->char_torchtime = 0;
-				if ( player >= 0 && players[player]->isLocalPlayer() )
+				if ( myStats->shield->type == TOOL_TORCH && player >= 0 )
 				{
-					if ( myStats->shield->count > 1 )
+					std::string itemName = myStats->shield->getName();
+					ItemType itemType = myStats->shield->type;
+					Status itemStatus = myStats->shield->status;
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], itemName.c_str());
+					int qty = std::max(0, myStats->shield->count - 1);
+					Item* item = myStats->shield;
+					consumeItem(item, player);
+					if ( qty > 0 )
 					{
-						Uint32 newAppearance = rand();
-						int tries = 100;
-						while ( tries > 0 && newAppearance == myStats->shield->appearance )
+						messagePlayer(player, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
+						playSoundEntity(this, 134, 64); // ignite
+						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
-							newAppearance = rand();
-							--tries;
+							players[player]->hud.shieldSwitch = true;
 						}
-						if ( Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, newAppearance, myStats->shield->identified, &myStats->inventory) )
+					}
+					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "TORC");
+						SDLNet_Write16((Sint16)itemType, &net_packet->data[4]);
+						net_packet->data[6] = itemStatus;
+						net_packet->data[7] = qty;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
+				}
+				else // lanterns, monster torches
+				{
+					if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						if ( myStats->shield->count > 1 )
 						{
-							for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+							Uint32 newAppearance = rand();
+							int tries = 100;
+							while ( tries > 0 && newAppearance == myStats->shield->appearance )
 							{
-								if ( hotbarSlot.item == newTorch->uid && (newTorch->count == myStats->shield->count - 1) )
+								newAppearance = rand();
+								--tries;
+							}
+							if ( Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, newAppearance, myStats->shield->identified, &myStats->inventory) )
+							{
+								for ( auto& hotbarSlot : players[player]->hotbar.slots() )
 								{
-									// this was auto placed by newItem just above, undo it.
-									hotbarSlot.item = 0;
+									if ( hotbarSlot.item == newTorch->uid && (newTorch->count == myStats->shield->count - 1) )
+									{
+										// this was auto placed by newItem just above, undo it.
+										hotbarSlot.item = 0;
+									}
 								}
 							}
 						}
 					}
-				}
-				myStats->shield->count = 1;
-				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
-				if ( myStats->shield->status > BROKEN )
-				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[637], myStats->shield->getName());
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
-					// burns out - maybe code here to auto replace?
-					/*if ( player >= 0 && players[player]->isLocalPlayer() )
+					myStats->shield->count = 1;
+					myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
+					if ( myStats->shield->status > BROKEN )
 					{
-						bool tryReplaceNewTorch = true;
-						if ( this->effectShapeshift != NOTHING )
-						{
-							if ( !myStats->shield->usableWhileShapeshifted(myStats) )
-							{
-								tryReplaceNewTorch = false;
-							}
-						}
-						if ( tryReplaceNewTorch )
-						{
-							for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
-							{
-								Item* tempItem = (Item*)(node->element);
-								if ( !tempItem ) { continue; }
-								if ( tempItem != myStats->shield && tempItem->type == myStats->shield->type
-									&& tempItem->status != BROKEN )
-								{
-									for ( auto& hotbarSlot : players[player]->hotbar.slots() )
-									{
-										if ( hotbarSlot.item == myStats->shield->uid )
-										{
-											hotbarSlot.item = tempItem->uid;
-										}
-									}
-									break;
-								}
-							}
-						}
-					}*/
-				}
-				if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
-				{
-					strcpy((char*)net_packet->data, "ARMR");
-					net_packet->data[4] = 4;
-					net_packet->data[5] = myStats->shield->status;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						messagePlayer(player, MESSAGE_EQUIPMENT, language[637], myStats->shield->getName());
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
+					}
+					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "ARMR");
+						net_packet->data[4] = 4;
+						net_packet->data[5] = myStats->shield->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
 				}
 			}
 		}
