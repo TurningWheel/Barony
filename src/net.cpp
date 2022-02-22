@@ -2766,6 +2766,7 @@ void clientHandlePacket()
 				int tries = 100;
 				while ( tries > 0 && newAppearance == item->appearance )
 				{
+					newAppearance = rand();
 					--tries;
 				}
 				if ( Item* pickedUp = newItem(item->type, item->status, item->beatitude, item->count - 1, newAppearance, item->identified, &stats[clientnum]->inventory) )

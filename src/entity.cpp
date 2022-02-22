@@ -3703,6 +3703,7 @@ void Entity::handleEffects(Stat* myStats)
 						int tries = 100;
 						while ( tries > 0 && newAppearance == myStats->shield->appearance )
 						{
+							newAppearance = rand();
 							--tries;
 						}
 						if ( Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, newAppearance, myStats->shield->identified, &myStats->inventory) )
