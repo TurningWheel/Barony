@@ -1558,8 +1558,8 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 	else
 	{
 		// on success, client gets legit player number
-		strcpy(stats[c]->name, (char*)(&net_packet->data[4]));
 		client_disconnected[c] = false;
+		strcpy(stats[c]->name, (char*)(&net_packet->data[4]));
 		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[27]);
 		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[31]));
 		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[35]);
@@ -4486,7 +4486,7 @@ void clientHandlePacket()
 		//buttonCloseSubwindow(NULL);
 		numplayers = 0;
 		introstage = 3;
-		if ( net_packet->data[25] == 0 )
+		if ( net_packet->data[12] == 0 )
 		{
 			loadingsavegame = 0; // the server said we're not loading a saved game.
 		}

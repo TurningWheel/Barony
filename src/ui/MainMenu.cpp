@@ -331,6 +331,8 @@ namespace MainMenu {
 	static void createLobby(LobbyType);
 	static void createLobbyBrowser(Button&);
 
+    static void sendPlayerOverNet();
+    static void sendReadyOverNet();
 	static void updateLobby();
 
 /******************************************************************************/
@@ -4251,6 +4253,46 @@ bind_failed:
 		}
 	}
 
+	static void sendPlayerOverNet() {
+	    if (multiplayer != SERVER && multiplayer != CLIENT) {
+	        return;
+	    }
+
+			    // forward to other players
+			    if (multiplayer == SERVER) {
+				    for (int i = 1; i < MAXPLAYERS; i++ ) {
+					    if ( client_disconnected[i] ) {
+						    continue;
+					    }
+					    net_packet->address.host = net_clients[i - 1].host;
+					    net_packet->address.port = net_clients[i - 1].port;
+					    sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				    }
+				} else
+				Uint8 player = net_packet->data[4];
+		        strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
+		        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
+		        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
+		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
+		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
+	}
+
+	static void sendReadyStatusOverNet() {
+	}
+
+	static void sendChatMessageOverNet(const char* msg) {
+	}
+
+	static void updateLobby() {
+	    if (multiplayer == SERVER) {
+	        handlePacketsAsServer();
+	    } else if (multiplayer == CLIENT) {
+	        handlePacketsAsClient();
+	    }
+
+	}
+
 	static void handlePacketsAsServer() {
 #ifdef STEAMWORKS
 		CSteamID newSteamID;
@@ -4382,8 +4424,45 @@ bind_failed:
 				continue;
 			}
 
+			// update player attributes
+			else if (packetId == 'PLYR') {
+			    // forward to other players
+				for (int i = 1; i < MAXPLAYERS; i++ ) {
+					if ( client_disconnected[i] ) {
+						continue;
+					}
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+				Uint8 player = net_packet->data[4];
+		        strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
+		        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
+		        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
+		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
+		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
+			}
+
+			// update ready status
+			else if (packetId == 'REDY') {
+			    // forward to other players
+				for (int i = 1; i < MAXPLAYERS; i++ ) {
+					if ( client_disconnected[i] ) {
+						continue;
+					}
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+			    Uint8 player = net_packet->data[4];
+			    Uint8 status = net_packet->data[5];
+			    // TODO update ready status
+			}
+
 			// got a chat message
 			else if (packetId == 'CMSG') {
+			    // forward to other players
 				for (int i = 1; i < MAXPLAYERS; i++ ) {
 					if ( client_disconnected[i] ) {
 						continue;
@@ -4401,6 +4480,7 @@ bind_failed:
 			// player disconnected
 			else if (packetId == 'DISC') {
 				client_disconnected[net_packet->data[5]] = true;
+			    // forward to other players
 				for (int c = 1; c < MAXPLAYERS; c++) {
 					if (client_disconnected[c]) {
 						continue;
@@ -4422,7 +4502,6 @@ bind_failed:
 				// update svFlags for everyone
 				SDLNet_Write32(svFlags, &net_packet->data[4]);
 				net_packet->len = 8;
-
 				for (int c = 1; c < MAXPLAYERS; c++) {
 					if (client_disconnected[c]) {
 						continue;
@@ -4500,13 +4579,11 @@ bind_failed:
 
 			// game start
 			if (packetId == 'STRT') {
-				lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[5]);
-				uniqueGameKey = SDLNet_Read32(&net_packet->data[9]);
-				// TODO launch the game
+				lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+				uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+				beginFade(FadeDestination::GameStart);
 				numplayers = MAXPLAYERS;
-				introstage = 3;
-				fadeout = true;
-				if (net_packet->data[13] == 0) {
+				if (net_packet->data[12] == 0) {
 					loadingsavegame = 0;
 				}
 				continue;
@@ -4522,11 +4599,29 @@ bind_failed:
 				stats[player]->playerRace = net_packet->data[8];
 				strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
 
-				char shortname[32] = { 0 };
-				strncpy(shortname, stats[player]->name, 22);
+				//char shortname[32] = { 0 };
+				//strncpy(shortname, stats[player]->name, 22);
 				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
 				// TODO report player joined in message log
 				continue;
+			}
+
+			// update player attributes
+			else if (packetId == 'PLYR') {
+				Uint8 player = net_packet->data[4];
+		        strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
+		        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
+		        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
+		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
+		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
+			}
+
+			// update ready status
+			else if (packetId == 'REDY') {
+			    Uint8 player = net_packet->data[4];
+			    Uint8 status = net_packet->data[5];
+			    // TODO set ready state
 			}
 
 			// player disconnect
@@ -4540,9 +4635,25 @@ bind_failed:
 				}
 				if (playerDisconnected == clientnum || net_packet->data[5] == 0) {
 					// we got kicked!
-                    // TODO display kicked window
+					destroyMainMenu();
+					createDummyMainMenu();
+                    monoPrompt(
+                        "You have been disconnected\nfrom the remote server.",
+                        "Okay",
+                        [](Button& button){
+		                    soundCancel();
+		                    assert(main_menu_frame);
+		                    auto prompt = main_menu_frame->findFrame("mono_prompt");
+		                    if (prompt) {
+			                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                    dimmer->removeSelf();
+		                    }
+		                    beginFade(FadeDestination::RootMainMenu);
+                        }
+                    );
 					multiplayer = SINGLE;
 					disconnectFromLobby();
+					pauseGame(2, 0);
 				} else {
 					char shortname[32] = { 0 };
 					strncpy(shortname, stats[net_packet->data[16]]->name, 22);
@@ -6742,6 +6853,47 @@ bind_failed:
 		cancel->select();
 	}
 
+	static void startGame() {
+        destroyMainMenu();
+        createDummyMainMenu();
+        beginFade(MainMenu::FadeDestination::GameStart);
+
+	    // initialize all player stats
+	    for (int c = 1; c < MAXPLAYERS; c++) {
+		    if (!client_disconnected[c]) {
+			    if (!loadingsavegame || !intro) {
+				    stats[c]->clearStats();
+				    initClass(c);
+			    } else {
+				    loadGame(c);
+			    }
+		    }
+	    }
+
+	    // set unique game key
+	    uniqueGameKey = prng_get_uint();
+	    if (!uniqueGameKey) {
+		    uniqueGameKey++;
+	    }
+
+	    // send start signal to each player
+	    if (multiplayer == SERVER) {
+	        for (int c = 1; c < MAXPLAYERS; c++) {
+		        if (client_disconnected[c] || players[c]->isLocalPlayer()) {
+			        continue;
+		        }
+		        strcpy((char*)net_packet->data, "STRT");
+		        SDLNet_Write32(svFlags, &net_packet->data[4]);
+		        SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
+		        net_packet->data[12] = loadingsavegame ? 1 : 0;
+		        net_packet->address.host = net_clients[c - 1].host;
+		        net_packet->address.port = net_clients[c - 1].port;
+		        net_packet->len = 13;
+		        sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	        }
+	    }
+	}
+
 	static void createCountdownTimer() {
 		static const char* timer_font = "fonts/pixelmix_bold.ttf#64#2";
 		static float countdown_timer;
@@ -6764,9 +6916,7 @@ bind_failed:
 			const float inc = 1.f / fpsLimit;
 		    countdown_timer -= inc;
 		    if (countdown_timer <= 0.f) {
-		        destroyMainMenu();
-		        createDummyMainMenu();
-		        beginFade(MainMenu::FadeDestination::GameStart);
+		        startGame();
 		    } else {
 		        if (countdown_timer < 0.25f) {
 		            countdown->setText("1...");
@@ -7967,11 +8117,11 @@ bind_failed:
 		            savegame_selected = first_savegame;
 	            } else {
 	                if (delete_singleplayer) {
-                        auto singleplayer = window->findButton("singleplayer");
-                        singleplayer->select();
+                        auto b = window->findButton("singleplayer");
+                        b->select();
 	                } else {
-                        auto multiplayer = window->findButton("multiplayer");
-                        multiplayer->select();
+                        auto b = window->findButton("multiplayer");
+                        b->select();
 	                }
 	            }
 
@@ -7990,11 +8140,11 @@ bind_failed:
 			        assert(main_menu_frame);
 		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
 	                if (delete_singleplayer) {
-                        auto singleplayer = window->findButton("singleplayer");
-                        singleplayer->select();
+                        auto b = window->findButton("singleplayer");
+                        b->select();
 	                } else {
-                        auto multiplayer = window->findButton("multiplayer");
-                        multiplayer->select();
+                        auto b = window->findButton("multiplayer");
+                        b->select();
 	                }
 			    }
 			    assert(main_menu_frame);
@@ -8047,11 +8197,11 @@ bind_failed:
 			        assert(main_menu_frame);
 		            auto window = main_menu_frame->findFrame("continue_window"); assert(window);
 	                if (load_singleplayer) {
-                        auto singleplayer = window->findButton("singleplayer");
-                        singleplayer->select();
+                        auto b = window->findButton("singleplayer");
+                        b->select();
 	                } else {
-                        auto multiplayer = window->findButton("multiplayer");
-                        multiplayer->select();
+                        auto b = window->findButton("multiplayer");
+                        b->select();
 	                }
 			    }
 			    assert(main_menu_frame);
@@ -9298,8 +9448,6 @@ bind_failed:
 				playMusic(intermissionmusic, false, false, false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
-				multiplayer = SINGLE;
-				numplayers = 0;
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 				setupSplitscreen();
 				if (!loadingsavegame) {
