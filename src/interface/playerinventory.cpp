@@ -8236,7 +8236,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 					sortInventoryItemsOfType(player, FOOD, invertSortDirection);
 					break;
 				case 11: // equipped items
-					sortInventoryItemsOfType(player, -2, invertSortDirection);
+					//sortInventoryItemsOfType(player, -2, invertSortDirection);
 					break;
 				default:
 					break;
@@ -8290,7 +8290,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 					sortInventoryItemsOfType(player, FOOD, invertSortDirection);
 					break;
 				case 11: // equipped items
-					sortInventoryItemsOfType(player, -2, invertSortDirection);
+					//sortInventoryItemsOfType(player, -2, invertSortDirection);
 					break;
 				default:
 					break;
@@ -8531,7 +8531,11 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 			}
 			if ( categoryInt != -2 && itemIsEquipped(itemBeingSorted, player) )
 			{
-				continue;
+				Item** slot = itemSlot(stats[player], itemBeingSorted);
+				if ( slot && (*slot == itemBeingSorted) )
+				{
+					continue;
+				}
 			}
 
 			// find a place...
