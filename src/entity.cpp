@@ -3692,14 +3692,30 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
 		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10500) )
+			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 150) )
 			{
 				this->char_torchtime = 0;
 				if ( player >= 0 && players[player]->isLocalPlayer() )
 				{
 					if ( myStats->shield->count > 1 )
 					{
-						newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, myStats->shield->appearance, myStats->shield->identified, &myStats->inventory);
+						Uint32 newAppearance = rand();
+						int tries = 100;
+						while ( tries > 0 && newAppearance == myStats->shield->appearance )
+						{
+							--tries;
+						}
+						if ( Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, newAppearance, myStats->shield->identified, &myStats->inventory) )
+						{
+							for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+							{
+								if ( hotbarSlot.item == newTorch->uid && (newTorch->count == myStats->shield->count - 1) )
+								{
+									// this was auto placed by newItem just above, undo it.
+									hotbarSlot.item = 0;
+								}
+							}
+						}
 					}
 				}
 				myStats->shield->count = 1;
@@ -3711,6 +3727,38 @@ void Entity::handleEffects(Stat* myStats)
 				else
 				{
 					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
+					// burns out - maybe code here to auto replace?
+					/*if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						bool tryReplaceNewTorch = true;
+						if ( this->effectShapeshift != NOTHING )
+						{
+							if ( !myStats->shield->usableWhileShapeshifted(myStats) )
+							{
+								tryReplaceNewTorch = false;
+							}
+						}
+						if ( tryReplaceNewTorch )
+						{
+							for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+							{
+								Item* tempItem = (Item*)(node->element);
+								if ( !tempItem ) { continue; }
+								if ( tempItem != myStats->shield && tempItem->type == myStats->shield->type
+									&& tempItem->status != BROKEN )
+								{
+									for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+									{
+										if ( hotbarSlot.item == myStats->shield->uid )
+										{
+											hotbarSlot.item = tempItem->uid;
+										}
+									}
+									break;
+								}
+							}
+						}
+					}*/
 				}
 				if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 				{
