@@ -427,8 +427,8 @@ void GameController::handleAnalog(int player)
 
 		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 		{
-			rightx = getRightXMove();
-			righty = getRightYMove();
+			rightx = getRightXMove(player);
+			righty = getRightYMove(player);
 		}
 		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
 		{
@@ -527,25 +527,25 @@ void GameController::handleAnalog(int player)
 	}
 }
 
-int GameController::getRightXMove() // with sensitivity
+int GameController::getRightXMove(int player) // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
 	int x = getRawRightXMove();
-	x *= getGamepadRightXSensitivity(0);
+	x *= getGamepadRightXSensitivity(player);
 	return x;
 }
 
-int GameController::getRightYMove() // with sensitivity
+int GameController::getRightYMove(int player) // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
 	int y = getRawRightYMove();
-	y *= getGamepadRightYSensitivity(0);
+	y *= getGamepadRightYSensitivity(player);
 	return y;
 }
 
