@@ -174,7 +174,10 @@ void Entity::actFurniture()
 {
 	if ( !furnitureInit )
 	{
-		this->createWorldUITooltip();
+		if ( furnitureType == FURNITURE_BUNKBED )
+		{
+			this->createWorldUITooltip();
+		}
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
