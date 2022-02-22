@@ -2785,24 +2785,7 @@ void clientHandlePacket()
 		{
 			if ( item->count > 1 )
 			{
-				Uint32 newAppearance = rand();
-				int tries = 100;
-				while ( tries > 0 && newAppearance == item->appearance )
-				{
-					newAppearance = rand();
-					--tries;
-				}
-				if ( Item* pickedUp = newItem(item->type, item->status, item->beatitude, item->count - 1, newAppearance, item->identified, &stats[clientnum]->inventory) )
-				{
-					for ( auto& hotbarSlot : players[clientnum]->hotbar.slots() )
-					{
-						if ( hotbarSlot.item == pickedUp->uid && (pickedUp->count == item->count - 1) )
-						{
-							// this was auto placed by newItem just above, undo it.
-							hotbarSlot.item = 0;
-						}
-					}
-				}
+				Item* pickedUp = newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
 				item->count = 1;
 			}
 			if ( static_cast<int>(net_packet->data[5]) > EXCELLENT )

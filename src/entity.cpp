@@ -3731,24 +3731,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						if ( myStats->shield->count > 1 )
 						{
-							Uint32 newAppearance = rand();
-							int tries = 100;
-							while ( tries > 0 && newAppearance == myStats->shield->appearance )
-							{
-								newAppearance = rand();
-								--tries;
-							}
-							if ( Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, newAppearance, myStats->shield->identified, &myStats->inventory) )
-							{
-								for ( auto& hotbarSlot : players[player]->hotbar.slots() )
-								{
-									if ( hotbarSlot.item == newTorch->uid && (newTorch->count == myStats->shield->count - 1) )
-									{
-										// this was auto placed by newItem just above, undo it.
-										hotbarSlot.item = 0;
-									}
-								}
-							}
+							Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, myStats->shield->appearance, myStats->shield->identified, &myStats->inventory);
 						}
 					}
 					myStats->shield->count = 1;
