@@ -4304,13 +4304,17 @@ void actPlayer(Entity* my)
 				bool clickedOnGUI = false;
 
 				EntityClickType clickType = ENTITY_CLICK_USE;
-
+				bool tempDisableWorldUI = false;
 				bool skipUse = false;
 				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
-					if ( (!players[PLAYER_NUM]->shootmode)
+					if ( !players[PLAYER_NUM]->shootmode && inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+					{
+						tempDisableWorldUI = true;
+					}
+					else if ( (!players[PLAYER_NUM]->shootmode)
 						|| (players[PLAYER_NUM]->hotbar.useHotbarFaceMenu
-							&& players[PLAYER_NUM]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE) )
+							&& (players[PLAYER_NUM]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE)) )
 					{
 						skipUse = true;
 					}
@@ -4323,6 +4327,10 @@ void actPlayer(Entity* my)
 
 				if ( !skipUse )
 				{
+					if ( tempDisableWorldUI )
+					{
+						players[PLAYER_NUM]->worldUI.disable();
+					}
 					if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 					{
 						clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
@@ -4344,6 +4352,11 @@ void actPlayer(Entity* my)
 								++players[PLAYER_NUM]->movement.selectedEntityGimpTimer;
 							}
 						}
+					}
+
+					if ( tempDisableWorldUI )
+					{
+						players[PLAYER_NUM]->worldUI.enable();
 					}
 				}
 				else
