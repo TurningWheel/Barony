@@ -53,7 +53,8 @@ bool gamepad_menuy_invert = false;
 
 const int Player::Inventory_t::MAX_SPELLS_X = 4;
 const int Player::Inventory_t::MAX_SPELLS_Y = 20;
-
+const int Player::Inventory_t::MAX_CHEST_X = 4;
+const int Player::Inventory_t::MAX_CHEST_Y = 3;
 
 std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
 Inputs inputs;
@@ -197,6 +198,46 @@ const bool GameController::isActive()
 	return (sdl_device != nullptr);
 }
 
+real_t getGamepadMenuXSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_menux_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_menux_sensitivity * fpsScale;
+}
+
+real_t getGamepadMenuYSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_menuy_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_menuy_sensitivity * fpsScale;
+}
+
+real_t getGamepadRightXSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_rightx_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_rightx_sensitivity * fpsScale;
+}
+
+real_t getGamepadRightYSensitivity(int player)
+{
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		return gamepad_righty_sensitivity;
+	}
+	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	return gamepad_righty_sensitivity * fpsScale;
+}
+
 void GameController::handleAnalog(int player)
 {
 	if (!isActive())
@@ -215,8 +256,8 @@ void GameController::handleAnalog(int player)
 
 	if (!players[player]->shootmode || gamePaused)
 	{
-		int rightx = getRawRightXMove() * gamepad_menux_sensitivity;
-		int righty = getRawRightYMove() * gamepad_menuy_sensitivity;
+		int rightx = getRawRightXMove() * getGamepadMenuXSensitivity(player);
+		int righty = getRawRightYMove() * getGamepadMenuYSensitivity(player);
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
 		if (gamepad_rightx_invert)
@@ -359,8 +400,7 @@ void GameController::handleAnalog(int player)
 	}
 	else
 	{
-		bool debugMouse = true;
-		if ( debugMouse )
+		if ( enableDebugKeys )
 		{
 			if ( keystatus[SDL_SCANCODE_F1] && keystatus[SDL_SCANCODE_EQUALS] )
 			{
@@ -387,8 +427,8 @@ void GameController::handleAnalog(int player)
 
 		if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 		{
-			rightx = getRightXMove();
-			righty = getRightYMove();
+			rightx = getRightXMove(player);
+			righty = getRightYMove(player);
 		}
 		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
 		{
@@ -421,8 +461,8 @@ void GameController::handleAnalog(int player)
 				{
 					newMagnitude = magnitude * (normalised - deadzone) / (1 - deadzone); // linear gradient
 				}
-				floatx = newMagnitude * cos(angle) * gamepad_rightx_sensitivity;
-				floaty = newMagnitude * sin(angle) * gamepad_righty_sensitivity;
+				floatx = newMagnitude * cos(angle) * getGamepadRightXSensitivity(player);
+				floaty = newMagnitude * sin(angle) * getGamepadRightYSensitivity(player);
 
 				//rightx = oldFloatRightX;
 				//righty = oldFloatRightY;
@@ -487,47 +527,25 @@ void GameController::handleAnalog(int player)
 	}
 }
 
-int GameController::getLeftXMove() // with sensitivity
-{
-	if (!isActive())
-	{
-		return 0;
-	}
-	int x = getRawLeftXMove();
-	x *= gamepad_leftx_sensitivity;
-	return x;
-}
-
-int GameController::getLeftYMove() // with sensitivity
-{
-	if (!isActive())
-	{
-		return 0;
-	}
-	int y = -getRawLeftYMove();
-	y *= gamepad_lefty_sensitivity;
-	return y;
-}
-
-int GameController::getRightXMove() // with sensitivity
+int GameController::getRightXMove(int player) // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
 	int x = getRawRightXMove();
-	x *= gamepad_rightx_sensitivity;
+	x *= getGamepadRightXSensitivity(player);
 	return x;
 }
 
-int GameController::getRightYMove() // with sensitivity
+int GameController::getRightYMove(int player) // with sensitivity
 {
 	if (!isActive())
 	{
 		return 0;
 	}
 	int y = getRawRightYMove();
-	y *= gamepad_righty_sensitivity;
+	y *= getGamepadRightYSensitivity(player);
 	return y;
 }
 
@@ -1072,7 +1090,8 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 {
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
-		|| moduleToAccess == MODULE_HOTBAR )
+		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
+		|| moduleToAccess == MODULE_SHOP )
 	{
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
@@ -1150,7 +1169,19 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
+			if ( player.inventoryUI.chestGUI.bOpen )
+			{
+				if ( !checkDestinationOnly )
+				{
+					player.inventory_mode = INVENTORY_MODE_ITEM;
+					activateModule(MODULE_CHEST);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHEST;
+			}
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1191,6 +1222,19 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_CHEST
+			&& (player.inventoryUI.chestGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( !checkDestinationOnly )
+			{
+				player.inventory_mode = INVENTORY_MODE_ITEM;
+				activateModule(MODULE_INVENTORY);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavLeftBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_INVENTORY;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
@@ -1277,15 +1321,30 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
-			if ( !checkDestinationOnly )
+			if ( player.inventoryUI.chestGUI.bOpen )
 			{
-				activateModule(MODULE_HOTBAR);
-				player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
-				warpControllerToModule(false);
-				input.consumeBinaryToggle("UINavRightBumper");
-				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				if ( !checkDestinationOnly )
+				{
+					player.inventory_mode = INVENTORY_MODE_ITEM;
+					activateModule(MODULE_CHEST);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_CHEST;
 			}
-			return MODULE_HOTBAR;
+			else
+			{
+				if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_HOTBAR);
+					player.hotbar.updateHotbar(); // simulate the slots rearranging before we try to move the mouse to it.
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_HOTBAR;
+			}
 		}
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
@@ -1299,6 +1358,19 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_HOTBAR;
+		}
+		else if ( activeModule == MODULE_CHEST
+			&& (player.inventoryUI.chestGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( !checkDestinationOnly )
+			{
+				player.inventory_mode = INVENTORY_MODE_ITEM;
+				activateModule(MODULE_INVENTORY);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavRightBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_INVENTORY;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
@@ -1461,6 +1533,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			}
 			warpMouseToSelectedHotbarSlot(player);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+		{
+			select_chest_slot(player,
+				players[player]->inventoryUI.getSelectedChestX(),
+				players[player]->inventoryUI.getSelectedChestY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1495,6 +1574,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				hotbar_t.selectHotbarSlot(hotbar_t.current_hotbar + 1);
 			}
 			warpMouseToSelectedHotbarSlot(player);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+		{
+			select_chest_slot(player,
+				players[player]->inventoryUI.getSelectedChestX(),
+				players[player]->inventoryUI.getSelectedChestY(),
+				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
@@ -1584,6 +1670,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 			}
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+		{
+			select_chest_slot(player,
+				players[player]->inventoryUI.getSelectedChestX(),
+				players[player]->inventoryUI.getSelectedChestY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1672,6 +1765,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 			}
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+		{
+			select_chest_slot(player,
+				players[player]->inventoryUI.getSelectedChestX(),
+				players[player]->inventoryUI.getSelectedChestY(),
+				0, 1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1701,41 +1801,6 @@ bool Player::GUI_t::handleInventoryMovement()
 	return false;
 }
 
-bool GameController::handleChestMovement(const int player)
-{
-	bool dpad_moved = false;
-
-	if ( inputs.getUIInteraction(player)->itemMenuOpen )
-	{
-		return false;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
-	{
-		selectChestSlot(player, selectedChestSlot[player] - 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_UP);
-
-		dpad_moved = true;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
-	{
-		selectChestSlot(player, selectedChestSlot[player] + 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
-
-		dpad_moved = true;
-	}
-
-	if (dpad_moved)
-	{
-		dpad_moved = false;
-		//inputs.getVirtualMouse(player)->draw_cursor = false;
-
-		return true;
-	}
-
-	return false;
-}
 
 bool GameController::handleShopMovement(const int player)
 {
@@ -2243,7 +2308,6 @@ void Player::init() // for use on new/restart game, UI related
 	hud.resetBars();
 	hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
 	inventoryUI.resetInventory();
-	selectedChestSlot[playernum] = -1;
 	selectedShopSlot[playernum] = -1;
 	shopinventorycategory[playernum] = -1;
 	characterSheet.setDefaultSkillsSheetBox();
@@ -2256,7 +2320,6 @@ void Player::cleanUpOnEntityRemoval()
 {
 	if ( isLocalPlayer() )
 	{
-		//selectedChestSlot[playernum] = -1;
 		//selectedShopSlot[playernum] = -1;
 		//shopinventorycategory[playernum] = -1;
 		hud.reset();
@@ -2951,7 +3014,7 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( !command && Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") )
+		if ( !command && Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{
@@ -2982,7 +3045,11 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
+		if ( !players[player]->shootmode )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		else if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
 		{
 			bDoingActionHideTooltips = true;
 		}
@@ -3032,18 +3099,18 @@ void Player::WorldUI_t::handleTooltips()
 			hit.entity = ohitentity;
 		}
 
-		if ( players[player]->worldUI.tooltipsInRange.size() > 1 )
+		bool cycleNext = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipNext");
+		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipPrev");
+		if ( !bDoingActionHideTooltips && players[player]->worldUI.tooltipsInRange.size() > 1 )
 		{
-			if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT) )
+			if ( cyclePrev )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
-				inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT);
 				players[player]->worldUI.cycleToPreviousTooltip();
 			}
-			if ( inputs.bControllerRawInputPressed(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT) )
+			if ( cycleNext )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
-				inputs.controllerClearRawInput(player, 301 + SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
 				players[player]->worldUI.cycleToNextTooltip();
 			}
 		}
@@ -3689,6 +3756,49 @@ bool Player::Inventory_t::warpMouseToSelectedSpell(Item* snapToItem, Uint32 flag
 	return false;
 }
 
+bool Player::Inventory_t::warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags)
+{
+	if ( chestFrame )
+	{
+		int x = getSelectedChestX();
+		int y = getSelectedChestY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( chestGUI.isInteractable )
+		{
+			if ( abs(chestGUI.scrollAnimateX - chestGUI.scrollSetpoint) > 0.00001 )
+			{
+				int diff = (chestGUI.scrollAnimateX - chestGUI.scrollSetpoint) / getSlotSize();
+				y += diff; // if we have a scroll in the works, then manipulate y to pretend where we'd be ahead of time.
+			}
+		}
+
+		if ( auto slot = getChestSlotFrame(x, y) )
+		{
+			if ( !chestGUI.isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select spell queued");
+				cursor.queuedModule = Player::GUI_t::MODULE_CHEST;
+				cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select spell warped");
+				slot->warpMouseToFrame(player.playernum, flags);
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				cursor.queuedFrameToWarpTo = nullptr;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 {
 	if ( frame )
@@ -3717,9 +3827,27 @@ Frame* Player::Inventory_t::getSpellSlotFrame(int x, int y) const
 	return nullptr;
 }
 
+Frame* Player::Inventory_t::getChestSlotFrame(int x, int y) const
+{
+	if ( chestFrame )
+	{
+		int key = x + y * 100;
+		if ( chestSlotFrames.find(key) != chestSlotFrames.end() )
+		{
+			return chestSlotFrames.at(key);
+		}
+		//assert(chestSlotFrames.find(key) == chestSlotFrames.end());
+	}
+	return nullptr;
+}
+
 Frame* Player::Inventory_t::getItemSlotFrame(Item* item, int x, int y) const
 {
-	if ( item && itemCategory(item) == SPELL_CAT )
+	if ( item && isItemFromChest(item) )
+	{
+		return getChestSlotFrame(x, y);
+	}
+	else if ( item && itemCategory(item) == SPELL_CAT )
 	{
 		return getSpellSlotFrame(x, y);
 	}
@@ -3727,6 +3855,7 @@ Frame* Player::Inventory_t::getItemSlotFrame(Item* item, int x, int y) const
 	{
 		return getInventorySlotFrame(x, y);
 	}
+	return nullptr;
 }
 
 const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const

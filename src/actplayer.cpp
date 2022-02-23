@@ -2865,6 +2865,19 @@ void actPlayer(Entity* my)
 			keystatus[SDL_SCANCODE_KP_7] = 0;
 			consoleCommand("/splitscreen");
 		}
+		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_8] )
+		{
+			keystatus[SDL_SCANCODE_KP_8] = 0;
+			if ( !players[PLAYER_NUM]->inventoryUI.chestGUI.bOpen )
+			{
+				players[PLAYER_NUM]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+				players[PLAYER_NUM]->inventoryUI.chestGUI.openChest();
+			}
+			else
+			{
+				players[PLAYER_NUM]->inventoryUI.chestGUI.closeChest();
+			}
+		}
 	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
 	    {
 		    keystatus[SDL_SCANCODE_KP_9] = 0;
@@ -4291,11 +4304,20 @@ void actPlayer(Entity* my)
 				bool clickedOnGUI = false;
 
 				EntityClickType clickType = ENTITY_CLICK_USE;
-
+				bool tempDisableWorldUI = false;
 				bool skipUse = false;
-				if ( players[PLAYER_NUM]->worldUI.isEnabled() && !players[PLAYER_NUM]->shootmode )
+				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
-					skipUse = true;
+					if ( !players[PLAYER_NUM]->shootmode && inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+					{
+						tempDisableWorldUI = true;
+					}
+					else if ( (!players[PLAYER_NUM]->shootmode)
+						|| (players[PLAYER_NUM]->hotbar.useHotbarFaceMenu
+							&& (players[PLAYER_NUM]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE)) )
+					{
+						skipUse = true;
+					}
 				}
 				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && inputs.hasController(PLAYER_NUM) 
 					&& !players[PLAYER_NUM]->shootmode )
@@ -4305,6 +4327,10 @@ void actPlayer(Entity* my)
 
 				if ( !skipUse )
 				{
+					if ( tempDisableWorldUI )
+					{
+						players[PLAYER_NUM]->worldUI.disable();
+					}
 					if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 					{
 						clickType = ENTITY_CLICK_USE_TOOLTIPS_ONLY;
@@ -4327,10 +4353,16 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+
+					if ( tempDisableWorldUI )
+					{
+						players[PLAYER_NUM]->worldUI.enable();
+					}
 				}
 				else
 				{
 					input.consumeBinaryToggle("Use");
+					selectedEntity[PLAYER_NUM] = nullptr;
 				}
 			}
 			else

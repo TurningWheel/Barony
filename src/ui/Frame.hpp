@@ -52,11 +52,13 @@ public:
 		std::string name;
 		std::string path;
 		Uint32 color;
+		Uint32 outlineColor;
 		SDL_Rect pos;
 		SDL_Rect section{0, 0, 0, 0};
 		bool tiled = false;
 		bool disabled = false;
 		bool ontop = false;
+		bool outline = false;
 	};
 
 	struct entry_t;

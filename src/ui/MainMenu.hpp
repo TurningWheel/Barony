@@ -15,6 +15,9 @@ namespace MainMenu {
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
 	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)
 	extern Frame* main_menu_frame;
+	
+	static constexpr const char* emptyBinding = "[unbound]"; // string appended to default empty bindings
+	static constexpr const char* hiddenBinding = "[hidden]"; // string appended to hidden bindings on the UI
 
 	enum class FadeDestination : Uint8 {
 		None,

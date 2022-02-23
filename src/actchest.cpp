@@ -585,6 +585,26 @@ void Entity::actChest()
 				printlog("warning: default cause in chest init theme type reached. This should never happen.");
 				break;
 		}
+
+		// sort items into slots
+		int slotx = 0;
+		int sloty = 0;
+		node_t* nextnode;
+		for ( node = inventory->first; node != NULL; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( !item ) { continue; }
+
+			item->x = slotx;
+			item->y = sloty;
+			++slotx;
+			if ( slotx >= Player::Inventory_t::MAX_CHEST_X )
+			{
+				slotx = 0;
+				++sloty;
+			}
+		}
 	}
 
 	list_t* inventory = static_cast<list_t* >(children.first->element);
@@ -715,10 +735,6 @@ void Entity::actChest()
 				openedChest[chestclicked] = this;
 
 				chestOpener = chestclicked;
-				if ( players[chestclicked]->isLocalPlayer() ) // i.e host opened the chest, close GUIs
-				{
-					players[chestclicked]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_CHEST);
-				}
 				if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
 				{
 					//Send all of the items to the client.
@@ -738,31 +754,24 @@ void Entity::actChest()
 						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 						net_packet->data[24] = item->identified;
+						net_packet->data[25] = 1; //forceNewStack ? 1 : 0;
 						net_packet->address.host = net_clients[chestclicked - 1].host;
 						net_packet->address.port = net_clients[chestclicked - 1].port;
-						net_packet->len = 25;
+						net_packet->len = 26;
 						sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 					}
 				}
 				else
 				{
 					players[chestclicked]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
-					if ( numItemsInChest(chestclicked) > 0 )   //Warp mouse to first item in chest only if there are any items!
-					{
-						selectedChestSlot[chestclicked] = 0;
-						warpMouseToSelectedChestSlot(chestclicked);
-					}
-					else
-					{
-						selectedChestSlot[chestclicked] = -1;
-						players[chestclicked]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER)); //Because setting shootmode to false tends to start the mouse in the middle of the screen. Which is not nice.
-					}
+					players[chestclicked]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+					players[chestclicked]->inventoryUI.chestGUI.openChest();
 				}
 				chestStatus = 1; //Toggle chest open/closed.
 			}
 			else
 			{
-				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]);
+				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]); // slam the chest shut
 				if ( !players[chestOpener]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -771,16 +780,25 @@ void Entity::actChest()
 					net_packet->len = 4;
 					sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
 				}
-				else
-				{
-					chestitemscroll[chestclicked] = 0;
-				}
 				if (chestOpener != chestclicked)
 				{
 					messagePlayer(chestOpener, MESSAGE_HINT, language[461]);
 				}
 				closeChestServer();
 			}
+		}
+		else if ( !chestLocked && chestStatus && openedChest[chestclicked] && chestOpener == chestclicked )
+		{
+			messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]); // slam the chest shut
+			if ( !players[chestOpener]->isLocalPlayer() )
+			{
+				strcpy((char*)net_packet->data, "CCLS");  //Chest close.
+				net_packet->address.host = net_clients[chestOpener - 1].host;
+				net_packet->address.port = net_clients[chestOpener - 1].port;
+				net_packet->len = 4;
+				sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
+			}
+			closeChestServer();
 		}
 		else if ( chestLocked )
 		{
@@ -933,16 +951,8 @@ void Entity::closeChest()
 		}
 		else
 		{
-			if ( players[chestOpener]->isLocalPlayer() )
-			{
-				for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-				{
-					invitemschest[chestOpener][c] = nullptr;
-				}
-			}
-			chestitemscroll[chestOpener] = 0;
 			//Reset chest-gamepad related stuff here.
-			selectedChestSlot[chestOpener] = -1;
+			players[chestOpener]->inventoryUI.chestGUI.closeChest();
 		}
 	}
 }
@@ -953,23 +963,21 @@ void Entity::closeChestServer()
 	{
 		chestStatus = 0;
 		openedChest[chestOpener] = NULL;
-		if ( players[chestOpener]->isLocalPlayer() )
-		{
-			for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-			{
-				invitemschest[chestOpener][c] = nullptr;
-			}
-		}
+		players[chestOpener]->inventoryUI.chestGUI.closeChest();
 	}
 }
 
-void Entity::addItemToChest(Item* item)
+Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDestinationStack)
 {
 	if (!item)
 	{
-		return;
+		return nullptr;
 	}
 	int player = getChestOpenerFromEntity(*this);
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return nullptr;
+	}
 	if ( players[player]->isLocalPlayer() && multiplayer == CLIENT )
 	{
 		//Tell the server.
@@ -983,11 +991,11 @@ void Entity::addItemToChest(Item* item)
 		SDLNet_Write32((Uint32)item->count, &net_packet->data[17]);
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[21]);
 		net_packet->data[25] = item->identified;
-		net_packet->len = 26;
+		net_packet->data[26] = forceNewStack ? 1 : 0;
+		net_packet->len = 27;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 
-		addItemToChestClientside(player, item);
-		return;
+		return addItemToChestClientside(player, item, forceNewStack, specificDestinationStack);
 	}
 
 	Item* item2 = NULL;
@@ -996,14 +1004,28 @@ void Entity::addItemToChest(Item* item)
 	list_t* inventory = static_cast<list_t* >(children.first->element);
 
 	node_t* t_node = NULL;
-	//If item's already in the chest, add it to a pre-existing stack.
-	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
+	if ( !forceNewStack )
 	{
-		item2 = (Item*) t_node->element;
-		if (!itemCompare(item, item2, false))
+		//If item's already in the chest, add it to a pre-existing stack.
+		for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 		{
-			item2->count += item->count;
-			return;
+			item2 = (Item*) t_node->element;
+			if ( !specificDestinationStack )
+			{
+				if (!itemCompare(item, item2, false) )
+				{
+					item2->count += item->count;
+					return item2;
+				}
+			}
+			else
+			{
+				if ( specificDestinationStack == item2 )
+				{
+					item2->count += item->count;
+					return item2;
+				}
+			}
 		}
 	}
 
@@ -1020,23 +1042,34 @@ void Entity::addItemToChest(Item* item)
 		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
+		net_packet->data[25] = forceNewStack ? 1 : 0;
 		net_packet->address.host = net_clients[chestOpener - 1].host;
 		net_packet->address.port = net_clients[chestOpener - 1].port;
-		net_packet->len = 25;
+		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
 	}
+	return item;
 }
 
-void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
+Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bool forceNewStack, Item* specificDestinationStack)
 {
 	if (!item || !players[player] || !players[player]->entity)
 	{
-		return;
+		return nullptr;
 	}
 
 	if (itemCategory(item) == SPELL_CAT)
 	{
-		return;
+		return nullptr;
+	}
+
+	if ( amount <= 0 )
+	{
+		amount = item->count;
+	}
+	else
+	{
+		amount = std::min((Sint16)amount, item->count);
 	}
 
 	bool isEquipped = itemIsEquipped(item, player);
@@ -1054,7 +1087,7 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 				messagePlayer(player, MESSAGE_EQUIPMENT, language[1087]);
 			}
 			item->identified = true;
-			return;
+			return nullptr;
 		}
 	}
 	playSoundPlayer(player, 47 + rand() % 3, 64);
@@ -1063,15 +1096,17 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 	if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
 	{
 		printlog( "failed to allocate memory for new item!\n" );
-		return; //Error or something.
+		return nullptr; //Error or something.
 	}
 	newitem->node = NULL;
-	newitem->count = 1;
+	newitem->count = amount;
 	newitem->type = item->type;
 	newitem->status = item->status;
 	newitem->beatitude = item->beatitude;
 	newitem->appearance = item->appearance;
 	newitem->identified = item->identified;
+	newitem->uid = itemuids;
+	itemuids++;
 
 	Item** slot = itemSlot(stats[player], item);
 	if ( multiplayer == CLIENT )
@@ -1130,7 +1165,7 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 	}
 
 	// unequip the item
-	if ( item->count <= 1 || all)
+	if ( item->count - (Sint16)amount <= 0 )
 	{
 		if ( slot != NULL )
 		{
@@ -1141,9 +1176,9 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 	{
 		if ( item->node->list == &stats[player]->inventory )
 		{
-			if (!all)
+			if ( (Sint16)amount != item->count )
 			{
-				item->count--;
+				item->count = item->count - (Sint16)amount;
 				if ( item->count <= 0 )
 				{
 					list_RemoveNode(item->node);
@@ -1151,14 +1186,13 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 			}
 			else
 			{
-				newitem->count = item->count;
 				list_RemoveNode(item->node);
 			}
 		}
 	}
 	else
 	{
-		item->count--;
+		item->count = item->count - (Sint16)amount;
 		if ( item->count <= 0 )
 		{
 			free(item);
@@ -1166,12 +1200,11 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 	}
 
 	messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
-	addItemToChest(newitem);
 
-	return; //Do not execute the rest of this function.
+	return addItemToChest(newitem, forceNewStack, specificDestinationStack);
 }
 
-Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
+Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 {
 	/*
 	 * getInfoOnly just returns a copy of the item at the slot, it does not actually grab the item.
@@ -1183,6 +1216,15 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 	if ( item == NULL )
 	{
 		return NULL;
+	}
+
+	if ( amount <= 0 )
+	{
+		amount = item->count;
+	}
+	else
+	{
+		amount = std::min((Sint16)amount, item->count);
 	}
 
 	int player = getChestOpenerFromEntity(*this);
@@ -1217,11 +1259,7 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 			SDLNet_Write32((Uint32)item->type, &net_packet->data[5]);
 			SDLNet_Write32((Uint32)item->status, &net_packet->data[9]);
 			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[13]);
-			int count = 1;
-			if (all)
-			{
-				count = item->count;
-			}
+			Sint16 count = (Sint16)amount;
 			SDLNet_Write32((Uint32)count, &net_packet->data[17]);
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[21]);
 			net_packet->data[25] = item->identified;
@@ -1258,29 +1296,22 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 		newitem->identified = item->identified;
 	}
 
-	if (!all)
+	if ( !getInfoOnly )
 	{
-		//Grab only one item from the chest.
-		newitem->count = 1;
-		if (!getInfoOnly )
-		{
-			item->count -= 1;
-			if ( item->count <= 0 )
-			{
-				list_RemoveNode(item->node);
-			}
-		}
+		newitem->uid = itemuids;
+		itemuids++;
 	}
-	else
+
+	//Grab only x items from the chest.
+	newitem->count = amount;
+	if (!getInfoOnly )
 	{
-		//Grab all items from the chest.
-		newitem->count = item->count;
-		if ( !getInfoOnly )
+		item->count -= amount;
+		if ( item->count <= 0 )
 		{
 			list_RemoveNode(item->node);
 		}
 	}
-
 	return newitem;
 }
 
@@ -1298,24 +1329,16 @@ void closeChestClientside(const int player)
 	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
 	{
 		//Only called for the client.
-
 		list_FreeAll(&chestInv[player]);
 
 		openedChest[player] = NULL;
 
-		chestitemscroll[player] = 0;
-
-		for ( int c = 0; c < kNumChestItemsToDisplay; ++c )
-		{
-			invitemschest[player][c] = nullptr;
-		}
-
 		//Reset chest-gamepad related stuff here.
-		selectedChestSlot[player] = -1;
+		players[player]->inventoryUI.chestGUI.closeChest();
 	}
 }
 
-void addItemToChestClientside(const int player, Item* item)
+Item* addItemToChestClientside(const int player, Item* item, bool forceNewStack, Item* specificDestinationStack)
 {
 	if (openedChest[player])
 	{
@@ -1327,30 +1350,44 @@ void addItemToChestClientside(const int player, Item* item)
 		Item* item2 = NULL;
 		node_t* node = NULL;
 
-		for (node = chestInv[player].first; node != NULL; node = node->next)
+		if ( !forceNewStack )
 		{
-			item2 = (Item*) node->element;
-			if (!itemCompare(item, item2, false))
+			for (node = chestInv[player].first; node != NULL; node = node->next)
 			{
-				item2->count += item->count;
-				return;
+				item2 = (Item*) node->element;
+				if ( !specificDestinationStack )
+				{
+					if ( !itemCompare(item, item2, false) )
+					{
+						item2->count += item->count;
+						return item2;
+					}
+				}
+				else
+				{
+					if ( specificDestinationStack == item2 )
+					{
+						item2->count += item->count;
+						return item2;
+					}
+				}
 			}
 		}
 
 		item->node = list_AddNodeFirst(&chestInv[player]);
 		item->node->element = item;
 		item->node->deconstructor = &defaultDeconstructor;
+		return item;
 	}
 	//TODO: Else: Ruh-roh, error!
+	return nullptr;
 }
 
-
-
-void Entity::addItemToChestServer(Item* item)
+Item* Entity::addItemToChestServer(Item* item, bool forceNewStack, Item* specificDestinationStack)
 {
 	if (!item)
 	{
-		return;
+		return nullptr;
 	}
 
 	Item* item2 = NULL;
@@ -1361,30 +1398,45 @@ void Entity::addItemToChestServer(Item* item)
 
 	if (!inventory)
 	{
-		return;
+		return nullptr;
 	}
 
-	//If item's already in the chest, add it to a pre-existing stack.
-	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
+	if ( !forceNewStack )
 	{
-		item2 = (Item*) t_node->element;
-		if (!itemCompare(item, item2, false))
+		//If item's already in the chest, add it to a pre-existing stack.
+		for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 		{
-			item2->count += item->count;
-			return;
+			item2 = (Item*) t_node->element;
+			if ( !specificDestinationStack )
+			{
+				if ( !itemCompare(item, item2, false) )
+				{
+					item2->count += item->count;
+					return item2;
+				}
+			}
+			else
+			{
+				if ( specificDestinationStack == item2 )
+				{
+					item2->count += item->count;
+					return item2;
+				}
+			}
 		}
 	}
 
 	item->node = list_AddNodeFirst(inventory);
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
+	return item;
 }
 
-void Entity::removeItemFromChestServer(Item* item, int count)
+bool Entity::removeItemFromChestServer(Item* item, int count)
 {
 	if (!item)
 	{
-		return;
+		return false;
 	}
 
 	Item* item2 = NULL;
@@ -1393,15 +1445,17 @@ void Entity::removeItemFromChestServer(Item* item, int count)
 	list_t* inventory = static_cast<list_t* >(children.first->element);
 	if (!inventory)
 	{
-		return;
+		return false;
 	}
 
-	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
+	node_t* nextnode = nullptr;
+	for ( t_node = inventory->first; t_node != NULL; t_node = nextnode )
 	{
+		nextnode = t_node->next;
 		item2 = (Item*) t_node->element;
 		if (!item2  || !item2->node || item2->node->list != children.first->element)
 		{
-			return;
+			return false;
 		}
 		if (!itemCompare(item, item2, false))
 		{
@@ -1420,9 +1474,10 @@ void Entity::removeItemFromChestServer(Item* item, int count)
 				//Grab all items from the chest.
 				list_RemoveNode(item2->node);
 			}
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
 void Entity::unlockChest()

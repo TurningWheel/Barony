@@ -3695,32 +3695,65 @@ void Entity::handleEffects(Stat* myStats)
 			if ( (this->char_torchtime >= 7500 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10500) )
 			{
 				this->char_torchtime = 0;
-				if ( player >= 0 && players[player]->isLocalPlayer() )
+				if ( myStats->shield->type == TOOL_TORCH && player >= 0 )
 				{
-					if ( myStats->shield->count > 1 )
+					std::string itemName = myStats->shield->getName();
+					ItemType itemType = myStats->shield->type;
+					Status itemStatus = myStats->shield->status;
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], itemName.c_str());
+					int qty = std::max(0, myStats->shield->count - 1);
+					Item* item = myStats->shield;
+					consumeItem(item, player);
+					if ( qty > 0 )
 					{
-						newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, myStats->shield->appearance, myStats->shield->identified, &myStats->inventory);
+						messagePlayer(player, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
+						playSoundEntity(this, 134, 64); // ignite
+						if ( player >= 0 && players[player]->isLocalPlayer() )
+						{
+							players[player]->hud.shieldSwitch = true;
+						}
+					}
+					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "TORC");
+						SDLNet_Write16((Sint16)itemType, &net_packet->data[4]);
+						net_packet->data[6] = itemStatus;
+						net_packet->data[7] = qty;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
-				myStats->shield->count = 1;
-				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
-				if ( myStats->shield->status > BROKEN )
+				else // lanterns, monster torches
 				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[637], myStats->shield->getName());
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
-				}
-				if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
-				{
-					strcpy((char*)net_packet->data, "ARMR");
-					net_packet->data[4] = 4;
-					net_packet->data[5] = myStats->shield->status;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						if ( myStats->shield->count > 1 )
+						{
+							Item* newTorch = newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, myStats->shield->appearance, myStats->shield->identified, &myStats->inventory);
+						}
+					}
+					myStats->shield->count = 1;
+					myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
+					if ( myStats->shield->status > BROKEN )
+					{
+						messagePlayer(player, MESSAGE_EQUIPMENT, language[637], myStats->shield->getName());
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
+					}
+					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "ARMR");
+						net_packet->data[4] = 4;
+						net_packet->data[5] = myStats->shield->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
 				}
 			}
 		}
@@ -11720,15 +11753,15 @@ void createMonsterEquipment(Stat* stats)
 				itemCount = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 3];
 				if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 1 )
 				{
-					itemIdentified = false;
+					itemIdentified = true;
 				}
 				else if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 2 )
 				{
-					itemIdentified = true;
+					itemIdentified = rand() % 2;
 				}
 				else
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = false;
 				}
 				itemAppearance = rand();
 				chance = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 5];

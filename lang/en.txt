@@ -6044,9 +6044,17 @@ Cast#
 4090 gets pinched to pieces by the clawing crab.#
 
 # Nav Prompts
+4091 Take All#
 4092 Move cursor#
 4093 View Spells#
 4094 View Items#
 4095 View Skills#
+4096 Take#
+4097 Store All#
+4098 There is no room left in the chest for a
+ %s!#
+4099 Took %d items from the chest.#
+4100 You have no room left in your pack!#
+4101 You reignite another %s.#
 
-4099 end#
+4199 end#

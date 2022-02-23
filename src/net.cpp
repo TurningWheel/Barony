@@ -2719,6 +2719,29 @@ void clientHandlePacket()
 		return;
 	}
 
+	// a torch burns out
+	else if ( !strncmp((char*)net_packet->data, "TORC", 4) )
+	{
+		ItemType itemType = static_cast<ItemType>(SDLNet_Read16(&net_packet->data[4]));
+		Status itemStatus = static_cast<Status>(net_packet->data[6]);
+		int qty = static_cast<int>(net_packet->data[7]);
+		if ( stats[clientnum]->shield && stats[clientnum]->shield->type == itemType )
+		{
+			stats[clientnum]->shield->status = itemStatus;
+			stats[clientnum]->shield->count = qty;
+			if ( stats[clientnum]->shield->count <= 0 )
+			{
+				Item* item = stats[clientnum]->shield;
+				consumeItem(item, clientnum);
+			}
+			else
+			{
+				players[clientnum]->hud.shieldSwitch = true;
+			}
+		}
+		return;
+	}
+
 	// update armor quality
 	else if (!strncmp((char*)net_packet->data, "ARMR", 4))
 	{
@@ -2762,7 +2785,7 @@ void clientHandlePacket()
 		{
 			if ( item->count > 1 )
 			{
-				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
+				Item* pickedUp = newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
 				item->count = 1;
 			}
 			if ( static_cast<int>(net_packet->data[5]) > EXCELLENT )
@@ -3080,6 +3103,7 @@ void clientHandlePacket()
 		if ( *armor == inputs.getUIInteraction(clientnum)->selectedItem )
 		{
 			inputs.getUIInteraction(clientnum)->selectedItem = nullptr;
+			inputs.getUIInteraction(clientnum)->selectedItemFromChest = 0;
 		}
 
 		if ( (*armor)->count > 1 )
@@ -4152,6 +4176,8 @@ void clientHandlePacket()
 			chestInv[clientnum].first = nullptr;
 			chestInv[clientnum].last = nullptr;
 			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+			players[clientnum]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+			players[clientnum]->inventoryUI.chestGUI.openChest();
 		}
 		return;
 	}
@@ -4179,8 +4205,9 @@ void clientHandlePacket()
 		{
 			newitem->identified = false;
 		}
+		bool forceNewStack = net_packet->data[25] ? true : false;
 
-		addItemToChestClientside(clientnum, newitem);
+		addItemToChestClientside(clientnum, newitem, forceNewStack, nullptr);
 		return;
 	}
 
@@ -5403,9 +5430,8 @@ void serverHandlePacket()
 		{
 			newitem->identified = false;
 		}
-
-		openedChest[the_client]->addItemToChestServer(newitem);
-
+		bool forceNewStack = net_packet->data[26] ? true : false;
+		openedChest[the_client]->addItemToChestServer(newitem, forceNewStack, nullptr);
 		return;
 	}
 

@@ -8,6 +8,7 @@
 #include "player.hpp"
 #endif
 #include "mod_tools.hpp"
+#include "ui/MainMenu.hpp"
 
 #include <algorithm>
 
@@ -98,6 +99,8 @@ void Input::defaultBindings() {
 
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("InventoryTooltipPromptAppraise", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Expand Inventory Tooltip", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("CycleWorldTooltipNext", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("CycleWorldTooltipPrev", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftBumper", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavRightBumper", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftTrigger", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str()));
@@ -286,7 +289,16 @@ void Input::refresh() {
 		prefix.append("Pad");
 		prefix.append(std::to_string(player));
 		for (auto& binding : getGamepadBindings()) {
-		    bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			if ( binding.second == MainMenu::hiddenBinding )
+			{
+				auto b = bindings.find(binding.first);
+				if ( b != bindings.end() && b->second.isBindingUsingGamepad() )
+				{
+					// hidden binding, don't override existing bind by the defaults.
+					continue;
+				}
+			}
+			bind(binding.first.c_str(), (prefix + binding.second).c_str());
 		}
 	}
 	if ( false /*::inputs.hasJoystick(player)*/ )

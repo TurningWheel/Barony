@@ -99,17 +99,18 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 		}
 		if ( openedChest[player] )
 		{
-			if ( mx > getChestGUIStartX(player)
-				&& mx < getChestGUIStartX(player) + inventoryChest_bmp->w
-				&& my > getChestGUIStartY(player)
-				&& my < getChestGUIStartY(player) + inventoryChest_bmp->h )
-			{
-				if ( clickedOnGUI )
-				{
-					*clickedOnGUI = true;
-				}
-				return NULL;    //Click falls inside the chest inventory GUI.
-			}
+			// TODO UI: REPLACE
+			//if ( mx > getChestGUIStartX(player)
+			//	&& mx < getChestGUIStartX(player) + inventoryChest_bmp->w
+			//	&& my > getChestGUIStartY(player)
+			//	&& my < getChestGUIStartY(player) + inventoryChest_bmp->h )
+			//{
+			//	if ( clickedOnGUI )
+			//	{
+			//		*clickedOnGUI = true;
+			//	}
+			//	return NULL;    //Click falls inside the chest inventory GUI.
+			//}
 		}
 		SDL_Rect guiBox;
 		GenericGUI[player].getDimensions(guiBox);

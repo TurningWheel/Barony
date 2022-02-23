@@ -174,7 +174,10 @@ void Entity::actFurniture()
 {
 	if ( !furnitureInit )
 	{
-		this->createWorldUITooltip();
+		if ( furnitureType == FURNITURE_BUNKBED )
+		{
+			this->createWorldUITooltip();
+		}
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
@@ -1984,7 +1987,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Item* item = newItemFromEntity(entity);
 							if ( item )
 							{
-								chest->addItemToChest(item);
+								chest->addItemToChest(item, true, false);
 							}
 							list_RemoveNode(entity->mynode);
 							entity = nullptr;

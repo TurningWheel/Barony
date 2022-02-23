@@ -293,7 +293,10 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			Uint8 r, g, b, a;
 			SDL_GetRGBA(color, mainsurface->format, &r, &g, &b, &a);
 			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
-			text->drawColor(src, scaledDest, viewport, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+			if ( a > 0 )
+			{
+				text->drawColor(src, scaledDest, viewport, SDL_MapRGBA(mainsurface->format, r, g, b, a));
+			}
 		} else {
 			text->drawColor(src, scaledDest, viewport, color);
 		}

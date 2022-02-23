@@ -47,7 +47,6 @@ SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
 SDL_Surface* hunger_boiler_flame_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
-Item* invitemschest[MAXPLAYERS][kNumChestItemsToDisplay];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
@@ -63,11 +62,6 @@ int dragoffset_x[MAXPLAYERS] = { 0 };
 int dragoffset_y[MAXPLAYERS] = { 0 };
 
 list_t chestInv[MAXPLAYERS];
-int chestitemscroll[MAXPLAYERS] = { 0 };
-int chestgui_offset_x[MAXPLAYERS] = { 0 };
-int chestgui_offset_y[MAXPLAYERS] = { 0 };
-bool dragging_chestGUI[MAXPLAYERS] = { 0 };
-int selectedChestSlot[MAXPLAYERS];
 
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
@@ -1053,6 +1047,24 @@ Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 	}
 }
 
+void Player::GUI_t::setHoveringOverModuleButton(Player::GUI_t::GUIModules moduleOfButton)
+{
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		hoveringButtonModule = MODULE_NONE;
+		return;
+	}
+	hoveringButtonModule = moduleOfButton;
+}
+void Player::GUI_t::clearHoveringOverModuleButton()
+{
+	hoveringButtonModule = MODULE_NONE;
+}
+Player::GUI_t::GUIModules Player::GUI_t::hoveringOverModuleButton()
+{
+	return hoveringButtonModule;
+}
+
 bool Player::GUI_t::bActiveModuleHasNoCursor()
 {
 	switch ( activeModule )
@@ -1069,6 +1081,10 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 
 bool Player::GUI_t::bActiveModuleUsesInventory()
 {
+	if ( hoveringOverModuleButton() != MODULE_NONE )
+	{
+		return false;
+	}
 	switch ( activeModule )
 	{
 		case MODULE_INVENTORY:
@@ -1102,7 +1118,7 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	{
 		auto& inventoryUI = player.inventoryUI;
 		Item* selectedItem = inputs.getUIInteraction(player.playernum)->selectedItem;
-		if ( selectedItem)
+		if ( selectedItem && !player.inventoryUI.isItemFromChest(selectedItem) )
 		{
 			// we're holding an item, move to the selected item's slot
 			auto slot = player.paperDoll.getSlotForItem(*selectedItem);
@@ -1153,6 +1169,23 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		}
 		return true;
 	}
+	else if ( activeModule == MODULE_CHEST )
+	{
+		auto& inventoryUI = player.inventoryUI;
+		if ( inventoryUI.warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = inventoryUI.getChestSlotFrame(inventoryUI.getSelectedChestX(), inventoryUI.getSelectedChestY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
+		return true;
+	}
 	else if ( activeModule == MODULE_HOTBAR )
 	{
 		warpMouseToSelectedHotbarSlot(player.playernum);
@@ -1182,15 +1215,33 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 		}
 		if ( hudCursor && player.inventoryUI.selectedItemCursorFrame )
 		{
-			if ( (oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS)
-				&& !(activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR || activeModule == MODULE_SPELLS)
-				&& !bActiveModuleHasNoCursor() )
+			if ( (oldModule == MODULE_INVENTORY 
+					|| oldModule == MODULE_HOTBAR 
+					|| oldModule == MODULE_SPELLS
+					|| oldModule == MODULE_CHEST 
+					|| oldModule == MODULE_SHOP )
+				&& !(activeModule == MODULE_INVENTORY 
+					|| activeModule == MODULE_HOTBAR 
+					|| activeModule == MODULE_SPELLS
+					|| activeModule == MODULE_CHEST
+					|| activeModule == MODULE_SHOP)
+				&& !bActiveModuleHasNoCursor()
+				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
 				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
 			}
-			else if ( (activeModule == MODULE_INVENTORY || activeModule == MODULE_HOTBAR || activeModule == MODULE_SPELLS)
-				&& !(oldModule == MODULE_INVENTORY || oldModule == MODULE_HOTBAR || oldModule == MODULE_SPELLS) )
+			else if ( ((activeModule == MODULE_INVENTORY 
+				|| activeModule == MODULE_HOTBAR 
+				|| activeModule == MODULE_SPELLS
+				|| oldModule == MODULE_CHEST
+				|| oldModule == MODULE_SHOP)
+				&& !(oldModule == MODULE_INVENTORY 
+					|| oldModule == MODULE_HOTBAR 
+					|| oldModule == MODULE_SPELLS
+					|| activeModule == MODULE_CHEST
+					|| activeModule == MODULE_SHOP))
+				|| hoveringOverModuleButton() != MODULE_NONE )
 			{
 				SDL_Rect size = hudCursor->getSize();
 				if ( !player.hud.cursorFrame->isDisabled() )
@@ -1242,6 +1293,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 	int oldmodule = GUI.activeModule;
 	GUI.activateModule((GUI_t::GUIModules)whichModule);
 	inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
 	inputs.getUIInteraction(playernum)->toggleclick = false;
 	GUI.closeDropdowns();
 
@@ -1339,6 +1391,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{
 		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
 		inputs.getUIInteraction(playernum)->toggleclick = false;
 		GUI.closeDropdowns();
 		shootmode = true;

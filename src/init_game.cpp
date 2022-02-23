@@ -388,10 +388,6 @@ int initGame()
 		{
 			chestInv[i].first = NULL;
 			chestInv[i].last = NULL;
-			for ( c = 0; c < kNumChestItemsToDisplay; c++ )
-			{
-				invitemschest[i][c] = NULL;
-			}
 		}
 		command_history.first = NULL;
 		command_history.last = NULL;

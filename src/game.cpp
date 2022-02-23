@@ -4492,7 +4492,6 @@ void ingameHud()
 			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
 			{
 				//updateCharacterSheet(player);
-				updateChestInventory(player);
 				GenericGUI[player].updateGUI();
 				players[player]->bookGUI.updateBookGUI();
 				//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D
@@ -4794,6 +4793,11 @@ void ingameHud()
 				pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * cursor->getHeight() / 7) - cursor->getHeight() / 2;
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
+				if ( inputs.getUIInteraction(player)->itemMenuOpen && inputs.getUIInteraction(player)->itemMenuFromHotbar )
+				{
+					// adjust cursor to match selection
+					pos.y -= inputs.getUIInteraction(player)->itemMenuOffsetDetectionY;
+				}
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 			}
 			else
@@ -5932,6 +5936,10 @@ int main(int argc, char** argv)
 			{
 			    printTextFormatted(font16x16_bmp, 8, 8, "fps = %3.1f", fps);
 			}
+			if ( enableDebugKeys )
+			{
+				printTextFormatted(font8x8_bmp, 8, 20, "gui mode: %d", players[0]->GUI.activeModule);
+			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
 			if ( logCheckMainLoopTimers )
@@ -6004,6 +6012,8 @@ int main(int argc, char** argv)
 					    input.consumeBinaryToggle("Use");
 					}
 				}
+
+				players[i]->GUI.clearHoveringOverModuleButton();
 			}
 
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();

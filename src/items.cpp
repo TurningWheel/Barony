@@ -1224,6 +1224,18 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		if ( item == inputs.getUIInteraction(monster->skill[2])->selectedItem )
 		{
 			inputs.getUIInteraction(monster->skill[2])->selectedItem = nullptr;
+			inputs.getUIInteraction(monster->skill[2])->selectedItemFromChest = 0;
+		}
+	}
+	else if ( monster->behavior == &actChest )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( item == inputs.getUIInteraction(i)->selectedItem )
+			{
+				inputs.getUIInteraction(i)->selectedItem = nullptr;
+				inputs.getUIInteraction(i)->selectedItemFromChest = 0;
+			}
 		}
 	}
 
@@ -1754,13 +1766,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		usedBy = players[player]->entity;
 	}
 
-	if ( openedChest[player] && itemCategory(item) != SPELL_CAT ) //TODO: What if fountain called this function for its potion effect?
-	{
-		//If a chest is open, put the item in the chest.
-		openedChest[player]->addItemToChestFromInventory(player, item, false);
-		return;
-	}
-	else if ( player >= 0 && players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
+	if ( player >= 0 && players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype[player] )
@@ -2670,7 +2676,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 -------------------------------------------------------------------------------*/
 
-Item* itemPickup(const int player, Item* const item)
+Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventoryItem, bool forceNewStack)
 {
 	if (!item)
 	{
@@ -2726,9 +2732,40 @@ Item* itemPickup(const int player, Item* const item)
 	else
 	{
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
+		bool doSpecificItemCheck = (addToSpecificInventoryItem != nullptr);
+		bool hasRunSpecificItemCheck = false;
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
-			item2 = static_cast<Item*>(node->element);
+			if ( doSpecificItemCheck )
+			{
+				if ( !hasRunSpecificItemCheck )
+				{
+					item2 = addToSpecificInventoryItem;
+					hasRunSpecificItemCheck = true;
+				}
+				else
+				{
+					node = stats[player]->inventory.first;
+					item2 = static_cast<Item*>(node->element);
+					doSpecificItemCheck = false;
+				}
+			}
+			else
+			{
+				item2 = static_cast<Item*>(node->element);
+			}
+
+			if ( forceNewStack )
+			{
+				if ( !itemCompare(item, item2, true) )
+				{
+					// items are the same (incl. appearance!)
+					// if they shouldn't stack, we need to change appearance of the new item.
+					appearancesOfSimilarItems.insert(item2->appearance);
+				}
+				continue;
+			}
+
 			if (!itemCompare(item, item2, false))
 			{
 				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
@@ -2864,6 +2901,333 @@ Item* itemPickup(const int player, Item* const item)
 	return item;
 }
 
+int Item::getMaxStackLimit(int player) const
+{
+	if ( !shouldItemStack(player, true) )
+	{
+		return 1;
+	}
+
+	int maxStack = 100;
+	if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
+	{
+		maxStack = THROWN_GEM_MAX_STACK_QTY;
+	}
+	else if ( itemTypeIsQuiver(this->type) )
+	{
+		maxStack = QUIVER_MAX_AMMO_QTY - 1;
+	}
+	else if ( type == TOOL_METAL_SCRAP || type == TOOL_MAGIC_SCRAP )
+	{
+		maxStack = SCRAP_MAX_STACK_QTY - 1;
+	}
+
+	return maxStack;
+}
+
+ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck || !itemDestinationStack )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( !itemCompare(itemToCheck, itemDestinationStack, false) )
+	{
+		if ( (itemTypeIsQuiver(itemDestinationStack->type) && (itemToCheck->count + itemDestinationStack->count) >= QUIVER_MAX_AMMO_QTY)
+			|| ((itemDestinationStack->type == TOOL_MAGIC_SCRAP || itemDestinationStack->type == TOOL_METAL_SCRAP)
+				&& (itemToCheck->count + itemDestinationStack->count) >= SCRAP_MAX_STACK_QTY) )
+		{
+			int maxStack = QUIVER_MAX_AMMO_QTY;
+			if ( itemDestinationStack->type == TOOL_MAGIC_SCRAP || itemDestinationStack->type == TOOL_METAL_SCRAP )
+			{
+				maxStack = SCRAP_MAX_STACK_QTY;
+			}
+
+			if ( itemDestinationStack->count == maxStack - 1 )
+			{
+				// can't add anymore to this stack, let's skip over this.
+				newQtyForDestItem = itemDestinationStack->count;
+				newQtyForCheckedItem = itemToCheck->count;
+				itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+
+			// too many arrows, split off into a new stack with reduced qty.
+			const int total = itemToCheck->count + itemDestinationStack->count;
+			const int destinationStackQty = maxStack - 1;
+			newQtyForDestItem = destinationStackQty;
+			newQtyForCheckedItem = total - newQtyForDestItem;
+
+			if ( newQtyForCheckedItem <= 0 )
+			{
+				itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+			else
+			{
+				itemStackResult.resultType = ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+		}
+		// if items are the same, check to see if they should stack
+		else if ( itemDestinationStack->shouldItemStack(player) )
+		{
+			int maxStack = itemDestinationStack->getMaxStackLimit(player);
+
+			const int total = itemToCheck->count + itemDestinationStack->count;
+			if ( total > maxStack )
+			{
+				newQtyForDestItem = maxStack;
+				newQtyForCheckedItem = total - newQtyForDestItem;
+				if ( newQtyForCheckedItem <= 0 )
+				{
+					itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+					itemStackResult.itemToStackInto = itemDestinationStack;
+					return itemStackResult;
+				}
+				else
+				{
+					itemStackResult.resultType = ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK;
+					itemStackResult.itemToStackInto = itemDestinationStack;
+					return itemStackResult;
+				}
+			}
+			else
+			{
+				newQtyForCheckedItem = 0;
+				newQtyForDestItem = total;
+				itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+		}
+		else if ( !itemCompare(itemToCheck, itemDestinationStack, true) )
+		{
+			newQtyForCheckedItem = itemToCheck->count;
+			newQtyForDestItem = itemDestinationStack->count;
+			itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+			return itemStackResult;
+		}
+	}
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = itemDestinationStack->count;
+	itemStackResult.resultType = ITEM_DESTINATION_NOT_SAME_ITEM;
+	return itemStackResult;
+}
+
+void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	int maxStack = itemToCheck.getMaxStackLimit(player);
+	if ( itemToCheck.count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck.count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck.count;
+	}
+}
+
+ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	list_t* chest_inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		chest_inventory = &chestInv[player];
+	}
+	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	{
+		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+	}
+	if ( !chest_inventory )
+	{
+		// no chest inventory available
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( itemDestinationStack )
+	{
+		return getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, itemDestinationStack, newQtyForCheckedItem, newQtyForDestItem);
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = 0;
+
+	for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( item2 )
+		{
+			int tmpQtyCheckedItem = newQtyForCheckedItem;
+			int tmpQtyDestItem = newQtyForDestItem;
+			auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+			bool skipResult = false;
+			switch ( res.resultType )
+			{
+				case ITEM_DESTINATION_NOT_SAME_ITEM:
+				case ITEM_STACKING_ERROR:
+				case ITEM_DESTINATION_STACK_IS_FULL:
+					skipResult = true;
+					break;
+				default:
+					break;
+			}
+			if ( skipResult )
+			{
+				continue;
+			}
+
+			// found a stack to add this item to
+			newQtyForCheckedItem = tmpQtyCheckedItem;
+			newQtyForDestItem = tmpQtyDestItem;
+			res.itemToStackInto = item2;
+			return res;
+		}
+	}
+
+	//std::vector<std::pair<int, Item*>> chestSlotOrder;
+	//for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
+	//{
+	//	Item* item2 = static_cast<Item*>(node->element);
+	//	if ( item2 )
+	//	{
+	//		int key = item2->x + item2->y * 100;
+	//		chestSlotOrder.push_back(std::make_pair(key, item2));
+	//	}
+	//}
+	//std::sort(chestSlotOrder.begin(), chestSlotOrder.end()); // sort ascending by position, left to right, then down
+	//for ( auto& keyValue : chestSlotOrder )
+	//{
+	//	Item* item2 = keyValue.second;
+	//	if ( item2 )
+	//	{
+	//		int tmpQtyCheckedItem = newQtyForCheckedItem;
+	//		int tmpQtyDestItem = newQtyForDestItem;
+	//		auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+	//		bool skipResult = false;
+	//		switch ( res )
+	//		{
+	//			case ITEM_DESTINATION_NOT_SAME_ITEM:
+	//			case ITEM_STACKING_ERROR:
+	//			case ITEM_DESTINATION_STACK_IS_FULL:
+	//				skipResult = true;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		if ( skipResult )
+	//		{
+	//			continue;
+	//		}
+
+	//		// found a stack to add this item to
+	//		result = res;
+	//		newQtyForCheckedItem = tmpQtyCheckedItem;
+	//		newQtyForDestItem = tmpQtyDestItem;
+	//		return result;
+	//	}
+	//}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	int maxStack = itemToCheck->getMaxStackLimit(player);
+	if ( itemToCheck->count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck->count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck->count;
+	}
+	return itemStackResult;
+}
+
+ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem)
+{
+	ItemStackResult itemStackResult;
+	itemStackResult.itemToStackInto = nullptr;
+	if ( !itemToCheck )
+	{
+		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+
+	if ( itemDestinationStack )
+	{
+		return getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, itemDestinationStack, newQtyForCheckedItem, newQtyForDestItem);
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	newQtyForCheckedItem = itemToCheck->count;
+	newQtyForDestItem = 0;
+
+	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( item2 )
+		{
+			int tmpQtyCheckedItem = newQtyForCheckedItem;
+			int tmpQtyDestItem = newQtyForDestItem;
+			auto res = getItemStackingBehaviorIndividualItemCheck(player, itemToCheck, item2, tmpQtyCheckedItem, tmpQtyDestItem);
+			bool skipResult = false;
+			switch ( res.resultType )
+			{
+				case ITEM_DESTINATION_NOT_SAME_ITEM:
+				case ITEM_STACKING_ERROR:
+				case ITEM_DESTINATION_STACK_IS_FULL:
+					skipResult = true;
+					break;
+				default:
+					break;
+			}
+			if ( skipResult )
+			{
+				continue;
+			}
+			
+			// found a stack to add this item to
+			newQtyForCheckedItem = tmpQtyCheckedItem;
+			newQtyForDestItem = tmpQtyDestItem;
+			res.itemToStackInto = item2;
+			return res;
+		}
+	}
+
+	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
+	int maxStack = itemToCheck->getMaxStackLimit(player);
+	if ( itemToCheck->count > maxStack )
+	{
+		newQtyForCheckedItem = itemToCheck->count - maxStack;
+		newQtyForDestItem = maxStack;
+	}
+	else
+	{
+		newQtyForCheckedItem = 0;
+		newQtyForDestItem = itemToCheck->count;
+	}
+	return itemStackResult;
+}
+
 /*-------------------------------------------------------------------------------
 
 	newItemFromEntity
@@ -2953,6 +3317,10 @@ Item** itemSlot(Stat* const myStats, Item* const item)
 
 bool itemIsEquipped(const Item* const item, const int player)
 {
+	if ( !item->node || item->node->list != &stats[player]->inventory )
+	{
+		return false;
+	}
 	if ( !itemCompare(item, stats[player]->helmet, true) )
 	{
 		return true;
@@ -4330,15 +4698,15 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
 				{
-					itemIdentified = false;
+					itemIdentified = true;
 				}
 				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
 				{
-					itemIdentified = true;
+					itemIdentified = rand() % 2;
 				}
 				else
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = false;
 				}
 				itemAppearance = rand();
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
@@ -4774,7 +5142,7 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlrea
 	return false;
 }
 
-bool Item::shouldItemStack(const int player) const
+bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 {
 	if ( player >= 0 )
 	{
@@ -4788,7 +5156,8 @@ bool Item::shouldItemStack(const int player) const
 				&& this->type != TOOL_PICKAXE
 				&& this->type != TOOL_ALEMBIC
 				&& this->type != TOOL_TINKERING_KIT
-				&& this->type != ENCHANTED_FEATHER )
+				&& this->type != ENCHANTED_FEATHER
+				&& this->type != TOOL_LANTERN)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
@@ -4796,21 +5165,22 @@ bool Item::shouldItemStack(const int player) const
 				&& this->type != TOOL_PICKAXE 
 				&& this->type != TOOL_ALEMBIC 
 				&& this->type != TOOL_TINKERING_KIT
-				&& this->type != ENCHANTED_FEATHER)
+				&& this->type != ENCHANTED_FEATHER
+				&& this->type != TOOL_LANTERN)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
 			if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 			{
-				if ( count >= 9 )
+				if ( !ignoreStackLimit && count >= THROWN_GEM_MAX_STACK_QTY )
 				{
 					return false;
 				}
 			}
 			else if ( itemTypeIsQuiver(this->type) )
 			{
-				if ( count >= QUIVER_MAX_AMMO_QTY - 1 )
+				if ( !ignoreStackLimit && count >= QUIVER_MAX_AMMO_QTY - 1 )
 				{
 					return false;
 				}
@@ -4818,7 +5188,7 @@ bool Item::shouldItemStack(const int player) const
 			}
 			else if ( type == TOOL_METAL_SCRAP || type == TOOL_MAGIC_SCRAP )
 			{
-				if ( count >= SCRAP_MAX_STACK_QTY - 1 )
+				if ( !ignoreStackLimit && count >= SCRAP_MAX_STACK_QTY - 1 )
 				{
 					return false;
 				}

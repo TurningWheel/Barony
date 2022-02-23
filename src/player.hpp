@@ -219,14 +219,10 @@ public:
 	 */
 	void handleAnalog(int player);
 
-	//Left analog stick movement along the x axis.
-	int getLeftXMove();
-	//...along the y axis.
-	int getLeftYMove();
 	//Right analog stick movement along the x axis.
-	int getRightXMove();
+	int getRightXMove(int player);
 	//...along the y axis.
-	int getRightYMove();
+	int getRightYMove(int player);
 
 	int getLeftTrigger();
 	int getRightTrigger();
@@ -283,12 +279,6 @@ public:
 	float x_forceMaxForwardThreshold = 0.7;
 	float x_forceMaxBackwardThreshold = 0.5;
 	float y_forceMaxStrafeThreshold = 0.7;
-
-	/*
-	 * Uses dpad to move the cursor around a chest's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleChestMovement(const int player);
 
 	/*
 	 * Uses dpad to move the cursor around a shop's inventory and select items.
@@ -370,10 +360,13 @@ class Inputs
 		* -1 means it's not from the hotbar.
 		*/
 		int selectedItemFromHotbar = -1;
+		Uint32 selectedItemFromChest = 0;
 
 		Item* selectedItem = nullptr;
 		bool toggleclick = false;
 		bool itemMenuOpen = false;
+		bool itemMenuFromHotbar = false;
+		int itemMenuOffsetDetectionY = 0;
 		int itemMenuX = 0;
 		int itemMenuY = 0;
 		int itemMenuSelected = 0;
@@ -723,10 +716,14 @@ public:
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
+		GUIModules hoveringButtonModule = MODULE_NONE;
 		void activateModule(GUIModules module);
 		bool warpControllerToModule(bool moveCursorInstantly);
 		bool bActiveModuleUsesInventory();
 		bool bActiveModuleHasNoCursor();
+		void setHoveringOverModuleButton(GUIModules moduleOfButton);
+		void clearHoveringOverModuleButton();
+		GUIModules hoveringOverModuleButton();
 		bool handleCharacterSheetMovement(); // controller movement for misc GUIs not for inventory/hotbar
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
@@ -764,13 +761,17 @@ public:
 		Frame* tooltipPromptFrame = nullptr;
 		Frame* selectedItemCursorFrame = nullptr;
 		Frame* spellFrame = nullptr;
+		Frame* chestFrame = nullptr;
 		std::unordered_map<int, Frame*> slotFrames;
 		std::unordered_map<int, Frame*> spellSlotFrames;
+		std::unordered_map<int, Frame*> chestSlotFrames;
 		bool bCompactView = false;
 		real_t slideOutPercent = 0.0;
 		static int slideOutWidth;
 		bool bFirstTimeSnapCursor = false;
 		bool isInteractable = false;
+		Uint32 tooltipDelayTick = 0;
+		bool bIsTooltipDelayed();
 		void openInventory();
 		void closeInventory();
 
@@ -828,6 +829,39 @@ public:
 		};
 		SpellPanel_t spellPanel;
 
+		struct ChestGUI_t
+		{
+			Player& player;
+			PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+			real_t animx = 0.0;
+			real_t animx2 = 0.0; // to duck out the paper doll in compact view
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = true;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+			const int kNumItemsToDisplayVertical = 3;
+			int getNumItemsToDisplayVertical() const;
+			void openChest();
+			void closeChest();
+			void updateChest();
+			void scrollToSlot(int x, int y, bool instantly);
+			bool isSlotVisible(int x, int y) const;
+			bool isItemVisible(Item* item) const;
+
+			int selectedChestSlotX = -1;
+			int selectedChestSlotY = -1;
+			bool isChestSelected();
+
+			static int heightOffsetWhenNotCompact;
+			ChestGUI_t(Player& p) :
+				player(p) {}
+		};
+		ChestGUI_t chestGUI;
+
 		struct ItemTooltipDisplay_t
 		{
 			Uint32 type;
@@ -870,10 +904,13 @@ public:
 		int DEFAULT_INVENTORY_SIZEY = 3;
 		static const int MAX_SPELLS_X;
 		static const int MAX_SPELLS_Y;
+		static const int MAX_CHEST_X;
+		static const int MAX_CHEST_Y;
 		Inventory_t(Player& p) : 
 			player(p), 
 			appraisal(p), 
 			spellPanel(p),
+			chestGUI(p),
 			DEFAULT_INVENTORY_SIZEX(12),
 			DEFAULT_INVENTORY_SIZEY(3)
 		{
@@ -893,9 +930,14 @@ public:
 		void selectSpell(const int x, const int y) { selectedSpellX = x; selectedSpellY = y; }
 		const int getSelectedSpellX() const { return selectedSpellX; }
 		const int getSelectedSpellY() const { return selectedSpellY; }
+		void selectChestSlot(const int x, const int y);
+		const int getSelectedChestX() const { return chestGUI.selectedChestSlotX; }
+		const int getSelectedChestY() const { return chestGUI.selectedChestSlotY; }
+		const bool isItemFromChest(Item* item) const;
 		const bool selectedSlotInPaperDoll() const { return selectedSlotY < 0; }
 		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags);
 		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
+		bool warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags);
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
@@ -942,6 +984,7 @@ public:
 		Frame* getInventorySlotFrame(int x, int y) const;
 		Frame* getSpellSlotFrame(int x, int y) const;
 		Frame* getItemSlotFrame(Item* item, int x, int y) const;
+		Frame* getChestSlotFrame(int x, int y) const;
 
 		enum PaperDollRows : int
 		{
