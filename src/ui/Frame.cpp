@@ -2047,27 +2047,33 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 			Uint8 r, g, b, a;
 			SDL_GetRGBA(image->color, mainsurface->format, &r, &g, &b, &a);
 			a *= getOpacity() / 100.0;
-			if ( image->outline )
+			if ( a > 0 )
 			{
-				real_t outlineGlowEffect = 0.0;
-				Uint32 halfInterval = imageGlowInterval / 2;
-				if ( ::ticks % imageGlowInterval > halfInterval )
+				if ( image->outline )
 				{
-					outlineGlowEffect = (halfInterval - ((::ticks % imageGlowInterval) - halfInterval)) / static_cast<real_t>(imageGlowInterval);
+					real_t outlineGlowEffect = 0.0;
+					Uint32 halfInterval = imageGlowInterval / 2;
+					if ( ::ticks % imageGlowInterval > halfInterval )
+					{
+						outlineGlowEffect = (halfInterval - ((::ticks % imageGlowInterval) - halfInterval)) / static_cast<real_t>(imageGlowInterval);
+					}
+					else
+					{
+						outlineGlowEffect = ::ticks % imageGlowInterval / static_cast<real_t>(imageGlowInterval);
+					}
+					outlineGlowEffect = (outlineGlowEffect * .5) + .5;
+					Uint8 r2, g2, b2, a2;
+					SDL_GetRGBA(image->outlineColor, mainsurface->format, &r2, &g2, &b2, &a2);
+					Uint32 alpha = static_cast<Uint8>(255.0 * ((static_cast<real_t>(a) / 255.0) * static_cast<real_t>(a2 / 255.0) * outlineGlowEffect));
+					if ( alpha > 0 )
+					{
+						drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+							SDL_MapRGBA(mainsurface->format, r2, g2, b2, alpha));
+					}
 				}
-				else
-				{
-					outlineGlowEffect = ::ticks % imageGlowInterval / static_cast<real_t>(imageGlowInterval);
-				}
-				outlineGlowEffect = (outlineGlowEffect * .5) + .5;
-				Uint8 r2, g2, b2, a2;
-				SDL_GetRGBA(image->outlineColor, mainsurface->format, &r2, &g2, &b2, &a2);
-				Uint32 alpha = static_cast<Uint8>(255.0 * ((static_cast<real_t>(a) / 255.0) * static_cast<real_t>(a2 / 255.0) * outlineGlowEffect));
-				drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-					SDL_MapRGBA(mainsurface->format, r2, g2, b2, alpha));
+				actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+					SDL_MapRGBA(mainsurface->format, r, g, b, a));
 			}
-			actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-				SDL_MapRGBA(mainsurface->format, r, g, b, a));
 		}
 		else
 		{
@@ -2087,8 +2093,11 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 				Uint8 r2, g2, b2, a2;
 				SDL_GetRGBA(image->outlineColor, mainsurface->format, &r2, &g2, &b2, &a2);
 				Uint32 alpha = static_cast<Uint8>(static_cast<real_t>(a2) * outlineGlowEffect);
-				drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-					SDL_MapRGBA(mainsurface->format, r2, g2, b2, alpha));
+				if ( alpha > 0 )
+				{
+					drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+						SDL_MapRGBA(mainsurface->format, r2, g2, b2, alpha));
+				}
 			}
 			actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, image->color);
 		}
