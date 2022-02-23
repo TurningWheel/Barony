@@ -4322,7 +4322,7 @@ bind_failed:
 
 	static void sendSvFlagsOverNet() {
 	    if (multiplayer == SERVER) {
-	        memcpy(net_packet->data, "SVFL");
+	        memcpy(net_packet->data, "SVFL", 4);
 			SDLNet_Write32(svFlags, &net_packet->data[4]);
 			net_packet->len = 8;
 			for (int c = 1; c < MAXPLAYERS; c++) {
@@ -4334,7 +4334,7 @@ bind_failed:
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 	    } else if (multiplayer == CLIENT) {
-	        memcpy(net_packet->data, "SVFL");
+	        memcpy(net_packet->data, "SVFL", 4);
 			net_packet->len = 4;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -6958,8 +6958,6 @@ bind_failed:
 		}
 
 		bool allReady = true;
-		assert(main_menu_frame);
-		auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 		for (int c = 0; c < 4; ++c) {
 			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
 			auto backdrop = card->findImage("backdrop"); assert(backdrop);
