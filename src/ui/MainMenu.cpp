@@ -4205,7 +4205,20 @@ bind_failed:
 			}
 
 			if (hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30)) {
-			    // TODO open disconnect window
+                monoPrompt(
+                    "You have been disconnected\nfrom the remote server.",
+                    "Okay",
+                    [](Button& button){
+	                    soundCancel();
+	                    assert(main_menu_frame);
+	                    auto prompt = main_menu_frame->findFrame("mono_prompt");
+	                    if (prompt) {
+		                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+		                    dimmer->removeSelf();
+	                    }
+	                    beginFade(FadeDestination::RootMainMenu);
+                    }
+                );
 				disconnectFromLobby();
 			}
 		}
@@ -4383,7 +4396,7 @@ bind_failed:
 					}
 					net_packet->len = packetlen;
 					if (packetlen < sizeof(DWORD)) {
-						continue;    // junk packet, skip //TODO: Investigate the cause of this. During earlier testing, we were getting bombarded with untold numbers of these malformed packets, as if the entire steam network were being routed through this game.
+						continue; // junk packet, skip
 					}
 
 					CSteamID mySteamID = SteamUser()->GetSteamID();
@@ -4613,7 +4626,6 @@ bind_failed:
 					}
 					net_packet->len = packetlen;
 					if (packetlen < sizeof(DWORD)) {
-					    // TODO can this actually happen
 						continue;
 					}
 
