@@ -866,7 +866,7 @@ namespace MainMenu {
 	    assert(frame);
 
 		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setSize(SDL_Rect{30, 12, 304, 142});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
@@ -4912,7 +4912,6 @@ bind_failed:
                     connectionErrorPrompt(error_str);
 
                     // reset connection
-                    clientnum = 0;
                     multiplayer = SINGLE;
                     disconnectFromLobby();
 
@@ -5207,12 +5206,12 @@ bind_failed:
 	    directConnect = true;
 
         // TODO get port number from settings
-	    Uint16 portnumber = DEFAULT_PORT;
+	    Uint16 port = DEFAULT_PORT;
 
 	    // resolve local host's address
-	    if (SDLNet_ResolveHost(&net_server, NULL, portnumber) == -1) {
+	    if (SDLNet_ResolveHost(&net_server, NULL, port) == -1) {
 	        char buf[1024];
-	        snprintf(buf, sizeof(buf), "Failed to resolve localhost:%hu.", portnumber);
+	        snprintf(buf, sizeof(buf), "Failed to resolve localhost:%hu.", port);
 		    printlog("%s\n", buf);
             monoPrompt(buf, "Okay",
                 [](Button& button){
@@ -5233,7 +5232,7 @@ bind_failed:
 	    }
 
 	    // open sockets
-	    if (!(net_sock = SDLNet_UDP_Open(portnumber))) {
+	    if (!(net_sock = SDLNet_UDP_Open(port))) {
 		    printlog( "warning: SDLNet_UDP_open has failed: %s\n", SDLNet_GetError());
 		    return false;
 	    }
@@ -5319,7 +5318,7 @@ bind_failed:
             // read port number
 		    char *port_err;
 		    port = (Uint16)strtol(&address_copy[port_index], &port_err, 10);
-		    if (*port_err != '\0' || portnumber < 1024) {
+		    if (*port_err != '\0' || port < 1024) {
 			    printlog("warning: invalid port number (%hu). Using default (%hu)\n", port, DEFAULT_PORT);
                 port = DEFAULT_PORT;
 		    }
@@ -5341,6 +5340,8 @@ bind_failed:
 			    printlog(buf);
 			    close_text_prompt();
 			    connectionErrorPrompt(buf);
+			    multiplayer = SINGLE;
+			    disconnectFromLobby();
 			    return;
 		    }
 
@@ -5352,6 +5353,8 @@ bind_failed:
 			    printlog(buf);
 			    close_text_prompt();
 			    connectionErrorPrompt(buf);
+			    multiplayer = SINGLE;
+			    disconnectFromLobby();
 			    return;
 		    }
 		    if (!(net_tcpsock = SDLNet_TCP_Open(&net_server))) {
@@ -5360,6 +5363,8 @@ bind_failed:
 			    printlog(buf);
 			    close_text_prompt();
 			    connectionErrorPrompt(buf);
+			    multiplayer = SINGLE;
+			    disconnectFromLobby();
 			    return;
 		    }
 		    tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
@@ -8528,9 +8533,13 @@ bind_failed:
                     auto field = prompt->findField("field");
                     const char* address = field->getText();
                     if (guide == ipaddr) {
+                        soundActivate();
                         connectToServer(address, LobbyType::LobbyLAN);
                     } else if (guide == roomcode) {
+                        soundActivate();
                         connectToServer(address, LobbyType::LobbyOnline);
+                    } else {
+                        soundError();
                     }
                 },
                 [](Button&){ // cancel

@@ -1485,6 +1485,8 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 
 NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 {
+    printlog("processing lobby join request\n");
+
 	int c = MAXPLAYERS;
 	if ( strcmp(VERSION, (char*)net_packet->data + 39) )
 	{
