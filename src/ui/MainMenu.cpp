@@ -4373,8 +4373,8 @@ bind_failed:
 			        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 		        }
 		    } else if (multiplayer == CLIENT) {
-		        net_packet->address.host = net_clients[0].host;
-		        net_packet->address.port = net_clients[0].port;
+		        net_packet->address.host = net_server.host;
+		        net_packet->address.port = net_server.port;
 		        sendPacketSafe(net_sock, -1, net_packet, 0);
 		    }
 		}
@@ -4393,7 +4393,7 @@ bind_failed:
 	    net_packet->data[5] = ready ? (Uint8)1u : (Uint8)0u;
 
         // send packet
-        net_packet->len = 5;
+        net_packet->len = 6;
         if (multiplayer == SERVER) {
 	        for (int i = 1; i < MAXPLAYERS; i++ ) {
 		        if ( client_disconnected[i] ) {
@@ -4509,7 +4509,7 @@ bind_failed:
 				continue;
 			}
 
-			Uint32 packetId = *(Uint32*)net_packet->data;
+			Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 
 			if (packetId == 'JOIN') {
 				int playerNum = MAXPLAYERS;
@@ -4645,7 +4645,7 @@ bind_failed:
 				}
 			    Uint8 player = net_packet->data[4];
 			    Uint8 status = net_packet->data[5];
-			    createReadyStone((int)player, false, (bool)status);
+			    createReadyStone((int)player, false, status ? true : false);
 			    continue;
 			}
 
@@ -4704,15 +4704,24 @@ bind_failed:
 
 			// keepalive
 			else if (packetId == 'KPAL') {
-				client_keepalive[net_packet->data[5]] = ticks;
-				continue; // just a keep alive
+				client_keepalive[net_packet->data[4]] = ticks;
+				continue;
+			}
+
+            // error
+			else {
+			    printlog("Got a mystery packet: %c%c%c%c",
+			        (char)net_packet->data[0],
+			        (char)net_packet->data[1],
+			        (char)net_packet->data[2],
+			        (char)net_packet->data[3]);
+			    continue;
 			}
 		}
 	}
 
 	static void handlePacketsAsClient() {
 	    if (receivedclientnum == false) {
-
             static auto close_text_prompt = [](){
                 assert(main_menu_frame);
                 auto prompt = main_menu_frame->findFrame("text_prompt"); assert(prompt);
@@ -5032,7 +5041,7 @@ bind_failed:
 				    continue;
 			    }
 
-			    Uint32 packetId = *(Uint32*)net_packet->data;
+			    Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 			    client_keepalive[0] = ticks;
 
 			    // game start
@@ -5061,21 +5070,25 @@ bind_failed:
 				    //strncpy(shortname, stats[player]->name, 22);
 				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
 				    // TODO report player joined in message log
-			        createReadyStone((int)player, false, false);
+			        if (player != clientnum) {
+			            createReadyStone((int)player, false, false);
+			        }
 				    continue;
 			    }
 
 			    // update player attributes
 			    else if (packetId == 'PLYR') {
 				    Uint8 player = net_packet->data[4];
-		            strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
-		            client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
-		            stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
-		            Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
-		            stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-		            stats[player]->playerRace = (raceAndAppearance & 0xFF);
-		            stats[player]->clearStats();
-		            initClass(player);
+				    if (player != clientnum) {
+		                strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
+		                client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
+		                stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
+		                Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
+		                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		                stats[player]->playerRace = (raceAndAppearance & 0xFF);
+		                stats[player]->clearStats();
+		                initClass(player);
+		            }
 			        continue;
 			    }
 
@@ -5083,7 +5096,9 @@ bind_failed:
 			    else if (packetId == 'REDY') {
 			        Uint8 player = net_packet->data[4];
 			        Uint8 status = net_packet->data[5];
-			        createReadyStone((int)player, false, (bool)status);
+			        if (player != clientnum) {
+			            createReadyStone((int)player, false, status ? true : false);
+			        }
 			        continue;
 			    }
 
@@ -5144,6 +5159,16 @@ bind_failed:
 			    // keepalive
 			    else if (packetId == 'KPAL') {
 				    continue; // just a keep alive
+			    }
+
+                // error
+			    else {
+			        printlog("Got a mystery packet: %c%c%c%c",
+			            (char)net_packet->data[0],
+			            (char)net_packet->data[1],
+			            (char)net_packet->data[2],
+			            (char)net_packet->data[3]);
+			        continue;
 			    }
 			}
 		}
@@ -6898,30 +6923,15 @@ bind_failed:
 		    countdown->removeSelf();
 		}
         sendReadyOverNet(index, false);
+        sendPlayerOverNet();
 
 		auto card = initCharacterCard(index, 346);
 
-		if (currentLobbyType == LobbyType::LobbyLocal) {
-			switch (index) {
-			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
-			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1);}); break;
-			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
-			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
-			}
-		} else if (currentLobbyType == LobbyType::LobbyLAN) {
-			switch (index) {
-			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(0);}); break;
-			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(1);}); break;
-			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(2);}); break;
-			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createWaitingStone(3);}); break;
-			}
-		} else if (currentLobbyType == LobbyType::LobbyOnline) {
-			switch (index) {
-			case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(0);}); break;
-			case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(1);}); break;
-			case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(2);}); break;
-			case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createInviteButton(3);}); break;
-			}
+		switch (index) {
+		case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -7485,12 +7495,14 @@ bind_failed:
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
-		card->setOwner(local ? index : 0);
+		card->setOwner(index);
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png",
+			ready ?
+			    "images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png":
+			    "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
 			"backdrop"
 		);
 
@@ -7535,12 +7547,21 @@ bind_failed:
 		    status->setHJustify(Button::justify_t::CENTER);
 		}
 
+        // determine if all players are ready, and if so, create a countdown timer
 		bool allReady = true;
 		for (int c = 0; c < 4; ++c) {
-			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str());
+			if (!card) {
+			    // this can happen when a player enters a lobby and not all the stones exist yet.
+			    allReady = false;
+			    break;
+			}
 			auto backdrop = card->findImage("backdrop"); assert(backdrop);
 			if (backdrop->path == "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
 				playersInLobby[c] = false;
+				if (multiplayer != SINGLE && !client_disconnected[c]) {
+			        allReady = false;
+			    }
 			} else if (backdrop->path == "images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
 				playersInLobby[c] = true;
 			} else {
@@ -7721,15 +7742,24 @@ bind_failed:
 				auto lobby = static_cast<Frame*>(widget.getParent());
 				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 				if (card) {
-					auto backdrop = card->findImage("backdrop");
 					paperdoll->setSize(SDL_Rect{
 						index * Frame::virtualScreenX / 4,
 						0,
 						Frame::virtualScreenX / 4,
 						Frame::virtualScreenY - card->getSize().h / 2
 						});
-					if (backdrop && backdrop->path != "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-						widget.setInvisible(false);
+				    auto backdrop = card->findImage("backdrop");
+				    const char* invite_window = "images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
+					if (multiplayer != SINGLE) {
+					    if (index != clientnum && !client_disconnected[index]) {
+						    widget.setInvisible(false);
+						} else if (index == clientnum && backdrop && backdrop->path != invite_window) {
+						    widget.setInvisible(false);
+						}
+					} else {
+					    if (backdrop && backdrop->path != invite_window) {
+						    widget.setInvisible(false);
+					    }
 					}
 				}
 				});
@@ -7792,7 +7822,11 @@ bind_failed:
 		            // OR perhaps players should automatically un-ready if
 		            // a new player connects? TBD
 		            if (client_disconnected[c]) {
-		                createInviteButton(c);
+		                if (directConnect) {
+		                    createWaitingStone(c);
+		                } else {
+		                    createInviteButton(c);
+		                }
 		            } else {
 		                createReadyStone(c, false, false);
 		            }
@@ -10304,7 +10338,7 @@ bind_failed:
 	void createTitleScreen() {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(0);
+        main_menu_frame->setOwner(clientnum);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -10375,7 +10409,7 @@ bind_failed:
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(ingame ? pause_menu_owner : 0);
+        main_menu_frame->setOwner(ingame ? pause_menu_owner : clientnum);
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -10631,7 +10665,8 @@ bind_failed:
 	}
 
 	void disconnectedFromServer() {
-	    assert(0 && "Disconnected from server. Need a window here!");
+	    multiplayer = SINGLE;
+	    disconnectFromLobby();
 	}
 
 	void receiveInvite() {

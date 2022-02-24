@@ -1385,14 +1385,16 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		}
 		//
 		tex = new TempTexture();
-		tex->load(sprite, false, true);
-		if ( mode == REALCOLORS )
-		{
-			tex->bind();
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
+		if (sprite) {
+		    tex->load(sprite, false, true);
+		    if ( mode == REALCOLORS )
+		    {
+			    tex->bind();
+		    }
+		    else
+		    {
+			    glBindTexture(GL_TEXTURE_2D, 0);
+		    }
 		}
 		//glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
 	}
@@ -1480,18 +1482,20 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	}
 
 	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
+	if (sprite) {
+	    glBegin(GL_QUADS);
+	    glTexCoord2f(0, 0);
+	    glVertex3f(0, sprite->h / 2, sprite->w / 2);
+	    glTexCoord2f(0, 1);
+	    glVertex3f(0, -sprite->h / 2, sprite->w / 2);
+	    glTexCoord2f(1, 1);
+	    glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
+	    glTexCoord2f(1, 0);
+	    glVertex3f(0, sprite->h / 2, -sprite->w / 2);
+	    glEnd();
+	    glDepthRange(0, 1);
+	    glPopMatrix();
+	}
 
 	glDisable(GL_ALPHA_TEST);
 

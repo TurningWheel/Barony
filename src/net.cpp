@@ -1979,7 +1979,7 @@ void clientHandlePacket()
 		}
 	}
 
-	Uint32 packetId = *(Uint32*)net_packet->data;
+	Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 
 	// keep alive
 	if (packetId == 'KPAL')
@@ -4633,7 +4633,7 @@ void serverHandlePacket()
 	printlog("info: server packet: %s\n", packetinfo);
 #endif
 
-	Uint32 packetId = *(Uint32*)net_packet->data;
+	Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 
 	// keep alive
 	if (packetId == 'KPAL')
@@ -5863,7 +5863,7 @@ bool handleSafePacket()
 	int c, j;
 
 	// safe packet
-	Uint32 packetId = *(Uint32*)net_packet->data;
+	Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 	if (packetId == 'SAFE')
 	{
 		if ( net_packet->data[4] != MAXPLAYERS )

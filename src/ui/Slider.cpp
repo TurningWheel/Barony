@@ -26,7 +26,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 #ifdef EDITOR
 	bool focused = highlighted || selected;
 #else
-	int mouseowner_pausemenu = 0;
+	int mouseowner_pausemenu = clientnum;
 	if ( gamePaused )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -38,7 +38,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 			}
 		}
 	}
-	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
+	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 	bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor);
 #endif
 
@@ -227,7 +227,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
-	int mouseowner_pausemenu = 0;
+	int mouseowner_pausemenu = clientnum;
 #ifndef EDITOR
 	if ( gamePaused )
 	{
@@ -241,7 +241,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		}
 	}
 #endif
-	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
+	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
