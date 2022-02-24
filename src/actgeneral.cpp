@@ -1987,7 +1987,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							Item* item = newItemFromEntity(entity);
 							if ( item )
 							{
-								chest->addItemToChest(item, true, false);
+								chest->addItemToChest(item, true, nullptr);
 							}
 							list_RemoveNode(entity->mynode);
 							entity = nullptr;
