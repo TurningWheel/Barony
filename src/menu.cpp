@@ -5517,11 +5517,6 @@ void handleMainMenu(bool mode)
 		}
 	}
 
-	if ( multiplayer == SINGLE )
-	{
-		receivedclientnum = false;
-	}
-
 	// lobby window
 	if ( lobby_window )
 	{

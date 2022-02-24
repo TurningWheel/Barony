@@ -3583,7 +3583,7 @@ void clientHandlePacket()
 	// current game level
 	else if (packetId == 'LVLC' || packetId == 'LVLR' )
 	{
-		if ( packetId == 'LVLR' )
+		if ( packetId != 'LVLR' )
 		{
 			if ( currentlevel == net_packet->data[13] && secretlevel == net_packet->data[4] )
 			{
@@ -5993,6 +5993,8 @@ bool handleSafePacket()
 void closeNetworkInterfaces()
 {
 	printlog("closing network interfaces...\n");
+
+	receivedclientnum = false;
 
 	if (net_handler)
 	{

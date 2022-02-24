@@ -685,18 +685,10 @@ namespace MainMenu {
 		return back_button;
 	}
 
-	static void binaryPrompt(
-		const char* window_text,
-		const char* okay_text,
-		const char* cancel_text,
-		void (*okay_callback)(Button&),
-		void (*cancel_callback)(Button&)
-	) {
-		if (main_menu_frame->findFrame("binary_prompt")) {
-			return;
+	static Frame* createPrompt(const char* name) {
+		if (main_menu_frame->findFrame(name)) {
+			return nullptr;
 		}
-
-		soundActivate();
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -704,7 +696,7 @@ namespace MainMenu {
 		dimmer->setColor(makeColor(0, 0, 0, 63));
 		dimmer->setBorder(0);
 
-		auto frame = dimmer->addFrame("binary_prompt");
+		auto frame = dimmer->addFrame(name);
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
 		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		frame->setColor(0);
@@ -715,6 +707,92 @@ namespace MainMenu {
 			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
 			"background"
 		);
+
+		return frame;
+	}
+
+	static void textFieldPrompt(
+		const char* field_text,
+		const char* guide_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&)
+	) {
+		soundActivate();
+
+	    Frame* frame = createPrompt("text_field_prompt");
+	    assert(frame);
+
+		auto text_box = frame->addImage(
+			SDL_Rect{(364 - 246) / 2, 32, 246, 36},
+			0xffffffff,
+			"images/ui/Main Menus/TextField_00.png",
+			"text_box"
+		);
+
+		constexpr int field_buffer_size = 64;
+
+		auto field = frame->addField("field", field_buffer_size);
+		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setEditable(true);
+		field->setScroll(true);
+		field->setGuide(guide_text);
+		field->setSize(SDL_Rect{(364 - 242) / 2, 36, 242, 28});
+		field->setFont(smallfont_outline);
+		field->setText(field_text);
+		field->setHJustify(Field::justify_t::LEFT);
+		field->setVJustify(Field::justify_t::CENTER);
+		field->setColor(makeColor(166, 123, 81, 255));
+		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+		field->setWidgetSearchParent(field->getParent()->getName());
+		field->setWidgetBack("cancel");
+		field->setWidgetDown("okay");
+		field->select();
+
+		auto okay = frame->addButton("okay");
+		okay->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setSize(SDL_Rect{58, 78, 108, 52});
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetSearchParent(okay->getParent()->getName());
+		okay->setWidgetUp("field");
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->setCallback(okay_callback);
+
+		auto cancel = frame->addButton("cancel");
+		cancel->setBackground("images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		cancel->setSize(SDL_Rect{174, 78, 130, 52});
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setWidgetSearchParent(cancel->getParent()->getName());
+		cancel->setWidgetUp("field");
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback(cancel_callback);
+	}
+
+	static void binaryPrompt(
+		const char* window_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&)
+	) {
+		soundActivate();
+
+	    Frame* frame = createPrompt("binary_prompt");
+	    assert(frame);
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
@@ -731,6 +809,7 @@ namespace MainMenu {
 		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setFont(smallfont_outline);
 		okay->setText(okay_text);
+		okay->setWidgetSearchParent(okay->getParent()->getName());
 		okay->setWidgetRight("cancel");
 		okay->setWidgetBack("cancel");
 		okay->setCallback(okay_callback);
@@ -745,6 +824,7 @@ namespace MainMenu {
 		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		cancel->setFont(smallfont_outline);
 		cancel->setText(cancel_text);
+		cancel->setWidgetSearchParent(okay->getParent()->getName());
 		cancel->setWidgetLeft("okay");
 		cancel->setWidgetBack("cancel");
 		cancel->setCallback(cancel_callback);
@@ -755,29 +835,10 @@ namespace MainMenu {
 		const char* okay_text,
 		void (*okay_callback)(Button&)
 	) {
-		if (main_menu_frame->findFrame("mono_prompt")) {
-			return;
-		}
-
 		soundActivate();
 
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(makeColor(0, 0, 0, 63));
-		dimmer->setBorder(0);
-
-		auto frame = dimmer->addFrame("mono_prompt");
-		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
-		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
-		frame->setColor(0);
-		frame->setBorder(0);
-		frame->addImage(
-			frame->getActualSize(),
-			0xffffffff,
-			"images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
-			"background"
-		);
+	    Frame* frame = createPrompt("mono_prompt");
+	    assert(frame);
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
@@ -797,6 +858,34 @@ namespace MainMenu {
 		okay->setCallback(okay_callback);
 		okay->select();
 	}
+
+	static void textPrompt(const char* window_text) {
+		soundActivate();
+
+	    Frame* frame = createPrompt("text_prompt");
+	    assert(frame);
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 28, 304, 46});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+		text->setHideSelectors(true);
+		text->setHideGlyphs(true);
+		text->select();
+	}
+
+    static void connectionErrorPrompt(const char* str) {
+        soundError();
+        monoPrompt(str, "Okay",
+            [](Button& button) {
+            soundCancel();
+            auto prompt = static_cast<Frame*>(button.getParent()); assert(prompt);
+            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+            dimmer->removeSelf();
+            multiplayer = SINGLE;
+            });
+    };
 
 /******************************************************************************/
 
@@ -1152,6 +1241,7 @@ namespace MainMenu {
 		    svFlags = extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
 		    svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 		}
+	    sendSvFlagsOverNet();
 		::skipintro = skipintro;
 
         // TODO crossplay settings
@@ -2427,9 +2517,9 @@ namespace MainMenu {
 		int result = settingsAddOption(frame, y, name, text, tip);
 
 		auto text_box = frame.addImage(
-			SDL_Rect{390, y + 8, 150, 36},
+			SDL_Rect{390, y + 8, 246, 36},
 			0xffffffff,
-			"images/ui/Main Menus/Play/PlayerCreation/Finalize__NameField_00.png",
+			"images/ui/Main Menus/TextField_00.png",
 			"text_box"
 		);
 
@@ -2438,7 +2528,7 @@ namespace MainMenu {
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(tip);
-		field->setSize(SDL_Rect{392, y + 12, 146, 28});
+		field->setSize(SDL_Rect{392, y + 12, 242, 28});
 		field->setFont(smallfont_outline);
 		field->setText(data);
 		field->setHJustify(Field::justify_t::LEFT);
@@ -4423,8 +4513,12 @@ bind_failed:
 
 			if (packetId == 'JOIN') {
 				int playerNum = MAXPLAYERS;
-				if ( !directConnect ) {
-					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+
+				// when processing connection requests using Steamworks or EOS,
+				// we can reject join requests out of hand if the player with
+				// the associated ID is already connected to this server.
+				if (!directConnect) {
+					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 						bool skipJoin = false;
 						for (int c = 0; c < MAXPLAYERS; c++) {
@@ -4437,7 +4531,7 @@ bind_failed:
 								break;
 							}
 						}
-						if ( skipJoin ) {
+						if (skipJoin) {
 							continue;
 						}
 #endif // STEAMWORKS
@@ -4451,13 +4545,17 @@ bind_failed:
 								skipJoin = true;
 							}
 						}
-						if ( skipJoin ) {
+						if (skipJoin) {
 							continue;
 						}
 #endif // USE_EOS
 					}
 				}
+
+				// process incoming join request
 				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum);
+
+				// finalize connections for Steamworks / EOS
 				if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
 					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
@@ -4497,6 +4595,17 @@ bind_failed:
 #endif
 					}
 				}
+
+				// assume success after this point
+				assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
+				    result == NET_LOBBY_JOIN_P2P_SUCCESS);
+
+
+				// finally, open a player card!
+				if (playerNum >= 1 && playerNum < MAXPLAYERS) {
+			        createReadyStone(playerNum, false, false);
+				}
+
 				continue;
 			}
 
@@ -4518,6 +4627,9 @@ bind_failed:
 		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
 		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
 		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
+		        stats[player]->clearStats();
+		        initClass(player);
+			    continue;
 			}
 
 			// update ready status
@@ -4534,6 +4646,7 @@ bind_failed:
 			    Uint8 player = net_packet->data[4];
 			    Uint8 status = net_packet->data[5];
 			    createReadyStone((int)player, false, (bool)status);
+			    continue;
 			}
 
 			// got a chat message
@@ -4598,30 +4711,67 @@ bind_failed:
 	}
 
 	static void handlePacketsAsClient() {
+	    if (receivedclientnum == false) {
+
+            static auto close_text_prompt = [](){
+                assert(main_menu_frame);
+                auto prompt = main_menu_frame->findFrame("text_prompt"); assert(prompt);
+                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+                dimmer->removeSelf();
+                };
+
 #ifdef STEAMWORKS
-		CSteamID newSteamID;
-		joinLobbyWaitingForHostResponse = false;
-#endif
-#ifdef USE_EOS
-		EOS.bJoinLobbyWaitingForHostResponse = false;
-#endif
-		for (int numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++) {
-			if (directConnect) {
-				if (!SDLNet_UDP_Recv(net_sock, net_packet)) {
-					break;
+			CSteamID newSteamID;
+			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+				if (joinLobbyWaitingForHostResponse) {
+					if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
+					    // 15 second timeout
+						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
+						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code).c_str();
+						disconnectFromLobby();
+						close_text_prompt();
+						connectionErrorPrompt(error_str);
+						connectingToLobbyStatus = EResult::k_EResultOK;
+					}
 				}
-			} else {
-				if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			}
+#endif
+#if defined USE_EOS
+			EOS_ProductUserId newRemoteProductId = nullptr;
+			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+				if ( EOS.bJoinLobbyWaitingForHostResponse ) {
+					if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
+					    // 15 second timeout
+						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
+						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code).c_str();
+						disconnectFromLobby();
+						close_text_prompt();
+						connectionErrorPrompt(error_str);
+						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+					}
+				}
+			}
+#endif
+
+			// trying to connect to the server and get a player number
+			// receive the packet:
+			bool gotPacket = false;
+			if (directConnect) {
+				if (SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 23))) {
+					gotPacket = true;
+				}
+			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-					uint32_t packetlen = 0;
-					if (!SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0)) {
+				for (Uint32 numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++) {
+					Uint32 packetlen = 0;
+					if ( !SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0) ) {
 						break;
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if (!SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0)) {
-					    //TODO Sometimes if a host closes a lobby, it can crash here for a client.
-					    //Are we sure about this in 2022?
+					if (!SteamNetworking()->ReadP2PPacket(
+					    net_packet->data, packetlen,
+					    &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 23)) {
 						continue;
 					}
 					net_packet->len = packetlen;
@@ -4633,127 +4783,369 @@ bind_failed:
 					if (mySteamID.ConvertToUint64() == newSteamID.ConvertToUint64()) {
 						continue;
 					}
-#endif // STEAMWORKS
-				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-					EOS_ProductUserId remoteId = nullptr;
-					if ( !EOS.HandleReceivedMessages(&remoteId) ) {
+					if ((int)net_packet->data[3] < '0'
+						&& (int)net_packet->data[0] == 0
+						&& (int)net_packet->data[1] == 0
+						&& (int)net_packet->data[2] == 0) {
+						// data encoded with [0 0 0 clientnum] - directly sends an INT, if the character is < '0', then it is non-alphanumeric character.
+						// likely not some other form of data - like an old "GOTP" from a recently closed session.
+						gotPacket = true;
+					} else {
 						continue;
 					}
+					break;
+				}
+#endif
+			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+				for (Uint32 numpacket = 0; numpacket < PACKET_LIMIT; numpacket++) {
+					if (!EOS.HandleReceivedMessages(&newRemoteProductId)) {
+						continue;
+					}
+					if ((int)net_packet->data[3] < '0'
+						&& (int)net_packet->data[0] == 0
+						&& (int)net_packet->data[1] == 0
+						&& (int)net_packet->data[2] == 0) {
+						// data encoded with [0 0 0 clientnum] - directly sends an INT, if the character is < '0', then it is non-alphanumeric character.
+						// likely not some other form of data - like an old "GOTP" from a recently closed session.
+						gotPacket = true;
+					} else {
+						continue;
+					}
+					break;
+				}
 #endif // USE_EOS
-				}
 			}
 
-            // unwrap a packet if it's marked "safe"
-			if (handleSafePacket()) {
-				continue;
-			}
-
-			Uint32 packetId = *(Uint32*)net_packet->data;
-			client_keepalive[0] = ticks;
-
-			// game start
-			if (packetId == 'STRT') {
-				lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-				uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
-				beginFade(FadeDestination::GameStart);
-				numplayers = MAXPLAYERS;
-				if (net_packet->data[12] == 0) {
-					loadingsavegame = 0;
-				}
-				continue;
-			}
-
-			// new player
-			else if (packetId == 'JOIN') {
-			    int player = net_packet->data[4];
-				client_disconnected[player] = false;
-				client_classes[player] = net_packet->data[5];
-				stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
-				stats[player]->appearance = net_packet->data[7];
-				stats[player]->playerRace = net_packet->data[8];
-				strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
-
-				//char shortname[32] = { 0 };
-				//strncpy(shortname, stats[player]->name, 22);
-				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
-				// TODO report player joined in message log
-				continue;
-			}
-
-			// update player attributes
-			else if (packetId == 'PLYR') {
-				Uint8 player = net_packet->data[4];
-		        strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
-		        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
-		        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
-		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
-		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
-			}
-
-			// update ready status
-			else if (packetId == 'REDY') {
-			    Uint8 player = net_packet->data[4];
-			    Uint8 status = net_packet->data[5];
-			    createReadyStone((int)player, false, (bool)status);
-			}
-
-			// player disconnect
-			else if (packetId == 'DISC' || packetId == 'KICK') {
-				int playerDisconnected = 0;
-				if (packetId == 'KICK') {
-					playerDisconnected = clientnum;
-				} else {
-					playerDisconnected = net_packet->data[5];
-					client_disconnected[playerDisconnected] = true;
-				}
-				if (playerDisconnected == clientnum || net_packet->data[5] == 0) {
-					// we got kicked!
-					destroyMainMenu();
-					createDummyMainMenu();
-                    monoPrompt(
-                        "You have been disconnected\nfrom the remote server.",
-                        "Okay",
-                        [](Button& button){
-		                    soundCancel();
-		                    assert(main_menu_frame);
-		                    auto prompt = main_menu_frame->findFrame("mono_prompt");
-		                    if (prompt) {
-			                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                    dimmer->removeSelf();
-		                    }
-		                    beginFade(FadeDestination::RootMainMenu);
-                        }
-                    );
+			// parse the packet:
+			if (gotPacket) {
+			    //TODO is there any particular reason we skip the first 3 bytes?
+				//clientnum = (int)SDLNet_Read32(&net_packet->data[0]);
+				clientnum = (int)net_packet->data[3];
+				if (clientnum >= MAXPLAYERS || clientnum <= 0) {
+                    int error = clientnum;
+					printlog("connection attempt denied by server, error code: %d.\n", error);
 					multiplayer = SINGLE;
-					disconnectFromLobby();
-					pauseGame(2, 0);
+					if (!directConnect) {
+						if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+							// if we got a packet, flush any remaining packets from the queue.
+							Uint32 startTicks = SDL_GetTicks();
+							Uint32 checkTicks = startTicks;
+							while ((checkTicks - startTicks) < 2000) {
+								SteamAPI_RunCallbacks();
+								Uint32 packetlen = 0;
+								if (SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0)) {
+									packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
+									Uint32 bytesRead = 0;
+									char buffer[NET_PACKET_SIZE];
+									if (SteamNetworking()->ReadP2PPacket(buffer, packetlen, &bytesRead, &newSteamID, 0)) {
+										checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+									}
+									buffer[4] = '\0';
+									if ( (int)buffer[3] < '0'
+										&& (int)buffer[0] == 0
+										&& (int)buffer[1] == 0
+										&& (int)buffer[2] == 0 ) {
+										printlog("[Steam Lobby]: Clearing P2P packet queue: received: %d", (int)buffer[3]);
+									} else {
+										printlog("[Steam Lobby]: Clearing P2P packet queue: received: %s", buffer);
+									}
+								}
+								SDL_Delay(10);
+								if ((SDL_GetTicks() - startTicks) > 5000) {
+									// hard break at 3 seconds.
+									break;
+								}
+							}
+#endif
+						} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#if defined USE_EOS
+							// if we got a packet, flush any remaining packets from the queue.
+							Uint32 startTicks = SDL_GetTicks();
+							Uint32 checkTicks = startTicks;
+							while ((checkTicks - startTicks) < 2000) {
+								EOS_Platform_Tick(EOS.PlatformHandle);
+								if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
+									checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+								}
+								SDL_Delay(10);
+								if ((SDL_GetTicks() - startTicks) > 5000) {
+									// hard break at 3 seconds.
+									break;
+								}
+							}
+#endif // USE_EOS
+						}
+					}
+
+#ifdef STEAMWORKS
+					if (!directConnect) {
+						if (currentLobby) {
+							SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
+							cpp_Free_CSteamID(currentLobby);
+							currentLobby = NULL;
+						}
+					}
+#endif
+#if defined USE_EOS
+					if (!directConnect) {
+						if (EOS.CurrentLobbyData.currentLobbyIsValid()) {
+							EOS.leaveLobby();
+						}
+					}
+#endif
+
+                    const char* error_str;
+                    switch (error) {
+                    case MAXPLAYERS + 0: error_str = language[1378]; break;
+                    case MAXPLAYERS + 1: error_str = language[1379]; break;
+                    case MAXPLAYERS + 2: error_str = language[1380]; break;
+                    case MAXPLAYERS + 3: error_str = language[1381]; break;
+                    case MAXPLAYERS + 4: error_str = language[1382]; break;
+                    case MAXPLAYERS + 5: error_str = language[1383]; break;
+                    default: error_str = language[1384]; break;
+                    }
+
+					// display error message
+                    close_text_prompt();
+                    connectionErrorPrompt(error_str);
+
+                    // reset connection
+                    clientnum = 0;
+                    multiplayer = SINGLE;
+                    disconnectFromLobby();
+
+                    return;
 				} else {
-					char shortname[32] = { 0 };
-					strncpy(shortname, stats[net_packet->data[16]]->name, 22);
-					newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
+					// join game succeeded, advance to lobby
+					client_keepalive[0] = ticks;
+					receivedclientnum = true;
+					printlog("connected to server.\n");
+					client_disconnected[clientnum] = false;
+					if (!loadingsavegame) {
+						stats[clientnum]->appearance = stats[0]->appearance;
+					}
+
+					// now set up everybody else
+					for (int c = 0; c < MAXPLAYERS; c++) {
+						client_classes[c] = net_packet->data[4 + c * (5 + 23)]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 23)]); // sex
+						client_disconnected[c] = net_packet->data[6 + c * (5 + 23)]; // connectedness :p
+						stats[c]->appearance = net_packet->data[7 + c * (5 + 23)]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (5 + 23)]; // player race
+						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 23)]));  // name
+		                stats[c]->clearStats();
+		                initClass(c);
+					}
+
+					// open lobby
+                    close_text_prompt();
+					createLobby(LobbyType::LobbyJoined);
+
+                    // TODO subscribe to mods!
+#if 0
+#ifdef STEAMWORKS
+					if (!directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+						const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
+						int serverNumModsLoaded = atoi(serverNumModsChar);
+						if ( serverNumModsLoaded > 0 )
+						{
+							// subscribe to server loaded mods button
+							button = newButton();
+							strcpy(button->label, language[2984]);
+							button->sizex = strlen(language[2984]) * 12 + 8;
+							button->sizey = 20;
+							button->x = subx2 - 4 - button->sizex;
+							button->y = suby2 - 24;
+							button->action = &buttonGamemodsSubscribeToHostsModFiles;
+							button->visible = 1;
+							button->focused = 1;
+
+							// mount server mods button
+							button = newButton();
+							strcpy(button->label, language[2985]);
+							button->sizex = strlen(language[2985]) * 12 + 8;
+							button->sizey = 20;
+							button->x = subx2 - 4 - button->sizex;
+							button->y = suby2 - 24;
+							button->action = &buttonGamemodsMountHostsModFiles;
+							button->visible = 0;
+							button->focused = 1;
+
+							g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Subscribed, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+							g_SteamWorkshop->subscribedCallStatus = 0;
+						}
+					}
+#endif // STEAMWORKS
+#endif
 				}
-				continue;
 			}
+		} else { // aka, if (receivedclientnum == true)
+#ifdef STEAMWORKS
+		    CSteamID newSteamID;
+		    joinLobbyWaitingForHostResponse = false;
+#endif
+#ifdef USE_EOS
+		    EOS.bJoinLobbyWaitingForHostResponse = false;
+#endif
+		    for (int numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++) {
+			    if (directConnect) {
+				    if (!SDLNet_UDP_Recv(net_sock, net_packet)) {
+					    break;
+				    }
+			    } else {
+				    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+					    uint32_t packetlen = 0;
+					    if (!SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0)) {
+						    break;
+					    }
+					    packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
+					    Uint32 bytesRead = 0;
+					    if (!SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0)) {
+					        //TODO Sometimes if a host closes a lobby, it can crash here for a client.
+					        //Are we sure about this in 2022?
+						    continue;
+					    }
+					    net_packet->len = packetlen;
+					    if (packetlen < sizeof(DWORD)) {
+						    continue;
+					    }
 
-			// got a chat message
-			else if (packetId == 'CMSG') {
-				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
-				// TODO print lobby message
-				playSound(238, 64);
-				continue;
-			}
+					    CSteamID mySteamID = SteamUser()->GetSteamID();
+					    if (mySteamID.ConvertToUint64() == newSteamID.ConvertToUint64()) {
+						    continue;
+					    }
+#endif // STEAMWORKS
+				    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+					    EOS_ProductUserId remoteId = nullptr;
+					    if ( !EOS.HandleReceivedMessages(&remoteId) ) {
+						    continue;
+					    }
+#endif // USE_EOS
+				    }
+			    }
 
-			// update svFlags
-			else if (packetId == 'SVFL') {
-				lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-				continue;
-			}
+                // unwrap a packet if it's marked "safe"
+			    if (handleSafePacket()) {
+				    continue;
+			    }
 
-			// keepalive
-			else if (packetId == 'KPAL') {
-				continue; // just a keep alive
+			    Uint32 packetId = *(Uint32*)net_packet->data;
+			    client_keepalive[0] = ticks;
+
+			    // game start
+			    if (packetId == 'STRT') {
+				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+				    uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+				    beginFade(FadeDestination::GameStart);
+				    numplayers = MAXPLAYERS;
+				    if (net_packet->data[12] == 0) {
+					    loadingsavegame = 0;
+				    }
+				    continue;
+			    }
+
+			    // new player
+			    else if (packetId == 'JOIN') {
+			        int player = net_packet->data[4];
+				    client_disconnected[player] = false;
+				    client_classes[player] = net_packet->data[5];
+				    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
+				    stats[player]->appearance = net_packet->data[7];
+				    stats[player]->playerRace = net_packet->data[8];
+				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
+
+				    //char shortname[32] = { 0 };
+				    //strncpy(shortname, stats[player]->name, 22);
+				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
+				    // TODO report player joined in message log
+			        createReadyStone((int)player, false, false);
+				    continue;
+			    }
+
+			    // update player attributes
+			    else if (packetId == 'PLYR') {
+				    Uint8 player = net_packet->data[4];
+		            strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
+		            client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
+		            stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
+		            Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
+		            stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+		            stats[player]->playerRace = (raceAndAppearance & 0xFF);
+		            stats[player]->clearStats();
+		            initClass(player);
+			        continue;
+			    }
+
+			    // update ready status
+			    else if (packetId == 'REDY') {
+			        Uint8 player = net_packet->data[4];
+			        Uint8 status = net_packet->data[5];
+			        createReadyStone((int)player, false, (bool)status);
+			        continue;
+			    }
+
+			    // player disconnect
+			    else if (packetId == 'DISC' || packetId == 'KICK') {
+				    int playerDisconnected = 0;
+				    if (packetId == 'KICK') {
+					    playerDisconnected = clientnum;
+				    } else {
+					    playerDisconnected = net_packet->data[5];
+					    client_disconnected[playerDisconnected] = true;
+				    }
+				    if (playerDisconnected == clientnum || net_packet->data[5] == 0) {
+					    // we got kicked!
+					    destroyMainMenu();
+					    createDummyMainMenu();
+                        monoPrompt(
+                            "You have been disconnected\nfrom the remote server.",
+                            "Okay",
+                            [](Button& button){
+		                        soundCancel();
+		                        assert(main_menu_frame);
+		                        auto prompt = main_menu_frame->findFrame("mono_prompt");
+		                        if (prompt) {
+			                        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                        dimmer->removeSelf();
+		                        }
+		                        beginFade(FadeDestination::RootMainMenu);
+                            }
+                        );
+					    multiplayer = SINGLE;
+					    disconnectFromLobby();
+					    pauseGame(2, 0);
+				    } else {
+				        //TODO announce player disconnect
+					    //char shortname[32] = { 0 };
+					    //strncpy(shortname, stats[net_packet->data[16]]->name, 22);
+					    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
+			            createInviteButton(playerDisconnected);
+				    }
+				    continue;
+			    }
+
+			    // got a chat message
+			    else if (packetId == 'CMSG') {
+				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
+				    // TODO print lobby message
+				    playSound(238, 64);
+				    continue;
+			    }
+
+			    // update svFlags
+			    else if (packetId == 'SVFL') {
+				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+				    continue;
+			    }
+
+			    // keepalive
+			    else if (packetId == 'KPAL') {
+				    continue; // just a keep alive
+			    }
 			}
 		}
 	}
@@ -4789,6 +5181,7 @@ bind_failed:
 
 	static void finalizeOnlineLobby() {
 	    closeNetworkInterfaces();
+	    directConnect = false;
 	    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 		    for ( c = 0; c < MAXPLAYERS; c++ ) {
@@ -4811,6 +5204,7 @@ bind_failed:
 
 	static bool finalizeLANLobby() {
 	    closeNetworkInterfaces();
+	    directConnect = true;
 
         // TODO get port number from settings
 	    Uint16 portnumber = DEFAULT_PORT;
@@ -4853,6 +5247,185 @@ bind_failed:
 	    setupNetGameAsServer();
 		printlog( "LAN server started successfully.\n");
 		return true;
+	}
+
+	static void connectToServer(const char* address, LobbyType lobbyType) {
+        textPrompt("Connecting to server...");
+
+	    // reset keepalive
+	    client_keepalive[0] = ticks;
+
+	    // setup connecting states
+	    bool temp1 = false;
+	    bool temp2 = false;
+	    bool temp3 = false;
+	    bool temp4 = false;
+#ifdef STEAMWORKS
+	    temp1 = connectingToLobby;
+	    temp2 = connectingToLobbyWindow;
+	    if (!directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+		    joinLobbyWaitingForHostResponse = true;
+	    }
+#endif
+#if defined USE_EOS
+	    temp3 = EOS.bConnectingToLobby;
+	    temp4 = EOS.bConnectingToLobbyWindow;
+	    if (!directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+		    EOS.bJoinLobbyWaitingForHostResponse = true;
+	    }
+#endif
+#ifdef STEAMWORKS
+	    connectingToLobby = temp1;
+	    connectingToLobbyWindow = temp2;
+#endif
+#if defined USE_EOS
+	    EOS.bConnectingToLobby = temp3;
+	    EOS.bConnectingToLobbyWindow = temp4;
+#endif
+
+	    multiplayer = CLIENT;
+	    if (loadingsavegame) {
+		    loadGame(getSaveGameClientnum(false));
+	    }
+
+	    assert(main_menu_frame);
+
+        static auto close_text_prompt = [](){
+	        assert(main_menu_frame);
+	        auto prompt = main_menu_frame->findFrame("text_prompt"); assert(prompt);
+	        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+	        dimmer->removeSelf();
+            };
+
+        // copy address
+        char address_copy[128];
+        int address_len = (int)strlen(address);
+        address_len = std::min(address_len, (int)(sizeof(address_copy) - 1));
+        memcpy(address_copy, address, address_len);
+        address_copy[address_len] = '\0';
+        Uint16 port;
+
+	    if (lobbyType == LobbyType::LobbyLAN) {
+            // find appended port number
+            int port_index = 0;
+	        for (; port_index <= address_len; ++port_index) {
+		        if (address_copy[port_index] == ':') {
+		            address_copy[port_index] = '\0';
+		            ++port_index;
+			        break;
+		        }
+	        }
+
+            // read port number
+		    char *port_err;
+		    port = (Uint16)strtol(&address_copy[port_index], &port_err, 10);
+		    if (*port_err != '\0' || portnumber < 1024) {
+			    printlog("warning: invalid port number (%hu). Using default (%hu)\n", port, DEFAULT_PORT);
+                port = DEFAULT_PORT;
+		    }
+
+		    // TODO save address for next time
+		    //strcpy(last_ip, connectaddress);
+		    //saveConfig("default.cfg");
+	    }
+
+	    // close any existing net interfaces
+	    closeNetworkInterfaces();
+
+	    if (lobbyType == LobbyType::LobbyLAN) {
+		    // resolve host's address
+		    printlog("resolving host's address at %s...\n", address);
+		    if (SDLNet_ResolveHost(&net_server, address_copy, port) == -1) {
+			    char buf[1024];
+			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
+			    printlog(buf);
+			    close_text_prompt();
+			    connectionErrorPrompt(buf);
+			    return;
+		    }
+
+		    // open sockets
+		    printlog("opening TCP and UDP sockets...\n");
+		    if (!(net_sock = SDLNet_UDP_Open(0))) {
+			    char buf[1024];
+			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
+			    printlog(buf);
+			    close_text_prompt();
+			    connectionErrorPrompt(buf);
+			    return;
+		    }
+		    if (!(net_tcpsock = SDLNet_TCP_Open(&net_server))) {
+			    char buf[1024];
+			    snprintf(buf, sizeof(buf), "Failed to open TCP socket.");
+			    printlog(buf);
+			    close_text_prompt();
+			    connectionErrorPrompt(buf);
+			    return;
+		    }
+		    tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
+		    SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
+	    }
+
+	    // allocate packet data
+	    net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
+	    assert(net_packet);
+
+	    if (lobbyType == LobbyType::LobbyLAN) {
+		    printlog("successfully contacted server at %s.\n", address);
+	    }
+
+	    printlog("submitting join request...\n");
+
+	    // send join request
+	    strcpy((char*)net_packet->data, "JOIN");
+	    if (loadingsavegame)
+	    {
+		    strncpy((char*)net_packet->data + 4, stats[getSaveGameClientnum(false)]->name, 22);
+		    SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[27]);
+		    SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[31]);
+		    Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
+		    appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
+		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
+		    strcpy((char*)net_packet->data + 39, VERSION);
+		    net_packet->data[47] = 0;
+		    net_packet->data[48] = getSaveGameClientnum(false);
+	    } else {
+		    strncpy((char*)net_packet->data + 4, stats[0]->name, 22);
+		    SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[27]);
+		    SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[31]);
+		    Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
+		    appearanceAndRace |= ((Uint8)stats[0]->playerRace);
+		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
+		    strcpy((char*)net_packet->data + 39, VERSION);
+		    net_packet->data[47] = 0;
+		    net_packet->data[48] = 0;
+	    }
+	    if (loadingsavegame) {
+		    // send over the map seed being used
+		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[49]);
+	    } else {
+		    SDLNet_Write32(0, &net_packet->data[49]);
+	    }
+	    SDLNet_Write32(loadingsavegame, &net_packet->data[53]); // send unique game key
+	    net_packet->address.host = net_server.host;
+	    net_packet->address.port = net_server.port;
+	    net_packet->len = 57;
+	    if (lobbyType == LobbyType::LobbyOnline) {
+#if (defined STEAMWORKS || defined USE_EOS)
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+#endif
+	    } else {
+		    sendPacket(net_sock, -1, net_packet, 0);
+	    }
 	}
 
 /******************************************************************************/
@@ -7205,7 +7778,21 @@ bind_failed:
 			createInviteButton(3);
 			finalizeOnlineLobby();
 		} else if (type == LobbyType::LobbyJoined) {
-		    assert(0 && "Joined lobby needs player cards!");
+		    for (int c = 0; c < 4; ++c) {
+		        if (clientnum == c) {
+		            createStartButton(c);
+		        } else {
+		            // TODO once connected, a new client needs to get ready
+		            // states for all of the already-connected players.
+		            // OR perhaps players should automatically un-ready if
+		            // a new player connects? TBD
+		            if (client_disconnected[c]) {
+		                createInviteButton(c);
+		            } else {
+		                createReadyStone(c, false, false);
+		            }
+		        }
+		    }
 		}
 	}
 
@@ -7790,6 +8377,7 @@ bind_failed:
 		};
 		static BrowserMode mode;
 		mode = BrowserMode::Online;
+		directConnect = false;
 
 		// remove "Local or Network" window
 		auto frame = static_cast<Frame*>(button.getParent());
@@ -7884,6 +8472,7 @@ bind_failed:
 			auto interior = frame->findImage("interior");
 			interior->path = "images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png";
 			mode = BrowserMode::Online;
+			directConnect = false;
 			});
 
 		auto lan_tab = window->addButton("lan_tab");
@@ -7909,6 +8498,7 @@ bind_failed:
 			auto interior = frame->findImage("interior");
 			interior->path = "images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png";
 			mode = BrowserMode::LAN;
+			directConnect = true;
 			});
 
 		auto refresh = window->addButton("refresh");
@@ -7923,6 +8513,37 @@ bind_failed:
 		refresh->addWidgetAction("MenuAlt1", "enter_code");
 		refresh->addWidgetAction("MenuAlt2", "refresh");
 		refresh->setWidgetBack("back_button");
+
+		static auto enter_code_fn = [](Button& button){
+		    static const char* guide;
+		    static const char* ipaddr = "Enter an IP address to connect to.";
+		    static const char* roomcode = "Enter the code to a lobby you wish to connect to.";
+		    guide = strcmp(button.getText(), "Enter IP\nAddress") ? roomcode : ipaddr;
+            textFieldPrompt("", guide, "Connect", "Cancel",
+                [](Button&){ // connect
+                    assert(main_menu_frame);
+                    auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
+                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+                    dimmer->removeSelf();
+                    auto field = prompt->findField("field");
+                    const char* address = field->getText();
+                    if (guide == ipaddr) {
+                        connectToServer(address, LobbyType::LobbyLAN);
+                    } else if (guide == roomcode) {
+                        connectToServer(address, LobbyType::LobbyOnline);
+                    }
+                },
+                [](Button&){ // cancel
+                    soundCancel();
+                    assert(main_menu_frame);
+                    auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
+                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+                    dimmer->removeSelf();
+                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+                    auto enter_code = window->findButton("enter_code"); assert(enter_code);
+                    enter_code->select();
+                });
+		    };
 
 		auto enter_code = window->addButton("enter_code");
 		enter_code->setSize(SDL_Rect{342, 454, 164, 62});
@@ -7947,6 +8568,7 @@ bind_failed:
 		        button->setText("Enter IP\nAddress");
 		    }
 		    });
+		enter_code->setCallback(enter_code_fn);
 
 		auto join_lobby = window->addButton("join_lobby");
 		join_lobby->setSize(SDL_Rect{514, 454, 164, 62});
@@ -9654,7 +10276,9 @@ bind_failed:
 #else
 #endif // STEAMWORKS
 
-        handleNetwork();
+        if (!ingame) {
+            handleNetwork();
+        }
 
 		if (fadeout && fadealpha >= 255) {
             handleFadeFinished(ingame);
