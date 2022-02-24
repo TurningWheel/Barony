@@ -1988,7 +1988,7 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 			Item* itemCopyToTake = openedChest[player]->getItemFromChest(selectedItem, selectedItem->count);
 			if ( itemCopyToTake )
 			{
-				assert(selectedItem == false);
+				assert(selectedItem == nullptr);
 				if ( Item* chestItem = openedChest[player]->addItemToChest(itemCopyToTake, false, tempItem) )
 				{
 					assert(chestItem == tempItem);
