@@ -11316,6 +11316,9 @@ bool takeAllChestGUIAction(const int player)
 	return true;
 }
 
+const int chestBaseImgBorderWidth = 16;
+const int chestBaseImgBorderTopHeight = 20;
+
 void createChestGUI(const int player)
 {
 	if ( !gui )
@@ -11333,23 +11336,25 @@ void createChestGUI(const int player)
 
 	frame->setSize(SDL_Rect{ 0,
 		0,
-		210,
+		194,
 		250 });
 	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
 
-	SDL_Rect basePos{ 0, 0, 210, 130 };
+	SDL_Rect basePos{ 0, 0, 194, 130 };
 	{
 		auto bgFrame = frame->addFrame("chest base");
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		//auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 170, 130 },
-		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 190, 190 },
+		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
 			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Chest4x3_BaseTest.png", "chest base img");
+			"images/ui/Inventory/chests/Chest_Main_00.png", "chest base img");
+		auto bg2 = bgFrame->addImage(SDL_Rect{ 0, 0, 194, 66 },
+			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			"images/ui/Inventory/chests/Chest_Top_00.png", "chest lid img");
 		//bg->disabled = false;
 
 		//auto slider = bgFrame->addSlider("chest slider");
@@ -11383,10 +11388,10 @@ void createChestGUI(const int player)
 		auto closeBtn = bgFrame->addButton("close chest button");
 		SDL_Rect closeBtnPos = titleText->getSize();
 		closeBtnPos.x = closeBtnPos.x + closeBtnPos.w - 98;
-		closeBtnPos.w = 38;
-		closeBtnPos.h = 38;
+		closeBtnPos.w = 26;
+		closeBtnPos.h = 26;
 		closeBtn->setSize(closeBtnPos);
-		closeBtn->setColor(makeColor(255, 255, 255, 191));
+		closeBtn->setColor(makeColor(255, 255, 255, 255));
 		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
 		closeBtn->setText("X");
 		closeBtn->setFont(font);
@@ -11394,18 +11399,21 @@ void createChestGUI(const int player)
 		closeBtn->setHideKeyboardGlyphs(true);
 		closeBtn->setHideSelectors(true);
 		closeBtn->setMenuConfirmControlType(0);
-		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
+		closeBtn->setBackground("images/ui/Inventory/chests/Button_X_00.png");
+		closeBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_XHigh_00.png");
+		closeBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_XPress_00.png");
+		closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		closeBtn->setCallback([](Button& button) {
 			closeChestGUIAction(button.getOwner());
 		});
 
 		auto grabAllBtn = bgFrame->addButton("grab all button");
 		SDL_Rect grabBtnPos = titleText->getSize();
-		grabBtnPos.x = closeBtnPos.x + closeBtnPos.w - 98;
-		grabBtnPos.w = 98;
-		grabBtnPos.h = 38;
+		grabBtnPos.x = closeBtnPos.x + closeBtnPos.w - 86;
+		grabBtnPos.w = 86;
+		grabBtnPos.h = 26;
 		grabAllBtn->setSize(grabBtnPos);
-		grabAllBtn->setColor(makeColor(255, 255, 255, 191));
+		grabAllBtn->setColor(makeColor(255, 255, 255, 255));
 		grabAllBtn->setHighlightColor(makeColor(255, 255, 255, 255));
 		grabAllBtn->setText("Take All");
 		grabAllBtn->setFont(font);
@@ -11413,7 +11421,10 @@ void createChestGUI(const int player)
 		grabAllBtn->setHideKeyboardGlyphs(true);
 		grabAllBtn->setHideSelectors(true);
 		grabAllBtn->setMenuConfirmControlType(0);
-		grabAllBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
+		grabAllBtn->setBackground("images/ui/Inventory/chests/Button_TakeAll_00.png");
+		grabAllBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_TakeAllHigh_00.png");
+		grabAllBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_TakeAllPress_00.png");
+		grabAllBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		grabAllBtn->setCallback([](Button& button) {
 			takeAllChestGUIAction(button.getOwner());
 		});
@@ -11455,11 +11466,8 @@ void createChestGUI(const int player)
 	const int baseSlotOffsetX = 0;
 	const int baseSlotOffsetY = 0;
 
-	const int baseImgBorderWidth = 10;
-	const int baseImgBorderTopHeight = 20;
-
 	const int gridHeight = 120 + 2; // 120px is grid img, plus 2px to tile the image for bottom border.
-	SDL_Rect invSlotsPos{ basePos.x + 4 + baseImgBorderWidth, basePos.y + 4 + baseImgBorderTopHeight, basePos.w, gridHeight };
+	SDL_Rect invSlotsPos{ basePos.x + chestBaseImgBorderWidth, basePos.y + 4 + chestBaseImgBorderTopHeight, basePos.w, gridHeight };
 	{
 		int numGrids = (players[player]->inventoryUI.MAX_CHEST_Y / players[player]->inventoryUI.chestGUI.kNumItemsToDisplayVertical) + 1;
 
@@ -11470,7 +11478,7 @@ void createChestGUI(const int player)
 		chestSlotsFrame->setAllowScrollBinds(false);
 
 		auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
-			0xFFFFFFFF, "images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
+			makeColor(255, 255, 255, 32), "images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -18815,7 +18823,7 @@ const bool Player::Inventory_t::isItemFromChest(Item* item) const
 	return false;
 }
 
-int Player::Inventory_t::ChestGUI_t::heightOffsetWhenNotCompact = 178;
+int Player::Inventory_t::ChestGUI_t::heightOffsetWhenNotCompact = 0;
 void Player::Inventory_t::ChestGUI_t::updateChest()
 {
 	updateChestInventory(player.playernum);
@@ -18826,7 +18834,6 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	auto baseFrame = chestFrame->findFrame("chest base");
 	auto grabAllBtn = baseFrame->findButton("grab all button");
 	auto closeBtn = baseFrame->findButton("close chest button");
-
 	if ( !chestFrame->isDisabled() && bOpen )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -18870,12 +18877,14 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 
 	auto chestFramePos = chestFrame->getSize();
 	auto baseBackgroundImg = baseFrame->findImage("chest base img");
+	auto lidBackgroundImg = baseFrame->findImage("chest lid img");
 
 	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
 		if ( !player.inventoryUI.bCompactView )
 		{
-			chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w * 2;
+			const int fullWidth = chestFramePos.w + 210; // inventory width 210
+			chestFramePos.x = -chestFramePos.w + animx * fullWidth;
 			if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
@@ -18956,17 +18965,19 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	promptGrabImg->disabled = !drawGlyphs;
 	// handle height changing..
 	{
-		const int baseImgBorderWidth = 10;
-		const int baseImgBorderTopHeight = 20;
-		int frameHeight = 250;
-		int totalFrameHeightChange = 0;
+		int frameHeight = 236 + 16;
 		if ( !player.bUseCompactGUIHeight() )
 		{
-			totalFrameHeightChange = heightOffsetWhenNotCompact;
+			chestFramePos.y = 130;
 		}
-		chestFramePos.h = frameHeight + totalFrameHeightChange;
+		else
+		{
+			chestFramePos.y = 0;
+		}
+		chestFramePos.h = frameHeight;
 		chestFrame->setSize(chestFramePos);
-		baseBackgroundImg->pos.y = totalFrameHeightChange;
+		baseBackgroundImg->pos.y = 16 + 48;
+		lidBackgroundImg->pos.y = baseBackgroundImg->pos.y - lidBackgroundImg->pos.h + 2;
 		SDL_Rect chestBasePos = baseFrame->getSize();
 		chestBasePos.h = chestFramePos.h;
 		baseFrame->setSize(chestBasePos);
@@ -18981,16 +18992,16 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		{
 			heightChange = player.inventoryUI.getSlotSize() * (kNumItemsToDisplayVertical - getNumItemsToDisplayVertical());
 		}
-		chestSlotsFramePos.y = 4 + baseImgBorderTopHeight + heightChange + totalFrameHeightChange;
+		chestSlotsFramePos.y = 4 + chestBaseImgBorderTopHeight + heightChange + 48;
 		chestSlotsFramePos.h = gridHeight - heightChange;
 		chestSlotsFrame->setActualSize(SDL_Rect{ chestSlotsFrame->getActualSize().x,
 			chestSlotsFrame->getActualSize().y,
 			chestSlotsFrame->getActualSize().w,
 			(chestSlotsFramePos.h) * numGrids });
 		chestSlotsFrame->setSize(chestSlotsFramePos);
-		auto gridImg = chestSlotsFrame->findImage("grid img");
-		gridImg->pos.y = 0;
-		gridImg->pos.h = (chestSlotsFramePos.h) * numGrids;
+		//auto gridImg = chestSlotsFrame->findImage("grid img");
+		//gridImg->pos.y = 0;
+		//gridImg->pos.h = (chestSlotsFramePos.h) * numGrids;
 
 		/*SDL_Rect sliderPos = slider->getRailSize();
 		sliderPos.y = 8 + heightChange + totalFrameHeightChange;
@@ -19000,26 +19011,25 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		// align title
 		auto titleText = baseFrame->findField("title txt");
 		auto titlePos = titleText->getSize();
-		titlePos.y = baseBackgroundImg->pos.y - 4;
+		titlePos.y = baseBackgroundImg->pos.y - 24;
 		titlePos.x = baseBackgroundImg->pos.x + baseBackgroundImg->pos.w / 2 - titlePos.w / 2;
 		titleText->setSize(titlePos);
 
+		chestFrame->setSize(chestFramePos);
+		baseFrame->setSize(chestBasePos);
+
 		// align buttons
 		auto grabAllBtnPos = grabAllBtn->getSize();
-		chestFramePos.h += grabAllBtnPos.h + 8;
-		chestFrame->setSize(chestFramePos);
-		chestBasePos.h += grabAllBtnPos.h + 8;
-		baseFrame->setSize(chestBasePos);
 		auto bg = baseFrame->findImage("chest base img");
-		grabAllBtnPos.y = bg->pos.y + bg->pos.h + 4;
+		grabAllBtnPos.y = bg->pos.y + bg->pos.h - 4 - grabAllBtnPos.h - 4;
+		grabAllBtnPos.x = bg->pos.x + bg->pos.w / 2 - grabAllBtnPos.w / 2;
+		grabAllBtn->setSize(grabAllBtnPos);
 
 		auto closeBtnPos = closeBtn->getSize();
-		closeBtnPos.y = grabAllBtnPos.y;
-		closeBtnPos.x = bg->pos.x + bg->pos.w - closeBtnPos.w;
+		closeBtnPos.x = bg->pos.x + bg->pos.w - closeBtnPos.w - 8 - 4;
+		closeBtnPos.y = titlePos.y + titlePos.h / 2 - closeBtnPos.h / 2;
 		closeBtn->setSize(closeBtnPos);
 
-		grabAllBtnPos.x = closeBtnPos.x - 2 - grabAllBtnPos.w;
-		grabAllBtn->setSize(grabAllBtnPos);
 
 		if ( player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
 			&& inputs.getVirtualMouse(player.playernum)->draw_cursor && !drawGlyphs )
@@ -19064,8 +19074,8 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			{
 				SDL_Rect textPos = promptBack->getSize();
 				textPos.w = textGet->getWidth();
-				textPos.x = bg->pos.x + bg->pos.w - textPos.w - 4;
-				textPos.y = bg->pos.y + bg->pos.h - textPos.h + 8;
+				textPos.x = bg->pos.x + bg->pos.w - textPos.w - 8;
+				textPos.y = bg->pos.y + bg->pos.h - textPos.h + 8 + 8;
 				promptBack->setSize(textPos);
 				glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
 			}
@@ -19091,7 +19101,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			{
 				SDL_Rect textPos = promptGrab->getSize();
 				textPos.w = textGet->getWidth();
-				textPos.x = bg->pos.x + bg->pos.w - textPos.w - 4;
+				textPos.x = bg->pos.x + bg->pos.w - textPos.w - 8;
 				textPos.y = promptBack->getSize().y - textPos.h + 2;
 				promptGrab->setSize(textPos);
 				glyphPos.x = promptGrab->getSize().x + promptGrab->getSize().w - textGet->getWidth() - 4;
