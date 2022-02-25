@@ -4609,6 +4609,30 @@ bind_failed:
 				continue;
 			}
 
+			// network scan
+			else if (packetId == 'SCAN') {
+			    if (directConnect) {
+			        char hostname[256] = { '\0' };
+			        (void)gethostname(hostname, sizeof(hostname));
+			        Uint32 hostname_len = (Uint32)strlen(hostname);
+			        SDLNet_Write32(hostname_len, &net_packet->data[4]);
+			        for (int c = 0; c < hostname_len; ++c) {
+                        net_packet->data[8 + c] = hostname[c];
+			        }
+			        Uint32 offset = 8 + hostname_len;
+			        int numplayers = 0;
+			        for (int c = 0; c < MAXPLAYERS; ++c) {
+			            if (!client_disconnected[c]) {
+			                ++numplayers;
+			            }
+			        }
+			        SDLNet_Write32(numplayers, &net_packet->data[offset]);
+			        net_packet->len = offset + 4;
+			        sendPacket(net_sock, -1, net_packet, 0);
+			    }
+			    continue;
+			}
+
 			// update player attributes
 			else if (packetId == 'PLYR') {
 			    // forward to other players
@@ -8418,6 +8442,16 @@ bind_failed:
 		mode = BrowserMode::Online;
 		directConnect = false;
 
+	    closeNetworkInterfaces();
+
+        // open a socket for network scanning
+	    net_sock = SDLNet_UDP_Open(0);
+	    assert(net_sock);
+
+        // allocate packet data
+        net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
+        assert(net_packet);
+
 		// remove "Local or Network" window
 		auto frame = static_cast<Frame*>(button.getParent());
 		frame = static_cast<Frame*>(frame->getParent());
@@ -8440,8 +8474,46 @@ bind_failed:
 		window->setColor(0);
 		window->setBorder(0);
 
+		static auto createLobbyListing = []
+		    (const char* hostname, int players, int ping) {
+		    assert(main_menu_frame);
+		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+
+		    };
+
+		static Uint32 scan_ticks;
+		scan_ticks = ticks;
+
+		// while the window is open, listen for SCAN packets
+		window->setTickCallback([](Widget&){
+		    if (multiplayer != CLIENT && directConnect) {
+			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
+				    Uint32 packetId = SDLNet_Read32(net_packet->data);
+				    if (packetId == 'SCAN') {
+                        if (net_packet->len > 4) {
+				            printlog("got a SCAN packet!\n");
+
+				            char hostname[256] = { '\0' };
+				            Uint32 hostname_len;
+				            hostname_len = SDLNet_Read32(&net_packet->data[4]);
+				            memcpy(hostname, &net_packet->data[8], hostname_len);
+
+				            Uint32 offset = 8 + hostname_len;
+				            int players = (int)SDLNet_Read32(&net_packet->data[offset]);
+
+				            int ping = (int)(ticks - scan_ticks);
+
+				            // there's a server on the network!
+				            createLobbyListing(hostname, players, ping);
+				        }
+				    }
+			    }
+			}
+		    });
+
 		(void)createBackWidget(window, [](Button& button){
 		    soundCancel();
+		    closeNetworkInterfaces();
 		    playNew(button);
 
 		    // remove "Play Game" window
@@ -8540,6 +8612,19 @@ bind_failed:
 			directConnect = true;
 			});
 
+		static auto refresh_fn = [](Button& button){
+		    soundActivate();
+		    scan_ticks = ticks;
+            if (directConnect) {
+                memcpy(net_packet->data, "SCAN", 4);
+                net_packet->len = 4;
+                SDLNet_ResolveHost(&net_packet->address, "255.255.255.255", DEFAULT_PORT);
+                sendPacket(net_sock, -1, net_packet, 0);
+            } else {
+                // TODO
+            }
+		    };
+
 		auto refresh = window->addButton("refresh");
 		refresh->setSize(SDL_Rect{634, 62, 40, 40});
 		refresh->setBackground("images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_Refresh00.png");
@@ -8552,6 +8637,8 @@ bind_failed:
 		refresh->addWidgetAction("MenuAlt1", "enter_code");
 		refresh->addWidgetAction("MenuAlt2", "refresh");
 		refresh->setWidgetBack("back_button");
+		refresh->setCallback(refresh_fn);
+		refresh->activate();
 
 		static auto enter_code_fn = [](Button& button){
 		    static const char* guide;
@@ -10437,6 +10524,7 @@ bind_failed:
 		);
 		y += title->pos.h;
 
+#ifndef NDEBUG
 		if (!ingame) {
 			auto notification = main_menu_frame->addFrame("notification");
 			notification->setSize(SDL_Rect{
@@ -10451,6 +10539,7 @@ bind_failed:
 			y += notification->getSize().h;
 			y += 16;
 		}
+#endif
 
 		struct Option {
 			const char* name;
@@ -10581,6 +10670,7 @@ bind_failed:
 		);
 
 		if (!ingame) {
+#ifndef NDEBUG
 			for (int c = 0; c < 2; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
 				auto banner = main_menu_frame->addFrame(name.c_str());
@@ -10596,6 +10686,7 @@ bind_failed:
 				y += banner->getSize().h;
 				y += 16;
 			}
+#endif
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
