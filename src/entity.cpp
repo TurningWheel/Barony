@@ -3704,7 +3704,7 @@ void Entity::handleEffects(Stat* myStats)
 					int qty = std::max(0, myStats->shield->count - 1);
 					Item* item = myStats->shield;
 					consumeItem(item, player);
-					if ( qty > 0 )
+					if ( qty > 0 && item )
 					{
 						messagePlayer(player, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
 						playSoundEntity(this, 134, 64); // ignite
@@ -3712,6 +3712,10 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							players[player]->hud.shieldSwitch = true;
 						}
+					}
+					if ( !item )
+					{
+						myStats->shield = nullptr;
 					}
 					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 					{

@@ -2681,7 +2681,7 @@ void clientHandlePacket()
 	}
 
 	// a torch burns out
-	else if ( !strncmp((char*)net_packet->data, "TORC", 4) )
+	else if (packetId == 'TORC')
 	{
 		ItemType itemType = static_cast<ItemType>(SDLNet_Read16(&net_packet->data[4]));
 		Status itemStatus = static_cast<Status>(net_packet->data[6]);
@@ -2693,7 +2693,9 @@ void clientHandlePacket()
 			if ( stats[clientnum]->shield->count <= 0 )
 			{
 				Item* item = stats[clientnum]->shield;
+				item->count = 1; // to be consumed below
 				consumeItem(item, clientnum);
+				stats[clientnum]->shield = nullptr;
 			}
 			else
 			{

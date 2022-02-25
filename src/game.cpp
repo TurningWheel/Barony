@@ -2599,6 +2599,20 @@ void gameLogic(void)
 					}
 					if ( entity->behavior != NULL )
 					{
+						if ( gameloopFreezeEntities
+							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actHudWeapon
+							&& entity->behavior != &actHudShield
+							&& entity->behavior != &actHudAdditional
+							&& entity->behavior != &actHudArrowModel
+							&& entity->behavior != &actLeftHandMagic
+							&& entity->behavior != &actRightHandMagic
+							&& entity->behavior != &actFlame )
+						{
+							TimerExperiments::updateEntityInterpolationPosition(entity);
+							continue;
+						}
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
 							(*entity->behavior)(entity);
@@ -2780,8 +2794,8 @@ void gameLogic(void)
 											}
 										}
 									}
-									TimerExperiments::updateEntityInterpolationPosition(entity);
 								}
+								TimerExperiments::updateEntityInterpolationPosition(entity);
 							}
 						}
 					}
