@@ -115,6 +115,9 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 	if (!surf) {
 		return;
 	}
+	if (!color) {
+	    return;
+	}
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);

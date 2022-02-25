@@ -7,14 +7,14 @@
 #include "../ui/Frame.hpp"
 
 namespace MainMenu {
-    extern int pause_menu_owner;
+    extern int pause_menu_owner; // which player is driving the pause menu
+	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)
+	extern Frame* main_menu_frame; // root main menu node
 
 	// Here be new menu options:
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
-	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)
-	extern Frame* main_menu_frame;
 	
 	static constexpr const char* emptyBinding = "[unbound]"; // string appended to default empty bindings
 	static constexpr const char* hiddenBinding = "[hidden]"; // string appended to hidden bindings on the UI

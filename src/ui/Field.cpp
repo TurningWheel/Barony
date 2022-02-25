@@ -357,7 +357,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		return result;
 	}
 
-	int mouseowner_pausemenu = 0;
+	int mouseowner_pausemenu = clientnum;
 #ifndef EDITOR
 	if ( gamePaused )
 	{
@@ -371,7 +371,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		}
 	}
 #endif
-	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
+	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
