@@ -60,7 +60,7 @@ void Frame::listener_t::onChangeName(const char* name) {
 
 void Frame::fboInit() {
     gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
-    gui4x_fb.init(Frame::virtualScreenX * 4, Frame::virtualScreenY * 4, GL_NEAREST, GL_NEAREST);
+    gui4x_fb.init(Frame::virtualScreenX * 4, Frame::virtualScreenY * 4, GL_LINEAR, GL_LINEAR);
 }
 
 void Frame::fboDestroy() {

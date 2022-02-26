@@ -7937,6 +7937,7 @@ bind_failed:
 		button->setTickCallback(button_tick_func);
 		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0,});
+		button->setHideKeyboardGlyphs(false);
 		button->select();
 
 		Input::waitingToBindControllerForPlayer = index;
