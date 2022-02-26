@@ -57,6 +57,7 @@ namespace MainMenu {
         // Game starts:
 
 		GameStart,
+		GameStartDummy,
 		HallOfTrials,
 	};
 

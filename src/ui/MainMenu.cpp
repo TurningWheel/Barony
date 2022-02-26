@@ -5070,6 +5070,10 @@ bind_failed:
 
 			    // game start
 			    if (packetId == 'STRT') {
+			        if (intro) {
+                        destroyMainMenu();
+                        createDummyMainMenu();
+                    }
 				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
 				    uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
 				    beginFade(FadeDestination::GameStart);
@@ -7609,40 +7613,44 @@ bind_failed:
 	static void startGame() {
         destroyMainMenu();
         createDummyMainMenu();
-        beginFade(MainMenu::FadeDestination::GameStart);
+	    if (multiplayer == CLIENT) {
+            beginFade(MainMenu::FadeDestination::GameStartDummy);
+	    } else {
+            beginFade(MainMenu::FadeDestination::GameStart);
 
-	    // initialize all player stats
-	    for (int c = 1; c < MAXPLAYERS; c++) {
-		    if (!client_disconnected[c]) {
-			    if (!loadingsavegame || !intro) {
-				    stats[c]->clearStats();
-				    initClass(c);
-			    } else {
-				    loadGame(c);
-			    }
-		    }
-	    }
-
-	    // set unique game key
-	    uniqueGameKey = prng_get_uint();
-	    if (!uniqueGameKey) {
-		    uniqueGameKey++;
-	    }
-
-	    // send start signal to each player
-	    if (multiplayer == SERVER) {
+	        // initialize all player stats
 	        for (int c = 1; c < MAXPLAYERS; c++) {
-		        if (client_disconnected[c] || players[c]->isLocalPlayer()) {
-			        continue;
+		        if (!client_disconnected[c]) {
+			        if (!loadingsavegame || !intro) {
+				        stats[c]->clearStats();
+				        initClass(c);
+			        } else {
+				        loadGame(c);
+			        }
 		        }
-		        strcpy((char*)net_packet->data, "STRT");
-		        SDLNet_Write32(svFlags, &net_packet->data[4]);
-		        SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
-		        net_packet->data[12] = loadingsavegame ? 1 : 0;
-		        net_packet->address.host = net_clients[c - 1].host;
-		        net_packet->address.port = net_clients[c - 1].port;
-		        net_packet->len = 13;
-		        sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	        }
+
+	        // set unique game key
+	        uniqueGameKey = prng_get_uint();
+	        if (!uniqueGameKey) {
+		        uniqueGameKey++;
+	        }
+
+	        // send start signal to each player
+	        if (multiplayer == SERVER) {
+	            for (int c = 1; c < MAXPLAYERS; c++) {
+		            if (client_disconnected[c] || players[c]->isLocalPlayer()) {
+			            continue;
+		            }
+		            strcpy((char*)net_packet->data, "STRT");
+		            SDLNet_Write32(svFlags, &net_packet->data[4]);
+		            SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
+		            net_packet->data[12] = loadingsavegame ? 1 : 0;
+		            net_packet->address.host = net_clients[c - 1].host;
+		            net_packet->address.port = net_clients[c - 1].port;
+		            net_packet->len = 13;
+		            sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	            }
 	        }
 	    }
 	}
@@ -9066,6 +9074,7 @@ bind_failed:
 	    binaryPrompt(
 	        window_text, "Yes", "No",
 	        [](Button& button) { // Yes button
+	            // TODO handle multiplayer games.
                 soundActivate();
                 destroyMainMenu();
                 savegameCurrentFileIndex = load_save_index;
@@ -10343,6 +10352,12 @@ bind_failed:
 				}
 				doNewGame(false);
 				destroyMainMenu();
+			}
+			else if (main_menu_fade_destination == FadeDestination::GameStartDummy) {
+			    // do nothing.
+			    // this state exists so that clients can begin fading without
+			    // starting the game too early.
+			    return;
 			}
 			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
 				destroyMainMenu();
