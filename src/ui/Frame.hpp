@@ -308,6 +308,7 @@ public:
 	justify_t						getJustify() const { return justify; }
 	const bool						isClickable() const { return clickable; }
 	const bool                      isDontTickChildren() const { return dontTickChildren; }
+	int                             getEntrySize() const { return entrySize; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -317,6 +318,7 @@ public:
 	void	setBorderStyle(int _borderStyle) { borderStyle = static_cast<border_style_t>(_borderStyle); }
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }
+	void    setSelectedEntryColor(const Uint32& _color) { selectedEntryColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }
 	void	setDisabled(const bool _disabled) { disabled = _disabled; }
 	void	setHollow(const bool _hollow) { hollow = _hollow; }
@@ -329,6 +331,7 @@ public:
 	void	setListJustify(justify_t _justify) { justify = _justify; }
 	void	setClickable(const bool _clickable) { clickable = _clickable; }
 	void    setDontTickChildren(const bool b) { dontTickChildren = b; }
+	void    setEntrySize(int _size) { entrySize = _size; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -338,6 +341,7 @@ private:
 	SDL_Rect actualSize{0, 0, 0, 0};					//!< size of the frame's whole contents. when larger than size, activates sliders
 	border_style_t borderStyle = BORDER_BEVEL_HIGH;		//!< border style
 	Uint32 color = 0;									//!< the frame's color
+	Uint32 selectedEntryColor = 0;                      //!< selected entry color
 	Uint32 borderColor = 0;								//!< the frame's border color (only used for flat border)
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame doesn't have a solid background
@@ -360,6 +364,7 @@ private:
 	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
 	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
 	bool dontTickChildren = false;                      //!< enable to prevent children from running their tick functions
+	int entrySize = 0;                                  //!< the height of every entry in the list (if 0, derived from font instead)
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
