@@ -437,11 +437,12 @@ void Widget::drawPost(const SDL_Rect size,
         }
 
         // draw glyphs
+        bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
         Input& input = Input::inputs[owner];
         for (int c = 0; c < actionListSize; ++c) {
             if ((action = actions.find(actionList[c])) != actions.end()) {
 	            if (action->second == name) {
-	                auto path = input.getGlyphPathForBinding(actionList[c], false);
+	                auto path = input.getGlyphPathForBinding(actionList[c], pressed);
 		            auto image = Image::get(path.c_str());
 		            int w = image->getWidth();
 		            int h = image->getHeight();
@@ -455,7 +456,7 @@ void Widget::drawPost(const SDL_Rect size,
 		            }
 	            }
             } else if (c == 0 && selectedWidget == this) {
-                auto path = input.getGlyphPathForBinding(actionList[c], false);
+                auto path = input.getGlyphPathForBinding(actionList[c], pressed);
 	            auto image = Image::get(path.c_str());
 	            int w = image->getWidth();
 	            int h = image->getHeight();
