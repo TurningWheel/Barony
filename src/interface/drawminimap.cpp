@@ -20,6 +20,7 @@
 #include "interface.hpp"
 #include "../collision.hpp"
 #include "../mod_tools.hpp"
+#include "../ui/Image.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -59,6 +60,8 @@ void drawMinimap(const int player, SDL_Rect rect)
     const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
     const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
 
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -131,8 +134,6 @@ void drawMinimap(const int player, SDL_Rect rect)
 	glTexCoord2f(1, 0);
 	glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
 	glEnd();
-
-	glBindTexture(GL_TEXTURE_2D, 0);
 	if (minimapTexture) {
 		delete minimapTexture;
 		minimapTexture = nullptr;
@@ -141,6 +142,10 @@ void drawMinimap(const int player, SDL_Rect rect)
 		SDL_FreeSurface(minimapSurface);
 		minimapSurface = nullptr;
 	}
+
+	// bind a solid white texture
+	auto white = Image::get("images/system/white.png");
+	white->bind();
 
 	// build a circle mesh
 	static std::vector<std::pair<real_t, real_t>> circle_mesh;
@@ -513,6 +518,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 		}
 	}
 
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
