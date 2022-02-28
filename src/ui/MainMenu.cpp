@@ -4193,7 +4193,7 @@ bind_failed:
 	    if (multiplayer == SERVER) {
 		    // send disconnect message to clients
 		    for (int c = 1; c < MAXPLAYERS; c++) {
-			    if (client_disconnected[c] || players[c]->isLocalPlayer()) {
+			    if (client_disconnected[c] || c == clientnum) {
 				    continue;
 			    }
 			    strcpy((char*)net_packet->data, "DISC");
@@ -4613,7 +4613,8 @@ bind_failed:
 			else if (packetId == 'SCAN') {
 			    if (directConnect) {
 			        char hostname[256] = { '\0' };
-			        (void)gethostname(hostname, sizeof(hostname));
+			        //(void)gethostname(hostname, sizeof(hostname));
+			        strcpy(hostname, "Barony");
 			        Uint32 hostname_len = (Uint32)strlen(hostname);
 			        SDLNet_Write32(hostname_len, &net_packet->data[4]);
 			        for (int c = 0; c < hostname_len; ++c) {
@@ -7639,7 +7640,7 @@ bind_failed:
 	        // send start signal to each player
 	        if (multiplayer == SERVER) {
 	            for (int c = 1; c < MAXPLAYERS; c++) {
-		            if (client_disconnected[c] || players[c]->isLocalPlayer()) {
+		            if (client_disconnected[c] || c == clientnum) {
 			            continue;
 		            }
 		            strcpy((char*)net_packet->data, "STRT");
