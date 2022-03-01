@@ -893,6 +893,23 @@ namespace MainMenu {
             });
     };
 
+    static void disconnectPrompt() {
+        monoPrompt(
+            "You have been disconnected\nfrom the remote server.",
+            "Okay",
+            [](Button& button){
+                soundCancel();
+                assert(main_menu_frame);
+                auto prompt = main_menu_frame->findFrame("mono_prompt");
+                if (prompt) {
+                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+                    dimmer->removeSelf();
+                }
+                beginFade(FadeDestination::RootMainMenu);
+            }
+        );
+    }
+
 /******************************************************************************/
 
 	inline void InventorySorting::save() {
@@ -4307,21 +4324,11 @@ bind_failed:
 			}
 
 			if (hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30)) {
-                monoPrompt(
-                    "You have been disconnected\nfrom the remote server.",
-                    "Okay",
-                    [](Button& button){
-	                    soundCancel();
-	                    assert(main_menu_frame);
-	                    auto prompt = main_menu_frame->findFrame("mono_prompt");
-	                    if (prompt) {
-		                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-		                    dimmer->removeSelf();
-	                    }
-	                    beginFade(FadeDestination::RootMainMenu);
-                    }
-                );
+			    destroyMainMenu();
+ 				createDummyMainMenu();
 				disconnectFromLobby();
+                disconnectPrompt();
+			    pauseGame(2, 0);
 			}
 		}
 
@@ -5159,20 +5166,6 @@ bind_failed:
 					    // we got kicked!
 					    destroyMainMenu();
 					    createDummyMainMenu();
-                        monoPrompt(
-                            "You have been disconnected\nfrom the remote server.",
-                            "Okay",
-                            [](Button& button){
-		                        soundCancel();
-		                        assert(main_menu_frame);
-		                        auto prompt = main_menu_frame->findFrame("mono_prompt");
-		                        if (prompt) {
-			                        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                        dimmer->removeSelf();
-		                        }
-		                        beginFade(FadeDestination::RootMainMenu);
-                            }
-                        );
 					    multiplayer = SINGLE;
 					    disconnectFromLobby();
 					    pauseGame(2, 0);
@@ -10655,7 +10648,7 @@ bind_failed:
 		main_menu_frame->setColor(0);
 		main_menu_frame->setTickCallback(tickMainMenu);
 
-		auto title_img = Image::get("images/system/title.png");
+		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
 				(int)(Frame::virtualScreenX - (int)title_img->getWidth()) / 2,
@@ -10733,7 +10726,7 @@ bind_failed:
 
 		int y = 16;
 
-		auto title_img = Image::get("images/system/title.png");
+		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
 				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 2.0 / 3.0) / 2,
@@ -10976,7 +10969,11 @@ bind_failed:
 
 	void disconnectedFromServer() {
 	    multiplayer = SINGLE;
-	    disconnectFromLobby();
+	    destroyMainMenu();
+		createDummyMainMenu();
+		disconnectFromLobby();
+        disconnectPrompt();
+	    pauseGame(2, 0);
 	}
 
 	void receiveInvite() {
