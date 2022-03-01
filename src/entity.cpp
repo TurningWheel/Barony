@@ -6093,7 +6093,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( tmpEntity->behavior == &actPlayer )
 							{
 								playerhit = tmpEntity->skill[2];
-								if ( playerhit > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 20; // turns into .1
@@ -8591,7 +8591,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										free(armor);
 									}
-									if ( playerhit > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+									if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 									{
 										strcpy((char*)net_packet->data, "STLA");
 										net_packet->data[4] = armornum;
