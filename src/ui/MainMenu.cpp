@@ -7612,7 +7612,9 @@ bind_failed:
         destroyMainMenu();
         createDummyMainMenu();
 	    if (multiplayer == CLIENT) {
-            beginFade(MainMenu::FadeDestination::GameStartDummy);
+	        if (!fadeout || main_menu_fade_destination != FadeDestination::GameStart) {
+                beginFade(MainMenu::FadeDestination::GameStartDummy);
+            }
 	    } else {
             beginFade(MainMenu::FadeDestination::GameStart);
 
