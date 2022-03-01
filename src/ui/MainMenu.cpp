@@ -412,6 +412,12 @@ namespace MainMenu {
 	static void setupSplitscreen() {
 		if (multiplayer != SINGLE) {
 			splitscreen = false;
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
+				players[c]->camera().winx = 0;
+				players[c]->camera().winy = 0;
+				players[c]->camera().winw = xres;
+				players[c]->camera().winh = yres;
+			}
 			return;
 		}
 
@@ -4201,7 +4207,10 @@ bind_failed:
 			    net_packet->address.host = net_clients[c - 1].host;
 			    net_packet->address.port = net_clients[c - 1].port;
 			    net_packet->len = 5;
-			    sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			    for (int c = 0; c < 5; ++c) {
+		            sendPacket(net_sock, -1, net_packet, 0);
+		            SDL_Delay(1);
+		        }
 		    }
 	    } else if (multiplayer == CLIENT) {
 		    // send disconnect message to server
@@ -4210,7 +4219,10 @@ bind_failed:
 		    net_packet->address.host = net_server.host;
 		    net_packet->address.port = net_server.port;
 		    net_packet->len = 5;
-		    sendPacketSafe(net_sock, -1, net_packet, 0);
+		    for (int c = 0; c < 5; ++c) {
+	            sendPacket(net_sock, -1, net_packet, 0);
+	            SDL_Delay(1);
+	        }
 	    }
 
 	    // reset multiplayer status
@@ -4613,7 +4625,8 @@ bind_failed:
 			else if (packetId == 'SCAN') {
 			    if (directConnect) {
 			        char hostname[256] = { '\0' };
-			        (void)gethostname(hostname, sizeof(hostname));
+			        //(void)gethostname(hostname, sizeof(hostname));
+			        strcpy(hostname, "Barony");
 			        Uint32 hostname_len = (Uint32)strlen(hostname);
 			        SDLNet_Write32(hostname_len, &net_packet->data[4]);
 			        for (int c = 0; c < hostname_len; ++c) {
@@ -4692,7 +4705,7 @@ bind_failed:
 
 			// player disconnected
 			else if (packetId == 'DISC') {
-				client_disconnected[net_packet->data[5]] = true;
+				client_disconnected[net_packet->data[4]] = true;
 			    // forward to other players
 				for (int c = 1; c < MAXPLAYERS; c++) {
 					if (client_disconnected[c]) {
@@ -4704,7 +4717,7 @@ bind_failed:
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
 				char shortname[32] = { 0 };
-				strncpy(shortname, stats[net_packet->data[5]]->name, 22);
+				strncpy(shortname, stats[net_packet->data[4]]->name, 22);
 				// TODO print the disconnect message somewhere.
 				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 				continue;
@@ -4790,9 +4803,14 @@ bind_failed:
 			// receive the packet:
 			bool gotPacket = false;
 			if (directConnect) {
-				if (SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 23))) {
-					gotPacket = true;
-				}
+			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
+			        if (!handleSafePacket()) {
+			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+			            if (packetId == 'HELO') {
+					        gotPacket = true;
+					    }
+					}
+			    }
 			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 				for (Uint32 numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++) {
@@ -4852,9 +4870,7 @@ bind_failed:
 
 			// parse the packet:
 			if (gotPacket) {
-			    //TODO is there any particular reason we skip the first 3 bytes?
-				//clientnum = (int)SDLNet_Read32(&net_packet->data[0]);
-				clientnum = (int)net_packet->data[3];
+				clientnum = (int)SDLNet_Read32(&net_packet->data[4]);
 				if (clientnum >= MAXPLAYERS || clientnum <= 0) {
                     int error = clientnum;
 					printlog("connection attempt denied by server, error code: %d.\n", error);
@@ -4961,12 +4977,12 @@ bind_failed:
 
 					// now set up everybody else
 					for (int c = 0; c < MAXPLAYERS; c++) {
-						client_classes[c] = net_packet->data[4 + c * (5 + 23)]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 23)]); // sex
-						client_disconnected[c] = net_packet->data[6 + c * (5 + 23)]; // connectedness :p
-						stats[c]->appearance = net_packet->data[7 + c * (5 + 23)]; // appearance
-						stats[c]->playerRace = net_packet->data[8 + c * (5 + 23)]; // player race
-						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 23)]));  // name
+						client_classes[c] = net_packet->data[8 + c * (5 + 23) + 0]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (5 + 23) + 1]); // sex
+						client_disconnected[c] = net_packet->data[8 + c * (5 + 23) + 2]; // connectedness :p
+						stats[c]->appearance = net_packet->data[8 + c * (5 + 23) + 3]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (5 + 23) + 4]; // player race
+						strcpy(stats[c]->name, (char*)(&net_packet->data[8 + c * (5 + 23) + 5]));  // name
 		                stats[c]->clearStats();
 		                initClass(c);
 					}
@@ -5136,10 +5152,10 @@ bind_failed:
 				    if (packetId == 'KICK') {
 					    playerDisconnected = clientnum;
 				    } else {
-					    playerDisconnected = net_packet->data[5];
+					    playerDisconnected = net_packet->data[4];
 					    client_disconnected[playerDisconnected] = true;
 				    }
-				    if (playerDisconnected == clientnum || net_packet->data[5] == 0) {
+				    if (playerDisconnected == clientnum || net_packet->data[4] == 0) {
 					    // we got kicked!
 					    destroyMainMenu();
 					    createDummyMainMenu();
@@ -5289,12 +5305,6 @@ bind_failed:
 		    printlog( "warning: SDLNet_UDP_open has failed: %s\n", SDLNet_GetError());
 		    return false;
 	    }
-	    if (!(net_tcpsock = SDLNet_TCP_Open(&net_server))) {
-		    printlog( "warning: SDLNet_TCP_open has failed: %s\n", SDLNet_GetError());
-		    return false;
-	    }
-	    tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
-	    SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
 
 	    setupNetGameAsServer();
 		printlog( "LAN server started successfully.\n");
@@ -5410,18 +5420,6 @@ bind_failed:
 			    disconnectFromLobby();
 			    return;
 		    }
-		    if (!(net_tcpsock = SDLNet_TCP_Open(&net_server))) {
-			    char buf[1024];
-			    snprintf(buf, sizeof(buf), "Failed to open TCP socket.");
-			    printlog(buf);
-			    close_text_prompt();
-			    connectionErrorPrompt(buf);
-			    multiplayer = SINGLE;
-			    disconnectFromLobby();
-			    return;
-		    }
-		    tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
-		    SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
 	    }
 
 	    // allocate packet data
@@ -7725,21 +7723,23 @@ bind_failed:
 
 		// reset ALL player stats
 		for (int c = 0; c < 4; ++c) {
-			stats[c]->playerRace = 0;
-			stats[c]->sex = static_cast<sex_t>(rand() % 2);
-			stats[c]->appearance = rand() % NUMAPPEARANCES;
-			stats[c]->clearStats();
-			client_classes[c] = 0;
-			initClass(c);
+		    if (players[c]->isLocalPlayer()) {
+			    stats[c]->playerRace = 0;
+			    stats[c]->sex = static_cast<sex_t>(rand() % 2);
+			    stats[c]->appearance = rand() % NUMAPPEARANCES;
+			    stats[c]->clearStats();
+			    client_classes[c] = 0;
+			    initClass(c);
 
-			// random name
-			auto& names = stats[c]->sex == sex_t::MALE ?
-				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto name = names[rand() % names.size()].c_str();
-			size_t len = strlen(name);
-			len = std::min(sizeof(Stat::name) - 1, len);
-			memcpy(stats[c]->name, name, len);
-			stats[c]->name[len] = '\0';
+			    // random name
+			    auto& names = stats[c]->sex == sex_t::MALE ?
+				    randomPlayerNamesMale : randomPlayerNamesFemale;
+			    auto name = names[rand() % names.size()].c_str();
+			    size_t len = strlen(name);
+			    len = std::min(sizeof(Stat::name) - 1, len);
+			    memcpy(stats[c]->name, name, len);
+			    stats[c]->name[len] = '\0';
+			}
 		}
 
 		currentLobbyType = type;
