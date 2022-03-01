@@ -10745,7 +10745,6 @@ bind_failed:
 		);
 		y += title->pos.h;
 
-#ifndef NDEBUG
 		if (!ingame) {
 			auto notification = main_menu_frame->addFrame("notification");
 			notification->setSize(SDL_Rect{
@@ -10760,7 +10759,6 @@ bind_failed:
 			y += notification->getSize().h;
 			y += 16;
 		}
-#endif
 
 		struct Option {
 			const char* name;
@@ -10891,7 +10889,6 @@ bind_failed:
 		);
 
 		if (!ingame) {
-#ifndef NDEBUG
 			for (int c = 0; c < 2; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
 				auto banner = main_menu_frame->addFrame(name.c_str());
@@ -10907,7 +10904,6 @@ bind_failed:
 				y += banner->getSize().h;
 				y += 16;
 			}
-#endif
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
