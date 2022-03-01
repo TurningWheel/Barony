@@ -237,7 +237,7 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
-	static inline void soundToggleMenu() {
+	void soundToggleMenu() {
 		playSound(500, 48);
 	}
 
@@ -892,6 +892,23 @@ namespace MainMenu {
             multiplayer = SINGLE;
             });
     };
+
+    static void disconnectPrompt() {
+        monoPrompt(
+            "You have been disconnected\nfrom the remote server.",
+            "Okay",
+            [](Button& button){
+                soundCancel();
+                assert(main_menu_frame);
+                auto prompt = main_menu_frame->findFrame("mono_prompt");
+                if (prompt) {
+                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+                    dimmer->removeSelf();
+                }
+                beginFade(FadeDestination::RootMainMenu);
+            }
+        );
+    }
 
 /******************************************************************************/
 
@@ -4307,21 +4324,11 @@ bind_failed:
 			}
 
 			if (hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30)) {
-                monoPrompt(
-                    "You have been disconnected\nfrom the remote server.",
-                    "Okay",
-                    [](Button& button){
-	                    soundCancel();
-	                    assert(main_menu_frame);
-	                    auto prompt = main_menu_frame->findFrame("mono_prompt");
-	                    if (prompt) {
-		                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-		                    dimmer->removeSelf();
-	                    }
-	                    beginFade(FadeDestination::RootMainMenu);
-                    }
-                );
+			    destroyMainMenu();
+ 				createDummyMainMenu();
 				disconnectFromLobby();
+                disconnectPrompt();
+			    pauseGame(2, 0);
 			}
 		}
 
@@ -5159,20 +5166,6 @@ bind_failed:
 					    // we got kicked!
 					    destroyMainMenu();
 					    createDummyMainMenu();
-                        monoPrompt(
-                            "You have been disconnected\nfrom the remote server.",
-                            "Okay",
-                            [](Button& button){
-		                        soundCancel();
-		                        assert(main_menu_frame);
-		                        auto prompt = main_menu_frame->findFrame("mono_prompt");
-		                        if (prompt) {
-			                        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                        dimmer->removeSelf();
-		                        }
-		                        beginFade(FadeDestination::RootMainMenu);
-                            }
-                        );
 					    multiplayer = SINGLE;
 					    disconnectFromLobby();
 					    pauseGame(2, 0);
@@ -7542,7 +7535,6 @@ bind_failed:
         if (local) {
 		    auto cancel = card->addButton("cancel_button");
 		    cancel->setText("Ready!");
-		    cancel->setButtonsOffset(SDL_Rect{-12, 0, 0, 0,});
 		    cancel->setHideSelectors(true);
 		    cancel->setFont(smallfont_outline);
 		    cancel->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
@@ -7553,6 +7545,9 @@ bind_failed:
 		    cancel->setBorderColor(0);
 		    cancel->setHighlightColor(0);
 		    cancel->setWidgetBack("cancel_button");
+		    cancel->setHideKeyboardGlyphs(false);
+		    cancel->setWidgetSearchParent(card->getName());
+		    cancel->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
 		    switch (index) {
 		    case 0: cancel->setCallback([](Button&){createCharacterCard(0);}); break;
 		    case 1: cancel->setCallback([](Button&){createCharacterCard(1);}); break;
@@ -7612,7 +7607,9 @@ bind_failed:
         destroyMainMenu();
         createDummyMainMenu();
 	    if (multiplayer == CLIENT) {
-            beginFade(MainMenu::FadeDestination::GameStartDummy);
+	        if (!fadeout || main_menu_fade_destination != FadeDestination::GameStart) {
+                beginFade(MainMenu::FadeDestination::GameStartDummy);
+            }
 	    } else {
             beginFade(MainMenu::FadeDestination::GameStart);
 
@@ -10653,13 +10650,13 @@ bind_failed:
 		main_menu_frame->setColor(0);
 		main_menu_frame->setTickCallback(tickMainMenu);
 
-		auto title_img = Image::get("images/system/title.png");
+		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
-				(int)(Frame::virtualScreenX - (int)title_img->getWidth()) / 2,
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 4.0) / 2,
 				Frame::virtualScreenY / 4,
-				(int)(title_img->getWidth()),
-				(int)(title_img->getHeight())
+				(int)(title_img->getWidth() * 4.0),
+				(int)(title_img->getHeight() * 4.0)
 			},
 			makeColor(255, 255, 255, 255),
 			title_img->getName(),
@@ -10711,6 +10708,7 @@ bind_failed:
 		start->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
+		    soundActivate();
 		    });
 	}
 
@@ -10729,15 +10727,15 @@ bind_failed:
 		        [](Button&){soundCancel(); destroyMainMenu(); createTitleScreen();});
 		};
 
-		int y = 16;
+		int y = 0;
 
-		auto title_img = Image::get("images/system/title.png");
+		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
-				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 2.0 / 3.0) / 2,
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 3.0) / 2,
 				y,
-				(int)(title_img->getWidth() * 2.0 / 3.0),
-				(int)(title_img->getHeight() * 2.0 / 3.0)
+				(int)(title_img->getWidth() * 3.0),
+				(int)(title_img->getHeight() * 3.0)
 			},
 			makeColor(255, 255, 255, 255),
 			title_img->getName(),
@@ -10745,7 +10743,6 @@ bind_failed:
 		);
 		y += title->pos.h;
 
-#ifndef NDEBUG
 		if (!ingame) {
 			auto notification = main_menu_frame->addFrame("notification");
 			notification->setSize(SDL_Rect{
@@ -10760,7 +10757,6 @@ bind_failed:
 			y += notification->getSize().h;
 			y += 16;
 		}
-#endif
 
 		struct Option {
 			const char* name;
@@ -10891,7 +10887,6 @@ bind_failed:
 		);
 
 		if (!ingame) {
-#ifndef NDEBUG
 			for (int c = 0; c < 2; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
 				auto banner = main_menu_frame->addFrame(name.c_str());
@@ -10907,7 +10902,6 @@ bind_failed:
 				y += banner->getSize().h;
 				y += 16;
 			}
-#endif
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
@@ -10978,7 +10972,11 @@ bind_failed:
 
 	void disconnectedFromServer() {
 	    multiplayer = SINGLE;
-	    disconnectFromLobby();
+	    destroyMainMenu();
+		createDummyMainMenu();
+		disconnectFromLobby();
+        disconnectPrompt();
+	    pauseGame(2, 0);
 	}
 
 	void receiveInvite() {
