@@ -3913,6 +3913,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
+	    MainMenu::soundToggleMenu();
 		gamePaused = true;
 		for (int c = 0; c < 4; ++c)
 		{

@@ -237,7 +237,7 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
-	static inline void soundToggleMenu() {
+	void soundToggleMenu() {
 		playSound(500, 48);
 	}
 
@@ -7535,7 +7535,6 @@ bind_failed:
         if (local) {
 		    auto cancel = card->addButton("cancel_button");
 		    cancel->setText("Ready!");
-		    cancel->setButtonsOffset(SDL_Rect{-12, 0, 0, 0,});
 		    cancel->setHideSelectors(true);
 		    cancel->setFont(smallfont_outline);
 		    cancel->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
@@ -7546,6 +7545,9 @@ bind_failed:
 		    cancel->setBorderColor(0);
 		    cancel->setHighlightColor(0);
 		    cancel->setWidgetBack("cancel_button");
+		    cancel->setHideKeyboardGlyphs(false);
+		    cancel->setWidgetSearchParent(card->getName());
+		    cancel->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
 		    switch (index) {
 		    case 0: cancel->setCallback([](Button&){createCharacterCard(0);}); break;
 		    case 1: cancel->setCallback([](Button&){createCharacterCard(1);}); break;
@@ -10651,10 +10653,10 @@ bind_failed:
 		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
-				(int)(Frame::virtualScreenX - (int)title_img->getWidth()) / 2,
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 4.0) / 2,
 				Frame::virtualScreenY / 4,
-				(int)(title_img->getWidth()),
-				(int)(title_img->getHeight())
+				(int)(title_img->getWidth() * 4.0),
+				(int)(title_img->getHeight() * 4.0)
 			},
 			makeColor(255, 255, 255, 255),
 			title_img->getName(),
@@ -10706,6 +10708,7 @@ bind_failed:
 		start->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
+		    soundActivate();
 		    });
 	}
 
@@ -10724,15 +10727,15 @@ bind_failed:
 		        [](Button&){soundCancel(); destroyMainMenu(); createTitleScreen();});
 		};
 
-		int y = 16;
+		int y = 0;
 
 		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
-				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 2.0 / 3.0) / 2,
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 3.0) / 2,
 				y,
-				(int)(title_img->getWidth() * 2.0 / 3.0),
-				(int)(title_img->getHeight() * 2.0 / 3.0)
+				(int)(title_img->getWidth() * 3.0),
+				(int)(title_img->getHeight() * 3.0)
 			},
 			makeColor(255, 255, 255, 255),
 			title_img->getName(),
