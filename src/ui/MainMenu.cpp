@@ -615,7 +615,7 @@ namespace MainMenu {
 			} else if (selectedWidget->getType() == Widget::WIDGET_BUTTON) {
 				auto button = static_cast<Button*>(selectedWidget);
 				auto customize = "*images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
-				auto binding = "*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonChoosing00.png";
+				auto binding = "*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png";
 				auto dropdown = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
 				// TODO more sensible ways to identify these button types...
 				auto boolean_button_text = "Off          On";
@@ -1234,25 +1234,25 @@ namespace MainMenu {
 		yres = std::max(resolution_y, 720);
 		verticalSync = vsync_enabled;
 		vertical_splitscreen = vertical_split_enabled;
-		vidgamma = gamma / 100.f;
-		::fov = fov;
-		fpsLimit = fps;
-		MainMenu::master_volume = (master_volume / 200.f);
-		sfxvolume = (gameplay_volume / 200.f);
-		sfxAmbientVolume = (ambient_volume / 200.f);
-		sfxEnvironmentVolume = (environment_volume / 200.f);
-		musvolume = (music_volume / 200.f);
+		vidgamma = std::min(std::max(0.f, gamma / 100.f), 1.f);
+		::fov = std::min(std::max(40.f, fov), 100.f);
+		fpsLimit = std::min(std::max(30.f, fps), 300.f);
+		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
+		sfxvolume = std::min(std::max(0.f, gameplay_volume / 200.f), .5f);
+		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 200.f), .5f);
+		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 200.f), .5f);
+		musvolume = std::min(std::max(0.f, music_volume / 200.f), .5f);
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
 		bindings.save();
 		hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
-		mousespeed = mouse_sensitivity;
+		mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
 		reversemouse = reverse_mouse_enabled;
 		smoothmouse = smooth_mouse_enabled;
 		disablemouserotationlimit = !rotation_speed_limit_enabled;
-		gamepad_rightx_sensitivity = turn_sensitivity_x / 32768.0;
-		gamepad_righty_sensitivity = turn_sensitivity_y / 32768.0;
+		gamepad_rightx_sensitivity = std::min(std::max(0.f, turn_sensitivity_x / 32768.f), 100.f);
+		gamepad_righty_sensitivity = std::min(std::max(0.f, turn_sensitivity_y / 32768.f), 100.f);
 		if (multiplayer != CLIENT) {
 		    svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 		    svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
