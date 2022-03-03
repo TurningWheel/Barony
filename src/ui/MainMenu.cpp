@@ -5169,17 +5169,19 @@ bind_failed:
 				    }
 				    if (playerDisconnected == clientnum || net_packet->data[4] == 0) {
 					    // we got kicked!
-					    destroyMainMenu();
-					    createDummyMainMenu();
-					    multiplayer = SINGLE;
-					    disconnectFromLobby();
-					    pauseGame(2, 0);
+		                multiplayer = SINGLE;
+		                disconnectFromLobby();
+			            destroyMainMenu();
+			            currentLobbyType = LobbyType::None;
+			            createMainMenu(false);
+		                connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
 				    } else {
 				        //TODO announce player disconnect
-					    //char shortname[32] = { 0 };
-					    //strncpy(shortname, stats[net_packet->data[16]]->name, 22);
-					    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
-			            createInviteButton(playerDisconnected);
+					    if (directConnect) {
+			                createWaitingStone(playerDisconnected);
+			            } else {
+			                createInviteButton(playerDisconnected);
+			            }
 				    }
 				    continue;
 			    }
