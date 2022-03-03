@@ -4627,8 +4627,11 @@ bind_failed:
 			else if (packetId == 'SCAN') {
 			    if (directConnect) {
 			        char hostname[256] = { '\0' };
-			        //(void)gethostname(hostname, sizeof(hostname));
+#ifdef LINUX
+			        (void)gethostname(hostname, sizeof(hostname));
+#else
 			        strcpy(hostname, "Barony");
+#endif
 			        Uint32 hostname_len = (Uint32)strlen(hostname);
 			        SDLNet_Write32(hostname_len, &net_packet->data[4]);
 			        for (int c = 0; c < hostname_len; ++c) {
@@ -8476,10 +8479,26 @@ bind_failed:
 		window->setBorder(0);
 
 		struct LobbyInfo {
-		    std::string name = "Barony";
-		    int players = 0;
-		    int ping = 0;
-		    bool locked = false;
+		    std::string name;
+		    int players;
+		    int ping;
+		    bool locked;
+		    Uint32 host;
+		    Uint16 port;
+		    LobbyInfo(
+		        const char* _name = "Barony",
+		        int _players = 0,
+		        int _ping = 0,
+		        bool _locked = false,
+		        Uint32 _host = 0,
+		        Uint16 _port = 0):
+		        name(_name),
+		        players(_players),
+		        ping(_ping),
+		        locked(_locked),
+		        host(_host),
+		        port(_port)
+		    {}
 		};
 
 		static std::unordered_map<std::string, LobbyInfo> lobbies;
@@ -8802,6 +8821,32 @@ bind_failed:
 		    });
 		enter_code->setCallback(enter_code_fn);
 
+		static auto join_lobby_fn = [](Button& button){
+		    assert(main_menu_frame);
+		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+		    auto names = window->findFrame("names"); assert(names);
+		    int selection = names->getSelection();
+		    auto& entries = names->getEntries();
+		    if (selection >= 0 && selection < entries.size()) {
+                auto& entry = entries[selection];
+		    } else {
+		        monoPrompt("Select a lobby to join first.",
+		            "Okay",
+		            [](Button&){
+			            soundCancel();
+		                assert(main_menu_frame);
+		                auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+		                auto names = window->findFrame("names"); assert(names);
+		                names->select();
+			            auto prompt = main_menu_frame->findFrame("mono_prompt");
+			            if (prompt) {
+				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+				            dimmer->removeSelf();
+			            }
+		            });
+		    }
+		    };
+
 		auto join_lobby = window->addButton("join_lobby");
 		join_lobby->setSize(SDL_Rect{514, 454, 164, 62});
 		join_lobby->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
@@ -8818,7 +8863,7 @@ bind_failed:
 		join_lobby->setWidgetBack("back_button");
 		join_lobby->setWidgetLeft("enter_code");
 		join_lobby->setWidgetUp("names");
-		//join_lobby->setCallback();
+		join_lobby->setCallback(join_lobby_fn);
 
 		static auto tick_callback = [](Widget& widget){
 		    widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
@@ -8943,17 +8988,17 @@ bind_failed:
 
         if (1) {
             // test lobbies
-		    add_lobby(LobbyInfo{"Ben", 1, 50, false});
-		    add_lobby(LobbyInfo{"Sheridan", 3, 50, false});
-		    add_lobby(LobbyInfo{"Paulie", 2, 250, false});
-		    add_lobby(LobbyInfo{"Fart_Face", 1, 420, false});
-		    add_lobby(LobbyInfo{"Tim", 3, 90, true});
-		    add_lobby(LobbyInfo{"Johnny", 3, 30, false});
-		    add_lobby(LobbyInfo{"Boaty McBoatFace", 2, 20, false});
-		    add_lobby(LobbyInfo{"RIP_Morgan_", 0, 120, false});
-		    add_lobby(LobbyInfo{"What is the longest name we can fit in a Barony lobby?", 4, 150, false});
-		    add_lobby(LobbyInfo{"16 PLAYER SMASH FEST", 16, 90, false});
-		    add_lobby(LobbyInfo{"ur mom", 16, 160, true});
+		    add_lobby(LobbyInfo("Ben", 1, 50, false));
+		    add_lobby(LobbyInfo("Sheridan", 3, 50, false));
+		    add_lobby(LobbyInfo("Paulie", 2, 250, false));
+		    add_lobby(LobbyInfo("Fart_Face", 1, 420, false));
+		    add_lobby(LobbyInfo("Tim", 3, 90, true));
+		    add_lobby(LobbyInfo("Johnny", 3, 30, false));
+		    add_lobby(LobbyInfo("Boaty McBoatFace", 2, 20, false));
+		    add_lobby(LobbyInfo("RIP_Morgan_", 0, 120, false));
+		    add_lobby(LobbyInfo("What is the longest name we can fit in a Barony lobby?", 4, 150, false));
+		    add_lobby(LobbyInfo("16 PLAYER SMASH FEST", 16, 90, false));
+		    add_lobby(LobbyInfo("ur mom", 16, 160, true));
 		} else {
 	        // scan for lobbies immediately
 		    refresh->activate();
