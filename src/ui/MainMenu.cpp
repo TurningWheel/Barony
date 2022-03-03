@@ -1350,7 +1350,7 @@ namespace MainMenu {
 		settings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
 		settings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
 		settings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
-		settings.skipintro = ::skipintro;
+		settings.skipintro = true;
 		return settings;
 	}
 
@@ -1406,7 +1406,7 @@ namespace MainMenu {
 		settings.random_traps_enabled = true;
 		settings.extra_life_enabled = false;
 		settings.cheats_enabled = false;
-		settings.skipintro = false;
+		settings.skipintro = true;
 		return settings;
 	}
 
