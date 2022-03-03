@@ -4502,16 +4502,18 @@ void actPlayer(Entity* my)
 
 			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
-				auto b = input.getBindings();
+				auto& b = input.getBindings();
 				bool showNPCCommandsOnGamepad = false;
-				if ( b.find("Show NPC Commands") != b.end() )
+				auto showNPCCommandsFind = b.find("Show NPC Commands");
+				if ( showNPCCommandsFind != b.end() )
 				{
-					showNPCCommandsOnGamepad = b["Show NPC Commands"].isBindingUsingGamepad();
+					showNPCCommandsOnGamepad = (*showNPCCommandsFind).second.isBindingUsingGamepad();
 				}
 				bool lastNPCCommandOnGamepad = false;
-				if ( b.find("Command NPC") != b.end() )
+				auto lastNPCCommandFind = b.find("Command NPC");
+				if ( lastNPCCommandFind != b.end() )
 				{
-					lastNPCCommandOnGamepad = b["Command NPC"].isBindingUsingGamepad();
+					lastNPCCommandOnGamepad = (*lastNPCCommandFind).second.isBindingUsingGamepad();
 				}
 				
 				if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
