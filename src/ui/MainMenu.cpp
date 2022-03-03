@@ -9068,7 +9068,7 @@ bind_failed:
 	    slider->setWidgetDown("join_lobby");
 	    slider->setWidgetLeft("pings");
 
-        if (1) {
+        if (0) {
             // test lobbies
 		    add_lobby(LobbyInfo("Ben", 1, 50, false));
 		    add_lobby(LobbyInfo("Sheridan", 3, 50, false));
