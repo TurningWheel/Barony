@@ -293,19 +293,18 @@ namespace MainMenu {
 	static void settingsOnline(Button&);
 	static void settingsGame(Button&);
 
-	static void recordsAdventureArchives(Button&);
-	static void recordsLeaderboards(Button&);
-	static void recordsDungeonCompendium(Button&);
-	static void recordsStoryIntroduction(Button&);
-	static void recordsCredits(Button&);
-	static void recordsBackToMainMenu(Button&);
+	static void archivesLeaderboards(Button&);
+	static void archivesDungeonCompendium(Button&);
+	static void archivesStoryIntroduction(Button&);
+	static void archivesCredits(Button&);
+	static void archivesBackToMainMenu(Button&);
 
 	static void playNew(Button&);
 	static void playContinue(Button&);
 
 	static void mainPlayGame(Button&);
 	static void mainPlayModdedGame(Button&);
-	static void mainHallOfRecords(Button&);
+	static void mainArchives(Button&);
 	static void mainAssignControllers(Button&);
 	static void mainSettings(Button&);
 	static void mainEditor(Button&);
@@ -1234,7 +1233,7 @@ namespace MainMenu {
 		yres = std::max(resolution_y, 720);
 		verticalSync = vsync_enabled;
 		vertical_splitscreen = vertical_split_enabled;
-		vidgamma = std::min(std::max(0.f, gamma / 100.f), 1.f);
+		vidgamma = std::min(std::max(.5f, gamma / 100.f), 2.f);
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
@@ -1251,8 +1250,8 @@ namespace MainMenu {
 		reversemouse = reverse_mouse_enabled;
 		smoothmouse = smooth_mouse_enabled;
 		disablemouserotationlimit = !rotation_speed_limit_enabled;
-		gamepad_rightx_sensitivity = std::min(std::max(0.f, turn_sensitivity_x / 32768.f), 100.f);
-		gamepad_righty_sensitivity = std::min(std::max(0.f, turn_sensitivity_y / 32768.f), 100.f);
+		gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
+		gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
 		if (multiplayer != CLIENT) {
 		    svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 		    svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
@@ -1389,7 +1388,7 @@ namespace MainMenu {
 		settings.reverse_mouse_enabled = false;
 		settings.smooth_mouse_enabled = false;
 		settings.rotation_speed_limit_enabled = true;
-		settings.turn_sensitivity_x = 50.f;
+		settings.turn_sensitivity_x = 75.f;
 		settings.turn_sensitivity_y = 50.f;
 		settings.classic_mode_enabled = false;
 		settings.hardcore_mode_enabled = false;
@@ -3866,10 +3865,10 @@ bind_failed:
 #endif
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 1.f, 100.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 1.f, 100.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
@@ -3996,15 +3995,11 @@ bind_failed:
 
 /******************************************************************************/
 
-	static void recordsAdventureArchives(Button& button) {
+	static void archivesLeaderboards(Button& button) {
 		soundActivate();
 	}
 
-	static void recordsLeaderboards(Button& button) {
-		soundActivate();
-	}
-
-	static void recordsDungeonCompendium(Button& button) {
+	static void archivesDungeonCompendium(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -4013,7 +4008,7 @@ bind_failed:
 		beginFade(MainMenu::FadeDestination::EndingEvil);
 	}
 
-	static void recordsStoryIntroduction(Button& button) {
+	static void archivesStoryIntroduction(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -4022,7 +4017,7 @@ bind_failed:
 		beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 	}
 
-	static void recordsCredits(Button& button) {
+	static void archivesCredits(Button& button) {
 		soundActivate();
 
 		destroyMainMenu();
@@ -4044,7 +4039,7 @@ bind_failed:
 		back_button->setCallback([](Button& b){
 			destroyMainMenu();
 			createMainMenu(false);
-			mainHallOfRecords(b);
+			mainArchives(b);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto credits = buttons->findButton("CREDITS"); assert(credits);
 			credits->select();
@@ -4057,7 +4052,7 @@ bind_failed:
 		    [](Button& b){
 			destroyMainMenu();
 			createMainMenu(false);
-			mainHallOfRecords(b);
+			mainArchives(b);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto credits = buttons->findButton("CREDITS"); assert(credits);
 			credits->select();});
@@ -4198,15 +4193,15 @@ bind_failed:
 		);
 	}
 
-	static void recordsBackToMainMenu(Button& button) {
+	static void archivesBackToMainMenu(Button& button) {
 		soundCancel();
         destroyMainMenu();
         createMainMenu(false);
         assert(main_menu_frame);
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-		auto records = buttons->findButton("HALL OF RECORDS");
-		if (records) {
-			records->select();
+		auto selection = buttons->findButton("ADVENTURE ARCHIVES");
+		if (selection) {
+			selection->select();
 		}
 	}
 
@@ -9817,12 +9812,12 @@ bind_failed:
 		createPlayWindow();
 	}
 
-	static void mainHallOfRecords(Button& button) {
+	static void mainArchives(Button& button) {
 		soundActivate();
 
 		assert(main_menu_frame);
 
-		// change "notification" section into Hall of Records banner
+		// change "notification" section into subsection banner
 		auto notification = main_menu_frame->findFrame("notification"); assert(notification);
 		auto image = notification->findImage("background"); assert(image);
 		image->path = "*images/ui/Main Menus/AdventureArchives/UI_AdventureArchives_TitleGraphic00.png";
@@ -9838,7 +9833,7 @@ bind_failed:
 		// add banner text to notification
 		auto banner_text = notification->addField("text", 64);
 		banner_text->setJustify(Field::justify_t::CENTER);
-		banner_text->setText("HALL OF RECORDS");
+		banner_text->setText("ADVENTURE ARCHIVES");
 		banner_text->setFont(menu_option_font);
 		banner_text->setColor(makeColor(180, 135, 27, 255));
 		banner_text->setSize(SDL_Rect{19 * 2, 15 * 2, 166 * 2, 12 * 2});
@@ -9859,11 +9854,11 @@ bind_failed:
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			{"ADVENTURE ARCHIVES", recordsAdventureArchives},
-			{"DUNGEON COMPENDIUM", recordsDungeonCompendium},
-			{"STORY INTRODUCTION", recordsStoryIntroduction},
-			{"CREDITS", recordsCredits},
-			{"BACK TO MAIN MENU", recordsBackToMainMenu}
+			{"LEADERBOARDS", archivesLeaderboards},
+			{"DUNGEON COMPENDIUM", archivesDungeonCompendium},
+			{"STORY INTRODUCTION", archivesStoryIntroduction},
+			{"CREDITS", archivesCredits},
+			{"BACK TO MAIN MENU", archivesBackToMainMenu}
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 
@@ -10768,7 +10763,7 @@ bind_failed:
 			    options.insert(options.begin(), {
 				    {"BACK TO GAME", mainClose},
 				    {"ASSIGN CONTROLLERS", mainAssignControllers},
-				    {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				    {"DUNGEON COMPENDIUM", archivesDungeonCompendium},
 				    {"SETTINGS", mainSettings},
 				    {"END LIFE", mainEndLife},
 				    {"RESTART GAME", mainRestartGame},
@@ -10780,7 +10775,7 @@ bind_failed:
 			        options.insert(options.begin(), {
 				        {"BACK TO GAME", mainClose},
 				        {"ASSIGN CONTROLLERS", mainAssignControllers},
-				        {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				        {"DUNGEON COMPENDIUM", archivesDungeonCompendium},
 				        {"SETTINGS", mainSettings},
 				        {"RESTART TRIAL", mainRestartGame},
 				        {"RETURN TO HALL OF TRIALS", mainReturnToHallofTrials},
@@ -10791,7 +10786,7 @@ bind_failed:
 			        options.insert(options.begin(), {
 				        {"BACK TO GAME", mainClose},
 				        {"ASSIGN CONTROLLERS", mainAssignControllers},
-				        {"DUNGEON COMPENDIUM", recordsDungeonCompendium},
+				        {"DUNGEON COMPENDIUM", archivesDungeonCompendium},
 				        {"SETTINGS", mainSettings},
 				        {"RESET HALL OF TRIALS", mainReturnToHallofTrials},
 				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
@@ -10803,14 +10798,14 @@ bind_failed:
 #ifdef NINTENDO
 			options.insert(options.begin(), {
 				{"PLAY GAME", mainPlayGame},
-				{"HALL OF RECORDS", mainHallOfRecords},
+				{"ADVENTURE ARCHIVES", mainArchives},
 				{"SETTINGS", mainSettings},
 				});
 #else
 			options.insert(options.begin(), {
 				{"PLAY GAME", mainPlayGame},
 				{"PLAY MODDED GAME", mainPlayModdedGame},
-				{"HALL OF RECORDS", mainHallOfRecords},
+				{"ADVENTURE ARCHIVES", mainArchives},
 				{"SETTINGS", mainSettings},
 #ifndef NDEBUG
 			    {"EDITOR", mainEditor},
