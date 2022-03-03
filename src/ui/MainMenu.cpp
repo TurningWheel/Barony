@@ -5300,7 +5300,15 @@ bind_failed:
 
 	    // open sockets
 	    if (!(net_sock = SDLNet_UDP_Open(port))) {
-		    printlog( "warning: SDLNet_UDP_open has failed: %s\n", SDLNet_GetError());
+		    char buf[1024];
+		    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
+		    printlog(buf);
+		    multiplayer = SINGLE;
+		    disconnectFromLobby();
+			destroyMainMenu();
+			currentLobbyType = LobbyType::None;
+			createMainMenu(false);
+		    connectionErrorPrompt(buf);
 		    return false;
 	    }
 
@@ -8600,7 +8608,9 @@ bind_failed:
             if (directConnect) {
                 memcpy(net_packet->data, "SCAN", 4);
                 net_packet->len = 4;
-                SDLNet_ResolveHost(&net_packet->address, "255.255.255.255", DEFAULT_PORT);
+                //SDLNet_ResolveHost(&net_packet->address, "255.255.255.255", DEFAULT_PORT);
+                net_packet->address.host = 0xffffffff;
+                SDLNet_Write16(DEFAULT_PORT, &net_packet->address.port);
                 sendPacket(net_sock, -1, net_packet, 0);
             } else {
                 // TODO
@@ -8614,8 +8624,6 @@ bind_failed:
 				    Uint32 packetId = SDLNet_Read32(net_packet->data);
 				    if (packetId == 'SCAN') {
                         if (net_packet->len > 4) {
-				            printlog("got a SCAN packet!\n");
-
 				            char hostname[256] = { '\0' };
 				            Uint32 hostname_len;
 				            hostname_len = SDLNet_Read32(&net_packet->data[4]);
@@ -8632,8 +8640,18 @@ bind_failed:
 				            info.players = players;
 				            info.ping = ping;
 				            info.locked = false;
-				            info.address = SDLNet_ResolveIP(&net_packet->address);
+
+                            Uint32 host = net_packet->address.host;
+				            char buf[16];
+				            snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
+				                (host & 0x000000ff) >> 0,
+				                (host & 0x0000ff00) >> 8,
+				                (host & 0x00ff0000) >> 16,
+				                (host & 0xff000000) >> 24);
+				            info.address = buf;
 				            add_lobby(info);
+
+				            printlog("got a SCAN packet from %s\n", buf);
 				        }
 				    }
 			    }
