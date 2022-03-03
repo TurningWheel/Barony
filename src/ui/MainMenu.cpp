@@ -4218,7 +4218,7 @@ bind_failed:
 	    if (multiplayer == SERVER) {
 		    // send disconnect message to clients
 		    for (int c = 1; c < MAXPLAYERS; c++) {
-			    if (client_disconnected[c] || players[c]->isLocalPlayer()) {
+			    if (client_disconnected[c]) {
 				    continue;
 			    }
 			    strcpy((char*)net_packet->data, "DISC");
@@ -4361,7 +4361,7 @@ bind_failed:
 	        return;
 	    }
 	    for (Uint8 player = 0; player < MAXPLAYERS; ++player) {
-	        if (!players[player]->isLocalPlayer()) {
+	        if (player != clientnum) {
 	            continue;
 	        }
 	        // packet header
@@ -5169,17 +5169,19 @@ bind_failed:
 				    }
 				    if (playerDisconnected == clientnum || net_packet->data[4] == 0) {
 					    // we got kicked!
-					    destroyMainMenu();
-					    createDummyMainMenu();
-					    multiplayer = SINGLE;
-					    disconnectFromLobby();
-					    pauseGame(2, 0);
+		                multiplayer = SINGLE;
+		                disconnectFromLobby();
+			            destroyMainMenu();
+			            currentLobbyType = LobbyType::None;
+			            createMainMenu(false);
+		                connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
 				    } else {
 				        //TODO announce player disconnect
-					    //char shortname[32] = { 0 };
-					    //strncpy(shortname, stats[net_packet->data[16]]->name, 22);
-					    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
-			            createInviteButton(playerDisconnected);
+					    if (directConnect) {
+			                createWaitingStone(playerDisconnected);
+			            } else {
+			                createInviteButton(playerDisconnected);
+			            }
 				    }
 				    continue;
 			    }
@@ -7647,7 +7649,7 @@ bind_failed:
 	        // send start signal to each player
 	        if (multiplayer == SERVER) {
 	            for (int c = 1; c < MAXPLAYERS; c++) {
-		            if (client_disconnected[c] || players[c]->isLocalPlayer()) {
+		            if (client_disconnected[c]) {
 			            continue;
 		            }
 		            strcpy((char*)net_packet->data, "STRT");
@@ -7733,7 +7735,7 @@ bind_failed:
 
 		// reset ALL player stats
 		for (int c = 0; c < 4; ++c) {
-		    if (players[c]->isLocalPlayer()) {
+		    if (multiplayer != CLIENT || c == clientnum) {
 			    stats[c]->playerRace = 0;
 			    stats[c]->sex = static_cast<sex_t>(rand() % 2);
 			    stats[c]->appearance = rand() % NUMAPPEARANCES;
@@ -7749,6 +7751,10 @@ bind_failed:
 			    len = std::min(sizeof(Stat::name) - 1, len);
 			    memcpy(stats[c]->name, name, len);
 			    stats[c]->name[len] = '\0';
+
+                if (multiplayer == CLIENT) {
+			        sendPlayerOverNet();
+			    }
 			}
 		}
 
