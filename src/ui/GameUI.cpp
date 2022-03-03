@@ -11585,7 +11585,7 @@ void createPlayerInventory(const int player)
 		for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
 		{
 			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
-			for ( int y = 0; y < players[player]->inventoryUI.getSizeY(); ++y )
+			for ( int y = 0; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; ++y )
 			{
 				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
 
@@ -11618,10 +11618,10 @@ void createPlayerInventory(const int player)
 			if ( x == 0 ) { currentSlotPos.x -= 4; } // backpack has unique first/last column entries
 			if ( x == players[player]->inventoryUI.getSizeX() - 1 ) { currentSlotPos.x += 4; }
 
-			for ( int y = players[player]->inventoryUI.getSizeY(); 
-				y < players[player]->inventoryUI.getSizeY() + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+			for ( int y = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY;
+				y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
 			{
-				currentSlotPos.y = backpackBaseSlotOffsetY + ((y - players[player]->inventoryUI.getSizeY()) * inventorySlotSize);
+				currentSlotPos.y = backpackBaseSlotOffsetY + ((y - players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY) * inventorySlotSize);
 
 				char slotname[32] = "";
 				snprintf(slotname, sizeof(slotname), "slot %d %d", x, y);
