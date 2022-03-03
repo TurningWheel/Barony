@@ -1017,6 +1017,13 @@ namespace MainMenu {
 			input.setJoystickBindings(joystick_bindings[c]);
 
 			input.refresh();
+
+			// scan for any held buttons and make sure we re-consume them to not double press anything
+			input.update();
+			for ( auto& b : input.getBindings() )
+			{
+				input.consumeBinaryToggle(b.first.c_str());
+			}
 		}
 		old_bindings = *this;
 	}
