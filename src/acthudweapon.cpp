@@ -3168,7 +3168,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity)
 	{
-		if ( players[HUDWEAPON_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
+		if ( players[HUDSHIELD_PLAYERNUM]->movement.isPlayerSwimming() || players[HUDSHIELD_PLAYERNUM]->entity->skill[13] != 0 ) //skill[13] PLAYER_INWATER
 		{
 			my->flags[INVISIBLE] = true;
 			Entity* parent = uidToEntity(my->parent);
@@ -3287,7 +3287,7 @@ void actHudShield(Entity* my)
 	Entity*& hudweapon = players[HUDSHIELD_PLAYERNUM]->hud.weapon;
 
 	// shield switching animation
-	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
+	if ( players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch )
 	{
 		if ( hudweapon )
 		{
@@ -3315,7 +3315,7 @@ void actHudShield(Entity* my)
 
 		if ( !spellbook )
 		{
-			players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch = false;
+			players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch = false;
 		}
 		if ( !(defending || (spellbook && cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook) || doBowReload) )
 		{
@@ -3709,7 +3709,7 @@ void actHudShield(Entity* my)
 		&& players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active 
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
-		&& !players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch)
+		&& !players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch)
 	{
 		if (itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == TOOL)
 		{
@@ -3849,11 +3849,11 @@ void actHudAdditional(Entity* my)
 	bool defending = false;
 
 	// shield switching animation
-	if ( players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch )
+	if ( players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch )
 	{
 		if ( spellbook )
 		{
-			players[HUDWEAPON_PLAYERNUM]->hud.shieldSwitch = false;
+			players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch = false;
 		}
 		if ( !(defending || (spellbook && cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook)) )
 		{

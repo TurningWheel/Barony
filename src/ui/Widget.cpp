@@ -353,7 +353,7 @@ void Widget::drawPost(const SDL_Rect size,
 	// draw selector widgets
 	if (!hideSelectors && selectedWidget == this) {
 		{
-			auto image = Image::get("images/ui/Main Menus/Selector_TL.png");
+			auto image = Image::get("*images/ui/Main Menus/Selector_TL.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
 			int x = size.x + selectorOffset.x;
@@ -363,7 +363,7 @@ void Widget::drawPost(const SDL_Rect size,
 			image->draw(nullptr, SDL_Rect{x - beatx, y - beaty, w, h}, viewport);
 		}
 		{
-			auto image = Image::get("images/ui/Main Menus/Selector_TR.png");
+			auto image = Image::get("*images/ui/Main Menus/Selector_TR.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
 			int x = size.x + size.w - w + selectorOffset.w;
@@ -373,7 +373,7 @@ void Widget::drawPost(const SDL_Rect size,
 			image->draw(nullptr, SDL_Rect{x + beatx, y - beaty, w, h}, viewport);
 		}
 		{
-			auto image = Image::get("images/ui/Main Menus/Selector_BL.png");
+			auto image = Image::get("*images/ui/Main Menus/Selector_BL.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
 			int x = size.x + selectorOffset.x;
@@ -383,7 +383,7 @@ void Widget::drawPost(const SDL_Rect size,
 			image->draw(nullptr, SDL_Rect{x - beatx, y + beaty, w, h}, viewport);
 		}
 		{
-			auto image = Image::get("images/ui/Main Menus/Selector_BR.png");
+			auto image = Image::get("*images/ui/Main Menus/Selector_BR.png");
 			int w = image->getWidth();
 			int h = image->getHeight();
 			int x = size.x + size.w - w + selectorOffset.w;
@@ -437,12 +437,13 @@ void Widget::drawPost(const SDL_Rect size,
         }
 
         // draw glyphs
+        bool pressed = ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
         Input& input = Input::inputs[owner];
         for (int c = 0; c < actionListSize; ++c) {
             if ((action = actions.find(actionList[c])) != actions.end()) {
 	            if (action->second == name) {
-	                auto path = input.getGlyphPathForBinding(actionList[c], false);
-		            auto image = Image::get(path.c_str());
+	                auto path = input.getGlyphPathForBinding(actionList[c], pressed);
+		            auto image = Image::get((std::string("*") + path).c_str());
 		            int w = image->getWidth();
 		            int h = image->getHeight();
 		            image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
@@ -455,8 +456,8 @@ void Widget::drawPost(const SDL_Rect size,
 		            }
 	            }
             } else if (c == 0 && selectedWidget == this) {
-                auto path = input.getGlyphPathForBinding(actionList[c], false);
-	            auto image = Image::get(path.c_str());
+                auto path = input.getGlyphPathForBinding(actionList[c], pressed);
+	            auto image = Image::get((std::string("*") + path).c_str());
 	            int w = image->getWidth();
 	            int h = image->getHeight();
 	            image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);

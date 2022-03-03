@@ -107,6 +107,10 @@ Image::~Image() {
 	}
 }
 
+void Image::bind() const {
+    glBindTexture(GL_TEXTURE_2D, texid);
+}
+
 void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport) const {
 	drawColor(src, dest, viewport, 0xffffffff);
 }
@@ -114,6 +118,9 @@ void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewpo
 void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const {
 	if (!surf) {
 		return;
+	}
+	if (!color) {
+	    return;
 	}
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);

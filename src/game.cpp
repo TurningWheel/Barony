@@ -845,20 +845,20 @@ void gameLogic(void)
 				{
 					continue;
 				}
-				strcpy((char*)net_packet->data, "BARONY_GAME_START");
-				SDLNet_Write32(svFlags, &net_packet->data[17]);
-				SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
+				strcpy((char*)net_packet->data, "STRT");
+				SDLNet_Write32(svFlags, &net_packet->data[4]);
+				SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
 				if ( loadingsavegame == 0 )
 				{
-					net_packet->data[25] = 0;
+					net_packet->data[12] = 0;
 				}
 				else
 				{
-					net_packet->data[25] = 1;
+					net_packet->data[12] = 1;
 				}
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 26;
+				net_packet->len = 13;
 				sendPacket(net_sock, -1, net_packet, c - 1);
 			}
 		}
@@ -2233,8 +2233,8 @@ void gameLogic(void)
 							strcpy((char*)net_packet->data, "MUSM");
 							net_packet->address.host = net_clients[c - 1].host;
 							net_packet->address.port = net_clients[c - 1].port;
-							net_packet->data[3] = assailant[c];
-							net_packet->len = 4;
+							net_packet->data[4] = assailant[c];
+							net_packet->len = 5;
 							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
 					}
@@ -2597,8 +2597,22 @@ void gameLogic(void)
 					{
 						entity->ticks++;
 					}
-					if ( entity->behavior != NULL )
+					if ( entity->behavior != nullptr )
 					{
+						if ( gameloopFreezeEntities
+							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actHudWeapon
+							&& entity->behavior != &actHudShield
+							&& entity->behavior != &actHudAdditional
+							&& entity->behavior != &actHudArrowModel
+							&& entity->behavior != &actLeftHandMagic
+							&& entity->behavior != &actRightHandMagic
+							&& entity->behavior != &actFlame )
+						{
+							TimerExperiments::updateEntityInterpolationPosition(entity);
+							continue;
+						}
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
 							(*entity->behavior)(entity);
@@ -2616,6 +2630,7 @@ void gameLogic(void)
 								if ( entitydeletedself == false )
 								{
 									entity->ranbehavior = true;
+									TimerExperiments::updateEntityInterpolationPosition(entity);
 								}
 								nextnode = map.entities->first;
 								list_FreeAll(&entitiesdeleted);
@@ -2780,9 +2795,13 @@ void gameLogic(void)
 											}
 										}
 									}
-									TimerExperiments::updateEntityInterpolationPosition(entity);
 								}
+								TimerExperiments::updateEntityInterpolationPosition(entity);
 							}
+						}
+						else
+						{
+							TimerExperiments::updateEntityInterpolationPosition(entity);
 						}
 					}
 				}
@@ -3899,6 +3918,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
+	    MainMenu::soundToggleMenu();
 		gamePaused = true;
 		for (int c = 0; c < 4; ++c)
 		{
@@ -5972,9 +5992,8 @@ int main(int argc, char** argv)
 			GO_SwapBuffers(screen);
 
 			// screenshots
-			if ( Input::keys[SDL_SCANCODE_F6] )
+			if ( Input::inputs[clientnum].consumeBinaryToggle("Screenshot") )
 			{
-				Input::keys[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
 

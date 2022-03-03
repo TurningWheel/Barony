@@ -3704,7 +3704,7 @@ void Entity::handleEffects(Stat* myStats)
 					int qty = std::max(0, myStats->shield->count - 1);
 					Item* item = myStats->shield;
 					consumeItem(item, player);
-					if ( qty > 0 )
+					if ( qty > 0 && item )
 					{
 						messagePlayer(player, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
 						playSoundEntity(this, 134, 64); // ignite
@@ -3712,6 +3712,10 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							players[player]->hud.shieldSwitch = true;
 						}
+					}
+					if ( !item )
+					{
+						myStats->shield = nullptr;
 					}
 					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 					{
@@ -6089,7 +6093,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( tmpEntity->behavior == &actPlayer )
 							{
 								playerhit = tmpEntity->skill[2];
-								if ( playerhit > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 								{
 									strcpy((char*)net_packet->data, "SHAK");
 									net_packet->data[4] = 20; // turns into .1
@@ -8587,7 +8591,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										free(armor);
 									}
-									if ( playerhit > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+									if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 									{
 										strcpy((char*)net_packet->data, "STLA");
 										net_packet->data[4] = armornum;

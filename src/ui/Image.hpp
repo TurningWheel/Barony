@@ -33,6 +33,9 @@ public:
 	//! @param color a 32-bit color to mix with the image
 	void drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const;
 
+	//! bind this image as the active GL texture
+	void bind() const;
+
 	//! get an Image object from the engine
 	//! @param name The Image name
 	//! @return the Image or nullptr if it could not be retrieved

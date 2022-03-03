@@ -423,67 +423,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 
 void sendEntityTCP(Entity* entity, int c)
 {
-	int j;
-
-	if ( entity == NULL )
-	{
-		return;
-	}
-	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
-	{
-		return;
-	}
-
-	// send entity data to the client
-	strcpy((char*)net_packet->data, "ENTU");
-	SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
-	SDLNet_Write16((Uint16)entity->sprite, &net_packet->data[8]);
-	SDLNet_Write16((Sint16)(entity->x * 32), &net_packet->data[10]);
-	SDLNet_Write16((Sint16)(entity->y * 32), &net_packet->data[12]);
-	SDLNet_Write16((Sint16)(entity->z * 32), &net_packet->data[14]);
-	net_packet->data[16] = (Sint8)entity->sizex;
-	net_packet->data[17] = (Sint8)entity->sizey;
-	net_packet->data[18] = (Uint8)(entity->scalex * 128);
-	net_packet->data[19] = (Uint8)(entity->scaley * 128);
-	net_packet->data[20] = (Uint8)(entity->scalez * 128);
-	SDLNet_Write16((Sint16)(entity->yaw * 256), &net_packet->data[21]);
-	SDLNet_Write16((Sint16)(entity->pitch * 256), &net_packet->data[23]);
-	SDLNet_Write16((Sint16)(entity->roll * 256), &net_packet->data[25]);
-	net_packet->data[27] = (char)(entity->focalx * 8);
-	net_packet->data[28] = (char)(entity->focaly * 8);
-	net_packet->data[29] = (char)(entity->focalz * 8);
-	SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
-	net_packet->data[34] = 0;
-	net_packet->data[35] = 0;
-	for (j = 0; j < 16; j++)
-	{
-		if ( entity->flags[j] )
-		{
-			net_packet->data[34 + j / 8] |= power(2, j - (j / 8) * 8);
-		}
-	}
-	SDLNet_Write32((Uint32)ticks, &net_packet->data[36]);
-	SDLNet_Write16((Sint16)(entity->vel_x * 32), &net_packet->data[40]);
-	SDLNet_Write16((Sint16)(entity->vel_y * 32), &net_packet->data[42]);
-	SDLNet_Write16((Sint16)(entity->vel_z * 32), &net_packet->data[44]);
-	net_packet->address.host = net_clients[c - 1].host;
-	net_packet->address.port = net_clients[c - 1].port;
-	net_packet->len = ENTITY_PACKET_LENGTH;
-	if ( directConnect )
-	{
-		SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-	}
-	else
-	{
-#ifdef STEAMWORKS
-		SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-#endif
-	}
-	SDL_Delay(50);
-	if ( entity->clientsHaveItsStats )
-	{
-		entity->serverUpdateEffectsForEntity(false);
-	}
+	// deprecated
 }
 
 void sendEntityUDP(Entity* entity, int c, bool guarantee)
@@ -564,26 +504,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 
 void sendMapSeedTCP(int c)
 {
-	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
-	{
-		return;
-	}
-
-	SDLNet_Write32(mapseed, &net_packet->data[0]);
-	net_packet->address.host = net_clients[c - 1].host;
-	net_packet->address.port = net_clients[c - 1].port;
-	net_packet->len = 4;
-	if ( directConnect )
-	{
-		SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-	}
-	else
-	{
-#ifdef STEAMWORKS
-		SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1 ]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-#endif
-	}
-	SDL_Delay(50);
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -596,38 +517,7 @@ void sendMapSeedTCP(int c)
 
 void sendMapTCP(int c)
 {
-	Uint32 x, y, z;
-
-	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
-	{
-		return;
-	}
-
-	// send all the map data to the client
-	for ( z = 0; z < MAPLAYERS; z++ )
-	{
-		for ( y = 0; y < map.height; y++ )
-		{
-			for ( x = 0; x < map.width; x++ )
-			{
-				net_packet->data[x] = map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height];
-			}
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = map.width;
-			if ( directConnect )
-			{
-				SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-			}
-			else
-			{
-#ifdef STEAMWORKS
-				SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-#endif
-			}
-			SDL_Delay(50);
-		}
-	}
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1485,16 +1375,18 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 
 NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 {
+    printlog("processing lobby join request\n");
+
 	int c = MAXPLAYERS;
-	if ( strcmp(VERSION, (char*)net_packet->data + 54) )
+	if ( strcmp(VERSION, (char*)net_packet->data + 39) )
 	{
 		c = MAXPLAYERS + 1; // wrong version number
 	}
 	else
 	{
-		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[68]);
-		Uint32 clientms = SDLNet_Read32(&net_packet->data[64]);
-		if ( net_packet->data[63] == 0 )
+		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[53]);
+		Uint32 clientms = SDLNet_Read32(&net_packet->data[49]);
+		if ( net_packet->data[48] == 0 )
 		{
 			// client will enter any player spot
 			for ( c = 0; c < MAXPLAYERS; c++ )
@@ -1508,7 +1400,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		else
 		{
 			// client is joining a particular player spot
-			c = net_packet->data[63];
+			c = net_packet->data[48];
 			if ( !client_disconnected[c] )
 			{
 				c = MAXPLAYERS;  // client wants to fill a space that is already filled
@@ -1537,17 +1429,15 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		// on error, client gets a player number that is invalid (to be interpreted as an error code)
 		net_clients[MAXPLAYERS - 1].host = net_packet->address.host;
 		net_clients[MAXPLAYERS - 1].port = net_packet->address.port;
-		if ( directConnect )
-			while ( (net_tcpclients[MAXPLAYERS - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
 		net_packet->address.host = net_clients[MAXPLAYERS - 1].host;
 		net_packet->address.port = net_clients[MAXPLAYERS - 1].port;
-		net_packet->len = 4;
-		SDLNet_Write32(c, &net_packet->data[0]); // error code for client to interpret
+		net_packet->len = 8;
+		memcpy(net_packet->data, "HELO", 4);
+		SDLNet_Write32(c, &net_packet->data[4]); // error code for client to interpret
 		printlog("sending error code %d to client.\n", c);
 		if ( directConnect )
 		{
-			SDLNet_TCP_Send(net_tcpclients[MAXPLAYERS - 1], net_packet->data, net_packet->len);
-			SDLNet_TCP_Close(net_tcpclients[MAXPLAYERS - 1]);
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 			return NET_LOBBY_JOIN_DIRECTIP_FAILURE;
 		}
 		else
@@ -1558,18 +1448,17 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 	else
 	{
 		// on success, client gets legit player number
-		strcpy(stats[c]->name, (char*)(&net_packet->data[19]));
 		client_disconnected[c] = false;
-		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
-		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
-		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[50]);
+		strcpy(stats[c]->name, (char*)(&net_packet->data[4]));
+		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[27]);
+		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[31]));
+		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[35]);
 		stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
 		stats[c]->playerRace = (raceAndAppearance & 0xFF);
 		net_clients[c - 1].host = net_packet->address.host;
 		net_clients[c - 1].port = net_packet->address.port;
 		if ( directConnect )
 		{
-			while ( (net_tcpclients[c - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
 			const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
 			printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
 		}
@@ -1586,44 +1475,45 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 			{
 				continue;
 			}
-			strcpy((char*)(&net_packet->data[0]), "NEWPLAYER");
-			net_packet->data[9] = c; // clientnum
-			net_packet->data[10] = client_classes[c]; // class
-			net_packet->data[11] = stats[c]->sex; // sex
-			net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
-			net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
+			strcpy((char*)(&net_packet->data[0]), "JOIN");
+			net_packet->data[4] = c; // clientnum
+			net_packet->data[5] = client_classes[c]; // class
+			net_packet->data[6] = stats[c]->sex; // sex
+			net_packet->data[7] = (Uint8)stats[c]->appearance; // appearance
+			net_packet->data[8] = (Uint8)stats[c]->playerRace; // player race
 			char shortname[32] = "";
 			strncpy(shortname, stats[c]->name, 22);
-			strcpy((char*)(&net_packet->data[14]), shortname);  // name
+			strcpy((char*)(&net_packet->data[9]), shortname);  // name
 			net_packet->address.host = net_clients[x - 1].host;
 			net_packet->address.port = net_clients[x - 1].port;
-			net_packet->len = 14 + strlen(stats[c]->name) + 1;
+			net_packet->len = 9 + strlen(stats[c]->name) + 1;
 			sendPacketSafe(net_sock, -1, net_packet, x - 1);
 		}
 		char shortname[32] = { 0 };
 		strncpy(shortname, stats[c]->name, 22);
 
-		newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
+		//newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
 
 		// send new client their id number + info on other clients
-		SDLNet_Write32(c, &net_packet->data[0]);
+		memcpy(net_packet->data, "HELO", 4);
+		SDLNet_Write32(c, &net_packet->data[4]);
 		for ( int x = 0; x < MAXPLAYERS; x++ )
 		{
-			net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
-			net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
-			net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
-			net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
-			net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
+			net_packet->data[8 + x * (5 + 23) + 0] = client_classes[x]; // class
+			net_packet->data[8 + x * (5 + 23) + 1] = stats[x]->sex; // sex
+			net_packet->data[8 + x * (5 + 23) + 2] = client_disconnected[x]; // connectedness :p
+			net_packet->data[8 + x * (5 + 23) + 3] = (Uint8)stats[x]->appearance; // appearance
+			net_packet->data[8 + x * (5 + 23) + 4] = (Uint8)stats[x]->playerRace; // player race
 			char shortname[32] = "";
 			strncpy(shortname, stats[x]->name, 22);
-			strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
+			strcpy((char*)(&net_packet->data[8 + x * (5 + 23) + 5]), shortname); // name
 		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 4 + MAXPLAYERS * (5 + 23);
+		net_packet->len = 8 + MAXPLAYERS * (5 + 23);
 		if ( directConnect )
 		{
-			SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
+		    sendPacketSafe(net_sock, -1, net_packet, 0);
 			return NET_LOBBY_JOIN_DIRECTIP_SUCCESS;
 		}
 		else
@@ -1977,15 +1867,17 @@ void clientHandlePacket()
 		}
 	}
 
+	Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+
 	// keep alive
-	if (!strncmp((char*)net_packet->data, "KPAL", 4))
+	if (packetId == 'KPAL')
 	{
 		client_keepalive[0] = ticks;
 		return;
 	}
 
 	// entity update
-	else if ( !strncmp((char*)net_packet->data, "ENTU", 4) )
+	else if ( packetId == 'ENTU' )
 	{
 		client_keepalive[0] = ticks; // don't timeout
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
@@ -2035,7 +1927,7 @@ void clientHandlePacket()
 		return;
 	}
 
-	else if ( !strncmp((char*)net_packet->data, "EFFE", 4) )
+	else if ( packetId == 'EFFE' )
 	{
 		/*
 		* Packet breakdown:
@@ -2083,7 +1975,7 @@ void clientHandlePacket()
 	}
 
 	// update entity skill
-	else if ( !strncmp((char*)net_packet->data, "ENTS", 4) )
+	else if ( packetId == 'ENTS' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2094,7 +1986,7 @@ void clientHandlePacket()
 	}
 
 	// update entity fskill
-	else if ( !strncmp((char*)net_packet->data, "ENFS", 4) )
+	else if ( packetId == 'ENFS' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2105,7 +1997,7 @@ void clientHandlePacket()
 	}
 
 	// update entity bodypart
-	else if ( !strncmp((char*)net_packet->data, "ENTB", 4) )
+	else if ( packetId == 'ENTB' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2123,7 +2015,7 @@ void clientHandlePacket()
 	}
 
 	// bodypart ids
-	else if ( !strncmp((char*)net_packet->data, "BDYI", 4) )
+	else if ( packetId == 'BDYI' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2154,7 +2046,7 @@ void clientHandlePacket()
 	}
 
 	// update entity flag
-	else if ( !strncmp((char*)net_packet->data, "ENTF", 4) )
+	else if ( packetId == 'ENTF' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2185,7 +2077,7 @@ void clientHandlePacket()
 	}
 
 	// player movement correction
-	else if ( !strncmp((char*)net_packet->data, "PMOV", 4) )
+	else if ( packetId == 'PMOV' )
 	{
 		if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
 		{
@@ -2197,7 +2089,7 @@ void clientHandlePacket()
 	}
 
 	// update health
-	else if ( !strncmp((char*)net_packet->data, "UPHP", 4) )
+	else if ( packetId == 'UPHP' )
 	{
 		if ( (Monster)SDLNet_Read32(&net_packet->data[8]) != NOTHING )
 		{
@@ -2217,7 +2109,7 @@ void clientHandlePacket()
 	}
 
 	// server sent item details.
-	else if ( !strncmp((char*)net_packet->data, "ITMU", 4) )
+	else if ( packetId == 'ITMU' )
 	{
 		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
 		Entity* entity = uidToEntity(uid);
@@ -2239,7 +2131,7 @@ void clientHandlePacket()
 
 
 	// spawn an explosion
-	else if ( !strncmp((char*)net_packet->data, "EXPL", 4) )
+	else if ( packetId == 'EXPL' )
 	{
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2249,7 +2141,7 @@ void clientHandlePacket()
 	}
 
 	// spawn an explosion, custom sprite
-	else if ( !strncmp((char*)net_packet->data, "EXPS", 4) )
+	else if ( packetId == 'EXPS' )
 	{
 		Uint16 sprite = (Uint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2260,7 +2152,7 @@ void clientHandlePacket()
 	}
 
 	// spawn a bang sprite
-	else if ( !strncmp((char*)net_packet->data, "BANG", 4) )
+	else if ( packetId == 'BANG' )
 	{
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2270,7 +2162,7 @@ void clientHandlePacket()
 	}
 
 	// spawn a gib
-	else if ( !strncmp((char*)net_packet->data, "SPGB", 4) )
+	else if ( packetId == 'SPGB' )
 	{
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2286,7 +2178,7 @@ void clientHandlePacket()
 	}
 
 	// spawn a sleep Z
-	else if ( !strncmp((char*)net_packet->data, "SLEZ", 4) )
+	else if ( packetId == 'SLEZ' )
 	{
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2296,7 +2188,7 @@ void clientHandlePacket()
 	}
 
 	// spawn a misc sprite like the sleep Z
-	else if ( !strncmp((char*)net_packet->data, "SLEM", 4) )
+	else if ( packetId == 'SLEM' )
 	{
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2307,7 +2199,7 @@ void clientHandlePacket()
 	}
 
 	// spawn magical effect particles
-	else if ( !strncmp((char*)net_packet->data, "MAGE", 4) )
+	else if ( packetId == 'MAGE' )
 	{
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
@@ -2318,7 +2210,7 @@ void clientHandlePacket()
 	}
 
 	// spawn misc particle effect 
-	else if ( !strncmp((char*)net_packet->data, "SPPE", 4) )
+	else if ( packetId == 'SPPE' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2440,7 +2332,7 @@ void clientHandlePacket()
 	}
 
 	// spawn misc particle effect at fixed location 
-	else if ( !strncmp((char*)net_packet->data, "SPPL", 4) )
+	else if ( packetId == 'SPPL' )
 	{
 		Sint16 particle_x = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[4]));
 		Sint16 particle_y = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[6]));
@@ -2504,7 +2396,7 @@ void clientHandlePacket()
 	}
 
 	// enemy hp bar
-	else if ( !strncmp((char*)net_packet->data, "ENHP", 4) )
+	else if ( packetId == 'ENHP' )
 	{
 		Sint32 enemy_hp = SDLNet_Read32(&net_packet->data[4]);
 		Sint32 enemy_maxhp = SDLNet_Read32(&net_packet->data[8]);
@@ -2523,21 +2415,21 @@ void clientHandlePacket()
 	}
 
 	// ping
-	else if (!strncmp((char*)net_packet->data, "PING", 4))
+	else if (packetId == 'PING')
 	{
 		messagePlayer(clientnum, MESSAGE_MISC, language[1117], (SDL_GetTicks() - pingtime));
 		return;
 	}
 
 	// unlock steam achievement
-	else if (!strncmp((char*)net_packet->data, "SACH", 4))
+	else if (packetId == 'SACH')
 	{
 		steamAchievement((char*)(&net_packet->data[4]));
 		return;
 	}
 
 	// update steam statistic
-	else if ( !strncmp((char*)net_packet->data, "SSTA", 4) )
+	else if (packetId == 'SSTA')
 	{
 		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
 		steamStatisticUpdate(static_cast<int>(net_packet->data[4]), 
@@ -2546,7 +2438,7 @@ void clientHandlePacket()
 	}
 
 	// pause game
-	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
+	else if (packetId == 'PAUS')
 	{
 		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
 		pauseGame(2, 0);
@@ -2554,7 +2446,7 @@ void clientHandlePacket()
 	}
 
 	// unpause game
-	else if (!strncmp((char*)net_packet->data, "UNPS", 4))
+	else if (packetId == 'UNPS')
 	{
 		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
 		pauseGame(1, 0);
@@ -2562,68 +2454,25 @@ void clientHandlePacket()
 	}
 
 	// server or player shut down
-	else if (!strncmp((char*)net_packet->data, "DISCONNECT", 10))
+	else if (packetId == 'DISC')
 	{
-		if ( net_packet->data[10] == 0 )
+		if (net_packet->data[4] == 0)
 		{
 			// server shutdown
-			if ( !victory )
+			if (!victory)
 			{
-				button_t* button;
-
 				printlog("The remote server has shut down.\n");
 				pauseGame(2, 0);
-
-				// close current window
-				buttonCloseSubwindow(NULL);
-				for ( node = button_l.first; node != NULL; node = nextnode )
-				{
-					nextnode = node->next;
-					button = (button_t*)node->element;
-					if ( button->focused )
-					{
-						list_RemoveNode(button->node);
-					}
-				}
-
-				// create new window
-				subwindow = 1;
-				subx1 = xres / 2 - 256;
-				subx2 = xres / 2 + 256;
-				suby1 = yres / 2 - 56;
-				suby2 = yres / 2 + 56;
-				strcpy(subtext, language[1126]);
-
-				// close button
-				button = newButton();
-				strcpy(button->label, "x");
-				button->x = subx2 - 20;
-				button->y = suby1;
-				button->sizex = 20;
-				button->sizey = 20;
-				button->action = &buttonCloseAndEndGameConfirm;
-				button->visible = 1;
-				button->focused = 1;
-
-				// okay button
-				button = newButton();
-				strcpy(button->label, language[732]);
-				button->x = subx2 - (subx2 - subx1) / 2 - 28;
-				button->y = suby2 - 28;
-				button->sizex = 56;
-				button->sizey = 20;
-				button->action = &buttonCloseAndEndGameConfirm;
-				button->visible = 1;
-				button->focused = 1;
-				button->key = SDL_SCANCODE_RETURN;
+				// TODO display disconnect window
+				// &buttonCloseAndEndGameConfirm on okay
 			}
 		}
-		client_disconnected[net_packet->data[10]] = true;
+		client_disconnected[net_packet->data[4]] = true;
 		return;
 	}
 
 	// teleport player
-	else if (!strncmp((char*)net_packet->data, "TELE", 4))
+	else if (packetId == 'TELE')
 	{
 		if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 		{
@@ -2639,7 +2488,7 @@ void clientHandlePacket()
 	}
 
 	// teleport player
-	else if ( !strncmp((char*)net_packet->data, "TELM", 4) )
+	else if ( packetId == 'TELM' )
 	{
 		if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
 		{
@@ -2663,7 +2512,7 @@ void clientHandlePacket()
 	}
 
 	// delete entity
-	else if (!strncmp((char*)net_packet->data, "ENTD", 4))
+	else if (packetId == 'ENTD')
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -2712,7 +2561,7 @@ void clientHandlePacket()
 	}
 
 	// shake screen
-	else if (!strncmp((char*)net_packet->data, "SHAK", 4))
+	else if (packetId == 'SHAK')
 	{
 		cameravars[clientnum].shakex += ((char)(net_packet->data[4])) / 100.f;
 		cameravars[clientnum].shakey += ((char)(net_packet->data[5]));
@@ -2720,7 +2569,7 @@ void clientHandlePacket()
 	}
 
 	// a torch burns out
-	else if ( !strncmp((char*)net_packet->data, "TORC", 4) )
+	else if (packetId == 'TORC')
 	{
 		ItemType itemType = static_cast<ItemType>(SDLNet_Read16(&net_packet->data[4]));
 		Status itemStatus = static_cast<Status>(net_packet->data[6]);
@@ -2732,7 +2581,9 @@ void clientHandlePacket()
 			if ( stats[clientnum]->shield->count <= 0 )
 			{
 				Item* item = stats[clientnum]->shield;
+				item->count = 1; // to be consumed below
 				consumeItem(item, clientnum);
+				stats[clientnum]->shield = nullptr;
 			}
 			else
 			{
@@ -2743,7 +2594,7 @@ void clientHandlePacket()
 	}
 
 	// update armor quality
-	else if (!strncmp((char*)net_packet->data, "ARMR", 4))
+	else if (packetId == 'ARMR')
 	{
 		switch ( net_packet->data[4] )
 		{
@@ -2838,7 +2689,7 @@ void clientHandlePacket()
 	}
 
 	// steal armor (destroy it)
-	else if (!strncmp((char*)net_packet->data, "STLA", 4))
+	else if (packetId == 'STLA')
 	{
 		switch ( net_packet->data[4] )
 		{
@@ -2889,28 +2740,28 @@ void clientHandlePacket()
 	}
 
 	// damage indicator
-	else if (!strncmp((char*)net_packet->data, "DAMI", 4))
+	else if (packetId == 'DAMI')
 	{
 		newDamageIndicator(clientnum, SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
 		return;
 	}
 
 	// play sound position
-	else if (!strncmp((char*)net_packet->data, "SNDP", 4))
+	else if (packetId == 'SNDP')
 	{
 		playSoundPos(SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]));
 		return;
 	}
 
 	// play sound global
-	else if (!strncmp((char*)net_packet->data, "SNDG", 4))
+	else if (packetId == 'SNDG')
 	{
 		playSound(SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
 		return;
 	}
 
 	// play sound entity local
-	else if ( !strncmp((char*)net_packet->data, "SNEL", 4) )
+	else if ( packetId == 'SNEL' )
 	{
 		Entity* tmp = uidToEntity(SDLNet_Read32(&net_packet->data[6]));
 		int sfx = SDLNet_Read16(&net_packet->data[4]);
@@ -2966,21 +2817,21 @@ void clientHandlePacket()
 	}
 
 	// new light, shadowed
-	else if (!strncmp((char*)net_packet->data, "LITS", 4))
+	else if (packetId == 'LITS')
 	{
 		lightSphereShadow(SDLNet_Read16(&net_packet->data[4]), SDLNet_Read16(&net_packet->data[6]), SDLNet_Read16(&net_packet->data[8]), SDLNet_Read16(&net_packet->data[10]));
 		return;
 	}
 
 	// new light, unshadowed
-	else if (!strncmp((char*)net_packet->data, "LITU", 4))
+	else if (packetId == 'LITU')
 	{
 		lightSphere(SDLNet_Read16(&net_packet->data[4]), SDLNet_Read16(&net_packet->data[6]), SDLNet_Read16(&net_packet->data[8]), SDLNet_Read16(&net_packet->data[10]));
 		return;
 	}
 
 	// create wall
-	else if (!strncmp((char*)net_packet->data, "WALC", 4))
+	else if (packetId == 'WALC')
 	{
 		int y = SDLNet_Read16(&net_packet->data[6]);
 		int x = SDLNet_Read16(&net_packet->data[4]);
@@ -2992,7 +2843,7 @@ void clientHandlePacket()
 	}
 
 	// destroy wall
-	else if (!strncmp((char*)net_packet->data, "WALD", 4))
+	else if (packetId == 'WALD')
 	{
 		int y = SDLNet_Read16(&net_packet->data[6]);
 		int x = SDLNet_Read16(&net_packet->data[4]);
@@ -3004,7 +2855,7 @@ void clientHandlePacket()
 	}
 
 	// destroy wall + ceiling
-	else if (!strncmp((char*)net_packet->data, "WACD", 4))
+	else if (packetId == 'WACD')
 	{
 		int y = SDLNet_Read16(&net_packet->data[6]);
 		int x = SDLNet_Read16(&net_packet->data[4]);
@@ -3017,14 +2868,15 @@ void clientHandlePacket()
 	}
 
 	// monster music
-	else if (!strncmp((char*)net_packet->data, "MUSM", 3))
+	else if (packetId == 'MUSM')
 	{
-		combat = (bool)net_packet->data[3];
+	    Uint8 assailant = net_packet->data[4];
+		combat = assailant;
 		return;
 	}
 
 	// get item
-	else if (!strncmp((char*)net_packet->data, "ITEM", 4))
+	else if (packetId == 'ITEM')
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
 		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
@@ -3055,7 +2907,7 @@ void clientHandlePacket()
 	}
 
 	// unequip and remove item
-	else if (!strncmp((char*)net_packet->data, "DROP", 4))
+	else if (packetId == 'DROP')
 	{
 		Item** armor = NULL;
 		switch ( net_packet->data[4] )
@@ -3126,14 +2978,14 @@ void clientHandlePacket()
 	}
 
 	// get gold
-	else if (!strncmp((char*)net_packet->data, "GOLD", 4))
+	else if (packetId == 'GOLD')
 	{
 		stats[clientnum]->GOLD = SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
 	// open shop
-	else if (!strncmp((char*)net_packet->data, "SHOP", 4))
+	else if (packetId == 'SHOP')
 	{
 		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
 		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
@@ -3160,7 +3012,7 @@ void clientHandlePacket()
 	}
 
 	// shop item
-	else if (!strncmp((char*)net_packet->data, "SHPI", 4))
+	else if (packetId == 'SHPI')
 	{
 		if ( !shopInv[clientnum] )
 		{
@@ -3170,7 +3022,7 @@ void clientHandlePacket()
 	}
 
 	// close shop
-	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
+	else if (packetId == 'SHPC')
 	{
 		Uint32 id = SDLNet_Read32(&net_packet->data[4]);
 		if ( id == shopkeeper[clientnum] )
@@ -3182,7 +3034,7 @@ void clientHandlePacket()
 	}
 
 	// textbox message
-	else if (!strncmp((char*)net_packet->data, "MSGS", 4))
+	else if (packetId == 'MSGS')
 	{
 		Uint32 color = SDLNet_Read32(&net_packet->data[4]);
 		MessageType type = (MessageType)SDLNet_Read32(&net_packet->data[8]);
@@ -3370,14 +3222,14 @@ void clientHandlePacket()
 	}
 
 	// update magic
-	else if (!strncmp((char*)net_packet->data, "UPMP", 4))
+	else if (packetId == 'UPMP')
 	{
 		stats[clientnum]->MP = SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
 	// update effects flags
-	else if (!strncmp((char*)net_packet->data, "UPEF", 4))
+	else if (packetId == 'UPEF')
 	{
 		for (c = 0; c < NUMEFFECTS; c++)
 		{
@@ -3402,7 +3254,7 @@ void clientHandlePacket()
 	}
 
 	// update entity stat flag
-	else if ( !strncmp((char*)net_packet->data, "ENSF", 4) )
+	else if ( packetId == 'ENSF' )
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -3416,7 +3268,7 @@ void clientHandlePacket()
 	}
 
 	// update attributes
-	else if (!strncmp((char*)net_packet->data, "ATTR", 4))
+	else if (packetId == 'ATTR')
 	{
 		stats[clientnum]->STR = (Sint8)net_packet->data[5];
 		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
@@ -3434,7 +3286,7 @@ void clientHandlePacket()
 	}
 
 	// level up icon timers, sets second row of icons if double stat gain is rolled.
-	else if (!strncmp((char*)net_packet->data, "LVLI", 4))
+	else if (packetId == 'LVLI')
 	{
 		// Note - set to 250 ticks, higher values will require resending/using 16 bit data.
 		players[clientnum]->hud.xpBar.animateState = Player::HUD_t::AnimateStates::ANIMATE_LEVELUP_RISING;
@@ -3456,14 +3308,14 @@ void clientHandlePacket()
 	}
 
 	// killed a monster
-	else if (!strncmp((char*)net_packet->data, "MKIL", 4))
+	else if (packetId == 'MKIL')
 	{
 		kills[net_packet->data[4]]++;
 		return;
 	}
 
 	// update skill
-	else if (!strncmp((char*)net_packet->data, "SKIL", 4))
+	else if (packetId == 'SKIL')
 	{
 		stats[clientnum]->PROFICIENCIES[net_packet->data[5]] = net_packet->data[6];
 
@@ -3484,7 +3336,7 @@ void clientHandlePacket()
 	}
 
 	//Add spell.
-	else if ( !strncmp((char*)net_packet->data, "ASPL", 4) )
+	else if ( packetId == 'ASPL' )
 	{
 		if ( net_packet->len != 6 ) //Need to get the actual length, not reported...Should be a generic check at the top of the function, if len != actual len, then abort.
 		{
@@ -3498,14 +3350,14 @@ void clientHandlePacket()
 	}
 
 	// update hunger
-	else if (!strncmp((char*)net_packet->data, "HNGR", 4))
+	else if (packetId == 'HNGR')
 	{
 		stats[clientnum]->HUNGER = (Sint32)SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
 	// update player stat values
-	else if ( !strncmp((char*)net_packet->data, "STAT", 4) )
+	else if ( packetId == 'STAT' )
 	{
 		Sint32 buffer = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -3520,7 +3372,7 @@ void clientHandlePacket()
 	}
 
 	// update sex
-	else if ( !strncmp((char*)net_packet->data, "SEXU", 4) )
+	else if ( packetId == 'SEXU' )
 	{
 		int player = static_cast<int>(net_packet->data[4]);
 		if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
@@ -3532,7 +3384,7 @@ void clientHandlePacket()
 		return;
 	}
 
-	else if ( !strncmp((char*)net_packet->data, "COND", 4) )
+	else if ( packetId == 'COND' )
 	{
 		int conduct = SDLNet_Read16(&net_packet->data[4]);
 		int value = SDLNet_Read16(&net_packet->data[6]);
@@ -3542,7 +3394,7 @@ void clientHandlePacket()
 	}
 
 	// update player statistics
-	else if ( !strncmp((char*)net_packet->data, "GPST", 4) )
+	else if ( packetId == 'GPST' )
 	{
 		int gameplayStat = SDLNet_Read32(&net_packet->data[4]);
 		int changeval = SDLNet_Read32(&net_packet->data[8]);
@@ -3611,7 +3463,7 @@ void clientHandlePacket()
 	}
 
 	// update player levels
-	else if ( !strncmp((char*)net_packet->data, "UPLV", 4) )
+	else if ( packetId == 'UPLV' )
 	{
 		Sint32 buffer = SDLNet_Read32(&net_packet->data[4]);
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -3621,9 +3473,9 @@ void clientHandlePacket()
 	}
 
 	// current game level
-	else if (!strncmp((char*)net_packet->data, "LVLC", 4) || !strncmp((char*)net_packet->data, "LVLR", 4) )
+	else if (packetId == 'LVLC' || packetId == 'LVLR' )
 	{
-		if ( strncmp((char*)net_packet->data, "LVLR", 4) )
+		if ( packetId != 'LVLR' )
 		{
 			if ( currentlevel == net_packet->data[13] && secretlevel == net_packet->data[4] )
 			{
@@ -3771,11 +3623,6 @@ void clientHandlePacket()
 		darkmap = false;
 		secretlevel = net_packet->data[4];
 		mapseed = SDLNet_Read32(&net_packet->data[5]);
-		/*Uint32 oldtime = SDL_GetTicks();
-		while( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4)!=4 ) {
-			if( SDL_GetTicks()-oldtime>10000 )
-				printlog("warning: game has taken more than 10 seconds to receive map seed\n");
-		}*/
 		numplayers = 0;
 		entity_uids = (Uint32)SDLNet_Read32(&net_packet->data[9]);
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
@@ -3909,7 +3756,7 @@ void clientHandlePacket()
 	}
 
 	// lead a monster
-	else if (!strncmp((char*)net_packet->data, "LEAD", 4))
+	else if (packetId == 'LEAD')
 	{
 		Uint32* uidnum = (Uint32*) malloc(sizeof(Uint32));
 		*uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
@@ -3938,7 +3785,7 @@ void clientHandlePacket()
 	}
 
 	// remove a monster from followers list
-	else if ( !strncmp((char*)net_packet->data, "LDEL", 4) )
+	else if ( packetId == 'LDEL' )
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		if ( stats[clientnum] )
@@ -3964,7 +3811,7 @@ void clientHandlePacket()
 	}
 
 	// update client's follower data on level up or initial follow.
-	else if ( !strncmp((char*)net_packet->data, "NPCI", 4) )
+	else if ( packetId == 'NPCI' )
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		Entity* monster = uidToEntity(uidnum);
@@ -3985,7 +3832,7 @@ void clientHandlePacket()
 	}
 
 	// update client's follower hp/maxhp data at intervals
-	else if ( !strncmp((char*)net_packet->data, "NPCU", 4) )
+	else if ( packetId == 'NPCU' )
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		Entity* monster = uidToEntity(uidnum);
@@ -4004,7 +3851,7 @@ void clientHandlePacket()
 	}
 
 	// bless my equipment
-	else if (!strncmp((char*)net_packet->data, "BLES", 4))
+	else if (packetId == 'BLES')
 	{
 		if ( stats[clientnum]->helmet )
 		{
@@ -4050,7 +3897,7 @@ void clientHandlePacket()
 	}
 
 	// bless one piece of my equipment
-	else if (!strncmp((char*)net_packet->data, "BLE1", 4))
+	else if (packetId == 'BLE1')
 	{
 		Uint32 chosen = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[4]));
 		switch ( chosen )
@@ -4122,7 +3969,7 @@ void clientHandlePacket()
 	}
 
 	// update entity appearance (sprite)
-	else if (!strncmp((char*)net_packet->data, "ENTA", 4))
+	else if (packetId == 'ENTA')
 	{
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -4133,7 +3980,7 @@ void clientHandlePacket()
 	}
 
 	// monster summon
-	else if (!strncmp((char*)net_packet->data, "SUMM", 4))
+	else if (packetId == 'SUMM')
 	{
 		Monster monster = (Monster)SDLNet_Read32(&net_packet->data[4]);
 		Sint32 x = (Sint32)SDLNet_Read32(&net_packet->data[8]);
@@ -4144,7 +3991,7 @@ void clientHandlePacket()
 	}
 
 	// monster summon
-	else if ( !strncmp((char*)net_packet->data, "SUMS", 4) )
+	else if ( packetId == 'SUMS' )
 	{
 		if ( stats[clientnum] )
 		{
@@ -4159,7 +4006,7 @@ void clientHandlePacket()
 	}
 
 	//Multiplayer chest code (client).
-	else if ( !strncmp((char*)net_packet->data, "CHST", 4) )
+	else if ( packetId == 'CHST' )
 	{
 		if ( openedChest[clientnum] )
 		{
@@ -4183,7 +4030,7 @@ void clientHandlePacket()
 	}
 
 	//Add an item to the chest.
-	else if (!strncmp((char*)net_packet->data, "CITM", 4))
+	else if (packetId == 'CITM')
 	{
 		Item* newitem = NULL;
 		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
@@ -4212,21 +4059,21 @@ void clientHandlePacket()
 	}
 
 	//Close the chest.
-	else if (!strncmp((char*)net_packet->data, "CCLS", 4))
+	else if (packetId == 'CCLS')
 	{
 		closeChestClientside(clientnum);
 		return;
 	}
 
 	//Open up the GUI to identify an item.
-	else if (!strncmp((char*)net_packet->data, "IDEN", 4))
+	else if (packetId == 'IDEN')
 	{
 		GenericGUI[clientnum].openGUI(GUI_TYPE_IDENTIFY, nullptr);
 		return;
 	}
 
 	// Open up the Remove Curse GUI
-	else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
+	else if ( packetId == 'CRCU' )
 	{
 		//Uncurse an item
 		GenericGUI[clientnum].openGUI(GUI_TYPE_REMOVECURSE, nullptr);
@@ -4234,7 +4081,7 @@ void clientHandlePacket()
 	}
 
 	//Add a spell to the channeled spells list.
-	else if (!strncmp((char*)net_packet->data, "CHAN", 4))
+	else if (packetId == 'CHAN')
 	{
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
 		node = list_AddNodeLast(&channeledSpells[clientnum]);
@@ -4247,7 +4094,7 @@ void clientHandlePacket()
 	}
 
 	//Remove a spell from the channeled spells list.
-	else if (!strncmp((char*)net_packet->data, "UNCH", 4))
+	else if (packetId == 'UNCH')
 	{
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
 		if (spellInList(&channeledSpells[clientnum], thespell))
@@ -4268,26 +4115,26 @@ void clientHandlePacket()
 	}
 
 	//Map the magic. I mean magic the map. I mean magically map the level (client).
-	else if (!strncmp((char*)net_packet->data, "MMAP", 4))
+	else if (packetId == 'MMAP')
 	{
 		spell_magicMap(clientnum);
 		return;
 	}
 
-	else if ( !strncmp((char*)net_packet->data, "MFOD", 4) )
+	else if ( packetId == 'MFOD' )
 	{
 		mapFoodOnLevel(clientnum);
 		return;
 	}
 
-	else if ( !strncmp((char*)net_packet->data, "TKIT", 4) )
+	else if ( packetId == 'TKIT' )
 	{
 		GenericGUI[clientnum].tinkeringKitDegradeOnUse(clientnum);
 		return;
 	}
 
 	// boss death
-	else if ( !strncmp((char*)net_packet->data, "BDTH", 4) )
+	else if ( packetId == 'BDTH' )
 	{
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
@@ -4325,14 +4172,14 @@ void clientHandlePacket()
 	}
 
 	// update svFlags
-	else if (!strncmp((char*)net_packet->data, "SVFL", 4))
+	else if (packetId == 'SVFL')
 	{
 		svFlags = SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
 	// kick
-	else if (!strncmp((char*)net_packet->data, "KICK", 4))
+	else if (packetId == 'KICK')
 	{
 		button_t* button;
 
@@ -4387,7 +4234,7 @@ void clientHandlePacket()
 	}
 
 	// win the game
-	else if (!strncmp((char*)net_packet->data, "WING", 4))
+	else if (packetId == 'WING')
 	{
 		victory = net_packet->data[4];
 		subwindow = 0;
@@ -4401,7 +4248,7 @@ void clientHandlePacket()
 	}
 
 	// mid game movie
-	else if ( !strncmp((char*)net_packet->data, "MIDG", 4) )
+	else if ( packetId == 'MIDG' )
 	{
 		subwindow = 0;
 		fadeout = true;
@@ -4413,7 +4260,7 @@ void clientHandlePacket()
 		return;
 	}
 
-	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
+	else if ( packetId == 'PMAP' )
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		for ( int c = 0; c < MAXPLAYERS; ++c )
@@ -4424,7 +4271,7 @@ void clientHandlePacket()
 			}
 		}
 	}
-	else if ( !strncmp((char*)net_packet->data, "DASH", 4) )
+	else if ( packetId == 'DASH' )
 	{
 		if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
 		{
@@ -4439,7 +4286,7 @@ void clientHandlePacket()
 	}
 
 	// get item
-	else if ( !strncmp((char*)net_packet->data, "ITEQ", 4) )
+	else if ( packetId == 'ITEQ' )
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
 		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
@@ -4456,7 +4303,7 @@ void clientHandlePacket()
 	}
 
 	// update attributes from script
-	else if ( !strncmp((char*)net_packet->data, "SCRU", 4) )
+	else if ( packetId == 'SCRU' )
 	{
 		if ( net_packet->data[25] )
 		{
@@ -4488,7 +4335,7 @@ void clientHandlePacket()
 	}
 
 	// update class from script
-	else if ( !strncmp((char*)net_packet->data, "SCRC", 4) )
+	else if ( packetId == 'SCRC' )
 	{
 		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
@@ -4505,7 +4352,7 @@ void clientHandlePacket()
 	}
 
 	// game restart
-	if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17))
+	if (packetId == 'STRT')
 	{
 		if ( !intro )
 		{
@@ -4519,12 +4366,14 @@ void clientHandlePacket()
 		}
 		intro = true;
 		client_disconnected[0] = true;
-		svFlags = SDLNet_Read32(&net_packet->data[17]);
-		uniqueGameKey = SDLNet_Read32(&net_packet->data[21]);
-		buttonCloseSubwindow(NULL);
+		svFlags = SDLNet_Read32(&net_packet->data[4]);
+		uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+		//TODO anything we gotta do for the new UI?
+		//probably not buttonCloseSubwindow().
+		//buttonCloseSubwindow(NULL);
 		numplayers = 0;
 		introstage = 3;
-		if ( net_packet->data[25] == 0 )
+		if ( net_packet->data[12] == 0 )
 		{
 			loadingsavegame = 0; // the server said we're not loading a saved game.
 		}
@@ -4533,7 +4382,7 @@ void clientHandlePacket()
 	}
 
 	// delete multiplayer save
-	if (!strncmp((char*)net_packet->data, "DSAV", 4))
+	if (packetId == 'DSAV')
 	{
 		if ( multiplayer == CLIENT )
 		{
@@ -4669,15 +4518,17 @@ void serverHandlePacket()
 	printlog("info: server packet: %s\n", packetinfo);
 #endif
 
+	Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+
 	// keep alive
-	if (!strncmp((char*)net_packet->data, "KPAL", 4))
+	if (packetId == 'KPAL')
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		return;
 	}
 
 	// ping
-	else if (!strncmp((char*)net_packet->data, "PING", 4))
+	else if (packetId == 'PING')
 	{
 		j = net_packet->data[4];
 		if ( j <= 0 )
@@ -4697,7 +4548,7 @@ void serverHandlePacket()
 	}
 
 	// pause game
-	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
+	else if (packetId == 'PAUS')
 	{
 		messagePlayer(clientnum, MESSAGE_MISC, language[1118], stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
@@ -4706,7 +4557,7 @@ void serverHandlePacket()
 	}
 
 	// unpause game
-	else if (!strncmp((char*)net_packet->data, "UNPS", 4))
+	else if (packetId == 'UNPS')
 	{
 		messagePlayer(clientnum, MESSAGE_MISC, language[1119], stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
@@ -4715,7 +4566,7 @@ void serverHandlePacket()
 	}
 
 	// check entity existence
-	else if (!strncmp((char*)net_packet->data, "ENTE", 4))
+	else if (packetId == 'ENTE')
 	{
 		int x = net_packet->data[4];
 		if ( x <= 0 )
@@ -4743,7 +4594,7 @@ void serverHandlePacket()
 	}
 
 	// client request item details.
-	else if ( !strncmp((char*)net_packet->data, "ITMU", 4) )
+	else if ( packetId == 'ITMU' )
 	{
 		int x = net_packet->data[4];
 		if ( x <= 0 )
@@ -4780,7 +4631,7 @@ void serverHandlePacket()
 	}
 
 	// player move
-	else if (!strncmp((char*)net_packet->data, "PMOV", 4))
+	else if (packetId == 'PMOV')
 	{
 		int player = net_packet->data[4];
 		if ( player < 0 || player >= MAXPLAYERS )
@@ -4882,7 +4733,7 @@ void serverHandlePacket()
 	}
 
 	// tried to update
-	else if (!strncmp((char*)net_packet->data, "NOUP", 4))
+	else if (packetId == 'NOUP')
 	{
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
@@ -4894,7 +4745,7 @@ void serverHandlePacket()
 	}
 
 	// client deleted entity
-	else if (!strncmp((char*)net_packet->data, "ENTD", 4))
+	else if (packetId == 'ENTD')
 	{
 		for ( node = entitiesToDelete[net_packet->data[4]].first; node != NULL; node = node->next )
 		{
@@ -4909,9 +4760,9 @@ void serverHandlePacket()
 	}
 
 	// clicked entity in range
-	else if (!strncmp((char*)net_packet->data, "CKIR", 4) 
-		|| !strncmp((char*)net_packet->data, "SALV", 4)
-		|| !strncmp((char*)net_packet->data, "RATF", 4) )
+	else if (packetId == 'CKIR'
+		|| packetId == 'SALV'
+		|| packetId == 'RATF' )
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
@@ -4919,7 +4770,7 @@ void serverHandlePacket()
 		if ( entity )
 		{
 			if ( (entity->behavior == &actItem || entity->behavior == &actTorch || entity->behavior == &actCrystalShard) 
-				&& !strncmp((char*)net_packet->data, "SALV", 4) )
+				&& packetId == 'SALV' )
 			{
 				// auto salvage this item.
 				if ( players[net_packet->data[4]] && players[net_packet->data[4]]->entity )
@@ -4927,7 +4778,7 @@ void serverHandlePacket()
 					entity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[net_packet->data[4]]->entity->getUID());
 				}
 			}
-			else if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "RATF", 4) )
+			else if ( entity->behavior == &actItem && packetId == 'RATF' )
 			{
 				achievementObserver.playerAchievements[net_packet->data[4]].rat5000secondRule.insert(uid);
 			}
@@ -4938,7 +4789,7 @@ void serverHandlePacket()
 	}
 
 	// clicked entity out of range
-	else if (!strncmp((char*)net_packet->data, "CKOR", 4))
+	else if (packetId == 'CKOR')
 	{
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
@@ -4951,9 +4802,9 @@ void serverHandlePacket()
 	}
 
 	// disconnect
-	else if (!strncmp((char*)net_packet->data, "DISCONNECT", 10))
+	else if (packetId == 'DISC')
 	{
-		int playerDisconnected = net_packet->data[10];
+		int playerDisconnected = net_packet->data[4];
 		char shortname[32] = { 0 };
 		strncpy(shortname, stats[playerDisconnected]->name, 22);
 		client_disconnected[playerDisconnected] = true;
@@ -4963,11 +4814,11 @@ void serverHandlePacket()
 			{
 				continue;
 			}
-			strncpy((char*)net_packet->data, "DISCONNECT", 10);
-			net_packet->data[10] = playerDisconnected;
+			strncpy((char*)net_packet->data, "DISC", 4);
+			net_packet->data[4] = playerDisconnected;
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 11;
+			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			messagePlayer(c, MESSAGE_MISC, language[1120], shortname);
 		}
@@ -4976,7 +4827,7 @@ void serverHandlePacket()
 	}
 
 	// message
-	else if (!strncmp((char*)net_packet->data, "MSGS", 4))
+	else if (packetId == 'MSGS')
 	{
 		char tempstr[1024];
 
@@ -5018,7 +4869,7 @@ void serverHandlePacket()
 	}
 
 	// spotting (examining)
-	else if (!strncmp((char*)net_packet->data, "SPOT", 4))
+	else if (packetId == 'SPOT')
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		j = net_packet->data[4]; // player number
@@ -5032,7 +4883,7 @@ void serverHandlePacket()
 	}
 
 	// item drop
-	else if (!strncmp((char*)net_packet->data, "DROP", 4))
+	else if (packetId == 'DROP')
 	{
 		client_keepalive[net_packet->data[25]] = ticks;
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
@@ -5041,7 +4892,7 @@ void serverHandlePacket()
 	}
 
 	// item drop (on death)
-	else if (!strncmp((char*)net_packet->data, "DIEI", 4))
+	else if (packetId == 'DIEI')
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
@@ -5072,21 +4923,21 @@ void serverHandlePacket()
 	}
 
 	// raise/lower shield
-	else if (!strncmp((char*)net_packet->data, "SHLD", 4))
+	else if (packetId == 'SHLD')
 	{
 		stats[net_packet->data[4]]->defending = net_packet->data[5];
 		return;
 	}
 
 	// sneaking
-	else if ( !strncmp((char*)net_packet->data, "SNEK", 4) )
+	else if ( packetId == 'SNEK' )
 	{
 		stats[net_packet->data[4]]->sneaking = net_packet->data[5];
 		return;
 	}
 
 	// close shop
-	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
+	else if (packetId == 'SHPC')
 	{
 		Entity* entity = uidToEntity((Uint32)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
@@ -5099,7 +4950,7 @@ void serverHandlePacket()
 	}
 
 	// buy item from shop
-	else if (!strncmp((char*)net_packet->data, "SHPB", 4))
+	else if (packetId == 'SHPB')
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		int client = net_packet->data[29];
@@ -5177,7 +5028,7 @@ void serverHandlePacket()
 	}
 
 	//Remove a spell from the channeled spells list.
-	else if (!strncmp((char*)net_packet->data, "UNCH", 4))
+	else if (packetId == 'UNCH')
 	{
 		int client = net_packet->data[4];
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
@@ -5198,7 +5049,7 @@ void serverHandlePacket()
 	}
 
 	// sell item to shop
-	else if (!strncmp((char*)net_packet->data, "SHPS", 4))
+	else if (packetId == 'SHPS')
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		int client = net_packet->data[29];
@@ -5255,7 +5106,7 @@ void serverHandlePacket()
 	}
 
 	// use item
-	else if (!strncmp((char*)net_packet->data, "USEI", 4))
+	else if (packetId == 'USEI')
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		useItem(item, net_packet->data[25]);
@@ -5263,7 +5114,7 @@ void serverHandlePacket()
 	}
 
 	// equip item (as a weapon)
-	else if (!strncmp((char*)net_packet->data, "EQUI", 4))
+	else if (packetId == 'EQUI')
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25], false);
@@ -5271,7 +5122,7 @@ void serverHandlePacket()
 	}
 
 	// equip item (as a shield)
-	else if ( !strncmp((char*)net_packet->data, "EQUS", 4) )
+	else if ( packetId == 'EQUS' )
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		equipItem(item, &stats[net_packet->data[25]]->shield, net_packet->data[25], false);
@@ -5279,7 +5130,7 @@ void serverHandlePacket()
 	}
 
 	// equip item (any other slot)
-	else if ( !strncmp((char*)net_packet->data, "EQUM", 4) )
+	else if ( packetId == 'EQUM' )
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		
@@ -5322,7 +5173,7 @@ void serverHandlePacket()
 	}
 
 	// apply item to entity
-	else if (!strncmp((char*)net_packet->data, "APIT", 4))
+	else if (packetId == 'APIT')
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
 		Entity* entity = uidToEntity(SDLNet_Read32(&net_packet->data[26]));
@@ -5339,7 +5190,7 @@ void serverHandlePacket()
 	}
 
 	// apply item to entity
-	else if ( !strncmp((char*)net_packet->data, "APIW", 4) )
+	else if ( packetId == 'APIW' )
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
 		int wallx = (SDLNet_Read16(&net_packet->data[26]));
@@ -5350,7 +5201,7 @@ void serverHandlePacket()
 	}
 
 	// attacking
-	else if (!strncmp((char*)net_packet->data, "ATAK", 4))
+	else if (packetId == 'ATAK')
 	{
 		if (players[net_packet->data[4]] && players[net_packet->data[4]]->entity)
 		{
@@ -5360,7 +5211,7 @@ void serverHandlePacket()
 	}
 
 	//Multiplayer chest code (server).
-	else if (!strncmp((char*)net_packet->data, "CCLS", 4))    //Close the chest.
+	else if (packetId == 'CCLS')    //Close the chest.
 	{
 		int the_client = net_packet->data[4];
 		if (openedChest[the_client])
@@ -5370,7 +5221,7 @@ void serverHandlePacket()
 	}
 
 	//The client failed some alchemy.
-	else if ( !strncmp((char*)net_packet->data, "BOOM", 4) )
+	else if ( packetId == 'BOOM' )
 	{
 		int the_client = net_packet->data[4];
 		if ( players[the_client] && players[the_client]->entity )
@@ -5382,7 +5233,7 @@ void serverHandlePacket()
 	}
 
 	//The client cast a spell.
-	else if (!strncmp((char*)net_packet->data, "SPEL", 4))
+	else if (packetId == 'SPEL')
 	{
 		int the_client = net_packet->data[4];
 
@@ -5402,7 +5253,7 @@ void serverHandlePacket()
 	}
 
 	//The client added an item to the chest.
-	else if (!strncmp((char*)net_packet->data, "CITM", 4))
+	else if (packetId == 'CITM')
 	{
 		int the_client = net_packet->data[4];
 		if (!openedChest[the_client])
@@ -5436,7 +5287,7 @@ void serverHandlePacket()
 	}
 
 	//The client removed an item from the chest.
-	else if (!strncmp((char*)net_packet->data, "RCIT", 4))
+	else if (packetId == 'RCIT')
 	{
 		int the_client = net_packet->data[4];
 		if (!openedChest[the_client])
@@ -5470,7 +5321,7 @@ void serverHandlePacket()
 	}
 
 	// the client removed a curse on his equipment
-	else if (!strncmp((char*)net_packet->data, "RCUR", 4))
+	else if (packetId == 'RCUR')
 	{
 		int player = net_packet->data[4];
 		switch ( net_packet->data[5] )
@@ -5517,7 +5368,7 @@ void serverHandlePacket()
 	}
 
 	// the client repaired equipment or otherwise modified status of equipment.
-	else if ( !strncmp((char*)net_packet->data, "REPA", 4) )
+	else if ( packetId == 'REPA' )
 	{
 		int player = net_packet->data[4];
 		Item* equipment = nullptr;
@@ -5571,7 +5422,7 @@ void serverHandlePacket()
 	}
 
 	// the client changed beatitude of equipment.
-	else if ( !strncmp((char*)net_packet->data, "BEAT", 4) )
+	else if ( packetId == 'BEAT' )
 	{
 		int player = net_packet->data[4];
 		Item* equipment = nullptr;
@@ -5619,7 +5470,7 @@ void serverHandlePacket()
 	}
 
 	// client dropped gold
-	else if (!strncmp((char*)net_packet->data, "DGLD", 4))
+	else if (packetId == 'DGLD')
 	{
 		int player = net_packet->data[4];
 		int amount = SDLNet_Read32(&net_packet->data[5]);
@@ -5658,7 +5509,7 @@ void serverHandlePacket()
 	}
 
 	// client played a sound
-	else if ( !strncmp((char*)net_packet->data, "EMOT", 4) )
+	else if ( packetId == 'EMOT' )
 	{
 		int player = net_packet->data[4];
 		int sfx = SDLNet_Read16(&net_packet->data[5]);
@@ -5685,7 +5536,7 @@ void serverHandlePacket()
 	}
 
 	// the client asked for a level up
-	else if ( !strncmp((char*)net_packet->data, "CLVL", 4) )
+	else if ( packetId == 'CLVL' )
 	{
 		int player = net_packet->data[4];
 		if ( players[player] && players[player]->entity )
@@ -5696,7 +5547,7 @@ void serverHandlePacket()
 	}
 
 	// the client asked for a level up
-	else if ( !strncmp((char*)net_packet->data, "CSKL", 4) )
+	else if ( packetId == 'CSKL' )
 	{
 		int player = net_packet->data[4];
 		int skill = net_packet->data[5];
@@ -5711,7 +5562,7 @@ void serverHandlePacket()
 	}
 
 	// the client sent a minimap ping packet.
-	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
+	else if ( packetId == 'PMAP' )
 	{
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay self and to other clients.
@@ -5719,7 +5570,7 @@ void serverHandlePacket()
 	}
 
 	//Remove vampiric aura
-	else if ( !strncmp((char*)net_packet->data, "VAMP", 4) )
+	else if ( packetId == 'VAMP' )
 	{
 		int player = net_packet->data[4];
 		int spellID = SDLNet_Read32(&net_packet->data[5]);
@@ -5743,7 +5594,7 @@ void serverHandlePacket()
 	}
 
 	// the client sent a monster command.
-	else if ( !strncmp((char*)net_packet->data, "ALLY", 4) )
+	else if ( packetId == 'ALLY' )
 	{
 		int player = net_packet->data[4];
 		int allyCmd = net_packet->data[5];
@@ -5766,7 +5617,7 @@ void serverHandlePacket()
 		}
 	}
 
-	else if ( !strncmp((char*)net_packet->data, "IDIE", 4) )
+	else if ( packetId == 'IDIE' )
 	{
 		int playerDie = net_packet->data[4];
 		if ( playerDie >= 1 && playerDie < MAXPLAYERS )
@@ -5779,19 +5630,11 @@ void serverHandlePacket()
 	}
 
 	// use automaton food item
-	else if ( !strncmp((char*)net_packet->data, "FODA", 4) )
+	else if ( packetId == 'FODA' )
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		item_FoodAutomaton(item, net_packet->data[25]);
 		return;
-	}
-
-	else if ( !strncmp((char*)net_packet->data, "BARONY_JOIN_PROGRES", 19) )
-	{
-		if ( directConnect )
-		{
-			return;
-		}
 	}
 }
 
@@ -5905,7 +5748,8 @@ bool handleSafePacket()
 	int c, j;
 
 	// safe packet
-	if (!strncmp((char*)net_packet->data, "SAFE", 4))
+	Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+	if (packetId == 'SAFE')
 	{
 		if ( net_packet->data[4] != MAXPLAYERS )
 		{
@@ -5982,7 +5826,7 @@ bool handleSafePacket()
 			chr[0] = '\0';
 			strncpy(chr, (char*)net_packet->data, 4);
 			chr[4] = '\0';
-			if ( !strncmp((char*)net_packet->data, "ENTU", 4) )
+			if ( packetId == 'ENTU' )
 			{
 				Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 				if ( entity )
@@ -5991,7 +5835,7 @@ bool handleSafePacket()
 				}
 			}
 
-			if ( !strncmp((char*)net_packet->data, "ENTS", 4) )
+			if ( packetId == 'ENTS' )
 			{
 				Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 				if ( entity )
@@ -6008,7 +5852,7 @@ bool handleSafePacket()
 	}
 
 	// they got the safe packet
-	else if (!strncmp((char*)net_packet->data, "GOTP", 4))
+	else if (packetId == 'GOTP')
 	{
 		for ( node = safePacketsSent.first; node != NULL; node = node->next )
 		{
@@ -6036,6 +5880,8 @@ bool handleSafePacket()
 void closeNetworkInterfaces()
 {
 	printlog("closing network interfaces...\n");
+
+	receivedclientnum = false;
 
 	if (net_handler)
 	{

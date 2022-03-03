@@ -60,7 +60,7 @@ void Frame::listener_t::onChangeName(const char* name) {
 
 void Frame::fboInit() {
     gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
-    gui4x_fb.init(Frame::virtualScreenX * 4, Frame::virtualScreenY * 4, GL_NEAREST, GL_NEAREST);
+    gui4x_fb.init(Frame::virtualScreenX * 4, Frame::virtualScreenY * 4, GL_LINEAR, GL_LINEAR);
 }
 
 void Frame::fboDestroy() {
@@ -221,11 +221,15 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	if (_size.w <= 0 || _size.h <= 0)
 		return;
 
-	int entrySize = 20;
-	Font* _font = Font::get(font.c_str());
-	if (_font != nullptr) {
-		entrySize = _font->height();
-		entrySize += entrySize / 2;
+    int entrySize = this->entrySize;
+    if (entrySize <= 0) {
+	    Font* _font = Font::get(font.c_str());
+	    if (_font == nullptr) {
+	        entrySize = 20;
+        } else {
+		    entrySize = _font->height();
+		    entrySize += entrySize / 2;
+	    }
 	}
 
 	SDL_Rect scaledSize;
@@ -254,7 +258,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
-	int mouseowner_pausemenu = 0;
+	int mouseowner_pausemenu = clientnum;
 #ifndef EDITOR
 	if ( gamePaused )
 	{
@@ -268,7 +272,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 #endif
-	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
+	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -385,7 +389,58 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		int i = listStart;
 		for (int i = listStart; i < list.size(); ++i) {
 			entry_t& entry = *list[i];
+
+			// draw selection background
+			if (selection == i && selectedEntryColor) {
+#ifndef EDITOR
+			    if (activated || !inputs.hasController(owner)) {
+#else
+                {
+#endif
+			        SDL_Rect pos;
+			        pos.x = _size.x + border + listOffset.x - scroll.x;
+			        pos.y = _size.y + border + listOffset.y + i * entrySize - scroll.y;
+			        pos.w = _size.w;
+			        pos.h = entrySize;
+
+			        SDL_Rect dest;
+			        dest.x = std::max(_size.x, pos.x);
+			        dest.y = std::max(_size.y, pos.y);
+			        dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+			        dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+
+                    white->drawColor(nullptr, dest, viewport, selectedEntryColor);
+                }
+			}
+
+			// draw an image if applicable
 			if (entry.text.empty()) {
+			    if (!entry.image.empty()) {
+			        auto image = Image::get(entry.image.c_str());
+			        if (!image) {
+			            continue;
+			        }
+
+			        int imageW = image->getWidth();
+			        int imageH = image->getHeight();
+
+			        SDL_Rect pos;
+			        switch (justify) {
+			        case justify_t::LEFT: pos.x = border + listOffset.x; break;
+			        case justify_t::CENTER: pos.x = (_size.w - imageW) / 2 + listOffset.x; break;
+			        case justify_t::RIGHT: pos.x = _size.w - imageW - border + listOffset.x; break;
+			        default: break;
+			        }
+			        pos.y = border + listOffset.y + i * entrySize;
+			        pos.w = imageW;
+			        pos.h = imageH;
+
+			        image_t _image;
+			        _image.pos = pos;
+			        _image.path = entry.image;
+			        _image.color = entry.color;
+		            drawImage(&_image, _size, scroll);
+			    }
 				continue;
 			}
 
@@ -442,15 +497,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 				white->drawColor(nullptr, entryback, viewport, color);
 			}
 
-			SDL_Rect scaledDest;
-			scaledDest.x = dest.x;
-			scaledDest.y = dest.y;
-			scaledDest.w = dest.w;
-			scaledDest.h = dest.h;
-			if (scaledDest.h <= 0 || scaledDest.w <= 0) {
-				continue;
-			}
-			text->drawColor(src, scaledDest, viewport, entry.color);
+			text->drawColor(src, dest, viewport, entry.color);
 		}
 	}
 
@@ -589,18 +636,22 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		return result;
 	}
 
-	int entrySize = 20;
-	Font* _font = Font::get(font.c_str());
-	if (_font != nullptr) {
-		entrySize = _font->height();
-		entrySize += entrySize / 2;
+    int entrySize = this->entrySize;
+    if (entrySize <= 0) {
+	    Font* _font = Font::get(font.c_str());
+	    if (_font == nullptr) {
+	        entrySize = 20;
+        } else {
+		    entrySize = _font->height();
+		    entrySize += entrySize / 2;
+	    }
 	}
 
 	SDL_Rect fullSize = _size;
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	int mouseowner_pausemenu = 0;
+	int mouseowner_pausemenu = clientnum;
 #ifndef EDITOR
 	if ( gamePaused )
 	{
@@ -614,7 +665,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 #endif
-	int mouseowner = intro ? 0 : (gamePaused ? mouseowner_pausemenu : owner);
+	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -692,15 +743,27 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					input.consumeBinaryToggle("AltMenuUDown")) {
 					selection = 0;
 					scrollToSelection();
+					auto entry = list[selection];
+					if (entry->selected) {
+						(*entry->selected)(*entry);
+					}
 				}
 			} else {
 				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp")) {
 					selection = std::max(0, selection - 1);
 					scrollToSelection();
+					auto entry = list[selection];
+					if (entry->selected) {
+						(*entry->selected)(*entry);
+					}
 				}
 				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown")) {
 					selection = std::min((int)list.size() - 1, selection + 1);
 					scrollToSelection();
+					auto entry = list[selection];
+					if (entry->selected) {
+						(*entry->selected)(*entry);
+					}
 				}
 			}
 		}
@@ -1056,10 +1119,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			// widget capture input
 			if (field->isActivated()) {
-			    if (input.consumeBinaryToggle("MenuConfirm") ||
-			        input.consumeBinaryToggle("MenuCancel")) {
-			        field->deactivate();
+#ifndef EDITOR
+			    if (inputs.hasController(field->getOwner())) {
+			        if (input.consumeBinaryToggle("MenuConfirm") ||
+			            input.consumeBinaryToggle("MenuCancel")) {
+			            field->deactivate();
+		            }
 		        }
+#endif
 			}
 			else if (!destWidget) {
 				destWidget = field->handleInput();
@@ -1469,11 +1536,15 @@ Slider* Frame::findSlider(const char* name) {
 }
 
 void Frame::resizeForEntries() {
-	int entrySize = 20;
-	Font* _font = Font::get(font.c_str());
-	if (_font != nullptr) {
-		entrySize = _font->height();
-		entrySize += entrySize / 2;
+    int entrySize = this->entrySize;
+    if (entrySize <= 0) {
+	    Font* _font = Font::get(font.c_str());
+	    if (_font == nullptr) {
+	        entrySize = 20;
+        } else {
+		    entrySize = _font->height();
+		    entrySize += entrySize / 2;
+	    }
 	}
 	actualSize.h = (Uint32)list.size() * entrySize;
 	actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
@@ -1630,11 +1701,15 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 	if (selection < 0 || selection >= list.size()) {
 		return;
 	}
-	int entrySize = 20;
-	Font* _font = Font::get(font.c_str());
-	if (_font != nullptr) {
-		entrySize = _font->height();
-		entrySize += entrySize / 2;
+    int entrySize = this->entrySize;
+    if (entrySize <= 0) {
+	    Font* _font = Font::get(font.c_str());
+	    if (_font == nullptr) {
+	        entrySize = 20;
+        } else {
+		    entrySize = _font->height();
+		    entrySize += entrySize / 2;
+	    }
 	}
 	const int index = selection;
 	if (scroll_to_top || actualSize.y > index * entrySize) {
