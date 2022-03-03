@@ -8476,7 +8476,7 @@ bind_failed:
 		window->setBorder(0);
 
 		struct LobbyInfo {
-		    const char* name = "Barony";
+		    std::string name = "Barony";
 		    int players = 0;
 		    int ping = 0;
 		    bool locked = false;
@@ -8509,7 +8509,7 @@ bind_failed:
                 };
 
             // name cell
-            auto entry_name = names->addEntry(info.name, true);
+            auto entry_name = names->addEntry(info.name.c_str(), true);
             entry_name->highlight = selection_fn;
             entry_name->selected = selection_fn;
             entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
@@ -8529,14 +8529,14 @@ bind_failed:
                 default: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
                 }
             }
-            auto entry_players = players->addEntry(info.name, true);
+            auto entry_players = players->addEntry(info.name.c_str(), true);
             entry_players->highlight = selection_fn;
             entry_players->selected = selection_fn;
             entry_players->color = 0xffffffff;
             entry_players->image = players_image;
 
             // ping cell
-            auto entry_ping = pings->addEntry(info.name, true);
+            auto entry_ping = pings->addEntry(info.name.c_str(), true);
             entry_ping->highlight = selection_fn;
             entry_ping->selected = selection_fn;
             entry_ping->color = 0xffffffff;
@@ -8552,7 +8552,7 @@ bind_failed:
                 }
             }
 
-            lobbies.emplace(std::string(info.name), info);
+            lobbies.emplace(info.name, info);
 		    };
 
 		static auto clear_lobbies = [](){
@@ -8943,17 +8943,17 @@ bind_failed:
 
         if (1) {
             // test lobbies
-		    add_lobby({"Ben", 1, 50, false});
-		    add_lobby({"Sheridan", 3, 50, false});
-		    add_lobby({"Paulie", 2, 250, false});
-		    add_lobby({"Fart_Face", 1, 420, false});
-		    add_lobby({"Tim", 3, 90, true});
-		    add_lobby({"Johnny", 3, 30, false});
-		    add_lobby({"Boaty McBoatFace", 2, 20, false});
-		    add_lobby({"RIP_Morgan_", 0, 120, false});
-		    add_lobby({"What is the longest name we can fit in a Barony lobby?", 4, 150, false});
-		    add_lobby({"16 PLAYER SMASH FEST", 16, 90, false});
-		    add_lobby({"ur mom", 16, 160, true});
+		    add_lobby(LobbyInfo{"Ben", 1, 50, false});
+		    add_lobby(LobbyInfo{"Sheridan", 3, 50, false});
+		    add_lobby(LobbyInfo{"Paulie", 2, 250, false});
+		    add_lobby(LobbyInfo{"Fart_Face", 1, 420, false});
+		    add_lobby(LobbyInfo{"Tim", 3, 90, true});
+		    add_lobby(LobbyInfo{"Johnny", 3, 30, false});
+		    add_lobby(LobbyInfo{"Boaty McBoatFace", 2, 20, false});
+		    add_lobby(LobbyInfo{"RIP_Morgan_", 0, 120, false});
+		    add_lobby(LobbyInfo{"What is the longest name we can fit in a Barony lobby?", 4, 150, false});
+		    add_lobby(LobbyInfo{"16 PLAYER SMASH FEST", 16, 90, false});
+		    add_lobby(LobbyInfo{"ur mom", 16, 160, true});
 		} else {
 	        // scan for lobbies immediately
 		    refresh->activate();
