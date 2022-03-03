@@ -423,67 +423,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 
 void sendEntityTCP(Entity* entity, int c)
 {
-	int j;
-
-	if ( entity == NULL )
-	{
-		return;
-	}
-	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
-	{
-		return;
-	}
-
-	// send entity data to the client
-	strcpy((char*)net_packet->data, "ENTU");
-	SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
-	SDLNet_Write16((Uint16)entity->sprite, &net_packet->data[8]);
-	SDLNet_Write16((Sint16)(entity->x * 32), &net_packet->data[10]);
-	SDLNet_Write16((Sint16)(entity->y * 32), &net_packet->data[12]);
-	SDLNet_Write16((Sint16)(entity->z * 32), &net_packet->data[14]);
-	net_packet->data[16] = (Sint8)entity->sizex;
-	net_packet->data[17] = (Sint8)entity->sizey;
-	net_packet->data[18] = (Uint8)(entity->scalex * 128);
-	net_packet->data[19] = (Uint8)(entity->scaley * 128);
-	net_packet->data[20] = (Uint8)(entity->scalez * 128);
-	SDLNet_Write16((Sint16)(entity->yaw * 256), &net_packet->data[21]);
-	SDLNet_Write16((Sint16)(entity->pitch * 256), &net_packet->data[23]);
-	SDLNet_Write16((Sint16)(entity->roll * 256), &net_packet->data[25]);
-	net_packet->data[27] = (char)(entity->focalx * 8);
-	net_packet->data[28] = (char)(entity->focaly * 8);
-	net_packet->data[29] = (char)(entity->focalz * 8);
-	SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
-	net_packet->data[34] = 0;
-	net_packet->data[35] = 0;
-	for (j = 0; j < 16; j++)
-	{
-		if ( entity->flags[j] )
-		{
-			net_packet->data[34 + j / 8] |= power(2, j - (j / 8) * 8);
-		}
-	}
-	SDLNet_Write32((Uint32)ticks, &net_packet->data[36]);
-	SDLNet_Write16((Sint16)(entity->vel_x * 32), &net_packet->data[40]);
-	SDLNet_Write16((Sint16)(entity->vel_y * 32), &net_packet->data[42]);
-	SDLNet_Write16((Sint16)(entity->vel_z * 32), &net_packet->data[44]);
-	net_packet->address.host = net_clients[c - 1].host;
-	net_packet->address.port = net_clients[c - 1].port;
-	net_packet->len = ENTITY_PACKET_LENGTH;
-	if ( directConnect )
-	{
-		SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-	}
-	else
-	{
-#ifdef STEAMWORKS
-		SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-#endif
-	}
-	SDL_Delay(50);
-	if ( entity->clientsHaveItsStats )
-	{
-		entity->serverUpdateEffectsForEntity(false);
-	}
+	// deprecated
 }
 
 void sendEntityUDP(Entity* entity, int c, bool guarantee)
@@ -564,26 +504,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 
 void sendMapSeedTCP(int c)
 {
-	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
-	{
-		return;
-	}
-
-	SDLNet_Write32(mapseed, &net_packet->data[0]);
-	net_packet->address.host = net_clients[c - 1].host;
-	net_packet->address.port = net_clients[c - 1].port;
-	net_packet->len = 4;
-	if ( directConnect )
-	{
-		SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-	}
-	else
-	{
-#ifdef STEAMWORKS
-		SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1 ]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-#endif
-	}
-	SDL_Delay(50);
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -596,38 +517,7 @@ void sendMapSeedTCP(int c)
 
 void sendMapTCP(int c)
 {
-	Uint32 x, y, z;
-
-	if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
-	{
-		return;
-	}
-
-	// send all the map data to the client
-	for ( z = 0; z < MAPLAYERS; z++ )
-	{
-		for ( y = 0; y < map.height; y++ )
-		{
-			for ( x = 0; x < map.width; x++ )
-			{
-				net_packet->data[x] = map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height];
-			}
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = map.width;
-			if ( directConnect )
-			{
-				SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
-			}
-			else
-			{
-#ifdef STEAMWORKS
-				SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-#endif
-			}
-			SDL_Delay(50);
-		}
-	}
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1539,17 +1429,15 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		// on error, client gets a player number that is invalid (to be interpreted as an error code)
 		net_clients[MAXPLAYERS - 1].host = net_packet->address.host;
 		net_clients[MAXPLAYERS - 1].port = net_packet->address.port;
-		if ( directConnect )
-			while ( (net_tcpclients[MAXPLAYERS - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
 		net_packet->address.host = net_clients[MAXPLAYERS - 1].host;
 		net_packet->address.port = net_clients[MAXPLAYERS - 1].port;
-		net_packet->len = 4;
-		SDLNet_Write32(c, &net_packet->data[0]); // error code for client to interpret
+		net_packet->len = 8;
+		memcpy(net_packet->data, "HELO", 4);
+		SDLNet_Write32(c, &net_packet->data[4]); // error code for client to interpret
 		printlog("sending error code %d to client.\n", c);
 		if ( directConnect )
 		{
-			SDLNet_TCP_Send(net_tcpclients[MAXPLAYERS - 1], net_packet->data, net_packet->len);
-			SDLNet_TCP_Close(net_tcpclients[MAXPLAYERS - 1]);
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 			return NET_LOBBY_JOIN_DIRECTIP_FAILURE;
 		}
 		else
@@ -1571,7 +1459,6 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		net_clients[c - 1].port = net_packet->address.port;
 		if ( directConnect )
 		{
-			while ( (net_tcpclients[c - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL );
 			const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
 			printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
 		}
@@ -1608,24 +1495,25 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		//newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
 
 		// send new client their id number + info on other clients
-		SDLNet_Write32(c, &net_packet->data[0]);
+		memcpy(net_packet->data, "HELO", 4);
+		SDLNet_Write32(c, &net_packet->data[4]);
 		for ( int x = 0; x < MAXPLAYERS; x++ )
 		{
-			net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
-			net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
-			net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
-			net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
-			net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
+			net_packet->data[8 + x * (5 + 23) + 0] = client_classes[x]; // class
+			net_packet->data[8 + x * (5 + 23) + 1] = stats[x]->sex; // sex
+			net_packet->data[8 + x * (5 + 23) + 2] = client_disconnected[x]; // connectedness :p
+			net_packet->data[8 + x * (5 + 23) + 3] = (Uint8)stats[x]->appearance; // appearance
+			net_packet->data[8 + x * (5 + 23) + 4] = (Uint8)stats[x]->playerRace; // player race
 			char shortname[32] = "";
 			strncpy(shortname, stats[x]->name, 22);
-			strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
+			strcpy((char*)(&net_packet->data[8 + x * (5 + 23) + 5]), shortname); // name
 		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 4 + MAXPLAYERS * (5 + 23);
+		net_packet->len = 8 + MAXPLAYERS * (5 + 23);
 		if ( directConnect )
 		{
-			SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
+		    sendPacketSafe(net_sock, -1, net_packet, 0);
 			return NET_LOBBY_JOIN_DIRECTIP_SUCCESS;
 		}
 		else
@@ -3735,11 +3623,6 @@ void clientHandlePacket()
 		darkmap = false;
 		secretlevel = net_packet->data[4];
 		mapseed = SDLNet_Read32(&net_packet->data[5]);
-		/*Uint32 oldtime = SDL_GetTicks();
-		while( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4)!=4 ) {
-			if( SDL_GetTicks()-oldtime>10000 )
-				printlog("warning: game has taken more than 10 seconds to receive map seed\n");
-		}*/
 		numplayers = 0;
 		entity_uids = (Uint32)SDLNet_Read32(&net_packet->data[9]);
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);

@@ -1449,6 +1449,7 @@ bool Entity::removeItemFromChestServer(Item* item, int count)
 	}
 
 	node_t* nextnode = nullptr;
+	bool removedItems = false;
 	for ( t_node = inventory->first; t_node != NULL; t_node = nextnode )
 	{
 		nextnode = t_node->next;
@@ -1469,15 +1470,23 @@ bool Entity::removeItemFromChestServer(Item* item, int count)
 					list_RemoveNode(item2->node);
 				}
 			}
-			else
+			else if ( count == item2->count )
 			{
 				//Grab all items from the chest.
 				list_RemoveNode(item2->node);
 			}
+			else if ( count > item2->count )
+			{
+				count -= item2->count;
+				//Grab items that we can, and then look for more. 
+				list_RemoveNode(item2->node);
+				removedItems = true;
+				continue;
+			}
 			return true;
 		}
 	}
-	return false;
+	return removedItems;
 }
 
 void Entity::unlockChest()

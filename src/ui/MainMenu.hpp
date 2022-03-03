@@ -76,6 +76,10 @@ namespace MainMenu {
 	void createDummyMainMenu();             // creates a main menu devoid of widgets
 	void closeMainMenu();                   // closes the menu and unpauses the game
 
+	// sounds:
+
+	void soundToggleMenu();
+
 	// special events:
 
 	void disconnectedFromServer();

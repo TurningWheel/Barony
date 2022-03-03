@@ -2597,7 +2597,7 @@ void gameLogic(void)
 					{
 						entity->ticks++;
 					}
-					if ( entity->behavior != NULL )
+					if ( entity->behavior != nullptr )
 					{
 						if ( gameloopFreezeEntities
 							&& entity->behavior != &actPlayer
@@ -2630,6 +2630,7 @@ void gameLogic(void)
 								if ( entitydeletedself == false )
 								{
 									entity->ranbehavior = true;
+									TimerExperiments::updateEntityInterpolationPosition(entity);
 								}
 								nextnode = map.entities->first;
 								list_FreeAll(&entitiesdeleted);
@@ -2797,6 +2798,10 @@ void gameLogic(void)
 								}
 								TimerExperiments::updateEntityInterpolationPosition(entity);
 							}
+						}
+						else
+						{
+							TimerExperiments::updateEntityInterpolationPosition(entity);
 						}
 					}
 				}
@@ -3913,6 +3918,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
+	    MainMenu::soundToggleMenu();
 		gamePaused = true;
 		for (int c = 0; c < 4; ++c)
 		{
