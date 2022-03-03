@@ -162,6 +162,8 @@ GenericGUIMenu GenericGUI[MAXPLAYERS];
 
 int EnemyHPDamageBarHandler::maxTickLifetime = 120;
 int EnemyHPDamageBarHandler::maxTickFurnitureLifetime = 60;
+int EnemyHPDamageBarHandler::shortDistanceHPBarFadeTicks = TICKS_PER_SECOND / 2;
+real_t EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance = 1.0;
 std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpointsMonsters;
 std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpointsFurniture;
 
@@ -8022,150 +8024,151 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::getMostRecentH
 
 void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 {
-	if ( HPBars.empty() )
-	{
-		return;
-	}
-	Uint32 mostRecentTicks = 0;
-	auto mostRecentEntry = HPBars.end();
-	auto highPriorityMostRecentEntry = HPBars.end();
-	bool foundHighPriorityEntry = false;
-	for ( auto it = HPBars.begin(); it != HPBars.end(); )
-	{
-		if ( ticks - (*it).second.enemy_timer >= EnemyHPDamageBarHandler::maxTickLifetime )
-		{
-			it = HPBars.erase(it); // no need to show this bar, delete it
-		}
-		else
-		{
-			if ( (*it).second.enemy_timer > mostRecentTicks && (*it).second.shouldDisplay )
-			{
-				if ( mostRecentEntry != HPBars.end() )
-				{
-					// previous most recent tick should not display until updated by high priority.
-					// since we've found a new one to display.
-					(*mostRecentEntry).second.shouldDisplay = false;
-				}
-				if ( !(*it).second.lowPriorityTick )
-				{
-					// this is a normal priority damage update (not burn/poison etc)
-					// if a newer tick is low priority, then defer to this one.
-					highPriorityMostRecentEntry = it;
-					foundHighPriorityEntry = true;
-				}
-				mostRecentEntry = it;
-				mostRecentTicks = (*it).second.enemy_timer;
-			}
-			else
-			{
-				(*it).second.shouldDisplay = false;
-			}
-			++it;
-		}
-	}
-	if ( mostRecentTicks > 0 )
-	{
-		if ( !foundHighPriorityEntry )
-		{
-			// all low priority, just display the last added.
-		}
-		else
-		{
-			if ( (mostRecentEntry != highPriorityMostRecentEntry) && foundHighPriorityEntry )
-			{
-				// the most recent was low priority, so defer to the most recent high priority.
-				mostRecentEntry = highPriorityMostRecentEntry;
-			}
-		}
+	// deprecated
+	//if ( HPBars.empty() )
+	//{
+	//	return;
+	//}
+	//Uint32 mostRecentTicks = 0;
+	//auto mostRecentEntry = HPBars.end();
+	//auto highPriorityMostRecentEntry = HPBars.end();
+	//bool foundHighPriorityEntry = false;
+	//for ( auto it = HPBars.begin(); it != HPBars.end(); )
+	//{
+	//	if ( ticks - (*it).second.enemy_timer >= EnemyHPDamageBarHandler::maxTickLifetime )
+	//	{
+	//		it = HPBars.erase(it); // no need to show this bar, delete it
+	//	}
+	//	else
+	//	{
+	//		if ( (*it).second.enemy_timer > mostRecentTicks && (*it).second.shouldDisplay )
+	//		{
+	//			if ( mostRecentEntry != HPBars.end() )
+	//			{
+	//				// previous most recent tick should not display until updated by high priority.
+	//				// since we've found a new one to display.
+	//				(*mostRecentEntry).second.shouldDisplay = false;
+	//			}
+	//			if ( !(*it).second.lowPriorityTick )
+	//			{
+	//				// this is a normal priority damage update (not burn/poison etc)
+	//				// if a newer tick is low priority, then defer to this one.
+	//				highPriorityMostRecentEntry = it;
+	//				foundHighPriorityEntry = true;
+	//			}
+	//			mostRecentEntry = it;
+	//			mostRecentTicks = (*it).second.enemy_timer;
+	//		}
+	//		else
+	//		{
+	//			(*it).second.shouldDisplay = false;
+	//		}
+	//		++it;
+	//	}
+	//}
+	//if ( mostRecentTicks > 0 )
+	//{
+	//	if ( !foundHighPriorityEntry )
+	//	{
+	//		// all low priority, just display the last added.
+	//	}
+	//	else
+	//	{
+	//		if ( (mostRecentEntry != highPriorityMostRecentEntry) && foundHighPriorityEntry )
+	//		{
+	//			// the most recent was low priority, so defer to the most recent high priority.
+	//			mostRecentEntry = highPriorityMostRecentEntry;
+	//		}
+	//	}
 
-		auto& HPDetails = (*mostRecentEntry).second;
-		HPDetails.enemy_hp = std::max(0, HPDetails.enemy_hp);
+	//	auto& HPDetails = (*mostRecentEntry).second;
+	//	HPDetails.enemy_hp = std::max(0, HPDetails.enemy_hp);
 
-		const int barWidth = 512;
-		SDL_Rect pos;
-		pos.w = barWidth;
-		pos.h = 38;
-		//pos.y = players[player]->camera_y2() - 224;
-		if ( players[player]->hotbar.useHotbarFaceMenu )
-		{
-			// anchor to the topmost position, including button glyphs
-			pos.y = players[player]->hotbar.faceButtonTopYPosition - pos.h - 8;
-		}
-		else
-		{
-			pos.y = players[player]->hotbar.hotbarBox.y - pos.h - 8;
-		}
-		if ( players[player]->isLocalPlayer() && players[player]->camera_width() < yres )
-		{
-			if ( yres < 900 )
-			{
-				pos.w *= 0.5;
-			}
-			else if ( yres < 1080 )
-			{
-				pos.w *= 0.8;
-			}
-		}
-		pos.x = players[player]->camera_midx() - (pos.w / 2);
+	//	const int barWidth = 512;
+	//	SDL_Rect pos;
+	//	pos.w = barWidth;
+	//	pos.h = 38;
+	//	//pos.y = players[player]->camera_y2() - 224;
+	//	if ( players[player]->hotbar.useHotbarFaceMenu )
+	//	{
+	//		// anchor to the topmost position, including button glyphs
+	//		pos.y = players[player]->hotbar.faceButtonTopYPosition - pos.h - 8;
+	//	}
+	//	else
+	//	{
+	//		pos.y = players[player]->hotbar.hotbarBox.y - pos.h - 8;
+	//	}
+	//	if ( players[player]->isLocalPlayer() && players[player]->camera_width() < yres )
+	//	{
+	//		if ( yres < 900 )
+	//		{
+	//			pos.w *= 0.5;
+	//		}
+	//		else if ( yres < 1080 )
+	//		{
+	//			pos.w *= 0.8;
+	//		}
+	//	}
+	//	pos.x = players[player]->camera_midx() - (pos.w / 2);
 
-		// bar
-		drawTooltip(&pos);
+	//	// bar
+	//	drawTooltip(&pos);
 
-		pos.w = pos.w - 6;
-		pos.x = pos.x + 3;
-		pos.y = pos.y + 3;
-		pos.h = pos.h - 6;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
+	//	pos.w = pos.w - 6;
+	//	pos.x = pos.x + 3;
+	//	pos.y = pos.y + 3;
+	//	pos.h = pos.h - 6;
+	//	drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
 
-		if ( HPDetails.enemy_oldhp > HPDetails.enemy_hp )
-		{
-			int timeDiff = ticks - HPDetails.enemy_timer;
-			if ( timeDiff > 30 || HPDetails.enemy_hp == 0 )
-			{
-				// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
-				// we want to complete animation with x ticks to go
-				int depletionTicks = (80 - timeDiff);
-				int healthDiff = HPDetails.enemy_oldhp - HPDetails.enemy_hp;
+	//	if ( HPDetails.enemy_oldhp > HPDetails.enemy_hp )
+	//	{
+	//		int timeDiff = ticks - HPDetails.enemy_timer;
+	//		if ( timeDiff > 30 || HPDetails.enemy_hp == 0 )
+	//		{
+	//			// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
+	//			// we want to complete animation with x ticks to go
+	//			int depletionTicks = (80 - timeDiff);
+	//			int healthDiff = HPDetails.enemy_oldhp - HPDetails.enemy_hp;
 
-				// scale duration to FPS - tested @ 144hz
-				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
-				HPDetails.depletionAnimationPercent -= fpsScale * (std::max((healthDiff) / std::max(depletionTicks, 1), 1) / 100.0);
-				HPDetails.enemy_oldhp = HPDetails.depletionAnimationPercent * HPDetails.enemy_maxhp; // this follows the animation
-			}
-			else
-			{
-				HPDetails.depletionAnimationPercent =
-					HPDetails.enemy_oldhp / static_cast<real_t>(HPDetails.enemy_maxhp);
-			}
-			int tmpw = pos.w;
-			pos.w = pos.w * HPDetails.depletionAnimationPercent;
-			if ( HPDetails.enemy_bar_color > 0 )
-			{
-				drawRect(&pos, HPDetails.enemy_bar_color, 128);
-			}
-			else
-			{
-				drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
-			}
-			pos.w = tmpw;
-		}
-		if ( HPDetails.enemy_hp > 0 )
-		{
-			int tmpw = pos.w;
-			pos.w = pos.w * ((double)HPDetails.enemy_hp / HPDetails.enemy_maxhp);
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
-			if ( HPDetails.enemy_bar_color > 0 )
-			{
-				drawRect(&pos, HPDetails.enemy_bar_color, 224);
-			}
-			pos.w = tmpw;
-		}
+	//			// scale duration to FPS - tested @ 144hz
+	//			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+	//			HPDetails.depletionAnimationPercent -= fpsScale * (std::max((healthDiff) / std::max(depletionTicks, 1), 1) / 100.0);
+	//			HPDetails.enemy_oldhp = HPDetails.depletionAnimationPercent * HPDetails.enemy_maxhp; // this follows the animation
+	//		}
+	//		else
+	//		{
+	//			HPDetails.depletionAnimationPercent =
+	//				HPDetails.enemy_oldhp / static_cast<real_t>(HPDetails.enemy_maxhp);
+	//		}
+	//		int tmpw = pos.w;
+	//		pos.w = pos.w * HPDetails.depletionAnimationPercent;
+	//		if ( HPDetails.enemy_bar_color > 0 )
+	//		{
+	//			drawRect(&pos, HPDetails.enemy_bar_color, 128);
+	//		}
+	//		else
+	//		{
+	//			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
+	//		}
+	//		pos.w = tmpw;
+	//	}
+	//	if ( HPDetails.enemy_hp > 0 )
+	//	{
+	//		int tmpw = pos.w;
+	//		pos.w = pos.w * ((double)HPDetails.enemy_hp / HPDetails.enemy_maxhp);
+	//		drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+	//		if ( HPDetails.enemy_bar_color > 0 )
+	//		{
+	//			drawRect(&pos, HPDetails.enemy_bar_color, 224);
+	//		}
+	//		pos.w = tmpw;
+	//	}
 
-		// name
-		int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name.c_str()) * TTF12_WIDTH / 2 + 2;
-		int y = pos.y + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, HPDetails.enemy_name.c_str());
-	}
+	//	// name
+	//	int x = players[player]->camera_midx() - longestline(HPDetails.enemy_name.c_str()) * TTF12_WIDTH / 2 + 2;
+	//	int y = pos.y + 16 - TTF12_HEIGHT / 2 + 2;
+	//	ttfPrintText(ttf12, x, y, HPDetails.enemy_name.c_str());
+	//}
 }
 
 void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
@@ -8277,53 +8280,4 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 			}
 		}
 	}
-}
-
-SDL_Rect getRectForSkillIcon(const int skill)
-{
-	SDL_Rect defaultRect{ 0, 0, 0, 0 };
-
-	int glyphHeight = 32;
-	int glyphWidth = 32;
-	const int glyphSpacing = 32;
-
-	switch ( skill )
-	{
-		case PRO_LOCKPICKING:
-			return SDL_Rect{ 1 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_STEALTH:
-			return SDL_Rect{ 1 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_TRADING:
-			return SDL_Rect{ 2 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_APPRAISAL:
-			return SDL_Rect{ 1 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_SWIMMING:
-			return SDL_Rect{ 2 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_LEADERSHIP:
-			return SDL_Rect{ 1 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_SPELLCASTING:
-			return SDL_Rect{ 0 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_MAGIC:
-			return SDL_Rect{ 3 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_RANGED:
-			return SDL_Rect{ 3 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_SWORD:
-			return SDL_Rect{ 0 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_MACE:
-			return SDL_Rect{ 2 * glyphSpacing, 1 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_AXE:
-			return SDL_Rect{ 2 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_POLEARM:
-			return SDL_Rect{ 0 * glyphSpacing, 2 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_UNARMED:
-			return SDL_Rect{ 3 * glyphSpacing, 3 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_SHIELD:
-			return SDL_Rect{ 3 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
-		case PRO_ALCHEMY:
-			return SDL_Rect{ 0 * glyphSpacing, 0 * glyphSpacing, glyphWidth, glyphHeight };
-		default:
-			break;
-	}
-
-	return defaultRect;
 }

@@ -10866,6 +10866,21 @@ void loadHUDSettingsJSON()
 					{
 						EnemyHPDamageBarHandler::maxTickFurnitureLifetime = d["enemy_hp_bars"]["furniture_bar_lifetime_ticks"].GetInt();
 					}
+					if ( d["enemy_hp_bars"].HasMember("quick_fade_delay_ticks") )
+					{
+						EnemyHPDamageBarHandler::shortDistanceHPBarFadeTicks = d["enemy_hp_bars"]["quick_fade_delay_ticks"].GetInt();
+					}
+					if ( d["enemy_hp_bars"].HasMember("quick_fade_distance_from_player_multiplier") )
+					{
+						if ( d["enemy_hp_bars"]["quick_fade_distance_from_player_multiplier"].IsDouble() )
+						{
+							EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance = d["enemy_hp_bars"]["quick_fade_distance_from_player_multiplier"].GetDouble();
+						}
+						else
+						{
+							EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance = d["enemy_hp_bars"]["quick_fade_distance_from_player_multiplier"].GetInt();
+						}
+					}
 				}
 				if ( d.HasMember("colors") )
 				{
@@ -13956,17 +13971,16 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	}
 
 	bool bIsMostRecentHPBar = enemyHPDamageBarHandler[player.playernum].getMostRecentHPBar() == enemyDetails;
-	if ( bIsMostRecentHPBar && !enemyDetails->hasDistanceCheck )
-	{
-		//enemyDetails->hasDistanceCheck = true;
-		auto& camera = cameras[player.playernum];
-		double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
-		if ( playerdist >= 3 * 16.0 )
-		{
-			//enemyDetails->displayOnHUD = true;
-		}
-	}
-
+	//if ( bIsMostRecentHPBar && !enemyDetails->hasDistanceCheck )
+	//{
+	//	//enemyDetails->hasDistanceCheck = true;
+	//	auto& camera = cameras[player.playernum];
+	//	double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
+	//	if ( playerdist >= 3 * 16.0 )
+	//	{
+	//		//enemyDetails->displayOnHUD = true;
+	//	}
+	//}
 
 	SDL_Rect pos = whichFrame->getSize();
 	bool doFadeout = false;
@@ -13974,6 +13988,19 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	if ( enemyDetails->displayOnHUD && whichFrame == enemyBarFrameHUD )
 	{
 		doAnimation = false;
+	}
+
+	if ( doAnimation && !enemyDetails->displayOnHUD && !enemyDetails->expired && enemyDetails->animator.setpoint <= 0 )
+	{
+		if ( ticks - enemyDetails->enemy_timer >= EnemyHPDamageBarHandler::shortDistanceHPBarFadeTicks )
+		{
+			auto& camera = cameras[player.playernum];
+			double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
+			if ( playerdist <= EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance * 16.0 )
+			{
+				enemyDetails->expired = true;
+			}
+		}
 	}
 
 	if ( enemyDetails->expired == true )

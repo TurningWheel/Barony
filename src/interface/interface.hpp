@@ -39,6 +39,8 @@ class EnemyHPDamageBarHandler
 public:
 	static int maxTickLifetime;
 	static int maxTickFurnitureLifetime;
+	static int shortDistanceHPBarFadeTicks;
+	static real_t shortDistanceHPBarFadeDistance;
 	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsMonsters;
 	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsFurniture;
 	enum HPBarType {
@@ -803,7 +805,6 @@ public:
 };
 extern FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 
-SDL_Rect getRectForSkillIcon(const int skill);
 std::string getItemSpritePath(const int player, Item& item);
 
 enum ItemContextMenuPrompts {
