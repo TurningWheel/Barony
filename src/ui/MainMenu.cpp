@@ -4480,6 +4480,33 @@ bind_failed:
 	    }
 	}
 
+	void handleScanPacket() {
+	    if (directConnect) {
+	        char hostname[256] = { '\0' };
+#ifdef LINUX
+	        (void)gethostname(hostname, sizeof(hostname));
+#else
+	        strcpy(hostname, "Barony");
+#endif
+	        Uint32 hostname_len = (Uint32)strlen(hostname);
+	        SDLNet_Write32(hostname_len, &net_packet->data[4]);
+	        for (int c = 0; c < hostname_len; ++c) {
+                net_packet->data[8 + c] = hostname[c];
+	        }
+	        Uint32 offset = 8 + hostname_len;
+	        int numplayers = 0;
+	        for (int c = 0; c < MAXPLAYERS; ++c) {
+	            if (!client_disconnected[c]) {
+	                ++numplayers;
+	            }
+	        }
+	        SDLNet_Write32(numplayers, &net_packet->data[offset]);
+	        net_packet->data[offset + 4] = intro ? 0 : 1;
+	        net_packet->len = offset + 5;
+	        sendPacket(net_sock, -1, net_packet, 0);
+	    }
+	}
+
 	static void handlePacketsAsServer() {
 #ifdef STEAMWORKS
 		CSteamID newSteamID;
@@ -4632,29 +4659,7 @@ bind_failed:
 
 			// network scan
 			else if (packetId == 'SCAN') {
-			    if (directConnect) {
-			        char hostname[256] = { '\0' };
-#ifdef LINUX
-			        (void)gethostname(hostname, sizeof(hostname));
-#else
-			        strcpy(hostname, "Barony");
-#endif
-			        Uint32 hostname_len = (Uint32)strlen(hostname);
-			        SDLNet_Write32(hostname_len, &net_packet->data[4]);
-			        for (int c = 0; c < hostname_len; ++c) {
-                        net_packet->data[8 + c] = hostname[c];
-			        }
-			        Uint32 offset = 8 + hostname_len;
-			        int numplayers = 0;
-			        for (int c = 0; c < MAXPLAYERS; ++c) {
-			            if (!client_disconnected[c]) {
-			                ++numplayers;
-			            }
-			        }
-			        SDLNet_Write32(numplayers, &net_packet->data[offset]);
-			        net_packet->len = offset + 4;
-			        sendPacket(net_sock, -1, net_packet, 0);
-			    }
+			    handleScanPacket();
 			    continue;
 			}
 
@@ -5107,6 +5112,17 @@ bind_failed:
 				    if (net_packet->data[12] == 0) {
 					    loadingsavegame = 0;
 				    }
+				    continue;
+			    }
+
+			    // we can get an ENTU packet if the server already started and we missed it somehow
+			    else if (packetId == 'ENTU') {
+                    destroyMainMenu();
+                    createDummyMainMenu();
+				    beginFade(FadeDestination::GameStart);
+
+				    // TODO we may not get a unique game key or server flags this way!!
+
 				    continue;
 			    }
 
@@ -7515,6 +7531,10 @@ bind_failed:
 	    if (!main_menu_frame) {
 	        // maybe this could happen if we got a REDY packet
 	        // super late or something.
+	        if (!ready) {
+	            fadeout = false;
+	            main_menu_fade_destination = FadeDestination::None;
+	        }
 	        return;
 	    }
 
@@ -7522,6 +7542,10 @@ bind_failed:
 		if (!lobby) {
 	        // maybe this could happen if we got a REDY packet
 	        // super late or something.
+	        if (!ready) {
+	            fadeout = false;
+	            main_menu_fade_destination = FadeDestination::None;
+	        }
 		    return;
 		}
 
@@ -7669,7 +7693,11 @@ bind_failed:
 		            if (client_disconnected[c]) {
 			            continue;
 		            }
-		            strcpy((char*)net_packet->data, "STRT");
+		            if (intro) {
+		                memcpy((char*)net_packet->data, "STRT", 4);
+		            } else {
+		                memcpy((char*)net_packet->data, "RSTR", 4);
+		            }
 		            SDLNet_Write32(svFlags, &net_packet->data[4]);
 		            SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
 		            net_packet->data[12] = loadingsavegame ? 1 : 0;
@@ -8662,7 +8690,7 @@ bind_failed:
 				            info.name = hostname;
 				            info.players = players;
 				            info.ping = ping;
-				            info.locked = false;
+				            info.locked = net_packet->data[offset + 4];
 
                             Uint32 host = net_packet->address.host;
 				            char buf[16];
@@ -8879,7 +8907,9 @@ bind_failed:
                 auto find = lobbies.find(entry->text);
                 if (find != lobbies.end()) {
                     const auto& lobby = find->second;
-                    connectToServer(lobby.address.c_str(), LobbyType::LobbyLAN);
+                    if (!lobby.locked) {
+                        connectToServer(lobby.address.c_str(), LobbyType::LobbyLAN);
+                    }
                 }
 		    } else {
 		        monoPrompt("Select a lobby to join first.",
