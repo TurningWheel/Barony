@@ -1438,6 +1438,7 @@ Input::playerControlType_t Input::getPlayerControlType()
 
 void Input::consumeBindingsSharedWithFaceHotbar()
 {
+#ifndef EDITOR
 	if ( disabled )
 	{
 		return;
@@ -1542,4 +1543,5 @@ void Input::consumeBindingsSharedWithFaceHotbar()
 			}
 		}
 	}
+#endif
 }
