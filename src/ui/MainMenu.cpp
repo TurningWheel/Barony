@@ -8490,21 +8490,18 @@ bind_failed:
 		    int players;
 		    int ping;
 		    bool locked;
-		    Uint32 host;
-		    Uint16 port;
+		    std::string address;
 		    LobbyInfo(
 		        const char* _name = "Barony",
 		        int _players = 0,
 		        int _ping = 0,
 		        bool _locked = false,
-		        Uint32 _host = 0,
-		        Uint16 _port = 0):
+		        const char* _address = "localhost"):
 		        name(_name),
 		        players(_players),
 		        ping(_ping),
 		        locked(_locked),
-		        host(_host),
-		        port(_port)
+		        address(_address)
 		    {}
 		};
 
@@ -8634,6 +8631,8 @@ bind_failed:
 				            info.name = hostname;
 				            info.players = players;
 				            info.ping = ping;
+				            info.locked = false;
+				            info.address = SDLNet_ResolveIP(&net_packet->address);
 				            add_lobby(info);
 				        }
 				    }
@@ -8833,9 +8832,14 @@ bind_failed:
 		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
 		    auto names = window->findFrame("names"); assert(names);
 		    int selection = names->getSelection();
-		    auto& entries = names->getEntries();
+		    const auto& entries = names->getEntries();
 		    if (selection >= 0 && selection < entries.size()) {
-                auto& entry = entries[selection];
+                const auto& entry = entries[selection];
+                auto find = lobbies.find(entry->text);
+                if (find != lobbies.end()) {
+                    const auto& lobby = find->second;
+                    connectToServer(lobby.address.c_str(), LobbyType::LobbyLAN);
+                }
 		    } else {
 		        monoPrompt("Select a lobby to join first.",
 		            "Okay",
