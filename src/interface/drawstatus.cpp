@@ -2323,9 +2323,6 @@ void drawStatusNew(const int player)
 
 	Input& input = Input::inputs[player];
 
-	// enemy health
-	//enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
-
 	int playerStatusBarWidth = 38 * uiscale_playerbars;
 	int playerStatusBarHeight = 156 * uiscale_playerbars;
 
@@ -3133,6 +3130,7 @@ void drawStatusNew(const int player)
 			}
 
 			players[player]->hotbar.faceMenuButtonHeld = pressed;
+			Input::inputs[player].consumeBindingsSharedWithFaceHotbar();
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.

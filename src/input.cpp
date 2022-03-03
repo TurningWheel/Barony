@@ -1316,3 +1316,111 @@ Input::playerControlType_t Input::getPlayerControlType()
 #endif // !EDITOR
 	return Input::PLAYER_CONTROLLED_BY_INVALID;
 }
+
+void Input::consumeBindingsSharedWithFaceHotbar()
+{
+	if ( disabled )
+	{
+		return;
+	}
+	if ( players[player]->hotbar.useHotbarFaceMenu )
+	{
+		if ( players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::FaceMenuGroup::GROUP_NONE )
+		{
+			const std::unordered_map<std::string, binding_t> faceMenuBindings =
+			{
+				std::make_pair("HotbarFacebarCancel", input("HotbarFacebarCancel")),
+				std::make_pair("HotbarFacebarLeft", input("HotbarFacebarLeft")),
+				std::make_pair("HotbarFacebarUp", input("HotbarFacebarUp")),
+				std::make_pair("HotbarFacebarRight", input("HotbarFacebarRight")),
+				std::make_pair("HotbarFacebarModifierLeft", input("HotbarFacebarModifierLeft")),
+				std::make_pair("HotbarFacebarModifierRight", input("HotbarFacebarModifierRight"))
+			};
+			for ( auto& b : bindings )
+			{
+				if ( !b.second.binary )
+				{
+					continue; // don't pre-consume non-pressed buttons
+				}
+				if ( b.second.consumed )
+				{
+					continue; // no need to consume again
+				}
+				for ( auto& faceMenuBinding : faceMenuBindings )
+				{
+					if ( b.second.type == faceMenuBinding.second.type )
+					{
+						if ( b.first == faceMenuBinding.first )
+						{
+							continue; // skip the hotbar bindings
+						}
+						if ( b.second.type == binding_t::CONTROLLER_AXIS ||
+							b.second.type == binding_t::CONTROLLER_BUTTON ) 
+						{
+							if ( b.second.type == binding_t::CONTROLLER_BUTTON )
+							{
+								if ( b.second.padButton == faceMenuBinding.second.padButton )
+								{
+									b.second.consumed = true;
+								}
+							}
+							else 
+							{
+								if ( b.second.padAxis == faceMenuBinding.second.padAxis )
+								{
+									b.second.consumed = true;
+								}
+							}
+						}
+						else if (
+							b.second.type == binding_t::JOYSTICK_AXIS ||
+							b.second.type == binding_t::JOYSTICK_BUTTON ||
+							b.second.type == binding_t::JOYSTICK_HAT ) 
+						{
+							if ( b.second.type == binding_t::JOYSTICK_BUTTON ) 
+							{
+								if ( b.second.joystickButton == faceMenuBinding.second.joystickButton )
+								{
+									b.second.consumed = true;
+								}
+							}
+							else if ( b.second.type == binding_t::JOYSTICK_AXIS ) 
+							{
+								if ( b.second.joystickAxis == faceMenuBinding.second.joystickAxis )
+								{
+									b.second.consumed = true;
+								}
+							}
+							else 
+							{
+								if ( b.second.joystickHat == faceMenuBinding.second.joystickHat )
+								{
+									b.second.consumed = true;
+								}
+							}
+						}
+						else if ( b.second.type == binding_t::MOUSE_BUTTON ) 
+						{
+							if ( b.second.mouseButton == faceMenuBinding.second.mouseButton )
+							{
+								b.second.consumed = true;
+								if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
+									|| b.second.mouseButton == MOUSE_WHEEL_UP )
+								{
+									mouseButtons[b.second.mouseButton] = false; // manually need to clear this
+								}
+							}
+						}
+						else if ( b.second.type == binding_t::KEYBOARD ) 
+						{
+							if ( b.second.scancode == faceMenuBinding.second.scancode )
+							{
+								b.second.consumed = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
