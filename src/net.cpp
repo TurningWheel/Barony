@@ -36,6 +36,7 @@
 #include "colors.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#include "ui/MainMenu.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -2449,18 +2450,16 @@ void clientHandlePacket()
 	// server or player shut down
 	else if (packetId == 'DISC')
 	{
+		client_disconnected[net_packet->data[4]] = true;
 		if (net_packet->data[4] == 0)
 		{
 			// server shutdown
 			if (!victory)
 			{
 				printlog("The remote server has shut down.\n");
-				pauseGame(2, 0);
-				// TODO display disconnect window
-				// &buttonCloseAndEndGameConfirm on okay
+				MainMenu::disconnectedFromServer();
 			}
 		}
-		client_disconnected[net_packet->data[4]] = true;
 		return;
 	}
 
