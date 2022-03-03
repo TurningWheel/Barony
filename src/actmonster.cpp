@@ -3238,7 +3238,8 @@ void actMonster(Entity* my)
 		monsterclicked = MONSTER_CLICKED - 1;
 		MONSTER_CLICKED = 0;
 	}
-	if ( monsterclicked >= 0 && monsterclicked < MAXPLAYERS )
+	if ( monsterclicked >= 0 && monsterclicked < MAXPLAYERS
+		&& players[monsterclicked] && players[monsterclicked]->entity )
 	{
 		if ( !my->isMobile() )
 		{
