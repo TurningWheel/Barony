@@ -7514,17 +7514,25 @@ bind_failed:
 	}
 
 	static void createReadyStone(int index, bool local, bool ready) {
-	    assert(main_menu_frame);
+	    if (!main_menu_frame) {
+	        // maybe this could happen if we got a REDY packet
+	        // super late or something.
+	        return;
+	    }
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		if (!lobby) {
+	        // maybe this could happen if we got a REDY packet
+	        // super late or something.
+		    return;
+		}
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
 			card->removeSelf();
 		}
 
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
 		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
@@ -7540,7 +7548,7 @@ bind_failed:
 			"backdrop"
 		);
 
-		auto banner = card->addField("banner", 64);
+		auto banner = card->addField("banner", 64); assert(banner);
 		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
@@ -7548,7 +7556,7 @@ bind_failed:
 		banner->setHJustify(Field::justify_t::CENTER);
 
         if (local) {
-		    auto cancel = card->addButton("cancel_button");
+		    auto cancel = card->addButton("cancel_button"); assert(cancel);
 		    cancel->setText("Ready!");
 		    cancel->setHideSelectors(true);
 		    cancel->setFont(smallfont_outline);
@@ -7571,7 +7579,7 @@ bind_failed:
 		    }
 		    cancel->select();
 		} else {
-		    auto status = card->addField("status", 64);
+		    auto status = card->addField("status", 64); assert(status);
 		    if (ready) {
 		        status->setText("Ready!");
 		    } else {
