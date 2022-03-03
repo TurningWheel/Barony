@@ -15529,7 +15529,7 @@ void doFrames() {
 		{
 			++gui_ticks;
 		}
-		(void)gui->process();
+	    (void)gui->process();
 
 		gui->predraw();
 		gui->draw();

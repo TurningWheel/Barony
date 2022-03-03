@@ -5098,10 +5098,8 @@ bind_failed:
 
 			    // game start
 			    if (packetId == 'STRT') {
-			        if (intro) {
-                        destroyMainMenu();
-                        createDummyMainMenu();
-                    }
+                    destroyMainMenu();
+                    createDummyMainMenu();
 				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
 				    uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
 				    beginFade(FadeDestination::GameStart);
@@ -7556,6 +7554,15 @@ bind_failed:
 		banner->setHJustify(Field::justify_t::CENTER);
 
         if (local) {
+            static auto cancel_fn = [](int index){
+                if (main_menu_fade_destination == FadeDestination::GameStart) {
+                    // fix servers being able to back out on the last frame
+                    return;
+                } else {
+                    createCharacterCard(index);
+                }
+                };
+
 		    auto cancel = card->addButton("cancel_button"); assert(cancel);
 		    cancel->setText("Ready!");
 		    cancel->setHideSelectors(true);
@@ -7572,10 +7579,10 @@ bind_failed:
 		    cancel->setWidgetSearchParent(card->getName());
 		    cancel->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
 		    switch (index) {
-		    case 0: cancel->setCallback([](Button&){createCharacterCard(0);}); break;
-		    case 1: cancel->setCallback([](Button&){createCharacterCard(1);}); break;
-		    case 2: cancel->setCallback([](Button&){createCharacterCard(2);}); break;
-		    case 3: cancel->setCallback([](Button&){createCharacterCard(3);}); break;
+		    case 0: cancel->setCallback([](Button&){cancel_fn(0);}); break;
+		    case 1: cancel->setCallback([](Button&){cancel_fn(1);}); break;
+		    case 2: cancel->setCallback([](Button&){cancel_fn(2);}); break;
+		    case 3: cancel->setCallback([](Button&){cancel_fn(3);}); break;
 		    }
 		    cancel->select();
 		} else {
@@ -7623,17 +7630,19 @@ bind_failed:
 	        if (countdown) {
 	            countdown->removeSelf();
 	        }
+	        fadeout = false;
+	        main_menu_fade_destination = FadeDestination::None;
 		}
 	}
 
 	static void startGame() {
-        destroyMainMenu();
-        createDummyMainMenu();
 	    if (multiplayer == CLIENT) {
 	        if (!fadeout || main_menu_fade_destination != FadeDestination::GameStart) {
                 beginFade(MainMenu::FadeDestination::GameStartDummy);
             }
 	    } else {
+            destroyMainMenu();
+            createDummyMainMenu();
             beginFade(MainMenu::FadeDestination::GameStart);
 
 	        // initialize all player stats
@@ -7675,7 +7684,6 @@ bind_failed:
 
 	static void createCountdownTimer() {
 		static const char* timer_font = "fonts/pixelmix_bold.ttf#64#2";
-		static float countdown_timer;
 
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
@@ -7684,7 +7692,9 @@ bind_failed:
 		frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		frame->setHollow(true);
 
-		countdown_timer = 3.f;
+        static Uint32 countdown_end;
+        countdown_end = ticks + TICKS_PER_SECOND * 3;
+
 		auto countdown = frame->addField("timer", 8);
 		countdown->setHJustify(Field::justify_t::LEFT);
 		countdown->setVJustify(Field::justify_t::TOP);
@@ -7692,42 +7702,41 @@ bind_failed:
 		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 0, 300, 200});
 		countdown->setTickCallback([](Widget& widget){
 		    auto countdown = static_cast<Field*>(&widget);
-			const float inc = 1.f / fpsLimit;
-		    countdown_timer -= inc;
-		    if (countdown_timer <= 0.f) {
+		    if (ticks >= countdown_end) {
 		        startGame();
 		    } else {
-		        if (countdown_timer < 0.25f) {
+		        Uint32 fourth = TICKS_PER_SECOND / 4;
+		        if (ticks >= countdown_end - fourth) {
 		            countdown->setText("1...");
 		        }
-		        else if (countdown_timer < 0.5f) {
+		        else if (ticks >= countdown_end - fourth * 2) {
 		            countdown->setText("1..");
 		        }
-		        else if (countdown_timer < 0.75f) {
+		        else if (ticks >= countdown_end - fourth * 3) {
 		            countdown->setText("1.");
 		        }
-		        else if (countdown_timer < 1.f) {
+		        else if (ticks >= countdown_end - fourth * 4) {
 		            countdown->setText("1");
 		        }
-		        else if (countdown_timer < 1.25f) {
+		        else if (ticks >= countdown_end - fourth * 5) {
 		            countdown->setText("2...");
 		        }
-		        else if (countdown_timer < 1.5f) {
+		        else if (ticks >= countdown_end - fourth * 6) {
 		            countdown->setText("2..");
 		        }
-		        else if (countdown_timer < 1.75f) {
+		        else if (ticks >= countdown_end - fourth * 7) {
 		            countdown->setText("2.");
 		        }
-		        else if (countdown_timer < 2.f) {
+		        else if (ticks >= countdown_end - fourth * 8) {
 		            countdown->setText("2");
 		        }
-		        else if (countdown_timer < 2.25f) {
+		        else if (ticks >= countdown_end - fourth * 9) {
 		            countdown->setText("3...");
 		        }
-		        else if (countdown_timer < 2.5f) {
+		        else if (ticks >= countdown_end - fourth * 10) {
 		            countdown->setText("3..");
 		        }
-		        else if (countdown_timer < 2.75f) {
+		        else if (ticks >= countdown_end - fourth * 11) {
 		            countdown->setText("3.");
 		        }
 		        else {
