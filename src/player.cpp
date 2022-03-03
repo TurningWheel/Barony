@@ -2330,7 +2330,7 @@ void Player::cleanUpOnEntityRemoval()
 
 const bool Player::isLocalPlayer() const
 {
-	return ((splitscreen && bSplitscreen) || playernum == clientnum);
+	return ((splitscreen && bSplitscreen) || playernum == clientnum || intro);
 }
 const bool Player::isLocalPlayerAlive() const
 {
