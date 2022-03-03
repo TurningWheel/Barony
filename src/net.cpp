@@ -1457,16 +1457,9 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		stats[c]->playerRace = (raceAndAppearance & 0xFF);
 		net_clients[c - 1].host = net_packet->address.host;
 		net_clients[c - 1].port = net_packet->address.port;
-		if ( directConnect )
-		{
-			const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
-			printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
-		}
-		else
-		{
-			printlog("client %d connected.\n", c);
-		}
 		client_keepalive[c] = ticks;
+
+		printlog("client %d connected.\n", c);
 
 		// send existing clients info on new client
 		for ( int x = 1; x < MAXPLAYERS; x++ )
