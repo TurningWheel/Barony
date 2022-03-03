@@ -122,7 +122,9 @@ public:
 	}
 
 	virtual void endObject() override {
-		stack.pop_back();
+	    if (!stack.empty()) {
+		    stack.pop_back();
+		}
 	}
 
 	virtual bool beginArray(Uint32 & size) override {
@@ -140,7 +142,9 @@ public:
 	}
 
 	virtual void endArray() override {
-		stack.pop_back();
+	    if (!stack.empty()) {
+		    stack.pop_back();
+		}
 	}
 	virtual void propertyName(const char * fieldName) override {
 		propName = fieldName;
