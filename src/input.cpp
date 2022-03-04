@@ -750,9 +750,23 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 				return rootPath + "G_Switch_R00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				return rootPath + "Stick_Switch_L_00.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Switch_L_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_L_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				return rootPath + "Stick_Switch_R_00.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Switch_R_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_R_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
 				return rootPath + "PlusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
@@ -784,9 +798,23 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 				return rootPath + "Button_Xbox_RB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				return rootPath + "Stick_Xbox_L_00.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Xbox_L_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Xbox_L_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				return rootPath + "Stick_Xbox_R_00.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Xbox_R_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Xbox_R_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
 				return rootPath + "Button_Xbox_Menu_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
