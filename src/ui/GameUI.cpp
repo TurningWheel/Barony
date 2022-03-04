@@ -9798,7 +9798,10 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+
 	}
+	auto tooltipPromptImg = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inventory mouse tooltip prompt img");
+	tooltipPromptImg->disabled = true;
 
 	snprintf(name, sizeof(name), "player interact %d", player);
 	if ( auto interactFrame = gui->addFrame(name) )
