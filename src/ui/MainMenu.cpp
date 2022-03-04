@@ -5335,6 +5335,7 @@ bind_failed:
 
 	static void connectToServer(const char* address, LobbyType lobbyType) {
 	    if (!address || address[0] == '\0') {
+	        soundError();
 	        return;
 	    }
         textPrompt("Connecting to server...");
@@ -7490,7 +7491,6 @@ bind_failed:
 		invite->setBorderColor(0);
 		invite->setHighlightColor(0);
 		invite->setCallback([](Button&){buttonInviteFriends(NULL);});
-		invite->select();
 	}
 
 	static void createWaitingStone(int index) {
@@ -8561,7 +8561,7 @@ bind_failed:
 		        int _players = 0,
 		        int _ping = 0,
 		        bool _locked = false,
-		        const char* _address = "localhost"):
+		        const char* _address = ""):
 		        name(_name),
 		        players(_players),
 		        ping(_ping),
@@ -9142,7 +9142,7 @@ bind_failed:
 			slider->updateHandlePosition();
 			});
 
-        if (1) {
+        if (0) {
             // test lobbies
 		    add_lobby(LobbyInfo("Ben", 1, 50, false));
 		    add_lobby(LobbyInfo("Sheridan", 3, 50, false));
