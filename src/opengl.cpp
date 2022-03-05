@@ -523,13 +523,16 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	glRotatef(rotx, 1, 0, 0); // rotate roll
 	glTranslatef(entity->focalx * 2, -entity->focalz * 2, entity->focaly * 2);
 #ifndef EDITOR
-    int chop = entity->skill[0];
-	if (entity->behavior == &actHudWeapon && entity->sprite == 868 &&
-	    (chop == 1 || chop == 2 || chop == 4 || chop == 5)) {
-	    // whips get turned around when attacking
-	    // gross hack, but it works, and we don't have quaternions. so this is way easier
-	    glRotatef(180, 0, 1, 0);
-	    glRotatef(60, 0, 0, 1);
+    static ConsoleVariable<bool> reverseWhip("/reversewhip", false);
+    if (*reverseWhip) {
+        int chop = entity->skill[0];
+	    if (entity->behavior == &actHudWeapon && entity->sprite == 868 &&
+	        (chop == 1 || chop == 2 || chop == 4 || chop == 5)) {
+	        // whips get turned around when attacking
+	        // gross hack, but it works, and we don't have quaternions. so this is way easier
+	        glRotatef(180, 0, 1, 0);
+	        glRotatef(60, 0, 0, 1);
+	    }
 	}
 #endif
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
