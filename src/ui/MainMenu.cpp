@@ -231,6 +231,7 @@ namespace MainMenu {
 		bool extra_life_enabled;
 		bool cheats_enabled;
 		bool skipintro;
+		int port_number;
 		inline bool save(); // true if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
@@ -1272,6 +1273,7 @@ namespace MainMenu {
 		}
 	    sendSvFlagsOverNet();
 		::skipintro = skipintro;
+		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
         // TODO crossplay settings
 #ifdef USE_EOS
@@ -1351,6 +1353,7 @@ namespace MainMenu {
 		settings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
 		settings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 		settings.skipintro = true;
+		settings.port_number = ::portnumber;
 		return settings;
 	}
 
@@ -1407,6 +1410,7 @@ namespace MainMenu {
 		settings.extra_life_enabled = false;
 		settings.cheats_enabled = false;
 		settings.skipintro = true;
+		settings.port_number = DEFAULT_PORT;
 		return settings;
 	}
 
@@ -1465,6 +1469,7 @@ namespace MainMenu {
 		file->property("skipintro", skipintro);
 		file->property("use_model_cache", useModelCache);
 		file->property("debug_keys_enabled", enableDebugKeys);
+		file->property("port_number", port_number);
 		return true;
 	}
 
@@ -3913,15 +3918,17 @@ bind_failed:
 			"If you're a streamer and know what doxxing is, definitely switch this on.",
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggle(); allSettings.show_ip_address_enabled = button.isPressed();});
 
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%hu", (Uint16)allSettings.port_number);
 		y += settingsAddSubHeader(*settings_subwindow, y, "lan", "LAN");
 		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
-		    "The port number to use when opening a network socket as a host.",
-		    "12345", nullptr);
+		    "The port number to use when hosting a LAN lobby.",
+		    buf, [](Field& field){soundActivate(); allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
 		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
 		    "Enable crossplay through Epic Online Services",
-		    false, [](Button&){}, [](Button&){});
+		    false, [](Button&){soundWarning();}, [](Button&){soundWarning();});
 
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Boolean, "show_ip_address"},
@@ -5288,8 +5295,7 @@ bind_failed:
 	    closeNetworkInterfaces();
 	    directConnect = true;
 
-        // TODO get port number from settings
-	    Uint16 port = DEFAULT_PORT;
+	    Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
 
 	    // resolve local host's address
 	    if (SDLNet_ResolveHost(&net_server, NULL, port) == -1) {
@@ -10387,6 +10393,27 @@ bind_failed:
 		restore_defaults->setCallback([](Button& button){
 			soundActivate();
 			settingsReset();
+			auto settings = static_cast<Frame*>(button.getParent()); assert(settings);
+			std::vector<const char*> tabs = {
+				"Controls",
+				"Audio",
+				"Video",
+				"UI",
+			};
+			if (intro) {
+				tabs.insert(tabs.begin(), "Online");
+			} else {
+			    tabs.insert(tabs.begin(), "Game");
+			}
+			for (auto tab : tabs) {
+				auto button = settings->findButton(tab); assert(button);
+				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+				if (strcmp(button->getBackground(), name) == 0) {
+				    button->select();
+				    button->activate();
+					return;
+				}
+			}
 			});
 
 		auto discard_and_exit = settings->addButton("discard_and_exit");
