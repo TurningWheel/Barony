@@ -1338,6 +1338,52 @@ void Player::HUD_t::updateUINavigation()
 		}
 	}
 }
+Frame* statusEffectFrame = nullptr;
+const int statusEffectFrameWidth = 200;
+struct StatusEffectQueueEntry
+{
+	real_t animateX = 0.0;
+	real_t animateY = 0.0;
+	int animateSetpointX = 0;
+	int animateSetpointY = 0;
+	int animateStartX = 0;
+	int animateStartY = 0;
+	Uint32 lastUpdateTick = 0;
+};
+
+struct StatusEffectQueue
+{
+	std::queue<int> effectQueue;
+} statusEffectQueue;
+
+void createStatusEffectQueue(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	statusEffectFrame = hud_t.hudFrame->addFrame("status effects");
+	statusEffectFrame->setHollow(true);
+	statusEffectFrame->setBorder(0);
+	statusEffectFrame->setOwner(player);
+	statusEffectFrame->setSize(SDL_Rect{ 0, 0, statusEffectFrameWidth, 0 });
+	statusEffectFrame->addImage(SDL_Rect{ 0, 0, statusEffectFrameWidth, 200 }, 0xFFFFFFFF, "images/system/white.png", "tmpbg");
+}
+
+void updateStatusEffectInQueue(int effect)
+{
+
+}
+
+void updateStatusEffectQueue(const int player)
+{
+	if ( !statusEffectFrame )
+	{
+		return;
+	}
+	auto& hud_t = players[player]->hud;
+	SDL_Rect mainFramePos{ 0, 0, statusEffectFrameWidth, 200 };
+	mainFramePos.x = hud_t.hudFrame->getSize().w / 2;
+	mainFramePos.y = hud_t.hudFrame->getSize().h / 2;
+	statusEffectFrame->setSize(mainFramePos);
+}
 
 void createWorldTooltipPrompts(const int player)
 {
@@ -2360,6 +2406,10 @@ void Player::HUD_t::processHUD()
 	{
 		createEnemyBar(player.playernum, enemyBarFrameHUD);
 	}
+	if ( !statusEffectFrame )
+	{
+		createStatusEffectQueue(player.playernum);
+	}
 
 	updateXPBar();
 	updateHPBar();
@@ -2373,6 +2423,7 @@ void Player::HUD_t::processHUD()
 	{
 		updateEnemyBar2(enemyBarFrame, &HPBar.second);
 	}
+	updateStatusEffectQueue(player.playernum);
 }
 
 void Player::MessageZone_t::createChatbox()
