@@ -3160,7 +3160,8 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 				parent = uidToEntity(tooltip->parent);
-				if ( parent && parent->flags[INVISIBLE] )
+				if ( parent && parent->flags[INVISIBLE] 
+					&& !(parent->behavior == &actMonster && parent->getMonsterTypeFromSprite() == DUMMYBOT) )
 				{
 					continue;
 				}

@@ -1195,37 +1195,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
+											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
+											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
+											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -1338,37 +1335,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
+											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
+											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
+											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -1579,37 +1573,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
+											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
+											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
+											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}
@@ -2025,37 +2016,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
-							if ( hit.entity->furnitureHealth < 0 )
+							if ( parent )
 							{
-								if ( parent )
+								if ( parent->behavior == &actPlayer )
 								{
-									if ( parent->behavior == &actPlayer )
+									switch ( hit.entity->furnitureType )
 									{
-										switch ( hit.entity->furnitureType )
-										{
-											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
-												break;
-											default:
-												break;
-										}
+										case FURNITURE_CHAIR:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_TABLE:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
+											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_BUNKBED:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
+											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										case FURNITURE_PODIUM:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
+											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											break;
+										default:
+											break;
 									}
 								}
 							}

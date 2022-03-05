@@ -1653,7 +1653,7 @@ public:
 		bool useHotbarRadialMenu = false;
 		bool useHotbarFaceMenu = true;
 		bool faceMenuInvertLayout = false;
-		bool faceMenuQuickCastEnabled = true;
+		bool faceMenuQuickCastEnabled = false;
 		bool faceMenuQuickCast = true;
 		bool faceMenuAlternateLayout = false;
 		enum FaceMenuGroup : int

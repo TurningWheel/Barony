@@ -6056,5 +6056,8 @@ Cast#
 4099 Took %d items from the chest.#
 4100 You have no room left in your pack!#
 4101 You reignite another %s.#
+4102 Appraise item#
+4103 View spell details#
+4104 Hide spell details#
 
 4199 end#

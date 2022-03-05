@@ -202,6 +202,9 @@ public:
 	static bool mouseButtons[18];
 	static const int MOUSE_WHEEL_UP;
 	static const int MOUSE_WHEEL_DOWN;
+
+	//! consume inputs related to the players face-hotbar if it is open
+	void consumeBindingsSharedWithFaceHotbar();
 private:
 	std::unordered_map<std::string, binding_t> bindings;
 

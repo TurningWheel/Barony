@@ -3986,6 +3986,12 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		tooltipDisplayedSettings.displayingShortFormTooltip = false;
 	}
 
+	bool isItemFromInventory = false;
+	if ( item->node && item->node->list == &stats[player]->inventory )
+	{
+		isItemFromInventory = true;
+	}
+
 	if ( ItemTooltips.itemDebug )
 	{
 		if ( keystatus[SDL_SCANCODE_KP_PLUS] )
@@ -4039,9 +4045,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 	}
 
+	bool expandBindingPressed = false;
 	if ( !command && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
-		if ( !players[player]->shootmode )
+		expandBindingPressed = true;
+		if ( !players[player]->shootmode && item->identified )
 		{
 			tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
 		}
@@ -5372,7 +5380,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 			framePromptPos.h = imgBottomBackground->pos.h;
 
-			if ( !item->identified || doShortTooltip )
+			if ( (!item->identified && (!isItemFromInventory || inputs.getVirtualMouse(player)->draw_cursor)) || doShortTooltip )
 			{
 				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
 				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
@@ -5415,13 +5423,33 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		SDL_Rect framePromptPos = framePrompt->getSize();
 		framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 		framePrompt->setSize(framePromptPos);
-		if ( tooltipDisplayedSettings.expanded )
+
+		bool doAppraisalPrompt = !item->identified && isItemFromInventory;
+		if ( doAppraisalPrompt )
 		{
-			txtPrompt->setText(language[4086]); // show item details
+			txtPrompt->setText(language[4102]);
+		}
+		else if ( !tooltipDisplayedSettings.expanded )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				txtPrompt->setText(language[4103]); // show spell details
+			}
+			else
+			{
+				txtPrompt->setText(language[4086]); // show item details
+			}
 		}
 		else
 		{
-			txtPrompt->setText(language[4087]); // view item details
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				txtPrompt->setText(language[4104]); // hide spell details
+			}
+			else
+			{
+				txtPrompt->setText(language[4087]); // hide item details
+			}
 		}
 
 		// get left anchor for tooltip - if we want moving x tooltips, otherwise currently anchor to right of inventory panel
@@ -5433,6 +5461,65 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			newPos.x -= newPos.w;
 		}
 		frameMain->setSize(newPos);
+
+		// prompt for expanding tooltip position
+		auto promptImg = frameMain->findImage("inventory mouse tooltip prompt img");
+		promptImg->disabled = true;
+		if ( !players[player]->shootmode 
+			&& !txtPrompt->isDisabled() 
+			&& (!doAppraisalPrompt || (doAppraisalPrompt && stats[player]->HP > 0)) )
+		{
+			auto& binding = Input::inputs[player].input("Expand Inventory Tooltip");
+			bool pressedGlyph = false;
+			if ( binding.isBindingUsingGamepad()
+				&& (binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK
+					|| binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK) )
+			{
+				pressedGlyph = true;
+			}
+			promptImg->path = Input::inputs[player].getGlyphPathForBinding(binding, pressedGlyph);
+			if ( auto imgGet = Image::get(promptImg->path.c_str()) )
+			{
+				unsigned int largestTextWidth = 0;
+				std::vector<int> languageIndexes;
+				if ( doAppraisalPrompt )
+				{
+					languageIndexes.push_back(4102);
+				}
+				else if ( itemCategory(item) == SPELL_CAT )
+				{
+					languageIndexes.push_back(4103);
+					languageIndexes.push_back(4104);
+				}
+				else
+				{
+					languageIndexes.push_back(4086);
+					languageIndexes.push_back(4087);
+				}
+
+				for ( auto index : languageIndexes )
+				{
+					if ( auto textGet = Text::get(language[index], txtPrompt->getFont(),
+						txtPrompt->getTextColor(), txtPrompt->getOutlineColor()) )
+					{
+						largestTextWidth = std::max(textGet->getWidth(), largestTextWidth);
+					}
+				}
+				promptImg->disabled = false;
+				promptImg->pos.w = imgGet->getWidth();
+				promptImg->pos.h = imgGet->getHeight();
+				promptImg->pos.x = framePromptPos.x + framePromptPos.w - 4 - largestTextWidth - promptImg->pos.w;
+				promptImg->pos.y = framePromptPos.y;
+				if ( promptImg->pos.y + promptImg->pos.h > frameMain->getSize().h )
+				{
+					promptImg->pos.y -= (promptImg->pos.y + promptImg->pos.h) - frameMain->getSize().h;
+				}
+			}
+			if ( doAppraisalPrompt && expandBindingPressed )
+			{
+				players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_APPRAISE);
+			}
+		}
 	}
 
 	// position the background elements.

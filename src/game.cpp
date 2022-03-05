@@ -3152,6 +3152,7 @@ void handleEvents(void)
 	for (auto& input : Input::inputs) {
 		input.updateReleasedBindings();
 		input.update();
+		input.consumeBindingsSharedWithFaceHotbar();
 	}
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events

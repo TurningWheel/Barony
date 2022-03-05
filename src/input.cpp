@@ -352,14 +352,28 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	{
 		return rootPath + "G_Switch_R00.png";
     }
-	if (in == "ButtonLeftStick")
+	if ( in == "ButtonLeftStick" )
 	{
-		return rootPath + "Stick_Switch_00B.png";
-    }
-	if (in == "ButtonRightStick")
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_L_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_L_00.png";
+		}
+	}
+	if ( in == "ButtonRightStick" )
 	{
-		return rootPath + "Stick_Switch_00B.png";
-    }
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_R_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_R_00.png";
+		}
+	}
 	if (in == "ButtonStart")
 	{
 		return rootPath + "PlusMed00.png";
@@ -368,17 +382,94 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	{
 		return rootPath + "MinusMed00.png";
     }
-	if (in == "StickLeftX+" ||
-	    in == "StickLeftX-" ||
-	    in == "StickLeftY+" ||
-	    in == "StickLeftY-" ||
-	    in == "StickRightX+" ||
-	    in == "StickRightX-" ||
-	    in == "StickRightY+" ||
-	    in == "StickRightY-")
+	if ( in == "StickLeftX-" )
 	{
-	    return rootPath + "Stick_Switch_00B.png";
-    }
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_L_Left_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_L_Left_00.png";
+		}
+	}
+	if ( in == "StickLeftX+" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_L_Right_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_L_Right_00.png";
+		}
+}
+	if ( in == "StickLeftY-" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_L_Up_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_L_Up_00.png";
+		}
+	}
+	if ( in == "StickLeftY+" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_L_Down_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_L_Down_00.png";
+		}
+	}
+	if ( in == "StickRightX-" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_R_Left_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_R_Left_00.png";
+		}
+	}
+	if ( in == "StickRightX+" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_R_Right_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_R_Right_00.png";
+		}
+	}
+	if ( in == "StickRightY-" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_R_Up_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_R_Up_00.png";
+		}
+	}
+	if ( in == "StickRightY+" )
+	{
+		if ( pressed )
+		{
+			return rootPath + "Stick_Switch_R_Down_Pressed_00.png";
+		}
+		else
+		{
+			return rootPath + "Stick_Switch_R_Down_00.png";
+		}
+	}
 	if (in == "LeftTrigger")
 	{
 		return rootPath + "G_Switch_ZL00.png";
@@ -659,9 +750,23 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 				return rootPath + "G_Switch_R00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				return rootPath + "Stick_Switch_00B.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Switch_L_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_L_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				return rootPath + "Stick_Switch_00B.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Switch_R_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_R_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
 				return rootPath + "PlusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
@@ -693,9 +798,23 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 				return rootPath + "Button_Xbox_RB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				return rootPath + "Stick_Xbox_L_00.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Xbox_L_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Xbox_L_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				return rootPath + "Stick_Xbox_R_00.png";
+				if ( pressed )
+				{
+					return rootPath + "Stick_Xbox_R_Pressed_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Xbox_R_00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
 				return rootPath + "Button_Xbox_Menu_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
@@ -719,13 +838,41 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padAxis )
 		{
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
-				return rootPath + "Stick_Switch_00B.png";
+				if ( binding.padAxisNegative )
+				{
+					return rootPath + "Stick_Switch_L_Left_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_L_Right_00.png";
+				}
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
-				return rootPath + "Stick_Switch_00B.png";
+				if ( binding.padAxisNegative )
+				{
+					return rootPath + "Stick_Switch_L_Up_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_L_Down_00.png";
+				}
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
-				return rootPath + "Stick_Switch_00B.png";
+				if ( binding.padAxisNegative )
+				{
+					return rootPath + "Stick_Switch_R_Left_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_R_Right_00.png";
+				}
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
-				return rootPath + "Stick_Switch_00B.png";
+				if ( binding.padAxisNegative )
+				{
+					return rootPath + "Stick_Switch_R_Up_00.png";
+				}
+				else
+				{
+					return rootPath + "Stick_Switch_R_Down_00.png";
+				}
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
 				return rootPath + "G_Switch_ZL00.png";
 			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
@@ -1315,4 +1462,114 @@ Input::playerControlType_t Input::getPlayerControlType()
 	}
 #endif // !EDITOR
 	return Input::PLAYER_CONTROLLED_BY_INVALID;
+}
+
+void Input::consumeBindingsSharedWithFaceHotbar()
+{
+#ifndef EDITOR
+	if ( disabled )
+	{
+		return;
+	}
+	if ( players[player]->hotbar.useHotbarFaceMenu )
+	{
+		if ( players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::FaceMenuGroup::GROUP_NONE )
+		{
+			const std::unordered_map<std::string, binding_t> faceMenuBindings =
+			{
+				std::make_pair("HotbarFacebarCancel", input("HotbarFacebarCancel")),
+				std::make_pair("HotbarFacebarLeft", input("HotbarFacebarLeft")),
+				std::make_pair("HotbarFacebarUp", input("HotbarFacebarUp")),
+				std::make_pair("HotbarFacebarRight", input("HotbarFacebarRight")),
+				std::make_pair("HotbarFacebarModifierLeft", input("HotbarFacebarModifierLeft")),
+				std::make_pair("HotbarFacebarModifierRight", input("HotbarFacebarModifierRight"))
+			};
+			for ( auto& b : bindings )
+			{
+				if ( !b.second.binary )
+				{
+					continue; // don't pre-consume non-pressed buttons
+				}
+				if ( b.second.consumed )
+				{
+					continue; // no need to consume again
+				}
+				for ( auto& faceMenuBinding : faceMenuBindings )
+				{
+					if ( b.second.type == faceMenuBinding.second.type )
+					{
+						if ( b.first == faceMenuBinding.first )
+						{
+							continue; // skip the hotbar bindings
+						}
+						if ( b.second.type == binding_t::CONTROLLER_AXIS ||
+							b.second.type == binding_t::CONTROLLER_BUTTON ) 
+						{
+							if ( b.second.type == binding_t::CONTROLLER_BUTTON )
+							{
+								if ( b.second.padButton == faceMenuBinding.second.padButton )
+								{
+									b.second.consumed = true;
+								}
+							}
+							else 
+							{
+								if ( b.second.padAxis == faceMenuBinding.second.padAxis )
+								{
+									b.second.consumed = true;
+								}
+							}
+						}
+						else if (
+							b.second.type == binding_t::JOYSTICK_AXIS ||
+							b.second.type == binding_t::JOYSTICK_BUTTON ||
+							b.second.type == binding_t::JOYSTICK_HAT ) 
+						{
+							if ( b.second.type == binding_t::JOYSTICK_BUTTON ) 
+							{
+								if ( b.second.joystickButton == faceMenuBinding.second.joystickButton )
+								{
+									b.second.consumed = true;
+								}
+							}
+							else if ( b.second.type == binding_t::JOYSTICK_AXIS ) 
+							{
+								if ( b.second.joystickAxis == faceMenuBinding.second.joystickAxis )
+								{
+									b.second.consumed = true;
+								}
+							}
+							else 
+							{
+								if ( b.second.joystickHat == faceMenuBinding.second.joystickHat )
+								{
+									b.second.consumed = true;
+								}
+							}
+						}
+						else if ( b.second.type == binding_t::MOUSE_BUTTON ) 
+						{
+							if ( b.second.mouseButton == faceMenuBinding.second.mouseButton )
+							{
+								b.second.consumed = true;
+								if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
+									|| b.second.mouseButton == MOUSE_WHEEL_UP )
+								{
+									mouseButtons[b.second.mouseButton] = false; // manually need to clear this
+								}
+							}
+						}
+						else if ( b.second.type == binding_t::KEYBOARD ) 
+						{
+							if ( b.second.scancode == faceMenuBinding.second.scancode )
+							{
+								b.second.consumed = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+#endif
 }
