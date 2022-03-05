@@ -84,4 +84,5 @@ namespace MainMenu {
 
 	void disconnectedFromServer();
 	void receivedInvite();
+	void handleScanPacket();
 }

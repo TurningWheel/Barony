@@ -836,32 +836,6 @@ void gameLogic(void)
 		{
 			fadefinished = true;
 		}
-		if ( multiplayer == SERVER && introstage == 3 )
-		{
-			// machinegun this message to clients to make sure they get it!
-			for ( c = 1; c < MAXPLAYERS; c++ )
-			{
-				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
-				{
-					continue;
-				}
-				strcpy((char*)net_packet->data, "STRT");
-				SDLNet_Write32(svFlags, &net_packet->data[4]);
-				SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
-				if ( loadingsavegame == 0 )
-				{
-					net_packet->data[12] = 0;
-				}
-				else
-				{
-					net_packet->data[12] = 1;
-				}
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 13;
-				sendPacket(net_sock, -1, net_packet, c - 1);
-			}
-		}
 	}
 	else
 	{
