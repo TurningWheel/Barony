@@ -2781,6 +2781,15 @@ const int NUM_CHARSHEET_TOOLTIP_TEXT_FIELDS = 16;
 std::map<int, Field*> characterSheetTooltipTextFields[MAXPLAYERS];
 std::map<int, Frame*> characterSheetTooltipTextBackingFrames[MAXPLAYERS];
 
+static auto charsheet_deselect_fn = [](Widget& widget) {
+	if ( widget.isSelected()
+		&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+		&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+	{
+		widget.deselect();
+	}
+};
+
 void Player::CharacterSheet_t::createCharacterSheet()
 {
 	char name[32];
@@ -2865,12 +2874,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			    openMinimap(button.getOwner());
 			});
 			mapButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected()
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
@@ -2894,12 +2898,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Log button clicked", button.getOwner());
 			});
 			logButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected()
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
@@ -2959,12 +2958,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				bShowTimer = !bShowTimer;
 			});
 			timerButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected() 
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 
 			SDL_Rect textPos = timerImg->pos;
@@ -2996,12 +2990,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				players[button.getOwner()]->skillSheet.openSkillSheet();
 			});
 			skillsButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected()
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 		}
 
@@ -3020,6 +3009,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			dungeonButton->setHideKeyboardGlyphs(true);
 			dungeonButton->setHideSelectors(true);
 			dungeonButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			dungeonButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
@@ -3095,6 +3087,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classButton->setHideKeyboardGlyphs(true);
 			classButton->setHideSelectors(true);
 			classButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			classButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
@@ -3140,6 +3135,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			raceButton->setHideKeyboardGlyphs(true);
 			raceButton->setHideSelectors(true);
 			raceButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			raceButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -3173,6 +3171,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldButton->setHideKeyboardGlyphs(true);
 			goldButton->setHideSelectors(true);
 			goldButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			goldButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 		}
 
 		{
@@ -3228,6 +3229,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3266,6 +3270,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3304,6 +3311,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3342,6 +3352,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3380,6 +3393,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3418,6 +3434,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 		}
 
@@ -3465,6 +3484,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			const int rowSpacing = 4;
@@ -3496,6 +3518,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3526,6 +3551,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3556,6 +3584,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3608,6 +3639,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 
 				auto attributeButton2 = attributesInnerFrame->addButton("rgn mp button");
 				attributeButton2->setSize(SDL_Rect{ attributeButton->getSize().x + attributeButton->getSize().w,
@@ -3618,6 +3652,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton2->setHideKeyboardGlyphs(true);
 				attributeButton2->setHideSelectors(true);
 				attributeButton2->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3648,6 +3685,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 		}
 
@@ -15610,7 +15650,7 @@ void doFrames() {
 		{
 			++gui_ticks;
 		}
-		(void)gui->process();
+	    (void)gui->process();
 
 		gui->predraw();
 		gui->draw();

@@ -283,6 +283,13 @@ public:
 	//! @param scroll_to_top if true, scroll the selection to the very top of the frame
 	void scrollToSelection(bool scroll_to_top = false);
 
+	//! adds a frame to an internal list which will match our scroll values at all times.
+	//! @param name the name of the frame to sync with
+	void addSyncScrollTarget(const char* name);
+
+	//! synchronizes scrolling with sync scroll targets
+	void syncScroll();
+
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
 	const int						getBorder() const { return border; }
@@ -319,6 +326,7 @@ public:
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }
 	void    setSelectedEntryColor(const Uint32& _color) { selectedEntryColor = _color; }
+	void    setActivatedEntryColor(const Uint32& _color) { activatedEntryColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }
 	void	setDisabled(const bool _disabled) { disabled = _disabled; }
 	void	setHollow(const bool _hollow) { hollow = _hollow; }
@@ -332,6 +340,7 @@ public:
 	void	setClickable(const bool _clickable) { clickable = _clickable; }
 	void    setDontTickChildren(const bool b) { dontTickChildren = b; }
 	void    setEntrySize(int _size) { entrySize = _size; }
+	void    setActivation(entry_t* entry) { activation = entry; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -342,6 +351,7 @@ private:
 	border_style_t borderStyle = BORDER_BEVEL_HIGH;		//!< border style
 	Uint32 color = 0;									//!< the frame's color
 	Uint32 selectedEntryColor = 0;                      //!< selected entry color
+	Uint32 activatedEntryColor = 0;                     //!< activated entry color
 	Uint32 borderColor = 0;								//!< the frame's border color (only used for flat border)
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame doesn't have a solid background
@@ -352,6 +362,7 @@ private:
 	bool dropDown = false;								//!< if true, the frame is destroyed when specific inputs register
 	Uint32 dropDownClicked = 0;							//!< key states stored for removing drop downs
 	int selection = -1;									//!< entry selection
+	entry_t* activation = nullptr;                      //!< activated entry
 	bool allowScrollBinds = true;						//!< if true, scroll wheel + right stick can scroll frame
 	bool allowScrolling = false;						//!< must be enabled for any kind of scrolling/actualSize to work
 	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
@@ -372,6 +383,8 @@ private:
 	std::vector<image_t*> images;
 	std::vector<Slider*> sliders;
 	std::vector<entry_t*> list;
+
+	std::vector<std::string> syncScrollTargets;
 
 	//! activate the given list entry
 	//! @param entry the entry to activate

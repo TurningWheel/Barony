@@ -5469,7 +5469,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			&& !txtPrompt->isDisabled() 
 			&& (!doAppraisalPrompt || (doAppraisalPrompt && stats[player]->HP > 0)) )
 		{
-			auto& binding = Input::inputs[player].input("Expand Inventory Tooltip");
+			auto binding = Input::inputs[player].input("Expand Inventory Tooltip");
 			bool pressedGlyph = false;
 			if ( binding.isBindingUsingGamepad()
 				&& (binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK

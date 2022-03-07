@@ -36,6 +36,7 @@
 #include "colors.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#include "ui/MainMenu.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -2449,18 +2450,16 @@ void clientHandlePacket()
 	// server or player shut down
 	else if (packetId == 'DISC')
 	{
+		client_disconnected[net_packet->data[4]] = true;
 		if (net_packet->data[4] == 0)
 		{
 			// server shutdown
 			if (!victory)
 			{
 				printlog("The remote server has shut down.\n");
-				pauseGame(2, 0);
-				// TODO display disconnect window
-				// &buttonCloseAndEndGameConfirm on okay
+				MainMenu::disconnectedFromServer();
 			}
 		}
-		client_disconnected[net_packet->data[4]] = true;
 		return;
 	}
 
@@ -4345,32 +4344,14 @@ void clientHandlePacket()
 	}
 
 	// game restart
-	if (packetId == 'STRT')
+	if (packetId == 'RSTR')
 	{
-		if ( !intro )
-		{
-			// intro is true if starting from main menu, otherwise we're restarting the game.
-			// set the main menu camera to the player camera coordinates if restarting midgame.
-			menucam.x = cameras[clientnum].x;
-			menucam.y = cameras[clientnum].y;
-			menucam.z = cameras[clientnum].z;
-			menucam.ang = cameras[clientnum].ang;
-			menucam.vang = cameras[clientnum].vang;
-		}
-		intro = true;
-		client_disconnected[0] = true;
 		svFlags = SDLNet_Read32(&net_packet->data[4]);
 		uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
-		//TODO anything we gotta do for the new UI?
-		//probably not buttonCloseSubwindow().
-		//buttonCloseSubwindow(NULL);
-		numplayers = 0;
-		introstage = 3;
-		if ( net_packet->data[12] == 0 )
-		{
-			loadingsavegame = 0; // the server said we're not loading a saved game.
-		}
-		fadeout = true;
+	    if (net_packet->data[12] == 0) {
+		    loadingsavegame = 0;
+	    }
+		MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
 		return;
 	}
 
@@ -4538,6 +4519,13 @@ void serverHandlePacket()
 		net_packet->len = 5;
 		sendPacketSafe(net_sock, -1, net_packet, j - 1);
 		return;
+	}
+
+	// network scan
+	else if (packetId == 'SCAN')
+	{
+	    MainMenu::handleScanPacket();
+	    return;
 	}
 
 	// pause game
