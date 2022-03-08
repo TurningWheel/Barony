@@ -3883,10 +3883,7 @@ void pauseGame(int mode, int ignoreplayer)
 	{
 		return;
 	}
-	if ( introstage == 9 
-		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
-		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
-		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
+	if ( MainMenu::isCutsceneActive() )
 	{
 		return;
 	}
@@ -4543,7 +4540,7 @@ void ingameHud()
 
 	DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
-	UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
+	UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursors
 
 	// pointer in inventory screen
 	for ( int player = 0; player < MAXPLAYERS; ++player )
@@ -5429,7 +5426,7 @@ int main(int argc, char** argv)
 					{
 						// draws the menu level "backdrop"
 						drawClearBuffers();
-						if ( movie == false )
+						if ( !MainMenu::isCutsceneActive() )
 						{
 							menucam.winx = 0;
 							menucam.winy = 0;
@@ -5438,7 +5435,6 @@ int main(int argc, char** argv)
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
 							occlusionCulling(map, menucam);
 							glDrawWorld(&menucam, REALCOLORS);
-							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
 							list_RemoveNode(light->node);
 						}
@@ -5450,34 +5446,31 @@ int main(int argc, char** argv)
 						else
 						{
 							handleMainMenu(intro);
-							UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 
 						doFrames();
 
 #ifndef NINTENDO
 						// draw mouse
-						if ( !movie )
+						// only draw 1 cursor in the main menu
+						if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
 						{
-							// only draw 1 cursor in the main menu
-							if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
-							{
-								auto cursor = Image::get("images/system/cursor_hand.png");
-								pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
-								pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
-								pos.w = cursor->getWidth();
-								pos.h = cursor->getHeight();
-								cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 
-								if (MainMenu::cursor_delete_mode)
-								{
-								    auto icon = Image::get("images/system/Broken.png");
-								    pos.x = pos.x + pos.w;
-								    pos.y = pos.y + pos.h;
-								    pos.w = icon->getWidth() * 2;
-								    pos.h = icon->getHeight() * 2;
-								    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
-								}
+							if (MainMenu::cursor_delete_mode)
+							{
+							    auto icon = Image::get("images/system/Broken.png");
+							    pos.x = pos.x + pos.w;
+							    pos.y = pos.y + pos.h;
+							    pos.w = icon->getWidth() * 2;
+							    pos.h = icon->getHeight() * 2;
+							    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 							}
 						}
 #endif
@@ -5629,7 +5622,7 @@ int main(int argc, char** argv)
 					}
 				}
 
-				if ( true )
+				if ( !MainMenu::isCutsceneActive() )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
@@ -5777,7 +5770,6 @@ int main(int argc, char** argv)
 								glDrawWorld(&camera, REALCOLORS);
 							}
 
-							//drawFloors(&camera);
 							drawEntities3D(&camera, REALCOLORS);
 
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
@@ -5850,32 +5842,29 @@ int main(int argc, char** argv)
 					MainMenu::destroyMainMenu();
 
 					// draw subwindow
-					if ( !movie )
+					if ( subwindow )
 					{
-						if ( subwindow )
+						drawWindowFancy(subx1, suby1, subx2, suby2);
+						if ( subtext && subtext[0] != '\0')
 						{
-							drawWindowFancy(subx1, suby1, subx2, suby2);
-							if ( subtext && subtext[0] != '\0')
+							if ( strncmp(subtext, language[1133], 12) )
 							{
-								if ( strncmp(subtext, language[1133], 12) )
-								{
-									ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 8, subtext);
-								}
-								else
-								{
-									ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
-								}
+								ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 8, subtext);
+							}
+							else
+							{
+								ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
 							}
 						}
-
-						// process button actions
-						handleButtons();
 					}
+
+					// process button actions
+					handleButtons();
 				}
 
 				if ( gamePaused ) // draw after main menu windows etc.
 				{
-					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+					UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 				}
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -5961,7 +5950,7 @@ int main(int argc, char** argv)
 
 			//printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
-			UIToastNotificationManager.drawNotifications(movie, false);
+			UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), false);
 
 			// update screen
 			GO_SwapBuffers(screen);

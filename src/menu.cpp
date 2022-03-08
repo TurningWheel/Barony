@@ -1597,7 +1597,7 @@ void handleMainMenu(bool mode)
 		initMenuOptions();
 	}
 
-	if ( !movie )
+	if ( true )
 	{
 		// title pic
 		SDL_Rect src;
@@ -2110,7 +2110,7 @@ void handleMainMenu(bool mode)
 				{
 					pauseMenuOnInputPressed();
 
-					introstage = 6; // goes to intro movie
+					introstage = 6; // goes to intro
 					fadeout = true;
 #ifdef MUSIC
 					playMusic(introductionmusic, true, true, false);
@@ -8780,7 +8780,6 @@ void handleMainMenu(bool mode)
 		}
 	}
 
-	// third end movie stage
 	if ( thirdendmoviestage > 0 )
 	{
 		SDL_Rect pos;
@@ -8890,7 +8889,6 @@ void handleMainMenu(bool mode)
 			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
 		}
 	}
-	// fourth (expansion) end movie stage
 	if ( fourthendmoviestage > 0 )
 	{
 		SDL_Rect pos;
@@ -9069,7 +9067,6 @@ void handleMainMenu(bool mode)
 		}
 	}
 
-	// new end movie stage
 	int movieType = -1;
 	for ( int i = 0; i < 8; ++i )
 	{
@@ -10134,12 +10131,10 @@ void doCredits() {
 		introstage = 1;
 		credittime = 0;
 		creditstage = 0;
-		movie = false;
 	}
 	else
 	{
 		credittime = 0;
-		movie = true;
 	}
 }
 
@@ -10659,12 +10654,10 @@ void doIntro() {
 		{
 			intromoviealpha[c] = 0;
 		}
-		movie = false;
 	}
 	else
 	{
 		intromovietime = 0;
-		movie = true;
 	}
 
 }
@@ -10694,7 +10687,6 @@ void doEndgameHerx() {
 		fadefinished = false;
 		fadeout = false;
 		firstendmovietime = 0;
-		movie = true;
 	}
 }
 
@@ -10723,7 +10715,6 @@ void doEndgameDevil() {
 		fadefinished = false;
 		fadeout = false;
 		secondendmovietime = 0;
-		movie = true;
 	}
 }
 
@@ -10746,7 +10737,6 @@ void doMidgame() {
 		fadeout = false;
 		if ( multiplayer != CLIENT )
 		{
-			movie = false; // allow normal pause screen.
 			thirdendmoviestage = 0;
 			thirdendmovietime = 0;
 			introstage = 1; // return to normal game functionality
@@ -10760,7 +10750,6 @@ void doMidgame() {
 		fadefinished = false;
 		fadeout = false;
 		thirdendmovietime = 0;
-		movie = true;
 	}
 }
 
@@ -10789,7 +10778,6 @@ void doEndgameCitadel() {
 		fadefinished = false;
 		fadeout = false;
 		fourthendmovietime = 0;
-		movie = true;
 	}
 }
 
@@ -10831,7 +10819,6 @@ void doEndgameClassicAndExtraMidGame() {
 			fadefinished = false;
 			fadeout = false;
 			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-			movie = true;
 		}
 	}
 	else
@@ -10848,7 +10835,6 @@ void doEndgameClassicAndExtraMidGame() {
 			fadeout = false;
 			if ( multiplayer != CLIENT )
 			{
-				movie = false; // allow normal pause screen.
 				DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
 				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
 				introstage = 1; // return to normal game functionality
@@ -10869,7 +10855,6 @@ void doEndgameClassicAndExtraMidGame() {
 			fadefinished = false;
 			fadeout = false;
 			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-			movie = true;
 		}
 	}
 }
@@ -10909,7 +10894,6 @@ void doEndgameExpansion() {
 		fadefinished = false;
 		fadeout = false;
 		DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
-		movie = true;
 	}
 }
 

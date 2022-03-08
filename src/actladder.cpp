@@ -23,6 +23,7 @@
 #include "files.hpp"
 #include "items.hpp"
 #include "mod_tools.hpp"
+#include "ui/MainMenu.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -477,7 +478,17 @@ void actWinningPortal(Entity* my)
 						return;
 					}
 				}
+
 				victory = my->portalVictoryType;
+
+				Uint8 cutscene = 0;
+				if (!strncmp(map.name, "Boss", 4)) {
+				    cutscene = 1;
+				}
+				else if (!strncmp(map.name, "Hell Boss", 9)) {
+				    cutscene = 2;
+				}
+
 				if ( multiplayer == SERVER )
 				{
 					for ( c = 1; c < MAXPLAYERS; c++ )
@@ -488,19 +499,61 @@ void actWinningPortal(Entity* my)
 						}
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
+						net_packet->data[5] = cutscene;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 5;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
-				subwindow = 0;
-				introstage = 5; // prepares win game sequence
-				fadeout = true;
-				if ( !intro )
-				{
-					pauseGame(2, false);
-				}
+
+	            if (cutscene == 1) { // classic herx ending
+	                switch (stats[clientnum]->playerRace) {
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingEvil);
+	                    break;
+	                }
+	            }
+	            else if (cutscene == 2) { // classic baphomet ending
+	                switch (stats[clientnum]->playerRace) {
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingEvil);
+	                    break;
+	                }
+	            }
+
+                movie = true;
+				pauseGame(2, false);
 				return;
 			}
 		}
@@ -633,19 +686,37 @@ void Entity::actExpansionEndGamePortal()
 						}
 						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
+						net_packet->data[5] = 0;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
-				subwindow = 0;
-				introstage = 5; // prepares win game sequence
-				fadeout = true;
-				if ( !intro )
-				{
-					pauseGame(2, false);
-				}
+
+                switch (stats[clientnum]->playerRace) {
+                default:
+                case RACE_HUMAN:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
+                    break;
+                case RACE_AUTOMATON:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingAutomaton);
+                    break;
+                case RACE_GOATMAN:
+                case RACE_GOBLIN:
+                case RACE_INSECTOID:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingBeast);
+                    break;
+                case RACE_SKELETON:
+                case RACE_VAMPIRE:
+                case RACE_SUCCUBUS:
+                case RACE_INCUBUS:
+                    MainMenu::beginFade(MainMenu::FadeDestination::EndingEvil);
+                    break;
+                }
+
+                movie = true;
+				pauseGame(2, false);
 				return;
 			}
 		}
@@ -786,56 +857,81 @@ void Entity::actMidGamePortal()
 						return;
 					}
 				}
-				//victory = portalVictoryType;
-				int movieCrawlType = -1;
-				if ( !strncmp(map.name, "Hell Boss", 9) )
+
+				Uint8 cutscene = 0;
+				if ( !strncmp(map.name, "Boss", 4) )
 				{
-					movieCrawlType = MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON;
-					if ( stats[0] && stats[0]->playerRace > 0 
-						&& stats[0]->playerRace != RACE_AUTOMATON
-						&& stats[0]->appearance == 0 )
-					{
-						movieCrawlType = MOVIE_MIDGAME_BAPHOMET_MONSTERS;
-					}
+				    cutscene = 0;
 				}
-				else if ( !strncmp(map.name, "Boss", 4) )
+				else if ( !strncmp(map.name, "Hell Boss", 9) )
 				{
-					if ( stats[0] && stats[0]->playerRace > 0 
-						&& stats[0]->playerRace != RACE_AUTOMATON
-						&& stats[0]->appearance == 0 )
-					{
-						movieCrawlType = MOVIE_MIDGAME_HERX_MONSTERS;
-					}
-				}
-				int introstageToChangeTo = 9;
-				if ( movieCrawlType >= 0 )
-				{
-					introstageToChangeTo = 11 + movieCrawlType;
+				    cutscene = 1;
 				}
 
 				if ( multiplayer == SERVER )
 				{
-					for ( c = 1; c < MAXPLAYERS; c++ )
+					for ( int c = 1; c < MAXPLAYERS; c++ )
 					{
 						if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 						{
 							continue;
 						}
 						strcpy((char*)net_packet->data, "MIDG");
-						net_packet->data[4] = introstageToChangeTo;
+						net_packet->data[4] = cutscene;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 5;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
-				subwindow = 0;
-				fadeout = true;
-				if ( !intro )
-				{
-					pauseGame(2, false);
-				}
-				introstage = introstageToChangeTo; // prepares mid game sequence
+
+	            if (cutscene == 0) {
+	                switch (stats[clientnum]->playerRace) { // herx midpoint
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointEvil);
+	                    break;
+	                }
+	            }
+	            else if (cutscene == 1) { // baphomet midpoint
+	                switch (stats[clientnum]->playerRace) {
+	                default:
+	                case RACE_HUMAN:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
+	                    break;
+	                case RACE_AUTOMATON:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointAutomaton);
+	                    break;
+	                case RACE_GOATMAN:
+	                case RACE_GOBLIN:
+	                case RACE_INSECTOID:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointBeast);
+	                    break;
+	                case RACE_SKELETON:
+	                case RACE_VAMPIRE:
+	                case RACE_SUCCUBUS:
+	                case RACE_INCUBUS:
+	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointEvil);
+	                    break;
+	                }
+	            }
+
+                movie = true;
+				pauseGame(2, false);
 				return;
 			}
 		}

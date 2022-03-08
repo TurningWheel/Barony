@@ -19,6 +19,7 @@
 #include "../engine/audio/sound.hpp"
 #include "../classdescriptions.hpp"
 #include "../lobbies.hpp"
+#include "../interface/consolecommand.hpp"
 
 #include <cassert>
 #include <functional>
@@ -32,6 +33,13 @@ namespace MainMenu {
 	bool arachnophobia_filter = false;
 	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
+
+	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
+	    [](int argc, const char** argv){
+	    Image::dumpCache();
+	    Text::dumpCache();
+	    Font::dumpCache();
+	    });
 
 	// If you want to add new player-visible bindings, ADD THEM HERE:
 	// The first string in a binding is the name of the binding.
@@ -90,6 +98,11 @@ namespace MainMenu {
 
 	static LobbyType currentLobbyType = LobbyType::None;
 	static bool playersInLobby[4];
+
+    bool story_active = false;
+    bool isCutsceneActive() {
+        return story_active;
+    }
 
 	void beginFade(FadeDestination fd) {
 		main_menu_fade_destination = fd;
@@ -1586,37 +1599,55 @@ namespace MainMenu {
 			"storyboard"
 		);
 
-		auto back_button = main_menu_frame->addButton("back");
-		back_button->setHideSelectors(true);
-		back_button->setText("Skip story");
-		back_button->setColor(makeColor(0, 0, 0, 0));
-		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
-		back_button->setBorderColor(makeColor(0, 0, 0, 0));
-		back_button->setTextColor(0xffffffff);
-		back_button->setTextHighlightColor(0xffffffff);
-		back_button->setFont(smallfont_outline);
-		back_button->setHJustify(Button::justify_t::RIGHT);
-		back_button->setVJustify(Button::justify_t::CENTER);
-		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 416, Frame::virtualScreenY - 70, 380, 50});
-		back_button->setCallback([](Button& button){
-		    ++story_skip;
-		    story_skip_timer = (float)TICKS_PER_SECOND;
-		    switch (story_skip) {
-		    case 0: button.setText("Skip story"); break;
-		    case 1: button.setText("Confirm (1)?"); break;
-		    case 2: button.setText("Confirm (2)?"); break;
+        story_active = true;
+		static auto end_story_screen = [](){
+		    if (multiplayer == CLIENT && !victory) {
+		        auto next = main_menu_frame->findButton("next");
+		        if (next) {
+		            next->setHideGlyphs(true);
+		            next->setHideKeyboardGlyphs(true);
+		            next->setText("Waiting for host...");
+		        }
+		    } else {
+		        movie = false;
+		        story_active = false;
+		        story_end_func();
 		    }
-		    if (story_skip >= 3) {
-			    story_end_func();
+		    };
+
+        if (multiplayer != CLIENT || victory) {
+		    auto back_button = main_menu_frame->addButton("back");
+		    back_button->setHideSelectors(true);
+		    back_button->setText("Skip story");
+		    back_button->setColor(makeColor(0, 0, 0, 0));
+		    back_button->setHighlightColor(makeColor(0, 0, 0, 0));
+		    back_button->setBorderColor(makeColor(0, 0, 0, 0));
+		    back_button->setTextColor(0xffffffff);
+		    back_button->setTextHighlightColor(0xffffffff);
+		    back_button->setFont(smallfont_outline);
+		    back_button->setHJustify(Button::justify_t::RIGHT);
+		    back_button->setVJustify(Button::justify_t::CENTER);
+		    back_button->setSize(SDL_Rect{Frame::virtualScreenX - 416, Frame::virtualScreenY - 70, 380, 50});
+		    back_button->setCallback([](Button& button){
+		        ++story_skip;
+		        story_skip_timer = (float)TICKS_PER_SECOND;
+		        switch (story_skip) {
+		        case 0: button.setText("Skip story"); break;
+		        case 1: button.setText("Confirm (1)?"); break;
+		        case 2: button.setText("Confirm (2)?"); break;
+		        }
+		        if (story_skip >= 3) {
+			        end_story_screen();
+		        }
+			    });
+		    back_button->setWidgetBack("back");
+		    back_button->setHideKeyboardGlyphs(false);
+		    if (inputs.hasController(clientnum)) {
+		        back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
+		        back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
+		    } else {
+		        back_button->setGlyphPosition(Button::glyph_position_t::BOTTOM_RIGHT);
 		    }
-			});
-		back_button->setWidgetBack("back");
-		back_button->setHideKeyboardGlyphs(false);
-		if (inputs.hasController(clientnum)) {
-		    back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
-		    back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
-		} else {
-		    back_button->setGlyphPosition(Button::glyph_position_t::BOTTOM_RIGHT);
 		}
 
 		auto font = Font::get(bigfont_outline); assert(font);
@@ -1625,7 +1656,7 @@ namespace MainMenu {
 	        if (story_text_pause) {
 		        story_text_pause = 0;
 			    if (story_text_end == true) {
-				    story_end_func();
+				    end_story_screen();
 			    } else {
 	                auto font = Font::get(bigfont_outline); assert(font);
 				    story_text_scroll = font->height() * story_text_box_size;
@@ -1766,7 +1797,7 @@ namespace MainMenu {
 				    }
 					if (story_text_pause == 0) {
 						if (story_text_end == true) {
-							story_end_func();
+							end_story_screen();
 						} else {
 							story_text_scroll = story_font->height() * story_text_box_size;
 						}
@@ -1848,6 +1879,199 @@ namespace MainMenu {
 		        }
 		    }
 			});
+	}
+
+	static void createCreditsScreen(bool endgame) {
+		/*auto back_button = main_menu_frame->addButton("back");
+		back_button->setHideSelectors(true);
+		back_button->setText("Return to Main Menu");
+		back_button->setColor(makeColor(0, 0, 0, 0));
+		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
+		back_button->setBorderColor(makeColor(0, 0, 0, 0));
+		back_button->setTextColor(0xffffffff);
+		back_button->setTextHighlightColor(0xffffffff);
+		back_button->setFont(smallfont_outline);
+		back_button->setHJustify(Button::justify_t::RIGHT);
+		back_button->setVJustify(Button::justify_t::CENTER);
+		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
+		back_button->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+		back_button->setCallback([](Button& b){
+			destroyMainMenu();
+			createMainMenu(false);
+			mainArchives(b);
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			auto credits = buttons->findButton("CREDITS"); assert(credits);
+			credits->select();
+			});
+		back_button->setWidgetBack("back");
+	    back_button->setHideKeyboardGlyphs(false);
+		back_button->select();*/
+
+		if (endgame) {
+		    movie = true;
+		    auto backdrop = main_menu_frame->addImage(
+		        SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY},
+			    0xffffffff,
+			    "*images/ui/Main Menus/Story/black.png",
+			    "backdrop"
+			    );
+		}
+
+        if (endgame) {
+		    auto back = createBackWidget(main_menu_frame,
+		        [](Button&){
+		        soundCancel();
+			    destroyMainMenu();
+			    createMainMenu(false);
+			    });
+		    back->select();
+        } else {
+		    auto back = createBackWidget(main_menu_frame,
+		        [](Button& b){
+			    destroyMainMenu();
+			    createMainMenu(false);
+			    mainArchives(b);
+			    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			    auto credits = buttons->findButton("CREDITS"); assert(credits);
+			    credits->select();
+			    });
+		    back->select();
+		}
+
+		auto font = Font::get(bigfont_outline); assert(font);
+
+		static float credits_scroll = 0.f;
+		constexpr int num_credits_lines = 83;
+
+		auto credits = main_menu_frame->addFrame("credits");
+		credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * num_credits_lines});
+		credits->setScrollBarsEnabled(false);
+		credits->setAllowScrollBinds(false);
+		credits->setHollow(true);
+		credits->setBorder(0);
+		credits->setTickCallback([](Widget& widget){
+			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
+			int old_credits_scroll = (int)credits_scroll;
+			credits_scroll += inc;
+			if (old_credits_scroll != (int)credits_scroll) {
+				auto credits = static_cast<Frame*>(&widget);
+				auto size = credits->getActualSize();
+				size.y += 1;
+				if (size.y >= size.h) {
+					size.y = 0;
+				}
+				credits->setActualSize(size);
+			}
+			});
+
+		// titles
+		auto text1 = credits->addField("text1", 1024);
+		text1->setFont(bigfont_outline);
+		text1->setColor(makeColor(255, 191, 32, 255));
+		text1->setHJustify(Field::justify_t::CENTER);
+		text1->setVJustify(Field::justify_t::TOP);
+		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * num_credits_lines});
+		text1->setText(
+			u8"Project lead, programming, and design\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Music and sound design\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Programming\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Art and design\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Programming and design\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Additional art\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Additional writing\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Special thanks\n"
+			u8" \n"
+			u8" \n"
+			u8" \n"
+			u8" \n"
+			u8" \n"
+			u8" \n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"A big shout-out to our open-source community!\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"Barony is a product of Turning Wheel LLC\n"
+			u8" \n"
+#ifdef USE_FMOD
+			u8" \n"
+#endif
+			u8" \n"
+			u8" \n \n \n \n \n"
+			u8"This game is dedicated to all of our friends, family, and fans\n"
+			u8"who encouraged and supported us on our journey to finish it.\n"
+			u8" \n"
+			u8" \n"
+		);
+
+		// entries
+		auto text2 = credits->addField("text2", 1024);
+		text2->setFont(bigfont_outline);
+		text2->setColor(0xffffffff);
+		text2->setHJustify(Field::justify_t::CENTER);
+		text2->setVJustify(Field::justify_t::TOP);
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * num_credits_lines});
+		text2->setText(
+			u8" \n"
+			u8"Sheridan Rathbun\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Chris Kukla\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Ciprian Elies\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Josiah Colborn\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Ben Potter\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Matthew Griebner\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Frasier Panton\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Our Kickstarter Backers\n"
+			u8"Sterling Rathbun\n"
+			u8"Julian Seeger\n"
+			u8"Mathias Golinelli\n"
+			u8"Jesse Riddle\n"
+			u8"Kevin White\n"
+			u8"Desiree Colborn\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Copyright \u00A9 2022, all rights reserved\n"
+#ifdef USE_FMOD
+			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
+#endif
+			u8"http://www.baronygame.com/\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8" \n"
+			u8" \n"
+			u8"Thank you!\n"
+		);
 	}
 
 /******************************************************************************/
@@ -4011,200 +4235,27 @@ bind_failed:
 
 	static void archivesLeaderboards(Button& button) {
 		soundActivate();
+		destroyMainMenu();
+		createDummyMainMenu();
+		beginFade(MainMenu::FadeDestination::EndingHuman);
 	}
 
 	static void archivesDungeonCompendium(Button& button) {
 		soundActivate();
-
-		destroyMainMenu();
-		createDummyMainMenu();
-
-		beginFade(MainMenu::FadeDestination::EndingEvil);
 	}
 
 	static void archivesStoryIntroduction(Button& button) {
 		soundActivate();
-
 		destroyMainMenu();
 		createDummyMainMenu();
-
 		beginFade(MainMenu::FadeDestination::IntroStoryScreen);
 	}
 
 	static void archivesCredits(Button& button) {
 		soundActivate();
-
 		destroyMainMenu();
 		createDummyMainMenu();
-
-		/*auto back_button = main_menu_frame->addButton("back");
-		back_button->setHideSelectors(true);
-		back_button->setText("Return to Main Menu");
-		back_button->setColor(makeColor(0, 0, 0, 0));
-		back_button->setHighlightColor(makeColor(0, 0, 0, 0));
-		back_button->setBorderColor(makeColor(0, 0, 0, 0));
-		back_button->setTextColor(0xffffffff);
-		back_button->setTextHighlightColor(0xffffffff);
-		back_button->setFont(smallfont_outline);
-		back_button->setHJustify(Button::justify_t::RIGHT);
-		back_button->setVJustify(Button::justify_t::CENTER);
-		back_button->setSize(SDL_Rect{Frame::virtualScreenX - 400, Frame::virtualScreenY - 70, 380, 50});
-		back_button->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
-		back_button->setCallback([](Button& b){
-			destroyMainMenu();
-			createMainMenu(false);
-			mainArchives(b);
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto credits = buttons->findButton("CREDITS"); assert(credits);
-			credits->select();
-			});
-		back_button->setWidgetBack("back");
-	    back_button->setHideKeyboardGlyphs(false);
-		back_button->select();*/
-
-		auto back = createBackWidget(main_menu_frame,
-		    [](Button& b){
-			destroyMainMenu();
-			createMainMenu(false);
-			mainArchives(b);
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto credits = buttons->findButton("CREDITS"); assert(credits);
-			credits->select();});
-		back->select();
-
-		auto font = Font::get(bigfont_outline); assert(font);
-
-		static float credits_scroll = 0.f;
-
-		auto credits = main_menu_frame->addFrame("credits");
-		credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		credits->setActualSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY + font->height() * 81});
-		credits->setScrollBarsEnabled(false);
-		credits->setAllowScrollBinds(false);
-		credits->setHollow(true);
-		credits->setBorder(0);
-		credits->setTickCallback([](Widget& widget){
-			const float inc = 1.f * ((float)TICKS_PER_SECOND / (float)fpsLimit);
-			int old_credits_scroll = (int)credits_scroll;
-			credits_scroll += inc;
-			if (old_credits_scroll != (int)credits_scroll) {
-				auto credits = static_cast<Frame*>(&widget);
-				auto size = credits->getActualSize();
-				size.y += 1;
-				if (size.y >= size.h) {
-					size.y = 0;
-				}
-				credits->setActualSize(size);
-			}
-			});
-
-		// titles
-		auto text1 = credits->addField("text1", 1024);
-		text1->setFont(bigfont_outline);
-		text1->setColor(makeColor(255, 191, 32, 255));
-		text1->setHJustify(Field::justify_t::CENTER);
-		text1->setVJustify(Field::justify_t::TOP);
-		text1->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 90});
-		text1->setText(
-			u8"Project lead, programming, and design\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Music and sound design\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Programming\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Art and design\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Programming and design\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Additional art\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Additional writing\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Special thanks\n"
-			u8" \n"
-			u8" \n"
-			u8" \n"
-			u8" \n"
-			u8" \n"
-			u8" \n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"A big shout-out to our open-source community!\n"
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"Barony is a product of Turning Wheel LLC\n"
-			u8" \n"
-#ifdef USE_FMOD
-			u8" \n"
-#endif
-			u8" \n"
-			u8" \n \n \n \n \n"
-			u8"This game is dedicated to all of our friends, family, and fans\n"
-			u8"who encouraged and supported us on our journey to finish it.\n"
-			u8" \n"
-			u8" \n"
-		);
-
-		// entries
-		auto text2 = credits->addField("text2", 1024);
-		text2->setFont(bigfont_outline);
-		text2->setColor(0xffffffff);
-		text2->setHJustify(Field::justify_t::CENTER);
-		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * 90});
-		text2->setText(
-			u8" \n"
-			u8"Sheridan Rathbun\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Chris Kukla\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Ciprian Elies\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Josiah Colborn\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Ben Potter\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Matthew Griebner\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Frasier Panton\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Our Kickstarter Backers\n"
-			u8"Sterling Rathbun\n"
-			u8"Julian Seeger\n"
-			u8"Mathias Golinelli\n"
-			u8"Jesse Riddle\n"
-			u8"Kevin White\n"
-			u8"Desiree Colborn\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8"Copyright \u00A9 2022, all rights reserved\n"
-#ifdef USE_FMOD
-			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
-#endif
-			u8"http://www.baronygame.com/\n"
-			u8" \n \n \n \n \n"
-			u8" \n"
-			u8" \n"
-			u8" \n"
-			u8"Thank you!\n"
-		);
+        createCreditsScreen(false);
 	}
 
 	static void archivesBackToMainMenu(Button& button) {
@@ -10090,7 +10141,7 @@ bind_failed:
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
-			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
@@ -10716,6 +10767,13 @@ bind_failed:
 	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
 				createMainMenu(false);
 			}
+			else if (main_menu_fade_destination == FadeDestination::Victory) {
+				doEndgame();
+				destroyMainMenu();
+				createDummyMainMenu();
+				createCreditsScreen(true);
+	            playMusic(intromusic[0], true, false, false);
+			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				destroyMainMenu();
 				createDummyMainMenu();
@@ -10736,17 +10794,19 @@ bind_failed:
 				    const char* filename;
 				    void (*end_func)();
 				};
-				auto returnToMainMenu = [](){(void)beginFade(FadeDestination::RootMainMenu);};
+				auto returnToMainMenu = [](){(void)beginFade(FadeDestination::Victory);};
+				auto loadNextLevel = [](){loadnextlevel = true; skipLevelsOnLoad = 0; pauseGame(1, false);};
+				auto skipHellLevels = [](){loadnextlevel = true; skipLevelsOnLoad = 5; pauseGame(1, false);};
 				Scene scenes[] = {
-				    {"data/story/HerxMidpointHuman.json", returnToMainMenu},
-				    {"data/story/HerxMidpointAutomaton.json", returnToMainMenu},
-				    {"data/story/HerxMidpointBeast.json", returnToMainMenu},
-				    {"data/story/HerxMidpointEvil.json", returnToMainMenu},
+				    {"data/story/HerxMidpointHuman.json", skipHellLevels},
+				    {"data/story/HerxMidpointAutomaton.json", skipHellLevels},
+				    {"data/story/HerxMidpointBeast.json", skipHellLevels},
+				    {"data/story/HerxMidpointEvil.json", skipHellLevels},
 
-				    {"data/story/BaphometMidpointHuman.json", returnToMainMenu},
-				    {"data/story/BaphometMidpointAutomaton.json", returnToMainMenu},
-				    {"data/story/BaphometMidpointBeast.json", returnToMainMenu},
-				    {"data/story/BaphometMidpointEvil.json", returnToMainMenu},
+				    {"data/story/BaphometMidpointHuman.json", loadNextLevel},
+				    {"data/story/BaphometMidpointAutomaton.json", loadNextLevel},
+				    {"data/story/BaphometMidpointBeast.json", loadNextLevel},
+				    {"data/story/BaphometMidpointEvil.json", loadNextLevel},
 
 				    {"data/story/EndingHuman.json", returnToMainMenu},
 				    {"data/story/EndingAutomaton.json", returnToMainMenu},
@@ -10767,7 +10827,7 @@ bind_failed:
 				int scene = (int)main_menu_fade_destination - (int)FadeDestination::HerxMidpointHuman;
 				assert(scene >= 0 && scene < num_scenes);
 				createStoryScreen(scenes[scene].filename, scenes[scene].end_func);
-				playMusic(intermissionmusic, false, false, false);
+				playMusic(endgamemusic, false, false, false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
@@ -10827,7 +10887,11 @@ bind_failed:
 	void doMainMenu(bool ingame) {
 		if (!main_menu_frame) {
 		    if (ingame) {
-		        createMainMenu(ingame);
+		        if (movie) {
+		            createDummyMainMenu();
+		        } else {
+		            createMainMenu(ingame);
+		        }
 		    } else {
 			    createTitleScreen();
 			}
@@ -11069,7 +11133,7 @@ bind_failed:
 			button->setVJustify(Button::justify_t::CENTER);
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
-			button->setBackground("#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
@@ -11181,6 +11245,8 @@ bind_failed:
 			main_menu_frame = nullptr;
 		}
 		cursor_delete_mode = false;
+		story_active = false;
+		movie = false;
 	}
 
 	void createDummyMainMenu() {
