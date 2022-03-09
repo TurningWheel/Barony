@@ -4235,9 +4235,13 @@ bind_failed:
 
 	static void archivesLeaderboards(Button& button) {
 		soundActivate();
-		destroyMainMenu();
-		createDummyMainMenu();
-		beginFade(MainMenu::FadeDestination::EndingHuman);
+
+		// test cutscene
+		if (0) {
+		    destroyMainMenu();
+		    createDummyMainMenu();
+		    beginFade(MainMenu::FadeDestination::EndingHuman);
+		}
 	}
 
 	static void archivesDungeonCompendium(Button& button) {
@@ -10084,6 +10088,7 @@ bind_failed:
 		auto notification = main_menu_frame->findFrame("notification"); assert(notification);
 		auto image = notification->findImage("background"); assert(image);
 		image->path = "*images/ui/Main Menus/AdventureArchives/UI_AdventureArchives_TitleGraphic00.png";
+		image->disabled = false;
 		notification->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 204 * 2) / 2,
 			notification->getSize().y,
@@ -10105,7 +10110,9 @@ bind_failed:
 		for (int c = 0; c < 2; ++c) {
 			std::string name = std::string("banner") + std::to_string(c + 1);
 			auto banner = main_menu_frame->findFrame(name.c_str());
-			banner->setDisabled(true);
+			if (banner) {
+			    banner->setDisabled(true);
+			}
 		}
 
 		// delete existing buttons
@@ -10167,7 +10174,7 @@ bind_failed:
 		}
 		y += 16;
 
-		auto archives = buttons->findButton("ADVENTURE ARCHIVES");
+		auto archives = buttons->findButton("LEADERBOARDS");
 		if (archives) {
 			archives->select();
 		}
@@ -10794,7 +10801,8 @@ bind_failed:
 				    const char* filename;
 				    void (*end_func)();
 				};
-				auto returnToMainMenu = [](){(void)beginFade(FadeDestination::Victory);};
+				auto classicEnding = [](){(void)beginFade(FadeDestination::Victory);};
+				auto fullEnding = [](){(void)beginFade(FadeDestination::Victory); steamAchievement("BARONY_ACH_ALWAYS_WAITING");};
 				auto loadNextLevel = [](){loadnextlevel = true; skipLevelsOnLoad = 0; pauseGame(1, false);};
 				auto skipHellLevels = [](){loadnextlevel = true; skipLevelsOnLoad = 5; pauseGame(1, false);};
 				Scene scenes[] = {
@@ -10808,20 +10816,20 @@ bind_failed:
 				    {"data/story/BaphometMidpointBeast.json", loadNextLevel},
 				    {"data/story/BaphometMidpointEvil.json", loadNextLevel},
 
-				    {"data/story/EndingHuman.json", returnToMainMenu},
-				    {"data/story/EndingAutomaton.json", returnToMainMenu},
-				    {"data/story/EndingBeast.json", returnToMainMenu},
-				    {"data/story/EndingEvil.json", returnToMainMenu},
+				    {"data/story/EndingHuman.json", fullEnding},
+				    {"data/story/EndingAutomaton.json", fullEnding},
+				    {"data/story/EndingBeast.json", fullEnding},
+				    {"data/story/EndingEvil.json", fullEnding},
 
-				    {"data/story/ClassicEndingHuman.json", returnToMainMenu},
-				    {"data/story/ClassicEndingAutomaton.json", returnToMainMenu},
-				    {"data/story/ClassicEndingBeast.json", returnToMainMenu},
-				    {"data/story/ClassicEndingEvil.json", returnToMainMenu},
+				    {"data/story/ClassicEndingHuman.json", classicEnding},
+				    {"data/story/ClassicEndingAutomaton.json", classicEnding},
+				    {"data/story/ClassicEndingBeast.json", classicEnding},
+				    {"data/story/ClassicEndingEvil.json", classicEnding},
 
-				    {"data/story/ClassicBaphometEndingHuman.json", returnToMainMenu},
-				    {"data/story/ClassicBaphometEndingAutomaton.json", returnToMainMenu},
-				    {"data/story/ClassicBaphometEndingBeast.json", returnToMainMenu},
-				    {"data/story/ClassicBaphometEndingEvil.json", returnToMainMenu},
+				    {"data/story/ClassicBaphometEndingHuman.json", classicEnding},
+				    {"data/story/ClassicBaphometEndingAutomaton.json", classicEnding},
+				    {"data/story/ClassicBaphometEndingBeast.json", classicEnding},
+				    {"data/story/ClassicBaphometEndingEvil.json", classicEnding},
 				};
 				constexpr int num_scenes = sizeof(scenes) / sizeof(scenes[0]);
 				int scene = (int)main_menu_fade_destination - (int)FadeDestination::HerxMidpointHuman;
@@ -10918,6 +10926,17 @@ bind_failed:
 
         if (!ingame) {
             handleNetwork();
+        } else {
+#ifdef STEAMWORKS
+			if (ticks % 250 == 0) {
+				bool unlocked = false;
+				if (SteamUserStats()->GetAchievement("BARONY_ACH_GUDIPARIAN_BAZI", &unlocked)) {
+					if ( unlocked ) {
+						steamAchievement("BARONY_ACH_RANGER_DANGER");
+					}
+				}
+			}
+#endif
         }
 
 		if (fadeout && fadealpha >= 255) {
@@ -11044,8 +11063,12 @@ bind_failed:
 				49 * 2
 				});
 			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-			notification->addImage(notification->getActualSize(), 0xffffffff,
+			auto image = notification->addImage(notification->getActualSize(), 0xffffffff,
 				"*images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
+            // TODO notification!
+#if 1
+            image->disabled = true;
+#endif
 			y += notification->getSize().h;
 			y += 16;
 		}
@@ -11179,6 +11202,8 @@ bind_failed:
 		);
 
 		if (!ingame) {
+		    // TODO banners!
+#if 0
 			for (int c = 0; c < 2; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
 				auto banner = main_menu_frame->addFrame(name.c_str());
@@ -11194,6 +11219,7 @@ bind_failed:
 				y += banner->getSize().h;
 				y += 16;
 			}
+#endif
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
@@ -11220,8 +11246,23 @@ bind_failed:
 				});
 			version->setColor(0xffffffff);
 
-#ifndef NINTENDO
-			int num_online_players = 1337; // TODO change me!
+#ifdef STEAMWORKS
+			if (SteamUser()->BLoggedOn()) {
+			    bool bFailed = false;
+                NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
+				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+				SteamUtils()->GetAPICallResult(
+				    SteamAPICall_NumPlayersOnline,
+				    &NumberOfCurrentPlayers,
+				    sizeof(NumberOfCurrentPlayers_t),
+				    1107, &bFailed);
+				if (NumberOfCurrentPlayers.m_bSuccess) {
+					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				}
+			}
+
+			int num_online_players = steamOnlinePlayers;
+
 			std::string online_players_text = std::string("Players online: ") + std::to_string(num_online_players);
 			auto online_players = main_menu_frame->addField("online_players", 32);
 			online_players->setFont(smallfont_outline);
