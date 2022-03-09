@@ -77,6 +77,9 @@ struct CustomColors_t
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
 } hudColors;
 EnemyBarSettings_t enemyBarSettings;
+StatusEffectQueue_t statusEffectQueue(0);
+std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
+std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allSustainedSpells;
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue);
 
@@ -1340,21 +1343,386 @@ void Player::HUD_t::updateUINavigation()
 }
 Frame* statusEffectFrame = nullptr;
 const int statusEffectFrameWidth = 200;
-struct StatusEffectQueueEntry
-{
-	real_t animateX = 0.0;
-	real_t animateY = 0.0;
-	int animateSetpointX = 0;
-	int animateSetpointY = 0;
-	int animateStartX = 0;
-	int animateStartY = 0;
-	Uint32 lastUpdateTick = 0;
-};
 
-struct StatusEffectQueue
+bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 {
-	std::queue<int> effectQueue;
-} statusEffectQueue;
+	if ( spellID >= 0 && spellID < NUM_SPELLS )
+	{
+		effectID = spellID + kSpellEffectOffset;
+	}
+	if ( (effectID >= 0 && effectID < NUMEFFECTS) || effectID == kEffectBread || effectID >= kSpellEffectOffset )
+	{
+		for ( auto& q : effectQueue )
+		{
+			if ( effectID == q.effect )
+			{
+				return false;
+			}
+		}
+	}
+
+	effectQueue.push_back(StatusEffectQueueEntry_t(effectID));
+	effectQueue.back().pos.x = kBaseEffectPosX;
+	effectQueue.back().pos.y = kBaseEffectPosY;
+	notificationQueue.push_back(StatusEffectQueueEntry_t(effectID));
+	notificationQueue.back().pos.x = kBaseEffectPosX;
+	notificationQueue.back().pos.y = kBaseEffectPosY;
+	requiresAnimUpdate = true;
+	return true;
+}
+
+std::string StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(StatusEffectQueue_t::EffectDefinitionEntry_t& entry, int variation)
+{
+	if ( entry.imgPath == "" )
+	{
+		node_t* spellImageNode = nullptr;
+		int spellID = entry.useSpellIDForImg;
+		if ( variation >= 0 )
+		{
+			int spellID = entry.useSpellIDForImgVariations[std::min(variation, (int)entry.useSpellIDForImgVariations.size() - 1)];
+		}
+		if ( spellID >= 0 && spellID < NUM_SPELLS )
+		{
+			if ( arachnophobia_filter )
+			{
+				if ( spellID == SPELL_SPIDER_FORM )
+				{
+					spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_FORM);
+				}
+				else if ( spellID == SPELL_SPRAY_WEB )
+				{
+					spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_WEB);
+				}
+				else
+				{
+					spellImageNode = list_Node(&items[SPELL_ITEM].images, spellID);
+				}
+			}
+			else
+			{
+				spellImageNode = list_Node(&items[SPELL_ITEM].images, spellID);
+			}
+		}
+		if ( spellImageNode )
+		{
+			string_t* string = (string_t*)spellImageNode->element;
+			if ( string )
+			{
+				return string->data;
+			}
+		}
+		return "images/system/null.png";
+	}
+	return entry.imgPath;
+}
+
+void StatusEffectQueueEntry_t::setAnimatePosition(int destx, int desty, int destw, int desth)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = destw;
+	animateSetpointH = desth;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void StatusEffectQueueEntry_t::setAnimatePosition(int destx, int desty)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = 0;
+	animateSetpointH = 0;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void StatusEffectQueueEntry_t::animate()
+{
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0);
+	animateX += setpointDiffX;
+	animateY += setpointDiffY;
+	animateX = std::min(1.0, animateX);
+	animateY = std::min(1.0, animateY);
+
+	int destX = animateSetpointX - animateStartX;
+	int destY = animateSetpointY - animateStartY;
+
+	pos.x = animateStartX + destX * animateX;
+	pos.y = animateStartY + destY * animateY;
+}
+
+void StatusEffectQueue_t::loadStatusEffectsJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/status_effects.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/status_effects.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/status_effects.json");
+		inputPath.append("/data/status_effects.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				StatusEffectDefinitions_t::reset();
+				if ( d.HasMember("sustained_effects") )
+				{
+					for ( rapidjson::Value::ConstMemberIterator itr = d["sustained_effects"].MemberBegin();
+						itr != d["sustained_effects"].MemberEnd(); ++itr )
+					{
+						int id = -1;
+						if ( itr->value.HasMember("id") )
+						{
+							id = itr->value["id"].GetInt();
+						}
+						int spellID = -1;
+						if ( itr->value.HasMember("spell_id") )
+						{
+							spellID = itr->value["spell_id"].GetInt();
+						}
+						StatusEffectDefinitions_t::allSustainedSpells.insert(
+							std::make_pair(spellID, EffectDefinitionEntry_t()));
+						auto& entry = StatusEffectDefinitions_t::allSustainedSpells[spellID];
+						entry.effect_id = id;
+						entry.spell_id = spellID;
+						entry.internal_name = itr->name.GetString();
+						entry.name = itr->value["name"].GetString();
+						entry.desc = itr->value["desc"].GetString();
+						entry.imgPath = itr->value["img_path"].GetString();
+						entry.useSpellIDForImg = itr->value["img_from_spell_id"].GetInt();
+						entry.neverDisplay = false;
+						if ( itr->value.HasMember("never_display") )
+						{
+							entry.neverDisplay = itr->value["never_display"].GetBool();
+						}
+					}
+				}
+				if ( d.HasMember("effects") )
+				{
+					for ( rapidjson::Value::ConstMemberIterator itr = d["effects"].MemberBegin();
+						itr != d["effects"].MemberEnd(); ++itr )
+					{
+						int id = -1;
+						if ( itr->value.HasMember("id") )
+						{
+							id = itr->value["id"].GetInt();
+						}
+						StatusEffectDefinitions_t::allEffects.insert(
+							std::make_pair(id, EffectDefinitionEntry_t()));
+						auto& entry = StatusEffectDefinitions_t::allEffects[id];
+						entry.effect_id = id;
+						if ( itr->value["name"].IsArray() )
+						{
+							for ( auto arr = itr->value["name"].Begin();
+								arr != itr->value["name"].End(); ++arr )
+							{
+								entry.nameVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.name = itr->value["name"].GetString();
+						}
+						if ( itr->value["desc"].IsArray() )
+						{
+							for ( auto arr = itr->value["desc"].Begin();
+								arr != itr->value["desc"].End(); ++arr )
+							{
+								entry.descVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.desc = itr->value["desc"].GetString();
+						}
+						entry.internal_name = itr->name.GetString();
+						entry.imgPath = itr->value["img_path"].GetString();
+						if ( itr->value["img_from_spell_id"].IsArray() )
+						{
+							for ( auto arr = itr->value["img_from_spell_id"].Begin();
+								arr != itr->value["img_from_spell_id"].End(); ++arr )
+							{
+								entry.useSpellIDForImgVariations.push_back(arr->GetInt());
+							}
+						}
+						else
+						{
+							entry.useSpellIDForImg = itr->value["img_from_spell_id"].GetInt();
+						}
+						entry.neverDisplay = false;
+						if ( itr->value.HasMember("never_display") )
+						{
+							entry.neverDisplay = itr->value["never_display"].GetBool();
+						}
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
+}
+
+const int StatusEffectQueue_t::kBaseEffectPosX = 300;
+const int StatusEffectQueue_t::kBaseEffectPosY = 0;
+
+int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread )
+	{
+		return 64;
+	}
+	return 32;
+}
+int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread )
+	{
+		return 60;
+	}
+	return 32;
+}
+
+void StatusEffectQueueEntry_t::animateNotification()
+{
+	real_t animspeed = 5.0;
+	switch ( notificationState )
+	{
+		case STATE_1:
+			if ( notificationStateInit == STATE_1 )
+			{
+				notificationStateInit = STATE_2;
+				setAnimatePosition(
+					StatusEffectQueue_t::kBaseEffectPosX - 50,
+					StatusEffectQueue_t::kBaseEffectPosY - 50,
+					getEffectSpriteNormalWidth(), getEffectSpriteNormalHeight());
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_2;
+			}
+			animspeed = 10.0;
+			break;
+		case STATE_2:
+			if ( notificationStateInit == STATE_2 )
+			{
+				notificationStateInit = STATE_3;
+				setAnimatePosition(
+					StatusEffectQueue_t::kBaseEffectPosX - 50 - getEffectSpriteNormalWidth() / 2,
+					StatusEffectQueue_t::kBaseEffectPosY - 50 - getEffectSpriteNormalHeight() / 2,
+					getEffectSpriteNormalWidth() * 2,
+					getEffectSpriteNormalHeight() * 2);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_3;
+			}
+			animspeed = 20.0;
+			break;
+		case STATE_3:
+			if ( notificationStateInit == STATE_3 )
+			{
+				notificationStateInit = STATE_4;
+				setAnimatePosition(
+					StatusEffectQueue_t::kBaseEffectPosX - 50 - getEffectSpriteNormalWidth() / 4,
+					StatusEffectQueue_t::kBaseEffectPosY - 50 - getEffectSpriteNormalHeight() / 4,
+					getEffectSpriteNormalWidth() * 1.5,
+					getEffectSpriteNormalHeight() * 1.5);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_4;
+			}
+			animspeed = 20.0;
+			break;
+		case STATE_4:
+			if ( notificationStateInit == STATE_4 )
+			{
+				notificationStateInit = STATE_END;
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( notificationTargetPosition.x != animateSetpointX
+				|| notificationTargetPosition.y != animateSetpointY
+				|| notificationTargetPosition.w != animateSetpointW
+				|| notificationTargetPosition.h != animateSetpointH )
+			{
+				// re update this as our target moved.
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_END;
+			}
+			animspeed = 10.0;
+			break;
+		case STATE_END:
+			return;
+		default:
+			break;
+	}
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
+	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - animateW)) / (animspeed);
+	real_t setpointDiffH = fpsScale * std::max(.1, (1.0 - animateH)) / (animspeed);
+	animateX += setpointDiffX;
+	animateY += setpointDiffY;
+	animateX = std::min(1.0, animateX);
+	animateY = std::min(1.0, animateY);
+	animateW += setpointDiffW;
+	animateH += setpointDiffH;
+	animateW = std::min(1.0, animateW);
+	animateH = std::min(1.0, animateH);
+
+	int destX = animateSetpointX - animateStartX;
+	int destY = animateSetpointY - animateStartY;
+	int destW = animateSetpointW - animateStartW;
+	int destH = animateSetpointH - animateStartH;
+
+	pos.x = animateStartX + destX * animateX;
+	pos.y = animateStartY + destY * animateY;
+	pos.w = animateStartW + destW * animateW;
+	pos.h = animateStartH + destH * animateH;
+}
 
 void createStatusEffectQueue(const int player)
 {
@@ -1366,10 +1734,442 @@ void createStatusEffectQueue(const int player)
 	statusEffectFrame->setSize(SDL_Rect{ 0, 0, statusEffectFrameWidth, 0 });
 	statusEffectFrame->addImage(SDL_Rect{ 0, 0, statusEffectFrameWidth, 200 }, 0xFFFFFFFF, "images/system/white.png", "tmpbg");
 }
+const int moveBreadStatusEffectX = -64;
+const int moveBreadStatusEffectY = 0;
 
-void updateStatusEffectInQueue(int effect)
+void StatusEffectQueue_t::updateAllQueuedEffects()
 {
+	if ( keystatus[SDL_SCANCODE_H] )
+	{
+		keystatus[SDL_SCANCODE_H] = 0;
+		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		{
+			loadStatusEffectsJSON();
+		}
+		else
+		{
+			if ( effectQueue.size() > 0 )
+			{
+				deleteEffect(effectQueue.back().effect);
+			}
+		}
+	}
 
+	std::unordered_set<int> effectSet;
+	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+	{
+		effectSet.insert((*it).effect);
+	}
+
+	for ( int i = 0; i <= NUMEFFECTS; ++i )
+	{
+		if ( i == NUMEFFECTS )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+				{
+					insertEffect(SPELL_SHADOW_TAG, -1);
+				}
+			}
+		}
+		if ( stats[player]->EFFECTS[i] )
+		{
+			if ( effectSet.find(i) == effectSet.end() )
+			{
+				insertEffect(i, -1);
+			}
+		}
+		else
+		{
+			if ( effectSet.find(i) != effectSet.end() )
+			{
+				//deleteEffect(i);
+			}
+		}
+	}
+	if ( channeledSpells[player].first )
+	{
+		int count = 0; //This is just for debugging purposes.
+		std::unordered_set<int> spellsActive;
+		for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
+		{
+			spell_t* spell = (spell_t*)node->element;
+			if ( !spell )
+			{
+				break;
+			}
+			int effectID = spell->ID + kSpellEffectOffset;
+			if ( effectSet.find(effectID) == effectSet.end() )
+			{
+				insertEffect(-1, spell->ID);
+			}
+			spellsActive.insert(effectID);
+		}
+		for ( auto& eff : effectSet )
+		{
+			if ( eff >= kSpellEffectOffset )
+			{
+				if ( spellsActive.find(eff) == spellsActive.end() )
+				{
+					// effect has expired.
+					deleteEffect(eff);
+				}
+			}
+		}
+	}
+	else
+	{
+		for ( auto& eff : effectSet )
+		{
+			if ( eff >= kSpellEffectOffset )
+			{
+				// effect has expired.
+				deleteEffect(eff);
+			}
+		}
+	}
+
+	int movex = 0;
+	int movey = 36;
+	const int spacing = 36;
+	int numEffectsOnLine = 0;
+
+	if ( notificationQueue.size() >= 1 )
+	{
+		auto& notif = notificationQueue.front();
+		notif.animateNotification();
+		updateEntry(notif);
+		if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_END )
+		{
+			notificationQueue.pop_front();
+		}
+	}
+
+	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); )
+	{
+		auto& q = (*it);
+
+		bool existsInNotifications = false;
+		for ( auto it2 = notificationQueue.begin(); it2 != notificationQueue.end(); ++it2 )
+		{
+			if ( (*it2).effect == q.effect )
+			{
+				existsInNotifications = true;
+				break;
+			}
+		}
+		if ( !existsInNotifications )
+		{
+			updateEntry(q);
+		}
+		int animatePosX = movex;
+		int animatePosY = movey;
+		if ( q.effect == kEffectBread )
+		{
+			animatePosX = moveBreadStatusEffectX;
+			animatePosY = moveBreadStatusEffectY;
+		}
+
+		if ( requiresAnimUpdate )
+		{
+			q.setAnimatePosition(animatePosX, animatePosY);
+		}
+		for ( auto it2 = notificationQueue.begin(); it2 != notificationQueue.end(); ++it2 )
+		{
+			if ( (*it2).effect == q.effect )
+			{
+				(*it2).notificationTargetPosition.x = animatePosX;
+				(*it2).notificationTargetPosition.y = animatePosY;
+				break;
+			}
+		}
+
+		++it;
+
+		q.animate();
+		if ( q.effect == kEffectBread )
+		{
+			continue; // don't advance position as this is fixed
+		}
+		movex += spacing;
+		++numEffectsOnLine;
+		if ( numEffectsOnLine >= effectsPerRow )
+		{
+			numEffectsOnLine = 0;
+			movex = 0;
+			movey -= spacing;
+		}
+	}
+
+	requiresAnimUpdate = false;
+}
+
+//SDL_Surface* getStatusEffectSprite(int player, int effect)
+//{
+//	node_t* effectImageNode = nullptr;
+//	SDL_Surface** sprite = nullptr;
+//	std::string tooltipText = "";
+//
+//	switch ( effect )
+//	{
+//		case EFF_SLOW:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
+//			tooltipText = language[3384];
+//			break;
+//		case EFF_BLEEDING:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
+//			tooltipText = language[3385];
+//			break;
+//		case EFF_ASLEEP:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
+//			tooltipText = language[3386];
+//			break;
+//		case EFF_CONFUSED:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
+//			tooltipText = language[3387];
+//			break;
+//		case EFF_PACIFY:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
+//			tooltipText = language[3388];
+//			break;
+//		case EFF_FEAR:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FEAR);
+//			tooltipText = language[3861];
+//			break;
+//		case EFF_WEBBED:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPRAY_WEB);
+//			tooltipText = language[3859];
+//			break;
+//		case EFF_MAGICAMPLIFY:
+//		{
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_AMPLIFY_MAGIC);
+//			node_t* node = channeledSpells[player].first;
+//			for ( ; node != nullptr; node = node->next )
+//			{
+//				spell_t* spell = (spell_t*)node->element;
+//				if ( spell && spell->ID == SPELL_AMPLIFY_MAGIC )
+//				{
+//					effectImageNode = nullptr;
+//					break;
+//				}
+//			}
+//			tooltipText = language[3860];
+//			break;
+//		}
+//		case EFF_TROLLS_BLOOD:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
+//			tooltipText = language[3492];
+//			break;
+//		case EFF_FLUTTER:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FLUTTER);
+//			tooltipText = language[3766];
+//			break;
+//		case EFF_FAST:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
+//			tooltipText = language[3493];
+//			break;
+//		case EFF_SHAPESHIFT:
+//			if ( players[player] && players[player]->entity )
+//			{
+//				switch ( players[player]->entity->effectShapeshift )
+//				{
+//					case RAT:
+//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
+//						tooltipText = language[3854];
+//						break;
+//					case TROLL:
+//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLL_FORM);
+//						tooltipText = language[3855];
+//						break;
+//					case SPIDER:
+//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPIDER_FORM);
+//						tooltipText = language[3856];
+//						break;
+//					case CREATURE_IMP:
+//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_IMP_FORM);
+//						tooltipText = language[3857];
+//						break;
+//					default:
+//						break;
+//				}
+//			}
+//			break;
+//		case EFF_VAMPIRICAURA:
+//		{
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
+//			tooltipText = language[3389];
+//			node_t* node = channeledSpells[player].first;
+//			for ( ; node != nullptr; node = node->next )
+//			{
+//				spell_t* spell = (spell_t*)node->element;
+//				if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+//				{
+//					tooltipText = language[3390];
+//					break;
+//				}
+//			}
+//			break;
+//		}
+//		case EFF_PARALYZED:
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
+//			tooltipText = language[3391];
+//			break;
+//		case EFF_DRUNK:
+//			if ( effect_drunk_bmp )
+//			{
+//				sprite = &effect_drunk_bmp;
+//			}
+//			tooltipText = language[3392];
+//			break;
+//		case EFF_POLYMORPH:
+//			if ( effect_polymorph_bmp )
+//			{
+//				sprite = &effect_polymorph_bmp;
+//			}
+//			tooltipText = language[3399];
+//			break;
+//		case EFF_WITHDRAWAL:
+//			if ( effect_hungover_bmp )
+//			{
+//				sprite = &effect_hungover_bmp;
+//			}
+//			tooltipText = language[3393];
+//			break;
+//		case EFF_POTION_STR:
+//			sprite = &str_bmp64u;
+//			tooltipText = language[3394];
+//			break;
+//		case EFF_LEVITATING:
+//		{
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
+//			node_t* node = channeledSpells[player].first;
+//			for ( ; node != nullptr; node = node->next )
+//			{
+//				spell_t* spell = (spell_t*)node->element;
+//				if ( spell && spell->ID == SPELL_LEVITATION )
+//				{
+//					effectImageNode = nullptr;
+//					break;
+//				}
+//			}
+//			tooltipText = language[3395];
+//			break;
+//		}
+//		case EFF_INVISIBLE:
+//		{
+//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
+//			node_t* node = channeledSpells[player].first;
+//			for ( ; node != nullptr; node = node->next )
+//			{
+//				spell_t* spell = (spell_t*)node->element;
+//				if ( spell && spell->ID == SPELL_INVISIBILITY )
+//				{
+//					effectImageNode = nullptr;
+//					break;
+//				}
+//			}
+//			tooltipText = language[3396];
+//			break;
+//		}
+//		default:
+//			effectImageNode = nullptr;
+//			tooltipText = "";
+//			break;
+//	}
+//
+//	if ( effectImageNode || sprite )
+//	{
+//		if ( !sprite )
+//		{
+//			sprite = (SDL_Surface**)effectImageNode->element;
+//		}
+//	}
+//
+//	if ( sprite )
+//	{
+//		return *sprite;
+//	}
+//	return nullptr;
+//}
+
+void StatusEffectQueue_t::updateEntry(StatusEffectQueueEntry_t& entry)
+{
+	SDL_Surface* sprite = nullptr;
+	if ( entry.effect == StatusEffectQueue_t::kEffectBread )
+	{
+		if ( auto imgGet = Image::get("images/ui/HUD/HUD_Hunger_00.png") )
+		{
+			sprite = const_cast<SDL_Surface*>(imgGet->getSurf());
+		}
+	}
+	else
+	{
+		if ( entry.effect >= kSpellEffectOffset )
+		{
+			int effectID = entry.effect - kSpellEffectOffset;
+			if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+			{
+				if ( auto imgGet = Image::get(StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getSustainedSpell(effectID)).c_str()) )
+				{
+					sprite = const_cast<SDL_Surface*>(imgGet->getSurf());
+				}
+			}
+		}
+		else
+		{
+			int effectID = entry.effect;
+			if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+			{
+				if ( auto imgGet = Image::get(StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID)).c_str()) )
+				{
+					sprite = const_cast<SDL_Surface*>(imgGet->getSurf());
+				}
+			}
+		}
+	}
+	if ( sprite )
+	{
+		SDL_Rect src{ 0, 0, sprite->w, sprite->h };
+
+		int baseX = 300;
+		int baseY = 300;
+		SDL_Rect dest{ 0, 0, entry.pos.w, entry.pos.h };
+		dest.x = baseX + entry.pos.x;
+		dest.y = baseX + entry.pos.y;
+
+		const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+
+		TempTexture* tex = new TempTexture();
+		tex->load(sprite, true, true);
+		tex->bind();
+
+		Image::drawSurface(sprite, &src, dest, viewport, 0xFFFFFFFF);
+
+		if ( tex )
+		{
+			delete tex;
+			tex = nullptr;
+		}
+
+		if ( entry.notificationState == StatusEffectQueueEntry_t::STATE_2
+			|| entry.notificationState == StatusEffectQueueEntry_t::STATE_3 )
+		{
+			auto textGet = Text::get("Effect!", "fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0);
+			if ( textGet )
+			{
+				SDL_Rect textDest;
+				textDest.w = (int)textGet->getWidth();
+				textDest.h = (int)textGet->getHeight();
+				textDest.x = dest.x + dest.w / 2 - textDest.w / 2;
+				textDest.y = dest.y + dest.h / 2 - (int)textDest.h - 16;
+				textGet->draw(SDL_Rect{ 0, 0, 0, 0 },
+					textDest,
+					viewport);
+			}
+		}
+	}
 }
 
 void updateStatusEffectQueue(const int player)
@@ -1383,6 +2183,42 @@ void updateStatusEffectQueue(const int player)
 	mainFramePos.x = hud_t.hudFrame->getSize().w / 2;
 	mainFramePos.y = hud_t.hudFrame->getSize().h / 2;
 	statusEffectFrame->setSize(mainFramePos);
+
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		{
+			statusEffectQueue.insertEffect(StatusEffectQueue_t::kEffectBread, -1);
+		}
+		else
+		{
+			std::vector<int> randEffects{ EFF_WITHDRAWAL, EFF_POTION_STR, EFF_POLYMORPH, EFF_DRUNK, EFF_PARALYZED, EFF_TROLLS_BLOOD,
+				EFF_SLOW, EFF_BLEEDING, EFF_PACIFY, EFF_FEAR, EFF_WEBBED, EFF_MAGICAMPLIFY };
+			int effectToAdd = -1;
+			for ( auto v : randEffects )
+			{
+				effectToAdd = v;
+				for ( auto it = statusEffectQueue.effectQueue.begin(); it != statusEffectQueue.effectQueue.end(); ++it )
+				{
+					if ( v == (*it).effect )
+					{
+						effectToAdd = -1;
+						break;
+					}
+				}
+				if ( effectToAdd != -1 )
+				{
+					break;
+				}
+			}
+			if ( effectToAdd >= 0 )
+			{
+				statusEffectQueue.insertEffect(effectToAdd, -1);
+			}
+		}
+		keystatus[SDL_SCANCODE_G] = 0;
+	}
+	statusEffectQueue.updateAllQueuedEffects();
 }
 
 void createWorldTooltipPrompts(const int player)
@@ -9178,7 +10014,7 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	auto equippedIconFrame = slotFrame->addFrame("equipped icon frame");
 	equippedIconFrame->setSize(slotSize);
 	equippedIconFrame->setHollow(true);
-	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
+	SDL_Rect equippedImgPos = { 2, slotSize.h - 18, 18, 18 };
 	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
 
 	auto brokenIconFrame = slotFrame->addFrame("broken icon frame");
