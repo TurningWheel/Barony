@@ -3624,7 +3624,8 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset();
-				settingsBindings(0, 0, {Setting::Type::Dropdown, "player_dropdown_button"});
+				settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+				    {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
 				soundCancel();
@@ -3675,7 +3676,8 @@ namespace MainMenu {
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int player_index = (int)(entry.name.back() - '1');
-						settingsBindings(player_index, bound_device, {Setting::Type::Dropdown, "player_dropdown_button"});
+						settingsBindings(player_index, bound_device,
+						    {Setting::Type::Dropdown, "player_dropdown_button"});
 					});
 			});
 
@@ -3696,7 +3698,8 @@ namespace MainMenu {
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int device_index = getDeviceIndexForName(entry.text.c_str());
-						settingsBindings(bound_player, device_index, {Setting::Type::Dropdown, "device_dropdown_button"});
+						settingsBindings(bound_player, device_index,
+						    {Setting::Type::Dropdown, "device_dropdown_button"});
 					});
 			});
 
@@ -4070,7 +4073,11 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
-			[](Button&){allSettings.bindings = Bindings::load(); settingsBindings(0, 0, {Setting::Type::Dropdown, "player_dropdown_button"});});
+			[](Button&){
+			    allSettings.bindings = Bindings::load();
+			    settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+			        {Setting::Type::Dropdown, "player_dropdown_button"});
+			    });
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
