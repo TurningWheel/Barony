@@ -603,6 +603,10 @@ const char* itemUseString(int player, const Item& item)
 //TODO UI: PORT
 void updateAppraisalItemBox(const int player)
 {
+    if (players[player]->shootmode) {
+        return;
+    }
+
 	SDL_Rect pos;
 	Item* item;
 

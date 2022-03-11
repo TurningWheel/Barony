@@ -2458,11 +2458,17 @@ void Player::MessageZone_t::processChatbox()
 	const int entryPaddingY = 4;
 
 	int currentY = messageDrawDescending ?
-	    messageBoxSize.y : messageBoxSize.h;
+	    0 : messageBoxSize.h;
 
 	int index = 0;
-	for ( Message *current : notification_messages )
+
+	auto it = notification_messages.begin();
+	auto end = notification_messages.end();
+	auto rit = notification_messages.rbegin();
+	auto rend = notification_messages.rend();
+	for ( ; messageDrawDescending ? rit != rend : it != end; ++it, ++rit )
 	{
+	    Message* current = messageDrawDescending ? *rit : *it;
 		if (index >= MESSAGE_MAX_ENTRIES)
 		{
 			break;
