@@ -13,6 +13,7 @@
 #include "../game.hpp"
 #include "../menu.hpp"
 #include "../interface/interface.hpp"
+#include "../interface/consolecommand.hpp"
 #include "../stat.hpp"
 #include "../player.hpp"
 #include "../draw.hpp"
@@ -2419,7 +2420,7 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualHeight() });
 
 	const int leftAlignedPaddingX = 8;
-	const int leftAlignedBottomY = 236;
+	const int leftAlignedBottomY = 200;
 	const int topAlignedPaddingX = 8;
 	const int topAlignedPaddingY = 8;
 	SDL_Rect messageboxTopAlignedPos{
@@ -2433,7 +2434,8 @@ void Player::MessageZone_t::processChatbox()
 	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX,
 		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
 
-	const bool useLeftAligned = !player.shootmode;
+    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
+	const bool useLeftAligned = !(*cvar_top_aligned) || !player.shootmode;
 
 	Frame* messageBoxFrame = chatFrame->findFrame("message box");
 	if (gamePaused) {
