@@ -2387,17 +2387,14 @@ void Player::MessageZone_t::createChatbox()
 		chatMainFrame->setOwner(player.playernum);
 		chatMainFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 			players[player.playernum]->camera_virtualy1(),
-			Frame::virtualScreenX,
-			Frame::virtualScreenY });
+			players[player.playernum]->camera_virtualWidth(),
+			players[player.playernum]->camera_virtualHeight() });
 		chatFrame = chatMainFrame;
 		Frame* messages = chatMainFrame->addFrame("message box");
 		messages->setHollow(true);
-		messages->setSize(SDL_Rect{ 224, 16, 
-			players[player.playernum]->camera_virtualWidth() - 224,
-			players[player.playernum]->camera_virtualHeight() });
 
 		static const char* bigfont = "fonts/pixelmix.ttf#16#2";
-		SDL_Rect entryPos{ 0, 0, messages->getSize().w, 0 };
+		SDL_Rect entryPos{ 0, 0, messages->getSize().w, messages->getSize().h };
 		for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
 		{
 			char msgName[32];
@@ -2412,8 +2409,7 @@ void Player::MessageZone_t::createChatbox()
 
 void Player::MessageZone_t::processChatbox()
 {
-	if ( !chatFrame )
-	{
+	if (!chatFrame) {
 		createChatbox();
 	}
 
@@ -2422,14 +2418,22 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	const int leftAlignedBottomY = 484;
-	const int topAlignedBottomY = 216;
-	int topAlignedPaddingX = 224;
-	chatboxTopAlignedPos = SDL_Rect{ topAlignedPaddingX, 0,
-		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
-		players[player.playernum]->camera_virtualHeight() };
-	chatboxLeftAlignedPos = SDL_Rect{ 8, 0, players[player.playernum]->camera_virtualWidth() / 2,
-		players[player.playernum]->camera_virtualHeight() };
+	const int leftAlignedPaddingX = 8;
+	const int leftAlignedBottomY = 236;
+	const int topAlignedPaddingX = 8;
+	const int topAlignedPaddingY = 8;
+	SDL_Rect messageboxTopAlignedPos{
+	    topAlignedPaddingX,
+	    topAlignedPaddingY,
+		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX,
+		players[player.playernum]->camera_virtualHeight() - topAlignedPaddingY };
+	SDL_Rect messageboxLeftAlignedPos{
+	    leftAlignedPaddingX,
+	    0,
+	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX,
+		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
+
+	const bool useLeftAligned = !player.shootmode;
 
 	Frame* messageBoxFrame = chatFrame->findFrame("message box");
 	if (gamePaused) {
@@ -2437,54 +2441,29 @@ void Player::MessageZone_t::processChatbox()
 	} else {
 		messageBoxFrame->setDisabled(false);
 	}
-	SDL_Rect messageBoxSize = messageBoxFrame->getSize();
-	if ( player.shootmode && messageBoxSize.x == chatboxTopAlignedPos.x )
-	{
-		chatboxMovedResize = true;
-	}
-	else if ( !player.shootmode && messageBoxSize.x == chatboxLeftAlignedPos.x )
-	{
-		chatboxMovedResize = true;
-	}
+	SDL_Rect messageBoxSize = useLeftAligned ?
+	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
 
-	if ( chatboxMovedResize )
-	{
-		if ( player.shootmode )
-		{
-			messageBoxSize = chatboxLeftAlignedPos;
-		}
-		else
-		{
-			messageBoxSize = chatboxTopAlignedPos;
-		}
-	}
-
-	char msgName[32];
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
 	{
+	    char msgName[32];
 		snprintf(msgName, sizeof(msgName), "message %d", i);
 		if ( auto entry = messageBoxFrame->findField(msgName) )
 		{
 			entry->setDisabled(true);
-			SDL_Rect entryPos = entry->getSize();
-			entryPos.w = messageBoxSize.w;
-			entry->setSize(entryPos);
 		}
 	}
 
+	const bool messageDrawDescending = !useLeftAligned;
 	const int entryPaddingY = 4;
-	int currentY = (messageBoxSize.h);
+
+	int currentY = messageDrawDescending ?
+	    messageBoxSize.y : messageBoxSize.h;
+
 	int index = 0;
-
-	bool messageDrawDescending = false;
-	if ( messageDrawDescending )
-	{
-		currentY = 4;
-	}
-
 	for ( Message *current : notification_messages )
 	{
-		if ( index >= MESSAGE_MAX_ENTRIES )
+		if (index >= MESSAGE_MAX_ENTRIES)
 		{
 			break;
 		}
@@ -2492,6 +2471,7 @@ void Player::MessageZone_t::processChatbox()
 		Uint32 color = current->text->color ^ mainsurface->format->Amask;
 		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
 
+	    char msgName[32];
 		snprintf(msgName, sizeof(msgName), "message %d", index);
 		if ( auto entry = messageBoxFrame->findField(msgName) )
 		{
@@ -2499,73 +2479,34 @@ void Player::MessageZone_t::processChatbox()
 			entry->setColor(color);
 			entry->setText(current->text->data);
 
-			if ( current->requiresResize )
-			{
-				entry->reflowTextToFit(0);
-				//current->requiresResize = false;
-			}
-
+            Font* fontGet = Font::get(entry->getFont());
 			Text* textGet = Text::get(entry->getText(), entry->getFont(),
 				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
-			if ( !messageDrawDescending )
-			{
-				currentY -= textGet->getHeight();
+
+			int w = textGet->getWidth();
+			int h = textGet->getHeight() * current->text->lines;
+
+			if (!messageDrawDescending) {
+				currentY -= h;
+				currentY -= entryPaddingY;
 			}
 
 			SDL_Rect pos = entry->getSize();
-			pos.h = textGet->getHeight();
+			pos.x = 0;
 			pos.y = currentY;
-			if ( messageDrawDescending )
-			{
-				currentY += textGet->getHeight();
-			}
+			pos.w = w;
+			pos.h = h;
 			entry->setSize(pos);
-			if ( pos.y < 0 )
-			{
-				entry->setDisabled(true); // clipping outside of frame
-			}
-		}
 
-		if ( messageDrawDescending )
-		{
-			currentY += entryPaddingY;
-		}
-		else
-		{
-			currentY -= entryPaddingY;
+			if (messageDrawDescending) {
+				currentY += h;
+			    currentY += entryPaddingY;
+			}
 		}
 		++index;
 	}
 
-	if ( player.shootmode )
-	{
-		messageBoxSize.y = leftAlignedBottomY - messageBoxSize.h;
-	}
-	else
-	{
-		messageBoxSize.y = topAlignedBottomY - messageBoxSize.h;
-	}
-	if ( messageDrawDescending )
-	{
-		messageBoxSize.y = 4;
-	}
 	messageBoxFrame->setSize(messageBoxSize);
-	/*int newHeight = messageBoxSize.h - currentY;
-	messageBoxSize.h = newHeight;
-
-	if ( currentY < 0 )
-	{
-		for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
-		{
-			snprintf(msgName, sizeof(msgName), "message %d", i);
-			if ( auto entry = messageBoxFrame->findField(msgName) )
-			{
-				SDL_Rect pos = entry->getSize();
-				pos.y -= currentY;
-				entry->setSize(pos);
-			}
-		}
-	}*/
 }
 
 static Frame* createMinimap(int player) {

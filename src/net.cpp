@@ -357,31 +357,13 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 
 	if ( localPlayer )
 	{
-	    bool end = false;
-	    char *ptr = str;
-	    char buf[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH];
-	    do {
-	        int c;
-	        for (c = 0; ptr[c] != '\n'; ++c) {
-	            if (ptr[c] == '\0') {
-	                end = true;
-	                break;
-	            }
-	        }
-	        ptr[c] = '\0';
-		    printlog("%s\n", ptr);
-		    snprintf(buf, sizeof(buf), "%s", messageSanitizePercentSign(ptr, nullptr).c_str());
-		    newString(&messages, color, buf);
-		    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
-		    {
-			    list_RemoveNode(messages.first);
-		    }
-		    if ( !disable_messages )
-		    {
-			    players[player]->messageZone.addMessage(color, buf);
-		    }
-		    ptr += c + 1;
-		} while (!end);
+	    printlog("%s\n", str);
+	    newString(&messages, color, str);
+	    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
+	    {
+		    list_RemoveNode(messages.first);
+	    }
+	    players[player]->messageZone.addMessage(color, str);
 	}
 	else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{

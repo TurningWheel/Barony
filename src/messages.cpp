@@ -26,33 +26,18 @@ void messageDeconstructor(void* data)
 	}
 }
 
-void Player::MessageZone_t::addMessage(Uint32 color, char* content, ...)
+//Add a message to notification_messages (the list of messages) -- and pop off (and delete) and excess messages.
+void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
 {
-	//Add a message to notification_messages (the list of messages) -- and pop off (and delete) and excess messages.
+    if (content == nullptr) {
+        return;
+    }
 
 	//Find out how many lines we need.
-	int lines_needed = 0;
-	{
-		va_list argptr;
-		int c, i;
-		char str[1024] = { 0 };
-
-		if (content != NULL)
-		{
-			va_start(argptr, content);
-			i = vsnprintf(str, 1023, content, argptr);
-			va_end(argptr);
-			for (c = 0; c < i; c++)
-			{
-				if (str[c] == 10 || c == i - 1)   //Line feed
-				{
-					lines_needed++;
-				}
-			}
-		}
-		else
-		{
-			lines_needed = 0;
+	int lines_needed = 1;
+	for (int c = 0; content[c] != '\0'; ++c) {
+		if (content[c] == '\n') {
+			++lines_needed;
 		}
 	}
 
@@ -65,7 +50,8 @@ void Player::MessageZone_t::addMessage(Uint32 color, char* content, ...)
 
 	if (getMaxTotalLines() > 0)
 	{
-		for (auto last_message = notification_messages.rbegin(); last_message != notification_messages.rend(); last_message++) {
+		for (auto last_message = notification_messages.rbegin();
+		    last_message != notification_messages.rend(); last_message++) {
 			if ( line_count < (getMaxTotalLines() - lines_needed) )
 			{
 				break;
@@ -98,75 +84,52 @@ void Player::MessageZone_t::addMessage(Uint32 color, char* content, ...)
 	}
 	//Assign the message's text.
 	{
-		va_list argptr;
-		int c, i;
-		char str[1024] = { 0 };
-
 		if ((new_message->text = (string_t*) malloc(sizeof(string_t))) == NULL)
 		{
 			printlog( "[addMessage()] Failed to allocate memory for new string!\n" );
 			exit(1); //Should it do this?
 		}
 
-		new_message->requiresResize = true;
 		new_message->text->color = color;
 		new_message->text->lines = 1;
-		if (content != NULL)
+
+		char str[ADD_MESSAGE_BUFFER_LENGTH] = { '\0' };
+
+		int additionalCharacters = 0;
+		strncpy(str, messageSanitizePercentSign(content, &additionalCharacters).c_str(), sizeof(str) - 1);
+		int i = strlen(content) + additionalCharacters;
+
+		new_message->text->data = (char*) malloc(sizeof(char) * (i + 1));
+		if (new_message->text->data == NULL)
 		{
-			//Format the content.
-			va_start(argptr, content);
-			i = vsnprintf(str, 1023, content, argptr);
-			va_end(argptr);
-
-			int additionalCharacters = 0;
-			strncpy(str, messageSanitizePercentSign(str, &additionalCharacters).c_str(), ADD_MESSAGE_BUFFER_LENGTH - 1);
-			i += additionalCharacters;
-
-			new_message->text->data = (char*) malloc(sizeof(char) * (i + 1));
-			if (new_message->text->data == NULL)
-			{
-				printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
-				exit(1);
-			}
-			memset(new_message->text->data, 0, sizeof(char) * (i + 1));
-			for (c = 0; c < i; ++c)
-			{
-				if (str[c] == 10)   //Line feed
-				{
-					new_message->text->lines++;
-				}
-			}
-			strncpy(new_message->text->data, str, i);
-
-			//Make sure we don't exceed the maximum number of lines permissible.
-			if (line_count + new_message->text->lines > getMaxTotalLines() )
-			{
-				//Remove lines until we have an okay amount.
-				while (line_count + new_message->text->lines > getMaxTotalLines() )
-				{
-					for (c = 0; c < i; ++c)
-					{
-						if (str[c] == 10)   //Line feed
-						{
-							new_message->text->lines--; //First let it know it's now one less line.
-							char* temp = new_message->text->data; //Point to the message's text so we don't lose it.
-							new_message->text->data = (char*) malloc(sizeof(char) * ((i + 1) - c));  //Give the message itself new text.
-							if (new_message->text->data == NULL)   //Error checking.
-							{
-								printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
-								exit(1);
-							}
-							memmove(new_message->text->data, temp + (c - 1), strlen(temp)); //Now copy the text into the message's new allocated memory, sans the first line.
-							free(temp); //Free the old memory so we don't memleak.
-							break;
-						}
-					}
-				}
-			}
+			printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
+			exit(1);
 		}
-		else
+		memset(new_message->text->data, 0, sizeof(char) * (i + 1));
+		new_message->text->lines = lines_needed;
+		strncpy(new_message->text->data, str, i);
+
+	    //Make sure we don't exceed the maximum number of lines permissible.
+		//Remove lines until we have an okay amount.
+		while (line_count + new_message->text->lines > getMaxTotalLines() )
 		{
-			new_message->text->data = NULL;
+			for (int c = 0; c < i; ++c)
+			{
+				if (str[c] == '\n')   //Line feed
+				{
+					new_message->text->lines--; //First let it know it's now one less line.
+					char* temp = new_message->text->data; //Point to the message's text so we don't lose it.
+					new_message->text->data = (char*) malloc(sizeof(char) * ((i + 1) - c));  //Give the message itself new text.
+					if (new_message->text->data == NULL)   //Error checking.
+					{
+						printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
+						exit(1);
+					}
+					memmove(new_message->text->data, temp + (c - 1), strlen(temp)); //Now copy the text into the message's new allocated memory, sans the first line.
+					free(temp); //Free the old memory so we don't memleak.
+					break;
+				}
+			}
 		}
 	}
 	new_message->time_displayed = 0; //Currently been displayed for 0 seconds.

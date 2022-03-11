@@ -2269,7 +2269,7 @@ namespace MainMenu {
 		);
 		auto rock_background = window->addImage(
 			SDL_Rect{18, 54, 942, 658},
-			makeColor(127, 127, 127, 251),
+			makeColor(255, 255, 255, 255),
 			"*images/ui/Main Menus/Settings/Settings_BGTile00.png",
 			"rock_background"
 		);
@@ -3065,7 +3065,7 @@ namespace MainMenu {
 			});
 		auto rock_background = settings_subwindow->addImage(
 			settings_subwindow->getActualSize(),
-			makeColor(127, 127, 127, 251),
+			makeColor(255, 255, 255, 255),
 			"*images/ui/Main Menus/Settings/Settings_BGTile00.png",
 			"background"
 		);
@@ -3273,7 +3273,7 @@ namespace MainMenu {
 
 		auto rocks = subwindow->addImage(
 			subwindow->getActualSize(),
-			makeColor(127, 127, 127, 251),
+			makeColor(255, 255, 255, 255),
 			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks00.png",
 			"background"
 		);
@@ -4240,14 +4240,97 @@ bind_failed:
 
 /******************************************************************************/
 
+    static void createLeaderboards() {
+        assert(main_menu_frame);
+
+        auto dimmer = main_menu_frame->addFrame("dimmer");
+        dimmer->setSize(SDL_Rect{
+            0, 0,
+            Frame::virtualScreenX,
+            Frame::virtualScreenY
+            });
+        dimmer->setBorder(0);
+        dimmer->setColor(makeColor(0, 0, 0, 63));
+
+        auto window = dimmer->addFrame("leaderboards");
+        window->setSize(SDL_Rect{
+            (Frame::virtualScreenX - 992) / 2,
+            (Frame::virtualScreenY - 720) / 2,
+            992,
+            720});
+        window->setActualSize(SDL_Rect{0, 0, 992, 720});
+        window->setBorder(0);
+        window->setColor(0);
+
+		auto back = createBackWidget(window, [](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			auto leaderboards = buttons->findButton("LEADERBOARDS"); assert(leaderboards);
+			leaderboards->select();
+			});
+		back->select();
+
+        auto background = window->addImage(
+			SDL_Rect{10, 0, 972, 714},
+			0xffffffff,
+			"*images/ui/Main Menus/Leaderboards/AA_Window_03.png",
+			"background"
+		    );
+
+		auto timber = window->addImage(
+			SDL_Rect{0, 138, 992, 582},
+			0xffffffff,
+			"*images/ui/Main Menus/Leaderboards/AA_Window_Overlay_00.png",
+		    "timber"
+		    );
+		timber->ontop = true;
+
+		auto banner = window->addField("banner", 128);
+		banner->setFont(banner_font);
+		banner->setText("LEADERBOARDS");
+		banner->setSize(SDL_Rect{330, 30, 338, 24});
+		banner->setJustify(Field::justify_t::CENTER);
+
+		auto tab_left = window->addButton("tab_left");
+		tab_left->setSize(SDL_Rect{40, 72, 38, 58});
+		tab_left->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_LArrow_00.png");
+		tab_left->setColor(makeColor(255, 255, 255, 255));
+		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
+		tab_left->setGlyphPosition(Widget::glyph_position_t::BOTTOM_LEFT);
+
+		auto tab_right = window->addButton("tab_right");
+		tab_right->setSize(SDL_Rect{40, 72, 38, 58});
+		tab_right->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_RArrow_00.png");
+		tab_right->setColor(makeColor(255, 255, 255, 255));
+		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
+		tab_right->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+
+        const char* tabs[][2] = {
+            {"local", "Your Top 30\nLocal"},
+            {"lan", "Your Top 30\nLAN"},
+            {"friends", "Friends\nLeaderboard"},
+            {"world", "World\nLeaderboard"},
+        };
+
+        //for (auto)
+    }
+
+/******************************************************************************/
+
 	static void archivesLeaderboards(Button& button) {
 		soundActivate();
-
-		// test cutscene
-		if (0) {
+		if (1) {
+		    // test cutscene
 		    destroyMainMenu();
 		    createDummyMainMenu();
 		    beginFade(MainMenu::FadeDestination::EndingHuman);
+		} else {
+		    createLeaderboards();
 		}
 	}
 
@@ -8130,7 +8213,7 @@ bind_failed:
 
 		auto rock_background = subwindow->addImage(
 			subwindow->getActualSize(),
-			makeColor(127, 127, 127, 251),
+			makeColor(255, 255, 255, 255),
 			"*images/ui/Main Menus/Play/HallofTrials/HoT_Background_00.png",
 			"rock_background"
 		);
@@ -10156,6 +10239,7 @@ bind_failed:
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setHideSelectors(false);
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
@@ -10173,10 +10257,10 @@ bind_failed:
 			button->setWidgetUp(options[back].name);
 			button->setWidgetBack("BACK TO MAIN MENU");
 			y += button->getSize().h;
-			y += 4;
+			//y += 4;
 			if (c == num_options - 2) {
 				y += button->getSize().h;
-				y += 4;
+				//y += 4;
 			}
 		}
 		y += 16;
@@ -11164,6 +11248,7 @@ bind_failed:
 			button->setText(options[c].name);
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
+			button->setHideSelectors(false);
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setTextColor(makeColor(180, 180, 180, 255));
@@ -11183,7 +11268,7 @@ bind_failed:
 			    button->setWidgetBack("back_button");
 			}
 			y += button->getSize().h;
-			y += 4;
+			//y += 4;
 		}
 		y += 16;
 

@@ -48,7 +48,6 @@ typedef struct Message
 	 * To ensure everything always works right. I guess. Maybe not necessary. Whatever. There are much bigger problems to worry about.
 	 */
 	Sint16 alpha;
-	bool requiresResize;
 } Message;
 
 /*
