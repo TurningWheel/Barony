@@ -1,6 +1,7 @@
 // GameUI.cpp
 
 #include "GameUI.hpp"
+#include "MainMenu.hpp"
 #include "Frame.hpp"
 #include "Image.hpp"
 #include "Field.hpp"
@@ -2026,7 +2027,18 @@ void Player::HUD_t::updateActionPrompts()
 		}
 	}
 
-	if ( !bShowActionPrompts )
+	static ConsoleVariable<bool> disableActionPrompts(
+	    "/disableprompts", false, "Disable action prompts in HUD");
+
+	int playercount = 0;
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+	    if (!client_disconnected[c] && players[c]->isLocalPlayer()) {
+	        ++playercount;
+	    }
+	}
+
+	if ( !bShowActionPrompts || playercount > 2 ||
+	    (playercount == 2 && MainMenu::vertical_splitscreen) || *disableActionPrompts )
 	{
 		actionPromptsFrame->setDisabled(true);
 		return;
@@ -2419,10 +2431,27 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
+	int playercount = 0;
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+	    if (!client_disconnected[c] && players[c]->isLocalPlayer()) {
+	        ++playercount;
+	    }
+	}
+
+	Frame* messageBoxFrame = chatFrame->findFrame("message box");
+	messageBoxFrame->setDisabled(gamePaused || (!player.shootmode && playercount > 2));
+	if (messageBoxFrame->isDisabled()) {
+		return;
+	}
+
+	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
+	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
+    bool useBigFont = playercount < 2 || (playercount == 2 && !MainMenu::vertical_splitscreen);
+
 	const int leftAlignedPaddingX = 8;
 	const int leftAlignedBottomY = 200;
 	const int topAlignedPaddingX = 8;
-	const int topAlignedPaddingY = 8;
+	const int topAlignedPaddingY = playercount > 2 ? 32 : 8;
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
 	    topAlignedPaddingY,
@@ -2435,14 +2464,8 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
 
     static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
-	const bool useLeftAligned = !(*cvar_top_aligned) || !player.shootmode;
+	const bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
 
-	Frame* messageBoxFrame = chatFrame->findFrame("message box");
-	if (gamePaused) {
-		messageBoxFrame->setDisabled(true);
-	} else {
-		messageBoxFrame->setDisabled(false);
-	}
 	SDL_Rect messageBoxSize = useLeftAligned ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
 
@@ -2457,7 +2480,7 @@ void Player::MessageZone_t::processChatbox()
 	}
 
 	const bool messageDrawDescending = !useLeftAligned;
-	const int entryPaddingY = 4;
+	const int entryPaddingY = playercount > 2 ? 0 : 4;
 
 	int currentY = messageDrawDescending ?
 	    0 : messageBoxSize.h;
@@ -2486,6 +2509,7 @@ void Player::MessageZone_t::processChatbox()
 			entry->setDisabled(false);
 			entry->setColor(color);
 			entry->setText(current->text->data);
+			entry->setFont(useBigFont ? bigfont : smallfont);
 
             Font* fontGet = Font::get(entry->getFont());
 			Text* textGet = Text::get(entry->getText(), entry->getFont(),
@@ -2534,21 +2558,30 @@ static Frame* createMinimap(int player) {
         });
 
     window->setTickCallback([](Widget& widget){
+        int playercount = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (!client_disconnected[c] && players[c]->isLocalPlayer()) {
+	            ++playercount;
+	        }
+	    }
+
+        bool reducedSize = playercount > 2 || (playercount == 2 && MainMenu::vertical_splitscreen);
+
         auto player = widget.getOwner();
         auto& minimap = players[player]->minimap;
         auto& input = Input::inputs[player];
         if (!gamePaused && !command && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
-            if (minimap.real_scale > 75) {
-                minimap.real_scale = 75;
+            if (minimap.real_scale > 75.0) {
+                minimap.real_scale = 75.0;
             }
-            else if (minimap.real_scale > 50) {
-                minimap.real_scale = 50;
+            else if (minimap.real_scale > 50.0) {
+                minimap.real_scale = 50.0;
             }
-            else if (minimap.real_scale > 25) {
-                minimap.real_scale = 25;
+            else if (minimap.real_scale > 25.0) {
+                minimap.real_scale = 25.0;
             }
             else {
-                minimap.real_scale = 100;
+                minimap.real_scale = reducedSize ? 75.0 : 100.0;
             }
         }
 
@@ -2572,8 +2605,10 @@ static Frame* createMinimap(int player) {
 
         real_t factor0 = 1.0 - sin(scale_ang);
         real_t factor1 = sin(scale_ang);
+        real_t scale_small = std::min(reducedSize ? 25.0 : 50.0, minimap.real_scale);
+        real_t scale_big = std::min(reducedSize ? 75.0 : 100.0, minimap.real_scale);
 
-        scale = factor0 * 50 + factor1 * minimap.real_scale;
+        scale = factor0 * scale_small + factor1 * scale_big;
 
         Frame* parent = players[player]->hud.hudFrame;
 
