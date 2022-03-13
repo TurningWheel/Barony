@@ -7942,26 +7942,22 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 	}
 }
 
-bool Entity::playerRequiresBloodToSustain()
+bool playerRequiresBloodToSustain(int player)
 {
-	if ( behavior != &actPlayer )
-	{
-		return false;
-	}
-	if ( !stats[skill[2]] )
+	if ( !stats[player] )
 	{
 		return false;
 	}
 
-	if ( stats[skill[2]]->type == VAMPIRE )
+	if ( stats[player]->type == VAMPIRE )
 	{
 		return true;
 	}
-	if ( stats[skill[2]]->EFFECTS[EFF_VAMPIRICAURA] || client_classes[skill[2]] == CLASS_ACCURSED )
+	if ( stats[player]->EFFECTS[EFF_VAMPIRICAURA] || client_classes[player] == CLASS_ACCURSED )
 	{
 		return true;
 	}
-	if ( stats[skill[2]]->playerRace == VAMPIRE && stats[skill[2]]->appearance == 0 )
+	if ( stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
 	{
 		return true;
 	}

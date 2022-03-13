@@ -871,7 +871,7 @@ void drawStatus(int player)
 		pos.y = y2 - 160;
 		pos.w = 64;
 		pos.h = 64;
-		if ( players[player] && players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
+		if ( playerRequiresBloodToSustain(player) )
 		{
 			drawImageScaled(hunger_blood_bmp, NULL, &pos);
 		}
@@ -2340,7 +2340,7 @@ void drawStatusNew(const int player)
 		pos.y = y2 - 160 + 64 + 2 - 82 + 4;
 		pos.w = 64;
 		pos.h = 64;
-		if ( players[player] && players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
+		if ( playerRequiresBloodToSustain(player) )
 		{
 			drawImageScaled(hunger_blood_bmp, NULL, &pos);
 		}

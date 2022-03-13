@@ -1280,21 +1280,23 @@ void Entity::effectTimes()
 						break;
 					case EFF_VOMITING:
 						messagePlayer(player, MESSAGE_STATUS, language[609]);
-						if ( myStats->HUNGER > 1500 )
+						if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED) )
 						{
 							messagePlayer(player, MESSAGE_STATUS, language[610]);
 						}
-						else if ( myStats->HUNGER > 150 && myStats->HUNGER <= 250 )
+						else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK)
+							&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY) )
 						{
 							messagePlayer(player, MESSAGE_STATUS, language[611]);
 							playSoundPlayer(player, 32, 128);
 						}
-						else if ( myStats->HUNGER > 50 && myStats->HUNGER <= 150 )
+						else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) 
+							&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK) )
 						{
 							messagePlayer(player, MESSAGE_STATUS, language[612]);
 							playSoundPlayer(player, 32, 128);
 						}
-						else if ( myStats->HUNGER <= 50 )
+						else if ( myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) )
 						{
 							myStats->HUNGER = 50;
 							messagePlayer(player, MESSAGE_STATUS, language[613]);
@@ -3207,17 +3209,10 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 0 && !playerAutomaton )
 		{
 			myStats->HUNGER--;
-			Sint32 noLongerFull = 1500;
-			Sint32 youFeelHungry = 250;
-			Sint32 youFeelWeak = 150;
-			Sint32 youFeelFaint = 50;
-
-			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
-			{
-				youFeelHungry = 100;
-				youFeelWeak = 50;
-				youFeelFaint = 25;
-			}
+			Sint32 noLongerFull = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED);
+			Sint32 youFeelHungry = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY);
+			Sint32 youFeelWeak = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK);
+			Sint32 youFeelFaint = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING);
 
 			if ( myStats->HUNGER == noLongerFull )
 			{
@@ -4885,15 +4880,15 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( entitystats->HUNGER >= 1500 )
+		if ( entitystats->HUNGER >= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_OVERSATIATED) )
 		{
 			STR--;
 		}
-		if ( entitystats->HUNGER <= 150 )
+		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_WEAK) )
 		{
 			STR--;
 		}
-		if ( entitystats->HUNGER <= 50 )
+		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
 		{
 			STR--;
 		}
@@ -5088,15 +5083,15 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	}
 	else if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( entitystats->HUNGER >= 1500 )
+		if ( entitystats->HUNGER >= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_OVERSATIATED) )
 		{
 			DEX--;
 		}
-		if ( entitystats->HUNGER <= 150 )
+		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_WEAK) )
 		{
 			DEX--;
 		}
-		if ( entitystats->HUNGER <= 50 )
+		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
 		{
 			DEX--;
 		}
@@ -5345,7 +5340,7 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( entitystats->HUNGER <= 50 )
+		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
 		{
 			INT--;
 		}
@@ -5461,7 +5456,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( entitystats->HUNGER <= 50 )
+		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
 		{
 			PER--;
 		}
@@ -9697,13 +9692,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						for ( c = 0; c < MAXPLAYERS; ++c )
 						{
-							if ( players[c] && players[c]->entity )
+							if ( playerRequiresBloodToSustain(c) )
 							{
-								if ( players[c]->entity->playerRequiresBloodToSustain() )
-								{
-									tryBloodVial = true;
-									break;
-								}
+								tryBloodVial = true;
+								break;
 							}
 						}
 					}
@@ -19060,4 +19052,49 @@ bool Entity::bEntityHighlightedForPlayer(const int player) const
 		}
 	}
 	return false;
+}
+
+int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerIntervals hungerInterval)
+{
+	bool isInsectoidPlayer = false;
+	if ( player >= 0 )
+	{
+		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			isInsectoidPlayer = true;
+		}
+	}
+	else if ( my && my->behavior == &actPlayer && myStats && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+	{
+		isInsectoidPlayer = true;
+	}
+	else if ( myStats )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( myStats == stats[i] )
+			{
+				if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+				{
+					isInsectoidPlayer = true;
+				}
+				break;
+			}
+		}
+	}
+
+	switch ( hungerInterval )
+	{
+		case HUNGER_INTERVAL_OVERSATIATED:
+			return 1500;
+		case HUNGER_INTERVAL_HUNGRY:
+			return isInsectoidPlayer ? 250 : 100;
+		case HUNGER_INTERVAL_WEAK:
+			return isInsectoidPlayer ? 150 : 50;
+		case HUNGER_INTERVAL_STARVING:
+			return isInsectoidPlayer ? 50 : 25;
+		default:
+			break;
+	}
+	return 1000;
 }
