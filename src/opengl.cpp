@@ -1253,7 +1253,9 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent && parent->behavior == &actItem && (multiplayer != CLIENT || (multiplayer == CLIENT && parent->itemReceivedDetailsFromServer != 0)) )
+		if ( parent && parent->behavior == &actItem 
+			&& (multiplayer != CLIENT 
+				|| (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))) )
 		{
 			Item* item = newItemFromEntity(uidToEntity(entity->parent));
 			if ( !item )
