@@ -3662,4 +3662,9 @@ namespace ConsoleCommands {
 		GlyphHelper.renderGlyphsToPNGs();
 		messagePlayer(clientnum, MESSAGE_MISC, "Re-rendering keyboard glyphs...");
 	});
+
+	static ConsoleCommand ccmd_loadstatusfx("/loadstatusfx", "", []CCMD{
+		StatusEffectQueue_t::loadStatusEffectsJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded status_effects.json");
+	});
 }

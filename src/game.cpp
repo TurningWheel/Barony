@@ -4461,6 +4461,7 @@ void ingameHud()
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
+		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->GUI.handleModuleNavigation(false);
 		players[player]->inventoryUI.updateCursor();

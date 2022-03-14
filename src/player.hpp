@@ -712,7 +712,8 @@ public:
 			MODULE_SKILLS_LIST,
 			MODULE_BOOK_VIEW,
 			MODULE_HOTBAR,
-			MODULE_SPELLS
+			MODULE_SPELLS,
+			MODULE_STATUS_EFFECTS
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -1385,6 +1386,7 @@ public:
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
 		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
+		void updateStatusEffectTooltip();
 		void updateCursor();
 		void updateActionPrompts();
 		void updateWorldTooltipPrompts();

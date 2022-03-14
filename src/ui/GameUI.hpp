@@ -57,6 +57,8 @@ struct StatusEffectQueueEntry_t
 	SDL_Rect notificationTargetPosition{ 0, 0, 32, 32 };
 	Uint32 lastUpdateTick = 0;
 	int effect = -1;
+	Uint32 customVariable = 0;
+	bool lowDuration = false;
 	enum NotificationStates_t : int
 	{
 		STATE_1,
@@ -80,25 +82,38 @@ struct StatusEffectQueueEntry_t
 	int getEffectSpriteNormalWidth();
 	int getEffectSpriteNormalHeight();
 	void animate();
-	void animateNotification();
+	void animateNotification(int player);
 	void setAnimatePosition(int destx, int desty);
 	void setAnimatePosition(int destx, int desty, int destw, int desth);
+	real_t getStatusEffectLargestScaling(int player);
+	real_t getStatusEffectMidScaling(int player);
 };
 
 struct StatusEffectQueue_t
 {
+	Frame* statusEffectFrame = nullptr;
+	Frame* statusEffectTooltipFrame = nullptr;
 	int player = -1;
 	std::deque<StatusEffectQueueEntry_t> effectQueue;
 	std::deque<StatusEffectQueueEntry_t> notificationQueue;
-	static const int kBaseEffectPosX;
-	static const int kBaseEffectPosY;
+	int getBaseEffectPosX();
+	int getBaseEffectPosY();
 	static const int kEffectBread = -2;
+	static const int kEffectBloodHunger = -3;
 	static const int kSpellEffectOffset = 10000;
+	real_t tooltipOpacitySetpoint = 100;
+	real_t tooltipOpacityAnimate = 1.0;
+	Uint32 tooltipDeselectedTick = 0;
+	int tooltipShowingEffectID = -1;
+	int tooltipShowingEffectVariable = -1;
 	bool insertEffect(int effectID, int spellID);
 	int effectsPerRow = 4;
 	bool requiresAnimUpdate = false;
 	void updateAllQueuedEffects();
-	void updateEntry(StatusEffectQueueEntry_t& entry); // does drawing for now
+	void animateStatusEffectTooltip(bool showTooltip);
+	bool doStatusEffectTooltip(StatusEffectQueueEntry_t& entry, SDL_Rect pos);
+	void updateEntryImage(StatusEffectQueueEntry_t& entry, Frame::image_t* img);
+	void createStatusEffectTooltip();
 	void resetQueue()
 	{
 		requiresAnimUpdate = true;
@@ -131,13 +146,22 @@ struct StatusEffectQueue_t
 		std::vector<std::string> nameVariations;
 		std::vector<std::string> descVariations;
 		std::vector<int> useSpellIDForImgVariations;
+		std::vector<std::string> imgPathVariations;
 		int useSpellIDForImg = -1;
 		bool neverDisplay = false;
+		int sustainedSpellID = -1;
+		std::string& getName(int variation = -1);
+		std::string& getDesc(int variation = -1);
+		int tooltipWidth = 200;
 	};
 	struct StatusEffectDefinitions_t
 	{
 		static std::unordered_map<int, EffectDefinitionEntry_t> allEffects;
 		static std::unordered_map<int, EffectDefinitionEntry_t> allSustainedSpells;
+		static Uint32 tooltipHeadingColor;
+		static Uint32 tooltipDescColor;
+		static Uint32 notificationTextColor;
+		static std::string notificationFont;
 		static void reset()
 		{
 			allEffects.clear();
@@ -162,4 +186,4 @@ struct StatusEffectQueue_t
 		static std::string getEffectImgPath(EffectDefinitionEntry_t& entry, int variation = -1);
 	};
 };
-extern StatusEffectQueue_t statusEffectQueue;
+extern StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS];
