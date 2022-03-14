@@ -19088,11 +19088,11 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		case HUNGER_INTERVAL_OVERSATIATED:
 			return 1500;
 		case HUNGER_INTERVAL_HUNGRY:
-			return isInsectoidPlayer ? 250 : 100;
+			return !isInsectoidPlayer ? 250 : 100;
 		case HUNGER_INTERVAL_WEAK:
-			return isInsectoidPlayer ? 150 : 50;
+			return !isInsectoidPlayer ? 150 : 50;
 		case HUNGER_INTERVAL_STARVING:
-			return isInsectoidPlayer ? 50 : 25;
+			return !isInsectoidPlayer ? 50 : 25;
 		default:
 			break;
 	}
