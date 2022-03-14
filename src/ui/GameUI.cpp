@@ -15607,15 +15607,49 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		{
 			if ( (enemy_statusEffects1 & (1 << i)) != 0 )
 			{
-				if ( SDL_Surface* srcSurf = getStatusEffectSprite(entity,
-					(entity ? entity->getStats() : nullptr), i, playernum) )
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(i) )
 				{
-					bool blinking = false;
-					if ( (enemy_statusEffectsLowDuration1 & (1 << i)) != 0 )
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
 					{
-						blinking = true;
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+								case RAT:
+									variation = 0;
+									break;
+								case SPIDER:
+									variation = 1;
+									break;
+								case TROLL:
+									variation = 2;
+									break;
+								case CREATURE_IMP:
+									variation = 3;
+									break;
+								default:
+									break;
+							}
+						}
 					}
-					statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(i);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration1 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
 				}
 			}
 		}
@@ -15626,15 +15660,50 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		{
 			if ( (enemy_statusEffects2 & (1 << i)) != 0 )
 			{
-				if ( SDL_Surface* srcSurf = getStatusEffectSprite(entity,
-					(entity ? entity->getStats() : nullptr), i + 32, playernum) )
+				int effectID = i + 32;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
 				{
-					bool blinking = false;
-					if ( (enemy_statusEffectsLowDuration2 & (1 << i)) != 0 )
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
 					{
-						blinking = true;
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+								case RAT:
+									variation = 0;
+									break;
+								case SPIDER:
+									variation = 1;
+									break;
+								case TROLL:
+									variation = 2;
+									break;
+								case CREATURE_IMP:
+									variation = 3;
+									break;
+								default:
+									break;
+							}
+						}
 					}
-					statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration2 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
 				}
 			}
 		}

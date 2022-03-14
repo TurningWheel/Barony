@@ -290,7 +290,6 @@ void updateMagicGUI();
 extern SDL_Surface* identifyGUI_img;
 
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
-SDL_Surface* getStatusEffectSprite(Entity* entity, Stat* stat, const int effect, const int player);
 
 enum GUICurrentType
 {
