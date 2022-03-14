@@ -77,9 +77,13 @@ struct CustomColors_t
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
 } hudColors;
 EnemyBarSettings_t enemyBarSettings;
-StatusEffectQueue_t statusEffectQueue(0);
+StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3} };
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allSustainedSpells;
+Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipDescColor = 0xFFFFFFFF;
+Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipHeadingColor = 0xFFFFFFFF;
+Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::notificationTextColor = 0xFFFFFFFF;
+std::string StatusEffectQueue_t::StatusEffectDefinitions_t::notificationFont = "fonts/pixelmix.ttf#16#2";
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue);
 
@@ -90,6 +94,18 @@ void capitalizeString(std::string& str)
 	if ( letter >= 'a' && letter <= 'z' )
 	{
 		str[0] = toupper(letter);
+	}
+}
+
+void uppercaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'a' && letter <= 'z' )
+		{
+			letter = toupper(letter);
+		}
 	}
 }
 
@@ -1341,17 +1357,32 @@ void Player::HUD_t::updateUINavigation()
 		}
 	}
 }
-Frame* statusEffectFrame = nullptr;
-const int statusEffectFrameWidth = 200;
 
 bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 {
 	if ( spellID >= 0 && spellID < NUM_SPELLS )
 	{
 		effectID = spellID + kSpellEffectOffset;
+		if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+		{
+			if ( StatusEffectDefinitions_t::getSustainedSpell(effectID).neverDisplay )
+			{
+				return false;
+			}
+		}
 	}
-	if ( (effectID >= 0 && effectID < NUMEFFECTS) || effectID == kEffectBread || effectID >= kSpellEffectOffset )
+	if ( (effectID >= 0 && effectID < NUMEFFECTS) 
+		|| effectID == kEffectBread 
+		|| effectID == kEffectBloodHunger
+		|| effectID >= kSpellEffectOffset )
 	{
+		if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+		{
+			if ( StatusEffectDefinitions_t::getEffect(effectID).neverDisplay )
+			{
+				return false;
+			}
+		}
 		for ( auto& q : effectQueue )
 		{
 			if ( effectID == q.effect )
@@ -1362,11 +1393,15 @@ bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 	}
 
 	effectQueue.push_back(StatusEffectQueueEntry_t(effectID));
-	effectQueue.back().pos.x = kBaseEffectPosX;
-	effectQueue.back().pos.y = kBaseEffectPosY;
+	effectQueue.back().pos.x = getBaseEffectPosX();
+	effectQueue.back().pos.y = getBaseEffectPosY();
 	notificationQueue.push_back(StatusEffectQueueEntry_t(effectID));
-	notificationQueue.back().pos.x = kBaseEffectPosX;
-	notificationQueue.back().pos.y = kBaseEffectPosY;
+	notificationQueue.back().pos.x = getBaseEffectPosX();
+	notificationQueue.back().pos.y = getBaseEffectPosY();
+
+	// fall back if notificationTargetPosition doesn't have an effect to go to.
+	notificationQueue.back().notificationTargetPosition.x = 0;
+	notificationQueue.back().notificationTargetPosition.y = statusEffectFrame->getSize().h - notificationQueue.back().notificationTargetPosition.h;
 	requiresAnimUpdate = true;
 	return true;
 }
@@ -1375,11 +1410,15 @@ std::string StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(Sta
 {
 	if ( entry.imgPath == "" )
 	{
+		if ( entry.imgPathVariations.size() > 0 && variation >= 0 )
+		{
+			return entry.imgPathVariations[std::min(variation, (int)entry.imgPathVariations.size() - 1)];
+		}
 		node_t* spellImageNode = nullptr;
 		int spellID = entry.useSpellIDForImg;
 		if ( variation >= 0 )
 		{
-			int spellID = entry.useSpellIDForImgVariations[std::min(variation, (int)entry.useSpellIDForImgVariations.size() - 1)];
+			spellID = entry.useSpellIDForImgVariations[std::min(variation, (int)entry.useSpellIDForImgVariations.size() - 1)];
 		}
 		if ( spellID >= 0 && spellID < NUM_SPELLS )
 		{
@@ -1411,7 +1450,11 @@ std::string StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(Sta
 				return string->data;
 			}
 		}
-		return "images/system/null.png";
+		return "images/sprites/null.png";
+	}
+	if ( entry.imgPath == "" )
+	{
+		return "images/sprites/null.png";
 	}
 	return entry.imgPath;
 }
@@ -1451,8 +1494,8 @@ void StatusEffectQueueEntry_t::setAnimatePosition(int destx, int desty)
 void StatusEffectQueueEntry_t::animate()
 {
 	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0);
-	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0);
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0 / 4.0);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0 / 4.0);
 	animateX += setpointDiffX;
 	animateY += setpointDiffY;
 	animateX = std::min(1.0, animateX);
@@ -1498,6 +1541,42 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 			else
 			{
 				StatusEffectDefinitions_t::reset();
+				int defaultTooltipWidth = 200;
+				if ( d.HasMember("default_tooltip_width") )
+				{
+					defaultTooltipWidth = d["default_tooltip_width"].GetInt();
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("notification_text") )
+					{
+						StatusEffectDefinitions_t::notificationTextColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["notification_text"]["r"].GetInt(),
+							d["colors"]["notification_text"]["g"].GetInt(),
+							d["colors"]["notification_text"]["b"].GetInt(),
+							d["colors"]["notification_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("tooltip_desc_text") )
+					{
+						StatusEffectDefinitions_t::tooltipDescColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["tooltip_desc_text"]["r"].GetInt(),
+							d["colors"]["tooltip_desc_text"]["g"].GetInt(),
+							d["colors"]["tooltip_desc_text"]["b"].GetInt(),
+							d["colors"]["tooltip_desc_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("tooltip_heading_text") )
+					{
+						StatusEffectDefinitions_t::tooltipHeadingColor = SDL_MapRGBA(mainsurface->format,
+							d["colors"]["tooltip_heading_text"]["r"].GetInt(),
+							d["colors"]["tooltip_heading_text"]["g"].GetInt(),
+							d["colors"]["tooltip_heading_text"]["b"].GetInt(),
+							d["colors"]["tooltip_heading_text"]["a"].GetInt());
+					}
+				}
+				if ( d.HasMember("notification_font") )
+				{
+					StatusEffectDefinitions_t::notificationFont = d["notification_font"].GetString();
+				}
 				if ( d.HasMember("sustained_effects") )
 				{
 					for ( rapidjson::Value::ConstMemberIterator itr = d["sustained_effects"].MemberBegin();
@@ -1519,14 +1598,54 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 						entry.effect_id = id;
 						entry.spell_id = spellID;
 						entry.internal_name = itr->name.GetString();
-						entry.name = itr->value["name"].GetString();
-						entry.desc = itr->value["desc"].GetString();
+						if ( itr->value["name"].IsArray() )
+						{
+							for ( auto arr = itr->value["name"].Begin();
+								arr != itr->value["name"].End(); ++arr )
+							{
+								entry.nameVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.name = itr->value["name"].GetString();
+						}
+						std::string buf = itr->value["desc"].GetString();
+						entry.desc = "\x1E ";
+						int index = 0;
+						for ( auto s : buf )
+						{
+							if ( index == 0 && (buf[0] == '+' || buf[0] == '-') )
+							{
+								entry.desc = "";
+							}
+							entry.desc += s;
+							if ( s == '\n' )
+							{
+								if ( index + 1 < buf.size() )
+								{
+									if ( buf[index + 1] == '+' || buf[index + 1] == '-' )
+									{
+										// skip adding dot
+										++index;
+										continue;
+									}
+								}
+								entry.desc += "\x1E ";
+							}
+							++index;
+						}
 						entry.imgPath = itr->value["img_path"].GetString();
 						entry.useSpellIDForImg = itr->value["img_from_spell_id"].GetInt();
 						entry.neverDisplay = false;
 						if ( itr->value.HasMember("never_display") )
 						{
 							entry.neverDisplay = itr->value["never_display"].GetBool();
+						}
+						entry.tooltipWidth = defaultTooltipWidth;
+						if ( itr->value.HasMember("tooltip_width") )
+						{
+							entry.tooltipWidth = itr->value["tooltip_width"].GetInt();
 						}
 					}
 				}
@@ -1561,15 +1680,75 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 							for ( auto arr = itr->value["desc"].Begin();
 								arr != itr->value["desc"].End(); ++arr )
 							{
-								entry.descVariations.push_back(arr->GetString());
+								std::string buf = arr->GetString();
+								int index = 0;
+								std::string formattedStr = "\x1E ";
+								for ( auto s : buf )
+								{
+									if ( index == 0 && (buf[0] == '+' || buf[0] == '-') )
+									{
+										formattedStr = "";
+									}
+									formattedStr += s;
+									if ( s == '\n' )
+									{
+										if ( index + 1 < buf.size() )
+										{
+											if ( buf[index + 1] == '+' || buf[index + 1] == '-' )
+											{
+												// skip adding dot
+												++index;
+												continue;
+											}
+										}
+										formattedStr += "\x1E ";
+									}
+									++index;
+								}
+								entry.descVariations.push_back(formattedStr);
 							}
 						}
 						else
 						{
-							entry.desc = itr->value["desc"].GetString();
+							std::string buf = itr->value["desc"].GetString();
+							entry.desc = "\x1E ";
+							int index = 0;
+							for ( auto s : buf )
+							{
+								if ( index == 0 && (buf[0] == '+' || buf[0] == '-') )
+								{
+									entry.desc = "";
+								}
+								entry.desc += s;
+								if ( s == '\n' )
+								{
+									if ( index + 1 < buf.size() )
+									{
+										if ( buf[index + 1] == '+' || buf[index + 1] == '-' )
+										{
+											// skip adding dot
+											++index;
+											continue;
+										}
+									}
+									entry.desc += "\x1E ";
+								}
+								++index;
+							}
 						}
 						entry.internal_name = itr->name.GetString();
-						entry.imgPath = itr->value["img_path"].GetString();
+						if ( itr->value["img_path"].IsArray() )
+						{
+							for ( auto arr = itr->value["img_path"].Begin();
+								arr != itr->value["img_path"].End(); ++arr )
+							{
+								entry.imgPathVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.imgPath = itr->value["img_path"].GetString();
+						}
 						if ( itr->value["img_from_spell_id"].IsArray() )
 						{
 							for ( auto arr = itr->value["img_from_spell_id"].Begin();
@@ -1582,10 +1761,20 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 						{
 							entry.useSpellIDForImg = itr->value["img_from_spell_id"].GetInt();
 						}
+						entry.sustainedSpellID = -1;
+						if ( itr->value.HasMember("use_entry_for_sustained_spell") )
+						{
+							entry.sustainedSpellID = itr->value["use_entry_for_sustained_spell"].GetInt();
+						}
 						entry.neverDisplay = false;
 						if ( itr->value.HasMember("never_display") )
 						{
 							entry.neverDisplay = itr->value["never_display"].GetBool();
+						}
+						entry.tooltipWidth = defaultTooltipWidth;
+						if ( itr->value.HasMember("tooltip_width") )
+						{
+							entry.tooltipWidth = itr->value["tooltip_width"].GetInt();
 						}
 					}
 				}
@@ -1595,12 +1784,30 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 	}
 }
 
-const int StatusEffectQueue_t::kBaseEffectPosX = 300;
-const int StatusEffectQueue_t::kBaseEffectPosY = 0;
+int StatusEffectQueue_t::getBaseEffectPosX()
+{
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		return statusEffectFrame->getSize().w / 2 - 100;
+	}
+	return statusEffectFrame->getSize().w / 2 - 100;
+}
+int StatusEffectQueue_t::getBaseEffectPosY()
+{
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		return statusEffectFrame->getSize().h / 2;
+	}
+	return statusEffectFrame->getSize().h / 2 - 50;
+}
 
 int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 {
 	if ( effect == StatusEffectQueue_t::kEffectBread )
+	{
+		return 64;
+	}
+	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger )
 	{
 		return 64;
 	}
@@ -1612,12 +1819,46 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 	{
 		return 60;
 	}
+	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger )
+	{
+		return 64;
+	}
 	return 32;
 }
 
-void StatusEffectQueueEntry_t::animateNotification()
+int getStatusEffectMovementAmount(int player)
 {
-	real_t animspeed = 5.0;
+	int movementAmount = 50;
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		movementAmount = 25;
+	}
+	return movementAmount;
+}
+
+real_t StatusEffectQueueEntry_t::getStatusEffectLargestScaling(int player)
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread || effect == StatusEffectQueue_t::kEffectBloodHunger )
+	{
+		return 2.0;
+	}
+	return 3.0;
+}
+
+real_t StatusEffectQueueEntry_t::getStatusEffectMidScaling(int player)
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread || effect == StatusEffectQueue_t::kEffectBloodHunger )
+	{
+		return 1.5;
+	}
+	return 2.0;
+}
+
+void StatusEffectQueueEntry_t::animateNotification(int player)
+{
+	auto& statusEffectQueue = StatusEffectQueue[player];
+	real_t animspeed = 5.0 / 4;
+	const int movementAmount = getStatusEffectMovementAmount(player);
 	switch ( notificationState )
 	{
 		case STATE_1:
@@ -1625,47 +1866,47 @@ void StatusEffectQueueEntry_t::animateNotification()
 			{
 				notificationStateInit = STATE_2;
 				setAnimatePosition(
-					StatusEffectQueue_t::kBaseEffectPosX - 50,
-					StatusEffectQueue_t::kBaseEffectPosY - 50,
+					statusEffectQueue.getBaseEffectPosX() - movementAmount,
+					statusEffectQueue.getBaseEffectPosY() - movementAmount,
 					getEffectSpriteNormalWidth(), getEffectSpriteNormalHeight());
 			}
 			if ( animateX >= 1.0 )
 			{
 				notificationState = STATE_2;
 			}
-			animspeed = 10.0;
+			animspeed *= 2.0;
 			break;
 		case STATE_2:
 			if ( notificationStateInit == STATE_2 )
 			{
 				notificationStateInit = STATE_3;
 				setAnimatePosition(
-					StatusEffectQueue_t::kBaseEffectPosX - 50 - getEffectSpriteNormalWidth() / 2,
-					StatusEffectQueue_t::kBaseEffectPosY - 50 - getEffectSpriteNormalHeight() / 2,
-					getEffectSpriteNormalWidth() * 2,
-					getEffectSpriteNormalHeight() * 2);
+					statusEffectQueue.getBaseEffectPosX() - movementAmount - (getStatusEffectLargestScaling(player) - 1.0) * getEffectSpriteNormalWidth() / 2,
+					statusEffectQueue.getBaseEffectPosY() - movementAmount - (getStatusEffectLargestScaling(player) - 1.0) * getEffectSpriteNormalHeight() / 2,
+					getEffectSpriteNormalWidth() * getStatusEffectLargestScaling(player),
+					getEffectSpriteNormalHeight() * getStatusEffectLargestScaling(player));
 			}
 			if ( animateX >= 1.0 )
 			{
 				notificationState = STATE_3;
 			}
-			animspeed = 20.0;
+			animspeed *= 4.0;
 			break;
 		case STATE_3:
 			if ( notificationStateInit == STATE_3 )
 			{
 				notificationStateInit = STATE_4;
 				setAnimatePosition(
-					StatusEffectQueue_t::kBaseEffectPosX - 50 - getEffectSpriteNormalWidth() / 4,
-					StatusEffectQueue_t::kBaseEffectPosY - 50 - getEffectSpriteNormalHeight() / 4,
-					getEffectSpriteNormalWidth() * 1.5,
-					getEffectSpriteNormalHeight() * 1.5);
+					statusEffectQueue.getBaseEffectPosX() - movementAmount - (getStatusEffectMidScaling(player) - 1.0) * getEffectSpriteNormalWidth() / 2,
+					statusEffectQueue.getBaseEffectPosY() - movementAmount - (getStatusEffectMidScaling(player) - 1.0) * getEffectSpriteNormalHeight() / 2,
+					getEffectSpriteNormalWidth() * getStatusEffectMidScaling(player),
+					getEffectSpriteNormalHeight() * getStatusEffectMidScaling(player));
 			}
 			if ( animateX >= 1.0 )
 			{
 				notificationState = STATE_4;
 			}
-			animspeed = 20.0;
+			animspeed *= 4.0;
 			break;
 		case STATE_4:
 			if ( notificationStateInit == STATE_4 )
@@ -1691,7 +1932,7 @@ void StatusEffectQueueEntry_t::animateNotification()
 			{
 				notificationState = STATE_END;
 			}
-			animspeed = 10.0;
+			animspeed *= 2.0;
 			break;
 		case STATE_END:
 			return;
@@ -1726,39 +1967,437 @@ void StatusEffectQueueEntry_t::animateNotification()
 
 void createStatusEffectQueue(const int player)
 {
-	auto& hud_t = players[player]->hud;
-	statusEffectFrame = hud_t.hudFrame->addFrame("status effects");
-	statusEffectFrame->setHollow(true);
-	statusEffectFrame->setBorder(0);
-	statusEffectFrame->setOwner(player);
-	statusEffectFrame->setSize(SDL_Rect{ 0, 0, statusEffectFrameWidth, 0 });
-	statusEffectFrame->addImage(SDL_Rect{ 0, 0, statusEffectFrameWidth, 200 }, 0xFFFFFFFF, "images/system/white.png", "tmpbg");
-}
-const int moveBreadStatusEffectX = -64;
-const int moveBreadStatusEffectY = 0;
-
-void StatusEffectQueue_t::updateAllQueuedEffects()
-{
-	if ( keystatus[SDL_SCANCODE_H] )
+	auto& statusEffectQueue = StatusEffectQueue[player];
+	if ( statusEffectQueue.statusEffectFrame )
 	{
-		keystatus[SDL_SCANCODE_H] = 0;
-		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		return;
+	}
+	auto& hud_t = players[player]->hud;
+	statusEffectQueue.statusEffectFrame = hud_t.hudFrame->addFrame("status effects");
+	statusEffectQueue.statusEffectFrame->setHollow(true);
+	statusEffectQueue.statusEffectFrame->setBorder(0);
+	statusEffectQueue.statusEffectFrame->setOwner(player);
+	statusEffectQueue.statusEffectFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+	auto notif = statusEffectQueue.statusEffectFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "notification img");
+	notif->disabled = true;
+	auto notif_txt = statusEffectQueue.statusEffectFrame->addField("notification txt", 128);
+	//notif_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+	notif_txt->setFont("fonts/pixelmix.ttf#16#2");
+	notif_txt->setText("");
+	notif_txt->setDisabled(true);
+	notif_txt->setColor(makeColor(255, 255, 255, 255));
+	notif_txt->setVJustify(Field::justify_t::CENTER);
+	notif_txt->setHJustify(Field::justify_t::CENTER);
+
+	auto innerFrame = statusEffectQueue.statusEffectFrame->addFrame("effects");
+	innerFrame->setHollow(true);
+}
+const int breadStatusEffectWidth = 64;
+const int breadStatusEffectHeight = 60;
+
+std::string& StatusEffectQueue_t::EffectDefinitionEntry_t::getName(int variation)
+{
+	if ( variation >= 0 )
+	{
+		return nameVariations[std::min(variation, (int)nameVariations.size() - 1)];
+	}
+	return name;
+}
+
+std::string& StatusEffectQueue_t::EffectDefinitionEntry_t::getDesc(int variation)
+{
+	if ( variation >= 0 )
+	{
+		return descVariations[std::min(variation, (int)nameVariations.size() - 1)];
+	}
+	return desc;
+}
+
+void StatusEffectQueue_t::createStatusEffectTooltip()
+{
+	auto& tooltipFrame = statusEffectTooltipFrame;
+	if ( tooltipFrame )
+	{
+		return;
+	}
+	char name[32];
+	snprintf(name, sizeof(name), "player statusfx tooltip %d", player);
+	tooltipFrame = gui->addFrame(name);
+	tooltipFrame->setHollow(true);
+	tooltipFrame->setDisabled(true);
+	tooltipFrame->setInheritParentFrameOpacity(false);
+	tooltipFrame->setBorder(0);
+	tooltipFrame->setOwner(player);
+	tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+	{
+		Uint32 color = makeColor(255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+
+		auto heading_txt = tooltipFrame->addField("heading txt", 128);
+		heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		heading_txt->setText("");
+		heading_txt->setColor(makeColor(255, 255, 255, 255));
+		heading_txt->setVJustify(Field::justify_t::CENTER);
+		heading_txt->setHJustify(Field::justify_t::LEFT);
+
+		auto desc_txt = tooltipFrame->addField("desc txt", 1024);
+		desc_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		desc_txt->setText("");
+		desc_txt->setColor(makeColor(0, 192, 255, 255));
+		desc_txt->setVJustify(Field::justify_t::LEFT);
+		desc_txt->setHJustify(Field::justify_t::LEFT);
+	}
+}
+
+void Player::HUD_t::updateStatusEffectTooltip()
+{
+	StatusEffectQueue[player.playernum].createStatusEffectTooltip();
+}
+
+void StatusEffectQueue_t::animateStatusEffectTooltip(bool showTooltip)
+{
+	if ( !statusEffectTooltipFrame )
+	{
+		return;
+	}
+	auto tooltipFrame = statusEffectTooltipFrame;
+	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipOpacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipOpacitySetpoint == 0 )
 		{
-			loadStatusEffectsJSON();
+			if ( ticks - tooltipDeselectedTick > 5 )
+			{
+				real_t factor = 10.0;
+				real_t setpointDiff = fpsScale * std::max(.05, (tooltipOpacityAnimate)) / (factor);
+				tooltipOpacityAnimate -= setpointDiff;
+				tooltipOpacityAnimate = std::max(0.0, tooltipOpacityAnimate);
+			}
 		}
 		else
 		{
-			if ( effectQueue.size() > 0 )
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipOpacityAnimate)) / (1);
+			tooltipOpacityAnimate += setpointDiff;
+			tooltipOpacityAnimate = std::min(1.0, tooltipOpacityAnimate);
+		}
+		tooltipFrame->setOpacity(tooltipOpacityAnimate * 100);
+	}
+	else
+	{
+		tooltipFrame->setOpacity(tooltipOpacitySetpoint);
+	}
+
+	if ( players[player]->hud.hudFrame && players[player]->hud.hudFrame->isDisabled() )
+	{
+		tooltipFrame->setDisabled(true);
+	}
+
+	if ( tooltipFrame->isDisabled() || !showTooltip )
+	{
+		tooltipShowingEffectID = -1;
+		tooltipShowingEffectVariable = -1;
+		return;
+	}
+
+	tooltipOpacitySetpoint = 0;
+	tooltipOpacityAnimate = 1.0;
+	tooltipFrame->setDisabled(false);
+	tooltipFrame->setOpacity(100.0);
+	tooltipDeselectedTick = ticks;
+}
+
+bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry, SDL_Rect pos)
+{
+	auto tooltipFrame = statusEffectTooltipFrame;
+	if ( !tooltipFrame )
+	{
+		return false;
+	}
+	auto tooltipHeader = tooltipFrame->findField("heading txt");
+	tooltipHeader->setColor(StatusEffectDefinitions_t::tooltipHeadingColor);
+	auto tooltipDesc = tooltipFrame->findField("desc txt");
+	tooltipDesc->setColor(StatusEffectDefinitions_t::tooltipDescColor);
+	int fontHeight = Font::get(tooltipDesc->getFont())->height(true);
+	int tooltipInnerWidth = 200;
+
+	bool refreshTooltip = (tooltipShowingEffectID != entry.effect) || (tooltipShowingEffectVariable != entry.customVariable);
+	if ( refreshTooltip )
+	{
+		if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
+		{
+			int effectID = entry.effect - StatusEffectQueue_t::kSpellEffectOffset;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
 			{
-				deleteEffect(effectQueue.back().effect);
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+				if ( effectID == SPELL_SHADOW_TAG )
+				{
+					int variation = 2;
+					if ( players[player] && players[player]->entity )
+					{
+						if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+							&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+						{
+							variation = 1;
+							std::string formatString = definition.getName(variation).c_str();
+							char buf[256] = "";
+							Entity* tagged = uidToEntity(players[player]->entity->creatureShadowTaggedThisUid);
+							if ( tagged->behavior == &actMonster )
+							{
+								int type = tagged->getMonsterTypeFromSprite();
+								if ( type != NOTHING )
+								{
+									snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+								}
+								else
+								{
+									strcpy(buf, "");
+								}
+							}
+							else if ( tagged->behavior == &actPlayer )
+							{
+								snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+							}
+							std::string formattedName = buf;
+							uppercaseString(formattedName);
+							tooltipHeader->setText(formattedName.c_str());
+						}
+					}
+					if ( variation == 2 )
+					{
+						std::string newHeader = definition.getName(variation).c_str();
+						uppercaseString(newHeader);
+						tooltipHeader->setText(newHeader.c_str());
+					}
+					tooltipDesc->setText(definition.getDesc(-1).c_str()); // always -1 default desc
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else
+				{
+					int variation = -1;
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(variation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+			}
+		}
+		else
+		{
+			int effectID = entry.effect;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+				int variation = -1;
+				if ( effectID == EFF_SHAPESHIFT )
+				{
+					if ( players[player] && players[player]->entity )
+					{
+						switch ( players[player]->entity->effectShapeshift )
+						{
+							case RAT:
+								variation = 0;
+								break;
+							case SPIDER:
+								variation = 1;
+								break;
+							case TROLL:
+								variation = 2;
+								break;
+							case CREATURE_IMP:
+								variation = 3;
+								break;
+							default:
+								break;
+						}
+					}
+				}
+				else if ( effectID == EFF_VAMPIRICAURA )
+				{
+					bool sustained = false;
+					for ( node_t* node = channeledSpells[player].first; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+						{
+							sustained = true;
+							break;
+						}
+					}
+					if ( sustained )
+					{
+						variation = 1;
+					}
+					else
+					{
+						variation = 0;
+					}
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectBread
+					|| effectID == StatusEffectQueue_t::kEffectBloodHunger )
+				{
+					if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+					{
+						variation = 0;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+					{
+						variation = 3;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+					{
+						variation = 2;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+					{
+						variation = 1;
+					}
+				}
+				std::string newHeader = definition.getName(variation).c_str();
+				uppercaseString(newHeader);
+				tooltipHeader->setText(newHeader.c_str());
+				tooltipDesc->setText(definition.getDesc(variation).c_str());
+				tooltipInnerWidth = definition.tooltipWidth;
+			}
+		}
+	}
+	else
+	{
+		if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
+		{
+			int effectID = entry.effect - StatusEffectQueue_t::kSpellEffectOffset;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+				tooltipInnerWidth = definition.tooltipWidth;
+			}
+		}
+		else
+		{
+			int effectID = entry.effect;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+				tooltipInnerWidth = definition.tooltipWidth;
 			}
 		}
 	}
 
+	tooltipInnerWidth = std::max(tooltipInnerWidth, (int)tooltipHeader->getTextObject()->getWidth() + (tooltipHeader->getSize().x * 2));
+
+	const int padx = 16;
+	const int pady1 = 4;
+	tooltipHeader->setSize(SDL_Rect{ padx, pady1, tooltipInnerWidth, fontHeight + 4 });
+
+	auto descPos = tooltipDesc->getSize();
+	descPos.w = tooltipInnerWidth;
+	tooltipDesc->setSize(descPos);
+	if ( refreshTooltip )
+	{
+		tooltipDesc->reflowTextToFit(0);
+	}
+
+	const int pady2 = 6;
+	descPos.x = padx + 4;
+	descPos.y = tooltipHeader->getSize().y + tooltipHeader->getSize().h + pady2;
+	descPos.h = tooltipDesc->getNumTextLines() * fontHeight + 4;
+	tooltipDesc->setSize(descPos);
+
+	tooltipFrame->setDisabled(false);
+	SDL_Rect tooltipPos;
+	tooltipPos.w = tooltipInnerWidth + padx * 2;
+	tooltipPos.h = tooltipHeader->getSize().y + tooltipHeader->getSize().h + pady2 + descPos.h + 8;
+	tooltipPos.x = pos.x + pos.w / 2;
+	tooltipPos.y = pos.y - tooltipPos.h - 8;
+	tooltipFrame->setSize(tooltipPos);
+	imageResizeToContainer9x9(tooltipFrame, SDL_Rect{0, 0, tooltipPos.w, tooltipPos.h}, skillsheetEffectBackgroundImages);
+	tooltipShowingEffectID = entry.effect;
+	tooltipShowingEffectVariable = entry.customVariable;
+	return true;
+}
+
+void StatusEffectQueue_t::updateAllQueuedEffects()
+{
 	std::unordered_set<int> effectSet;
 	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
 	{
 		effectSet.insert((*it).effect);
+	}
+
+	std::unordered_set<int> spellsActive;
+	int count = 0; //This is just for debugging purposes.
+	for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
+	{
+		spell_t* spell = (spell_t*)node->element;
+		if ( !spell )
+		{
+			break;
+		}
+		spellsActive.insert(spell->ID);
+		if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(spell->ID) )
+		{
+			if ( StatusEffectDefinitions_t::getSustainedSpell(spell->ID).effect_id == -1 )
+			{
+				// unique sustained effect
+				int effectID = spell->ID + kSpellEffectOffset;
+				if ( effectSet.find(effectID) == effectSet.end() )
+				{
+					insertEffect(-1, spell->ID);
+				}
+			}
+		}
+	}
+	for ( auto& eff : effectSet )
+	{
+		if ( eff >= kSpellEffectOffset && (eff - kSpellEffectOffset) == SPELL_SHADOW_TAG )
+		{
+			if ( players[player] && players[player]->entity 
+				&& players[player]->entity->creatureShadowTaggedThisUid != 0
+				&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+			{
+				// shadow tag still active, check uid
+				for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+				{
+					if ( (*it).effect == kSpellEffectOffset + SPELL_SHADOW_TAG )
+					{
+						if ( (*it).customVariable != players[player]->entity->creatureShadowTaggedThisUid )
+						{
+							deleteEffect(eff);
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				deleteEffect(eff);
+			}
+		}
+		else if ( eff >= kSpellEffectOffset && spellsActive.find(eff - kSpellEffectOffset) == spellsActive.end() )
+		{
+			// effect has expired.
+			deleteEffect(eff);
+		}
 	}
 
 	for ( int i = 0; i <= NUMEFFECTS; ++i )
@@ -1770,7 +2409,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				if ( players[player]->entity->creatureShadowTaggedThisUid != 0
 					&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
 				{
-					insertEffect(SPELL_SHADOW_TAG, -1);
+					if ( insertEffect(-1, SPELL_SHADOW_TAG) )
+					{
+						effectQueue.back().customVariable = players[player]->entity->creatureShadowTaggedThisUid;
+						notificationQueue.back().customVariable = players[player]->entity->creatureShadowTaggedThisUid;
+					}
 				}
 			}
 		}
@@ -1785,71 +2428,220 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			if ( effectSet.find(i) != effectSet.end() )
 			{
-				//deleteEffect(i);
-			}
-		}
-	}
-	if ( channeledSpells[player].first )
-	{
-		int count = 0; //This is just for debugging purposes.
-		std::unordered_set<int> spellsActive;
-		for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
-		{
-			spell_t* spell = (spell_t*)node->element;
-			if ( !spell )
-			{
-				break;
-			}
-			int effectID = spell->ID + kSpellEffectOffset;
-			if ( effectSet.find(effectID) == effectSet.end() )
-			{
-				insertEffect(-1, spell->ID);
-			}
-			spellsActive.insert(effectID);
-		}
-		for ( auto& eff : effectSet )
-		{
-			if ( eff >= kSpellEffectOffset )
-			{
-				if ( spellsActive.find(eff) == spellsActive.end() )
-				{
-					// effect has expired.
-					deleteEffect(eff);
-				}
-			}
-		}
-	}
-	else
-	{
-		for ( auto& eff : effectSet )
-		{
-			if ( eff >= kSpellEffectOffset )
-			{
-				// effect has expired.
-				deleteEffect(eff);
+				deleteEffect(i);
 			}
 		}
 	}
 
-	int movex = 0;
-	int movey = 36;
+	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() || effectSet.find(kEffectBloodHunger) != effectSet.end());
+
+	int iconSize = 32;
+	int movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
+	int movey = statusEffectFrame->getSize().h - iconSize;
 	const int spacing = 36;
 	int numEffectsOnLine = 0;
 
+	auto notificationImg = statusEffectFrame->findImage("notification img");
+	notificationImg->disabled = true;
+	auto notificationTxt = statusEffectFrame->findField("notification txt");
+	notificationTxt->setDisabled(true);
+	notificationTxt->setFont(StatusEffectDefinitions_t::notificationFont.c_str());
+	notificationTxt->setColor(StatusEffectDefinitions_t::notificationTextColor);
 	if ( notificationQueue.size() >= 1 )
 	{
 		auto& notif = notificationQueue.front();
-		notif.animateNotification();
-		updateEntry(notif);
+		notif.animateNotification(player);
+		updateEntryImage(notif, notificationImg);
+		if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_2
+			|| notif.notificationState == StatusEffectQueueEntry_t::STATE_3 )
+		{
+			if ( notif.effect >= kSpellEffectOffset )
+			{
+				int effectID = notif.effect - kSpellEffectOffset;
+				if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+				{
+					auto& definition = StatusEffectDefinitions_t::getSustainedSpell(effectID);
+					if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_2 )
+					{
+						int variation = -1;
+						if ( effectID == SPELL_SHADOW_TAG )
+						{
+							variation = 0;
+							notificationTxt->setText("");
+							if ( players[player] && players[player]->entity )
+							{
+								if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+									&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+								{
+									std::string formatString = definition.getName(variation).c_str();
+									char buf[256] = "";
+									Entity* tagged = uidToEntity(players[player]->entity->creatureShadowTaggedThisUid);
+									if ( tagged->behavior == &actMonster )
+									{
+										int type = tagged->getMonsterTypeFromSprite();
+										if ( type != NOTHING )
+										{
+											snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+										}
+										else
+										{
+											strcpy(buf, "");
+										}
+									}
+									else if ( tagged->behavior == &actPlayer )
+									{
+										snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+									}
+									std::string formattedName = buf;
+									notificationTxt->setText(formattedName.c_str());
+								}
+							}
+						}
+						else
+						{
+							notificationTxt->setText(definition.getName(variation).c_str());
+						}
+					}
+					notificationTxt->setDisabled(false);
+				}
+			}
+			else
+			{
+				int effectID = notif.effect;
+				if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					auto& definition = StatusEffectDefinitions_t::getEffect(effectID);
+					if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_2 )
+					{
+						int variation = -1;
+						if ( effectID == EFF_SHAPESHIFT )
+						{
+							if ( players[player] && players[player]->entity )
+							{
+								switch ( players[player]->entity->effectShapeshift )
+								{
+									case RAT:
+										variation = 0;
+										break;
+									case SPIDER:
+										variation = 1;
+										break;
+									case TROLL:
+										variation = 2;
+										break;
+									case CREATURE_IMP:
+										variation = 3;
+										break;
+									default:
+										break;
+								}
+							}
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectBread
+							|| effectID == StatusEffectQueue_t::kEffectBloodHunger )
+						{
+							if ( notif.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+							{
+								variation = 0;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+							{
+								variation = 3;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+							{
+								variation = 2;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+							{
+								variation = 1;
+							}
+						}
+						else if ( effectID == EFF_VAMPIRICAURA )
+						{
+							bool sustained = false;
+							for ( node_t* node = channeledSpells[player].first; node != nullptr; node = node->next )
+							{
+								spell_t* spell = (spell_t*)node->element;
+								if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+								{
+									sustained = true;
+									break;
+								}
+							}
+							if ( sustained )
+							{
+								variation = 1;
+							}
+							else
+							{
+								variation = 0;
+							}
+						}
+						notificationTxt->setText(definition.getName(variation).c_str());
+					}
+					notificationTxt->setDisabled(false);
+				}
+			}
+			if ( auto textGet = notificationTxt->getTextObject() )
+			{
+				SDL_Rect txtPos;
+				txtPos.w = textGet->getWidth();
+				txtPos.h = textGet->getHeight() * textGet->getNumTextLines() + 4;
+
+				const int movementAmount = getStatusEffectMovementAmount(player);
+				txtPos.x = (getBaseEffectPosX() - movementAmount - (notif.getStatusEffectLargestScaling(player) - 1.0) * notif.getEffectSpriteNormalWidth() / 2)
+					+ (notif.getEffectSpriteNormalWidth() * notif.getStatusEffectLargestScaling(player)) / 2 - txtPos.w / 2;
+				txtPos.y = getBaseEffectPosY() - movementAmount - txtPos.h;
+				notificationTxt->setSize(txtPos);
+			}
+		}
 		if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_END )
 		{
 			notificationQueue.pop_front();
 		}
 	}
 
+	auto innerFrame = statusEffectFrame->findFrame("effects");
+	int numFrameImages = innerFrame->getImages().size();
+	while ( effectQueue.size() > numFrameImages )
+	{
+		auto img = innerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "inner img");
+		img->disabled = true;
+		numFrameImages = innerFrame->getImages().size();
+	}
+	while ( effectQueue.size() < numFrameImages )
+	{
+		innerFrame->getImages().erase(innerFrame->getImages().begin());
+		numFrameImages = innerFrame->getImages().size();
+	}
+	auto& frameImages = innerFrame->getImages();
+	for ( auto img : frameImages )
+	{
+		img->disabled = true;
+	}
+
+	auto frameImagesIterator = frameImages.begin();
+	bool bFrameCapturesMouse = false;
+	if ( !players[player]->shootmode && inputs.getVirtualMouse(player)->draw_cursor )
+	{
+		bFrameCapturesMouse = statusEffectFrame->capturesMouse();
+	}
+	bool tooltipShowing = false;
+	bool bStatusEffectModuleActive = players[player]->GUI.activeModule == Player::GUI_t::MODULE_STATUS_EFFECTS;
+	Sint32 mousex = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+
 	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); )
 	{
 		auto& q = (*it);
+
+		Frame::image_t* frameImg = nullptr;
+		if ( frameImagesIterator != frameImages.end() )
+		{
+			frameImg = *frameImagesIterator;
+		}
 
 		bool existsInNotifications = false;
 		for ( auto it2 = notificationQueue.begin(); it2 != notificationQueue.end(); ++it2 )
@@ -1862,14 +2654,72 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		if ( !existsInNotifications )
 		{
-			updateEntry(q);
+			updateEntryImage(q, frameImg);
+
+			if ( bFrameCapturesMouse && !tooltipShowing )
+			{
+				SDL_Rect size = statusEffectFrame->getAbsoluteSize();
+				int mouseDetectionPadding = 2;
+				size.x += frameImg->pos.x - (mouseDetectionPadding);
+				size.y += frameImg->pos.y - (mouseDetectionPadding);
+				size.w = frameImg->pos.w + (mouseDetectionPadding * 2);
+				size.h = frameImg->pos.h + (mouseDetectionPadding * 2);
+				if ( rectContainsPoint(size, mousex, mousey) )
+				{
+					if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_STATUS_EFFECTS )
+					{
+						tooltipShowing = doStatusEffectTooltip(q, size);
+					}
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_STATUS_EFFECTS);
+					players[player]->hud.setCursorDisabled(false);
+					players[player]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding, 
+						frameImg->pos.w, frameImg->pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+				}
+			}
 		}
 		int animatePosX = movex;
 		int animatePosY = movey;
-		if ( q.effect == kEffectBread )
+		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger )
 		{
-			animatePosX = moveBreadStatusEffectX;
-			animatePosY = moveBreadStatusEffectY;
+			animatePosX = 0;
+			animatePosY = statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
+		}
+
+		// low duration flash
+		bool effectIsSustained = false;
+		if ( StatusEffectDefinitions_t::effectDefinitionExists(q.effect) )
+		{
+			auto& definition = StatusEffectDefinitions_t::getEffect(q.effect);
+			if ( definition.sustainedSpellID >= 0 )
+			{
+				if ( spellsActive.find(definition.sustainedSpellID) != spellsActive.end() )
+				{
+					effectIsSustained = true;
+				}
+			}
+		}
+
+		q.lowDuration = false;
+		if ( !effectIsSustained && q.effect >= 0 && q.effect < NUMEFFECTS )
+		{
+			bool lowDuration = stats[player]->EFFECTS_TIMERS[q.effect] > 0 &&
+				(stats[player]->EFFECTS_TIMERS[q.effect] < TICKS_PER_SECOND * 5);
+			q.lowDuration = lowDuration;
+			if ( lowDuration && lowDurationFlash )
+			{
+				frameImg->disabled = true;
+			}
+		}
+		else if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger )
+		{
+			if ( q.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+			{
+				q.lowDuration = true;
+				if ( lowDurationFlash )
+				{
+					frameImg->disabled = true;
+				}
+			}
 		}
 
 		if ( requiresAnimUpdate )
@@ -1887,9 +2737,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 
 		++it;
+		if ( frameImagesIterator != frameImages.end() )
+		{
+			++frameImagesIterator;
+		}
 
 		q.animate();
-		if ( q.effect == kEffectBread )
+		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger )
 		{
 			continue; // don't advance position as this is fixed
 		}
@@ -1898,326 +2752,252 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		if ( numEffectsOnLine >= effectsPerRow )
 		{
 			numEffectsOnLine = 0;
-			movex = 0;
+			movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
 			movey -= spacing;
+		}
+	}
+
+	animateStatusEffectTooltip(tooltipShowing);
+
+	if ( bStatusEffectModuleActive )
+	{
+		if ( !tooltipShowing )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_NONE);
 		}
 	}
 
 	requiresAnimUpdate = false;
 }
 
-//SDL_Surface* getStatusEffectSprite(int player, int effect)
-//{
-//	node_t* effectImageNode = nullptr;
-//	SDL_Surface** sprite = nullptr;
-//	std::string tooltipText = "";
-//
-//	switch ( effect )
-//	{
-//		case EFF_SLOW:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
-//			tooltipText = language[3384];
-//			break;
-//		case EFF_BLEEDING:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
-//			tooltipText = language[3385];
-//			break;
-//		case EFF_ASLEEP:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
-//			tooltipText = language[3386];
-//			break;
-//		case EFF_CONFUSED:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
-//			tooltipText = language[3387];
-//			break;
-//		case EFF_PACIFY:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
-//			tooltipText = language[3388];
-//			break;
-//		case EFF_FEAR:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FEAR);
-//			tooltipText = language[3861];
-//			break;
-//		case EFF_WEBBED:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPRAY_WEB);
-//			tooltipText = language[3859];
-//			break;
-//		case EFF_MAGICAMPLIFY:
-//		{
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_AMPLIFY_MAGIC);
-//			node_t* node = channeledSpells[player].first;
-//			for ( ; node != nullptr; node = node->next )
-//			{
-//				spell_t* spell = (spell_t*)node->element;
-//				if ( spell && spell->ID == SPELL_AMPLIFY_MAGIC )
-//				{
-//					effectImageNode = nullptr;
-//					break;
-//				}
-//			}
-//			tooltipText = language[3860];
-//			break;
-//		}
-//		case EFF_TROLLS_BLOOD:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
-//			tooltipText = language[3492];
-//			break;
-//		case EFF_FLUTTER:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FLUTTER);
-//			tooltipText = language[3766];
-//			break;
-//		case EFF_FAST:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
-//			tooltipText = language[3493];
-//			break;
-//		case EFF_SHAPESHIFT:
-//			if ( players[player] && players[player]->entity )
-//			{
-//				switch ( players[player]->entity->effectShapeshift )
-//				{
-//					case RAT:
-//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
-//						tooltipText = language[3854];
-//						break;
-//					case TROLL:
-//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLL_FORM);
-//						tooltipText = language[3855];
-//						break;
-//					case SPIDER:
-//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPIDER_FORM);
-//						tooltipText = language[3856];
-//						break;
-//					case CREATURE_IMP:
-//						effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_IMP_FORM);
-//						tooltipText = language[3857];
-//						break;
-//					default:
-//						break;
-//				}
-//			}
-//			break;
-//		case EFF_VAMPIRICAURA:
-//		{
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
-//			tooltipText = language[3389];
-//			node_t* node = channeledSpells[player].first;
-//			for ( ; node != nullptr; node = node->next )
-//			{
-//				spell_t* spell = (spell_t*)node->element;
-//				if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
-//				{
-//					tooltipText = language[3390];
-//					break;
-//				}
-//			}
-//			break;
-//		}
-//		case EFF_PARALYZED:
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
-//			tooltipText = language[3391];
-//			break;
-//		case EFF_DRUNK:
-//			if ( effect_drunk_bmp )
-//			{
-//				sprite = &effect_drunk_bmp;
-//			}
-//			tooltipText = language[3392];
-//			break;
-//		case EFF_POLYMORPH:
-//			if ( effect_polymorph_bmp )
-//			{
-//				sprite = &effect_polymorph_bmp;
-//			}
-//			tooltipText = language[3399];
-//			break;
-//		case EFF_WITHDRAWAL:
-//			if ( effect_hungover_bmp )
-//			{
-//				sprite = &effect_hungover_bmp;
-//			}
-//			tooltipText = language[3393];
-//			break;
-//		case EFF_POTION_STR:
-//			sprite = &str_bmp64u;
-//			tooltipText = language[3394];
-//			break;
-//		case EFF_LEVITATING:
-//		{
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
-//			node_t* node = channeledSpells[player].first;
-//			for ( ; node != nullptr; node = node->next )
-//			{
-//				spell_t* spell = (spell_t*)node->element;
-//				if ( spell && spell->ID == SPELL_LEVITATION )
-//				{
-//					effectImageNode = nullptr;
-//					break;
-//				}
-//			}
-//			tooltipText = language[3395];
-//			break;
-//		}
-//		case EFF_INVISIBLE:
-//		{
-//			effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
-//			node_t* node = channeledSpells[player].first;
-//			for ( ; node != nullptr; node = node->next )
-//			{
-//				spell_t* spell = (spell_t*)node->element;
-//				if ( spell && spell->ID == SPELL_INVISIBILITY )
-//				{
-//					effectImageNode = nullptr;
-//					break;
-//				}
-//			}
-//			tooltipText = language[3396];
-//			break;
-//		}
-//		default:
-//			effectImageNode = nullptr;
-//			tooltipText = "";
-//			break;
-//	}
-//
-//	if ( effectImageNode || sprite )
-//	{
-//		if ( !sprite )
-//		{
-//			sprite = (SDL_Surface**)effectImageNode->element;
-//		}
-//	}
-//
-//	if ( sprite )
-//	{
-//		return *sprite;
-//	}
-//	return nullptr;
-//}
-
-void StatusEffectQueue_t::updateEntry(StatusEffectQueueEntry_t& entry)
+void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Frame::image_t* img)
 {
-	SDL_Surface* sprite = nullptr;
-	if ( entry.effect == StatusEffectQueue_t::kEffectBread )
+	if ( img )
 	{
-		if ( auto imgGet = Image::get("images/ui/HUD/HUD_Hunger_00.png") )
+		img->path = "";
+		if ( entry.effect == kEffectBread || entry.effect == kEffectBloodHunger )
 		{
-			sprite = const_cast<SDL_Surface*>(imgGet->getSurf());
-		}
-	}
-	else
-	{
-		if ( entry.effect >= kSpellEffectOffset )
-		{
-			int effectID = entry.effect - kSpellEffectOffset;
-			if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+			if ( StatusEffectDefinitions_t::effectDefinitionExists(entry.effect) )
 			{
-				if ( auto imgGet = Image::get(StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getSustainedSpell(effectID)).c_str()) )
+				int variation = -1;
+				if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
 				{
-					sprite = const_cast<SDL_Surface*>(imgGet->getSurf());
+					variation = 0;
+				}
+				else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+				{
+					variation = 3;
+				}
+				else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+				{
+					variation = 2;
+				}
+				else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+				{
+					variation = 1;
+				}
+				if ( variation >= 0 )
+				{
+					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
+				}
+				else
+				{
+					img->path = "";
 				}
 			}
 		}
 		else
 		{
-			int effectID = entry.effect;
-			if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+			if ( entry.effect >= kSpellEffectOffset )
 			{
-				if ( auto imgGet = Image::get(StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID)).c_str()) )
+				int effectID = entry.effect - kSpellEffectOffset;
+				if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
 				{
-					sprite = const_cast<SDL_Surface*>(imgGet->getSurf());
+					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getSustainedSpell(effectID));
+				}
+			}
+			else
+			{
+				int effectID = entry.effect;
+				if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					if ( effectID == EFF_SHAPESHIFT )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							switch ( players[player]->entity->effectShapeshift )
+							{
+								case RAT:
+									variation = 0;
+									break;
+								case SPIDER:
+									variation = 1;
+									break;
+								case TROLL:
+									variation = 2;
+									break;
+								case CREATURE_IMP:
+									variation = 3;
+									break;
+								default:
+									break;
+							}
+						}
+					}
+					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
 				}
 			}
 		}
-	}
-	if ( sprite )
-	{
-		SDL_Rect src{ 0, 0, sprite->w, sprite->h };
 
-		int baseX = 300;
-		int baseY = 300;
 		SDL_Rect dest{ 0, 0, entry.pos.w, entry.pos.h };
-		dest.x = baseX + entry.pos.x;
-		dest.y = baseX + entry.pos.y;
+		dest.x = entry.pos.x;
+		dest.y = entry.pos.y;
+		img->pos = dest;
+		img->disabled = false;
 
-		const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
-
-		TempTexture* tex = new TempTexture();
-		tex->load(sprite, true, true);
-		tex->bind();
-
-		Image::drawSurface(sprite, &src, dest, viewport, 0xFFFFFFFF);
-
-		if ( tex )
+		if ( img->path.size() > 1 && img->path[0] != '*' )
 		{
-			delete tex;
-			tex = nullptr;
-		}
-
-		if ( entry.notificationState == StatusEffectQueueEntry_t::STATE_2
-			|| entry.notificationState == StatusEffectQueueEntry_t::STATE_3 )
-		{
-			auto textGet = Text::get("Effect!", "fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0);
-			if ( textGet )
-			{
-				SDL_Rect textDest;
-				textDest.w = (int)textGet->getWidth();
-				textDest.h = (int)textGet->getHeight();
-				textDest.x = dest.x + dest.w / 2 - textDest.w / 2;
-				textDest.y = dest.y + dest.h / 2 - (int)textDest.h - 16;
-				textGet->draw(SDL_Rect{ 0, 0, 0, 0 },
-					textDest,
-					viewport);
-			}
+			img->path.insert(0, 1, '*');
 		}
 	}
 }
 
 void updateStatusEffectQueue(const int player)
 {
-	if ( !statusEffectFrame )
+	auto& statusEffectQueue = StatusEffectQueue[player];
+	if ( !statusEffectQueue.statusEffectFrame )
 	{
 		return;
 	}
 	auto& hud_t = players[player]->hud;
-	SDL_Rect mainFramePos{ 0, 0, statusEffectFrameWidth, 200 };
-	mainFramePos.x = hud_t.hudFrame->getSize().w / 2;
-	mainFramePos.y = hud_t.hudFrame->getSize().h / 2;
-	statusEffectFrame->setSize(mainFramePos);
+	SDL_Rect mainFramePos{ 0, 0, players[player]->camera_virtualWidth(), players[player]->camera_virtualHeight() / 2 };
+	mainFramePos.x = hud_t.hpFrame->getSize().x;
+	mainFramePos.y = hud_t.hpFrame->getSize().y - mainFramePos.h;
+	mainFramePos.w -= mainFramePos.x;
+	statusEffectQueue.statusEffectFrame->setSize(mainFramePos);
+	auto innerFrame = statusEffectQueue.statusEffectFrame->findFrame("effects");
+	innerFrame->setSize(SDL_Rect{ 0, 0, statusEffectQueue.statusEffectFrame->getSize().w, statusEffectQueue.statusEffectFrame->getSize().h });
 
-	if ( keystatus[SDL_SCANCODE_G] )
+	const int hungerEffectID = playerRequiresBloodToSustain(player) ? StatusEffectQueue_t::kEffectBloodHunger : StatusEffectQueue_t::kEffectBread;
+
+	// hunger icon
+	if ( stats[player] && stats[player]->type != AUTOMATON
+		&& (svFlags & SV_FLAG_HUNGER) 
+		&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) 
+			|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)) )
 	{
-		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectBloodHunger )
 		{
-			statusEffectQueue.insertEffect(StatusEffectQueue_t::kEffectBread, -1);
+			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread); // delete opposite if present
 		}
-		else
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectBread )
 		{
-			std::vector<int> randEffects{ EFF_WITHDRAWAL, EFF_POTION_STR, EFF_POLYMORPH, EFF_DRUNK, EFF_PARALYZED, EFF_TROLLS_BLOOD,
-				EFF_SLOW, EFF_BLEEDING, EFF_PACIFY, EFF_FEAR, EFF_WEBBED, EFF_MAGICAMPLIFY };
-			int effectToAdd = -1;
-			for ( auto v : randEffects )
+			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger); // delete opposite if present
+		}
+
+		const int HUNGER_NONE = 1000;
+		const int HUNGER_OVERSATIATED = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED);
+		const int HUNGER_HUNGRY = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY);
+		const int HUNGER_WEAK = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK);
+		const int HUNGER_STARVING = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING);
+		int hungerStateToSet = HUNGER_NONE;
+		if ( stats[player]->HUNGER >= HUNGER_OVERSATIATED )
+		{
+			hungerStateToSet = HUNGER_OVERSATIATED;
+		}
+		else if ( stats[player]->HUNGER <= HUNGER_STARVING )
+		{
+			hungerStateToSet = HUNGER_STARVING;
+		}
+		else if ( stats[player]->HUNGER <= HUNGER_WEAK )
+		{
+			hungerStateToSet = HUNGER_WEAK;
+		}
+		else if ( stats[player]->HUNGER <= HUNGER_HUNGRY )
+		{
+			hungerStateToSet = HUNGER_HUNGRY;
+		}
+		StatusEffectQueueEntry_t* entry = nullptr;
+		StatusEffectQueueEntry_t* notif = nullptr;
+
+
+		for ( auto& q : statusEffectQueue.effectQueue )
+		{
+			if ( q.effect == hungerEffectID )
 			{
-				effectToAdd = v;
-				for ( auto it = statusEffectQueue.effectQueue.begin(); it != statusEffectQueue.effectQueue.end(); ++it )
+				entry = &(q);
+				for ( auto& n : statusEffectQueue.notificationQueue )
 				{
-					if ( v == (*it).effect )
+					if ( n.effect == hungerEffectID )
 					{
-						effectToAdd = -1;
+						notif = &(n);
+					}
+					break;
+				}
+				break;
+			}
+		}
+		if ( entry && entry->customVariable != hungerStateToSet )
+		{
+			if ( notif && notif->customVariable != hungerStateToSet )
+			{
+				// reset the notification
+				bool erased = false;
+				for ( auto it = statusEffectQueue.notificationQueue.begin(); it != statusEffectQueue.notificationQueue.end(); ++it )
+				{
+					if ( (*it).effect == hungerEffectID )
+					{
+						statusEffectQueue.notificationQueue.erase(it);
+						erased = true;
 						break;
 					}
 				}
-				if ( effectToAdd != -1 )
+				statusEffectQueue.notificationQueue.push_back(StatusEffectQueueEntry_t(hungerEffectID));
+				statusEffectQueue.notificationQueue.back().pos.x = statusEffectQueue.getBaseEffectPosX();
+				statusEffectQueue.notificationQueue.back().pos.y = statusEffectQueue.getBaseEffectPosY();
+
+				// fall back if notificationTargetPosition doesn't have an effect to go to.
+				statusEffectQueue.notificationQueue.back().notificationTargetPosition.x = 0;
+				statusEffectQueue.notificationQueue.back().notificationTargetPosition.y = statusEffectQueue.statusEffectFrame->getSize().h 
+					- statusEffectQueue.notificationQueue.back().notificationTargetPosition.h;
+				statusEffectQueue.requiresAnimUpdate = true;
+				entry->customVariable = hungerStateToSet;
+				statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+			}
+			else
+			{
+				// else, delete and reapply
+				statusEffectQueue.deleteEffect(hungerEffectID);
+				if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
 				{
-					break;
+					if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+					{
+						statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+						statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+					}
 				}
 			}
-			if ( effectToAdd >= 0 )
+		}
+		else
+		{
+			// new effect, does not exist
+			if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
 			{
-				statusEffectQueue.insertEffect(effectToAdd, -1);
+				if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+				{
+					statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+					statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+				}
 			}
 		}
-		keystatus[SDL_SCANCODE_G] = 0;
 	}
+	else
+	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
+	}
+
 	statusEffectQueue.updateAllQueuedEffects();
 }
 
@@ -3242,7 +4022,7 @@ void Player::HUD_t::processHUD()
 	{
 		createEnemyBar(player.playernum, enemyBarFrameHUD);
 	}
-	if ( !statusEffectFrame )
+	if ( !StatusEffectQueue[player.playernum].statusEffectFrame )
 	{
 		createStatusEffectQueue(player.playernum);
 	}
@@ -6364,6 +7144,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			tooltipOpacityAnimate = std::min(1.0, tooltipOpacityAnimate);
 		}
 		tooltipFrame->setOpacity(tooltipOpacityAnimate * 100);
+	}
+	else
+	{
+		tooltipFrame->setOpacity(tooltipOpacitySetpoint);
 	}
 
 	if ( element == SHEET_ENUM_END || element == SHEET_UNSELECTED
@@ -10315,7 +11099,20 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 					}
 					else
 					{
-						beatitudeImg->path = "images/system/white.png";
+						beatitudeImg->color = makeColor(255, 255, 255, 255);
+						if ( !item->identified )
+						{
+							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+						}
+						else if ( item->beatitude > 0 )
+						{
+							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+						}
+						else if ( item->beatitude < 0 )
+						{
+							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+						}
+						//beatitudeImg->path = "images/system/white.png";
 					}
 				}
 			}
@@ -13781,6 +14578,10 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 		}
 		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
 	}
+	else
+	{
+		tooltipFrame->setOpacity(tooltipDisplay.opacitySetpoint);
+	}
 
 	if ( tooltipPromptFrame )
 	{
@@ -13807,6 +14608,10 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 		}
 		double t = tooltipDisplay.expandAnimate;
 		tooltipDisplay.expandCurrent = t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1);
+	}
+	else
+	{
+		tooltipDisplay.expandCurrent = tooltipDisplay.expandSetpoint / 100.0;
 	}
 }
 
