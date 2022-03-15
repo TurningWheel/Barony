@@ -2448,7 +2448,8 @@ void Player::MessageZone_t::processChatbox()
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
     bool useBigFont = playercount < 2 || (playercount == 2 && !MainMenu::vertical_splitscreen);
 
-	const int leftAlignedPaddingX = 8;
+	const int leftAlignedPaddingX = !players[player.playernum]->shootmode &&
+	    stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK ? 240 : 8;
 	const int leftAlignedBottomY = 200;
 	const int topAlignedPaddingX = 8;
 	const int topAlignedPaddingY = playercount > 2 ? 32 : 8;
@@ -2581,7 +2582,7 @@ static Frame* createMinimap(int player) {
                 minimap.real_scale = 25.0;
             }
             else {
-                minimap.real_scale = reducedSize ? 75.0 : 100.0;
+                minimap.real_scale = reducedSize ? 75.0 :  100.0;
             }
         }
 

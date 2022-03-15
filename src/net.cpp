@@ -351,6 +351,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	{
 	    if (disable_messages || !(messagesEnabled & type))
 	    {
+	        printlog("%s\n", str);
 	        return false;
 	    }
 	}

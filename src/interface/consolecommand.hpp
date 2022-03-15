@@ -10,7 +10,9 @@
 -------------------------------------------------------------------------------*/
 
 #include <string>
-#include <unordered_map>
+#include <map>
+
+const char* FindConsoleCommand(const char* str, int index);
 
 /*
  * How to define a console command:
@@ -90,6 +92,6 @@ public:
 private:
     static void setter(int argc, const char** argv);
     void add_to_map();
-    using cvar_map_t = std::unordered_map<std::string, ConsoleVariable<T>&>;
+    using cvar_map_t = std::map<std::string, ConsoleVariable<T>&>;
     static cvar_map_t& getConsoleVariables();
 };

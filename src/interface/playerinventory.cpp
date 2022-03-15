@@ -21,6 +21,7 @@
 #include "../menu.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "consolecommand.hpp"
 #include "../ui/GameUI.hpp"
 #include "../ui/Frame.hpp"
 #include "../ui/Image.hpp"
@@ -604,6 +605,11 @@ const char* itemUseString(int player, const Item& item)
 void updateAppraisalItemBox(const int player)
 {
     if (players[player]->shootmode) {
+        return;
+    }
+
+    static ConsoleVariable<bool> disable("/disableappraisalbox", false);
+    if (*disable) {
         return;
     }
 

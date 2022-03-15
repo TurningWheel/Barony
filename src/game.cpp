@@ -19,6 +19,7 @@
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
+#include "interface/consolecommand.hpp"
 #include "magic/magic.hpp"
 #include "engine/audio/sound.hpp"
 #include "items.hpp"
@@ -3166,6 +3167,31 @@ void handleEvents(void)
 			case SDL_KEYDOWN: // if a key is pressed...
 				if ( command )
 				{
+				    static int saved_command_index = 0;
+				    static std::string saved_command_str;
+				    if ( event.key.keysym.sym == SDLK_TAB )
+				    {
+				        if (saved_command_str.empty()) {
+				            saved_command_str = command_str;
+				        }
+				        auto find = FindConsoleCommand(saved_command_str.c_str(), saved_command_index);
+				        if (find) {
+				            strcpy(command_str, find);
+				            ++saved_command_index;
+				        } else if (saved_command_index) {
+				            saved_command_index = 0;
+				            find = FindConsoleCommand(saved_command_str.c_str(), saved_command_index);
+				            if (find) {
+				                strcpy(command_str, find);
+				                ++saved_command_index;
+				            }
+				        }
+				    }
+				    else
+				    {
+				        saved_command_index = 0;
+				        saved_command_str.clear();
+				    }
 					if ( event.key.keysym.sym == SDLK_UP )
 					{
 						if ( !chosen_command && command_history.last )   //If no command is chosen (user has not tried to go up through the commands yet...

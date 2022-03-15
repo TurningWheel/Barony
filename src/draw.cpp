@@ -3087,18 +3087,26 @@ void occlusionCulling(map_t& map, const view_t& camera)
             const int index = v + u * h;
 	        vmap[index] = map.vismap[index];
 		    if (!vmap[index]) {
+#ifndef EDITOR
+                static ConsoleVariable<bool> diagonalCulling("/diagonalculling", true);
+#else
+                static bool culling = true;
+                auto* diagonalCulling = &culling;
+#endif
 		        if (v >= 1) {
 		            if (map.vismap[index - 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
-		            if (u >= 1 && map.vismap[index - h - 1]) {
-		                vmap[index] = true;
-		                continue;
-		            }
-		            if (u < w1 && map.vismap[index + h - 1]) {
-		                vmap[index] = true;
-		                continue;
+		            if (*diagonalCulling) {
+		                if (u >= 1 && map.vismap[index - h - 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
+		                if (u < w1 && map.vismap[index + h - 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
 		            }
 		        }
 		        if (v < h1) {
@@ -3106,13 +3114,15 @@ void occlusionCulling(map_t& map, const view_t& camera)
 		                vmap[index] = true;
 		                continue;
 		            }
-		            if (u >= 1 && map.vismap[index - h + 1]) {
-		                vmap[index] = true;
-		                continue;
-		            }
-		            if (u < w1 && map.vismap[index + h + 1]) {
-		                vmap[index] = true;
-		                continue;
+		            if (*diagonalCulling) {
+		                if (u >= 1 && map.vismap[index - h + 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
+		                if (u < w1 && map.vismap[index + h + 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
 		            }
 		        }
 		        if (u >= 1 && map.vismap[index - h]) {
