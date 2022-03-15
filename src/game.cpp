@@ -4015,6 +4015,15 @@ void ingameHud()
 {
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		if ( nohud || intro || !players[player]->isLocalPlayer() )
+		{
+			gameUIFrame[player]->setDisabled(true);
+		}
+		else
+		{
+			gameUIFrame[player]->setDisabled(false);
+		}
+
 	    Input& input = Input::inputs[player];
 
 	    // toggle minimap

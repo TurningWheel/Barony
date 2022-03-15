@@ -25,6 +25,7 @@
 
 #include <assert.h>
 
+Frame* gameUIFrame[MAXPLAYERS] = { nullptr };
 bool newui = true;
 int selectedCursorOpacity = 255;
 int oldSelectedCursorOpacity = 255;
@@ -2023,7 +2024,7 @@ void StatusEffectQueue_t::createStatusEffectTooltip()
 	}
 	char name[32];
 	snprintf(name, sizeof(name), "player statusfx tooltip %d", player);
-	tooltipFrame = gui->addFrame(name);
+	tooltipFrame = gameUIFrame[player]->addFrame(name);
 	tooltipFrame->setHollow(true);
 	tooltipFrame->setDisabled(true);
 	tooltipFrame->setInheritParentFrameOpacity(false);
@@ -2623,7 +2624,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 
 	auto frameImagesIterator = frameImages.begin();
 	bool bFrameCapturesMouse = false;
-	if ( !players[player]->shootmode && inputs.getVirtualMouse(player)->draw_cursor )
+	if ( !players[player]->shootmode && inputs.getVirtualMouse(player)->draw_cursor 
+		&& !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive() )
 	{
 		bFrameCapturesMouse = statusEffectFrame->capturesMouse();
 	}
@@ -3982,7 +3984,7 @@ void Player::HUD_t::processHUD()
 	snprintf(name, sizeof(name), "player hud %d", player.playernum);
 	if ( !hudFrame )
 	{
-		hudFrame = gui->addFrame(name);
+		hudFrame = gameUIFrame[player.playernum]->addFrame(name);
 		hudFrame->setHollow(true);
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
@@ -4046,9 +4048,9 @@ void Player::MessageZone_t::createChatbox()
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player chat %d", player.playernum);
-	if ( !gui->findFrame(name) )
+	if ( !gameUIFrame[player.playernum]->findFrame(name) )
 	{
-		Frame* chatMainFrame = gui->addFrame(name);
+		Frame* chatMainFrame = gameUIFrame[player.playernum]->addFrame(name);
 		chatMainFrame->setHollow(true);
 		chatMainFrame->setBorder(0);
 		chatMainFrame->setOwner(player.playernum);
@@ -4410,12 +4412,12 @@ void Player::CharacterSheet_t::createCharacterSheet()
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player sheet %d", player.playernum);
-	if ( !gui->findFrame(name) )
+	if ( !gameUIFrame[player.playernum]->findFrame(name) )
 	{
 		characterSheetTooltipTextFields[player.playernum].clear();
 		characterSheetTooltipTextBackingFrames[player.playernum].clear();
 
-		Frame* sheetFrame = gui->addFrame(name);
+		Frame* sheetFrame = gameUIFrame[player.playernum]->addFrame(name);
 		sheetFrame->setHollow(true);
 		sheetFrame->setBorder(0);
 		sheetFrame->setOwner(player.playernum);
@@ -6208,7 +6210,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 
 	char dropdownBlockClickName[64] = "";
 	snprintf(dropdownBlockClickName, sizeof(dropdownBlockClickName), "player dropdown block click %d", player.playernum);
-	dropdownBlockClickFrame = gui->addFrame(dropdownBlockClickName);
+	dropdownBlockClickFrame = gameUIFrame[player.playernum]->addFrame(dropdownBlockClickName);
 	dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),
 		players[player.playernum]->camera_virtualWidth(),
@@ -6217,7 +6219,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 
 	char dropdownName[64] = "";
 	snprintf(dropdownName, sizeof(dropdownName), "player dropdown %d", player.playernum);
-	dropdownFrame = gui->addFrame(dropdownName);
+	dropdownFrame = gameUIFrame[player.playernum]->addFrame(dropdownName);
 	const int interactWidth = 106;
 	dropdownFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
 	dropdownFrame->setDisabled(true);
@@ -10714,7 +10716,7 @@ void Player::Hotbar_t::processHotbar()
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
-		hotbarFrame = gui->addFrame(name);
+		hotbarFrame = gameUIFrame[player.playernum]->addFrame(name);
 		hotbarFrame->setHollow(true);
 		hotbarFrame->setBorder(0);
 		hotbarFrame->setOwner(player.playernum);
@@ -11221,7 +11223,7 @@ void createInventoryTooltipFrame(const int player)
 
 	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
-		players[player]->inventoryUI.tooltipFrame = gui->addFrame(name);
+		players[player]->inventoryUI.tooltipFrame = gameUIFrame[player]->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
@@ -11528,7 +11530,7 @@ void createInventoryTooltipFrame(const int player)
 	tooltipPromptImg->disabled = true;
 
 	snprintf(name, sizeof(name), "player interact %d", player);
-	if ( auto interactFrame = gui->addFrame(name) )
+	if ( auto interactFrame = gameUIFrame[player]->addFrame(name) )
 	{
 		players[player]->inventoryUI.interactFrame = interactFrame;
 		const int interactWidth = 106;
@@ -11682,7 +11684,7 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	snprintf(name, sizeof(name), "player item prompt %d", player);
-	if ( auto promptFrame = gui->addFrame(name) )
+	if ( auto promptFrame = gameUIFrame[player]->addFrame(name) )
 	{
 		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
 		const int interactWidth = 0;
@@ -13252,7 +13254,7 @@ void createPlayerInventory(const int player)
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player inventory %d", player);
-	Frame* frame = gui->addFrame(name);
+	Frame* frame = gameUIFrame[player]->addFrame(name);
 	players[player]->inventoryUI.frame = frame;
 	frame->setSize(SDL_Rect{ players[player]->camera_virtualx1(),
 		players[player]->camera_virtualy1(),
@@ -14697,7 +14699,7 @@ void Player::Inventory_t::updateItemContextMenuClickFrame()
 	{
 		char interactBlockClickName[64] = "";
 		snprintf(interactBlockClickName, sizeof(interactBlockClickName), "player inventory dropdown block click %d", player.playernum);
-		if ( interactBlockClickFrame = gui->addFrame(interactBlockClickName) )
+		if ( interactBlockClickFrame = gameUIFrame[player.playernum]->addFrame(interactBlockClickName) )
 		{
 			interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
 				player.camera_virtualy1(),
@@ -14998,7 +15000,7 @@ void Player::HUD_t::updateCursor()
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player hud cursor %d", player.playernum);
-		cursorFrame = gui->addFrame(name);
+		cursorFrame = gameUIFrame[player.playernum]->addFrame(name);
 		cursorFrame->setHollow(true);
 		cursorFrame->setBorder(0);
 		cursorFrame->setOwner(player.playernum);
@@ -17400,7 +17402,7 @@ void Player::SkillSheet_t::createSkillSheet()
 
 	char name[32];
 	snprintf(name, sizeof(name), "player skills %d", player.playernum);
-	Frame* frame = gui->addFrame(name);
+	Frame* frame = gameUIFrame[player.playernum]->addFrame(name);
 	skillFrame = frame;
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),

@@ -6,6 +6,7 @@ void doFrames();
 #include "Frame.hpp"
 #include <deque>
 
+extern Frame* gameUIFrame[MAXPLAYERS];
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);

@@ -13,6 +13,7 @@
 #include "Text.hpp"
 #include "../interface/consolecommand.hpp"
 #include <queue>
+#include "GameUI.hpp"
 
 const Sint32 Frame::sliderSize = 15;
 
@@ -79,10 +80,30 @@ void Frame::guiInit() {
 	gui->setActualSize(guiRect);
 	gui->setHollow(true);
 
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		char name[32] = "";
+		snprintf(name, sizeof(name), "game_ui_%d", i);
+		gameUIFrame[i] = gui->addFrame(name);
+		gameUIFrame[i]->setSize(guiRect);
+		gameUIFrame[i]->setActualSize(guiRect);
+		gameUIFrame[i]->setHollow(true);
+		gameUIFrame[i]->setOwner(i);
+		gameUIFrame[i]->setDisabled(true);
+	}
+
 	fboInit();
 }
 
 void Frame::guiDestroy() {
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( gameUIFrame[i] )
+		{
+			gameUIFrame[i] = nullptr;
+		}
+	}
+
 	if (gui) {
 		delete gui;
 		gui = nullptr;
