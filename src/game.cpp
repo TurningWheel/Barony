@@ -4473,6 +4473,8 @@ void ingameHud()
 
 	DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
+    doSharedMinimap();
+
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		players[player]->messageZone.processChatbox();
@@ -5648,20 +5650,20 @@ int main(int argc, char** argv)
 					}
 				}
 
+				int playercount = 0;
+				for (int c = 0; c < MAXPLAYERS; ++c)
+				{
+					if (!client_disconnected[c] && players[c]->isLocalPlayer())
+					{
+						++playercount;
+					}
+				}
+
 				if ( !MainMenu::isCutsceneActive() )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 					double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
-
-					int playercount = 0;
-					for (int c = 0; c < MAXPLAYERS; ++c) 
-					{
-						if (!client_disconnected[c]) 
-						{
-							++playercount;
-						}
-					}
 
 					if (playercount >= 1)
 					{
@@ -5848,7 +5850,6 @@ int main(int argc, char** argv)
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
 				doFrames();
-
 				ingameHud();
 
 				if ( gamePaused )

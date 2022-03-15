@@ -2446,10 +2446,13 @@ void Player::MessageZone_t::processChatbox()
 
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
-    bool useBigFont = playercount < 2 || (playercount == 2 && !MainMenu::vertical_splitscreen);
+    bool useBigFont = playercount == 1 || (playercount == 2 && !MainMenu::vertical_splitscreen);
 
-	const int leftAlignedPaddingX = !players[player.playernum]->shootmode &&
-	    stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK ? 240 : 8;
+    bool pushPaddingX = !players[player.playernum]->shootmode &&
+        ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
+        (playercount == 2 && !MainMenu::vertical_splitscreen));
+
+	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	const int leftAlignedBottomY = 200;
 	const int topAlignedPaddingX = 8;
 	const int topAlignedPaddingY = playercount > 2 ? 32 : 8;
@@ -2542,6 +2545,47 @@ void Player::MessageZone_t::processChatbox()
 	messageBoxFrame->setSize(messageBoxSize);
 }
 
+ConsoleVariable<bool> shareMinimap("/shareminimap", true);
+
+void doSharedMinimap() {
+    static Frame* minimap = nullptr;
+    if (!minimap) {
+        minimap = gui->addFrame("shared_minimap");
+        minimap->setColor(0);
+        minimap->setHollow(true);
+        minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+            drawMinimap(widget.getOwner(), rect);
+            });
+        minimap->setTickCallback([](Widget& widget){
+	        int playercount = 0;
+	        for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (!client_disconnected[c] && players[c]->isLocalPlayer()) {
+			        ++playercount;
+		        }
+	        }
+            if (intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
+                minimap->setInvisible(true);
+            } else {
+                minimap->setInvisible(false);
+            }
+            if (playercount == 3) {
+                constexpr int size = std::min(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2);
+                minimap->setSize(SDL_Rect{
+                    (Frame::virtualScreenX + ((Frame::virtualScreenX / 2) - size)) / 2,
+                    (Frame::virtualScreenY + ((Frame::virtualScreenY / 2) - size)) / 2,
+                    size, size});
+            } else if (playercount == 4) {
+                constexpr int size = 128;
+                minimap->setSize(SDL_Rect{
+                    (Frame::virtualScreenX - size) / 2,
+                    Frame::virtualScreenY / 2,
+                    size, size});
+            }
+            });
+    }
+    minimap->setOwner(clientnum);
+}
+
 static Frame* createMinimap(int player) {
     std::string name = "minimap";
     name.append(std::to_string(player));
@@ -2565,6 +2609,8 @@ static Frame* createMinimap(int player) {
 	            ++playercount;
 	        }
 	    }
+
+	    widget.setInvisible(*shareMinimap && playercount > 2);
 
         bool reducedSize = playercount > 2 || (playercount == 2 && MainMenu::vertical_splitscreen);
 
