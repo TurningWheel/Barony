@@ -6045,7 +6045,7 @@ Cast#
 
 # Nav Prompts
 4091 Take All#
-4092 Move cursor#
+4092 Move Cursor#
 4093 View Spells#
 4094 View Items#
 4095 View Skills#
@@ -6059,5 +6059,13 @@ Cast#
 4102 Appraise item#
 4103 View spell details#
 4104 Hide spell details#
+4105 Open Map#
+4106 Open Log#
+4107 Activate#
+4108 Drop Gold#
+4109 Pin Timer To HUD#
+4110 Unpin Timer From HUD#
+4111 Show Tooltip (Hold)#
+4112 Show Level Info (Hold)#
 
 4199 end#
