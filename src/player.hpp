@@ -1144,7 +1144,7 @@ public:
 		static void loadCharacterSheetJSON();
 		static std::string defaultString;
 		static std::string& getHoverTextString(std::string key);
-		void updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos);
+		void updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT);
 	} characterSheet;
 
 	class SkillSheet_t

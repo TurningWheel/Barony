@@ -1069,6 +1069,10 @@ Player::GUI_t::GUIModules Player::GUI_t::hoveringOverModuleButton()
 
 bool Player::GUI_t::bActiveModuleHasNoCursor()
 {
+	if ( hoveringOverModuleButton() != MODULE_NONE )
+	{
+		return false;
+	}
 	switch ( activeModule )
 	{
 		case MODULE_BOOK_VIEW:

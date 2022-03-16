@@ -657,6 +657,11 @@ void createUINavigation(const int player)
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Magic button clicked", button.getOwner());
+			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+			{
+				// prevent 1 frame flickering of hud.cursor after click
+				players[button.getOwner()]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+			}
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
@@ -691,6 +696,11 @@ void createUINavigation(const int player)
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
 			}
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_CHARSHEET;
+			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+			{
+				// prevent 1 frame flickering of hud.cursor after click
+				players[button.getOwner()]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+			}
 			players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
 			if ( players[button.getOwner()]->characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
 			{
@@ -715,6 +725,11 @@ void createUINavigation(const int player)
 		itemsButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Item button clicked", button.getOwner());
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+			{
+				// prevent 1 frame flickering of hud.cursor after click
+				players[button.getOwner()]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+			}
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL
 				&& players[button.getOwner()]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 			{
@@ -788,6 +803,15 @@ void createUINavigation(const int player)
 		auto rightTriggerNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "right trigger img");
 		rightTriggerNavigationImg->disabled = true;
+
+		auto additionalNavigationTxt = uiNavFrame->addField("additional txt", 64);
+		additionalNavigationTxt->setFont(navFont);
+		additionalNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		additionalNavigationTxt->setHJustify(Field::justify_t::LEFT);
+
+		auto additionalNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "additional img");
+		additionalNavigationImg->disabled = true;
 	}
 }
 
@@ -847,44 +871,120 @@ void Player::HUD_t::updateUINavigation()
 	rightTriggerTxt->setDisabled(true);
 	auto rightTriggerGlyph = uiNavFrame->findImage("right trigger img");
 	rightTriggerGlyph->disabled = true;
+
+	auto additionalTxt = uiNavFrame->findField("additional txt");
+	additionalTxt->setDisabled(true);
+	auto additionalGlyph = uiNavFrame->findImage("additional img");
+	additionalGlyph->disabled = true;
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth()
-		&& leftBumperModule != Player::GUI_t::MODULE_NONE )
+		&& !player.bUseCompactGUIWidth() )
 	{
-		switch ( leftBumperModule )
+		if ( leftBumperModule != Player::GUI_t::MODULE_NONE )
 		{
-			case Player::GUI_t::MODULE_INVENTORY:
-			case Player::GUI_t::MODULE_SPELLS:
-			case Player::GUI_t::MODULE_HOTBAR:
-			case Player::GUI_t::MODULE_CHARACTERSHEET:
-			case Player::GUI_t::MODULE_CHEST:
-				leftBumperTxt->setDisabled(false);
-				leftBumperTxt->setText("/");
-				break;
-			default:
-				break;
+			switch ( leftBumperModule )
+			{
+				case Player::GUI_t::MODULE_INVENTORY:
+				case Player::GUI_t::MODULE_SPELLS:
+				case Player::GUI_t::MODULE_HOTBAR:
+				case Player::GUI_t::MODULE_CHARACTERSHEET:
+				case Player::GUI_t::MODULE_CHEST:
+					leftBumperTxt->setDisabled(false);
+					leftBumperTxt->setText("/");
+					break;
+				default:
+					break;
+			}
 		}
-	}
-	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth()
-		&& rightBumperModule != Player::GUI_t::MODULE_NONE )
-	{
-		switch ( rightBumperModule )
+		if ( rightBumperModule != Player::GUI_t::MODULE_NONE )
 		{
-			case Player::GUI_t::MODULE_INVENTORY:
-			case Player::GUI_t::MODULE_SPELLS:
-			case Player::GUI_t::MODULE_HOTBAR:
-			case Player::GUI_t::MODULE_CHARACTERSHEET:
-			case Player::GUI_t::MODULE_CHEST:
-				rightBumperTxt->setDisabled(false);
-				rightBumperTxt->setText(language[4092]);
-				break;
-			default:
-				break;
+			switch ( rightBumperModule )
+			{
+				case Player::GUI_t::MODULE_INVENTORY:
+				case Player::GUI_t::MODULE_SPELLS:
+				case Player::GUI_t::MODULE_HOTBAR:
+				case Player::GUI_t::MODULE_CHARACTERSHEET:
+				case Player::GUI_t::MODULE_CHEST:
+					rightBumperTxt->setDisabled(false);
+					rightBumperTxt->setText(language[4092]);
+					break;
+				default:
+					break;
+			}
+		}
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		{
+			auto selectedElement = player.characterSheet.selectedElement;
+			if ( selectedElement >= Player::CharacterSheet_t::SHEET_STR && selectedElement <= Player::CharacterSheet_t::SHEET_WGT )
+			{
+				additionalTxt->setDisabled(false);
+				additionalTxt->setText(language[4111]);
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
+			{
+				additionalTxt->setDisabled(false);
+				additionalTxt->setText(language[4112]);
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_SKILL_LIST
+				|| selectedElement == Player::CharacterSheet_t::SHEET_OPEN_LOG 
+				|| selectedElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
+			{
+				additionalTxt->setDisabled(false);
+				// options to use specific text 'open log' etc
+				//if ( selectedElement == Player::CharacterSheet_t::SHEET_SKILL_LIST )
+				//{
+				//	additionalTxt->setText(language[4095]);
+				//}
+				//else if ( selectedElement == Player::CharacterSheet_t::SHEET_OPEN_LOG )
+				//{
+				//	additionalTxt->setText(language[4106]);
+				//}
+				//else if ( selectedElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
+				//{
+				//	additionalTxt->setText(language[4105]);
+				//}
+				additionalTxt->setText(language[4107]); // activate
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_GOLD )
+			{
+				additionalTxt->setDisabled(false);
+				if ( player.GUI.isDropdownActive() )
+				{
+					additionalTxt->setText(language[4053]);
+				}
+				else
+				{
+					additionalTxt->setText(language[4108]);
+				}
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_TIMER )
+			{
+				additionalTxt->setDisabled(false);
+				if ( player.characterSheet.showGameTimerAlways )
+				{
+					additionalTxt->setText(language[4110]);
+				}
+				else
+				{
+					additionalTxt->setText(language[4109]);
+				}
+			}
+			if ( !additionalTxt->isDisabled() )
+			{
+				if ( selectedElement == Player::CharacterSheet_t::SHEET_GOLD
+					&& player.GUI.isDropdownActive() )
+				{
+					additionalGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+				}
+				else
+				{
+					additionalGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuConfirm");
+				}
+			}
 		}
 	}
 
 	int lowestLeftY = 8;
+	int lowestRightY = 8;
 
 	int leftAnchorX = 0;
 	int rightAnchorX = 0;
@@ -1012,6 +1112,43 @@ void Player::HUD_t::updateUINavigation()
 				}
 				rightTriggerTxt->setDisabled(false);
 				rightTriggerTxt->setText(language[4095]);
+
+				if ( !additionalTxt->isDisabled() )
+				{
+					if ( justify == PANEL_JUSTIFY_LEFT )
+					{
+						additionalTxt->setHJustify(Field::justify_t::LEFT);
+					}
+					else
+					{
+						additionalTxt->setHJustify(Field::justify_t::RIGHT);
+					}
+					additionalGlyph->disabled = false;
+					SDL_Rect textPos;
+					textPos.w = additionalTxt->getTextObject()->getWidth();
+					textPos.h = Font::get(additionalTxt->getFont())->height() + 8;
+					if ( justify == PANEL_JUSTIFY_LEFT )
+					{
+						textPos.x = rightTriggerTxt->getSize().x;
+					}
+					else
+					{
+						textPos.x = rightTriggerTxt->getSize().x + rightTriggerTxt->getSize().w - textPos.w;
+					}
+					textPos.y = std::max(lowestRightY, rightTriggerTxt->getSize().y + rightTriggerTxt->getSize().h);
+
+					SDL_Rect imgPos;
+					if ( auto imgGet = Image::get(additionalGlyph->path.c_str()) )
+					{
+						imgPos.w = imgGet->getWidth();
+						imgPos.h = imgGet->getHeight();
+					}
+					imgPos.x = rightTriggerGlyph->pos.x + rightTriggerGlyph->pos.w / 2 - imgPos.w / 2;
+					imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+					additionalGlyph->pos = imgPos;
+
+					additionalTxt->setSize(textPos);
+				}
 			}
 		}
 
@@ -1055,6 +1192,11 @@ void Player::HUD_t::updateUINavigation()
 		{
 			lowestLeftY = std::max(lowestLeftY, leftTriggerTxt->getSize().y + leftTriggerTxt->getSize().h);
 			lowestLeftY = std::max(lowestLeftY, leftTriggerGlyph->pos.y + leftTriggerGlyph->pos.h);
+		}
+		if ( !rightTriggerTxt->isDisabled() )
+		{
+			lowestRightY = std::max(lowestRightY, rightTriggerTxt->getSize().y + rightTriggerTxt->getSize().h);
+			lowestRightY = std::max(lowestRightY, rightTriggerGlyph->pos.y + rightTriggerGlyph->pos.h);
 		}
 
 		if ( !leftBumperTxt->isDisabled() )
@@ -4788,7 +4930,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldButton->setHideGlyphs(true);
 			goldButton->setHideKeyboardGlyphs(true);
 			goldButton->setHideSelectors(true);
-			goldButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			goldButton->setMenuConfirmControlType(0);
 			goldButton->setTickCallback([](Widget& widget) {
 				charsheet_deselect_fn(widget);
 			});
@@ -5422,25 +5564,25 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 		if ( dropdown.options[option].action == "gold_drop_10" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 10);
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, 10);
 			consoleCommand(dropCommand);
 		}
 		else if ( dropdown.options[option].action == "gold_drop_100" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 100);
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, 100);
 			consoleCommand(dropCommand);
 		}
 		else if ( dropdown.options[option].action == "gold_drop_1000" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 1000);
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, 1000);
 			consoleCommand(dropCommand);
 		}
 		else if ( dropdown.options[option].action == "gold_drop_all" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", std::max(0, stats[player.playernum]->GOLD));
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, std::max(0, stats[player.playernum]->GOLD));
 			consoleCommand(dropCommand);
 		}
 		messagePlayer(player.playernum, MESSAGE_DEBUG, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
@@ -5852,6 +5994,7 @@ void Player::GUIDropdown_t::process()
 		dropDownOptionSelected = -1;
 		dropDownX = 0;
 		dropDownY = 0;
+		dropDownToggleClick = false;
 		return;
 	}
 	else
@@ -5893,6 +6036,26 @@ void Player::GUIDropdown_t::process()
 		}
 	}
 
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown") )
+		{
+			++dropDownOptionSelected;
+			if ( dropDownOptionSelected >= dropDown.options.size() )
+			{
+				dropDownOptionSelected = 0;
+			}
+		}
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp") )
+		{
+			--dropDownOptionSelected;
+			if ( dropDownOptionSelected < 0 )
+			{
+				dropDownOptionSelected = dropDown.options.size() - 1;
+			}
+		}
+	}
+
 	std::vector<std::tuple<Frame::image_t*, Field*, Frame::image_t*>> optionFrames;
 	index = 1;
 	for ( auto& option : dropDown.options )
@@ -5910,7 +6073,20 @@ void Player::GUIDropdown_t::process()
 		txt->setDisabled(false);
 		img->disabled = true;
 
-		if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( dropDownOptionSelected + 1 == index )
+			{
+				img->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuConfirm");
+				if ( auto imgGet = Image::get(img->path.c_str()) )
+				{
+					img->pos.w = imgGet->getWidth();
+					img->pos.h = imgGet->getHeight();
+					img->disabled = false;
+				}
+			}
+		}
+		/*if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 		{
 			img->path = Input::inputs[player.playernum].getGlyphPathForBinding(option.controllerGlyph.c_str());
 			img->disabled = false;
@@ -5919,7 +6095,7 @@ void Player::GUIDropdown_t::process()
 		{
 			img->path = Input::inputs[player.playernum].getGlyphPathForBinding(option.keyboardGlyph.c_str());
 			img->disabled = false;
-		}
+		}*/
 
 		txt->setText(option.text.c_str());
 		if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
@@ -5929,7 +6105,7 @@ void Player::GUIDropdown_t::process()
 
 			SDL_Rect size = txt->getSize();
 			size.w = textGet->getWidth();
-			if ( img->disabled )
+			if ( img->disabled || true )
 			{
 				size.x = textPaddingX;
 				txt->setHJustify(Field::justify_t::CENTER);
@@ -5964,26 +6140,32 @@ void Player::GUIDropdown_t::process()
 			txt->setSize(size);
 		}
 
-		auto ml = dropdownFrame->findImage("interact middle left");
-		SDL_Rect absoluteSize = txt->getAbsoluteSize();
-		absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
-		absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
-		absoluteSize.y += 4;
-		absoluteSize.h -= 4;
-		if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
-			&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+		img->pos.x = txt->getSize().x - 8;
+		img->pos.y = txt->getSize().y + txt->getSize().h / 2 - img->pos.h / 2;
+
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			dropDownOptionSelected = index;
+			auto ml = dropdownFrame->findImage("interact middle left");
+			SDL_Rect absoluteSize = txt->getAbsoluteSize();
+			absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
+			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+			absoluteSize.y += 4;
+			absoluteSize.h -= 4;
+			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			{
+				dropDownOptionSelected = index;
+			}
 		}
 		++index;
 	}
 
 	int textStartX = textPaddingX;
-	if ( optionFrames.size() > 0 )
-	{
-		auto img = std::get<0>(optionFrames[0]);
-		textStartX += (img->disabled ? 0 : img->pos.x + img->pos.w);
-	}
+	//if ( optionFrames.size() > 0 )
+	//{
+	//	auto img = std::get<0>(optionFrames[0]);
+	//	textStartX += (img->disabled ? 0 : img->pos.x + img->pos.w);
+	//}
 	const int frameWidth = maxWidth + textStartX + textPaddingX;
 
 	SDL_Rect frameSize = dropdownFrame->getSize();
@@ -6043,14 +6225,17 @@ void Player::GUIDropdown_t::process()
 	}
 	dropdownFrame->setSize(frameSize);
 
-	SDL_Rect absoluteSize = dropdownFrame->getAbsoluteSize();
-	// right click protect uses exact border, else there is 10 px buffer
-	absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
-	absoluteSize.w += rightClickProtectBuffer;
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		SDL_Rect absoluteSize = dropdownFrame->getAbsoluteSize();
+		// right click protect uses exact border, else there is 10 px buffer
+		absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
+		absoluteSize.w += rightClickProtectBuffer;
 	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
 		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
 	{
 		dropDownOptionSelected = -1;
+	}
 	}
 
 	if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
@@ -6076,9 +6261,24 @@ void Player::GUIDropdown_t::process()
 	}
 
 	bool activate = false;
-	if ( !Input::inputs[player.playernum].binary("MenuRightClick") && !dropDownToggleClick )
+	if ( !dropDownToggleClick && !Input::inputs[player.playernum].binary("MenuRightClick") )
 	{
 		activate = true;
+	}
+	else if ( dropDownToggleClick )
+	{
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuRightClick") )
+		{
+			close();
+		}
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm") )
+		{
+			activate = true;
+		}
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel") )
+		{
+			close();
+		}
 	}
 	if ( activate )
 	{
@@ -6154,13 +6354,16 @@ void Player::GUIDropdown_t::open(const std::string name)
 	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
 	itemMenuOpen = false;
 
-	dropDownX = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + (getDropDownAlignRight(name) ? 8 : -8);
-	dropDownY = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	if ( auto interactMenuTop = dropdownFrame->findImage("interact top background") )
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		// 10px is slot half height, minus the top interact text height
-		// mouse will be situated halfway in first menu option
-		dropDownY -= (interactMenuTop->pos.h + 10 + 2);
+		dropDownX = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + (getDropDownAlignRight(name) ? 8 : -8);
+		dropDownY = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+		if ( auto interactMenuTop = dropdownFrame->findImage("interact top background") )
+		{
+			// 10px is slot half height, minus the top interact text height
+			// mouse will be situated halfway in first menu option
+			dropDownY -= (interactMenuTop->pos.h + 10 + 2);
+		}
 	}
 	dropDownOptionSelected = 0;
 	if ( allDropDowns[name].defaultOption > 0 && allDropDowns[name].options.size() > allDropDowns[name].defaultOption )
@@ -6580,7 +6783,8 @@ void Player::CharacterSheet_t::updateGameTimer()
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
 
-	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() )
+	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() 
+		&& inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
 		updateCharacterSheetTooltip(SHEET_TIMER, sheetFrame->findFrame("game timer")->getSize());
 	}
@@ -7113,7 +7317,7 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	return regen * 100.0;
 }
 
-void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos)
+void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify)
 {
 	if ( !sheetFrame )
 	{
@@ -7922,7 +8126,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		tooltipPos.h = pady1 + currentHeight + pady2;
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -9785,7 +9996,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		tooltipPos.h = pady1 + currentHeight + pady2;
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 		tooltipFrame->setSize(tooltipPos);
 		if ( tooltipPos.y + tooltipPos.h > sheetFrame->getSize().h )
@@ -9863,7 +10081,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			tooltipPos.h = pady1 + txtPos.h + pady2;
 		}
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -9997,7 +10222,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			tooltipPos.h = pady1 + currentHeight + pady2;
 		}
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -10013,7 +10245,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padyMid = 4;
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
-		if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+		if ( !usingMouse )
 		{
 			txt->setText(getHoverTextString("game_timer_controller").c_str());
 		}
@@ -10095,7 +10328,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 		tooltipPos.w = txtPos.w + padx * 2;
 		tooltipPos.h = pady1 + currentHeight + pady2;
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -10118,6 +10358,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	{
 		enableTooltips = false;
 	}
+
+	bool bCompactView = player.bUseCompactGUIHeight();
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -10279,7 +10521,15 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
 				if ( selectedElement == SHEET_DUNGEON_FLOOR && enableTooltips )
 				{
-					updateCharacterSheetTooltip(selectedElement, floorFrame->getSize());
+					SDL_Rect tooltipPos = characterInfoFrame->getSize();
+					tooltipPos.y = floorFrame->getSize().y;
+					Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT;
+					if ( panelJustify == PANEL_JUSTIFY_LEFT || (panelJustify == PANEL_JUSTIFY_RIGHT && bCompactView) )
+					{
+						tooltipJustify = PANEL_JUSTIFY_LEFT;
+						tooltipPos.x += tooltipPos.w;
+					}
+					updateCharacterSheetTooltip(selectedElement, tooltipPos, tooltipJustify);
 				}
 			}
 			else
@@ -10294,17 +10544,49 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		gold->setText(buf);
 		if ( selectedElement == SHEET_GOLD )
 		{
-			if ( Input::inputs[player.playernum].binary("MenuRightClick") 
+			if ( Input::inputs[player.playernum].binary("MenuRightClick")
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive() )
 			{
 				player.GUI.dropdownMenu.open("drop_gold");
 			}
-			if ( enableTooltips )
+			else if ( (!inputs.getVirtualMouse(player.playernum)->draw_cursor
+					&& inputs.hasController(player.playernum)
+					&& Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm"))
+				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+				&& !player.GUI.isDropdownActive() )
+			{
+				player.GUI.dropdownMenu.open("drop_gold");
+				player.GUI.dropdownMenu.dropDownToggleClick = true;
+				SDL_Rect dropdownPos = characterInfoFrame->getSize();
+				dropdownPos.y += gold->getSize().y + gold->getSize().h / 2;
+				if ( auto interactMenuTop = player.GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+				{
+					// 10px is slot half height, move by 1.5 slots, minus the top interact text height
+					dropdownPos.y -= (interactMenuTop->pos.h + (3 * 10) + 4);
+				}
+				if ( !player.GUI.dropdownMenu.getDropDownAlignRight("drop_gold") )
+				{
+					player.GUI.dropdownMenu.dropDownX = dropdownPos.x;
+				}
+				else
+				{
+					player.GUI.dropdownMenu.dropDownX = dropdownPos.x + dropdownPos.w;
+				}
+				player.GUI.dropdownMenu.dropDownX += player.camera_virtualx1();
+				player.GUI.dropdownMenu.dropDownY = dropdownPos.y + player.camera_virtualy1();
+			}
+			if ( enableTooltips && !inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 			{
 				SDL_Rect tooltipPos = characterInfoFrame->getSize();
 				tooltipPos.y += gold->getSize().y;
-				updateCharacterSheetTooltip(selectedElement, tooltipPos);
+				Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT;
+				if ( panelJustify == PANEL_JUSTIFY_LEFT || (panelJustify == PANEL_JUSTIFY_RIGHT && bCompactView) )
+				{
+					tooltipJustify = PANEL_JUSTIFY_LEFT;
+					tooltipPos.x += tooltipPos.w;
+				}
+				updateCharacterSheetTooltip(selectedElement, tooltipPos, tooltipJustify);
 			}
 		}
 	}

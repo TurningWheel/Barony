@@ -770,7 +770,8 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	if ( !Input::inputs[player].binaryToggle("InventoryMoveUp")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveLeft")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveRight")
-		&& !Input::inputs[player].binaryToggle("InventoryMoveDown") )
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDown")
+		|| isDropdownActive() )
 	{
 		return false;
 	}
