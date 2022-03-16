@@ -857,7 +857,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 #endif
 
 	// scroll with mouse wheel
-	if (parent != nullptr && !hollow && rectContainsPoint(fullSize, omousex, omousey) && usable) {
+	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && usable) {
 		bool mwheeldown = false;
 		bool mwheelup = false;
 	    if (input.consumeBinaryToggle("MenuMouseWheelDown")) {
@@ -936,7 +936,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			SDL_Rect sliderRect;
 			sliderRect.x = _size.x + _size.w; sliderRect.w = sliderSize;
 			sliderRect.y = _size.y + _size.h; sliderRect.h = sliderSize;
-			if (rectContainsPoint(sliderRect, omousex, omousey)) {
+			if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 				result.usable = false;
 			}
 		}
@@ -973,14 +973,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				usable = result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
 			} else {
-				if (rectContainsPoint(handleRect, omousex, omousey)) {
+				if ( mouseActive && rectContainsPoint(handleRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						draggingHSlider = true;
 						oldSliderX = this->actualSize.x;
 					}
 					usable = result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
-				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
+				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize, size.w) : std::min(entrySize, size.w);
 						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
@@ -1025,14 +1025,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				usable = result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
 			} else {
-				if (rectContainsPoint(handleRect, omousex, omousey)) {
+				if ( mouseActive && rectContainsPoint(handleRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						draggingVSlider = true;
 						oldSliderY = this->actualSize.y;
 					}
 					usable = result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
-				} else if (rectContainsPoint(sliderRect, omousex, omousey)) {
+				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize, size.h) : std::min(entrySize, size.h);
 						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
@@ -1120,7 +1120,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			entryRect.x = _size.x + border - actualSize.x + listOffset.x; entryRect.w = _size.w - border * 2;
 			entryRect.y = _size.y + border + i * entrySize - actualSize.y + listOffset.y; entryRect.h = entrySize;
 
-			if (rectContainsPoint(_size, omousex, omousey) && rectContainsPoint(entryRect, omousex, omousey)) {
+			if ( mouseActive 
+				&& rectContainsPoint(_size, omousex, omousey) 
+				&& rectContainsPoint(entryRect, omousex, omousey) ) {
 				result.highlightTime = entry->highlightTime;
 				result.tooltip = entry->tooltip.c_str();
 				if (mouseActive) {
@@ -1230,7 +1232,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	if (rectContainsPoint(_size, omousex, omousey) && !hollow) {
+	if ( mouseActive && rectContainsPoint(_size, omousex, omousey) && !hollow ) {
 		//messagePlayer(0, "%d: %s", getOwner(), getName());
 		if (clickable && usable) {
 			if (mousestatus[SDL_BUTTON_LEFT]) {
