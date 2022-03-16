@@ -134,28 +134,28 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		if ( colorblind )
 		{
-			enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
+			enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(0, 0, 64); // Display blue
 		}
 		else
 		{
-			enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
+			enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(0, 64, 0); // Display green
 		}
 	}
 	else if ( targetStats.EFFECTS[EFF_PARALYZED] )
 	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 112, 112, 0);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(112, 112, 0);
 	}
 	else if ( targetStats.EFFECTS[EFF_CONFUSED] || targetStats.EFFECTS[EFF_DISORIENTED] )
 	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 92, 0, 92);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(92, 0, 92);
 	}
 	else if ( targetStats.EFFECTS[EFF_PACIFY] )
 	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 128, 32, 80);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(128, 32, 80);
 	}
 	else if ( targetStats.EFFECTS[EFF_BLIND] )
 	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = SDL_MapRGB(mainsurface->format, 64, 64, 64);
+		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(64, 64, 64);
 	}
 	else
 	{
@@ -396,11 +396,11 @@ void drawHPMPBars(int player)
 		{
 			if ( colorblind )
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+				drawTooltip(&pos, makeColorRGB(0, 255, 255)); // blue
 			}
 			else
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+				drawTooltip(&pos, makeColorRGB(0, 255, 0)); // green
 			}
 		}
 	}
@@ -424,11 +424,11 @@ void drawHPMPBars(int player)
 		{
 			if ( colorblind )
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+				drawTooltip(&pos, makeColorRGB(0, 255, 255)); // blue
 			}
 			else
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+				drawTooltip(&pos, makeColorRGB(0, 255, 0)); // green
 			}
 		}
 	}
@@ -445,16 +445,16 @@ void drawHPMPBars(int player)
 	{
 		if ( colorblind )
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 0, 48); // Display blue
+			color = makeColorRGB(0, 0, 48); // Display blue
 		}
 		else
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 48, 0); // Display green
+			color = makeColorRGB(0, 48, 0); // Display green
 		}
 	}
 	else
 	{
-		color = SDL_MapRGB(mainsurface->format, 48, 0, 0); // Display red
+		color = makeColorRGB(48, 0, 0); // Display red
 	}
 
 	// Draw the actual Health bar's faint background with specified color
@@ -472,16 +472,16 @@ void drawHPMPBars(int player)
 		{
 			if ( !colorblind )
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 128, 0);
+				color = makeColorRGB(0, 128, 0);
 			}
 			else
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 0, 128);
+				color = makeColorRGB(0, 0, 128);
 			}
 		}
 		else
 		{
-			color = SDL_MapRGB(mainsurface->format, 128, 0, 0);
+			color = makeColorRGB(128, 0, 0);
 		}
 
 		// Only draw the actual Health bar if the Player is alive
@@ -521,27 +521,27 @@ void drawHPMPBars(int player)
 		{
 			if ( colorblind )
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+				drawTooltip(&pos, makeColorRGB(0, 255, 255)); // blue
 			}
 			else
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+				drawTooltip(&pos, makeColorRGB(0, 255, 0)); // green
 			}
 		}
 	}
-	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
-	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
+	Uint32 mpColorBG = makeColorRGB(0, 0, 48);
+	Uint32 mpColorFG = makeColorRGB(0, 24, 128);
 	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 	{
 		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3768]);
-		mpColorBG = SDL_MapRGB(mainsurface->format, 32, 48, 0);
-		mpColorFG = SDL_MapRGB(mainsurface->format, 92, 192, 0);
+		mpColorBG = makeColorRGB(32, 48, 0);
+		mpColorFG = makeColorRGB(92, 192, 0);
 	}
 	else if ( stats[player] && stats[player]->type == AUTOMATON )
 	{
 		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
-		mpColorBG = SDL_MapRGB(mainsurface->format, 64, 32, 0);
-		mpColorFG = SDL_MapRGB(mainsurface->format, 192, 92, 0);
+		mpColorBG = makeColorRGB(64, 32, 0);
+		mpColorFG = makeColorRGB(192, 92, 0);
 	}
 	else
 	{
@@ -565,11 +565,11 @@ void drawHPMPBars(int player)
 		{
 			if ( colorblind )
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+				drawTooltip(&pos, makeColorRGB(0, 255, 255)); // blue
 			}
 			else
 			{
-				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+				drawTooltip(&pos, makeColorRGB(0, 255, 0)); // green
 			}
 		}
 	}
@@ -727,7 +727,7 @@ void drawStatus(int player)
 					z = 0;
 				}
 			}
-			Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255); // black color
+			Uint32 color = makeColor( 0, 0, 0, 255); // black color
 			if ( uiscale_chatlog >= 1.5 )
 			{
 				ttfPrintTextColor(ttf16, x, y, color, false, string->data);
@@ -823,7 +823,7 @@ void drawStatus(int player)
 			pos.y = y2 - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
 			pos.w = 11 * uiscale_chatlog;
 			pos.h = 27 * uiscale_chatlog;
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
+			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
 			//drawImage(textup_bmp, NULL, &pos);
 		}
 		//Text scroll down all the way button.
@@ -833,7 +833,7 @@ void drawStatus(int player)
 			pos.y = y2 - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
 			pos.w = 11 * uiscale_chatlog;
 			pos.h = 31 * uiscale_chatlog;
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
+			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
 			//drawImage(textdown_bmp, NULL, &pos);
 		}
 		//Text scroll down button.
@@ -843,7 +843,7 @@ void drawStatus(int player)
 			pos.y = y2 - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
 			pos.w = 11 * uiscale_chatlog;
 			pos.h = 28 * uiscale_chatlog;
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
+			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
 			//drawImage(textup_bmp, NULL, &pos);
 		}
 		//Text scroll up all the way button.
@@ -963,11 +963,11 @@ void drawStatus(int player)
 		Uint32 color;
 		if ( players[player]->hotbar.current_hotbar == num && !openedChest[player] )
 		{
-			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255); //Draw gold border around currently selected hotbar.
+			color = makeColor( 255, 255, 0, 255); //Draw gold border around currently selected hotbar.
 		}
 		else
 		{
-			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60); //Draw normal grey border.
+			color = makeColor( 255, 255, 255, 60); //Draw normal grey border.
 		}
 		pos.w = hotbar_t.getSlotSize();
 		pos.h = hotbar_t.getSlotSize();
@@ -999,31 +999,31 @@ void drawStatus(int player)
 			if ( !item->identified )
 			{
 				// give it a yellow background if it is unidentified
-				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 128, 0), 64); //31875
+				drawRect(&highlightBox, makeColorRGB(128, 128, 0), 64); //31875
 			}
 			else if ( item->beatitude < 0 )
 			{
 				// give it a red background if cursed
-				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 0, 0), 64);
+				drawRect(&highlightBox, makeColorRGB(128, 0, 0), 64);
 			}
 			else if ( item->beatitude > 0 )
 			{
 				// give it a green background if blessed (light blue if colorblind mode)
 				if ( colorblind )
 				{
-					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 50, 128, 128), 64);
+					drawRect(&highlightBox, makeColorRGB(50, 128, 128), 64);
 				}
 				else
 				{
-					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 0, 128, 0), 64);
+					drawRect(&highlightBox, makeColorRGB(0, 128, 0), 64);
 				}
 			}
 			if ( item->status == BROKEN )
 			{
-				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 125);
+				drawRect(&highlightBox, makeColorRGB(64, 64, 64), 125);
 			}
 
-			Uint32 itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+			Uint32 itemColor = makeColor( 255, 255, 255, 255);
 			if ( hotbar_t.useHotbarFaceMenu && hotbar_t.faceMenuButtonHeld != hotbar_t.GROUP_NONE )
 			{
 				bool dimColor = false;
@@ -1033,7 +1033,7 @@ void drawStatus(int player)
 				}
 				if ( dimColor )
 				{
-					itemColor = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+					itemColor = makeColor( 255, 255, 255, 128);
 				}
 			}
 			drawImageScaledColor(itemSprite(item), NULL, &pos, itemColor);
@@ -1046,7 +1046,7 @@ void drawStatus(int player)
 				if ( !item->usableWhileShapeshifted(stats[player]) )
 				{
 					disableItemUsage = true;
-					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
+					drawRect(&highlightBox, makeColorRGB(64, 64, 64), 144);
 				}
 			}
 			if ( client_classes[player] == CLASS_SHAMAN )
@@ -1054,7 +1054,7 @@ void drawStatus(int player)
 				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(player, item)) )
 				{
 					disableItemUsage = true;
-					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
+					drawRect(&highlightBox, makeColorRGB(64, 64, 64), 144);
 				}
 			}
 
@@ -1523,14 +1523,14 @@ void drawStatus(int player)
 						Uint32 color = 0xFFFFFFFF;
 						if ( !item->identified )
 						{
-							color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							color = makeColorRGB(255, 255, 0);
 							ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
 						}
 						else
 						{
 							if ( item->beatitude < 0 )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
 							}
 							else if ( item->beatitude == 0 )
@@ -1540,7 +1540,7 @@ void drawStatus(int player)
 							}
 							else
 							{
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								color = makeColorRGB(0, 255, 0);
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 							}
 						}
@@ -1576,7 +1576,7 @@ void drawStatus(int player)
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
 						if ( strcmp(spellEffectText, "") )
 						{
-							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
+							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, makeColorRGB(0, 255, 255), spellEffectText);
 						}
 
 						if ( item->identified && stats[player] )
@@ -1596,15 +1596,15 @@ void drawStatus(int player)
 
 								if ( item->weaponGetAttack(stats[player]) >= 0 )
 								{
-									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+									color = makeColorRGB(0, 255, 255);
 								}
 								else
 								{
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									color = makeColorRGB(255, 0, 0);
 								}
 								if ( stats[player]->type != tmpRace )
 								{
-									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+									color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 								}
 
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
@@ -1624,15 +1624,15 @@ void drawStatus(int player)
 
 								if ( item->armorGetAC(stats[player]) >= 0 )
 								{
-									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+									color = makeColorRGB(0, 255, 255);
 								}
 								else
 								{
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									color = makeColorRGB(255, 0, 0);
 								}
 								if ( stats[player]->type != tmpRace )
 								{
-									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+									color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 								}
 
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
@@ -1640,7 +1640,7 @@ void drawStatus(int player)
 							}
 							else if ( itemCategory(item) == SCROLL )
 							{
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+								color = makeColorRGB(0, 255, 255);
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
 							}
 						}

@@ -44,7 +44,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		{
 			if ( entity.doorDisableLockpicks == 1 )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				Uint32 color = makeColorRGB(255, 0, 255);
 				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else
@@ -285,7 +285,7 @@ void Item::applyLockpick(int player, Entity& entity)
 
 			if ( entity.doorDisableLockpicks == 1 )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				Uint32 color = makeColorRGB(255, 0, 255);
 				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else if ( capstoneUnlocked 

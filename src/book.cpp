@@ -650,7 +650,7 @@ void BookParser_t::createBook(std::string filename)
 	//book->pages.first = nullptr;
 	//book->pages.last = nullptr;
 	//
-	//const Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
+	//const Uint32 color = makeColor( 0, 0, 0, 255);
 
 
 	//strncpy(string->data, pageText.c_str(), 120);

@@ -2357,7 +2357,7 @@ int main(int argc, char** argv)
 					pos.y = (selectedarea_y1 << TEXTUREPOWER) - camy;
 					pos.w = (selectedarea_x2 - selectedarea_x1 + 1) << TEXTUREPOWER;
 					pos.h = (selectedarea_y2 - selectedarea_y1 + 1) << TEXTUREPOWER;
-					drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 127);
+					drawRect(&pos, makeColorRGB(255, 255, 255), 127);
 				}
 				if ( viewsprites )
 				{
@@ -2531,7 +2531,7 @@ int main(int argc, char** argv)
 
 					if ( lastPaletteTileSelected == recentIndex )
 					{
-						drawRect(&boxPos, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+						drawRect(&boxPos, makeColorRGB(255, 0, 0), 255);
 					}
 					drawImage(tiles[recentUsedTiles[recentUsedTilePalette][recentIndex]], NULL, &pos);
 					pos.x += pad_x;
@@ -2731,7 +2731,7 @@ int main(int argc, char** argv)
 						pos.y = suby1 + 24 + (std::max(selectedFile - y2, 0)) * 8;
 						pos.w = subx2 - subx1 - 32;
 						pos.h = 8;
-						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 
 						// print all the files within the directory
 						x = subx1 + 8;
@@ -2819,7 +2819,7 @@ int main(int argc, char** argv)
 						pos.y = suby1 + 24 + (selectedFile - y2) * 8;
 						pos.w = subx2 - subx1 - 32;
 						pos.h = 8;
-						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 
 						// print all the files within the directory
 						x = subx1 + 8;
@@ -3448,7 +3448,7 @@ int main(int argc, char** argv)
 							int pad_y2 = suby1 + 28 + 2 * spacing;
 							int pad_x3 = 44; //property field width
 							int pad_x4;
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							Uint32 color = makeColorRGB(255, 255, 255);
 							char tmpPropertyName[lenProperties] = "";
 							for ( int i = 0; i < numProperties; i++ )
 							{
@@ -3470,19 +3470,19 @@ int main(int argc, char** argv)
 									{
 										if ( i < 3 ) //hp
 										{
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+											color = makeColorRGB(0, 255, 0);
 										}
 										else if ( i < 5 ) //mp
 										{
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 228);
+											color = makeColorRGB(0, 255, 228);
 										}
 										else if ( i == 5 ) //level
 										{
-											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
+											color = makeColorRGB(255, 192, 0);
 										}
 										else if ( i == 6 ) //gold
 										{
-											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
+											color = makeColorRGB(255, 192, 0);
 										}
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
 										// draw another box side by side, spaced by pad_x3 + 16
@@ -3499,7 +3499,7 @@ int main(int argc, char** argv)
 									}
 									else if ( i < 13 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										color = makeColorRGB(255, 255, 255);
 										pad_y1 += spacing + 10;
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
 										// draw another box side by side, spaced by pad_x3 + 16
@@ -3520,7 +3520,7 @@ int main(int argc, char** argv)
 										{
 											pad_y1 += 10;
 										}
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										color = makeColorRGB(255, 255, 255);
 										pad_y1 += spacing + 10;
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
 										// print property name
@@ -3530,7 +3530,7 @@ int main(int argc, char** argv)
 										if ( i == 13 && spriteStats->type == SHOPKEEPER )
 										{
 											char shopTypeText[32] = "";
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+											color = makeColorRGB(0, 255, 0);
 											switch ( atoi(spriteProperties[25]) )
 											{
 												case 1:
@@ -3565,11 +3565,11 @@ int main(int argc, char** argv)
 													break;
 												default:
 													strcpy(shopTypeText, "Default Random Store");
-													color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+													color = makeColorRGB(255, 255, 255);
 													break;
 											}
 											printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 + pad_x3 + 8, pad_y1, color, shopTypeText);
-											color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+											color = makeColorRGB(255, 255, 255);
 										}
 									}
 								}
@@ -3815,8 +3815,8 @@ int main(int argc, char** argv)
 						int pad_x3 = pad_x1 + pad_x2 + 8;
 						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -3843,7 +3843,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										if ( propertyInt == 0 )
 										{
@@ -3887,7 +3887,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
@@ -3898,7 +3898,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
@@ -4048,8 +4048,8 @@ int main(int argc, char** argv)
 						}
 						int propertyInt = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 						for ( int i = 0; i < numProperties; i++ )
 						{
 							if ( newwindow == 4 )
@@ -4117,27 +4117,27 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 2 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+										color = makeColorRGB(200, 128, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Decrepit");
 									}
 									else if ( propertyInt == 3 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										color = makeColorRGB(255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Worn");
 									}
 									else if ( propertyInt == 4 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+										color = makeColorRGB(128, 200, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Servicable");
 									}
 									else if ( propertyInt == 5 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Excellent");
 									}
 									else if ( propertyInt == 1 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										color = makeColorRGB(255, 0, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Broken");
 									}
 									else if ( propertyInt == 0 )
@@ -4174,7 +4174,7 @@ int main(int argc, char** argv)
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										color = makeColorRGB(255, 0, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
 									}
 								}
@@ -4182,12 +4182,12 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 1 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Identified");
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										color = makeColorRGB(255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Unidentified");
 									}
 									else if ( propertyInt == 2 )
@@ -4211,12 +4211,12 @@ int main(int argc, char** argv)
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										color = makeColorRGB(255, 0, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
@@ -4239,7 +4239,7 @@ int main(int argc, char** argv)
 										}
 										else
 										{
-											color = SDL_MapRGB(mainsurface->format, 200, 64, 220);
+											color = makeColorRGB(200, 64, 220);
 										}
 
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, itemCategoryNames[propertyInt]);
@@ -4249,7 +4249,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
@@ -4293,7 +4293,7 @@ int main(int argc, char** argv)
 						pos.y = pad_y1 + 4 + (itemSelect - y2) * 8;
 						pos.w = subx2 - pad_x1 - 24;
 						pos.h = 8;
-						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 
 						// print all the items
 						x = pad_x1;
@@ -4476,10 +4476,10 @@ int main(int argc, char** argv)
 						int pad_x3 = pad_x1 + pad_x2 + 8;
 						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 color2 = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-						Uint32 colorBad = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 color2 = makeColorRGB(255, 255, 0);
+						Uint32 colorBad = makeColorRGB(255, 0, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -4518,7 +4518,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, monsterEditorNameStrings[atoi(spriteProperties[i])]);
 										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
@@ -4598,7 +4598,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
@@ -4609,7 +4609,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
@@ -4685,8 +4685,8 @@ int main(int argc, char** argv)
 						int pad_x3 = pad_x1 + pad_x2 + 8;
 						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -4713,7 +4713,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										char tmpStr[32] = "";
 										if ( propertyInt == 0 )
 										{
@@ -4744,7 +4744,7 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										// 32 is WAY TOO SMALL for this, wtf?
 										// spriteProperties is a string table, each entry 128 bytes long
 										// " Tiles to power in facing direction" = 35 bytes
@@ -4793,7 +4793,7 @@ int main(int argc, char** argv)
 
 							if ( errorMessage )
 							{
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 								if ( errorArr[i] == 1 )
 								{
 									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
@@ -4878,9 +4878,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -4976,9 +4976,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5118,9 +5118,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5289,9 +5289,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5397,9 +5397,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5474,9 +5474,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5609,9 +5609,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5716,9 +5716,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -5948,9 +5948,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6065,9 +6065,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6171,9 +6171,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 						bool showTextSourceTooltip = false;
 
 						for ( int i = 0; i < numProperties; i++ )
@@ -6211,7 +6211,7 @@ int main(int argc, char** argv)
 								inputField_x = subx1 + 8 + (inputFieldWidth + 8) * i;
 								if ( i == 2 )
 								{
-									Uint32 colorPreview = SDL_MapRGB(mainsurface->format, (Uint32)atoi(spriteProperties[0]),
+									Uint32 colorPreview = makeColorRGB((Uint32)atoi(spriteProperties[0]),
 										(Uint32)atoi(spriteProperties[1]), (Uint32)atoi(spriteProperties[2]));
 									SDL_Rect src;
 									src.x = subx1 + 8 + (inputFieldWidth + 8) * 3;
@@ -6559,9 +6559,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6704,9 +6704,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -6901,9 +6901,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7051,9 +7051,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7082,23 +7082,23 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 2 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 200, 128, 0), "Decrepit");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(200, 128, 0), "Decrepit");
 									}
 									else if ( propertyInt == 3 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 255, 255, 0), "Worn");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 255, 0), "Worn");
 									}
 									else if ( propertyInt == 4 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 128, 200, 0), "Servicable");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(128, 200, 0), "Servicable");
 									}
 									else if ( propertyInt == 5 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 0, 255, 0), "Excellent");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(0, 255, 0), "Excellent");
 									}
 									else if ( propertyInt == 1 )
 									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, SDL_MapRGB(mainsurface->format, 255, 0, 0), "Broken");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, makeColorRGB(255, 0, 0), "Broken");
 									}
 									else if ( propertyInt == 0 )
 									{
@@ -7124,12 +7124,12 @@ int main(int argc, char** argv)
 								{
 									if ( propertyInt == 1 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										color = makeColorRGB(0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "Identified");
 									}
 									else if ( propertyInt == 0 )
 									{
-										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										color = makeColorRGB(255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "Unidentified");
 									}
 									else if ( propertyInt == 2 )
@@ -7193,9 +7193,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7296,9 +7296,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7375,9 +7375,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7482,9 +7482,9 @@ int main(int argc, char** argv)
 						int inputFieldWidth = 64; // width of the text field
 						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 						char tmpPropertyName[lenProperties] = "";
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
@@ -7589,9 +7589,9 @@ int main(int argc, char** argv)
 					//	int inputFieldWidth = 64; // width of the text field
 					//	int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 					//	char tmpPropertyName[lenProperties] = "";
-					//	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					//	Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-					//	Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					//	Uint32 color = makeColorRGB(0, 255, 0);
+					//	Uint32 colorRandom = makeColorRGB(0, 168, 255);
+					//	Uint32 colorError = makeColorRGB(255, 0, 0);
 
 					//	for ( int i = 0; i < numProperties; i++ )
 					//	{
@@ -7672,7 +7672,7 @@ int main(int argc, char** argv)
 					int textColumnRight = (subx2 - subx1) / 2 + 300;
 					int pady = suby1 + 16;
 					int spacing = 0;
-					Uint32 colorHeader = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 colorHeader = makeColorRGB(0, 255, 0);
 					char helptext[128];
 
 					if ( newwindow == 16 )
@@ -8428,7 +8428,7 @@ int main(int argc, char** argv)
 			x = 0;
 			y = 0;
 			z = 0;
-			drawRect( NULL, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255 ); // wipe screen
+			drawRect( NULL, makeColorRGB(0, 0, 0), 255 ); // wipe screen
 			for ( c = 0; c < xres * yres; c++ )
 			{
 				palette[c] = -1;
@@ -8601,7 +8601,7 @@ int main(int argc, char** argv)
 		{
 			x = 0;
 			y = 0;
-			drawRect( NULL, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255 ); // wipe screen
+			drawRect( NULL, makeColorRGB(0, 0, 0), 255 ); // wipe screen
 			for ( c = 0; c < xres * yres; c++ )
 			{
 				palette[c] = -1;

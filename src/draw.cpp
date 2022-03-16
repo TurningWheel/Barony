@@ -909,13 +909,13 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	glEnable(GL_DEPTH_TEST);
 
 	// debug corners
-	//Uint32 color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+	//Uint32 color = makeColorRGB(64, 255, 64); // green
 	//drawCircle(pos->x, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-	//color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+	//color = makeColorRGB(204, 121, 167); // pink
 	//drawCircle(pos->x, pos->y + pos->h, 5, color, 255);
-	//color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+	//color = makeColorRGB(86, 180, 233); // sky blue
 	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
-	//color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+	//color = makeColorRGB(240, 228, 66); // yellow
 	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
 }
 
@@ -1696,12 +1696,12 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					drawRect(&box, makeColorRGB(255, 0, 0), 255);
 					box.w = TEXTURESIZE - 2;
 					box.h = TEXTURESIZE - 2;
 					box.x = pos.x + 1;
 					box.y = pos.y + 1;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+					drawRect(&box, makeColorRGB(0, 0, 255), 255);
 				}
 				
 				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
@@ -1747,12 +1747,12 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					drawRect(&box, makeColorRGB(255, 0, 0), 255);
 					box.w = TEXTURESIZE - 2;
 					box.h = TEXTURESIZE - 2;
 					box.x = pos.x + 1;
 					box.y = pos.y + 1;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+					drawRect(&box, makeColorRGB(0, 0, 255), 255);
 				}
 				drawImageScaled(sprites[0], nullptr, &pos);
 			}
@@ -1766,12 +1766,12 @@ void drawEntities2D(long camx, long camy)
 				box.h = TEXTURESIZE;
 				box.x = pos.x;
 				box.y = pos.y;
-				drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+				drawRect(&box, makeColorRGB(255, 0, 0), 255);
 				box.w = TEXTURESIZE - 2;
 				box.h = TEXTURESIZE - 2;
 				box.x = pos.x + 1;
 				box.y = pos.y + 1;
-				drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+				drawRect(&box, makeColorRGB(0, 0, 255), 255);
 			}
 			drawImageScaled(sprites[0], nullptr, &pos);
 		}
@@ -1810,8 +1810,8 @@ void drawEntities2D(long camx, long camy)
 					char tmpStr2[1024] = "";
 					int padx = pos.x + 10;
 					int pady = pos.y - 40;
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-					Uint32 colorWhite = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					Uint32 color = makeColorRGB(255, 255, 255);
+					Uint32 colorWhite = makeColorRGB(255, 255, 255);
 					switch ( spriteType )
 					{
 						case 1: //monsters
@@ -1894,7 +1894,7 @@ void drawEntities2D(long camx, long camy)
 							pady += 5;
 							strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
 							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
-							color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							color = makeColorRGB(255, 255, 255);
 							pady += 2;
 
 							strcpy(tmpStr, "Status: ");
@@ -1903,27 +1903,27 @@ void drawEntities2D(long camx, long camy)
 							{
 								case 1:
 									strcpy(tmpStr, "Broken");
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									color = makeColorRGB(255, 0, 0);
 									break;
 								case 2:
 									strcpy(tmpStr, "Decrepit");
-									color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+									color = makeColorRGB(200, 128, 0);
 									break;
 								case 3:
 									strcpy(tmpStr, "Worn");
-									color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+									color = makeColorRGB(255, 255, 0);
 									break;
 								case 4:
 									strcpy(tmpStr, "Servicable");
-									color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+									color = makeColorRGB(128, 200, 0);
 									break;
 								case 5:
 									strcpy(tmpStr, "Excellent");
-									color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									color = makeColorRGB(0, 255, 0);
 									break;
 								default:
 									strcpy(tmpStr, "?");
-									color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+									color = makeColorRGB(0, 168, 255);
 									break;
 							}
 							ttfPrintTextColor(ttf8, padx + 56, pady - 10, color, 1, tmpStr);
@@ -1933,22 +1933,22 @@ void drawEntities2D(long camx, long camy)
 							if ( selectedEntity[0]->skill[12] < 0 )
 							{
 								snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[12]);
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 							}
 							else if ( selectedEntity[0]->skill[12] == 0 )
 							{
 								snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[12]);
-								color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+								color = makeColorRGB(255, 255, 255);
 							}
 							else if ( selectedEntity[0]->skill[12] == 10 )
 							{
 								strcpy(tmpStr2, "?");
-								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+								color = makeColorRGB(0, 168, 255);
 							}
 							else
 							{
 								snprintf(tmpStr2, 10, "+%d", selectedEntity[0]->skill[12]);
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								color = makeColorRGB(0, 255, 0);
 							}
 							ttfPrintTextColor(ttf8, padx + 48, pady, color, 1, tmpStr2);
 
@@ -1963,17 +1963,17 @@ void drawEntities2D(long camx, long camy)
 							if ( (int)selectedEntity[0]->skill[15] == 0 )
 							{
 								strcpy(tmpStr2, "No");
-								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+								color = makeColorRGB(255, 255, 0);
 							}
 							else if ( (int)selectedEntity[0]->skill[15] == 1 )
 							{
 								strcpy(tmpStr2, "Yes");
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								color = makeColorRGB(0, 255, 0);
 							}
 							else
 							{
 								strcpy(tmpStr2, "?");
-								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+								color = makeColorRGB(0, 168, 255);
 							}
 							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 1, tmpStr2);
 							break;
@@ -2256,7 +2256,7 @@ void drawGrid(long camx, long camy)
 	long x, y;
 	Uint32 color;
 
-	color = SDL_MapRGB(mainsurface->format, 127, 127, 127);
+	color = makeColorRGB(127, 127, 127);
 	drawLine(-camx, (map.height << TEXTUREPOWER) - camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	drawLine((map.width << TEXTUREPOWER) - camx, -camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	for ( y = 0; y < map.height; y++ )
@@ -2286,7 +2286,7 @@ void drawEditormap(long camx, long camy)
 	src.y = 24;
 	src.w = 112;
 	src.h = 112;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255);
+	drawRect(&src, makeColorRGB(0, 0, 0), 255);
 
 	// initial box dimensions
 	src.x = (xres - 120) + (((real_t)camx / TEXTURESIZE) * 112.0) / map.width;
@@ -2324,8 +2324,8 @@ void drawEditormap(long camx, long camy)
 	osrc.y = src.y + 1;
 	osrc.w = src.w - 2;
 	osrc.h = src.h - 2;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 255, 255, 255), 255);
-	drawRect(&osrc, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255);
+	drawRect(&src, makeColorRGB(255, 255, 255), 255);
+	drawRect(&osrc, makeColorRGB(0, 0, 0), 255);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2345,17 +2345,17 @@ void drawWindow(int x1, int y1, int x2, int y2)
 	src.y = y1;
 	src.w = x2 - x1;
 	src.h = y2 - y1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 160, 160, 192), 255);
+	drawRect(&src, makeColorRGB(160, 160, 192), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 1;
 	src.h = y2 - y1 - 1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 96, 96, 128), 255);
+	drawRect(&src, makeColorRGB(96, 96, 128), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 2;
 	src.h = y2 - y1 - 2;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 128, 128, 160), 255);
+	drawRect(&src, makeColorRGB(128, 128, 160), 255);
 }
 
 void drawDepressed(int x1, int y1, int x2, int y2)
@@ -2366,17 +2366,17 @@ void drawDepressed(int x1, int y1, int x2, int y2)
 	src.y = y1;
 	src.w = x2 - x1;
 	src.h = y2 - y1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 96, 96, 128), 255);
+	drawRect(&src, makeColorRGB(96, 96, 128), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 1;
 	src.h = y2 - y1 - 1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 160, 160, 192), 255);
+	drawRect(&src, makeColorRGB(160, 160, 192), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 2;
 	src.h = y2 - y1 - 2;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 128, 128, 160), 255);
+	drawRect(&src, makeColorRGB(128, 128, 160), 255);
 }
 
 void drawWindowFancy(int x1, int y1, int x2, int y2)
@@ -2921,7 +2921,7 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 {
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255);
+	Uint32 color = makeColorRGB(0, 192, 255);
 	if ( optionalColor == 0 )
 	{
 		drawRect(src, 0, 250);
@@ -2936,8 +2936,8 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, 255);
 }
 
-Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-	return SDL_MapRGBA(mainsurface->format, r, g, b, a);
+void getColor(Uint32 color, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a) {
+    return SDL_GetRGBA(color, mainsurface->format, r, g, b, a);
 }
 
 bool behindCamera(const view_t& camera, real_t x, real_t y)

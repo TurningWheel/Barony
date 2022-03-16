@@ -42,9 +42,9 @@ void Frame::listener_t::onChangeColor(bool selected, bool highlighted) {
 	}
 	Frame::entry_t* entryCast = (Frame::entry_t *)entry;
 	if (selected) {
-		entryCast->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
+		entryCast->color = makeColor( 255, 0, 0, 255);
 	} else if (highlighted) {
-		entryCast->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		entryCast->color = makeColor( 255, 255, 0, 255);
 	} else {
 		entryCast->color = 0xffffffff;
 	}
@@ -1763,7 +1763,7 @@ void createTestUI() {
 	Frame* window = gui->addFrame("window");
 	window->setSize(SDL_Rect{(Frame::virtualScreenX - 500) / 2, (Frame::virtualScreenY - 400) / 2, 500, 400});
 	window->setActualSize(SDL_Rect{0, 0, 1500, 1500});
-	window->setColor(SDL_MapRGBA(mainsurface->format, 128, 128, 160, 255));
+	window->setColor(makeColor( 128, 128, 160, 255));
 
 	{
 		Button* bt = window->addButton("closeButton");
@@ -1817,7 +1817,7 @@ void createTestUI() {
 		Frame* textBox = window->addFrame("testTextBox");
 		textBox->setSize(SDL_Rect{510, y, 200, 40});
 		textBox->setActualSize(SDL_Rect{0, 0, 200, 40});
-		textBox->setColor(SDL_MapRGBA(mainsurface->format, 96, 96, 128, 255));
+		textBox->setColor(makeColor( 96, 96, 128, 255));
 
 		Field* field = textBox->addField("testField", 32);
 		field->setSize(SDL_Rect{0, 0, 200, 40});
@@ -1843,7 +1843,7 @@ void createTestUI() {
 		Frame* frame = window->addFrame("testFrame");
 		frame->setSize(SDL_Rect{510, y, 200, 200});
 		frame->setActualSize(SDL_Rect{0, 0, 200, 200});
-		frame->setColor(SDL_MapRGBA(mainsurface->format, 96, 96, 128, 255));
+		frame->setColor(makeColor( 96, 96, 128, 255));
 		{
 			Frame::entry_t* entry = frame->addEntry("entry1", true);
 			entry->text = "Entry #1";
@@ -1922,7 +1922,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 						if ( pixLeft != 0 )
 						{
 							Uint8 r, g, b, a;
-							SDL_GetRGBA(pixLeft, scaledImg->format, &r, &g, &b, &a);
+							getColor(pixLeft, &r, &g, &b, &a);
 							if ( a > 0 )
 							{
 								++neighbours;
@@ -1935,7 +1935,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 						if ( pixRight != 0 )
 						{
 							Uint8 r, g, b, a;
-							SDL_GetRGBA(pixRight, scaledImg->format, &r, &g, &b, &a);
+							getColor(pixRight, &r, &g, &b, &a);
 							if ( a > 0 )
 							{
 								++neighbours;
@@ -1952,7 +1952,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 						if ( pixUp != 0 )
 						{
 							Uint8 r, g, b, a;
-							SDL_GetRGBA(pixUp, scaledImg->format, &r, &g, &b, &a);
+							getColor(pixUp, &r, &g, &b, &a);
 							if ( a > 0 )
 							{
 								++neighbours;
@@ -1965,7 +1965,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 						if ( pixDown != 0 )
 						{
 							Uint8 r, g, b, a;
-							SDL_GetRGBA(pixDown, scaledImg->format, &r, &g, &b, &a);
+							getColor(pixDown, &r, &g, &b, &a);
 							if ( a > 0 )
 							{
 								++neighbours;
@@ -2142,7 +2142,7 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 		if ( getOpacity() < 100.0 )
 		{
 			Uint8 r, g, b, a;
-			SDL_GetRGBA(image->color, mainsurface->format, &r, &g, &b, &a);
+			getColor(image->color, &r, &g, &b, &a);
 			a *= getOpacity() / 100.0;
 			if ( a > 0 )
 			{
@@ -2160,16 +2160,16 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 					}
 					outlineGlowEffect = (outlineGlowEffect * .5) + .5;
 					Uint8 r2, g2, b2, a2;
-					SDL_GetRGBA(image->outlineColor, mainsurface->format, &r2, &g2, &b2, &a2);
+					getColor(image->outlineColor, &r2, &g2, &b2, &a2);
 					Uint32 alpha = static_cast<Uint8>(255.0 * ((static_cast<real_t>(a) / 255.0) * static_cast<real_t>(a2 / 255.0) * outlineGlowEffect));
 					if ( alpha > 0 )
 					{
 						drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-							SDL_MapRGBA(mainsurface->format, r2, g2, b2, alpha));
+							makeColor( r2, g2, b2, alpha));
 					}
 				}
 				actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-					SDL_MapRGBA(mainsurface->format, r, g, b, a));
+					makeColor( r, g, b, a));
 			}
 		}
 		else
@@ -2188,12 +2188,12 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 				}
 				outlineGlowEffect = (outlineGlowEffect * .5) + .5;
 				Uint8 r2, g2, b2, a2;
-				SDL_GetRGBA(image->outlineColor, mainsurface->format, &r2, &g2, &b2, &a2);
+				getColor(image->outlineColor, &r2, &g2, &b2, &a2);
 				Uint32 alpha = static_cast<Uint8>(static_cast<real_t>(a2) * outlineGlowEffect);
 				if ( alpha > 0 )
 				{
 					drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-						SDL_MapRGBA(mainsurface->format, r2, g2, b2, alpha));
+						makeColor( r2, g2, b2, alpha));
 				}
 			}
 			actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, image->color);

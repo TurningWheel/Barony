@@ -880,7 +880,7 @@ void actThrown(Entity* my)
 											{
 												spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 685);
 												parent->increaseSkill(PRO_LEADERSHIP);
-												messagePlayerMonsterEvent(parent->skill[2], SDL_MapRGB(mainsurface->format, 0, 255, 0), 
+												messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), 
 													*hitstats, language[3252], language[3251], MSG_COMBAT);
 												hit.entity->monsterAllyIndex = parent->skill[2];
 												if ( multiplayer == SERVER )
@@ -1018,7 +1018,7 @@ void actThrown(Entity* my)
 							{
 								skipMessage = true;
 								playSoundEntity(hit.entity, 28, 64);
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								friendlyHit = false;
 								if ( parent && parent->behavior == &actPlayer )
 								{
@@ -1039,7 +1039,7 @@ void actThrown(Entity* my)
 								{
 									hit.entity->setEffect(EFF_MESSY, true, 250, false);
 									serverUpdateEffects(hit.entity->skill[2]);
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3877]);
 									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[910]);
 								}
@@ -1053,7 +1053,7 @@ void actThrown(Entity* my)
 							}
 							case POTION_POLYMORPH:
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( hit.entity->behavior == &actMonster )
 								{
 									if ( parent && parent->behavior == &actPlayer )
@@ -1070,7 +1070,7 @@ void actThrown(Entity* my)
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
 								}
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
@@ -1313,7 +1313,7 @@ void actThrown(Entity* my)
 						}
 					}
 					hit.entity = ohitentity;
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 color = makeColorRGB(0, 255, 0);
 					if ( parent->behavior == &actPlayer && !skipMessage )
 					{
 						if ( !strcmp(hitstats->name, "") )
@@ -1365,7 +1365,7 @@ void actThrown(Entity* my)
 				}
 				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					Uint32 color = makeColorRGB(255, 0, 0);
 					messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
 					if ( damage == 0 && !wasPotion )
 					{

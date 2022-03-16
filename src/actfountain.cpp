@@ -230,7 +230,7 @@ void actFountain(Entity* my)
 						{
 							playSoundEntity(players[i]->entity, 52, 64);
 							//Spawn succubus.
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+							Uint32 color = makeColorRGB(255, 128, 0);
 							Entity* spawnedMonster = nullptr;
 
 							if ( !strncmp(map.name, "Underworld", 10) )
@@ -324,7 +324,7 @@ void actFountain(Entity* my)
 								playSoundEntity(players[i]->entity, 249, 128);
 								players[i]->entity->setObituary(language[1533]);
 
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
@@ -357,7 +357,7 @@ void actFountain(Entity* my)
 							// bless all equipment
 							playSoundEntity(players[i]->entity, 52, 64);
 							//playSoundEntity(players[i]->entity, 167, 64);
-							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+							Uint32 textcolor = makeColorRGB(0, 255, 255);
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[471]);
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[473]);
 							bool stuckOnYouSuccess = false;
@@ -466,7 +466,7 @@ void actFountain(Entity* my)
 							// bless one piece of equipment
 							playSoundEntity(players[i]->entity, 52, 64);
 							//playSoundEntity(players[i]->entity, 167, 64);
-							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+							Uint32 textcolor = makeColorRGB(0, 255, 255);
 							messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[471]);
 							//Choose only one piece of equipment to bless.
 

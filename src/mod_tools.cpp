@@ -355,7 +355,7 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 	scaled.h = title_bmp->h * 0.75;
 	drawImageScaled(title_bmp, nullptr, &pos);
 	
-	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3936]);
+	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, makeColorRGB(255, 255, 0), language[3936]);
 	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);
 	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3968]);
 }
@@ -912,42 +912,42 @@ void ItemTooltips_t::readTooltipsFromFile()
 
 	if ( d.HasMember("default_text_colors") )
 	{
-		defaultHeadingTextColor = SDL_MapRGBA(mainsurface->format, 
+		defaultHeadingTextColor = makeColor( 
 			d["default_text_colors"]["heading"]["r"].GetInt(), 
 			d["default_text_colors"]["heading"]["g"].GetInt(), 
 			d["default_text_colors"]["heading"]["b"].GetInt(),
 			d["default_text_colors"]["heading"]["a"].GetInt());
-		defaultIconTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultIconTextColor = makeColor(
 			d["default_text_colors"]["icons"]["r"].GetInt(),
 			d["default_text_colors"]["icons"]["g"].GetInt(),
 			d["default_text_colors"]["icons"]["b"].GetInt(), 
 			d["default_text_colors"]["icons"]["a"].GetInt());
-		defaultDescriptionTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultDescriptionTextColor = makeColor(
 			d["default_text_colors"]["description"]["r"].GetInt(),
 			d["default_text_colors"]["description"]["g"].GetInt(), 
 			d["default_text_colors"]["description"]["b"].GetInt(),
 			d["default_text_colors"]["description"]["a"].GetInt());
-		defaultDetailsTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultDetailsTextColor = makeColor(
 			d["default_text_colors"]["details"]["r"].GetInt(), 
 			d["default_text_colors"]["details"]["g"].GetInt(), 
 			d["default_text_colors"]["details"]["b"].GetInt(), 
 			d["default_text_colors"]["details"]["a"].GetInt());
-		defaultPositiveTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultPositiveTextColor = makeColor(
 			d["default_text_colors"]["positive_color"]["r"].GetInt(),
 			d["default_text_colors"]["positive_color"]["g"].GetInt(),
 			d["default_text_colors"]["positive_color"]["b"].GetInt(),
 			d["default_text_colors"]["positive_color"]["a"].GetInt());
-		defaultNegativeTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultNegativeTextColor = makeColor(
 			d["default_text_colors"]["negative_color"]["r"].GetInt(),
 			d["default_text_colors"]["negative_color"]["g"].GetInt(),
 			d["default_text_colors"]["negative_color"]["b"].GetInt(),
 			d["default_text_colors"]["negative_color"]["a"].GetInt());
-		defaultStatusEffectTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultStatusEffectTextColor = makeColor(
 			d["default_text_colors"]["status_effect"]["r"].GetInt(),
 			d["default_text_colors"]["status_effect"]["g"].GetInt(),
 			d["default_text_colors"]["status_effect"]["b"].GetInt(),
 			d["default_text_colors"]["status_effect"]["a"].GetInt());
-		defaultFaintTextColor = SDL_MapRGBA(mainsurface->format,
+		defaultFaintTextColor = makeColor(
 			d["default_text_colors"]["faint_text"]["r"].GetInt(),
 			d["default_text_colors"]["faint_text"]["g"].GetInt(),
 			d["default_text_colors"]["faint_text"]["b"].GetInt(),
@@ -1017,7 +1017,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 					if ( icons->HasMember("color") && icons->FindMember("color")->value.HasMember("r") )
 					{
 						// icons->FindMember("color")->value.isObject() always returning true?? so check for "r" member instead
-						color = SDL_MapRGBA(mainsurface->format,
+						color = makeColor(
 							icons->FindMember("color")->value["r"].GetInt(),
 							icons->FindMember("color")->value["g"].GetInt(),
 							icons->FindMember("color")->value["b"].GetInt(),

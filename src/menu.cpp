@@ -1612,7 +1612,7 @@ void handleMainMenu(bool mode)
 
 		if ( mode && subtitleVisible )
 		{
-			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+			Uint32 colorYellow = makeColor( 255, 255, 0, 255);
 			Uint32 len = strlen(language[1910 + subtitleCurrent]);
 			ttfPrintTextColor(ttf16, src.x + src.w / 2 - (len * TTF16_WIDTH) / 2, src.y + src.h - 32, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
@@ -1662,7 +1662,7 @@ void handleMainMenu(bool mode)
 #endif
 
 		// gray text color
-		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
+		Uint32 colorGray = makeColor( 128, 128, 128, 255);
 
 		// print game version
 		if ( mode || introstage != 5 )
@@ -2565,10 +2565,10 @@ void handleMainMenu(bool mode)
 				pos.x += 2;
 				pos.w -= 6;
 				drawRect(&pos, 0, 168);
-				drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
-				drawLine(pos.x, pos.y + pos.h, pos.x + pos.w, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
-				drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
-				drawLine(pos.x + pos.w, pos.y, pos.x + pos.w, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, makeColorRGB(0, 192, 255), 255);
+				drawLine(pos.x, pos.y + pos.h, pos.x + pos.w, pos.y + pos.h, makeColorRGB(0, 192, 255), 255);
+				drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, makeColorRGB(0, 192, 255), 255);
+				drawLine(pos.x + pos.w, pos.y, pos.x + pos.w, pos.y + pos.h, makeColorRGB(0, 192, 255), 255);
 				if ( stats[0]->playerRace >= RACE_HUMAN )
 				{
 					ttfPrintText(ttf12, pos.x + 12, pos.y + 6, language[3375 + stats[0]->playerRace]);
@@ -5302,16 +5302,16 @@ void handleMainMenu(bool mode)
 				if ( achievementUnlocked(item.first.c_str()) )
 				{
 					drawRect(&bodyHighlight, uint32ColorBaronyBlue(*mainsurface), 64);
-					drawRect(&iconHighlight, SDL_MapRGB(mainsurface->format, 1, 0, 16), 255);
+					drawRect(&iconHighlight, makeColorRGB(1, 0, 16), 255);
 				}
 				else
 				{
-					drawRect(&bodyHighlight, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
-					drawRect(&iconHighlight, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+					drawRect(&bodyHighlight, makeColorRGB(128, 128, 128), 64);
+					drawRect(&iconHighlight, makeColorRGB(36, 36, 36), 255);
 				}
 
 				// draw name
-				Uint32 nameColor = unlocked ? SDL_MapRGB(mainsurface->format, 0, 255, 255) : SDL_MapRGB(mainsurface->format, 128, 128, 128);
+				Uint32 nameColor = unlocked ? makeColorRGB(0, 255, 255) : makeColorRGB(128, 128, 128);
 				if ( hiddenAchievement && !unlocked )
 				{
 					ttfPrintTextColor(ttf12, subx1 + 100, suby1 + 92 + (index - first_ach) * 80, nameColor, true, "Hidden Achievements");
@@ -5379,7 +5379,7 @@ void handleMainMenu(bool mode)
 						progressbar.w = (bodyBox.x + bodyBox.w) - progressbar.x - 4;
 						drawWindowFancy(progressbar.x - 2, progressbar.y - 2, progressbar.x + progressbar.w + 2, progressbar.y + progressbar.h + 2);
 
-						drawRect(&progressbar, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+						drawRect(&progressbar, makeColorRGB(36, 36, 36), 255);
 						progressbar.w = std::min((bodyBox.x + bodyBox.w) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
 						drawRect(&progressbar, uint32ColorBaronyBlue(*mainsurface), 92);
 						progressbar.w = (bodyBox.x + bodyBox.w) - progressbar.x - TTF12_WIDTH;
@@ -6483,7 +6483,7 @@ void handleMainMenu(bool mode)
 			// handle slider movement.
 			if ( numEntriesTotal > numEntriesToShow )
 			{
-				drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 				if ( mouseInBounds(clientnum, filename_padx, slider.x + slider.w,
 					slider.y, slider.y + slider.h) )
 				{
@@ -6524,7 +6524,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				//drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				//drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 				drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
 			}
 
@@ -7001,7 +7001,7 @@ void handleMainMenu(bool mode)
 		// handle slider movement.
 		if ( numSaves > numSavesToShow )
 		{
-			drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 			if ( mouseInBounds(clientnum, filename_padx, slider.x + slider.w,
 				slider.y, slider.y + slider.h) )
 			{
@@ -7042,7 +7042,7 @@ void handleMainMenu(bool mode)
 		}
 		else
 		{
-			//drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			//drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
 		}
 
@@ -7091,7 +7091,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( std::get<1>(entry) == SINGLE ) // single player.
 					{
-						drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 48);
+						drawRect(&highlightEntry, makeColorRGB(128, 128, 128), 48);
 						//drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 16);
 					}
 					else
@@ -7204,7 +7204,7 @@ void handleMainMenu(bool mode)
 				pos.h = TTF12_HEIGHT;
 				if ( gamemods_window_fileSelect != 0 )
 				{
-					drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+					drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 				}
 
 				for ( ; it != currentDirectoryFiles.end() && lineNumber < numFileEntries; ++it )
@@ -7629,7 +7629,7 @@ void handleMainMenu(bool mode)
 				// handle slider movement.
 				if ( numSubscribedItemsReturned > numFileEntries )
 				{
-					drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+					drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 					if ( mouseInBounds(clientnum, filename_padx, slider.x + slider.w,
 						slider.y, slider.y + slider.h) )
 					{
@@ -7685,7 +7685,7 @@ void handleMainMenu(bool mode)
 						highlightEntry.y = filename_pady - 8;
 						highlightEntry.w = filename_padx2 - filename_padx;
 						highlightEntry.h = filename_rowHeight + 8;
-						drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+						drawRect(&highlightEntry, makeColorRGB(128, 128, 128), 64);
 
 						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
 						bool pathIsMounted = gamemodsIsPathInMountedFiles(fullpath);
@@ -8045,7 +8045,7 @@ void handleMainMenu(bool mode)
 			// handle slider movement.
 			if ( numLocalFolders > numFileEntries )
 			{
-				drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 				if ( mouseInBounds(clientnum, filename_padx, slider.x + slider.w,
 					slider.y, slider.y + slider.h) )
 				{
@@ -8096,7 +8096,7 @@ void handleMainMenu(bool mode)
 				highlightEntry.y = filename_pady - 8;
 				highlightEntry.w = filename_padx2 - filename_padx;
 				highlightEntry.h = filename_rowHeight + 8;
-				drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+				drawRect(&highlightEntry, makeColorRGB(128, 128, 128), 64);
 
 				std::string path = outputdir;
 				path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(folderName);
@@ -8205,7 +8205,7 @@ void handleMainMenu(bool mode)
 		// handle slider movement.
 		if ( gameModeManager.Tutorial.levels.size() > numFileEntries )
 		{
-			drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			drawRect(&slider, makeColorRGB(64, 64, 64), 255);
 			if ( mouseInBounds(clientnum, filename_padx, slider.x + slider.w,
 				slider.y, slider.y + slider.h) )
 			{
@@ -8256,7 +8256,7 @@ void handleMainMenu(bool mode)
 			highlightEntry.y = filename_pady - 8;
 			highlightEntry.w = filename_padx2 - filename_padx;
 			highlightEntry.h = filename_rowHeight + 8;
-			drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+			drawRect(&highlightEntry, makeColorRGB(128, 128, 128), 64);
 
 			if ( mouseInBounds(clientnum, highlightEntry.x, highlightEntry.x + highlightEntry.w, highlightEntry.y - 2, highlightEntry.y + highlightEntry.h + 4) )
 			{
@@ -8407,7 +8407,7 @@ void handleMainMenu(bool mode)
 		}
 
 		// stages
-		Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
+		Uint32 colorBlue = makeColor( 0, 92, 255, 255);
 		if ( creditstage == 1 )
 		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[56]), yres / 2 - 9 - 18, colorBlue, language[56]);
@@ -15423,7 +15423,7 @@ void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
 	}
 	if ( mouseInBounds(clientnum, x, x + printText.size() * TTF12_WIDTH, y, y + TTF12_HEIGHT) )
 	{
-		ttfPrintTextColor(ttf12, x, y, SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255), true, printText.c_str());
+		ttfPrintTextColor(ttf12, x, y, makeColor( 128, 128, 128, 255), true, printText.c_str());
 		if ( inputs.bMouseLeft(clientnum) )
 		{
 			playSound(139, 64);

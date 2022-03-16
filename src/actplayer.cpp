@@ -2450,7 +2450,7 @@ void actPlayer(Entity* my)
 			my->bodyparts.push_back(entity);
 		}
 	}
-	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+	Uint32 color = makeColorRGB(255, 0, 255);
 	int blueSpeechVolume = 100;
 	int orangeSpeechVolume = 128;
 
@@ -2750,9 +2750,9 @@ void actPlayer(Entity* my)
 					my->setEffect(EFF_VAMPIRICAURA, true, -2, true);
 					my->playerVampireCurse = 1;
 					serverUpdateEntitySkill(my, 51);
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, color, language[2477]);
-					color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+					color = makeColorRGB(255, 255, 0);
 					messagePlayerColor(PLAYER_NUM, MESSAGE_HINT, color, language[3202]);
 
 					playSoundEntity(my, 167, 128);
@@ -2789,12 +2789,12 @@ void actPlayer(Entity* my)
 				{
 					if ( PLAYER_ALIVETIME == 500 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+						color = makeColorRGB(255, 255, 255);
 						messagePlayerColor(PLAYER_NUM, MESSAGE_HINT, color, language[3221]);
 					}
 					else if ( PLAYER_ALIVETIME == 700 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+						color = makeColorRGB(255, 255, 255);
 						messagePlayerColor(PLAYER_NUM, MESSAGE_HINT, color, language[3222]);
 					}
 				}
@@ -4105,7 +4105,7 @@ void actPlayer(Entity* my)
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 				{
-					messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, SDL_MapRGB(mainsurface->format, 255, 0, 0), language[3183]);
+					messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, makeColorRGB(255, 0, 0), language[3183]);
 					playSoundPlayer(PLAYER_NUM, 28, 128);
 					playSoundPlayer(PLAYER_NUM, 249, 128);
 					cameravars[PLAYER_NUM].shakex += .1;
@@ -5022,7 +5022,7 @@ void actPlayer(Entity* my)
 							whatever[255] = '\0';
 							messagePlayer(c, MESSAGE_OBITUARY, whatever);
 						}
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, color, language[577]);
 
 						for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = nextnode )

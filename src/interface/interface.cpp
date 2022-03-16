@@ -5558,7 +5558,7 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 			{
 				// new recipe!
 				clientLearnedAlchemyIngredients[gui_player].insert(type);
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( notify )
 				{
 					if ( isItemBaseIngredient(type) )
@@ -5934,7 +5934,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			Item* pickedUp = itemPickup(player, crafted);
 			if ( bonusMetalScrap > 0 )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			else
@@ -5953,7 +5953,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			Item* pickedUp = itemPickup(player, crafted);
 			if ( bonusMagicScrap > 0 )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], magic, items[pickedUp->type].name_identified);
 			}
 			else
@@ -8118,7 +8118,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//	pos.x = pos.x + 3;
 	//	pos.y = pos.y + 3;
 	//	pos.h = pos.h - 6;
-	//	drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
+	//	drawRect(&pos, makeColorRGB(16, 0, 0), 255);
 
 	//	if ( HPDetails.enemy_oldhp > HPDetails.enemy_hp )
 	//	{
@@ -8148,7 +8148,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//		}
 	//		else
 	//		{
-	//			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
+	//			drawRect(&pos, makeColorRGB(128, 0, 0), 128);
 	//		}
 	//		pos.w = tmpw;
 	//	}
@@ -8156,7 +8156,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//	{
 	//		int tmpw = pos.w;
 	//		pos.w = pos.w * ((double)HPDetails.enemy_hp / HPDetails.enemy_maxhp);
-	//		drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+	//		drawRect(&pos, makeColorRGB(128, 0, 0), 255);
 	//		if ( HPDetails.enemy_bar_color > 0 )
 	//		{
 	//			drawRect(&pos, HPDetails.enemy_bar_color, 224);

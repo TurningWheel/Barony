@@ -264,7 +264,7 @@ void Player::MessageZone_t::drawMessages()
 			{
 				ttfPrintTextFormattedColor(font, current->x, current->y, color, "%s", data.c_str());
 
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255) ^ mainsurface->format->Amask;
+				Uint32 color = makeColorRGB(0, 192, 255) ^ mainsurface->format->Amask;
 				color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
 				ttfPrintTextFormattedColor(font, current->x, current->y, color, "%s", highlightedWords.c_str());
 			}

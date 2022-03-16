@@ -1406,11 +1406,11 @@ void drawPartySheet(const int player)
 				drawTooltip(&playerBar);
 				// draw faint red bar underneath
 				playerBar.x += 1;
-				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
+				drawRect(&playerBar, makeColorRGB(48, 0, 0), 255);
 
 				// draw main red bar for current HP
 				playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->HP) / stats[i]->MAXHP);
-				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+				drawRect(&playerBar, makeColorRGB(128, 0, 0), 255);
 
 				// draw HP values
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight * 2 + 4, color, "HP:  %3d / %3d", stats[i]->HP, stats[i]->MAXHP);
@@ -1427,11 +1427,11 @@ void drawPartySheet(const int player)
 				drawTooltip(&playerBar);
 				playerBar.x += 1;
 				// draw faint blue bar underneath
-				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255);
+				drawRect(&playerBar, makeColorRGB(0, 0, 48), 255);
 
 				// draw blue red bar for current MP
 				playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->MP) / stats[i]->MAXMP);
-				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255);
+				drawRect(&playerBar, makeColorRGB(0, 24, 128), 255);
 
 				// draw MP values
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 32 , pos.y + fontHeight * 3 + 4, color, "MP:  %3d / %3d", stats[i]->MP, stats[i]->MAXMP);
@@ -1606,11 +1606,11 @@ void drawPartySheet(const int player)
 						drawTooltip(&playerBar);
 						// draw faint red bar underneath
 						playerBar.x += 1;
-						drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
+						drawRect(&playerBar, makeColorRGB(48, 0, 0), 255);
 
 						// draw main red bar for current HP
 						playerBar.w = (playerBar.w) * (static_cast<double>(followerStats->HP) / followerStats->MAXHP);
-						drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+						drawRect(&playerBar, makeColorRGB(128, 0, 0), 255);
 
 						// draw HP values
 						ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight + 4, color, "HP:  %3d / %3d", followerStats->HP, followerStats->MAXHP);
@@ -2352,12 +2352,12 @@ void attackHoverText(const int player, Sint32 input[6])
 			if ( input[1] >= 0 )
 			{
 				// attack >= 0
-				color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+				color = makeColorRGB(0, 255, 255);
 			}
 			else
 			{
 				// attack < 0
-				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				color = makeColorRGB(255, 0, 0);
 			}
 			snprintf(tooltipHeader, 32, language[2533], input[1]);
 			ttfPrintTextColor(ttf12, src.x + 4, src.y + 4, color, false, tooltipHeader);

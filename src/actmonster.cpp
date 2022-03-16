@@ -2050,7 +2050,7 @@ void actMonster(Entity* my)
 				{
 					MONSTER_SOUND = playSoundPlayer(c, 179, 128);
 					playSoundPlayer(c, 166, 128);
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+					Uint32 color = makeColorRGB(255, 0, 255);
 					messagePlayerColor(c, MESSAGE_WORLD, color, language[512]);
 				}
 			}

@@ -268,7 +268,7 @@ void createHPMPBars(const int player)
 		hptext->setFont(font);
 		hptext->setVJustify(Field::justify_t::CENTER);
 		hptext->setHJustify(Field::justify_t::CENTER);
-		hptext->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+		hptext->setColor(makeColor( 255, 255, 255, 255));
 	}
 
 	// MP bar below
@@ -323,7 +323,7 @@ void createHPMPBars(const int player)
 		mptext->setFont(font);
 		mptext->setVJustify(Field::justify_t::CENTER);
 		mptext->setHJustify(Field::justify_t::CENTER);
-		mptext->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+		mptext->setColor(makeColor( 255, 255, 255, 255));
 	}
 }
 
@@ -482,7 +482,7 @@ void createXPBar(const int player)
 	textStatic->setFont(font);
 	textStatic->setVJustify(Field::justify_t::CENTER);
 	textStatic->setHJustify(Field::justify_t::LEFT);
-	textStatic->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+	textStatic->setColor(makeColor( 255, 255, 255, 255));
 
 	auto text = hud_t.xpFrame->addField("xp text current", 16);
 	text->setText("0");
@@ -491,7 +491,7 @@ void createXPBar(const int player)
 	text->setFont(font);
 	text->setVJustify(Field::justify_t::CENTER);
 	text->setHJustify(Field::justify_t::RIGHT);
-	text->setColor(SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255));
+	text->setColor(makeColor( 255, 255, 255, 255));
 }
 
 void createHotbar(const int player)
@@ -501,7 +501,7 @@ void createHotbar(const int player)
 	{
 		return;
 	}
-	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, hotbarSlotOpacity);
+	Uint32 color = makeColor( 255, 255, 255, hotbarSlotOpacity);
 	SDL_Rect slotPos{ 0, 0, hotbar_t.getSlotSize(), hotbar_t.getSlotSize() };
 	std::array<int, NUM_HOTBAR_SLOTS> slotCreationOrder = {
 		0, 2, 3, 5, 6, 8, 9, 1, 4, 7
@@ -568,9 +568,9 @@ void createHotbar(const int player)
 		const int itemSpriteSize = players[oldSelectedFrame->getOwner()]->inventoryUI.getItemSpriteSize();
 		SDL_Rect itemSpriteBorder{ 4, 4, itemSpriteSize, itemSpriteSize };
 
-		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		color = makeColor( 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "hotbar old selected item");
+			makeColor( 255, 255, 255, 128), "", "hotbar old selected item");
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "hotbar old selected highlight");
@@ -578,7 +578,7 @@ void createHotbar(const int player)
 		auto oldCursorFrame = hotbar_t.hotbarFrame->addFrame("hotbar old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
 		oldCursorFrame->setDisabled(true);
-		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
+		color = makeColor( 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/SelectorGrey_TL.png", "hotbar old cursor topleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -593,7 +593,7 @@ void createHotbar(const int player)
 		auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
 		cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
 		cursorFrame->setDisabled(true);
-		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -2891,7 +2891,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		// game timer
 		{
 			const char* timerFont = "fonts/pixel_maz.ttf#32#2";
-			Uint32 timerTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+			Uint32 timerTextColor = makeColor( 188, 154, 114, 255);
 
 			Frame* timerFrame = sheetFrame->addFrame("game timer");
 			timerFrame->setSize(SDL_Rect{leftAlignX + 36, 90, 142, 26});
@@ -2988,7 +2988,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		// dungeon floor and level descriptor
 		{
 			const char* dungeonFont = "fonts/pixel_maz.ttf#32#2";
-			Uint32 dungeonTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+			Uint32 dungeonTextColor = makeColor( 188, 154, 114, 255);
 			Frame* dungeonFloorFrame = sheetFrame->addFrame("dungeon floor frame");
 
 			dungeonFloorFrame->setSize(SDL_Rect{ leftAlignX + 6, 118, 202, 52 });
@@ -3021,8 +3021,8 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		Frame* characterFrame = sheetFrame->addFrame("character info");
 		const char* infoFont = "fonts/pixel_maz.ttf#32#2";
 		characterFrame->setSize(SDL_Rect{ leftAlignX, 206, bgWidth, 116});
-		Uint32 infoTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
-		Uint32 classTextColor = SDL_MapRGBA(mainsurface->format, 74, 66, 207, 255);
+		Uint32 infoTextColor = makeColor( 188, 154, 114, 255);
+		Uint32 classTextColor = makeColor( 74, 66, 207, 255);
 
 		sheetFrame->addImage(SDL_Rect{ characterFrame->getSize().x, characterFrame->getSize().y - 60, 
 			214, 170 }, 0xFFFFFFFF,
@@ -3689,11 +3689,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		}
 
 		auto div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
-			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			makeColor( 49, 53, 61, 255),
 			"images/system/white.png", "tooltip divider 1");
 		div->disabled = true;
 		div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
-			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			makeColor( 49, 53, 61, 255),
 			"images/system/white.png", "tooltip divider 2");
 		div->disabled = true;
 
@@ -4547,7 +4547,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 	dropdownFrame->setDisabled(true);
 	dropdownFrame->setInheritParentFrameOpacity(false);
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+	Uint32 color = makeColor( 255, 255, 255, 255);
 	const int topBackgroundHeight = 30;
 	const int optionHeight = 20;
 
@@ -9074,7 +9074,7 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	brokenStatusFrame->setSize(slotSize);
 	brokenStatusFrame->setHollow(true);
 	brokenStatusFrame->setDisabled(true);
-	brokenStatusFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 160, 160, 160, 64), "images/system/white.png", "broken status bg");
+	brokenStatusFrame->addImage(coloredBackgroundPos, makeColor( 160, 160, 160, 64), "images/system/white.png", "broken status bg");
 
 	auto itemSpriteFrame = slotFrame->addFrame("item sprite frame");
 
@@ -9100,7 +9100,7 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	unusableFrame->setSize(slotSize);
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
-	unusableFrame->addImage(coloredBackgroundPos, SDL_MapRGBA(mainsurface->format, 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
+	unusableFrame->addImage(coloredBackgroundPos, makeColor( 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
 
 
 	static const char* qtyfont = "fonts/pixel_maz.ttf#32#2";
@@ -9275,7 +9275,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 			if ( !strcmp(slotFrame->getName(), "hotbar slot item") ) // hotbar slots
 			{
 				// fade this icon
-				spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+				spriteImage->color = makeColor( 255, 255, 255, 128);
 				disableBackgrounds = true;
 				isHotbarIcon = true;
 			}
@@ -9299,7 +9299,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 					if ( hotbar_t.faceMenuButtonHeld != hotbar_t.getFaceMenuGroupForSlot(num) )
 					{
 						// fade this icon
-						spriteImage->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128);
+						spriteImage->color = makeColor( 255, 255, 255, 128);
 					}
 				}
 			}
@@ -9377,14 +9377,14 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 			{
 				if ( !item->identified )
 				{
-					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 128, 0, 125);
+					beatitudeImg->color = makeColor( 128, 128, 0, 125);
 					beatitudeFrame->setDisabled(false);
 					//spriteImage->outlineColor = makeColor(210, 183, 76, 255);
 					//spriteImage->outline = true;
 				}
 				else if ( item->beatitude < 0 )
 				{
-					beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 128, 0, 0, 125);
+					beatitudeImg->color = makeColor( 128, 0, 0, 125);
 					beatitudeFrame->setDisabled(false);
 					//spriteImage->outlineColor = hudColors.characterSheetRed;
 					//spriteImage->outline = true;
@@ -9393,11 +9393,11 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 				{
 					if ( colorblind )
 					{
-						beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 100, 245, 255, 65);
+						beatitudeImg->color = makeColor( 100, 245, 255, 65);
 					}
 					else
 					{
-						beatitudeImg->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 65);
+						beatitudeImg->color = makeColor( 0, 255, 0, 65);
 					}
 					//spriteImage->outlineColor = hudColors.characterSheetHeadingText;
 					//spriteImage->outline = true;
@@ -9542,7 +9542,7 @@ void createInventoryTooltipFrame(const int player)
 
 	auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+	Uint32 color = makeColor( 255, 255, 255, 255);
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
 		color, "images/ui/Inventory/tooltips/Hover_T00.png", "tooltip top background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
@@ -9575,29 +9575,29 @@ void createInventoryTooltipFrame(const int player)
 	tooltipTextField->setFont(headerFont.c_str());
 	tooltipTextField->setHJustify(Field::justify_t::LEFT);
 	tooltipTextField->setVJustify(Field::justify_t::CENTER);
-	tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+	tooltipTextField->setColor(makeColor( 67, 195, 157, 255));
 
 	// temporary debug stuff
 	{
 		Frame::image_t* tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip min");
-		tmp->color = SDL_MapRGBA(mainsurface->format, 255, 0, 0, 255);
+		tmp->color = makeColor( 255, 0, 0, 255);
 		tmp->disabled = true;
 		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip max");
-		tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 0, 255);
+		tmp->color = makeColor( 0, 255, 0, 255);
 		tmp->disabled = true;
 		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header max");
-		tmp->color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		tmp->color = makeColor( 0, 255, 255, 255);
 		tmp->disabled = true;
 		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg");
-		tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		tmp->color = makeColor( 255, 255, 255, 255);
 		tmp->disabled = true;
 		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg new");
-		tmp->color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		tmp->color = makeColor( 255, 255, 0, 255);
 		tmp->disabled = true;
 	}
 
@@ -9609,7 +9609,7 @@ void createInventoryTooltipFrame(const int player)
 		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
 			0xFFFFFFFF, "images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
 		spellImageBg->disabled = true;
-		//spellImageBg->color = SDL_MapRGBA(mainsurface->format, 125, 125, 125, 228);
+		//spellImageBg->color = makeColor( 125, 125, 125, 228);
 		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
 		spellImage->disabled = true;
@@ -9622,7 +9622,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value highlight", 256);
 		tooltipTextField->setText("Nothing");
@@ -9630,7 +9630,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value positive text", 256);
 		tooltipTextField->setText("Nothing");
@@ -9638,7 +9638,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value negative text", 256);
 		tooltipTextField->setText("Nothing");
@@ -9646,7 +9646,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value slot name", 256);
 		tooltipTextField->setText("Nothing");
@@ -9664,7 +9664,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value highlight", 256);
 		tooltipTextField->setText("Nothing");
@@ -9672,7 +9672,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value positive text", 256);
 		tooltipTextField->setText("Nothing");
@@ -9680,7 +9680,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip secondary value negative text", 256);
 		tooltipTextField->setText("Nothing");
@@ -9688,7 +9688,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
 			0xFFFFFFFF, "images/system/con32.png", "inventory mouse tooltip third image");
@@ -9698,7 +9698,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value highlight", 256);
 		tooltipTextField->setText("Nothing");
@@ -9706,7 +9706,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value positive text", 256);
 		tooltipTextField->setText("Nothing");
@@ -9714,7 +9714,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip third value negative text", 256);
 		tooltipTextField->setText("Nothing");
@@ -9722,7 +9722,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip attributes text", 1024);
 		tooltipTextField->setText("Nothing");
@@ -9730,7 +9730,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
 	}
 	if ( auto descFrame = tooltipFrame->addFrame("inventory mouse tooltip description frame") )
 	{
@@ -9738,7 +9738,7 @@ void createInventoryTooltipFrame(const int player)
 		descFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		descFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
-			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			makeColor( 49, 53, 61, 255),
 			"images/system/white.png", "inventory mouse tooltip description divider");
 
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description", 1024);
@@ -9747,9 +9747,9 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
-		//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		//tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
 		//tooltipTextField->setColor(0xFFFFFFFF);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+		tooltipTextField->setTextColor(makeColor( 67, 195, 157, 255));
 
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description positive text", 1024);
 		tooltipTextField->setText("Nothing");
@@ -9757,9 +9757,9 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
-		//tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 1, 151, 246, 255));
+		//tooltipTextField->setColor(makeColor( 1, 151, 246, 255));
 		tooltipTextField->setColor(0xFFFFFFFF);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setTextColor(makeColor( 188, 154, 114, 255));
 
 		tooltipTextField = descFrame->addField("inventory mouse tooltip description negative text", 1024);
 		tooltipTextField->setText("Nothing");
@@ -9768,7 +9768,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
 		tooltipTextField->setColor(0xFFFFFFFF);
-		tooltipTextField->setTextColor(SDL_MapRGBA(mainsurface->format, 215, 38, 61, 255));
+		tooltipTextField->setTextColor(makeColor( 215, 38, 61, 255));
 	}
 	if ( auto valueFrame = tooltipFrame->addFrame("inventory mouse tooltip value frame") )
 	{
@@ -9776,11 +9776,11 @@ void createInventoryTooltipFrame(const int player)
 		valueFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
-			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255), 
+			makeColor( 49, 53, 61, 255), 
 			"images/system/white.png", "inventory mouse tooltip value background");
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
-			SDL_MapRGBA(mainsurface->format, 49, 53, 61, 255),
+			makeColor( 49, 53, 61, 255),
 			"images/system/white.png", "inventory mouse tooltip value divider");
 
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip identified value", 64);
@@ -9789,7 +9789,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
 			0xFFFFFFFF, 
@@ -9802,7 +9802,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
 			0xFFFFFFFF, 
@@ -9815,7 +9815,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255));
+		tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
 	}
 	if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
 	{
@@ -9828,7 +9828,7 @@ void createInventoryTooltipFrame(const int player)
 		tooltipTextField->setFont(bodyFont.c_str());
 		tooltipTextField->setHJustify(Field::justify_t::RIGHT);
 		tooltipTextField->setVJustify(Field::justify_t::TOP);
-		tooltipTextField->setColor(SDL_MapRGBA(mainsurface->format, 148, 82, 3, 255));
+		tooltipTextField->setColor(makeColor( 148, 82, 3, 255));
 
 	}
 	auto tooltipPromptImg = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inventory mouse tooltip prompt img");
@@ -9843,7 +9843,7 @@ void createInventoryTooltipFrame(const int player)
 		interactFrame->setDisabled(true);
 		interactFrame->setInheritParentFrameOpacity(false);
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255);
+		Uint32 color = makeColor( 255, 255, 255, 255);
 		const int topBackgroundHeight = 30;
 		const int optionHeight = 20;
 
@@ -9997,7 +9997,7 @@ void createInventoryTooltipFrame(const int player)
 		promptFrame->setDisabled(true);
 		promptFrame->setInheritParentFrameOpacity(false);
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 64);
+		Uint32 color = makeColor( 255, 255, 255, 64);
 
 		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
 			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
@@ -10044,7 +10044,7 @@ void createInventoryTooltipFrame(const int player)
 		const int textWidth = 80;
 		const int textHeight = glyphSizeH + 8;
 
-		Uint32 promptTextColor = SDL_MapRGBA(mainsurface->format, 188, 154, 114, 255);
+		Uint32 promptTextColor = makeColor( 188, 154, 114, 255);
 		const char * promptFont = "fonts/pixel_maz.ttf#32#2";
 		int textAlignY = interactGlyph1->pos.y - 4;
 		int textAlignXRightJustify = interactGlyph1->pos.x - 6 - textWidth;
@@ -10421,7 +10421,7 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 				{
 					if ( d["colors"].HasMember("default") )
 					{
-						skillSheetData.defaultTextColor = SDL_MapRGBA(mainsurface->format,
+						skillSheetData.defaultTextColor = makeColor(
 							d["colors"]["default"]["r"].GetInt(),
 							d["colors"]["default"]["g"].GetInt(),
 							d["colors"]["default"]["b"].GetInt(),
@@ -10429,7 +10429,7 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 					}
 					if ( d["colors"].HasMember("novice") )
 					{
-						skillSheetData.noviceTextColor = SDL_MapRGBA(mainsurface->format,
+						skillSheetData.noviceTextColor = makeColor(
 							d["colors"]["novice"]["r"].GetInt(),
 							d["colors"]["novice"]["g"].GetInt(),
 							d["colors"]["novice"]["b"].GetInt(),
@@ -10437,7 +10437,7 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 					}
 					if ( d["colors"].HasMember("expert") )
 					{
-						skillSheetData.expertTextColor = SDL_MapRGBA(mainsurface->format,
+						skillSheetData.expertTextColor = makeColor(
 							d["colors"]["expert"]["r"].GetInt(),
 							d["colors"]["expert"]["g"].GetInt(),
 							d["colors"]["expert"]["b"].GetInt(),
@@ -10445,7 +10445,7 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 					}
 					if ( d["colors"].HasMember("legend") )
 					{
-						skillSheetData.legendTextColor = SDL_MapRGBA(mainsurface->format,
+						skillSheetData.legendTextColor = makeColor(
 							d["colors"]["legend"]["r"].GetInt(),
 							d["colors"]["legend"]["g"].GetInt(),
 							d["colors"]["legend"]["b"].GetInt(),
@@ -10920,7 +10920,7 @@ void loadHUDSettingsJSON()
 				{
 					if ( d["colors"].HasMember("itemmenu_heading_text") )
 					{
-						hudColors.itemContextMenuHeadingText = SDL_MapRGBA(mainsurface->format,
+						hudColors.itemContextMenuHeadingText = makeColor(
 							d["colors"]["itemmenu_heading_text"]["r"].GetInt(),
 							d["colors"]["itemmenu_heading_text"]["g"].GetInt(),
 							d["colors"]["itemmenu_heading_text"]["b"].GetInt(),
@@ -10928,7 +10928,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("itemmenu_option_text") )
 					{
-						hudColors.itemContextMenuOptionText = SDL_MapRGBA(mainsurface->format,
+						hudColors.itemContextMenuOptionText = makeColor(
 							d["colors"]["itemmenu_option_text"]["r"].GetInt(),
 							d["colors"]["itemmenu_option_text"]["g"].GetInt(),
 							d["colors"]["itemmenu_option_text"]["b"].GetInt(),
@@ -10936,7 +10936,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("itemmenu_selected_text") )
 					{
-						hudColors.itemContextMenuOptionSelectedText = SDL_MapRGBA(mainsurface->format,
+						hudColors.itemContextMenuOptionSelectedText = makeColor(
 							d["colors"]["itemmenu_selected_text"]["r"].GetInt(),
 							d["colors"]["itemmenu_selected_text"]["g"].GetInt(),
 							d["colors"]["itemmenu_selected_text"]["b"].GetInt(),
@@ -10944,7 +10944,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("itemmenu_selected_img") )
 					{
-						hudColors.itemContextMenuOptionSelectedImg = SDL_MapRGBA(mainsurface->format,
+						hudColors.itemContextMenuOptionSelectedImg = makeColor(
 							d["colors"]["itemmenu_selected_img"]["r"].GetInt(),
 							d["colors"]["itemmenu_selected_img"]["g"].GetInt(),
 							d["colors"]["itemmenu_selected_img"]["b"].GetInt(),
@@ -10952,7 +10952,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("itemmenu_option_img") )
 					{
-						hudColors.itemContextMenuOptionImg = SDL_MapRGBA(mainsurface->format,
+						hudColors.itemContextMenuOptionImg = makeColor(
 							d["colors"]["itemmenu_option_img"]["r"].GetInt(),
 							d["colors"]["itemmenu_option_img"]["g"].GetInt(),
 							d["colors"]["itemmenu_option_img"]["b"].GetInt(),
@@ -10960,7 +10960,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("charsheet_neutral_text") )
 					{
-						hudColors.characterSheetNeutral = SDL_MapRGBA(mainsurface->format,
+						hudColors.characterSheetNeutral = makeColor(
 							d["colors"]["charsheet_neutral_text"]["r"].GetInt(),
 							d["colors"]["charsheet_neutral_text"]["g"].GetInt(),
 							d["colors"]["charsheet_neutral_text"]["b"].GetInt(),
@@ -10968,7 +10968,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("charsheet_positive_text") )
 					{
-						hudColors.characterSheetGreen = SDL_MapRGBA(mainsurface->format,
+						hudColors.characterSheetGreen = makeColor(
 							d["colors"]["charsheet_positive_text"]["r"].GetInt(),
 							d["colors"]["charsheet_positive_text"]["g"].GetInt(),
 							d["colors"]["charsheet_positive_text"]["b"].GetInt(),
@@ -10976,7 +10976,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("charsheet_negative_text") )
 					{
-						hudColors.characterSheetRed = SDL_MapRGBA(mainsurface->format,
+						hudColors.characterSheetRed = makeColor(
 							d["colors"]["charsheet_negative_text"]["r"].GetInt(),
 							d["colors"]["charsheet_negative_text"]["g"].GetInt(),
 							d["colors"]["charsheet_negative_text"]["b"].GetInt(),
@@ -10984,7 +10984,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("charsheet_faint_text") )
 					{
-						hudColors.characterSheetFaintText = SDL_MapRGBA(mainsurface->format,
+						hudColors.characterSheetFaintText = makeColor(
 							d["colors"]["charsheet_faint_text"]["r"].GetInt(),
 							d["colors"]["charsheet_faint_text"]["g"].GetInt(),
 							d["colors"]["charsheet_faint_text"]["b"].GetInt(),
@@ -10992,7 +10992,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("charsheet_off_white_text") )
 					{
-						hudColors.characterSheetOffWhiteText = SDL_MapRGBA(mainsurface->format,
+						hudColors.characterSheetOffWhiteText = makeColor(
 							d["colors"]["charsheet_off_white_text"]["r"].GetInt(),
 							d["colors"]["charsheet_off_white_text"]["g"].GetInt(),
 							d["colors"]["charsheet_off_white_text"]["b"].GetInt(),
@@ -11000,7 +11000,7 @@ void loadHUDSettingsJSON()
 					}
 					if ( d["colors"].HasMember("charsheet_heading_text") )
 					{
-						hudColors.characterSheetHeadingText = SDL_MapRGBA(mainsurface->format,
+						hudColors.characterSheetHeadingText = makeColor(
 							d["colors"]["charsheet_heading_text"]["r"].GetInt(),
 							d["colors"]["charsheet_heading_text"]["g"].GetInt(),
 							d["colors"]["charsheet_heading_text"]["b"].GetInt(),
@@ -11110,7 +11110,7 @@ void createPlayerSpellList(const int player)
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
 		//bg->disabled = false;
 
@@ -11399,10 +11399,10 @@ void createChestGUI(const int player)
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/chests/Chest_Main_00.png", "chest base img");
 		auto bg2 = bgFrame->addImage(SDL_Rect{ 0, 0, 194, 66 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/chests/Chest_Top_00.png", "chest lid img");
 		//bg->disabled = false;
 
@@ -11580,16 +11580,16 @@ void createPlayerInventory(const int player)
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
 		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
 
 		auto compactBase = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_BaseCompact_02.png", "inventory base compact img");
 		compactBase->disabled = true;
 
 		auto compactCharacterView = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 214 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_CharacterCompact_02.png", "inventory character compact img");
 		compactCharacterView->disabled = true;
 
@@ -11599,7 +11599,7 @@ void createPlayerInventory(const int player)
 		auto backpackFrame = frame->addFrame("inventory backpack");
 		backpackFrame->setSize(SDL_Rect{ 0, 202 + 242 - 2, 226, 102 });
 		auto backpackImg = backpackFrame->addImage(SDL_Rect{ 0, 0, 226, 102 },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Base_Bag_00a.png", "inventory backpack img");
 	}
 
@@ -11736,7 +11736,7 @@ void createPlayerInventory(const int player)
 				drawCharacterPreview(widget.getOwner(), pos, 50, camera_charsheet_offsetyaw);
 			});
 			/*charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
-				SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+				makeColor( 255, 255, 255, 255),
 				"images/system/white.png", "inventory character preview bg");*/
 		}
 
@@ -11744,7 +11744,7 @@ void createPlayerInventory(const int player)
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		selectedFrame->setDisabled(true);
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		Uint32 color = makeColor( 255, 255, 0, 255);
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");*/
 	}
@@ -11756,7 +11756,7 @@ void createPlayerInventory(const int player)
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		selectedFrame->setDisabled(true);
 
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		Uint32 color = makeColor( 255, 255, 0, 255);
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "inventory selected highlight");
 
@@ -11768,9 +11768,9 @@ void createPlayerInventory(const int player)
 		const int itemSpriteSize = players[player]->inventoryUI.getItemSpriteSize();
 		SDL_Rect itemSpriteBorder{ 2, 2, itemSpriteSize, itemSpriteSize };
 
-		color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+		color = makeColor( 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 128), "", "inventory old selected item");
+			makeColor( 255, 255, 255, 128), "", "inventory old selected item");
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "inventory old selected highlight");
@@ -11779,14 +11779,14 @@ void createPlayerInventory(const int player)
 		auto flourishFrame = frame->addFrame("inventory base flourish");
 		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
 		auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
-			SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255),
+			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
 
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
 		oldCursorFrame->setHollow(true);
-		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, oldSelectedCursorOpacity);
+		color = makeColor( 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/SelectorGrey_TL.png", "inventory old cursor topleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -11801,7 +11801,7 @@ void createPlayerInventory(const int player)
 		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		cursorFrame->setDisabled(true);
 		cursorFrame->setHollow(true);
-		color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -13148,24 +13148,24 @@ void Player::Inventory_t::updateCursor()
 				if ( auto tl = oldSelectedSlotCursor->findImage("inventory old cursor topleft") )
 				{
 					tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-					SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+					getColor(tl->color, &r, &g, &b, &a);
 					a = oldSelectedCursorOpacity;
-					tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					tl->color = makeColor( r, g, b, a);
 				}
 				if ( auto tr = oldSelectedSlotCursor->findImage("inventory old cursor topright") )
 				{
 					tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-					tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					tr->color = makeColor( r, g, b, a);
 				}
 				if ( auto bl = oldSelectedSlotCursor->findImage("inventory old cursor bottomleft") )
 				{
 					bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-					bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					bl->color = makeColor( r, g, b, a);
 				}
 				if ( auto br = oldSelectedSlotCursor->findImage("inventory old cursor bottomright") )
 				{
 					br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-					br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					br->color = makeColor( r, g, b, a);
 				}
 			}
 		}
@@ -13196,24 +13196,24 @@ void Player::Inventory_t::updateCursor()
 		if ( auto tl = selectedItemCursorFrame->findImage("inventory selected cursor topleft") )
 		{
 			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			getColor(tl->color, &r, &g, &b, &a);
 			a = selectedCursorOpacity;
-			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			tl->color = makeColor( r, g, b, a);
 		}
 		if ( auto tr = selectedItemCursorFrame->findImage("inventory selected cursor topright") )
 		{
 			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			tr->color = makeColor( r, g, b, a);
 		}
 		if ( auto bl = selectedItemCursorFrame->findImage("inventory selected cursor bottomleft") )
 		{
 			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			bl->color = makeColor( r, g, b, a);
 		}
 		if ( auto br = selectedItemCursorFrame->findImage("inventory selected cursor bottomright") )
 		{
 			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			br->color = makeColor( r, g, b, a);
 		}
 
 		SDL_Rect currentPos = selectedItemCursorFrame->getSize();
@@ -13305,7 +13305,7 @@ void Player::HUD_t::updateCursor()
 		auto cursor = cursorFrame->addFrame("hud cursor");
 		cursor->setHollow(true);
 		cursor->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, selectedCursorOpacity);
+		Uint32 color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "images/ui/Inventory/Selector_TL.png", "hud cursor topleft");
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -13357,24 +13357,24 @@ void Player::HUD_t::updateCursor()
 		if ( auto tl = hudCursor->findImage("hud cursor topleft") )
 		{
 			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			getColor(tl->color, &r, &g, &b, &a);
 			a = selectedCursorOpacity;
-			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			tl->color = makeColor( r, g, b, a);
 		}
 		if ( auto tr = hudCursor->findImage("hud cursor topright") )
 		{
 			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			tr->color = makeColor( r, g, b, a);
 		}
 		if ( auto bl = hudCursor->findImage("hud cursor bottomleft") )
 		{
 			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			bl->color = makeColor( r, g, b, a);
 		}
 		if ( auto br = hudCursor->findImage("hud cursor bottomright") )
 		{
 			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			br->color = makeColor( r, g, b, a);
 		}
 
 		SDL_Rect currentPos = hudCursor->getSize();
@@ -13441,24 +13441,24 @@ void Player::Hotbar_t::updateCursor()
 				if ( auto tl = oldSelectedSlotCursor->findImage("hotbar old cursor topleft") )
 				{
 					tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-					SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+					getColor(tl->color, &r, &g, &b, &a);
 					a = oldSelectedCursorOpacity;
-					tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					tl->color = makeColor( r, g, b, a);
 				}
 				if ( auto tr = oldSelectedSlotCursor->findImage("hotbar old cursor topright") )
 				{
 					tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-					tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					tr->color = makeColor( r, g, b, a);
 				}
 				if ( auto bl = oldSelectedSlotCursor->findImage("hotbar old cursor bottomleft") )
 				{
 					bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-					bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					bl->color = makeColor( r, g, b, a);
 				}
 				if ( auto br = oldSelectedSlotCursor->findImage("hotbar old cursor bottomright") )
 				{
 					br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-					br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					br->color = makeColor( r, g, b, a);
 				}
 			}
 		}
@@ -13488,24 +13488,24 @@ void Player::Hotbar_t::updateCursor()
 		if ( auto tl = selectedSlotCursor->findImage("shootmode selected cursor topleft") )
 		{
 			tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
-			SDL_GetRGBA(tl->color, mainsurface->format, &r, &g, &b, &a);
+			getColor(tl->color, &r, &g, &b, &a);
 			a = selectedCursorOpacity;
-			tl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			tl->color = makeColor( r, g, b, a);
 		}
 		if ( auto tr = selectedSlotCursor->findImage("shootmode selected cursor topright") )
 		{
 			tr->pos = SDL_Rect{ -offset + cursorSize.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
-			tr->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			tr->color = makeColor( r, g, b, a);
 		}
 		if ( auto bl = selectedSlotCursor->findImage("shootmode selected cursor bottomleft") )
 		{
 			bl->pos = SDL_Rect{ offset, -offset + cursorSize.h - bl->pos.h, bl->pos.w, bl->pos.h };
-			bl->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			bl->color = makeColor( r, g, b, a);
 		}
 		if ( auto br = selectedSlotCursor->findImage("shootmode selected cursor bottomright") )
 		{
 			br->pos = SDL_Rect{ -offset + cursorSize.w - br->pos.w, -offset + cursorSize.h - br->pos.h, br->pos.w, br->pos.h };
-			br->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			br->color = makeColor( r, g, b, a);
 		}
 
 		SDL_Rect currentPos = selectedSlotCursor->getSize();
@@ -13795,7 +13795,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	{
 		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(img->color, &r, &g, &b, &a);
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 		SDL_Rect pos = img->pos;
@@ -13806,7 +13806,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	{
 		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(img->color, &r, &g, &b, &a);
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 		SDL_Rect pos = img->pos;
@@ -13819,7 +13819,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	{
 		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(img->color, &r, &g, &b, &a);
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 		SDL_Rect pos = img->pos;
@@ -13832,7 +13832,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	{
 		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(img->color, &r, &g, &b, &a);
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		SDL_Rect pos = img->pos;
 		pos.x += skullFrame->getSize().x;
@@ -13852,7 +13852,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 		pos.y = frame->getSize().h / 2 - pos.h / 2;
 		pos.y += statusEffectOffsetY;
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(txt->getColor(), mainsurface->format, &r, &g, &b, &a);
+		getColor(txt->getColor(), &r, &g, &b, &a);
 		SDL_SetSurfaceAlphaMod(txtSurf, a * frameOpacity);
 		SDL_BlitSurface(txtSurf, nullptr, sprite, &pos);
 	}
@@ -14243,7 +14243,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		if ( !skull.first ) { continue; }
 
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(skull.first->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(skull.first->color, &r, &g, &b, &a);
 		real_t& skullOpacity = enemyDetails->animator.skullOpacities[skullIndex];
 
 		if ( doAnimation )
@@ -14261,7 +14261,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		}
 		a = skullOpacity;
 		a *= enemyDetails->animator.fadeOut / 100.0;
-		skull.first->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		skull.first->color = makeColor( r, g, b, a);
 		++skullIndex;
 	}
 
@@ -14334,7 +14334,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 			hudDamageTextVelocityX = 1.0;
 			hudDamageTextVelocityY = 3.0;
 			Uint8 r, g, b, a;
-			SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+			getColor(dmgText->getColor(), &r, &g, &b, &a);
 			dmgText->setColor(makeColor(r, g, b, 255));
 		}
 
@@ -14349,7 +14349,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 			if ( hudDamageTextVelocityY < -2.0 )
 			{
 				Uint8 r, g, b, a;
-				SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+				getColor(dmgText->getColor(), &r, &g, &b, &a);
 				a = (std::max(0, (int)a - 16));
 				dmgText->setColor(makeColor(r, g, b, a));
 				if ( a == 0 )
@@ -14624,7 +14624,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 		if ( !skull.first ) { continue; }
 
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(skull.first->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(skull.first->color, &r, &g, &b, &a);
 
 		if ( (int)healthPercentage < skull.second )
 		{
@@ -14637,7 +14637,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			a = std::min(255, a + (int)opacityChange);
 		}
 		a *= whichFrame->getOpacity() / 100.0;
-		skull.first->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		skull.first->color = makeColor( r, g, b, a);
 	}
 
 	//char playerHPText[16];
@@ -14711,7 +14711,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			hudDamageTextVelocityX = 1.0;
 			hudDamageTextVelocityY = 3.0;
 			Uint8 r, g, b, a;
-			SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+			getColor(dmgText->getColor(), &r, &g, &b, &a);
 			dmgText->setColor(makeColor(r, g, b, 255));
 		}
 
@@ -14726,7 +14726,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			if ( hudDamageTextVelocityY < -2.0 )
 			{
 				Uint8 r, g, b, a;
-				SDL_GetRGBA(dmgText->getColor(), mainsurface->format, &r, &g, &b, &a);
+				getColor(dmgText->getColor(), &r, &g, &b, &a);
 				a = (std::max(0, (int)a - 16));
 				dmgText->setColor(makeColor(r, g, b, a));
 				if ( a == 0 )
@@ -15208,16 +15208,16 @@ void Player::Hotbar_t::updateHotbar()
 		if ( auto img = slot->findImage("slot img") ) // apply any opacity from config
 		{
 			Uint8 r, g, b, a;
-			SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+			getColor(img->color, &r, &g, &b, &a);
 			a = hotbarSlotOpacity;
-			img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			img->color = makeColor( r, g, b, a);
 		}
 		if ( highlightSlotImg )
 		{
 			Uint8 r, g, b, a;
-			SDL_GetRGBA(highlightSlotImg->color, mainsurface->format, &r, &g, &b, &a);
+			getColor(highlightSlotImg->color, &r, &g, &b, &a);
 			a = hotbarSelectedSlotOpacity;
-			highlightSlotImg->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+			highlightSlotImg->color = makeColor( r, g, b, a);
 		}
 
 		char glyphname[32];
@@ -15645,9 +15645,9 @@ void Player::SkillSheet_t::createSkillSheet()
 		SDL_Rect{ 0, 0, skillFrame->getSize().w, skillFrame->getSize().h },
 		0, "images/system/white.png", "fade img");
 	Uint8 r, g, b, a;
-	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+	getColor(fade->color, &r, &g, &b, &a);
 	a = 0;
-	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	fade->color = makeColor( r, g, b, a);
 	fade->disabled = true;
 
 	Frame* skillBackground = frame->addFrame("skills frame");
@@ -17278,9 +17278,9 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		auto fade = skillFrame->findImage("fade img");
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(fade->color, &r, &g, &b, &a);
 		a = 0;
-		fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		fade->color = makeColor( r, g, b, a);
 		fade->disabled = true;
 		return;
 	}
@@ -17421,9 +17421,9 @@ void Player::SkillSheet_t::processSkillSheet()
 
 	auto fade = skillFrame->findImage("fade img");
 	Uint8 r, g, b, a;
-	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+	getColor(fade->color, &r, &g, &b, &a);
 	a = 128 * skillsFadeInAnimationY;
-	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	fade->color = makeColor( r, g, b, a);
 	fade->disabled = false;
 
 	int baseY = (skillFrame->getSize().h / 2 - sheetSize.h / 2);

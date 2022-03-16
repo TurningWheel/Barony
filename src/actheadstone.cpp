@@ -111,7 +111,7 @@ void actHeadstone(Entity* my)
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
 						shouldspawn = true;
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+						Uint32 color = makeColorRGB(255, 128, 0);
 						messagePlayerColor(i, MESSAGE_INTERACTION, color, language[502]);
 					}
 				}

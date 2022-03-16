@@ -3804,7 +3804,7 @@ void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 //		if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Success )
 //		{
 //			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-//				SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3941]);
+//				makeColorRGB(0, 255, 0), language[3941]);
 //		}
 //		else if ( EOS.AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
 //		{
@@ -3829,18 +3829,18 @@ void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 //				}
 //				loginCriticalErrorOccurred = true;
 //				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3942]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-//					SDL_MapRGB(mainsurface->format, 255, 128, 0), language[3942]);
+//					makeColorRGB(255, 128, 0), language[3942]);
 //				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3943]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 7,
-//					SDL_MapRGB(mainsurface->format, 255, 128, 0), language[3943]);
+//					makeColorRGB(255, 128, 0), language[3943]);
 //				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3944]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 5,
-//					SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3944]);
+//					makeColorRGB(255, 255, 0), language[3944]);
 //			}
 //			else
 //			{
 //				char errorBuf[512] = "";
 //				snprintf(errorBuf, 512 - 1, language[3941], static_cast<int>(EOS.AccountManager.AccountAuthenticationStatus));
 //				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-//					SDL_MapRGB(mainsurface->format, 255, 0, 0), errorBuf);
+//					makeColorRGB(255, 0, 0), errorBuf);
 //			}
 //		}
 //	}
@@ -3853,11 +3853,11 @@ void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 //			suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
 //
 //			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3938]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 6, 
-//				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3938]);
+//				makeColorRGB(255, 255, 0), language[3938]);
 //			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3939]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 5,
-//				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3939]);
+//				makeColorRGB(255, 255, 0), language[3939]);
 //			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3940]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 4,
-//				SDL_MapRGB(mainsurface->format, 255, 255, 0), language[3940]);
+//				makeColorRGB(255, 255, 0), language[3940]);
 //		}
 //	}
 //}

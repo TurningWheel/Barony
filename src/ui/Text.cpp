@@ -115,12 +115,10 @@ void Text::render() {
 	TTF_Font* ttf = font->getTTF();
 
 	SDL_Color colorText;
-	SDL_GetRGBA(textColor, mainsurface->format,
-		&colorText.r, &colorText.g, &colorText.b, &colorText.a);
+	getColor(textColor, &colorText.r, &colorText.g, &colorText.b, &colorText.a);
 
 	SDL_Color colorOutline;
-	SDL_GetRGBA(outlineColor, mainsurface->format,
-		&colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
+	getColor(outlineColor, &colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
 
 	int outlineSize = font->getOutline();
 	if ( outlineSize > 0 ) {
@@ -199,7 +197,7 @@ void Text::render() {
 				{
 					Uint32 pix = getPixel(surf, x, y);
 					Uint8 r, g, b, a;
-					SDL_GetRGBA(pix, surf->format, &r, &g, &b, &a);
+					getColor(pix, &r, &g, &b, &a);
 					if ( r == colorText.r && g == colorText.g && b == colorText.b && a == colorText.a )
 					{
 						if ( !doFillRow )

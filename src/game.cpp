@@ -1492,7 +1492,7 @@ void gameLogic(void)
 								}
 								item->ownerUid = parent->getUID();
 								Item* pickedUp = itemPickup(parent->skill[2], item);
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
 								if ( pickedUp )
 								{
@@ -3078,7 +3078,7 @@ void handleButtons(void)
 		{
 			//Draw golden border.
 			//For such things as which settings tab the controller has presently selected.
-			Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
+			Uint32 color = makeColor( 255, 255, 0, 127);
 			SDL_Rect pos;
 			pos.x = button->x;
 			pos.w = button->sizex;
@@ -4314,7 +4314,7 @@ void ingameHud()
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+						Uint32 color = makeColor( 0, 255, 255, 255);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 						    playSound(238, 64);
 						}
@@ -4368,7 +4368,7 @@ void ingameHud()
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+						Uint32 color = makeColor( 0, 255, 255, 255);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 						    playSound(238, 64);
 						}
@@ -5259,7 +5259,7 @@ int main(int argc, char** argv)
 
 					// team splash
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
-					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 255, 32, 0), std::min<Uint16>(logoalpha, 255));
+					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, makeColorRGB(255, 32, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
 					if ( logoalpha >= 255 && !fadeout )
 					{

@@ -492,17 +492,19 @@ namespace MainMenu {
 					players[c]->camera().winw = xres;
 					players[c]->camera().winh = yres;
 				} else if (playercount == 2) {
+				    static ConsoleVariable<bool> staggered("/staggeredsplitscreen", true);
+				    static ConsoleVariable<bool> clipped("/clippedsplitscreen", true);
 					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
 						// divide screen vertically
 						players[c]->camera().winx = playerindex * xres / 2;
-						players[c]->camera().winy = 0;
+						players[c]->camera().winy = *clipped ? (*staggered ? playerindex * yres / 4 : yres / 8) : 0;
 						players[c]->camera().winw = xres / 2;
-						players[c]->camera().winh = yres;
+						players[c]->camera().winh = *clipped ? (yres * 3) / 4 : yres;
 					} else {
 						// divide screen horizontally
-						players[c]->camera().winx = 0;
+						players[c]->camera().winx = *clipped ? (*staggered ? playerindex * xres / 4 : xres / 8) : 0;
 						players[c]->camera().winy = playerindex * yres / 2;
-						players[c]->camera().winw = xres;
+						players[c]->camera().winw = *clipped ? (xres * 3) / 4 : xres;
 						players[c]->camera().winh = yres / 2;
 					}
 				} else if (playercount >= 3) {
@@ -518,6 +520,11 @@ namespace MainMenu {
 			inputs.getVirtualMouse(c)->y = players[c]->camera_y1() + players[c]->camera_height() / 2;
 		}
 	}
+
+	static ConsoleCommand ccmd_setupSplitscreen("/setupsplitscreen", "Refresh splitscreen layout",
+        [](int argc, const char** argv){
+            setupSplitscreen();
+        });
 
 /******************************************************************************/
 
@@ -4304,20 +4311,36 @@ bind_failed:
 		tab_left->setGlyphPosition(Widget::glyph_position_t::BOTTOM_LEFT);
 
 		auto tab_right = window->addButton("tab_right");
-		tab_right->setSize(SDL_Rect{40, 72, 38, 58});
+		tab_right->setSize(SDL_Rect{914, 72, 38, 58});
 		tab_right->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_RArrow_00.png");
 		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_right->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
 
-        const char* tabs[][2] = {
+        constexpr const char* tabs[][2] = {
             {"local", "Your Top 30\nLocal"},
             {"lan", "Your Top 30\nLAN"},
+#ifdef STEAMWORKS
             {"friends", "Friends\nLeaderboard"},
             {"world", "World\nLeaderboard"},
+#endif
         };
+        constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
 
-        //for (auto)
+        for (int c = 0; c < num_tabs; ++c) {
+            Button* tab = window->addButton(tabs[c][0]);
+            tab->setText(tabs[c][1]);
+            tab->setFont(bigfont_outline);
+			tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
+			tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
+			tab->setColor(makeColor(255, 255, 255, 255));
+			tab->setHighlightColor(makeColor(255, 255, 255, 255));
+
+            constexpr int fullw = 184 * num_tabs + 20 * (num_tabs - 1);
+            constexpr int xbegin = (992 - fullw) / 2;
+            const int x = xbegin + (184 + 20) * c;
+            tab->setSize(SDL_Rect{x, 70, 184, 64});
+        }
     }
 
 /******************************************************************************/
@@ -7363,6 +7386,7 @@ bind_failed:
 			        stats[index]->playerRace += 4;
 			    }
 			} else {
+			    stats[index]->playerRace = RACE_HUMAN;
 			}
 			auto race_button = card->findButton("race");
 			if (race_button) {
@@ -7370,10 +7394,10 @@ bind_failed:
 				case RACE_HUMAN: race_button->setText("Human"); break;
 				case RACE_SKELETON: race_button->setText("Skeleton"); break;
 				case RACE_VAMPIRE: race_button->setText("Vampire"); break;
-				case RACE_SUCCUBUS: race_button->setText("Succubus"); break;
+				case RACE_SUCCUBUS: stats[index]->sex = FEMALE; race_button->setText("Succubus"); break;
 				case RACE_GOATMAN: race_button->setText("Goatman"); break;
 				case RACE_AUTOMATON: race_button->setText("Automaton"); break;
-				case RACE_INCUBUS: race_button->setText("Incubus"); break;
+				case RACE_INCUBUS: stats[index]->sex = MALE; race_button->setText("Incubus"); break;
 				case RACE_GOBLIN: race_button->setText("Goblin"); break;
 				case RACE_INSECTOID: race_button->setText("Insectoid"); break;
 				case RACE_RAT: race_button->setText("Rat"); break;

@@ -317,7 +317,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 		)
 	{
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		Uint32 color = makeColorRGB(255, 0, 0);
 		if ( parent )
 		{
 			messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[2429]);
@@ -332,7 +332,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 
 	if ( parent && dominated )
 	{
-		Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+		Uint32 color = makeColorRGB(0, 255, 0);
 		if ( parent->behavior == &actPlayer )
 		{
 			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2428], language[2427], MSG_COMBAT);
@@ -445,7 +445,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			// hit messages
 			if ( parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2431], language[2430], MSG_COMBAT);
@@ -467,7 +467,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				parent->awardXP(hit.entity, true, true);
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
@@ -575,7 +575,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			// hit messages
 			if ( parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
@@ -597,7 +597,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				parent->awardXP(hit.entity, true, true);
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
@@ -683,7 +683,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 			// no effect.
 			if ( parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				Uint32 color = makeColorRGB(255, 0, 0);
 				if ( parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
@@ -695,14 +695,14 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 		// hit messages
 		if ( parent )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			Uint32 color = makeColorRGB(0, 255, 0);
 			if ( parent->behavior == &actPlayer )
 			{
 				messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3434], language[3435], MSG_COMBAT);
 			}
 		}
 
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		Uint32 color = makeColorRGB(255, 0, 0);
 
 		int player = -1;
 		if ( target->behavior == &actPlayer )
@@ -770,7 +770,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				// no effect.
 				if ( parent )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					Uint32 color = makeColorRGB(255, 0, 0);
 					if ( parent->behavior == &actPlayer )
 					{
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
@@ -782,7 +782,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			// hit messages
 			if ( parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
 					if ( duration - previousDuration > 10 ) // message if not recently webbed
@@ -792,7 +792,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				}
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
@@ -860,7 +860,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
@@ -894,13 +894,13 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					// hit messages
 					if ( player >= 0 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(player, MESSAGE_COMBAT, color, language[2435], hitstats->weapon->getName());
 					}
 
 					if ( parent )
 					{
-						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						color = makeColorRGB(0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2434], language[2433], MSG_STEAL_WEAPON);
@@ -947,13 +947,13 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				// hit messages
 				if ( player >= 0 )
 				{
-					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_COMBAT, color, language[2438]);
 				}
 
 				if ( parent )
 				{
-					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					color = makeColorRGB(255, 255, 255);
 					if ( parent->behavior == &actPlayer )
 					{
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2437], language[2436], MSG_COMBAT);
@@ -1039,7 +1039,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
@@ -1065,13 +1065,13 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					// hit messages
 					if ( player >= 0 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(player, MESSAGE_COMBAT, color, language[2441]);
 					}
 
 					if ( parent )
 					{
-						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						color = makeColorRGB(0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2440], language[2439], MSG_COMBAT);
@@ -1085,13 +1085,13 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				// hit messages
 				if ( player >= 0 )
 				{
-					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_COMBAT, color, language[2444]);
 				}
 
 				if ( parent )
 				{
-					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					color = makeColorRGB(255, 255, 255);
 					if ( parent->behavior == &actPlayer )
 					{
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2443], language[2442], MSG_COMBAT);
@@ -1173,7 +1173,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 		if ( players[i] && caster && (caster == players[i]->entity) )
 		{
 			serverUpdateEffects(i);
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			Uint32 color = makeColorRGB(0, 255, 0);
 			messagePlayerColor(i, MESSAGE_COMBAT, color, language[2477]);
 			playSoundPlayer(i, 403, 32);
 		}
@@ -1206,7 +1206,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				return;
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			Uint32 color = makeColorRGB(0, 255, 0);
 
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
@@ -1368,7 +1368,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
 					if ( player >= 0 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3144]);
 					}
 					if ( parent )
@@ -1400,7 +1400,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				}
 				if ( player >= 0 )
 				{
-					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3141]);
 				}
 			}
@@ -1524,7 +1524,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
 					if ( player >= 0 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3144]);
 					}
 					if ( parent )
@@ -1567,7 +1567,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					}
 					if ( player >= 0 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						color = makeColorRGB(0, 255, 0);
 						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3141]);
 					}
 				}
@@ -2114,7 +2114,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			Uint32 color = makeColorRGB(0, 255, 0);
 			bool namedMonsterAsGeneric = monsterNameIsGeneric(*targetStats);
 			// the %s polymorph into a %s!
 			if ( !strcmp((*targetStats).name, "") || namedMonsterAsGeneric )
@@ -2199,7 +2199,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			}
 			serverUpdateEntitySkill(target, 50);
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			Uint32 color = makeColorRGB(0, 255, 0);
 			Monster race = NOTHING;
 			if ( target->effectPolymorph > NUMMONSTERS )
 			{
@@ -2280,7 +2280,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 					if ( MFLAG_DISABLETELEPORT )
 					{
 						// can't teleport here.
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+						Uint32 color = makeColorRGB(255, 0, 255);
 						messagePlayerColor(target->skill[2], MESSAGE_STATUS, color, language[2381]);
 						if ( parent->behavior == &actPlayer )
 						{
@@ -2293,7 +2293,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				{
 					if ( parent->behavior == &actPlayer )
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(255, 0, 0);
 						if ( hitstats )
 						{
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
@@ -2432,7 +2432,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 					serverSpawnMiscParticlesAtLocation(tx, ty, 0, PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION, 593);
 				}
 
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
 					// play a sound for the player to confirm the hit.
@@ -2520,7 +2520,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 			// hit messages
 			if ( parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3463], language[3464], MSG_COMBAT);
@@ -2537,7 +2537,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 			int player = -1;
 			if ( hit.entity->behavior == &actPlayer )
 			{
@@ -2579,7 +2579,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				if ( parent && parent->behavior == &actPlayer )
 				{
 					// unable to taunt!
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					Uint32 color = makeColorRGB(255, 255, 255);
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3472], language[3473], MSG_COMBAT);
 				}
 				return false;
@@ -2590,7 +2590,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				if ( parent && parent->behavior == &actPlayer )
 				{
 					// already exorcised!
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					Uint32 color = makeColorRGB(255, 255, 255);
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3735], language[3736], MSG_COMBAT);
 				}
 				return false;
@@ -2700,7 +2700,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							Uint32 color = makeColorRGB(255, 255, 0);
 							messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, language[621]);
 						}
 						parent->modHP(-(parentStats->MAXHP / 10));
@@ -2717,7 +2717,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					hitstats->monsterDemonHasBeenExorcised++;
 
 					// hit messages
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 color = makeColorRGB(0, 255, 0);
 					if ( parent->behavior == &actPlayer )
 					{
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3469], language[3470], MSG_COMBAT);
@@ -2725,7 +2725,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				}
 			}
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 			int player = -1;
 			if ( target->behavior == &actPlayer )
 			{
@@ -2735,7 +2735,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3468]);
 					if ( hitstats->monsterDemonHasBeenExorcised == 3 )
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 color = makeColorRGB(0, 255, 0);
 						messagePlayerColor(player, MESSAGE_COMBAT, color, language[3468]);
 					}
 				}

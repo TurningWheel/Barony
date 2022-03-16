@@ -799,7 +799,7 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 	Uint32 color = 0xFFFFFFFF;
 	if ( !item->identified )
 	{
-		color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+		color = makeColorRGB(255, 255, 0);
 		ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
 		tooltipString += language[309];
 		tooltipString += "\r\n";
@@ -809,7 +809,7 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		if ( item->beatitude < 0 )
 		{
 			//Red if cursed
-			color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			color = makeColorRGB(255, 0, 0);
 			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
 			tooltipString += language[310];
 			tooltipString += "\r\n";
@@ -827,11 +827,11 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 			//Green if blessed.
 			if ( colorblind )
 			{
-				color = SDL_MapRGB(mainsurface->format, 100, 245, 255); //Light blue if colorblind
+				color = makeColorRGB(100, 245, 255); //Light blue if colorblind
 			}
 			else
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				color = makeColorRGB(0, 255, 0);
 			}
 
 			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
@@ -890,7 +890,7 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 
 	if ( strcmp(spellEffectText, "") )
 	{
-		ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
+		ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, makeColorRGB(0, 255, 255), spellEffectText);
 		tooltipString += spellEffectText;
 		tooltipString += "\r\n";
 	}
@@ -912,15 +912,15 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 
 			if ( item->weaponGetAttack(stats[player]) >= 0 )
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+				color = makeColorRGB(0, 255, 255);
 			}
 			else
 			{
-				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				color = makeColorRGB(255, 0, 0);
 			}
 			if ( stats[player]->type != tmpRace )
 			{
-				color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+				color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 			}
 
 			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
@@ -945,15 +945,15 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 
 			if ( item->armorGetAC(stats[player]) >= 0 )
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+				color = makeColorRGB(0, 255, 255);
 			}
 			else
 			{
-				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				color = makeColorRGB(255, 0, 0);
 			}
 			if ( stats[player]->type != tmpRace )
 			{
-				color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+				color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 			}
 
 			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
@@ -965,7 +965,7 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		}
 		else if ( itemCategory(item) == SCROLL )
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+			color = makeColorRGB(0, 255, 255);
 			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
 			snprintf(tooltipBuffer, sizeof(tooltipBuffer), "%s%s", language[3862], item->getScrollLabel());
 			tooltipString += tooltipBuffer;
@@ -3794,7 +3794,7 @@ void drawBlueInventoryBorder(const int player, const Item& item, int x, int y)
 	pos.w = players[player]->inventoryUI.getSlotSize();
 	pos.h = players[player]->inventoryUI.getSlotSize();
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 255, 127);
+	Uint32 color = makeColor( 0, 0, 255, 127);
 	drawBox(&pos, color, 127);
 }
 
@@ -5603,10 +5603,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				if ( img && txt )
 				{
 					Uint8 r, g, b, a;
-					SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+					getColor(img->color, &r, &g, &b, &a);
 					a = 128;
 					img->disabled = false; // unused glyphs will show as partially opaque
-					img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+					img->color = makeColor( r, g, b, a);
 					txt->setDisabled(true);
 					promptFrames.push_back(std::make_pair(img, txt));
 				}
@@ -5628,9 +5628,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				auto txt = frameTooltipPrompt->findField(fieldName);
 				img->disabled = false;
 				Uint8 r, g, b, a;
-				SDL_GetRGBA(img->color, mainsurface->format, &r, &g, &b, &a);
+				getColor(img->color, &r, &g, &b, &a);
 				a = 255;
-				img->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+				img->color = makeColor( r, g, b, a);
 				txt->setDisabled(false);
 				img->path = Input::inputs[player].getGlyphPathForBinding(getContextMenuOptionBindingName(option).c_str());
 				txt->setText(getContextMenuLangEntry(player, option, *item));
@@ -6753,7 +6753,7 @@ void Player::Inventory_t::updateInventory()
 		mode_pos.y += 2;
 		mode_pos.w -= 4;
 		mode_pos.h -= 4;
-		drawRect(&mode_pos, SDL_MapRGB(mainsurface->format, 192, 192, 192), 64);
+		drawRect(&mode_pos, makeColorRGB(192, 192, 192), 64);
 		// tooltip
 		SDL_Rect src;
 		src.x = mousex + 16;

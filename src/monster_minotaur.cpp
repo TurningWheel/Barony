@@ -620,7 +620,7 @@ void actMinotaurTrap(Entity* my)
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
 						playSoundPlayer( c, 107 + rand() % 3, 128 );
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+						Uint32 color = makeColorRGB(255, 128, 0);
 						messagePlayerColor(c, MESSAGE_HINT, color, language[1113]);
 					}
 				}
@@ -671,7 +671,7 @@ void actMinotaurTimer(Entity* my)
 #endif
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+				Uint32 color = makeColorRGB(0, 255, 255);
 				if ( stats[c]->type == HUMAN )
 				{
 					messagePlayerColor(c, MESSAGE_WORLD, color, language[1114], stats[c]->name);
@@ -695,7 +695,7 @@ void actMinotaurTimer(Entity* my)
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				playSoundPlayer( c, 107 + rand() % 3, 128 );
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+				Uint32 color = makeColorRGB(255, 128, 0);
 				messagePlayerColor(c, MESSAGE_HINT, color, language[1115]);
 			}
 			MINOTAURTIMER_ACTIVE = MINOTAURTIMER_LIFE;
@@ -709,7 +709,7 @@ void actMinotaurTimer(Entity* my)
 			if ( currentlevel < 25 )
 			{
 				playSoundPlayer(c, 120 + rand() % 3, 128);
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				Uint32 color = makeColorRGB(255, 0, 255);
 				messagePlayerColor(c, MESSAGE_WORLD, color, language[1116]);
 				messagePlayerColor(c, MESSAGE_WORLD, color, language[73]);
 			}
