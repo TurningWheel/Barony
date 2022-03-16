@@ -4015,15 +4015,6 @@ void ingameHud()
 {
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
-		if ( nohud || intro || !players[player]->isLocalPlayer() )
-		{
-			gameUIFrame[player]->setDisabled(true);
-		}
-		else
-		{
-			gameUIFrame[player]->setDisabled(false);
-		}
-
 	    Input& input = Input::inputs[player];
 
 	    // toggle minimap
@@ -5211,6 +5202,19 @@ int main(int argc, char** argv)
 #endif // USE_EOS
 
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
+
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( nohud || intro || !players[i]->isLocalPlayer() )
+				{
+					gameUIFrame[i]->setDisabled(true);
+				}
+				else
+				{
+					gameUIFrame[i]->setDisabled(false);
+				}
+			}
+
 			if ( intro )
 			{
 				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
