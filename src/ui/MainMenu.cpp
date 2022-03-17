@@ -4346,7 +4346,7 @@ bind_failed:
 
 	static void archivesLeaderboards(Button& button) {
 		soundActivate();
-		if (1) {
+		if (0) {
 		    // test cutscene
 		    destroyMainMenu();
 		    createDummyMainMenu();
