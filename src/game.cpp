@@ -5830,10 +5830,7 @@ int main(int argc, char** argv)
 
 				for ( int player = 0; player < MAXPLAYERS; ++player )
 				{
-					if ( players[player]->isLocalPlayer() )
-					{
-						players[player]->messageZone.updateMessages();
-					}
+					players[player]->messageZone.updateMessages();
 				}
 				if ( !nohud )
 				{
