@@ -219,8 +219,7 @@ void Player::MessageZone_t::drawMessages()
 	return;
 	for ( Message *current : notification_messages )
 	{
-		Uint32 color = current->text->color ^ mainsurface->format->Amask;
-		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+		Uint32 color = (current->text->color & 0x00ffffff) | ((Uint32)current->alpha << 24);
 
 		// highlights in messages.
 		std::string data = current->text->data;
@@ -264,8 +263,7 @@ void Player::MessageZone_t::drawMessages()
 			{
 				ttfPrintTextFormattedColor(font, current->x, current->y, color, "%s", data.c_str());
 
-				Uint32 color = makeColorRGB(0, 192, 255) ^ mainsurface->format->Amask;
-				color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+				Uint32 color = (makeColorRGB(0, 192, 255) & 0x00ffffff) | ((Uint32)current->alpha << 24);
 				ttfPrintTextFormattedColor(font, current->x, current->y, color, "%s", highlightedWords.c_str());
 			}
 		}

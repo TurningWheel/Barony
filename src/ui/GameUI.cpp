@@ -2503,8 +2503,7 @@ void Player::MessageZone_t::processChatbox()
 			break;
 		}
 
-		Uint32 color = current->text->color ^ mainsurface->format->Amask;
-		color += std::min<Sint16>(std::max<Sint16>(0, current->alpha), 255) << mainsurface->format->Ashift;
+		Uint32 color = (current->text->color & 0x00ffffff) | ((Uint32)current->alpha << 24);
 
 	    char msgName[32];
 		snprintf(msgName, sizeof(msgName), "message %d", index);

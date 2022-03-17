@@ -208,7 +208,6 @@ SDL_Renderer* renderer = nullptr;
 #else
 SDL_GLContext renderer;
 #endif
-SDL_Surface* mainsurface = nullptr;
 SDL_Event event;
 bool firstmouseevent = true;
 int fullscreen = 0;

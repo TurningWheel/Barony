@@ -391,8 +391,7 @@ namespace MainMenu {
     static inline void fireUpdate(Uint32* p) {
         constexpr int w = Frame::virtualScreenX / firePixelSize;
 	    const int diff = std::max(0, rand() % 5 - 3);
-	    const SDL_PixelFormat* const fmt = mainsurface->format;
-	    const int below = ((p[w] & fmt->Amask) >> fmt->Ashift) << fmt->Aloss;
+	    const int below = (p[w] & 0xff000000) >> 24;
 	    const int intensity = std::max(below - diff, 0);
 	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
 	    *newPixel = makeColor(0, 0, 0, intensity);

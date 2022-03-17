@@ -277,11 +277,9 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	glBindTexture(GL_TEXTURE_2D, texid);
 
 	// consume color
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 
 	// draw quad
 	glBegin(GL_QUADS);

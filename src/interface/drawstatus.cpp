@@ -850,7 +850,7 @@ void drawStatus(int player)
 		/*if( buttonclick==13 ) {
 			pos.x=players[player]->statusBarUI.getStartX()+617; pos.y=y2-status_bmp->h+8;
 			pos.w=11; pos.h=30;
-			drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
+			drawRect(&pos,0xffffffff,80);
 			//drawImage(textdown_bmp, NULL, &pos);
 		}*/
 	}

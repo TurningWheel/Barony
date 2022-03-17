@@ -52,15 +52,12 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
 		if (railImage.empty()) {
-			Uint8 r = color >> mainsurface->format->Rshift; r = (r / 3) * 2;
-			Uint8 g = color >> mainsurface->format->Gshift; g = (g / 3) * 2;
-			Uint8 b = color >> mainsurface->format->Bshift; b = (b / 3) * 2;
-			Uint8 a = color >> mainsurface->format->Ashift;
-			Uint32 darkColor =
-				(Uint32)r << mainsurface->format->Rshift |
-				(Uint32)g << mainsurface->format->Gshift |
-				(Uint32)b << mainsurface->format->Bshift |
-				(Uint32)a << mainsurface->format->Ashift;
+			Uint8 r, g, b, a;
+			::getColor(color, &r, &g, &b, &a);
+			r = (r / 3) * 2;
+			g = (g / 3) * 2;
+			b = (b / 3) * 2;
+			Uint32 darkColor = makeColor(r, g, b, a);
 			white->drawColor(nullptr, _railSize, viewport, darkColor);
 		} else {
 			Frame::image_t image;

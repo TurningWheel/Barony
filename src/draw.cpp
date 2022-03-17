@@ -211,12 +211,9 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 	glEnable(GL_BLEND);
 
 	// set color
-	glColor4f(
-		((Uint8)(color >> mainsurface->format->Rshift)) / 255.f,
-		((Uint8)(color >> mainsurface->format->Gshift)) / 255.f,
-		((Uint8)(color >> mainsurface->format->Bshift)) / 255.f,
-		alpha / 255.f
-	);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// draw arc
@@ -256,21 +253,15 @@ static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, 
 	glEnable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	Uint8 r, g, b, a;
+
 	// draw arc
 	glBegin(GL_TRIANGLE_FAN);
-	glColor4f(
-		((Uint8)(inner_color >> mainsurface->format->Rshift)) / 255.f,
-		((Uint8)(inner_color >> mainsurface->format->Gshift)) / 255.f,
-		((Uint8)(inner_color >> mainsurface->format->Bshift)) / 255.f,
-		((Uint8)(inner_color >> mainsurface->format->Ashift)) / 255.f
-	);
+	getColor(inner_color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	glVertex2f(x, yres - y);
-	glColor4f(
-		((Uint8)(outer_color >> mainsurface->format->Rshift)) / 255.f,
-		((Uint8)(outer_color >> mainsurface->format->Gshift)) / 255.f,
-		((Uint8)(outer_color >> mainsurface->format->Bshift)) / 255.f,
-		((Uint8)(outer_color >> mainsurface->format->Ashift)) / 255.f
-	);
+	getColor(outer_color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	for (real_t c = angle2; c >= angle1; c -= (real_t)1)
 	{
 		real_t degInRad = c * (real_t)PI / (real_t)180;
@@ -309,7 +300,9 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 	glLineWidth(2);
 
 	// draw line
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINE_STRIP);
@@ -351,7 +344,9 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 	glLineWidth(2);
 
 	// draw line
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINES);
@@ -383,8 +378,7 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 		secondsrc.h = yres;
 		src = &secondsrc;
 	}
-	auto format = mainsurface->format;
-	Uint32 c = (color & (format->Rmask | format->Gmask | format->Bmask)) | (alpha << format->Ashift);
+	Uint32 c = (color & 0x00ffffff) | ((Uint32)alpha << 24);
 	auto image = Image::get("images/system/white.png");
 	image->drawColor(nullptr, *src, SDL_Rect{0, 0, xres, yres}, c);
 	return 0;
@@ -542,12 +536,10 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	}
 
 	// draw a textured quad
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a/ 255.f);
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
 	glPushMatrix();
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
@@ -953,11 +945,9 @@ void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint
 
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	glPushMatrix();
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.f, 0.f);
@@ -1049,11 +1039,9 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	glPushMatrix();
 	glBegin(GL_QUADS);
 	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
@@ -2523,22 +2511,20 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 			getSizeOfText(font, newStr, &w, &h);
 			if ( font == ttf8 )
 			{
-				surf = SDL_CreateRGBSurface(0, w + 2, h + 2,
-				                            mainsurface->format->BitsPerPixel,
-				                            mainsurface->format->Rmask,
-				                            mainsurface->format->Gmask,
-				                            mainsurface->format->Bmask,
-				                            mainsurface->format->Amask
+				surf = SDL_CreateRGBSurface(0, w + 2, h + 2, 32,
+				                            0x000000ff,
+				                            0x0000ff00,
+				                            0x00ff0000,
+				                            0xff000000
 				                           );
 			}
 			else
 			{
-				surf = SDL_CreateRGBSurface(0, w + 4, h + 4,
-				                            mainsurface->format->BitsPerPixel,
-				                            mainsurface->format->Rmask,
-				                            mainsurface->format->Gmask,
-				                            mainsurface->format->Bmask,
-				                            mainsurface->format->Amask
+				surf = SDL_CreateRGBSurface(0, w + 4, h + 4, 32,
+				                            0x000000ff,
+				                            0x0000ff00,
+				                            0x00ff0000,
+				                            0xff000000
 				                           );
 			}
 		}
@@ -2937,7 +2923,10 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 }
 
 void getColor(Uint32 color, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a) {
-    return SDL_GetRGBA(color, mainsurface->format, r, g, b, a);
+	*r = (color & 0x000000ff) >> 0;
+	*g = (color & 0x0000ff00) >> 8;
+	*b = (color & 0x00ff0000) >> 16;
+	*a = (color & 0xff000000) >> 24;
 }
 
 bool behindCamera(const view_t& camera, real_t x, real_t y)
