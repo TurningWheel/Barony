@@ -502,7 +502,7 @@ void actWinningPortal(Entity* my)
 						net_packet->data[5] = cutscene;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 5;
+						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}

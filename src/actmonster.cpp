@@ -1449,6 +1449,11 @@ void actMonster(Entity* my)
 		return;
 	}
 
+	if (movie || MainMenu::isCutsceneActive())
+	{
+	    return;
+	}
+
 	int x, y, c, i;
 	double dist, dist2;
 	list_t* path;
