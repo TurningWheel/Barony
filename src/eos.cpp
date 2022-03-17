@@ -3360,11 +3360,11 @@ void EOSFuncs::CrossplayAccounts_t::drawDialogue()
 
 	if ( getPromptStatus() == PROMPT_SETUP )
 	{
-		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow(*mainsurface), "%s", language[3979]);
+		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow, "%s", language[3979]);
 	}
 	else if ( getPromptStatus() == PROMPT_ABOUT )
 	{
-		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow(*mainsurface), "%s", language[3981]);
+		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow, "%s", language[3981]);
 	}
 }
 

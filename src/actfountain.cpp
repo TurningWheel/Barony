@@ -554,11 +554,11 @@ void actFountain(Entity* my)
 					}
 					if ( potionDropQuantity > 1 )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3245], potionDropQuantity);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[3245], potionDropQuantity);
 					}
 					else if ( potionDropQuantity == 1 )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3246]);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[3246]);
 					}
 					messagePlayer(i, MESSAGE_INTERACTION, language[474]);
 					my->skill[0] = 0; //Dry up fountain.

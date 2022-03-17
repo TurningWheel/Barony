@@ -717,9 +717,9 @@ void actMinotaurTimer(Entity* my)
 			{
 				playSoundPlayer(c, 375, 128);
 				playSoundPlayer(c, 379, 128);
-				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[1116]);
-				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[73]);
-				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue(*mainsurface), language[73]);
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, language[1116]);
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, language[73]);
+				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, language[73]);
 			}
 		}
 		list_RemoveNode(my->mynode);

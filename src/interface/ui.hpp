@@ -334,13 +334,13 @@ public:
 
 		drawRect(&progressbar, makeColorRGB(36, 36, 36), 255);
 		progressbar.w = std::min((xres - 8 + animx) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
-		drawRect(&progressbar, uint32ColorBaronyBlue(*mainsurface), 92);
+		drawRect(&progressbar, uint32ColorBaronyBlue, 92);
 		progressbar.w = (xres - 8 + animx) - progressbar.x - TTF12_WIDTH;
 
 		char progress_str[32] = { 0 };
 		snprintf(progress_str, sizeof(progress_str), "%d / %d", statisticUpdateCurrent, statisticUpdateMax);
 		ttfPrintTextColor(ttf12, progressbar.x + progressbar.w / 2 - (strlen(progress_str) * TTF12_WIDTH) / 2,
-			progressbar.y + 4, uint32ColorWhite(*mainsurface), true, progress_str);
+			progressbar.y + 4, uint32ColorWhite, true, progress_str);
 	}
 
 	void drawMainCard()
@@ -535,7 +535,7 @@ public:
 		{
 			//drawDepressed(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
 			drawWindowFancy(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
-			drawRect(&actionBtn, uint32ColorBaronyBlue(*mainsurface), 32);
+			drawRect(&actionBtn, uint32ColorBaronyBlue, 32);
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;

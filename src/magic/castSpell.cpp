@@ -132,8 +132,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 				}
 				else
 				{
-					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3241]);
-					messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen(*mainsurface), language[3242]);
+					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, language[3241]);
+					messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen, language[3242]);
 					//messagePlayer(player, language[408], spell->name);
 					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
@@ -1196,7 +1196,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					if ( caster->setEffect(EFF_FLUTTER, true, duration, true) )
 					{
-						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3767]);
+						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[3767]);
 						playSoundEntity(caster, 178, 128);
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
 					}
@@ -1271,7 +1271,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
 					caster->setEffect(EFF_FAST, true, duration, true);
-					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[768]);
+					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, language[768]);
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
@@ -1291,7 +1291,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 							if ( entity->behavior == &actPlayer )
 							{
-								messagePlayerColor(entity->skill[2], MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[768]);
+								messagePlayerColor(entity->skill[2], MESSAGE_STATUS, uint32ColorGreen, language[768]);
 							}
 						}
 					}

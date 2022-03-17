@@ -2123,7 +2123,7 @@ void actMonster(Entity* my)
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
 						playSoundPlayer(c, 392, 128);
-						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue(*mainsurface), language[2647]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, language[2647]);
 					}
 				}
 				else if ( lichAlly && my->monsterLichAllyUID == 0 )
@@ -2142,7 +2142,7 @@ void actMonster(Entity* my)
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
 						playSoundPlayer(c, 391, 128);
-						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[2649]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, language[2649]);
 					}
 				}
 				else if ( lichAlly && my->monsterLichAllyUID == 0 )
@@ -6266,12 +6266,12 @@ timeToGoAgain:
 					if ( myStats->type == LICH_FIRE )
 					{
 						playSoundPlayer(c, 376, 128);
-						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange(*mainsurface), language[2646]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, language[2646]);
 					}
 					else if ( myStats->type == LICH_ICE )
 					{
 						playSoundPlayer(c, 381, 128);
-						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue(*mainsurface), language[2648]);
+						messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, language[2648]);
 					}
 				}
 			}

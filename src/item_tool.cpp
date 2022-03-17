@@ -103,7 +103,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				messagePlayer(player, MESSAGE_INTERACTION, language[3605]);
 			}
-			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorGreen(*mainsurface), language[3606]);
+			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorGreen, language[3606]);
 		}
 		else if ( entity.skill[22] == BOMB_TRIGGER_ALL )
 		{
@@ -115,7 +115,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				messagePlayer(player, MESSAGE_INTERACTION, language[3607]);
 			}
-			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorRed(*mainsurface), language[3608]);
+			messagePlayerColor(player, MESSAGE_INTERACTION, uint32ColorRed, language[3608]);
 		}
 		else if ( entity.skill[22] == BOMB_TELEPORT_RECEIVER )
 		{
@@ -168,7 +168,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
 						stats[player]->GOLD += goldAmount;
-						messagePlayerColor(player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), language[4088], goldAmount);
+						messagePlayerColor(player, MESSAGE_INVENTORY, uint32ColorGreen, language[4088], goldAmount);
 					}
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
@@ -589,7 +589,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 		{
 			if ( multiplayer != CLIENT )
 			{
-				messagePlayerMonsterEvent(player, uint32ColorWhite(*mainsurface), *entity.getStats(), language[3892], language[3891], MSG_COMBAT);
+				messagePlayerMonsterEvent(player, uint32ColorWhite, *entity.getStats(), language[3892], language[3891], MSG_COMBAT);
 			}
 			return;
 		}

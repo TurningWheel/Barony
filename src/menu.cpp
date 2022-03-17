@@ -578,11 +578,11 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 	{
 		if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unassigned key" ))
 		{
-			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorBaronyBlue, true, getInputName(settings_joyimpulses[c]));
 		}
 		else if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unknown key") || !strcmp(getInputName(settings_joyimpulses[c]), "Unknown trigger") )
 		{
-			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorRed(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorRed, true, getInputName(settings_joyimpulses[c]));
 		}
 		else
 		{
@@ -591,7 +591,7 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 	}
 	else
 	{
-		ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorGreen(*mainsurface), true, "...");
+		ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorGreen, true, "...");
 	}
 }
 
@@ -811,7 +811,7 @@ void inline pauseMenuOnInputPressed()
 
 void handleInGamePauseMenu()
 {
-	Uint32 colorGray = uint32ColorGray(*mainsurface);
+	Uint32 colorGray = uint32ColorGray;
 
 	Sint32 mousex = inputs.getMouse(clientnum, Inputs::MouseInputs::X);
 	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
@@ -1256,7 +1256,7 @@ void handleTutorialPauseMenu()
 	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
 	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
 
-	const Uint32 colorGray = uint32ColorGray(*mainsurface);
+	const Uint32 colorGray = uint32ColorGray;
 	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
@@ -2379,11 +2379,11 @@ void handleMainMenu(bool mode)
 				drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
 				if ( gamemods_numCurrentModsLoaded >= 0 )
 				{
-					drawRect(&saveBox, uint32ColorGreen(*mainsurface), 32);
+					drawRect(&saveBox, uint32ColorGreen, 32);
 				}
 				else
 				{
-					drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+					drawRect(&saveBox, uint32ColorBaronyBlue, 32);
 				}
 				if ( loadGameSaveShowRectangle == 2 )
 				{
@@ -2392,11 +2392,11 @@ void handleMainMenu(bool mode)
 					drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
 					if ( gamemods_numCurrentModsLoaded >= 0 )
 					{
-						drawRect(&saveBox, uint32ColorGreen(*mainsurface), 32);
+						drawRect(&saveBox, uint32ColorGreen, 32);
 					}
 					else
 					{
-						drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+						drawRect(&saveBox, uint32ColorBaronyBlue, 32);
 					}
 				}
 			}
@@ -2418,7 +2418,7 @@ void handleMainMenu(bool mode)
 			}
 			if ( loadGameSaveShowRectangle > 0 && gamemods_numCurrentModsLoaded >= 0 )
 			{
-				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - TTF12_HEIGHT * 5, uint32ColorBaronyBlue(*mainsurface), "%s", language[2982]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - TTF12_HEIGHT * 5, uint32ColorBaronyBlue, "%s", language[2982]);
 			}
 		}
 		else
@@ -2609,35 +2609,35 @@ void handleMainMenu(bool mode)
 		if ( charcreation_step == 1 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
-			Uint32 colorStep1 = uint32ColorWhite(*mainsurface);
+			Uint32 colorStep1 = uint32ColorWhite;
 			if ( raceSelect != 0 )
 			{
-				colorStep1 = uint32ColorGray(*mainsurface);
+				colorStep1 = uint32ColorGray;
 			}
 			if ( stats[0]->sex == 0 )
 			{
 				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[o] %s", language[1321]);
 				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[ ] %s", language[1322]);
 
-				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1321]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite, language[1320], language[1321]);
 			}
 			else
 			{
 				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[ ] %s", language[1321]);
 				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[o] %s", language[1322]);
 
-				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1322]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite, language[1320], language[1322]);
 			}
-			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite(*mainsurface), language[3175]);
+			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite, language[3175]);
 
 			// race
 			if ( raceSelect != 1 )
 			{
-				colorStep1 = uint32ColorGray(*mainsurface);
+				colorStep1 = uint32ColorGray;
 			}
 			else if ( raceSelect == 1 )
 			{
-				colorStep1 = uint32ColorWhite(*mainsurface);
+				colorStep1 = uint32ColorWhite;
 			}
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
 			int pady = suby1 + 108 + 24;
@@ -2650,38 +2650,38 @@ void handleMainMenu(bool mode)
 					{
 						if ( c > RACE_GOATMAN )
 						{
-							colorStep1 = uint32ColorGray(*mainsurface);
+							colorStep1 = uint32ColorGray;
 						}
 						else
 						{
-							colorStep1 = uint32ColorWhite(*mainsurface);
+							colorStep1 = uint32ColorWhite;
 						}
 					}
 					else if ( skipFirstDLC )
 					{
 						if ( c > RACE_HUMAN && c <= RACE_GOATMAN )
 						{
-							colorStep1 = uint32ColorGray(*mainsurface);
+							colorStep1 = uint32ColorGray;
 						}
 						else
 						{
-							colorStep1 = uint32ColorWhite(*mainsurface);
+							colorStep1 = uint32ColorWhite;
 						}
 					}
 					else if ( !(enabledDLCPack2 && enabledDLCPack1) )
 					{
 						if ( c > RACE_HUMAN )
 						{
-							colorStep1 = uint32ColorGray(*mainsurface);
+							colorStep1 = uint32ColorGray;
 						}
 						else
 						{
-							colorStep1 = uint32ColorWhite(*mainsurface);
+							colorStep1 = uint32ColorWhite;
 						}
 					}
 					else if ( enabledDLCPack2 && enabledDLCPack1 )
 					{
-						colorStep1 = uint32ColorWhite(*mainsurface);
+						colorStep1 = uint32ColorWhite;
 					}
 				}
 				if ( stats[0]->playerRace == c )
@@ -2767,11 +2767,11 @@ void handleMainMenu(bool mode)
 			bool displayRaceOptions = false;
 			if ( raceSelect != 2 )
 			{
-				colorStep1 = uint32ColorGray(*mainsurface);
+				colorStep1 = uint32ColorGray;
 			}
 			else
 			{
-				colorStep1 = uint32ColorWhite(*mainsurface);
+				colorStep1 = uint32ColorWhite;
 			}
 			if ( stats[0]->playerRace > 0 )
 			{
@@ -2979,14 +2979,14 @@ void handleMainMenu(bool mode)
 									tooltip.h = TTF12_HEIGHT * 2 + 8;
 									tooltip.w = longestline(language[3917]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3917]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3917]);
 								}
 								else
 								{
 									tooltip.h = TTF12_HEIGHT * 2 + 8;
 									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3200]);
 								}
 #ifdef STEAMWORKS
 								if ( SteamUser()->BLoggedOn() )
@@ -3034,13 +3034,13 @@ void handleMainMenu(bool mode)
 								{
 									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3372]);
 								}
 								else
 								{
 									tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
-									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3199]);
 								}
 #endif // STEAMWORKS
 							}
@@ -3503,7 +3503,7 @@ void handleMainMenu(bool mode)
 						img.w = 22;
 						img.h = 20;
 						drawImageScaled(sidebar_unlock_bmp, nullptr, &img);
-						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, uint32ColorGray(*mainsurface), "[ ] %s", playerClassLangEntry(classToPick, 0));
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, uint32ColorGray, "[ ] %s", playerClassLangEntry(classToPick, 0));
 
 						if ( mouseInBounds(clientnum, subx1 + 40, subx1 + 72, pady, pady + 16) )
 						{
@@ -3604,7 +3604,7 @@ void handleMainMenu(bool mode)
 			{
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange(*mainsurface), language[drawLockedTooltip]);
+					uint32ColorOrange, language[drawLockedTooltip]);
 			}
 		}
 
@@ -3775,23 +3775,23 @@ void handleMainMenu(bool mode)
 				{
 					if ( singleplayerSavegameFreeSlot == -1 )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2965]);
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange, true, language[2965]);
 					}
 				}
 				else if ( multiplayerselect > SINGLE )
 				{
 					if ( multiplayerSavegameFreeSlot == -1 )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2966]);
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange, true, language[2966]);
 					}
 					if ( gamemods_numCurrentModsLoaded >= 0 )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 - TTF12_HEIGHT * 6, uint32ColorOrange(*mainsurface), true, language[2981]);
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 - TTF12_HEIGHT * 6, uint32ColorOrange, true, language[2981]);
 					}
 				}
 				if ( gamemods_numCurrentModsLoaded >= 0 )
 				{
-					ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 + TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), true, language[2982]);
+					ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 + TTF12_HEIGHT, uint32ColorBaronyBlue, true, language[2982]);
 				}
 				if ( inputs.bMouseLeft(clientnum) )
 				{
@@ -3893,19 +3893,19 @@ void handleMainMenu(bool mode)
 		{
 			if ( serialVerifyWindow % 10 < 3 )
 			{
-				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying");
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange, "Verifying");
 			}
 			else if ( serialVerifyWindow % 10 < 5 )
 			{
-				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying.");
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange, "Verifying.");
 			}
 			else if ( serialVerifyWindow % 10 < 7 )
 			{
-				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying..");
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange, "Verifying..");
 			}
 			else if ( serialVerifyWindow % 10 < 10 )
 			{
-				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying...");
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange, "Verifying...");
 			}
 			if ( ticks % (TICKS_PER_SECOND / 2) == 0 )
 			{
@@ -4370,11 +4370,11 @@ void handleMainMenu(bool mode)
 				{
 					if ( !strcmp(getInputName(settings_impulses[c]), "Unassigned key" ))
 					{
-						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_impulses[c]));
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorBaronyBlue, true, getInputName(settings_impulses[c]));
 					}
 					else if ( !strcmp(getInputName(settings_impulses[c]), "Unknown key") || !strcmp(getInputName(settings_impulses[c]), "Unknown trigger") )
 					{
-						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorRed(*mainsurface), true, getInputName(settings_impulses[c]));
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorRed, true, getInputName(settings_impulses[c]));
 					}
 					else
 					{
@@ -4383,7 +4383,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorGreen(*mainsurface), true, "...");
+					ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorGreen, true, "...");
 				}
 			}
 
@@ -4485,7 +4485,7 @@ void handleMainMenu(bool mode)
 
 			//Print out the menu-exclusive bindings.
 			currentPos.y += 12;
-			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
+			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray, 255);
 			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1994]);
 			currentPos.y += 18;
 			for ( c = INDEX_JOYBINDINGS_START_MENU; c < INDEX_JOYBINDINGS_START_GAME; ++c, currentPos.y += 12 )
@@ -4495,7 +4495,7 @@ void handleMainMenu(bool mode)
 
 			//Print out the game-exclusive bindings.
 			currentPos.y += 12;
-			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
+			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray, 255);
 			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1995]);
 			currentPos.y += 18;
 			for ( c = INDEX_JOYBINDINGS_START_GAME; c < NUM_JOY_IMPULSES; ++c, currentPos.y += 12 )
@@ -4732,16 +4732,16 @@ void handleMainMenu(bool mode)
 			for ( int i = 0; i < (NUM_AUTOSORT_CATEGORIES); ++i )
 			{
 				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "<");
-				Uint32 autosortColor = uint32ColorGreen(*mainsurface);
+				Uint32 autosortColor = uint32ColorGreen;
 				int padValue_x = pad_x;
 				if ( settings_autosort_inventory_categories[i] < 0 )
 				{
-					autosortColor = uint32ColorRed(*mainsurface);
+					autosortColor = uint32ColorRed;
 					padValue_x += 4; // centre the negative numbers.
 				}
 				else if ( settings_autosort_inventory_categories[i] == 0 )
 				{
-					autosortColor = uint32ColorWhite(*mainsurface);
+					autosortColor = uint32ColorWhite;
 				}
 				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
 				if ( i == NUM_AUTOSORT_CATEGORIES - 1 )
@@ -5301,7 +5301,7 @@ void handleMainMenu(bool mode)
 
 				if ( achievementUnlocked(item.first.c_str()) )
 				{
-					drawRect(&bodyHighlight, uint32ColorBaronyBlue(*mainsurface), 64);
+					drawRect(&bodyHighlight, uint32ColorBaronyBlue, 64);
 					drawRect(&iconHighlight, makeColorRGB(1, 0, 16), 255);
 				}
 				else
@@ -5370,7 +5370,7 @@ void handleMainMenu(bool mode)
 						int percent = (int)floor(currentValue * 100 / static_cast<double>(maxValue));
 						//char percent_str[32] = { 0 };
 						// snprintf(percent_str, sizeof(percent_str), "%3d%% complete", percent);
-						// ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorWhite(*mainsurface), true, percent_str);
+						// ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorWhite, true, percent_str);
 
 						SDL_Rect progressbar;
 						progressbar.x = subx2 - 330 + (4 * TTF12_WIDTH) + TTF12_WIDTH;
@@ -5381,13 +5381,13 @@ void handleMainMenu(bool mode)
 
 						drawRect(&progressbar, makeColorRGB(36, 36, 36), 255);
 						progressbar.w = std::min((bodyBox.x + bodyBox.w) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
-						drawRect(&progressbar, uint32ColorBaronyBlue(*mainsurface), 92);
+						drawRect(&progressbar, uint32ColorBaronyBlue, 92);
 						progressbar.w = (bodyBox.x + bodyBox.w) - progressbar.x - TTF12_WIDTH;
 
 						char progress_str[32] = { 0 };
 						snprintf(progress_str, sizeof(progress_str), "%d / %d", currentValue, maxValue);
 						ttfPrintTextColor(ttf12, progressbar.x + progressbar.w / 2 - (strlen(progress_str) * TTF12_WIDTH) / 2,
-							suby1 + 92 + (index - first_ach) * 80, uint32ColorWhite(*mainsurface), true, progress_str);
+							suby1 + 92 + (index - first_ach) * 80, uint32ColorWhite, true, progress_str);
 					}
 				}
 
@@ -5404,7 +5404,7 @@ void handleMainMenu(bool mode)
 
 						char text[64];
 						snprintf(text, sizeof(text), "%32s", buffer);
-						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorYellow(*mainsurface), true, text);
+						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorYellow, true, text);
 					}
 				}
 
@@ -6244,7 +6244,7 @@ void handleMainMenu(bool mode)
 				int numToolboxLines = 9;
 				bool itemNeedsSubscribing = false;
 				bool itemNeedsMounting = false;
-				Uint32 modsStatusColor = uint32ColorBaronyBlue(*mainsurface);
+				Uint32 modsStatusColor = uint32ColorBaronyBlue;
 				bool modListOutOfOrder = false;
 				for ( int lines = 0; lines < serverNumModsLoaded; ++lines )
 				{
@@ -6291,7 +6291,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( itemNeedsMounting )
 					{
-						modsStatusColor = uint32ColorOrange(*mainsurface);
+						modsStatusColor = uint32ColorOrange;
 						for ( node = button_l.first; node != NULL; node = nextnode )
 						{
 							nextnode = node->next;
@@ -6309,7 +6309,7 @@ void handleMainMenu(bool mode)
 					else if ( gamemodsIsClientLoadOrderMatchingHost(serverFileIdsLoaded)
 						&& serverFileIdsLoaded.size() == gamemods_workshopLoadedFileIDMap.size() )
 					{
-						modsStatusColor = uint32ColorGreen(*mainsurface);
+						modsStatusColor = uint32ColorGreen;
 						for ( node = button_l.first; node != NULL; node = nextnode )
 						{
 							nextnode = node->next;
@@ -6326,7 +6326,7 @@ void handleMainMenu(bool mode)
 					}
 					else
 					{
-						modsStatusColor = uint32ColorOrange(*mainsurface);
+						modsStatusColor = uint32ColorOrange;
 						modListOutOfOrder = true;
 						for ( node = button_l.first; node != NULL; node = nextnode )
 						{
@@ -6396,17 +6396,17 @@ void handleMainMenu(bool mode)
 				{
 					if ( g_SteamWorkshop->subscribedCallStatus == 1 )
 					{
-						ttfPrintTextFormattedColor(ttf12, subx2 - 64 * TTF12_WIDTH, suby2 - 4 - TTF12_HEIGHT, uint32ColorOrange(*mainsurface), 
+						ttfPrintTextFormattedColor(ttf12, subx2 - 64 * TTF12_WIDTH, suby2 - 4 - TTF12_HEIGHT, uint32ColorOrange, 
 							"retrieving data...");
 					}
 					else if ( g_SteamWorkshop->subscribedCallStatus == 2 )
 					{
-						ttfPrintTextFormattedColor(ttf12, subx2 - 64 * TTF12_WIDTH, suby2 - 4 - TTF12_HEIGHT, uint32ColorOrange(*mainsurface),
+						ttfPrintTextFormattedColor(ttf12, subx2 - 64 * TTF12_WIDTH, suby2 - 4 - TTF12_HEIGHT, uint32ColorOrange,
 							"please retry mount operation.");
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf12, subx2 - 64 * TTF12_WIDTH, suby2 - 4 - TTF12_HEIGHT, uint32ColorOrange(*mainsurface),
+						ttfPrintTextFormattedColor(ttf12, subx2 - 64 * TTF12_WIDTH, suby2 - 4 - TTF12_HEIGHT, uint32ColorOrange,
 							"press mount button.");
 					}
 				}
@@ -6428,7 +6428,7 @@ void handleMainMenu(bool mode)
 		int filename_rowHeight = TTF12_HEIGHT + 4;
 		int numEntriesTotal = 0;
 
-		ttfPrintTextFormattedColor(ttf16, filename_padx, filename_pady, uint32ColorWhite(*mainsurface), "%s", 
+		ttfPrintTextFormattedColor(ttf16, filename_padx, filename_pady, uint32ColorWhite, "%s", 
 			g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
 
 		filename_pady += 3 * TTF12_HEIGHT;
@@ -6445,7 +6445,7 @@ void handleMainMenu(bool mode)
 					g_SteamLeaderboards->LeaderboardView.rangeEnd);
 				score_leaderboard_window = 2;
 			}
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorOrange(*mainsurface), "Downloading entries...");
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorOrange, "Downloading entries...");
 		}
 		else 
 		{
@@ -6455,7 +6455,7 @@ void handleMainMenu(bool mode)
 				numEntriesTotal = g_SteamLeaderboards->m_nLeaderboardEntries;
 				if ( numEntriesTotal <= 0 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorGreen(*mainsurface), "No Leaderboard entries for this category");
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorGreen, "No Leaderboard entries for this category");
 				}
 			}
 
@@ -6540,7 +6540,7 @@ void handleMainMenu(bool mode)
 					highlightEntry.y = filename_pady - 8;
 					highlightEntry.w = filename_padx2 - filename_padx;
 					highlightEntry.h = filename_rowHeight + 8;
-					drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 64);
+					drawRect(&highlightEntry, uint32ColorBaronyBlue, 64);
 
 					char steamID[32] = "";
 					if ( strlen(SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser)) > 18 )
@@ -6974,7 +6974,7 @@ void handleMainMenu(bool mode)
 		int numSaves = savegamesList.size();
 		if ( numSaves > 0 )
 		{
-			//ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), language[3066]);
+			//ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, language[3066]);
 		}
 
 		SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
@@ -7080,11 +7080,11 @@ void handleMainMenu(bool mode)
 				{
 					if ( std::get<1>(entry) == SINGLE ) // single player.
 					{
-						drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 64);
+						drawRect(&highlightEntry, uint32ColorGreen, 64);
 					}
 					else
 					{
-						drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 32);
+						drawRect(&highlightEntry, uint32ColorGreen, 32);
 					}
 				}
 				else
@@ -7092,11 +7092,11 @@ void handleMainMenu(bool mode)
 					if ( std::get<1>(entry) == SINGLE ) // single player.
 					{
 						drawRect(&highlightEntry, makeColorRGB(128, 128, 128), 48);
-						//drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 16);
+						//drawRect(&highlightEntry, uint32ColorBaronyBlue, 16);
 					}
 					else
 					{
-						drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 32);
+						drawRect(&highlightEntry, uint32ColorBaronyBlue, 32);
 					}
 				}
 
@@ -7122,7 +7122,7 @@ void handleMainMenu(bool mode)
 
 				filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
 				text_x = filename_padx;
-				if ( drawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
+				if ( drawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed) )
 				{
 					if ( std::get<1>(entry) == SINGLE )
 					{
@@ -7145,18 +7145,18 @@ void handleMainMenu(bool mode)
 			}
 		}
 
-		Uint32 saveNumColor = uint32ColorGreen(*mainsurface);
+		Uint32 saveNumColor = uint32ColorGreen;
 		if ( numSingleplayerSaves == SAVE_GAMES_MAX )
 		{
-			saveNumColor = uint32ColorOrange(*mainsurface);
+			saveNumColor = uint32ColorOrange;
 		}
 		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3067]) * TTF12_WIDTH), suby1 + 44, saveNumColor,
 			language[3067], numSingleplayerSaves, SAVE_GAMES_MAX);
 
-		saveNumColor = uint32ColorGreen(*mainsurface);
+		saveNumColor = uint32ColorGreen;
 		if ( numMultiplayerSaves == SAVE_GAMES_MAX )
 		{
-			saveNumColor = uint32ColorOrange(*mainsurface);
+			saveNumColor = uint32ColorOrange;
 		}
 		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3068]) * TTF12_WIDTH), suby1 + 44 + TTF12_HEIGHT + 4, saveNumColor,
 			language[3068], numMultiplayerSaves, SAVE_GAMES_MAX);
@@ -7314,7 +7314,7 @@ void handleMainMenu(bool mode)
 								{
 									if ( g_SteamWorkshop->UGCUpdateHandle == 0 )
 									{
-										ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "item created! awaiting file handle...");
+										ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange, "item created! awaiting file handle...");
 									}
 									else
 									{
@@ -7333,7 +7333,7 @@ void handleMainMenu(bool mode)
 											button->focused = 1;
 											gamemods_currentEditField = 0;
 										}
-										ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "item and file handle create success!");
+										ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen, "item and file handle create success!");
 									}
 								}
 								break;
@@ -7355,7 +7355,7 @@ void handleMainMenu(bool mode)
 										ttfPrintText(ttf12, status_padx + 8, status_pady - TTF12_HEIGHT, "Enter a title:");
 										if ( gamemods_uploadStatus == 3 && gamemods_workshopSetPropertyReturn[0] )
 										{
-											ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen(*mainsurface), true, "success set");
+											ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen, true, "success set");
 										}
 										ttfPrintText(ttf12, status_padx + 8, status_pady, gamemods_uploadTitle);
 										break;
@@ -7374,11 +7374,11 @@ void handleMainMenu(bool mode)
 								{
 									if ( gamemods_workshopSetPropertyReturn[fields] )
 									{
-										ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen(*mainsurface), true, "success set");
+										ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen, true, "success set");
 									}
 									else
 									{
-										ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorRed(*mainsurface), true, "error!");
+										ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorRed, true, "error!");
 									}
 								}
 
@@ -7422,11 +7422,11 @@ void handleMainMenu(bool mode)
 							{
 								if ( gamemods_workshopSetPropertyReturn[2] )
 								{
-									ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), true, "folder path success set");
+									ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorGreen, true, "folder path success set");
 								}
 								else
 								{
-									ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorRed(*mainsurface), true, "error in folder path!");
+									ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorRed, true, "error in folder path!");
 								}
 							}
 
@@ -7458,7 +7458,7 @@ void handleMainMenu(bool mode)
 						line.append("..");
 					}
 					status_pady += 2 * TTF12_HEIGHT;
-					ttfPrintTextFormattedColor(ttf12, status_padx + 8, status_pady, uint32ColorBaronyBlue(*mainsurface), "Title:");
+					ttfPrintTextFormattedColor(ttf12, status_padx + 8, status_pady, uint32ColorBaronyBlue, "Title:");
 					status_pady += TTF12_HEIGHT;
 					ttfPrintTextFormatted(ttf12, status_padx + 8, status_pady, "%s", line.c_str());
 
@@ -7469,7 +7469,7 @@ void handleMainMenu(bool mode)
 						line.append("..");
 					}
 					status_pady += TTF12_HEIGHT;
-					ttfPrintTextFormattedColor(ttf12, status_padx + 8, status_pady, uint32ColorBaronyBlue(*mainsurface), "Description:");
+					ttfPrintTextFormattedColor(ttf12, status_padx + 8, status_pady, uint32ColorBaronyBlue, "Description:");
 					status_pady += TTF12_HEIGHT;
 					ttfPrintTextFormatted(ttf12, status_padx + 8, status_pady, "%s", line.c_str());
 
@@ -7493,11 +7493,11 @@ void handleMainMenu(bool mode)
 					status_pady += 6 * TTF12_HEIGHT;
 					if ( directoryFilesListToUpload.empty() )
 					{
-						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "Only Workshop tags will be updated.");
+						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen, "Only Workshop tags will be updated.");
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "Workshop file contents will be updated.");
+						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange, "Workshop file contents will be updated.");
 					}
 				}
 				status_pady += 5 * TTF12_HEIGHT;
@@ -7539,19 +7539,19 @@ void handleMainMenu(bool mode)
 									gamemodsSubscribedItemsInit();
 								}
 							}
-							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "successfully uploaded!");
-							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorGreen(*mainsurface), "reloading window in %d...!", 5 - ((ticks - g_SteamWorkshop->uploadSuccessTicks) / TICKS_PER_SECOND));
+							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen, "successfully uploaded!");
+							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorGreen, "reloading window in %d...!", 5 - ((ticks - g_SteamWorkshop->uploadSuccessTicks) / TICKS_PER_SECOND));
 						}
 						else
 						{
-							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "error! %d", g_SteamWorkshop->SubmitItemUpdateResult.m_eResult);
-							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorOrange(*mainsurface), "close the window and try again.");
+							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange, "error! %d", g_SteamWorkshop->SubmitItemUpdateResult.m_eResult);
+							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorOrange, "close the window and try again.");
 						}
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "uploading... status %d", status);
-						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorOrange(*mainsurface), "bytes processed: %d", bytesProc);
+						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange, "uploading... status %d", status);
+						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorOrange, "bytes processed: %d", bytesProc);
 					}
 				}
 			}
@@ -7582,11 +7582,11 @@ void handleMainMenu(bool mode)
 				filename_pady += 2 * TTF12_HEIGHT;
 				if ( gamemods_window == 3 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved subscribed items!");
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, "successfully retrieved subscribed items!");
 				}
 				else
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved my workshop items!");
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, "successfully retrieved my workshop items!");
 				}
 
 				std::string modInfoStr = "current loaded mods (hover for info): ";
@@ -7667,7 +7667,7 @@ void handleMainMenu(bool mode)
 				// draw last message results
 				if ( ticks - g_SteamWorkshop->LastActionResult.creationTick < TICKS_PER_SECOND * 5 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - TTF12_HEIGHT - 4, uint32ColorOrange(*mainsurface), "%s returned status %d", 
+					ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - TTF12_HEIGHT - 4, uint32ColorOrange, "%s returned status %d", 
 						g_SteamWorkshop->LastActionResult.actionMsg.c_str(), static_cast<int>(g_SteamWorkshop->LastActionResult.lastResult));
 				}
 
@@ -7697,7 +7697,7 @@ void handleMainMenu(bool mode)
 							pos.y = filename_pady - 6;
 							pos.w = filename_padx2 - filename_padx - 4;
 							pos.h = filename_rowHeight + 4;
-							drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
+							drawRect(&pos, uint32ColorGreen, 64);
 						}
 
 						// draw preview title
@@ -7742,7 +7742,7 @@ void handleMainMenu(bool mode)
 						{
 							if ( !itemDownloaded )
 							{
-								if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), " Download ", 0) )
+								if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue, " Download ", 0) )
 								{
 									SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
 								}
@@ -7768,7 +7768,7 @@ void handleMainMenu(bool mode)
 						{
 							filename_padx += (12 * TTF12_WIDTH + 16);
 							// edit content button
-							if ( gamemodsDrawClickableButton(filename_padx, filename_pady + filename_rowHeight / 4, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), "  Update  ", 0) )
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady + filename_rowHeight / 4, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue, "  Update  ", 0) )
 							{
 								buttonGamemodsOpenModifyExistingWindow(nullptr);
 								gamemods_window = 5;
@@ -7794,7 +7794,7 @@ void handleMainMenu(bool mode)
 						if ( gamemods_window == 3 )
 						{
 							// unsubscribe button
-							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorRed(*mainsurface), "Unsubscribe", 0) )
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorRed, "Unsubscribe", 0) )
 							{
 								if ( pathIsMounted )
 								{
@@ -7838,7 +7838,7 @@ void handleMainMenu(bool mode)
 				{
 					drawTooltip(&tooltip);
 					int numLoadedModLine = 1;
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface), 
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue, 
 						"Current load list: (first is lowest priority)");
 					for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
 					{
@@ -7926,7 +7926,7 @@ void handleMainMenu(bool mode)
 						line = line.substr(0, 62);
 						line.append("..");
 					}
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "%s", line.c_str());
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue, "%s", line.c_str());
 					tooltip_pady += TTF12_HEIGHT * 2;
 
 					// draw description body.
@@ -7935,7 +7935,7 @@ void handleMainMenu(bool mode)
 					tooltip_pady += TTF12_HEIGHT * (numlines + 2);
 					
 					// draw tags.
-					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "tags:");
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue, "tags:");
 					tooltip_pady += TTF12_HEIGHT;
 					line = itemDetails.m_rgchTags;
 
@@ -7977,11 +7977,11 @@ void handleMainMenu(bool mode)
 			{
 				if ( gamemods_newBlankDirectoryStatus == -1 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorRed(*mainsurface), "Error: could not create directory %s/, already exists in mods/ folder", gamemods_newBlankDirectory);
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorRed, "Error: could not create directory %s/, already exists in mods/ folder", gamemods_newBlankDirectory);
 				}
 				else if ( gamemods_newBlankDirectoryStatus == 1 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "Successfully created directory %s/ in mods/ folder", gamemods_newBlankDirectory);
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, "Successfully created directory %s/ in mods/ folder", gamemods_newBlankDirectory);
 				}
 			}
 		}
@@ -7998,12 +7998,12 @@ void handleMainMenu(bool mode)
 			int numLocalFolders = std::max(static_cast<int>(gamemods_localModFoldernames.size() - 2), 0);
 			if ( numLocalFolders > 0 )
 			{
-				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved local items!");
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen, "successfully retrieved local items!");
 			}
 			else
 			{
-				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "no folders found!");
-				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + TTF12_HEIGHT + 8, uint32ColorOrange(*mainsurface), "to get started create a new folder, or copy shared custom content to the mods/ folder");
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange, "no folders found!");
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + TTF12_HEIGHT + 8, uint32ColorOrange, "to get started create a new folder, or copy shared custom content to the mods/ folder");
 			}
 
 			std::string modInfoStr = "current loaded mods (hover for info): ";
@@ -8109,7 +8109,7 @@ void handleMainMenu(bool mode)
 					pos.y = filename_pady - 6;
 					pos.w = filename_padx2 - filename_padx - 4;
 					pos.h = filename_rowHeight + 4;
-					drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
+					drawRect(&pos, uint32ColorGreen, 64);
 				}
 
 				if ( folderName.length() >= filenameMaxLength )
@@ -8159,7 +8159,7 @@ void handleMainMenu(bool mode)
 			{
 				drawTooltip(&tooltip);
 				int numLoadedModLine = 1;
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface),
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue,
 					"Current load list: (first is lowest priority)");
 				for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
 				{
@@ -8186,7 +8186,7 @@ void handleMainMenu(bool mode)
 		int filename_rowHeight = 1.25 * TTF12_HEIGHT + 8;
 
 		auto& menu = gameModeManager.Tutorial.Menu;
-		ttfPrintTextFormattedColor(ttf12, filename_padx + 8, filename_pady + 8, uint32ColorWhite(*mainsurface), "%s", menu.windowTitle.c_str());
+		ttfPrintTextFormattedColor(ttf12, filename_padx + 8, filename_pady + 8, uint32ColorWhite, "%s", menu.windowTitle.c_str());
 
 		filename_pady += 4 * TTF12_HEIGHT;
 
@@ -8270,8 +8270,8 @@ void handleMainMenu(bool mode)
 				pos.y = filename_pady - 6;
 				pos.w = filename_padx2 - filename_padx - 4;
 				pos.h = filename_rowHeight + 4;
-				drawRect(&pos, uint32ColorBaronyBlue(*mainsurface), 64);
-				ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow(*mainsurface), "%s", (*it).description.c_str());
+				drawRect(&pos, uint32ColorBaronyBlue, 64);
+				ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow, "%s", (*it).description.c_str());
 			}
 
 			SDL_Rect btn;
@@ -8322,7 +8322,7 @@ void handleMainMenu(bool mode)
 
 		if ( menu.selectedMenuItem == -1 )
 		{
-			ttfPrintTextFormattedColor(ttf12, subx1 + 16 + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow(*mainsurface), "%s", menu.defaultHoverText.c_str());
+			ttfPrintTextFormattedColor(ttf12, subx1 + 16 + 8, suby2 - 3 * TTF12_HEIGHT, uint32ColorYellow, "%s", menu.defaultHoverText.c_str());
 		}
 	}
 	else if ( gameModeManager.Tutorial.FirstTimePrompt.isOpen() )

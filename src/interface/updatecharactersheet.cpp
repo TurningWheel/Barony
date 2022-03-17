@@ -247,7 +247,7 @@ void updateCharacterSheet(const int player)
 	// attributes
 	Sint32 statModifier = 0;
 	char statText[64] = "";
-	//Uint32 statColor = uint32ColorWhite(*mainsurface);
+	//Uint32 statColor = uint32ColorWhite;
 	text_y += pad_y * 2;
 	snprintf(statText, 64, language[1200], stats[player]->STR);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
@@ -624,11 +624,11 @@ void drawSkillsSheet(const int player)
 	{
 		if ( skillCapstoneUnlocked(player, i) )
 		{
-			color = uint32ColorGreen(*mainsurface);
+			color = uint32ColorGreen;
 		}
 		else
 		{
-			color = uint32ColorWhite(*mainsurface);
+			color = uint32ColorWhite;
 		}
 
 
@@ -680,10 +680,10 @@ void drawSkillsSheet(const int player)
 			skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
 			skillTooltipRect.y = mousey + 16;
 
-			Uint32 capstoneTextColor = uint32ColorGray(*mainsurface);
+			Uint32 capstoneTextColor = uint32ColorGray;
 			if ( skillCapstoneUnlocked(player, i) )
 			{
-				capstoneTextColor = uint32ColorGreen(*mainsurface);
+				capstoneTextColor = uint32ColorGreen;
 			}
 
 			switch ( i )
@@ -789,10 +789,10 @@ void drawSkillsSheet(const int player)
 					break;
 			}
 
-			Uint32 headerColor = uint32ColorBaronyBlue(*mainsurface);
+			Uint32 headerColor = uint32ColorBaronyBlue;
 			if ( skillCapstoneUnlocked(player, i) )
 			{
-				headerColor = uint32ColorGreen(*mainsurface);
+				headerColor = uint32ColorGreen;
 			}
 
 			if ( i != PRO_MAGIC && i != PRO_ALCHEMY )
@@ -869,7 +869,7 @@ void drawSkillsSheet(const int player)
 							break;
 					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
+						uint32ColorWhite, language[3255 + i],
 						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[5], canRepairItems.c_str(), skillDetails[4], getInputName(impulses[IN_FOLLOWERMENU]));
 					break;
 				}
@@ -887,7 +887,7 @@ void drawSkillsSheet(const int player)
 						}
 					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
+						uint32ColorWhite, language[3255 + i],
 						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3]);
 					
 					break;
@@ -895,7 +895,7 @@ void drawSkillsSheet(const int player)
 					skillDetails[0] = 1 / ((50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
 					skillDetails[1] = (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
+						uint32ColorWhite, language[3255 + i],
 						skillDetails[0], skillDetails[1]);
 					break;
 				case PRO_APPRAISAL:
@@ -910,27 +910,27 @@ void drawSkillsSheet(const int player)
 						if ( (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + players[player]->entity->getPER() * 5) >= 100 )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-								uint32ColorWhite(*mainsurface), language[3255 + i],
+								uint32ColorWhite, language[3255 + i],
 								skillDetails[0], skillDetails[1], "yes");
 						}
 						else
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-								uint32ColorWhite(*mainsurface), language[3255 + i],
+								uint32ColorWhite, language[3255 + i],
 								skillDetails[0], skillDetails[1], "no");
 						}
 					}
 					else
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], skillDetails[1], "no");
 					}
 					break;
 				case PRO_SWIMMING:
 					skillDetails[0] = (((stats[player]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
+						uint32ColorWhite, language[3255 + i],
 						skillDetails[0]);
 					break;
 				case PRO_LEADERSHIP:
@@ -941,7 +941,7 @@ void drawSkillsSheet(const int player)
 						skillDetails[2] = 80 + ((players[player]->entity->getCHR() + stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
 					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
+						uint32ColorWhite, language[3255 + i],
 						getInputName(impulses[IN_USE]),skillDetails[0], skillDetails[1], skillDetails[2], getInputName(impulses[IN_FOLLOWERMENU]));
 					break;
 				case PRO_SPELLCASTING:
@@ -951,20 +951,20 @@ void drawSkillsSheet(const int player)
 						if ( isSpellcasterBeginner(player, players[player]->entity) )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-								uint32ColorWhite(*mainsurface), language[3255 + i],
+								uint32ColorWhite, language[3255 + i],
 								skillDetails[0], "yes");
 						}
 						else
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-								uint32ColorWhite(*mainsurface), language[3255 + i],
+								uint32ColorWhite, language[3255 + i],
 								skillDetails[0], "no");
 						}
 					}
 					else
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], "");
 					}
 					break;
@@ -1034,10 +1034,10 @@ void drawSkillsSheet(const int player)
 						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
+						uint32ColorWhite, language[3255 + i],
 						skillTooltip.c_str());
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (fontHeight) * 3, // print magic list
-						uint32ColorBaronyBlue(*mainsurface), "%s",
+						uint32ColorBaronyBlue, "%s",
 						magics.c_str());
 					break;
 				}
@@ -1062,13 +1062,13 @@ void drawSkillsSheet(const int player)
 					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 0.f, skillDetails[2], skillDetails[3]);
 					}
 					else
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 100 / skillDetails[1], skillDetails[2], skillDetails[3]);
 					}
 					break;
@@ -1088,7 +1088,7 @@ void drawSkillsSheet(const int player)
 					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 0.f, 0.f);
 					}
 					else
@@ -1103,7 +1103,7 @@ void drawSkillsSheet(const int player)
 							skillDetails[2] *= 2;
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
 					}
 					break;
@@ -1114,7 +1114,7 @@ void drawSkillsSheet(const int player)
 					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 0.f, 0.f, skillDetails[3], skillDetails[4]);
 					}
 					else
@@ -1129,7 +1129,7 @@ void drawSkillsSheet(const int player)
 							skillDetails[2] *= 2;
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2], skillDetails[3], skillDetails[4]);
 					}
 					break;
@@ -1138,7 +1138,7 @@ void drawSkillsSheet(const int player)
 					if ( skillCapstoneUnlocked(player, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 0.f, 0.f);
 					}
 					else
@@ -1152,7 +1152,7 @@ void drawSkillsSheet(const int player)
 							skillDetails[2] = 40 + (stats[player]->type == GOBLIN ? 10 : 0);
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-							uint32ColorWhite(*mainsurface), language[3255 + i],
+							uint32ColorWhite, language[3255 + i],
 							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
 					}
 					break;
@@ -1204,15 +1204,15 @@ void drawSkillsSheet(const int player)
 						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 					// effect text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3348], 
+						uint32ColorWhite, language[3348], 
 						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[4]);
 					// base potions
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
-						uint32ColorBaronyBlue(*mainsurface), "%s",
+						uint32ColorBaronyBlue, "%s",
 						baseIngredients.c_str());
 					// secondary potions
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
-						uint32ColorBaronyBlue(*mainsurface), "%s",
+						uint32ColorBaronyBlue, "%s",
 						secondaryIngredients.c_str());
 					break;
 				}
@@ -1370,7 +1370,7 @@ void drawPartySheet(const int player)
 	}
 
 	//Draw party stats
-	Uint32 color = uint32ColorWhite(*mainsurface);
+	Uint32 color = uint32ColorWhite;
 	if ( playerCnt > 0 )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (fontHeight * 4) + 6 )
@@ -1503,7 +1503,7 @@ void drawPartySheet(const int player)
 						if ( followerMenu.recentEntity == follower )
 						{
 							// draw highlight on current selected monster.
-							drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
+							drawRect(&monsterEntryWindow, uint32ColorBaronyBlue, 32);
 							// ttfPrintText(ttf16, x2 - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 						}
 
@@ -1839,7 +1839,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 				{
 					int infoText_x = src.x + 4 + tooltip_text_pad_x;
 					int infoText_y = src.y + 4 + (tooltip_base_h * (j + 1));
-					Uint32 color = uint32ColorWhite(*mainsurface);
+					Uint32 color = uint32ColorWhite;
 
 					if ( j == 0 )
 					{
@@ -1850,11 +1850,11 @@ void statsHoverText(const int player, Stat* tmpStat)
 						snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], statBonus);
 						if ( statBonus > 0 )
 						{
-							color = uint32ColorGreen(*mainsurface);
+							color = uint32ColorGreen;
 						}
 						else if ( statBonus < 0 )
 						{
-							color = uint32ColorRed(*mainsurface);
+							color = uint32ColorRed;
 						}
 					}
 					else if ( j == 2 )
@@ -1903,27 +1903,27 @@ void statsHoverText(const int player, Stat* tmpStat)
 								{
 									if ( stats[player]->HUNGER <= 300 )
 									{
-										color = uint32ColorRed(*mainsurface);
+										color = uint32ColorRed;
 									}
 									else if ( regen < static_cast<real_t>(getBaseManaRegen(tmp, *tmpStat)) / TICKS_PER_SECOND )
 									{
-										color = uint32ColorGreen(*mainsurface);
+										color = uint32ColorGreen;
 									}
 								}
 								else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 								{
 									if ( !(svFlags & SV_FLAG_HUNGER) )
 									{
-										color = uint32ColorWhite(*mainsurface);
+										color = uint32ColorWhite;
 									}
 									else
 									{
-										color = uint32ColorRed(*mainsurface);
+										color = uint32ColorRed;
 									}
 								}
 								else if ( regen < static_cast<real_t>(getBaseManaRegen(tmp, *tmpStat)) / TICKS_PER_SECOND)
 								{
-									color = uint32ColorGreen(*mainsurface);
+									color = uint32ColorGreen;
 								}
 								
 							}
@@ -1951,17 +1951,17 @@ void statsHoverText(const int player, Stat* tmpStat)
 									regen = 0.f;
 									if ( !(svFlags & SV_FLAG_HUNGER) )
 									{
-										color = uint32ColorWhite(*mainsurface);
+										color = uint32ColorWhite;
 									}
 									else
 									{
-										color = uint32ColorRed(*mainsurface);
+										color = uint32ColorRed;
 									}
 									snprintf(buf, longestline("HP regen rate: 0 / %2.1fs"), "HP regen rate: 0 / %2.1fs", (static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
 								}
 								else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
 								{
-									color = uint32ColorGreen(*mainsurface);
+									color = uint32ColorGreen;
 								}
 								if ( regen > 0.f )
 								{
@@ -1997,7 +1997,7 @@ void statsHoverText(const int player, Stat* tmpStat)
 								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], resistance);
 								if ( resistance > 0.f )
 								{
-									color = uint32ColorGreen(*mainsurface);
+									color = uint32ColorGreen;
 								}
 							}
 							else
@@ -2347,7 +2347,7 @@ void attackHoverText(const int player, Sint32 input[6])
 			drawTooltip(&src);
 
 			// draw header
-			Uint32 color = uint32ColorWhite(*mainsurface);
+			Uint32 color = uint32ColorWhite;
 			ttfPrintTextColor(ttf12, src.x + 4, src.y + 4, color, false, tooltipHeader);
 			if ( input[1] >= 0 )
 			{
@@ -2366,7 +2366,7 @@ void attackHoverText(const int player, Sint32 input[6])
 			{
 				int infoText_x = src.x + 4 + tooltip_text_pad_x;
 				int infoText_y = src.y + 4 + (tooltip_base_h * (j + 1));
-				Uint32 color = uint32ColorWhite(*mainsurface);
+				Uint32 color = uint32ColorWhite;
 
 				if ( input[0] == 0 ) // fists
 				{
@@ -2492,17 +2492,17 @@ void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers,
 
 	if ( statWithModifiers - stat == 0 )
 	{
-		color = uint32ColorWhite(*mainsurface);
+		color = uint32ColorWhite;
 		snprintf(bonusText, 4, "%2d", statWithModifiers);
 	}
 	else if ( statWithModifiers - stat < 0 )
 	{
-		color = uint32ColorRed(*mainsurface);
+		color = uint32ColorRed;
 		snprintf(bonusText, 4, "%2d", statWithModifiers);
 	}
 	if ( statWithModifiers - stat > 0 )
 	{
-		color = uint32ColorGreen(*mainsurface);
+		color = uint32ColorGreen;
 		snprintf(bonusText, 4, "%2d", statWithModifiers);
 	}
 

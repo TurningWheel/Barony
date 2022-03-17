@@ -3734,7 +3734,7 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 		drawTooltip(&pos);
 		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 4, "%s\n%s\n%s",
 			spellNameString, tempstr, spellType);
-		Uint32 effectColor = uint32ColorLightBlue(*mainsurface);
+		Uint32 effectColor = uint32ColorLightBlue;
 		ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y + 4, effectColor,
 			"\n\n\n%s", spellEffectText);
 	}

@@ -638,11 +638,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 						displayedLobbyName += "..";
 					}
 
-					Uint32 color = uint32ColorWhite(*mainsurface);
+					Uint32 color = uint32ColorWhite;
 					char buf[maxCharacters] = "";
 					if ( EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameCurrentLevel >= 0 )
 					{
-						color = uint32ColorYellow(*mainsurface);
+						color = uint32ColorYellow;
 						// hide lobby name for in progress.
 						snprintf(buf, maxCharacters - 1, "%s%s", "In-progress lobby", lobbyDetailText.c_str());
 					}
