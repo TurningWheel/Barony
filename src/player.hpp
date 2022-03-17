@@ -1480,9 +1480,6 @@ public:
 		static const int MESSAGE_FADE_RATE = 10;
 		TTF_Font* font = ttf16;
 		Uint32 old_sdl_ticks;
-		bool chatboxMovedResize = false;
-		SDL_Rect chatboxLeftAlignedPos;
-		SDL_Rect chatboxTopAlignedPos;
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
@@ -1490,7 +1487,7 @@ public:
 		~MessageZone_t() {};
 		std::list<Message*> notification_messages;
 		//Adds a message to the list of messages.
-		void addMessage(Uint32 color, char* content, ...);
+		void addMessage(Uint32 color, const char* content);
 		//Updates all the messages; fades them & removes them.
 		void updateMessages();
 		//Draw all the messages.

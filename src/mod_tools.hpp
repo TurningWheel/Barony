@@ -2443,14 +2443,14 @@ public:
 			{
 				bHasSavedServerFlags = false;
 				svFlags = serverFlags;
-				printlog("[SESSION]: Restoring server flags at stage: %d", introstage);
+				printlog("[SESSION]: Restoring server flags\n");
 			}
 		}
 		void saveServerFlags()
 		{
 			serverFlags = svFlags;
 			bHasSavedServerFlags = true;
-			printlog("[SESSION]: Saving server flags at stage: %d", introstage);
+			printlog("[SESSION]: Saving server flags\n");
 		}
 	} currentSession;
 	bool isServerflagDisabledForCurrentMode(int i)

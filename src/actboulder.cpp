@@ -184,7 +184,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 			{
 				if ( entity->behavior == &actPlayer )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					Uint32 color = makeColorRGB(255, 0, 0);
 					messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, language[455]);
 					if ( players[entity->skill[2]]->isLocalPlayer() )
 					{
@@ -361,7 +361,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 							int c;
 							for ( c = 0; c < MAXPLAYERS; c++ )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
 							}
 						}
@@ -733,7 +733,7 @@ void actBoulder(Entity* my)
 
 				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+					Uint32 color = makeColorRGB(255, 0, 255);
 					if ( !client_disconnected[c] )
 					{
 						messagePlayerColor(c, MESSAGE_HINT, color, language[3401]);
@@ -823,7 +823,7 @@ void actBoulder(Entity* my)
 
 								for ( int c = 0; c < MAXPLAYERS; ++c )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									Uint32 color = makeColorRGB(255, 0, 255);
 									if ( !client_disconnected[c] )
 									{
 										messagePlayerColor(c, MESSAGE_HINT, color, language[3401]);
@@ -1721,7 +1721,7 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 		//messagePlayer(0, "Solved it!");
 		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+			Uint32 color = makeColorRGB(255, 128, 0);
 			if ( goldCount >= 39 )
 			{
 				playSoundPlayer(c, 393, 128);

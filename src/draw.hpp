@@ -62,9 +62,17 @@ void drawSprite(view_t* camera, Entity* entity);
 void drawTooltip(SDL_Rect* src, Uint32 optionalColor = 0);
 Uint32 getPixel(SDL_Surface* surface, int x, int y);
 void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel);
-Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+void getColor(Uint32 color, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a);
 bool behindCamera(const view_t& camera, real_t x, real_t y);
 void occlusionCulling(map_t& map, const view_t& camera);
+
+constexpr Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return ((Uint32)a << 24) | ((Uint32)b << 16) | ((Uint32)g << 8) | ((Uint32)r << 0);
+}
+
+constexpr Uint32 makeColorRGB(uint8_t r, uint8_t g, uint8_t b) {
+    return 0xff000000 | ((Uint32)b << 16) | ((Uint32)g << 8) | ((Uint32)r << 0);
+}
 
 class TempTexture {
 public:

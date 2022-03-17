@@ -19,6 +19,7 @@
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
+#include "interface/consolecommand.hpp"
 #include "magic/magic.hpp"
 #include "engine/audio/sound.hpp"
 #include "items.hpp"
@@ -1491,7 +1492,7 @@ void gameLogic(void)
 								}
 								item->ownerUid = parent->getUID();
 								Item* pickedUp = itemPickup(parent->skill[2], item);
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
 								if ( pickedUp )
 								{
@@ -3077,7 +3078,7 @@ void handleButtons(void)
 		{
 			//Draw golden border.
 			//For such things as which settings tab the controller has presently selected.
-			Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
+			Uint32 color = makeColor( 255, 255, 0, 127);
 			SDL_Rect pos;
 			pos.x = button->x;
 			pos.w = button->sizex;
@@ -3166,6 +3167,31 @@ void handleEvents(void)
 			case SDL_KEYDOWN: // if a key is pressed...
 				if ( command )
 				{
+				    static int saved_command_index = 0;
+				    static std::string saved_command_str;
+				    if ( event.key.keysym.sym == SDLK_TAB )
+				    {
+				        if (saved_command_str.empty()) {
+				            saved_command_str = command_str;
+				        }
+				        auto find = FindConsoleCommand(saved_command_str.c_str(), saved_command_index);
+				        if (find) {
+				            strcpy(command_str, find);
+				            ++saved_command_index;
+				        } else if (saved_command_index) {
+				            saved_command_index = 0;
+				            find = FindConsoleCommand(saved_command_str.c_str(), saved_command_index);
+				            if (find) {
+				                strcpy(command_str, find);
+				                ++saved_command_index;
+				            }
+				        }
+				    }
+				    else
+				    {
+				        saved_command_index = 0;
+				        saved_command_str.clear();
+				    }
 					if ( event.key.keysym.sym == SDLK_UP )
 					{
 						if ( !chosen_command && command_history.last )   //If no command is chosen (user has not tried to go up through the commands yet...
@@ -3883,10 +3909,7 @@ void pauseGame(int mode, int ignoreplayer)
 	{
 		return;
 	}
-	if ( introstage == 9 
-		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
-		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
-		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
+	if ( MainMenu::isCutsceneActive() )
 	{
 		return;
 	}
@@ -4291,7 +4314,7 @@ void ingameHud()
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+						Uint32 color = makeColor( 0, 255, 255, 255);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 						    playSound(238, 64);
 						}
@@ -4345,7 +4368,7 @@ void ingameHud()
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
+						Uint32 color = makeColor( 0, 255, 255, 255);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 						    playSound(238, 64);
 						}
@@ -4450,6 +4473,8 @@ void ingameHud()
 
 	DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
+    doSharedMinimap();
+
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		players[player]->messageZone.processChatbox();
@@ -4543,7 +4568,7 @@ void ingameHud()
 
 	DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
-	UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursors
+	UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursors
 
 	// pointer in inventory screen
 	for ( int player = 0; player < MAXPLAYERS; ++player )
@@ -5234,7 +5259,7 @@ int main(int argc, char** argv)
 
 					// team splash
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
-					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, SDL_MapRGB(mainsurface->format, 255, 32, 0), std::min<Uint16>(logoalpha, 255));
+					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, makeColorRGB(255, 32, 0), std::min<Uint16>(logoalpha, 255));
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
 					if ( logoalpha >= 255 && !fadeout )
 					{
@@ -5429,7 +5454,7 @@ int main(int argc, char** argv)
 					{
 						// draws the menu level "backdrop"
 						drawClearBuffers();
-						if ( movie == false )
+						if ( !MainMenu::isCutsceneActive() )
 						{
 							menucam.winx = 0;
 							menucam.winy = 0;
@@ -5438,7 +5463,6 @@ int main(int argc, char** argv)
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
 							occlusionCulling(map, menucam);
 							glDrawWorld(&menucam, REALCOLORS);
-							//drawFloors(&menucam);
 							drawEntities3D(&menucam, REALCOLORS);
 							list_RemoveNode(light->node);
 						}
@@ -5450,34 +5474,31 @@ int main(int argc, char** argv)
 						else
 						{
 							handleMainMenu(intro);
-							UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 
 						doFrames();
 
 #ifndef NINTENDO
 						// draw mouse
-						if ( !movie )
+						// only draw 1 cursor in the main menu
+						if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
 						{
-							// only draw 1 cursor in the main menu
-							if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
-							{
-								auto cursor = Image::get("images/system/cursor_hand.png");
-								pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
-								pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
-								pos.w = cursor->getWidth();
-								pos.h = cursor->getHeight();
-								cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+							auto cursor = Image::get("images/system/cursor_hand.png");
+							pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+							pos.w = cursor->getWidth();
+							pos.h = cursor->getHeight();
+							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 
-								if (MainMenu::cursor_delete_mode)
-								{
-								    auto icon = Image::get("images/system/Broken.png");
-								    pos.x = pos.x + pos.w;
-								    pos.y = pos.y + pos.h;
-								    pos.w = icon->getWidth() * 2;
-								    pos.h = icon->getHeight() * 2;
-								    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
-								}
+							if (MainMenu::cursor_delete_mode)
+							{
+							    auto icon = Image::get("images/system/Broken.png");
+							    pos.x = pos.x + pos.w;
+							    pos.y = pos.y + pos.h;
+							    pos.w = icon->getWidth() * 2;
+							    pos.h = icon->getHeight() * 2;
+							    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 							}
 						}
 #endif
@@ -5629,20 +5650,20 @@ int main(int argc, char** argv)
 					}
 				}
 
-				if ( true )
+				int playercount = 0;
+				for (int c = 0; c < MAXPLAYERS; ++c)
+				{
+					if (!client_disconnected[c] && players[c]->isLocalPlayer())
+					{
+						++playercount;
+					}
+				}
+
+				if ( !MainMenu::isCutsceneActive() )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 					double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
-
-					int playercount = 0;
-					for (int c = 0; c < MAXPLAYERS; ++c) 
-					{
-						if (!client_disconnected[c]) 
-						{
-							++playercount;
-						}
-					}
 
 					if (playercount >= 1)
 					{
@@ -5777,7 +5798,6 @@ int main(int argc, char** argv)
 								glDrawWorld(&camera, REALCOLORS);
 							}
 
-							//drawFloors(&camera);
 							drawEntities3D(&camera, REALCOLORS);
 
 							if (shaking && players[c] && players[c]->entity && !gamePaused)
@@ -5810,10 +5830,7 @@ int main(int argc, char** argv)
 
 				for ( int player = 0; player < MAXPLAYERS; ++player )
 				{
-					if ( players[player]->isLocalPlayer() )
-					{
-						players[player]->messageZone.updateMessages();
-					}
+					players[player]->messageZone.updateMessages();
 				}
 				if ( !nohud )
 				{
@@ -5830,7 +5847,6 @@ int main(int argc, char** argv)
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
 				doFrames();
-
 				ingameHud();
 
 				if ( gamePaused )
@@ -5850,32 +5866,29 @@ int main(int argc, char** argv)
 					MainMenu::destroyMainMenu();
 
 					// draw subwindow
-					if ( !movie )
+					if ( subwindow )
 					{
-						if ( subwindow )
+						drawWindowFancy(subx1, suby1, subx2, suby2);
+						if ( subtext && subtext[0] != '\0')
 						{
-							drawWindowFancy(subx1, suby1, subx2, suby2);
-							if ( subtext && subtext[0] != '\0')
+							if ( strncmp(subtext, language[1133], 12) )
 							{
-								if ( strncmp(subtext, language[1133], 12) )
-								{
-									ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 8, subtext);
-								}
-								else
-								{
-									ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
-								}
+								ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 8, subtext);
+							}
+							else
+							{
+								ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
 							}
 						}
-
-						// process button actions
-						handleButtons();
 					}
+
+					// process button actions
+					handleButtons();
 				}
 
 				if ( gamePaused ) // draw after main menu windows etc.
 				{
-					UIToastNotificationManager.drawNotifications(movie, true); // draw this before the cursor
+					UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 				}
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -5961,7 +5974,7 @@ int main(int argc, char** argv)
 
 			//printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
 
-			UIToastNotificationManager.drawNotifications(movie, false);
+			UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), false);
 
 			// update screen
 			GO_SwapBuffers(screen);

@@ -2270,11 +2270,6 @@ int deinitApp()
 #endif
 		renderer = NULL;
 	}
-	if ( mainsurface )
-	{
-		SDL_FreeSurface(mainsurface);
-		mainsurface = NULL;
-	}
 	TTF_Quit();
 	SDL_Quit();
 
@@ -2597,11 +2592,6 @@ bool initVideo()
 	Uint32 bmask = 0x00ff0000;
 	Uint32 amask = 0xff000000;
 #endif
-	if ((mainsurface = SDL_CreateRGBSurface(0, xres, yres, 32, rmask, gmask, bmask, amask)) == NULL)
-	{
-		printlog("failed to create main window surface.\n");
-		return false;
-	}
 	if ( !softwaremode )
 	{
 #ifdef PANDORA
@@ -2701,11 +2691,6 @@ bool changeVideoMode(int new_xres, int new_yres)
 		SDL_GL_DeleteContext(renderer);
 #endif
 		renderer = NULL;
-	}
-	if ( mainsurface )
-	{
-		SDL_FreeSurface(mainsurface);
-		mainsurface = NULL;
 	}
 
 	// set video mode

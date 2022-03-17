@@ -351,37 +351,20 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	{
 	    if (disable_messages || !(messagesEnabled & type))
 	    {
+	        printlog("%s\n", str);
 	        return false;
 	    }
 	}
 
 	if ( localPlayer )
 	{
-	    bool end = false;
-	    char *ptr = str;
-	    char buf[Player::MessageZone_t::ADD_MESSAGE_BUFFER_LENGTH];
-	    do {
-	        int c;
-	        for (c = 0; ptr[c] != '\n'; ++c) {
-	            if (ptr[c] == '\0') {
-	                end = true;
-	                break;
-	            }
-	        }
-	        ptr[c] = '\0';
-		    printlog("%s\n", ptr);
-		    snprintf(buf, sizeof(buf), "%s", messageSanitizePercentSign(ptr, nullptr).c_str());
-		    newString(&messages, color, buf);
-		    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
-		    {
-			    list_RemoveNode(messages.first);
-		    }
-		    if ( !disable_messages )
-		    {
-			    players[player]->messageZone.addMessage(color, buf);
-		    }
-		    ptr += c + 1;
-		} while (!end);
+	    printlog("%s\n", str);
+	    newString(&messages, color, str);
+	    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
+	    {
+		    list_RemoveNode(messages.first);
+	    }
+	    players[player]->messageZone.addMessage(color, str);
 	}
 	else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
@@ -3484,21 +3467,8 @@ void clientHandlePacket()
 			loadCustomNextMap = buf;
 		}
 
-		if ( introstage == 9
-			|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
-			|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
-			|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
+		if ( MainMenu::isCutsceneActive() )
 		{
-			thirdendmovietime = 0;
-			thirdendmoviestage = 0;
-			DLCendmovieStageAndTime[MOVIE_MIDGAME_HERX_MONSTERS][MOVIE_STAGE] = 0;
-			DLCendmovieStageAndTime[MOVIE_MIDGAME_HERX_MONSTERS][MOVIE_TIME] = 0;
-			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_MONSTERS][MOVIE_STAGE] = 0;
-			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_MONSTERS][MOVIE_TIME] = 0;
-			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON][MOVIE_STAGE] = 0;
-			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON][MOVIE_TIME] = 0;
-
-			movie = false; // allow normal pause screen.
 			introstage = 1; // return to normal game functionality
 			pauseGame(1, false); // unpause game
 		}
@@ -3567,6 +3537,9 @@ void clientHandlePacket()
 				break;
 			}
 		}
+
+		MainMenu::destroyMainMenu();
+		movie = false;
 
 		// setup level change
 		printlog("Received order to change level.\n");
@@ -4229,26 +4202,131 @@ void clientHandlePacket()
 	else if (packetId == 'WING')
 	{
 		victory = net_packet->data[4];
-		subwindow = 0;
-		introstage = 5; // prepares win game sequence
-		fadeout = true;
-		if ( !intro )
-		{
-			pauseGame(2, false);
-		}
+	    if (net_packet->data[5] == 0) { // full ending
+	        switch (stats[clientnum]->playerRace) {
+	        default:
+	        case RACE_HUMAN:
+	            MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
+	            break;
+	        case RACE_AUTOMATON:
+	            MainMenu::beginFade(MainMenu::FadeDestination::EndingAutomaton);
+	            break;
+	        case RACE_GOATMAN:
+	        case RACE_GOBLIN:
+	        case RACE_INSECTOID:
+	            MainMenu::beginFade(MainMenu::FadeDestination::EndingBeast);
+	            break;
+	        case RACE_SKELETON:
+	        case RACE_VAMPIRE:
+	        case RACE_SUCCUBUS:
+	        case RACE_INCUBUS:
+	            MainMenu::beginFade(MainMenu::FadeDestination::EndingEvil);
+	            break;
+	        }
+	    }
+	    else if (net_packet->data[5] == 1) { // classic herx ending
+	        switch (stats[clientnum]->playerRace) {
+	        default:
+	        case RACE_HUMAN:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
+	            break;
+	        case RACE_AUTOMATON:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingAutomaton);
+	            break;
+	        case RACE_GOATMAN:
+	        case RACE_GOBLIN:
+	        case RACE_INSECTOID:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingBeast);
+	            break;
+	        case RACE_SKELETON:
+	        case RACE_VAMPIRE:
+	        case RACE_SUCCUBUS:
+	        case RACE_INCUBUS:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingEvil);
+	            break;
+	        }
+	    }
+	    else if (net_packet->data[5] == 2) { // classic baphomet ending
+	        switch (stats[clientnum]->playerRace) {
+	        default:
+	        case RACE_HUMAN:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
+	            break;
+	        case RACE_AUTOMATON:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingAutomaton);
+	            break;
+	        case RACE_GOATMAN:
+	        case RACE_GOBLIN:
+	        case RACE_INSECTOID:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingBeast);
+	            break;
+	        case RACE_SKELETON:
+	        case RACE_VAMPIRE:
+	        case RACE_SUCCUBUS:
+	        case RACE_INCUBUS:
+	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingEvil);
+	            break;
+	        }
+	    }
+
+	    // force game to pause
+        movie = true;
+		pauseGame(2, false);
 		return;
 	}
 
-	// mid game movie
+	// mid game cutscene
 	else if ( packetId == 'MIDG' )
 	{
-		subwindow = 0;
-		fadeout = true;
-		if ( !intro )
-		{
-			pauseGame(2, false);
-		}
-		introstage = net_packet->data[4]; // prepares mid game sequence
+	    if (net_packet->data[4] == 0) { // herx midpoint
+	        switch (stats[clientnum]->playerRace) {
+	        default:
+	        case RACE_HUMAN:
+	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
+	            break;
+	        case RACE_AUTOMATON:
+	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointAutomaton);
+	            break;
+	        case RACE_GOATMAN:
+	        case RACE_GOBLIN:
+	        case RACE_INSECTOID:
+	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointBeast);
+	            break;
+	        case RACE_SKELETON:
+	        case RACE_VAMPIRE:
+	        case RACE_SUCCUBUS:
+	        case RACE_INCUBUS:
+	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointEvil);
+	            break;
+	        }
+	    }
+	    else if (net_packet->data[4] == 1) { // baphomet midpoint
+	        switch (stats[clientnum]->playerRace) {
+	        default:
+	        case RACE_HUMAN:
+	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
+	            break;
+	        case RACE_AUTOMATON:
+	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointAutomaton);
+	            break;
+	        case RACE_GOATMAN:
+	        case RACE_GOBLIN:
+	        case RACE_INSECTOID:
+	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointBeast);
+	            break;
+	        case RACE_SKELETON:
+	        case RACE_VAMPIRE:
+	        case RACE_SUCCUBUS:
+	        case RACE_INCUBUS:
+	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointEvil);
+	            break;
+	        }
+	    }
+
+	    // force game to pause
+        movie = true;
+		pauseGame(2, false);
+
 		return;
 	}
 
@@ -5561,8 +5639,8 @@ void serverHandlePacket()
 				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, true, 1, true);
-				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen(*mainsurface), language[3241]);
-				messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen(*mainsurface), language[3242]);
+				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, language[3241]);
+				messagePlayerColor(player, MESSAGE_HINT, uint32ColorGreen, language[3242]);
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
 				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");

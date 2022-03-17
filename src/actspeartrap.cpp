@@ -129,7 +129,7 @@ void actSpearTrap(Entity* my)
 								// do damage!
 								if ( entity->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, language[586]);
 									if ( players[entity->skill[2]]->isLocalPlayer() )
 									{

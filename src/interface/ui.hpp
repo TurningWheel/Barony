@@ -268,7 +268,7 @@ public:
 			}
 		}
 		ttfPrintTextColor(ttf16, r.x + 8, r.y + texty,
-			SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true, "<");
+			makeColor( 255, 255, 0, 255), true, "<");
 
 		if ( temporaryCardHide )
 		{
@@ -332,15 +332,15 @@ public:
 		progressbar.y = imageDimensions.y + imageDimensions.h - progressbar.h;
 		drawWindowFancy(progressbar.x - 2, progressbar.y - 2, progressbar.x + progressbar.w + 2, progressbar.y + progressbar.h + 2);
 
-		drawRect(&progressbar, SDL_MapRGB(mainsurface->format, 36, 36, 36), 255);
+		drawRect(&progressbar, makeColorRGB(36, 36, 36), 255);
 		progressbar.w = std::min((xres - 8 + animx) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
-		drawRect(&progressbar, uint32ColorBaronyBlue(*mainsurface), 92);
+		drawRect(&progressbar, uint32ColorBaronyBlue, 92);
 		progressbar.w = (xres - 8 + animx) - progressbar.x - TTF12_WIDTH;
 
 		char progress_str[32] = { 0 };
 		snprintf(progress_str, sizeof(progress_str), "%d / %d", statisticUpdateCurrent, statisticUpdateMax);
 		ttfPrintTextColor(ttf12, progressbar.x + progressbar.w / 2 - (strlen(progress_str) * TTF12_WIDTH) / 2,
-			progressbar.y + 4, uint32ColorWhite(*mainsurface), true, progress_str);
+			progressbar.y + 4, uint32ColorWhite, true, progress_str);
 	}
 
 	void drawMainCard()
@@ -358,21 +358,21 @@ public:
 			// draw text centred
 			Uint32 centrex = r.x + (r.w / 2);
 			Uint32 textx = centrex - (headerCardText.length() * TTF12_WIDTH) / 2;
-			ttfPrintTextColor(ttf12, textx, r.y + texty + padding.y, SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true,
+			ttfPrintTextColor(ttf12, textx, r.y + texty + padding.y, makeColor( 255, 255, 0, 255), true,
 				headerCardText.c_str());
 
 			char c[256] = "";
 			strcpy(c, displayedText.c_str());
 			textx = centrex - (longestline(c) * TTF12_WIDTH) / 2;
-			ttfPrintTextColor(ttf12, textx, r.y + bodyy + padding.y, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
+			ttfPrintTextColor(ttf12, textx, r.y + bodyy + padding.y, makeColor( 255, 255, 255, 255), true,
 				displayedText.c_str());
 		}
 		else
 		{
-			ttfPrintTextColor(ttf12, r.x + r.w + textx, r.y + texty, SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255), true,
+			ttfPrintTextColor(ttf12, r.x + r.w + textx, r.y + texty, makeColor( 255, 255, 0, 255), true,
 				headerCardText.c_str());
 
-			ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, SDL_MapRGBA(mainsurface->format, 255, 255, 255, 255), true,
+			ttfPrintTextColor(ttf12, r.x + r.w + bodyx, r.y + bodyy, makeColor( 255, 255, 255, 255), true,
 				displayedText.c_str());
 		}
 
@@ -535,7 +535,7 @@ public:
 		{
 			//drawDepressed(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
 			drawWindowFancy(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
-			drawRect(&actionBtn, uint32ColorBaronyBlue(*mainsurface), 32);
+			drawRect(&actionBtn, uint32ColorBaronyBlue, 32);
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -547,7 +547,7 @@ public:
 		else
 		{
 			drawWindowFancy(actionBtn.x, actionBtn.y, actionBtn.x + actionBtn.w, actionBtn.y + actionBtn.h);
-			drawRect(&actionBtn, SDL_MapRGB(mainsurface->format, 255, 255, 255), 32);
+			drawRect(&actionBtn, makeColorRGB(255, 255, 255), 32);
 		}
 		ttfPrintText(ttf12, textx, actionBtn.y + 5, actionText.c_str());
 		return false;

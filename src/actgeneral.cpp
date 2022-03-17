@@ -2394,7 +2394,7 @@ void Entity::actTextSource()
 
 			std::string output = textSourceScript.getScriptFromEntity(*this);
 
-			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
+			Uint32 color = makeColorRGB((textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
 				(textSourceColorRGB >> 0) & 0xFF);
 
 			if ( textSourceIsScript != textSourceScript.NO_SCRIPT )

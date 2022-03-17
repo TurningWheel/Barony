@@ -4,7 +4,9 @@
 
 void doFrames();
 #include "Frame.hpp"
+#include "../interface/consolecommand.hpp"
 
+void doSharedMinimap();
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
@@ -35,5 +37,6 @@ extern EnemyBarSettings_t enemyBarSettings;
 extern bool newui;
 extern bool bUsePreciseFieldTextReflow;
 extern bool bUseSelectedSlotCycleAnimation;
+extern ConsoleVariable<bool> shareMinimap;
 
 void openMinimap(int player);

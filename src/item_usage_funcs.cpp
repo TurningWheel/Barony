@@ -155,7 +155,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 			if ( stats->type == AUTOMATON )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+				Uint32 color = makeColorRGB(255, 128, 0);
 				messagePlayerColor(player, MESSAGE_STATUS, color, language[3700]);
 				stats->HUNGER -= 200; //Lose boiler
 				int mpAmount = 3 + rand() % 6;
@@ -184,7 +184,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->type == VAMPIRE )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, language[3183]);
 			camera_shakex += .1;
 			camera_shakey += 10;
@@ -198,7 +198,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->type == SKELETON )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, language[3184]);
 			camera_shakex += .1;
 			camera_shakey += 10;
@@ -210,7 +210,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			stats->type == SHADOW ||
 			stats->type == VAMPIRE )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, language[3183]);
 			camera_shakex += .1;
 			camera_shakey += 10;
@@ -224,7 +224,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->type == VAMPIRE )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			Uint32 color = makeColorRGB(255, 0, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, language[3183]);
 			camera_shakex += .1;
 			camera_shakey += 10;
@@ -479,7 +479,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			}
 			entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
 			serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
-			messagePlayerColor(player, MESSAGE_STATUS, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
+			messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[3250]);
 		}
 		else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
 		{
@@ -620,7 +620,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 				}
 				entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
 				serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
-				messagePlayerColor(player, MESSAGE_STATUS, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
+				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[3250]);
 			}
 			else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
 			{
@@ -944,7 +944,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, MESSAGE_HINT, language[2900]);
 	}
 
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+	Uint32 color = makeColorRGB(0, 255, 0);
 	messagePlayerColor(player, MESSAGE_STATUS, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
@@ -1615,7 +1615,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, nullptr);
 			stats->HUNGER = std::min(stats->HUNGER + 1500, 1500);
 			players[player]->entity->modMP(stats->MAXMP);
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+			Uint32 color = makeColorRGB(255, 128, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, language[3699]); // superheats
 			serverUpdateHunger(player);
 			for ( int c = 0; c < 100; c++ )
@@ -1846,7 +1846,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	playSoundEntity(entity, 52, 64);
 	playSoundEntity(entity, 168, 128);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+	Uint32 color = makeColorRGB(0, 255, 0);
 
 	if ( item->beatitude < 0 )
 	{
@@ -1990,7 +1990,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	playSoundEntity(entity, 52, 64);
 	playSoundEntity(entity, 168, 128);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+	Uint32 color = makeColorRGB(0, 255, 0);
 	if ( item->beatitude < 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, language[2900]);
@@ -4975,7 +4975,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	// 40 hunger = 24 seconds
 	// 20 hunger = 12 seconds
 	int oldHunger = stats[player]->HUNGER;
-	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+	Uint32 color = makeColorRGB(255, 128, 0);
 
 	// replenish nutrition points
 	// automaton hunger is always in effect

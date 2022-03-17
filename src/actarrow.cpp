@@ -669,7 +669,7 @@ void actArrow(Entity* my)
 						hit.entity = ohitentity;
 						if ( parent->behavior == &actPlayer )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							Uint32 color = makeColorRGB(0, 255, 0);
 							if ( huntingDamage )
 							{
 								// plunges into the %s!
@@ -698,7 +698,7 @@ void actArrow(Entity* my)
 					}
 					if ( hit.entity->behavior == &actPlayer )
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(255, 0, 0);
 						if ( silverDamage )
 						{
 							messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3745]); // you are smited!
@@ -763,7 +763,7 @@ void actArrow(Entity* my)
 							{
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									Uint32 color = makeColorRGB(0, 255, 0);
 									if ( hitstats )
 									{
 										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3739], language[3740], MSG_COMBAT);
@@ -775,7 +775,7 @@ void actArrow(Entity* my)
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3741]);
 								}
 								statusEffectApplied = true;
@@ -841,7 +841,7 @@ void actArrow(Entity* my)
 
 							if ( parent && parent->behavior == &actPlayer )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3215], language[3214], MSG_COMBAT);
 
 								if ( hit.entity->behavior == &actMonster )
@@ -851,7 +851,7 @@ void actArrow(Entity* my)
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3742]);
 							}
 
@@ -886,7 +886,7 @@ void actArrow(Entity* my)
 								serverUpdateEffects(hit.entity->skill[2]);
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									Uint32 color = makeColorRGB(0, 255, 0);
 									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3747], language[3748], MSG_COMBAT);
 
 									achievementObserver.addEntityAchievementTimer(hit.entity, AchievementObserver::BARONY_ACH_PLEASE_HOLD, 150, true, 0);
@@ -904,13 +904,13 @@ void actArrow(Entity* my)
 											hit.entity->skill[26] = 140 + rand() % 60; 
 										}
 									}
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[3749]);
 								}
 							}
 							else if ( hit.entity->behavior == &actPlayer )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[451]); // you are hit by an arrow!
 							}
 						}
@@ -920,7 +920,7 @@ void actArrow(Entity* my)
 						// HP <= 0
 						if ( parent && parent->behavior == &actPlayer )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							Uint32 color = makeColorRGB(0, 255, 0);
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
 						}
 					}

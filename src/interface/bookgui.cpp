@@ -47,9 +47,9 @@ void Player::BookGUI_t::createBookGUI()
 		SDL_Rect{ 0, 0, bookFrame->getSize().w, bookFrame->getSize().h }, 
 		0, "images/system/white.png", "fade img");
 	Uint8 r, g, b, a;
-	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+	getColor(fade->color, &r, &g, &b, &a);
 	a = 0;
-	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	fade->color = makeColor( r, g, b, a);
 
 	Frame* bookBackground = frame->addFrame("book frame");
 	const int width = 534;
@@ -116,7 +116,7 @@ void Player::BookGUI_t::createBookGUI()
 	bookLeftColumnText->setFont(bookFont.c_str());
 	bookLeftColumnText->setHJustify(Field::justify_t::LEFT);
 	bookLeftColumnText->setVJustify(Field::justify_t::TOP);
-	bookLeftColumnText->setColor(SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
+	bookLeftColumnText->setColor(makeColor( 0, 0, 0, 255));
 	//bookLeftColumnText->setColor(makeColor(201, 162, 100, 255));
 
 	//bookBackground->addImage(bookLeftColumnText->getSize(), 0xFFFFFFFF, "images/system/white.png", "debug img");
@@ -127,8 +127,8 @@ void Player::BookGUI_t::createBookGUI()
 	bookRightColumnText->setFont(bookFont.c_str());
 	bookRightColumnText->setHJustify(Field::justify_t::LEFT);
 	bookRightColumnText->setVJustify(Field::justify_t::TOP);
-	bookRightColumnText->setColor(SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
-	//bookRightColumnText->setColor(SDL_MapRGBA(mainsurface->format, 67, 195, 157, 255));
+	bookRightColumnText->setColor(makeColor( 0, 0, 0, 255));
+	//bookRightColumnText->setColor(makeColor( 67, 195, 157, 255));
 
 	//bookBackground->addImage(bookRightColumnText->getSize(), 0xFFFF00FF, "images/system/white.png", "debug img");
 }
@@ -178,9 +178,9 @@ void Player::BookGUI_t::updateBookGUI()
 
 		auto fade = bookFrame->findImage("fade img");
 		Uint8 r, g, b, a;
-		SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+		getColor(fade->color, &r, &g, &b, &a);
 		a = 0;
-		fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+		fade->color = makeColor( r, g, b, a);
 		return;
 	}
 
@@ -201,9 +201,9 @@ void Player::BookGUI_t::updateBookGUI()
 
 	auto fade = bookFrame->findImage("fade img");
 	Uint8 r, g, b, a;
-	SDL_GetRGBA(fade->color, mainsurface->format, &r, &g, &b, &a);
+	getColor(fade->color, &r, &g, &b, &a);
 	a = 128 * bookFadeInAnimationY;
-	fade->color = SDL_MapRGBA(mainsurface->format, r, g, b, a);
+	fade->color = makeColor( r, g, b, a);
 
 	int baseY = (bookFrame->getSize().h / 2 - bookSize.h / 2);
 	bookSize.y = -bookSize.h + bookFadeInAnimationY * (baseY + bookSize.h);

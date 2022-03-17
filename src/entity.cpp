@@ -1584,7 +1584,7 @@ void Entity::increaseSkill(int skill, bool notify)
 		player = this->skill[2];
 	}
 
-	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+	Uint32 color = makeColorRGB(255, 255, 0);
 	if ( myStats->PROFICIENCIES[skill] < 100 )
 	{
 		myStats->PROFICIENCIES[skill]++;
@@ -2437,7 +2437,7 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 	{
 		if ( player >= 0 && notifyOverexpend )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+			Uint32 color = makeColorRGB(255, 255, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, language[621]);
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
@@ -2482,7 +2482,7 @@ bool Entity::safeConsumeMP(int amount)
 			this->drainMP(amount, false);
 			if ( (HP - stat->HP > 0) && (stat->HP % 5 == 0) )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+				Uint32 color = makeColorRGB(255, 255, 0);
 				messagePlayerColor(skill[2], MESSAGE_STATUS, color, language[621]);
 			}
 			return true;
@@ -2717,7 +2717,7 @@ void Entity::handleEffects(Stat* myStats)
 			players[player]->hud.xpBar.xpLevelups++;
 		}
 
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+		Uint32 color = makeColorRGB(255, 255, 0);
 		messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[622]);
 		playSoundPlayer(player, 97, 128);
 
@@ -2849,7 +2849,7 @@ void Entity::handleEffects(Stat* myStats)
 						serverUpdatePlayerSummonStrength(leader->skill[2]);
 						if ( rankUp )
 						{
-							color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							color = makeColorRGB(255, 255, 0);
 							messagePlayerMonsterEvent(leader->skill[2], color, *myStats, language[3197], language[3197], MSG_GENERIC);
 							playSoundPlayer(leader->skill[2], 40, 64);
 						}
@@ -2909,7 +2909,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						if ( players[i] && players[i]->entity == leader )
 						{
-							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							color = makeColorRGB(0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
 							playSoundEntity(this, 97, 128);
 							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
@@ -4011,7 +4011,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( player >= 0 && (myStats->EFFECTS[EFF_LEVITATING] || myStats->EFFECTS[EFF_FLUTTER]) && MFLAG_DISABLELEVITATION)
 	{
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+		Uint32 color = makeColorRGB(255, 0, 255);
 		messagePlayerColor(player, MESSAGE_HINT, color, language[2382]); // disabled levitation.
 		this->setEffect(EFF_LEVITATING, false, 0, true);
 		this->setEffect(EFF_FLUTTER, false, 0, true);
@@ -4361,7 +4361,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							if ( rand() % 3 > 0 && myStats->MP < myStats->MAXMP )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								messagePlayerColor(player, MESSAGE_HINT, color, language[3358]);
 								int amount = 2 + rand() % 2;
 								int oldMP = myStats->MP;
@@ -5766,13 +5766,9 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( behavior == &actMonster && 
-		(introstage == 9
-		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
-		|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
-		|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS) )
+	if ( behavior == &actMonster && MainMenu::isCutsceneActive() )
 	{
-		return false; // mid-game crawls.
+		return false;
 	}
 
 	// paralyzed
@@ -6110,7 +6106,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( playerhit >= 0 )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2523]);
 								}
 							}
@@ -6999,7 +6995,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								int c;
 								for ( c = 0; c < MAXPLAYERS; c++ )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+									Uint32 color = makeColorRGB(255, 128, 0);
 									messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
 								}
 							}
@@ -7731,7 +7727,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						if ( player >= 0 )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							Uint32 color = makeColorRGB(255, 255, 0);
 							messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[3446]);
 						}
 					}
@@ -8667,8 +8663,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorSpecial = color;// SDL_MapRGB(mainsurface->format, 255, 0, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorSpecial = color;// makeColorRGB(255, 0, 255);
 						if ( hitstats->HP > 0 )
 						{
 							if ( !artifactWeaponProc )
@@ -8838,8 +8834,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						Uint32 colorSpecial = color;// SDL_MapRGB(mainsurface->format, 255, 0, 255);
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorSpecial = color;// makeColorRGB(255, 0, 255);
 						if ( hitstats->HP > 0 )
 						{
 							if ( !artifactWeaponProc )
@@ -9030,7 +9026,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( hit.entity->behavior == &actMonster && !hit.entity->isBossMonster() )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( hitstats->weapon
 									&& itemCategory(hitstats->weapon) != SPELLBOOK )
 								{
@@ -9178,7 +9174,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(255, 0, 0);
 						messagePlayerMonsterEvent(playerhit, color, *myStats, language[698], language[699], MSG_ATTACKS);
 						if ( playerhit >= 0 )
 						{
@@ -9437,12 +9433,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 									if ( playerhit >= 0 )
 									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										Uint32 color = makeColorRGB(255, 0, 0);
 										messagePlayerColor(playerhit, MESSAGE_STATUS, color, playerHitMessage);
 									}
 									else
 									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										Uint32 color = makeColorRGB(0, 255, 0);
 										if ( !strcmp(hitstats->name, "") )
 										{
 											messagePlayerColor(player, MESSAGE_COMBAT, color, monsterHitMessage, getMonsterLocalizedName(hitstats->type).c_str());
@@ -9457,7 +9453,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									if ( myStats->helmet && myStats->helmet->type == PUNISHER_HOOD )
 									{
 										this->modMP(1 + rand() % 2);
-										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										Uint32 color = makeColorRGB(0, 255, 0);
 										this->setEffect(EFF_MP_REGEN, true, 250, true);
 										if ( behavior == &actPlayer )
 										{
@@ -9556,7 +9552,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										tmpEntity->modHP(-explodeDmg);
 										if ( playerhit >= 0 )
 										{
-											Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+											Uint32 color = makeColorRGB(255, 0, 0);
 											messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2523]);
 										}
 									}
@@ -9673,12 +9669,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( playerhit >= 0 )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2441]);
 							}
 							else
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( !strcmp(hitstats->name, "") )
 								{
 									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2440], getMonsterLocalizedName(hitstats->type).c_str());
@@ -9810,7 +9806,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							bool degradePickaxe = true;
 							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+								Uint32 color = makeColorRGB(255, 0, 255);
 								messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
@@ -10080,7 +10076,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 		player = skill[2];
 		if ( MFLAG_DISABLETELEPORT )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			Uint32 color = makeColorRGB(255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
 			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
@@ -10173,7 +10169,7 @@ bool Entity::teleportRandom()
 		player = skill[2];
 		if ( MFLAG_DISABLETELEPORT )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			Uint32 color = makeColorRGB(255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
 			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
@@ -10241,7 +10237,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		player = skill[2];
 		if ( MFLAG_DISABLETELEPORT )
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			Uint32 color = makeColorRGB(255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
 			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);

@@ -115,12 +115,10 @@ void Text::render() {
 	TTF_Font* ttf = font->getTTF();
 
 	SDL_Color colorText;
-	SDL_GetRGBA(textColor, mainsurface->format,
-		&colorText.r, &colorText.g, &colorText.b, &colorText.a);
+	getColor(textColor, &colorText.r, &colorText.g, &colorText.b, &colorText.a);
 
 	SDL_Color colorOutline;
-	SDL_GetRGBA(outlineColor, mainsurface->format,
-		&colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
+	getColor(outlineColor, &colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
 
 	int outlineSize = font->getOutline();
 	if ( outlineSize > 0 ) {
@@ -199,7 +197,7 @@ void Text::render() {
 				{
 					Uint32 pix = getPixel(surf, x, y);
 					Uint8 r, g, b, a;
-					SDL_GetRGBA(pix, surf->format, &r, &g, &b, &a);
+					getColor(pix, &r, &g, &b, &a);
 					if ( r == colorText.r && g == colorText.g && b == colorText.b && a == colorText.a )
 					{
 						if ( !doFillRow )
@@ -279,11 +277,9 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	glBindTexture(GL_TEXTURE_2D, texid);
 
 	// consume color
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 
 	// draw quad
 	glBegin(GL_QUADS);

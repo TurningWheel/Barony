@@ -163,7 +163,7 @@ void actBeartrap(Entity* my)
 					if ( entity->behavior == &actPlayer )
 					{
 						int player = entity->skill[2];
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(player, MESSAGE_STATUS, color, language[454]);
 						if ( !players[player]->isLocalPlayer() )
 						{
@@ -337,7 +337,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 
 	// stumbled into the trap!
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+	Uint32 color = makeColorRGB(0, 255, 0);
 	if ( parent && parent->behavior == &actPlayer && triggered != parent )
 	{
 		if ( !hitByAOE )
@@ -352,7 +352,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	if ( triggered->behavior == &actPlayer )
 	{
 		int player = triggered->skill[2];
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		Uint32 color = makeColorRGB(255, 0, 0);
 		// you stumbled into the trap!
 		if ( !hitByAOE )
 		{
@@ -371,7 +371,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			// no effect.
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				Uint32 color = makeColorRGB(255, 0, 0);
 				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
 			}
 			return;
@@ -425,13 +425,13 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 				// whisked away!
 				if ( triggered != parent )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3601], language[3602], MSG_COMBAT);
 				}
 			}
 			if ( triggered->behavior == &actPlayer )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+				Uint32 color = makeColorRGB(255, 255, 255);
 				messagePlayerColor(triggered->skill[2], MESSAGE_STATUS, color, language[3611]);
 				achievementObserver.playerAchievements[triggered->skill[2]].checkPathBetweenObjects(triggered, my, AchievementObserver::BARONY_ACH_WONDERFUL_TOYS);
 			}
@@ -448,7 +448,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		{
 			if ( parent && parent->behavior == &actPlayer && triggered != parent )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				Uint32 color = makeColorRGB(255, 0, 0);
 				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3615], language[3616], MSG_COMBAT);
 			}
 		}

@@ -23,6 +23,7 @@ namespace MainMenu {
 		None,
 		TitleScreen,
 		RootMainMenu,
+		Victory,
 
 		// Story scenes:
 
@@ -61,6 +62,7 @@ namespace MainMenu {
 		HallOfTrials,
 	};
 
+    bool isCutsceneActive();
 	void beginFade(FadeDestination);
 
 	void settingsApply();	// write settings to global variables
