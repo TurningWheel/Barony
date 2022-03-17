@@ -1270,18 +1270,18 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			if ( parent->behavior == &actItem )
 			{
 				sprite = SDL_CreateRGBSurface(0, tooltip.w, tooltip.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-				SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255));
+				SDL_FillRect(sprite, nullptr, makeColor( 0, 0, 0, 255));
 				SDL_LockSurface(sprite);
 
 				for ( int x = 0; x < sprite->w; x++ )
 				{
-					Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+					Uint32 color = makeColor( 0, 192, 255, 255);
 					putPixel(sprite, x, 0, color);
 					putPixel(sprite, x, sprite->h - 1, color);
 				}
 				for ( int y = 0; y < sprite->h; y++ )
 				{
-					Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 192, 255, 255);
+					Uint32 color = makeColor( 0, 192, 255, 255);
 					putPixel(sprite, 0, y, color);
 					putPixel(sprite, sprite->w - 1, y, color);
 				}
@@ -1289,7 +1289,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			else
 			{
 				sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-				SDL_FillRect(sprite, nullptr, SDL_MapRGBA(mainsurface->format, 0, 0, 0, 0));
+				SDL_FillRect(sprite, nullptr, makeColor( 0, 0, 0, 0));
 				SDL_LockSurface(sprite);
 			}
 			SDL_UnlockSurface(sprite);

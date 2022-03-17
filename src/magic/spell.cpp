@@ -1157,18 +1157,18 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 		{
 			if ( overdrewFromHP )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+				Uint32 color = makeColorRGB(255, 255, 255);
 				messagePlayerColor(player, MESSAGE_STATUS, color, language[3400]);
 			}
 			else
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				messagePlayerColor(player, MESSAGE_STATUS, color, language[443]);
 			}
 		}
 		else
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+			Uint32 color = makeColorRGB(255, 255, 0);
 			if (amount == 0)
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, language[444]);

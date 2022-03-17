@@ -169,12 +169,9 @@ void drawMinimap(const int player, SDL_Rect rect)
         const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
         x = (x - xmin) * unitX + rect.x;
         y = (y - ymin) * unitY + rect.y;
-        auto& f = *mainsurface->format;
-        glColor4f(
-            ((color & f.Rmask) >> f.Rshift) / 255.0,
-            ((color & f.Gmask) >> f.Gshift) / 255.0,
-            ((color & f.Bmask) >> f.Bshift) / 255.0,
-            ((color & f.Amask) >> f.Ashift) / 255.0);
+		Uint8 r, g, b, a;
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
         glBegin(GL_TRIANGLE_FAN);
         for (auto& pair : circle_mesh) {
             const real_t sx = pair.first * unitX * (minimapObjectZoom / 100.0);
@@ -500,12 +497,9 @@ void drawMinimap(const int player, SDL_Rect rect)
             };
             const int num_vertices = sizeof(v) / sizeof(v[0]);
 
-            auto& f = *mainsurface->format;
-            glColor4f(
-                ((color & f.Rmask) >> f.Rshift) / 255.0,
-                ((color & f.Gmask) >> f.Gshift) / 255.0,
-                ((color & f.Bmask) >> f.Bshift) / 255.0,
-                ((color & f.Amask) >> f.Ashift) / 255.0);
+			Uint8 r, g, b, a;
+			getColor(color, &r, &g, &b, &a);
+			glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	        glBegin(GL_TRIANGLES);
 	        for (int c = 0; c < num_vertices; ++c) {
 	            const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);

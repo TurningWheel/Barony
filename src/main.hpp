@@ -555,7 +555,6 @@ extern SDL_Renderer* renderer;
 #else
 extern SDL_GLContext renderer;
 #endif
-extern SDL_Surface* mainsurface;
 extern SDL_Event event;
 extern bool firstmouseevent;
 extern char const * window_title;

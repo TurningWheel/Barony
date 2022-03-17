@@ -464,7 +464,7 @@ void actLeftHandMagic(Entity* my)
 							cameravars[HANDMAGIC_PLAYERNUM].shakex += 0.1;
 							cameravars[HANDMAGIC_PLAYERNUM].shakey += 10;
 							playSoundPlayer(HANDMAGIC_PLAYERNUM, 28, 92);
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							Uint32 color = makeColorRGB(255, 255, 0);
 							messagePlayerColor(HANDMAGIC_PLAYERNUM, MESSAGE_STATUS, color, language[621]);
 						}
 					}

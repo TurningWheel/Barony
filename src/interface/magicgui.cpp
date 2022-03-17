@@ -523,7 +523,7 @@ void drawSustainedSpells(const int player)
 				ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, buf);
 				str = str.substr(found);
 				strncpy(buf, str.c_str(), str.length());
-				ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue(*mainsurface), buf);
+				ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue, buf);
 			}
 			else
 			{
@@ -618,7 +618,7 @@ void drawSustainedSpells(const int player)
 			ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, buf);
 			str = str.substr(found);
 			strncpy(buf, str.c_str(), str.length());
-			ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue(*mainsurface), buf);
+			ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue, buf);
 		}
 		else
 		{

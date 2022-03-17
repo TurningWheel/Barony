@@ -593,7 +593,7 @@ void LobbyHandler_t::handleLobbyBrowser()
 			}
 			pos.w = subx2 - subx1 - 44;
 			pos.h = 16;
-			drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			drawRect(&pos, makeColorRGB(64, 64, 64), 255);
 		}
 
 		// print all lobby entries
@@ -638,11 +638,11 @@ void LobbyHandler_t::handleLobbyBrowser()
 						displayedLobbyName += "..";
 					}
 
-					Uint32 color = uint32ColorWhite(*mainsurface);
+					Uint32 color = uint32ColorWhite;
 					char buf[maxCharacters] = "";
 					if ( EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.gameCurrentLevel >= 0 )
 					{
-						color = uint32ColorYellow(*mainsurface);
+						color = uint32ColorYellow;
 						// hide lobby name for in progress.
 						snprintf(buf, maxCharacters - 1, "%s%s", "In-progress lobby", lobbyDetailText.c_str());
 					}

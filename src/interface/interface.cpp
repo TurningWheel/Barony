@@ -1913,12 +1913,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			// draw borders around ring.
 			drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
-				centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray(*mainsurface), 192);
+				centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray, 192);
 			drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
-				centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray(*mainsurface), 192);
+				centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray, 192);
 
-			drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray(*mainsurface), 192);
-			drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray(*mainsurface), 192);
+			drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray, 192);
+			drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray, 192);
 
 			angleStart += 2 * PI / numoptions;
 			angleMiddle = angleStart + PI / numoptions;
@@ -1952,10 +1952,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 						drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
 
 						// draw borders around highlighted item.
-						Uint32 borderColor = uint32ColorBaronyBlue(*mainsurface);
+						Uint32 borderColor = uint32ColorBaronyBlue;
 						if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
 						{
-							borderColor = uint32ColorOrange(*mainsurface);
+							borderColor = uint32ColorOrange;
 						}
 						drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
 							centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), borderColor, 192);
@@ -2166,7 +2166,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
-			drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue(*mainsurface), 192);
+			drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue, 192);
 			//getSizeOfText(ttf12, language[3063], &width, nullptr);
 			//ttfPrintText(ttf12, centerx - width / 2, centery - 8, language[3063]);
 		}
@@ -2210,7 +2210,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
 				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3092]);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
 			}
 			else if ( disableOption == -1 ) // disabled due to creature type
 			{
@@ -2219,7 +2219,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange(*mainsurface), language[3103], getMonsterLocalizedName(followerStats->type).c_str());
+					uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
@@ -2229,7 +2229,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange(*mainsurface), language[3673], getMonsterLocalizedName(followerStats->type).c_str());
+					uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else
 			{
@@ -2297,7 +2297,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
 				}
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-					uint32ColorOrange(*mainsurface), lowSkillLVLTooltip, requirement.c_str(), current.c_str());
+					uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
 			}
 		}
 
@@ -3633,7 +3633,7 @@ void GenericGUIMenu::updateGUI()
 				toolStatusText);
 			/*if ( scribingLastUsageDisplayTimer > 0 )
 			{
-				ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed(*mainsurface),
+				ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed,
 						"(%3d)", -scribingLastUsageAmount);
 			}*/
 
@@ -4027,7 +4027,7 @@ void GenericGUIMenu::updateGUI()
 							}
 							char tempstr[256] = { 0 };
 							int showTinkeringBotHealthPercentage = false;
-							Uint32 color = uint32ColorWhite(*mainsurface);
+							Uint32 color = uint32ColorWhite;
 							if ( guiType == GUI_TYPE_TINKERING )
 							{
 								if ( isNodeTinkeringCraftableItem(item->node) )
@@ -4041,7 +4041,7 @@ void GenericGUIMenu::updateGUI()
 									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
 									if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
 									{
-										color = uint32ColorGray(*mainsurface);
+										color = uint32ColorGray;
 									}
 								}
 								else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
@@ -4055,11 +4055,11 @@ void GenericGUIMenu::updateGUI()
 									{
 										if ( tinkeringUpgradeMaxStatus(item) <= item->status )
 										{
-											color = uint32ColorGray(*mainsurface); // can't upgrade since it's higher status than we can craft.
+											color = uint32ColorGray; // can't upgrade since it's higher status than we can craft.
 										}
 										else if ( !tinkeringPlayerCanAffordRepair(item) )
 										{
-											color = uint32ColorGray(*mainsurface); // can't upgrade since no materials
+											color = uint32ColorGray; // can't upgrade since no materials
 										}
 										strcpy(tempstr, language[3684]); // upgrade
 										strncat(tempstr, item->description(), 46 - strlen(language[3684]));
@@ -4068,11 +4068,11 @@ void GenericGUIMenu::updateGUI()
 									{
 										if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 && itemCategory(item) == TOOL )
 										{
-											color = uint32ColorGray(*mainsurface); // can't repair since no we can't craft it.
+											color = uint32ColorGray; // can't repair since no we can't craft it.
 										}
 										else if ( !tinkeringPlayerCanAffordRepair(item) )
 										{
-											color = uint32ColorGray(*mainsurface); // can't repair since no materials
+											color = uint32ColorGray; // can't repair since no materials
 										}
 										strcpy(tempstr, language[3646]); // repair
 										strncat(tempstr, item->description(), 46 - strlen(language[3646]));
@@ -5299,22 +5299,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( basePotion->identified && secondaryPotion->identified )
 	{
-		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3332],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite, language[3332],
 			items[basePotion->type].name_identified, items[secondaryPotion->type].name_identified);
 	}
 	else if ( basePotion->identified )
 	{
-		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3334],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite, language[3334],
 			items[basePotion->type].name_identified);
 	}
 	else if ( secondaryPotion->identified )
 	{
-		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3333],
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite, language[3333],
 			items[secondaryPotion->type].name_identified);
 	}
 	else
 	{
-		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite(*mainsurface), language[3335]);
+		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite, language[3335]);
 	}
 
 	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
@@ -5562,7 +5562,7 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 			{
 				// new recipe!
 				clientLearnedAlchemyIngredients[gui_player].insert(type);
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( notify )
 				{
 					if ( isItemBaseIngredient(type) )
@@ -5938,7 +5938,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			Item* pickedUp = itemPickup(player, crafted);
 			if ( bonusMetalScrap > 0 )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			else
@@ -5957,7 +5957,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			Item* pickedUp = itemPickup(player, crafted);
 			if ( bonusMagicScrap > 0 )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				Uint32 color = makeColorRGB(0, 255, 0);
 				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], magic, items[pickedUp->type].name_identified);
 			}
 			else
@@ -7835,10 +7835,10 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				crafted->appearance = rand(); 
 			}
 			Item* pickedUp = itemPickup(gui_player, crafted);
-			//messagePlayerColor(gui_player, uint32ColorGreen(*mainsurface), language[3724]);
+			//messagePlayerColor(gui_player, uint32ColorGreen, language[3724]);
 			int oldcount = pickedUp->count;
 			pickedUp->count = 1;
-			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
+			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, language[3724], pickedUp->description());
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
 			//scribingBlankScrollTarget = nullptr;
@@ -8122,7 +8122,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//	pos.x = pos.x + 3;
 	//	pos.y = pos.y + 3;
 	//	pos.h = pos.h - 6;
-	//	drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
+	//	drawRect(&pos, makeColorRGB(16, 0, 0), 255);
 
 	//	if ( HPDetails.enemy_oldhp > HPDetails.enemy_hp )
 	//	{
@@ -8152,7 +8152,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//		}
 	//		else
 	//		{
-	//			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
+	//			drawRect(&pos, makeColorRGB(128, 0, 0), 128);
 	//		}
 	//		pos.w = tmpw;
 	//	}
@@ -8160,7 +8160,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//	{
 	//		int tmpw = pos.w;
 	//		pos.w = pos.w * ((double)HPDetails.enemy_hp / HPDetails.enemy_maxhp);
-	//		drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+	//		drawRect(&pos, makeColorRGB(128, 0, 0), 255);
 	//		if ( HPDetails.enemy_bar_color > 0 )
 	//		{
 	//			drawRect(&pos, HPDetails.enemy_bar_color, 224);

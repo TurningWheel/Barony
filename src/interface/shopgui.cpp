@@ -547,10 +547,10 @@ void updateShopWindow(const int player)
 			{
 				strcat(tempstr, " ...");
 			}
-			Uint32 color = uint32ColorWhite(*mainsurface);
+			Uint32 color = uint32ColorWhite;
 			if ( item->beatitude > 0 && stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= SKILL_LEVEL_EXPERT )
 			{
-				color = uint32ColorGreen(*mainsurface);
+				color = uint32ColorGreen;
 			}
 			ttfPrintTextColor(ttf8, x + 12 + 36, y3, color, true, tempstr);
 			ttfPrintTextFormatted(ttf8, x + 12 + 348, y3, "%7dG", item->buyValue(player));

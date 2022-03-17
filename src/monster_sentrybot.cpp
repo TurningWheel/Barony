@@ -1029,7 +1029,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				int leader = my->monsterAllyIndex;
 				if ( leader >= 0 )
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					Uint32 color = makeColorRGB(0, 255, 0);
 					messagePlayerColor(leader, MESSAGE_HINT, color, language[3651]);
 				}
 			}

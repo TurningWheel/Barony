@@ -177,7 +177,7 @@ void actSink(Entity* my)
 							Entity* monster = summonMonster(SLIME, my->x, my->y);
 							if ( monster )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(i, MESSAGE_HINT, color, language[582]);
 								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
@@ -194,7 +194,7 @@ void actSink(Entity* my)
 							}
 							if ( stats[i]->type == AUTOMATON )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[3700]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER -= 200; //Lose boiler
@@ -215,7 +215,7 @@ void actSink(Entity* my)
 								playSoundEntity(players[i]->entity, 249, 128);
 								players[i]->entity->setObituary(language[1533]);
 
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
 								if ( i >= 0 && players[i]->isLocalPlayer() )
 								{
@@ -243,7 +243,7 @@ void actSink(Entity* my)
 							}
 							if ( stats[i]->type == AUTOMATON )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+								Uint32 color = makeColorRGB(255, 128, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[3701]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 200; //Gain boiler
@@ -265,7 +265,7 @@ void actSink(Entity* my)
 								playSoundEntity(players[i]->entity, 28, 64);
 								players[i]->entity->setObituary(language[1533]);
 
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[584]);
 
 								if ( i >= 0 && players[i]->isLocalPlayer() )

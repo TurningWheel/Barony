@@ -43,7 +43,7 @@ bool autoLimbReload = false;
 
 /******************************************************************************/
 
-typedef std::unordered_map<std::string, ConsoleCommand> ccmd_map_t;
+typedef std::map<std::string, ConsoleCommand> ccmd_map_t;
 static ccmd_map_t& getConsoleCommands()
 {
     static ccmd_map_t ccmd_map;
@@ -196,6 +196,24 @@ void consoleCommand(char const * const command_str)
 	    auto& ccmd = find->second;
 	    ccmd(tokens.size(), tokens.data());
 	}
+}
+
+const char* FindConsoleCommand(const char* str, int index) {
+    if (!str || str[0] == '\0') {
+        return nullptr;
+    }
+    size_t len = strlen(str);
+    int count = 0;
+	auto& map = getConsoleCommands();
+	auto lower = map.lower_bound(str);
+	auto it = lower;
+	for (; count < index; ++it, ++count);
+    auto cmd = it == map.end() ? nullptr : it->first.c_str();
+    if (cmd && strncmp(str, cmd, len) == 0) {
+        return cmd;
+    } else {
+        return nullptr;
+    }
 }
 
 namespace Test {

@@ -211,12 +211,9 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 	glEnable(GL_BLEND);
 
 	// set color
-	glColor4f(
-		((Uint8)(color >> mainsurface->format->Rshift)) / 255.f,
-		((Uint8)(color >> mainsurface->format->Gshift)) / 255.f,
-		((Uint8)(color >> mainsurface->format->Bshift)) / 255.f,
-		alpha / 255.f
-	);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// draw arc
@@ -256,21 +253,15 @@ static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, 
 	glEnable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	Uint8 r, g, b, a;
+
 	// draw arc
 	glBegin(GL_TRIANGLE_FAN);
-	glColor4f(
-		((Uint8)(inner_color >> mainsurface->format->Rshift)) / 255.f,
-		((Uint8)(inner_color >> mainsurface->format->Gshift)) / 255.f,
-		((Uint8)(inner_color >> mainsurface->format->Bshift)) / 255.f,
-		((Uint8)(inner_color >> mainsurface->format->Ashift)) / 255.f
-	);
+	getColor(inner_color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	glVertex2f(x, yres - y);
-	glColor4f(
-		((Uint8)(outer_color >> mainsurface->format->Rshift)) / 255.f,
-		((Uint8)(outer_color >> mainsurface->format->Gshift)) / 255.f,
-		((Uint8)(outer_color >> mainsurface->format->Bshift)) / 255.f,
-		((Uint8)(outer_color >> mainsurface->format->Ashift)) / 255.f
-	);
+	getColor(outer_color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	for (real_t c = angle2; c >= angle1; c -= (real_t)1)
 	{
 		real_t degInRad = c * (real_t)PI / (real_t)180;
@@ -309,7 +300,9 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 	glLineWidth(2);
 
 	// draw line
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINE_STRIP);
@@ -351,7 +344,9 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 	glLineWidth(2);
 
 	// draw line
-	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINES);
@@ -383,8 +378,7 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
 		secondsrc.h = yres;
 		src = &secondsrc;
 	}
-	auto format = mainsurface->format;
-	Uint32 c = (color & (format->Rmask | format->Gmask | format->Bmask)) | (alpha << format->Ashift);
+	Uint32 c = (color & 0x00ffffff) | ((Uint32)alpha << 24);
 	auto image = Image::get("images/system/white.png");
 	image->drawColor(nullptr, *src, SDL_Rect{0, 0, xres, yres}, c);
 	return 0;
@@ -542,12 +536,10 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	}
 
 	// draw a textured quad
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a/ 255.f);
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
 	glPushMatrix();
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
@@ -909,13 +901,13 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	glEnable(GL_DEPTH_TEST);
 
 	// debug corners
-	//Uint32 color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+	//Uint32 color = makeColorRGB(64, 255, 64); // green
 	//drawCircle(pos->x, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-	//color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+	//color = makeColorRGB(204, 121, 167); // pink
 	//drawCircle(pos->x, pos->y + pos->h, 5, color, 255);
-	//color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+	//color = makeColorRGB(86, 180, 233); // sky blue
 	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
-	//color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+	//color = makeColorRGB(240, 228, 66); // yellow
 	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
 }
 
@@ -953,11 +945,9 @@ void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint
 
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	glPushMatrix();
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.f, 0.f);
@@ -1049,11 +1039,9 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
-	glColor4f(r, g, b, a);
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 	glPushMatrix();
 	glBegin(GL_QUADS);
 	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
@@ -1696,12 +1684,12 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					drawRect(&box, makeColorRGB(255, 0, 0), 255);
 					box.w = TEXTURESIZE - 2;
 					box.h = TEXTURESIZE - 2;
 					box.x = pos.x + 1;
 					box.y = pos.y + 1;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+					drawRect(&box, makeColorRGB(0, 0, 255), 255);
 				}
 				
 				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
@@ -1747,12 +1735,12 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					drawRect(&box, makeColorRGB(255, 0, 0), 255);
 					box.w = TEXTURESIZE - 2;
 					box.h = TEXTURESIZE - 2;
 					box.x = pos.x + 1;
 					box.y = pos.y + 1;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+					drawRect(&box, makeColorRGB(0, 0, 255), 255);
 				}
 				drawImageScaled(sprites[0], nullptr, &pos);
 			}
@@ -1766,12 +1754,12 @@ void drawEntities2D(long camx, long camy)
 				box.h = TEXTURESIZE;
 				box.x = pos.x;
 				box.y = pos.y;
-				drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+				drawRect(&box, makeColorRGB(255, 0, 0), 255);
 				box.w = TEXTURESIZE - 2;
 				box.h = TEXTURESIZE - 2;
 				box.x = pos.x + 1;
 				box.y = pos.y + 1;
-				drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+				drawRect(&box, makeColorRGB(0, 0, 255), 255);
 			}
 			drawImageScaled(sprites[0], nullptr, &pos);
 		}
@@ -1810,8 +1798,8 @@ void drawEntities2D(long camx, long camy)
 					char tmpStr2[1024] = "";
 					int padx = pos.x + 10;
 					int pady = pos.y - 40;
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-					Uint32 colorWhite = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					Uint32 color = makeColorRGB(255, 255, 255);
+					Uint32 colorWhite = makeColorRGB(255, 255, 255);
 					switch ( spriteType )
 					{
 						case 1: //monsters
@@ -1894,7 +1882,7 @@ void drawEntities2D(long camx, long camy)
 							pady += 5;
 							strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
 							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
-							color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							color = makeColorRGB(255, 255, 255);
 							pady += 2;
 
 							strcpy(tmpStr, "Status: ");
@@ -1903,27 +1891,27 @@ void drawEntities2D(long camx, long camy)
 							{
 								case 1:
 									strcpy(tmpStr, "Broken");
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									color = makeColorRGB(255, 0, 0);
 									break;
 								case 2:
 									strcpy(tmpStr, "Decrepit");
-									color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+									color = makeColorRGB(200, 128, 0);
 									break;
 								case 3:
 									strcpy(tmpStr, "Worn");
-									color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+									color = makeColorRGB(255, 255, 0);
 									break;
 								case 4:
 									strcpy(tmpStr, "Servicable");
-									color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+									color = makeColorRGB(128, 200, 0);
 									break;
 								case 5:
 									strcpy(tmpStr, "Excellent");
-									color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									color = makeColorRGB(0, 255, 0);
 									break;
 								default:
 									strcpy(tmpStr, "?");
-									color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+									color = makeColorRGB(0, 168, 255);
 									break;
 							}
 							ttfPrintTextColor(ttf8, padx + 56, pady - 10, color, 1, tmpStr);
@@ -1933,22 +1921,22 @@ void drawEntities2D(long camx, long camy)
 							if ( selectedEntity[0]->skill[12] < 0 )
 							{
 								snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[12]);
-								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								color = makeColorRGB(255, 0, 0);
 							}
 							else if ( selectedEntity[0]->skill[12] == 0 )
 							{
 								snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[12]);
-								color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+								color = makeColorRGB(255, 255, 255);
 							}
 							else if ( selectedEntity[0]->skill[12] == 10 )
 							{
 								strcpy(tmpStr2, "?");
-								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+								color = makeColorRGB(0, 168, 255);
 							}
 							else
 							{
 								snprintf(tmpStr2, 10, "+%d", selectedEntity[0]->skill[12]);
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								color = makeColorRGB(0, 255, 0);
 							}
 							ttfPrintTextColor(ttf8, padx + 48, pady, color, 1, tmpStr2);
 
@@ -1963,17 +1951,17 @@ void drawEntities2D(long camx, long camy)
 							if ( (int)selectedEntity[0]->skill[15] == 0 )
 							{
 								strcpy(tmpStr2, "No");
-								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+								color = makeColorRGB(255, 255, 0);
 							}
 							else if ( (int)selectedEntity[0]->skill[15] == 1 )
 							{
 								strcpy(tmpStr2, "Yes");
-								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								color = makeColorRGB(0, 255, 0);
 							}
 							else
 							{
 								strcpy(tmpStr2, "?");
-								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+								color = makeColorRGB(0, 168, 255);
 							}
 							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 1, tmpStr2);
 							break;
@@ -2256,7 +2244,7 @@ void drawGrid(long camx, long camy)
 	long x, y;
 	Uint32 color;
 
-	color = SDL_MapRGB(mainsurface->format, 127, 127, 127);
+	color = makeColorRGB(127, 127, 127);
 	drawLine(-camx, (map.height << TEXTUREPOWER) - camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	drawLine((map.width << TEXTUREPOWER) - camx, -camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	for ( y = 0; y < map.height; y++ )
@@ -2286,7 +2274,7 @@ void drawEditormap(long camx, long camy)
 	src.y = 24;
 	src.w = 112;
 	src.h = 112;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255);
+	drawRect(&src, makeColorRGB(0, 0, 0), 255);
 
 	// initial box dimensions
 	src.x = (xres - 120) + (((real_t)camx / TEXTURESIZE) * 112.0) / map.width;
@@ -2324,8 +2312,8 @@ void drawEditormap(long camx, long camy)
 	osrc.y = src.y + 1;
 	osrc.w = src.w - 2;
 	osrc.h = src.h - 2;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 255, 255, 255), 255);
-	drawRect(&osrc, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255);
+	drawRect(&src, makeColorRGB(255, 255, 255), 255);
+	drawRect(&osrc, makeColorRGB(0, 0, 0), 255);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2345,17 +2333,17 @@ void drawWindow(int x1, int y1, int x2, int y2)
 	src.y = y1;
 	src.w = x2 - x1;
 	src.h = y2 - y1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 160, 160, 192), 255);
+	drawRect(&src, makeColorRGB(160, 160, 192), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 1;
 	src.h = y2 - y1 - 1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 96, 96, 128), 255);
+	drawRect(&src, makeColorRGB(96, 96, 128), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 2;
 	src.h = y2 - y1 - 2;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 128, 128, 160), 255);
+	drawRect(&src, makeColorRGB(128, 128, 160), 255);
 }
 
 void drawDepressed(int x1, int y1, int x2, int y2)
@@ -2366,17 +2354,17 @@ void drawDepressed(int x1, int y1, int x2, int y2)
 	src.y = y1;
 	src.w = x2 - x1;
 	src.h = y2 - y1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 96, 96, 128), 255);
+	drawRect(&src, makeColorRGB(96, 96, 128), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 1;
 	src.h = y2 - y1 - 1;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 160, 160, 192), 255);
+	drawRect(&src, makeColorRGB(160, 160, 192), 255);
 	src.x = x1 + 1;
 	src.y = y1 + 1;
 	src.w = x2 - x1 - 2;
 	src.h = y2 - y1 - 2;
-	drawRect(&src, SDL_MapRGB(mainsurface->format, 128, 128, 160), 255);
+	drawRect(&src, makeColorRGB(128, 128, 160), 255);
 }
 
 void drawWindowFancy(int x1, int y1, int x2, int y2)
@@ -2523,22 +2511,20 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 			getSizeOfText(font, newStr, &w, &h);
 			if ( font == ttf8 )
 			{
-				surf = SDL_CreateRGBSurface(0, w + 2, h + 2,
-				                            mainsurface->format->BitsPerPixel,
-				                            mainsurface->format->Rmask,
-				                            mainsurface->format->Gmask,
-				                            mainsurface->format->Bmask,
-				                            mainsurface->format->Amask
+				surf = SDL_CreateRGBSurface(0, w + 2, h + 2, 32,
+				                            0x000000ff,
+				                            0x0000ff00,
+				                            0x00ff0000,
+				                            0xff000000
 				                           );
 			}
 			else
 			{
-				surf = SDL_CreateRGBSurface(0, w + 4, h + 4,
-				                            mainsurface->format->BitsPerPixel,
-				                            mainsurface->format->Rmask,
-				                            mainsurface->format->Gmask,
-				                            mainsurface->format->Bmask,
-				                            mainsurface->format->Amask
+				surf = SDL_CreateRGBSurface(0, w + 4, h + 4, 32,
+				                            0x000000ff,
+				                            0x0000ff00,
+				                            0x00ff0000,
+				                            0xff000000
 				                           );
 			}
 		}
@@ -2921,7 +2907,7 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 {
-	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255);
+	Uint32 color = makeColorRGB(0, 192, 255);
 	if ( optionalColor == 0 )
 	{
 		drawRect(src, 0, 250);
@@ -2936,8 +2922,11 @@ void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, 255);
 }
 
-Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-	return SDL_MapRGBA(mainsurface->format, r, g, b, a);
+void getColor(Uint32 color, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a) {
+	*r = (color & 0x000000ff) >> 0;
+	*g = (color & 0x0000ff00) >> 8;
+	*b = (color & 0x00ff0000) >> 16;
+	*a = (color & 0xff000000) >> 24;
 }
 
 bool behindCamera(const view_t& camera, real_t x, real_t y)
@@ -3077,25 +3066,59 @@ void occlusionCulling(map_t& map, const view_t& camera)
     }
 
 	// expand vismap one tile in each direction
+	const int w = map.width;
+	const int w1 = map.width - 1;
+	const int h = map.height;
+	const int h1 = map.height - 1;
 	bool* vmap = (bool*)malloc(sizeof(bool) * size);
-    for ( int u = 0; u < map.width; u++ ) {
-        for ( int v = 0; v < map.height; v++ ) {
-            const int index = v + u * map.height;
+    for ( int u = 0; u < w; u++ ) {
+        for ( int v = 0; v < h; v++ ) {
+            const int index = v + u * h;
 	        vmap[index] = map.vismap[index];
 		    if (!vmap[index]) {
-		        if (v > 0 && map.vismap[index - 1]) {
+#ifndef EDITOR
+                static ConsoleVariable<bool> diagonalCulling("/diagonalculling", true);
+#else
+                static bool culling = true;
+                auto* diagonalCulling = &culling;
+#endif
+		        if (v >= 1) {
+		            if (map.vismap[index - 1]) {
+		                vmap[index] = true;
+		                continue;
+		            }
+		            if (*diagonalCulling) {
+		                if (u >= 1 && map.vismap[index - h - 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
+		                if (u < w1 && map.vismap[index + h - 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
+		            }
+		        }
+		        if (v < h1) {
+		            if (map.vismap[index + 1]) {
+		                vmap[index] = true;
+		                continue;
+		            }
+		            if (*diagonalCulling) {
+		                if (u >= 1 && map.vismap[index - h + 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
+		                if (u < w1 && map.vismap[index + h + 1]) {
+		                    vmap[index] = true;
+		                    continue;
+		                }
+		            }
+		        }
+		        if (u >= 1 && map.vismap[index - h]) {
 		            vmap[index] = true;
 		            continue;
 		        }
-		        if (v < map.height - 1 && map.vismap[index + 1]) {
-		            vmap[index] = true;
-		            continue;
-		        }
-		        if (u > 0 && map.vismap[index - map.height]) {
-		            vmap[index] = true;
-		            continue;
-		        }
-		        if (u < map.width - 1 && map.vismap[index + map.height]) {
+		        if (u < w1 && map.vismap[index + h]) {
 		            vmap[index] = true;
 		            continue;
 		        }
