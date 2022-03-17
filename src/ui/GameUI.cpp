@@ -1695,7 +1695,7 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 				{
 					if ( d["colors"].HasMember("notification_text") )
 					{
-						StatusEffectDefinitions_t::notificationTextColor = SDL_MapRGBA(mainsurface->format,
+						StatusEffectDefinitions_t::notificationTextColor = makeColor(
 							d["colors"]["notification_text"]["r"].GetInt(),
 							d["colors"]["notification_text"]["g"].GetInt(),
 							d["colors"]["notification_text"]["b"].GetInt(),
@@ -1703,7 +1703,7 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 					}
 					if ( d["colors"].HasMember("tooltip_desc_text") )
 					{
-						StatusEffectDefinitions_t::tooltipDescColor = SDL_MapRGBA(mainsurface->format,
+						StatusEffectDefinitions_t::tooltipDescColor = makeColor(
 							d["colors"]["tooltip_desc_text"]["r"].GetInt(),
 							d["colors"]["tooltip_desc_text"]["g"].GetInt(),
 							d["colors"]["tooltip_desc_text"]["b"].GetInt(),
@@ -1711,7 +1711,7 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 					}
 					if ( d["colors"].HasMember("tooltip_heading_text") )
 					{
-						StatusEffectDefinitions_t::tooltipHeadingColor = SDL_MapRGBA(mainsurface->format,
+						StatusEffectDefinitions_t::tooltipHeadingColor = makeColor(
 							d["colors"]["tooltip_heading_text"]["r"].GetInt(),
 							d["colors"]["tooltip_heading_text"]["g"].GetInt(),
 							d["colors"]["tooltip_heading_text"]["b"].GetInt(),
