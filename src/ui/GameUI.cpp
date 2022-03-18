@@ -4520,6 +4520,7 @@ void Player::MessageZone_t::createChatbox()
 			entry->setFont(bigfont);
 			entry->setSize(entryPos);
 			entry->setDisabled(true);
+			entry->setVJustify(Field::justify_t::TOP);
 		}
 	}
 }
@@ -4577,6 +4578,8 @@ void Player::MessageZone_t::processChatbox()
 	SDL_Rect messageBoxSize = useLeftAligned ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
 
+	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
+
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
 	{
 	    char msgName[32];
@@ -4584,6 +4587,17 @@ void Player::MessageZone_t::processChatbox()
 		if ( auto entry = messageBoxFrame->findField(msgName) )
 		{
 			entry->setDisabled(true);
+
+			// set alignment
+			if (*alignment == "left") {
+				entry->setHJustify(Field::justify_t::LEFT);
+			} else if (*alignment == "center") {
+				entry->setHJustify(Field::justify_t::CENTER);
+			} else if (*alignment == "right") {
+			    entry->setHJustify(Field::justify_t::RIGHT);
+			} else {
+				entry->setHJustify(Field::justify_t::LEFT);
+			}
 		}
 	}
 
@@ -4633,7 +4647,7 @@ void Player::MessageZone_t::processChatbox()
 			SDL_Rect pos = entry->getSize();
 			pos.x = 0;
 			pos.y = currentY;
-			pos.w = w;
+			pos.w = messageBoxFrame->getSize().w;
 			pos.h = h;
 			entry->setSize(pos);
 

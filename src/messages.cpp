@@ -34,8 +34,9 @@ void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
     }
 
 	//Find out how many lines we need.
+	size_t content_len = 0;
 	int lines_needed = 1;
-	for (int c = 0; content[c] != '\0'; ++c) {
+	for (int c = 0; content[c] != '\0'; ++c, ++content_len) {
 		if (content[c] == '\n') {
 			++lines_needed;
 		}
@@ -48,31 +49,30 @@ void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
 		line_count += m->text->lines;
 	}
 
-	if (getMaxTotalLines() > 0)
-	{
-		for (auto last_message = notification_messages.rbegin();
-		    last_message != notification_messages.rend(); last_message++) {
-			if ( line_count < (getMaxTotalLines() - lines_needed) )
-			{
-				break;
-			}
-			line_count -= (*last_message)->text->lines;
-
-			// make sure to call destructor when popping back.
-			Message *msg = notification_messages.back();
-			messageDeconstructor(msg);
-			notification_messages.pop_back();
-
-			if ( last_message != notification_messages.rend() )
-			{
-				last_message++;
-			}
+    //Clear space in the message log
+    int total_lines = line_count + lines_needed;
+	while (!notification_messages.empty() && total_lines > getMaxTotalLines()) {
+		Message *msg = notification_messages.back();
+		if (msg->text->lines > 1 && total_lines - msg->text->lines < getMaxTotalLines()) {
+		    int lines_to_delete = total_lines - getMaxTotalLines();
+		    int lines = 1;
+		    for (int c = 0; msg->text->data[c] != '\0'; ++c) {
+		        if (msg->text->data[c] == '\n') {
+		            if (lines == lines_to_delete) {
+		                size_t len = strlen(msg->text->data);
+		                memmove(msg->text->data, msg->text->data + c, len - c);
+		                msg->text->data[c] = '\0';
+		                msg->text->lines -= lines_to_delete;
+		                total_lines -= lines_to_delete;
+		            }
+		            ++lines;
+		        }
+		    }
+		} else {
+		    total_lines -= msg->text->lines;
+		    messageDeconstructor(msg);
+		    notification_messages.pop_back();
 		}
-	}
-	else
-	{
-		printlog( "Error, MESSAGE_MAX_TOTAL_LINES is too small (must be 1 or greater!)\n"); //Something done broke.
-		exit(1);
 	}
 
 	//Allocate the new message.
@@ -97,7 +97,7 @@ void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
 
 		int additionalCharacters = 0;
 		strncpy(str, messageSanitizePercentSign(content, &additionalCharacters).c_str(), sizeof(str) - 1);
-		int i = strlen(content) + additionalCharacters;
+		int i = content_len + additionalCharacters;
 
 		new_message->text->data = (char*) malloc(sizeof(char) * (i + 1));
 		if (new_message->text->data == NULL)
@@ -108,29 +108,6 @@ void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
 		memset(new_message->text->data, 0, sizeof(char) * (i + 1));
 		new_message->text->lines = lines_needed;
 		strncpy(new_message->text->data, str, i);
-
-	    //Make sure we don't exceed the maximum number of lines permissible.
-		//Remove lines until we have an okay amount.
-		while (line_count + new_message->text->lines > getMaxTotalLines() )
-		{
-			for (int c = 0; c < i; ++c)
-			{
-				if (str[c] == '\n')   //Line feed
-				{
-					new_message->text->lines--; //First let it know it's now one less line.
-					char* temp = new_message->text->data; //Point to the message's text so we don't lose it.
-					new_message->text->data = (char*) malloc(sizeof(char) * ((i + 1) - c));  //Give the message itself new text.
-					if (new_message->text->data == NULL)   //Error checking.
-					{
-						printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
-						exit(1);
-					}
-					memmove(new_message->text->data, temp + (c - 1), strlen(temp)); //Now copy the text into the message's new allocated memory, sans the first line.
-					free(temp); //Free the old memory so we don't memleak.
-					break;
-				}
-			}
-		}
 	}
 	new_message->time_displayed = 0; //Currently been displayed for 0 seconds.
 	new_message->alpha = SDL_ALPHA_OPAQUE; //Set the initial alpha.
@@ -161,7 +138,8 @@ int Player::MessageZone_t::getMessageZoneStartY()
 }
 int Player::MessageZone_t::getMaxTotalLines()
 {
-	return ((players[player.playernum]->camera_y2() - (status_bmp->h * uiscale_chatlog)) / fontSize());
+	//return ((players[player.playernum]->camera_y2() - (status_bmp->h * uiscale_chatlog)) / fontSize());
+	return 7;
 }
 
 void Player::MessageZone_t::updateMessages()
