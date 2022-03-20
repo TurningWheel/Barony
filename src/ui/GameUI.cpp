@@ -1519,6 +1519,7 @@ bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 	if ( (effectID >= 0 && effectID < NUMEFFECTS) 
 		|| effectID == kEffectBread 
 		|| effectID == kEffectBloodHunger
+		|| effectID == kEffectAutomatonHunger
 		|| effectID >= kSpellEffectOffset )
 	{
 		if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
@@ -1636,11 +1637,13 @@ void StatusEffectQueueEntry_t::setAnimatePosition(int destx, int desty)
 	animateH = 0.0;
 }
 
+const real_t kStatusEffectQueueAnimSpeedMult = 4.0;
+
 void StatusEffectQueueEntry_t::animate()
 {
 	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0 / 4.0);
-	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0 / 4.0);
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0 / kStatusEffectQueueAnimSpeedMult);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0 / kStatusEffectQueueAnimSpeedMult);
 	animateX += setpointDiffX;
 	animateY += setpointDiffY;
 	animateX = std::min(1.0, animateX);
@@ -1952,7 +1955,8 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 	{
 		return 64;
 	}
-	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger )
+	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
 	}
@@ -1964,7 +1968,8 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 	{
 		return 60;
 	}
-	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger )
+	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
 	}
@@ -1983,7 +1988,9 @@ int getStatusEffectMovementAmount(int player)
 
 real_t StatusEffectQueueEntry_t::getStatusEffectLargestScaling(int player)
 {
-	if ( effect == StatusEffectQueue_t::kEffectBread || effect == StatusEffectQueue_t::kEffectBloodHunger )
+	if ( effect == StatusEffectQueue_t::kEffectBread 
+		|| effect == StatusEffectQueue_t::kEffectBloodHunger 
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 2.0;
 	}
@@ -1992,7 +1999,9 @@ real_t StatusEffectQueueEntry_t::getStatusEffectLargestScaling(int player)
 
 real_t StatusEffectQueueEntry_t::getStatusEffectMidScaling(int player)
 {
-	if ( effect == StatusEffectQueue_t::kEffectBread || effect == StatusEffectQueue_t::kEffectBloodHunger )
+	if ( effect == StatusEffectQueue_t::kEffectBread 
+		|| effect == StatusEffectQueue_t::kEffectBloodHunger
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 1.5;
 	}
@@ -2002,7 +2011,7 @@ real_t StatusEffectQueueEntry_t::getStatusEffectMidScaling(int player)
 void StatusEffectQueueEntry_t::animateNotification(int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
-	real_t animspeed = 5.0 / 4;
+	real_t animspeed = 5.0 / kStatusEffectQueueAnimSpeedMult;
 	const int movementAmount = getStatusEffectMovementAmount(player);
 	switch ( notificationState )
 	{
@@ -2124,9 +2133,19 @@ void createStatusEffectQueue(const int player)
 	statusEffectQueue.statusEffectFrame->setOwner(player);
 	statusEffectQueue.statusEffectFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
-	auto notif = statusEffectQueue.statusEffectFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "notification img");
+	auto automatonHungerFrame = statusEffectQueue.statusEffectFrame->addFrame("automaton hunger notification");
+	automatonHungerFrame->setHollow(true);
+	automatonHungerFrame->setDisabled(true);
+	automatonHungerFrame->setSize(SDL_Rect{ 0, 0, 64, 64 });
+	auto automaton_flame_img = automatonHungerFrame->addImage(SDL_Rect{ 0, 0, 64, 64 }, 0xFFFFFFFF, "images/system/Hunger_boiler_fire.png", "flame");
+
+	auto notif_frame = statusEffectQueue.statusEffectFrame->addFrame("notification frame");
+	notif_frame->setHollow(true);
+	notif_frame->setDisabled(true);
+	notif_frame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	auto notif = notif_frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "notification img");
 	notif->disabled = true;
-	auto notif_txt = statusEffectQueue.statusEffectFrame->addField("notification txt", 128);
+	auto notif_txt = notif_frame->addField("notification txt", 128);
 	//notif_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
 	notif_txt->setFont("fonts/pixelmix.ttf#16#2");
 	notif_txt->setText("");
@@ -2418,11 +2437,48 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						variation = 1;
 					}
 				}
-				std::string newHeader = definition.getName(variation).c_str();
-				uppercaseString(newHeader);
-				tooltipHeader->setText(newHeader.c_str());
-				tooltipDesc->setText(definition.getDesc(variation).c_str());
-				tooltipInnerWidth = definition.tooltipWidth;
+				else if ( effectID == StatusEffectQueue_t::kEffectAutomatonHunger )
+				{
+					int nameVariation = 1;
+					int descVariation = 1;
+					if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED) )
+					{
+						nameVariation = 3;
+						descVariation = 0;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+					{
+						nameVariation = 5;
+						if ( svFlags & SV_FLAG_HUNGER )
+						{
+							descVariation = 2;
+						}
+						else
+						{
+							descVariation = 3;
+						}
+					}
+					else
+					{
+						nameVariation = 4;
+						descVariation = 1;
+					}
+
+					std::string newHeader = definition.getName(nameVariation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(descVariation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+
+				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger )
+				{
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(variation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 			}
 		}
 	}
@@ -2516,7 +2572,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	{
 		if ( eff >= kSpellEffectOffset && (eff - kSpellEffectOffset) == SPELL_SHADOW_TAG )
 		{
-			if ( players[player] && players[player]->entity 
+			if ( players[player] && players[player]->entity
 				&& players[player]->entity->creatureShadowTaggedThisUid != 0
 				&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
 			{
@@ -2578,7 +2634,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() || effectSet.find(kEffectBloodHunger) != effectSet.end());
+	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() 
+		|| effectSet.find(kEffectBloodHunger) != effectSet.end()
+		|| effectSet.find(kEffectAutomatonHunger) != effectSet.end());
+
+	auto automatonHungerFrame = statusEffectFrame->findFrame("automaton hunger notification");
+	automatonHungerFrame->setDisabled(true);
+	auto automatonFlameImg = automatonHungerFrame->findImage("flame");
 
 	int iconSize = 32;
 	int movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
@@ -2586,9 +2648,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	const int spacing = 36;
 	int numEffectsOnLine = 0;
 
-	auto notificationImg = statusEffectFrame->findImage("notification img");
+	auto notificationFrame = statusEffectFrame->findFrame("notification frame");
+	notificationFrame->setDisabled(true);
+	auto notificationImg = notificationFrame->findImage("notification img");
 	notificationImg->disabled = true;
-	auto notificationTxt = statusEffectFrame->findField("notification txt");
+	auto notificationTxt = notificationFrame->findField("notification txt");
 	notificationTxt->setDisabled(true);
 	notificationTxt->setFont(StatusEffectDefinitions_t::notificationFont.c_str());
 	notificationTxt->setColor(StatusEffectDefinitions_t::notificationTextColor);
@@ -2702,6 +2766,21 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 								variation = 1;
 							}
 						}
+						else if ( effectID == StatusEffectQueue_t::kEffectAutomatonHunger )
+						{
+							if ( notif.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED) )
+							{
+								variation = 0;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+							{
+								variation = 2;
+							}
+							else
+							{
+								variation = 1;
+							}
+						}
 						else if ( effectID == EFF_VAMPIRICAURA )
 						{
 							bool sustained = false;
@@ -2745,7 +2824,20 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			notificationQueue.pop_front();
 		}
+
+		if ( notif.effect == kEffectAutomatonHunger )
+		{
+			automatonHungerFrame->setDisabled(false);
+			automatonHungerFrame->setSize(notificationImg->pos);
+		}
 	}
+
+	if ( !notificationImg->disabled || !notificationTxt->isDisabled() )
+	{
+		notificationFrame->setDisabled(false);
+		notificationFrame->setSize(SDL_Rect{ 0, 0, statusEffectFrame->getSize().w, statusEffectFrame->getSize().h });
+	}
+
 
 	auto innerFrame = statusEffectFrame->findFrame("effects");
 	int numFrameImages = innerFrame->getImages().size();
@@ -2802,6 +2894,12 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			updateEntryImage(q, frameImg);
 
+			if ( q.effect == kEffectAutomatonHunger )
+			{
+				automatonHungerFrame->setDisabled(false);
+				automatonHungerFrame->setSize(frameImg->pos);
+			}
+
 			if ( bFrameCapturesMouse && !tooltipShowing )
 			{
 				SDL_Rect size = statusEffectFrame->getAbsoluteSize();
@@ -2830,6 +2928,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			animatePosX = 0;
 			animatePosY = statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
 		}
+		else if ( q.effect == kEffectAutomatonHunger )
+		{
+			animatePosX = 0;
+			animatePosY = 4 + statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
+		}
 
 		// low duration flash
 		bool effectIsSustained = false;
@@ -2856,14 +2959,29 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				frameImg->disabled = true;
 			}
 		}
-		else if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger )
+		else if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger || q.effect == kEffectAutomatonHunger )
 		{
-			if ( q.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+			if ( q.effect == kEffectAutomatonHunger )
 			{
-				q.lowDuration = true;
-				if ( lowDurationFlash )
+				if ( q.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
 				{
-					frameImg->disabled = true;
+					q.lowDuration = true;
+					if ( lowDurationFlash )
+					{
+						frameImg->disabled = true;
+						automatonHungerFrame->setDisabled(true);
+					}
+				}
+			}
+			else
+			{
+				if ( q.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+				{
+					q.lowDuration = true;
+					if ( lowDurationFlash )
+					{
+						frameImg->disabled = true;
+					}
 				}
 			}
 		}
@@ -2889,7 +3007,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 
 		q.animate();
-		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger )
+		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger || q.effect == kEffectAutomatonHunger )
 		{
 			continue; // don't advance position as this is fixed
 		}
@@ -2900,6 +3018,45 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			numEffectsOnLine = 0;
 			movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
 			movey -= spacing;
+		}
+	}
+
+	if ( stats[player] && stats[player]->type == AUTOMATON && !automatonHungerFrame->isDisabled() )
+	{
+		SDL_Rect automatonHungerFramePos = automatonHungerFrame->getSize();
+		SDL_Rect boilerFlamePos = automatonHungerFramePos;
+		boilerFlamePos.x = 0;
+		boilerFlamePos.y = 0;
+		if ( stats[player]->HUNGER > 300 )
+		{
+			if ( stats[player]->HUNGER > 1200 )
+			{
+				automatonFlameImg->path = "images/system/Hunger_boiler_hotfire.png";
+				automatonFlameImg->pos = boilerFlamePos;
+			}
+			else
+			{
+				automatonFlameImg->path = "images/system/Hunger_boiler_fire.png";
+				if ( stats[player]->HUNGER > 600 )
+				{
+					automatonFlameImg->pos = boilerFlamePos;
+				}
+				else
+				{
+					float percent = (stats[player]->HUNGER - 200) / 400.f; // always show a little bit more at the bottom (10-20%)
+					automatonFlameImg->pos = boilerFlamePos;
+					int newHeight = boilerFlamePos.h * percent;
+					int heightDiff = boilerFlamePos.h - newHeight;
+					automatonFlameImg->pos.y -= heightDiff;
+					automatonHungerFramePos.y += heightDiff;
+					automatonHungerFramePos.h -= heightDiff;
+					automatonHungerFrame->setSize(automatonHungerFramePos);
+				}
+			}
+		}
+		else
+		{
+			automatonHungerFrame->setDisabled(true);
 		}
 	}
 
@@ -2951,6 +3108,19 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 					img->path = "";
 				}
 			}
+		}
+		else if ( entry.effect == kEffectAutomatonHunger )
+		{
+			int variation = 1;
+			if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED) )
+			{
+				variation = 0;
+			}
+			else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+			{
+				variation = 2;
+			}
+			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
 		}
 		else
 		{
@@ -3025,14 +3195,21 @@ void updateStatusEffectQueue(const int player)
 	auto innerFrame = statusEffectQueue.statusEffectFrame->findFrame("effects");
 	innerFrame->setSize(SDL_Rect{ 0, 0, statusEffectQueue.statusEffectFrame->getSize().w, statusEffectQueue.statusEffectFrame->getSize().h });
 
-	const int hungerEffectID = playerRequiresBloodToSustain(player) ? StatusEffectQueue_t::kEffectBloodHunger : StatusEffectQueue_t::kEffectBread;
+	const int hungerEffectID = ((stats[player] && stats[player]->type == AUTOMATON) ? StatusEffectQueue_t::kEffectAutomatonHunger
+		: (playerRequiresBloodToSustain(player) ? StatusEffectQueue_t::kEffectBloodHunger : StatusEffectQueue_t::kEffectBread));
 
 	// hunger icon
+	if ( stats[player] && stats[player]->type != AUTOMATON )
+	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
+	}
+
 	if ( stats[player] && stats[player]->type != AUTOMATON
 		&& (svFlags & SV_FLAG_HUNGER) 
 		&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) 
 			|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)) )
 	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
 		if ( hungerEffectID == StatusEffectQueue_t::kEffectBloodHunger )
 		{
 			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread); // delete opposite if present
@@ -3142,6 +3319,94 @@ void updateStatusEffectQueue(const int player)
 	{
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
+
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectAutomatonHunger )
+		{
+			const int HUNGER_NONE = 1000;
+			const int HUNGER_SUPERHEATED = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED);
+			const int HUNGER_CRITICAL = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL);
+			int hungerStateToSet = HUNGER_NONE;
+			if ( stats[player]->HUNGER >= HUNGER_SUPERHEATED )
+			{
+				hungerStateToSet = HUNGER_SUPERHEATED;
+			}
+			else if ( stats[player]->HUNGER <= HUNGER_CRITICAL )
+			{
+				hungerStateToSet = HUNGER_CRITICAL;
+			}
+			StatusEffectQueueEntry_t* entry = nullptr;
+			StatusEffectQueueEntry_t* notif = nullptr;
+
+			for ( auto& q : statusEffectQueue.effectQueue )
+			{
+				if ( q.effect == hungerEffectID )
+				{
+					entry = &(q);
+					for ( auto& n : statusEffectQueue.notificationQueue )
+					{
+						if ( n.effect == hungerEffectID )
+						{
+							notif = &(n);
+						}
+						break;
+					}
+					break;
+				}
+			}
+			if ( entry && entry->customVariable != hungerStateToSet )
+			{
+				if ( notif && notif->customVariable != hungerStateToSet )
+				{
+					// reset the notification
+					bool erased = false;
+					for ( auto it = statusEffectQueue.notificationQueue.begin(); it != statusEffectQueue.notificationQueue.end(); ++it )
+					{
+						if ( (*it).effect == hungerEffectID )
+						{
+							statusEffectQueue.notificationQueue.erase(it);
+							erased = true;
+							break;
+						}
+					}
+					statusEffectQueue.notificationQueue.push_back(StatusEffectQueueEntry_t(hungerEffectID));
+					statusEffectQueue.notificationQueue.back().pos.x = statusEffectQueue.getBaseEffectPosX();
+					statusEffectQueue.notificationQueue.back().pos.y = statusEffectQueue.getBaseEffectPosY();
+
+					// fall back if notificationTargetPosition doesn't have an effect to go to.
+					statusEffectQueue.notificationQueue.back().notificationTargetPosition.x = 0;
+					statusEffectQueue.notificationQueue.back().notificationTargetPosition.y = statusEffectQueue.statusEffectFrame->getSize().h
+						- statusEffectQueue.notificationQueue.back().notificationTargetPosition.h;
+					statusEffectQueue.requiresAnimUpdate = true;
+					entry->customVariable = hungerStateToSet;
+					statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+				}
+				else
+				{
+					// else, delete and reapply
+					statusEffectQueue.deleteEffect(hungerEffectID);
+					if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
+					{
+						if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+						{
+							statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+							statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+						}
+					}
+				}
+			}
+			else
+			{
+				// new effect, does not exist
+				if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
+				{
+					if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+					{
+						statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+						statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+					}
+				}
+			}
+		}
 	}
 
 	statusEffectQueue.updateAllQueuedEffects();

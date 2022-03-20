@@ -104,6 +104,7 @@ struct StatusEffectQueue_t
 	int getBaseEffectPosY();
 	static const int kEffectBread = -2;
 	static const int kEffectBloodHunger = -3;
+	static const int kEffectAutomatonHunger = -4;
 	static const int kSpellEffectOffset = 10000;
 	real_t tooltipOpacitySetpoint = 100;
 	real_t tooltipOpacityAnimate = 1.0;

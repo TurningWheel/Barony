@@ -5233,6 +5233,10 @@ int main(int argc, char** argv)
 				if ( nohud || intro || !players[i]->isLocalPlayer() )
 				{
 					gameUIFrame[i]->setDisabled(true);
+					if ( intro || !players[i]->isLocalPlayer() )
+					{
+						StatusEffectQueue[i].resetQueue();
+					}
 				}
 				else
 				{

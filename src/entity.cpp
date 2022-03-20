@@ -4880,15 +4880,23 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( entitystats->HUNGER >= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_OVERSATIATED) )
+		if ( entitystats->type != AUTOMATON )
 		{
-			STR--;
+			if ( entitystats->HUNGER >= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_OVERSATIATED) )
+			{
+				STR--;
+			}
+			if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_WEAK) )
+			{
+				STR--;
+			}
+			if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
+			{
+				STR--;
+			}
 		}
-		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_WEAK) )
-		{
-			STR--;
-		}
-		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
+		else if ( entitystats->type == AUTOMATON
+			&& entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
 		{
 			STR--;
 		}
@@ -5456,7 +5464,15 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
+		if ( entitystats->type != AUTOMATON )
+		{
+			if ( entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_STARVING) )
+			{
+				PER--;
+			}
+		}
+		else if ( entitystats->type == AUTOMATON
+			&& entitystats->HUNGER <= getEntityHungerInterval(-1, my, entitystats, HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
 		{
 			PER--;
 		}
@@ -19053,16 +19069,28 @@ bool Entity::bEntityHighlightedForPlayer(const int player) const
 int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerIntervals hungerInterval)
 {
 	bool isInsectoidPlayer = false;
+	bool isAutomatonPlayer = false;
 	if ( player >= 0 )
 	{
-		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		if ( stats[player]->type == AUTOMATON )
+		{
+			isAutomatonPlayer = true;
+		}
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 		{
 			isInsectoidPlayer = true;
 		}
 	}
-	else if ( my && my->behavior == &actPlayer && myStats && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+	else if ( my && my->behavior == &actPlayer && myStats )
 	{
-		isInsectoidPlayer = true;
+		if ( myStats->type == AUTOMATON )
+		{
+			isAutomatonPlayer = true;
+		}
+		else if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+		{
+			isInsectoidPlayer = true;
+		}
 	}
 	else if ( myStats )
 	{
@@ -19070,12 +19098,37 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		{
 			if ( myStats == stats[i] )
 			{
-				if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+				if ( myStats->type == AUTOMATON )
+				{
+					isAutomatonPlayer = true;
+				}
+				else if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 				{
 					isInsectoidPlayer = true;
 				}
 				break;
 			}
+		}
+	}
+
+	if ( isAutomatonPlayer )
+	{
+		switch ( hungerInterval )
+		{
+			case HUNGER_INTERVAL_OVERSATIATED:
+				return 5000; // unreachable
+			case HUNGER_INTERVAL_HUNGRY:
+				return -1; // unreachable
+			case HUNGER_INTERVAL_WEAK:
+				return -1; // unreachable
+			case HUNGER_INTERVAL_STARVING:
+				return -1; // unreachable
+			case HUNGER_INTERVAL_AUTOMATON_CRITICAL:
+				return 300;
+			case HUNGER_INTERVAL_AUTOMATON_SUPERHEATED:
+				return 1200;
+			default:
+				return 1000;
 		}
 	}
 

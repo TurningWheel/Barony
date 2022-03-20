@@ -2350,34 +2350,34 @@ void drawStatusNew(const int player)
 	//	}
 	//}
 
-	if ( stats[player] && stats[player]->type == AUTOMATON )
-	{
-		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
-		{
-			SDL_Rect pos;
-			pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 43; // was pos.x = 128;
-			pos.y = y2 - 160 + 64 + 2 - 82 + 4;
-			pos.w = 64;
-			pos.h = 64;
-			if ( stats[player]->HUNGER > 1200 )
-			{
-				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
-			}
-			else
-			{
-				if ( stats[player]->HUNGER > 600 )
-				{
-					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
-				}
-				else
-				{
-					float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
-					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
-				}
-			}
-			drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
-		}
-	}
+	//if ( stats[player] && stats[player]->type == AUTOMATON )
+	//{
+	//	if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
+	//	{
+	//		SDL_Rect pos;
+	//		pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 43 + 128; // was pos.x = 128;
+	//		pos.y = y2 - 160 + 64 + 2 - 82 + 4;
+	//		pos.w = 64;
+	//		pos.h = 64;
+	//		if ( stats[player]->HUNGER > 1200 )
+	//		{
+	//			drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
+	//		}
+	//		else
+	//		{
+	//			if ( stats[player]->HUNGER > 600 )
+	//			{
+	//				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
+	//			}
+	//			else
+	//			{
+	//				float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
+	//				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
+	//			}
+	//		}
+	//		drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
+	//	}
+	//}
 
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
