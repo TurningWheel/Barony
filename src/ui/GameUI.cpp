@@ -276,10 +276,24 @@ void createHPMPBars(const int player)
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
+		auto currentProgressEndCapFlash = foregroundFrame->addImage(SDL_Rect{
+			currentProgress->pos.x + currentProgress->pos.w - 14, 6, 22, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png", "hp img progress endcap flash");
+		currentProgressEndCapFlash->disabled = true;
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
+
+		auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 25pc");
+		div25Percent->disabled = true;
+		auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 50pc");
+		div50Percent->disabled = true;
+		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 75pc");
+		div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto hptext = foregroundFrame->addField("hp text", 16);
@@ -331,10 +345,24 @@ void createHPMPBars(const int player)
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
+		auto currentProgressEndCapFlash = foregroundFrame->addImage(SDL_Rect{
+			currentProgress->pos.x + currentProgress->pos.w - 14, 6, 22, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png", "mp img progress endcap flash");
+		currentProgressEndCapFlash->disabled = true;
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
+
+		//auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+		//	"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 25pc");
+		//div25Percent->disabled = true;
+		//auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+		//	"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 50pc");
+		//div50Percent->disabled = true;
+		//auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+		//	"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
+		//div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto mptext = foregroundFrame->addField("mp text", 16);
@@ -15852,6 +15880,8 @@ void Player::HUD_t::resetBars()
 		HPBar.animateValue2 = HPBar.animateSetpoint;
 		HPBar.animatePreviousSetpoint = HPBar.animateSetpoint;
 		HPBar.animateState = ANIMATE_NONE;
+		HPBar.flashAnimState = -1;
+		HPBar.flashTicks = 0;
 	}
 	if ( mpFrame )
 	{
@@ -15860,6 +15890,8 @@ void Player::HUD_t::resetBars()
 		MPBar.animateValue2 = MPBar.animateSetpoint;
 		MPBar.animatePreviousSetpoint = MPBar.animateSetpoint;
 		MPBar.animateState = ANIMATE_NONE;
+		MPBar.flashAnimState = -1;
+		MPBar.flashTicks = 0;
 	}
 }
 
@@ -17186,6 +17218,11 @@ void Player::HUD_t::updateHPBar()
 	{
 		hpForegroundValue = HPBar.animateSetpoint;
 		HPBar.animateTicks = ticks;
+
+		// flash for taking damage
+		HPBar.flashTicks = ticks;
+		HPBar.flashAnimState = -1;
+		HPBar.flashType = FLASH_ON_DAMAGE;
 	}
 
 	if ( HPBar.maxValue > stats[player.playernum]->MAXHP )
@@ -17197,6 +17234,14 @@ void Player::HUD_t::updateHPBar()
 
 	if ( hpForegroundValue < HPBar.animateSetpoint ) // gaining HP, animate
 	{
+		// flash for gaining HP, provided not already flashing
+		/*if ( HPBar.flashAnimState == -1 || (HPBar.flashAnimState >= 0 && HPBar.flashType != FLASH_ON_DAMAGE) )
+		{
+			HPBar.flashTicks = ticks;
+			HPBar.flashAnimState = -1;
+			HPBar.flashType = FLASH_ON_RECOVERY;
+		}*/
+
 		real_t setpointDiff = std::max(0.0, HPBar.animateSetpoint - hpForegroundValue);
 		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
 		hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
@@ -17291,6 +17336,140 @@ void Player::HUD_t::updateHPBar()
 		hpProgressEndCap->disabled = false;
 		hpProgressBot->disabled = false;
 	}
+
+	// dividers
+	{
+		const int fullBarWidth = hpProgressBot->pos.w + progressWidth + hpEndcap->pos.w / 2;
+		auto div25Percent = hpForegroundFrame->findImage("hp img div 25pc");
+		div25Percent->disabled = false;
+		div25Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .25 - 2;
+		auto div50Percent = hpForegroundFrame->findImage("hp img div 50pc");
+		div50Percent->disabled = false;
+		div50Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .5 - 2;
+		auto div75Percent = hpForegroundFrame->findImage("hp img div 75pc");
+		div75Percent->disabled = false;
+		div75Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .75 - 2;
+	}
+
+	hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+	hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
+	hpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png";
+	auto hpProgressEndCapFlash = hpForegroundFrame->findImage("hp img progress endcap flash");
+	hpProgressEndCapFlash->disabled = true;
+	const int framesPerAnimation = HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
+	const int numAnimationFrames = HPBar.flashType == FLASH_ON_DAMAGE ? 20 : 2;
+	if ( HPBar.flashTicks > 0 )
+	{
+		//messagePlayer(0, MESSAGE_DEBUG, "ticks: %d, animticks: %d, state: %d", ticks, HPBarFlashTicks, HPBarFlashAnimState);
+		if ( HPBar.flashAnimState > numAnimationFrames || hpProgress->disabled )
+		{
+			HPBar.flashTicks = 0;
+			HPBar.flashType = FLASH_ON_DAMAGE;
+			HPBar.flashAnimState = -1;
+			hpProgressEndCapFlash->disabled = true;
+		}
+		else
+		{
+			hpProgressEndCapFlash->disabled = hpProgressEndCap->disabled;
+			if ( ticks == HPBar.flashTicks )
+			{
+				HPBar.flashAnimState = 1;
+				HPBar.flashProcessedOnTick = ticks;
+			}
+			else if ( (HPBar.flashProcessedOnTick != ticks)
+				&& (ticks > HPBar.flashTicks) 
+				&& (ticks - HPBar.flashTicks) % framesPerAnimation == 0 )
+			{
+				++HPBar.flashAnimState;
+				HPBar.flashProcessedOnTick = ticks;
+			}
+
+			if ( HPBar.flashType == 0 )
+			{
+				if ( HPBar.flashAnimState <= 6 )
+				{
+					hpProgressEndCapFlash->color = 0xFFFFFFFF;
+				}
+
+				if ( HPBar.flashAnimState == 0 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
+				}
+				else if ( HPBar.flashAnimState >= 1 && HPBar.flashAnimState <= 2 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
+				}
+				else if ( HPBar.flashAnimState == 3 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_02.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F02.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_02.png";
+				}
+				else if ( HPBar.flashAnimState >= 4 && HPBar.flashAnimState <= 5 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
+				}
+				else if ( HPBar.flashAnimState == 6 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F03.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
+				}
+				else
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					Uint8 r, g, b, a;
+					getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
+					int decrement = 20;
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					decrement *= fpsScale;
+					a = std::max(0, (int)a - decrement);
+					hpProgressEndCapFlash->color = makeColor(r, g, b, a);
+				}
+			}
+			else
+			{
+				hpProgressEndCapFlash->color = 0xFFFFFFFF;
+				hpProgressEndCapFlash->disabled = true;
+				if ( HPBar.flashAnimState == 1 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
+					hpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_01.png";
+				}
+			}
+		}
+	}
+	else
+	{
+		HPBar.flashAnimState = -1;
+		hpProgressEndCapFlash->disabled = true;
+	}
+	{
+		hpProgressEndCapFlash->pos.w = 22;
+		hpProgressEndCapFlash->section.x = 0;
+		hpProgressEndCapFlash->section.w = 0;
+		if ( !hpProgressEndCap->disabled )
+		{
+			hpProgressEndCapFlash->pos.x = hpProgressEndCap->pos.x - (hpProgressEndCapFlash->pos.w - hpProgressEndCap->pos.w);
+		}
+		if ( hpProgressEndCapFlash->pos.x < hpProgressBot->pos.x )
+		{
+			// adjust end cap flash to clip correctly sliding past end of bar
+			int overflowx = (hpProgressBot->pos.x - hpProgressEndCapFlash->pos.x);
+			hpProgressEndCapFlash->section.x = (overflowx);
+			hpProgressEndCapFlash->pos.x += overflowx;
+			hpProgressEndCapFlash->pos.w -= overflowx;
+			hpProgressEndCapFlash->section.w = hpProgressEndCapFlash->pos.w;
+		}
+	}
 }
 
 void Player::HUD_t::updateMPBar()
@@ -17365,6 +17544,11 @@ void Player::HUD_t::updateMPBar()
 	{
 		mpForegroundValue = MPBar.animateSetpoint;
 		MPBar.animateTicks = ticks;
+
+		// flash for taking damage
+		MPBar.flashTicks = ticks;
+		MPBar.flashAnimState = -1;
+		MPBar.flashType = FLASH_ON_DAMAGE;
 	}
 
 	if ( MPBar.maxValue > stats[player.playernum]->MAXMP )
@@ -17375,6 +17559,14 @@ void Player::HUD_t::updateMPBar()
 	MPBar.maxValue = stats[player.playernum]->MAXMP;
 	if ( mpForegroundValue < MPBar.animateSetpoint ) // gaining MP, animate
 	{
+		// flash for gaining MP, provided not already flashing
+		/*if ( MPBar.flashAnimState == -1 || (MPBar.flashAnimState >= 0 && MPBar.flashType != FLASH_ON_DAMAGE) )
+		{
+			MPBar.flashTicks = ticks;
+			MPBar.flashAnimState = -1;
+			MPBar.flashType = FLASH_ON_RECOVERY;
+		}*/
+
 		real_t setpointDiff = std::max(.1, MPBar.animateSetpoint - mpForegroundValue);
 		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
 		mpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
@@ -17456,6 +17648,165 @@ void Player::HUD_t::updateMPBar()
 		mpProgress->disabled = false;
 		mpProgressEndCap->disabled = false;
 		mpProgressBot->disabled = false;
+	}
+
+	// dividers
+	{
+		//const int fullBarWidth = mpProgressBot->pos.w + progressWidth + mpEndcap->pos.w / 2;
+		//auto div25Percent = mpForegroundFrame->findImage("mp img div 25pc");
+		//div25Percent->disabled = true;
+		//div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .25 - 2;
+		//auto div50Percent = mpForegroundFrame->findImage("mp img div 50pc");
+		//div50Percent->disabled = true;
+		//div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
+		//auto div75Percent = mpForegroundFrame->findImage("mp img div 75pc");
+		//div75Percent->disabled = true;
+		//div75Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .75 - 2;
+	}
+
+	mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+	mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+	mpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
+	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
+	mpProgressEndCapFlash->disabled = true;
+	const int framesPerAnimation = MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
+	const int numAnimationFrames = MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2;
+	if ( MPBar.flashTicks > 0 )
+	{
+		if ( MPBar.flashAnimState > numAnimationFrames || mpProgress->disabled )
+		{
+			MPBar.flashTicks = 0;
+			MPBar.flashType = FLASH_ON_DAMAGE;
+			MPBar.flashAnimState = -1;
+			mpProgressEndCapFlash->disabled = true;
+		}
+		else
+		{
+			mpProgressEndCapFlash->disabled = mpProgressEndCap->disabled;
+			if ( ticks == MPBar.flashTicks )
+			{
+				MPBar.flashAnimState = 1;
+				MPBar.flashProcessedOnTick = ticks;
+			}
+			else if ( (MPBar.flashProcessedOnTick != ticks)
+				&& (ticks > MPBar.flashTicks)
+				&& (ticks - MPBar.flashTicks) % framesPerAnimation == 0 )
+			{
+				++MPBar.flashAnimState;
+				MPBar.flashProcessedOnTick = ticks;
+			}
+
+			if ( MPBar.flashType == 0 )
+			{
+				if ( MPBar.flashAnimState <= 16 && MPBar.flashAnimState >= 10 )
+				{
+					mpProgressEndCapFlash->color = 0xFFFFFFFF;
+				}
+				else if ( MPBar.flashAnimState == 0 )
+				{
+					mpProgressEndCapFlash->color = makeColor(255, 255, 255, 0);
+				}
+
+				if ( MPBar.flashAnimState <= 9 )
+				{
+					if ( MPBar.flashAnimState == 7 )
+					{
+						// we need the MP bar to flash long enough for long spellcast times
+						// can adjust how many animStates we skip here to play with timing,
+						// without changing other state machine code
+						MPBar.flashAnimState = 9; // 1, 2 skip a few..
+					}
+					Uint8 r, g, b, a;
+					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
+					int increment = 10;
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					increment *= fpsScale;
+					a = std::min(255, (int)a + increment);
+					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
+
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+				}
+				else if ( MPBar.flashAnimState <= 10 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+				}
+				else if ( MPBar.flashAnimState >= 11 && MPBar.flashAnimState <= 12 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+				}
+				else if ( MPBar.flashAnimState == 13 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_02.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F02.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_02.png";
+				}
+				else if ( MPBar.flashAnimState >= 14 && MPBar.flashAnimState <= 15 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+				}
+				else if ( MPBar.flashAnimState == 16 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F03.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+				}
+				else
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					Uint8 r, g, b, a;
+					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
+					int decrement = 20;
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					decrement *= fpsScale;
+					a = std::max(0, (int)a - decrement);
+					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
+				}
+			}
+			else
+			{
+				mpProgressEndCapFlash->color = 0xFFFFFFFF;
+				mpProgressEndCapFlash->disabled = true;
+				if ( MPBar.flashAnimState == 1 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+					mpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_01.png";
+				}
+			}
+		}
+	}
+	else
+	{
+		MPBar.flashAnimState = -1;
+		mpProgressEndCapFlash->disabled = true;
+	}
+
+	{
+		mpProgressEndCapFlash->pos.w = 22;
+		mpProgressEndCapFlash->section.x = 0;
+		mpProgressEndCapFlash->section.w = 0;
+		if ( !mpProgressEndCap->disabled )
+		{
+			mpProgressEndCapFlash->pos.x = mpProgressEndCap->pos.x - (mpProgressEndCapFlash->pos.w - mpProgressEndCap->pos.w);
+		}
+		if ( mpProgressEndCapFlash->pos.x < mpProgressBot->pos.x )
+		{
+			// adjust end cap flash to clip correctly sliding past end of bar
+			int overflowx = (mpProgressBot->pos.x - mpProgressEndCapFlash->pos.x);
+			mpProgressEndCapFlash->section.x = (overflowx);
+			mpProgressEndCapFlash->pos.x += overflowx;
+			mpProgressEndCapFlash->pos.w -= overflowx;
+			mpProgressEndCapFlash->section.w = mpProgressEndCapFlash->pos.w;
+		}
 	}
 }
 

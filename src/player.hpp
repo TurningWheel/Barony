@@ -1309,6 +1309,11 @@ public:
 			ANIMATE_LEVELUP_FALLING
 		};
 
+		enum AnimateFlashEffects_t : int {
+			FLASH_ON_DAMAGE,
+			FLASH_ON_RECOVERY
+		};
+
 		struct Bar_t
 		{
 			real_t animateValue = 0.0;
@@ -1322,6 +1327,11 @@ public:
 			real_t fadeIn = 0.0;
 			real_t fadeOut = 0.0;
 			real_t widthMultiplier = 1.0;
+
+			Uint32 flashTicks = 0;
+			Uint32 flashProcessedOnTick = 0;
+			int flashAnimState = -1;
+			AnimateFlashEffects_t flashType = FLASH_ON_DAMAGE;
 		};
 		Bar_t xpBar;
 		Bar_t HPBar;
