@@ -250,6 +250,7 @@ bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
+
 void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
 	std::chrono::duration<double> dt)
@@ -514,6 +515,7 @@ void TimerExperiments::reset()
 
 }
 
+
 void TimerExperiments::updateClocks()
 {
 	if ( !bUseTimerInterpolation )
@@ -528,12 +530,34 @@ void TimerExperiments::updateClocks()
 		bIsInit = true;
 	}
 
+	static ConsoleVariable<int> cvar_frameTime("/frametimelimit", 250);
+	int frameTimeLimit = (*cvar_frameTime);
+
+	static ConsoleVariable<float> cvar_cameraLerpFactor("/cameralerp", 30.0);
+	lerpFactor = (*cvar_cameraLerpFactor);
+
+	static ConsoleVariable<bool> cvar_lerpAutoAdjust("/autocameralerp", true);
+
 	time_point newTime = Clock::now();
 	auto frameTime = newTime - currentTime;
-	if ( frameTime > std::chrono::milliseconds{ 250 } )
-		frameTime = std::chrono::milliseconds{ 250 };
+	if ( frameTime > std::chrono::milliseconds{ frameTimeLimit } )
+	{
+		frameTime = std::chrono::milliseconds{ frameTimeLimit };
+	}
+
 	currentTime = newTime;
 	accumulator += frameTime;
+
+	if ( (*cvar_lerpAutoAdjust) )
+	{
+		int frameTimeMillis = std::chrono::duration_cast<Clock::duration>(frameTime).count();
+		real_t approxFPS = 1000.0 / frameTimeMillis;
+		lerpFactor = 30.0;
+		if ( approxFPS < 32.0 )
+		{
+			lerpFactor = std::max(1, (int)approxFPS - 2);
+		}
+	}
 
 	std::vector<Entity*> entitiesToInterpolate;
 	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
@@ -574,7 +598,7 @@ void TimerExperiments::updateClocks()
 	double alpha = std::chrono::duration<double>{ accumulator } / dt;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		cameraRenderState[i] = cameraCurrentState[i] * alpha + cameraPreviousState[i] * (1 - alpha);
+		cameraRenderState[i] = cameraCurrentState[i] * alpha + cameraPreviousState[i] * (1.0 - alpha);
 		// make sure these are limited to prevent large jumps
 		cameraCurrentState[i].yaw.normalize(0, 2 * PI);
 		cameraCurrentState[i].roll.normalize(0, 2 * PI);
@@ -599,7 +623,7 @@ void TimerExperiments::updateClocks()
 	}
 	for ( auto& entity : entitiesToInterpolate )
 	{
-		entity->lerpRenderState = entity->lerpCurrentState * alpha + entity->lerpPreviousState * (1 - alpha);
+		entity->lerpRenderState = entity->lerpCurrentState * alpha + entity->lerpPreviousState * (1.0 - alpha);
 		// make sure these are limited to prevent large jumps
 		entity->lerpCurrentState.yaw.normalize(0, 2 * PI);
 		entity->lerpCurrentState.roll.normalize(0, 2 * PI);
