@@ -11629,6 +11629,39 @@ bind_failed:
         }
 	}
 
+	static std::string getVersionString() {
+        char date[64];
+		strcpy(date, __DATE__ + 7);
+		strcat(date, ".");
+		Uint32 month = SDLNet_Read32(__DATE__);
+		switch (month) {
+		case 'Jan ': strcat(date, "01."); break;
+		case 'Feb ': strcat(date, "02."); break;
+		case 'Mar ': strcat(date, "03."); break;
+		case 'Apr ': strcat(date, "04."); break;
+		case 'May ': strcat(date, "05."); break;
+		case 'Jun ': strcat(date, "06."); break;
+		case 'Jul ': strcat(date, "07."); break;
+		case 'Aug ': strcat(date, "08."); break;
+		case 'Sep ': strcat(date, "09."); break;
+		case 'Oct ': strcat(date, "10."); break;
+		case 'Nov ': strcat(date, "11."); break;
+		case 'Dec ': strcat(date, "12."); break;
+		}
+		int day = atoi(__DATE__ + 4);
+		if (day >= 10) {
+			strncat(date, __DATE__ + 4, 2);
+		} else {
+			strcat(date, "0");
+			strncat(date, __DATE__ + 5, 1);
+		}
+
+        char version_buf[256];
+        snprintf(version_buf, sizeof(version_buf), "%s.%s", VERSION, date);
+
+        return std::string(version_buf);
+	}
+
 	void createTitleScreen() {
 		main_menu_frame = gui->addFrame("main_menu");
 
@@ -11664,13 +11697,14 @@ bind_failed:
 			});
 		copyright->setColor(0xffffffff);
 
+        auto version_str = getVersionString();
 		auto version = main_menu_frame->addField("version", 32);
 		version->setFont(smallfont_outline);
-		version->setText(VERSION);
+		version->setText(version_str.c_str());
 		version->setHJustify(Field::justify_t::RIGHT);
 		version->setVJustify(Field::justify_t::BOTTOM);
 		version->setSize(SDL_Rect{
-			Frame::virtualScreenX - 200,
+			Frame::virtualScreenX - 204,
 			Frame::virtualScreenY - 54,
 			200,
 			50
@@ -11912,13 +11946,14 @@ bind_failed:
 				});
 			copyright->setColor(0xffffffff);
 
+			auto version_str = getVersionString();
 			auto version = main_menu_frame->addField("version", 32);
 			version->setFont(smallfont_outline);
-			version->setText(VERSION);
+			version->setText(version_str.c_str());
 			version->setHJustify(Field::justify_t::RIGHT);
 			version->setVJustify(Field::justify_t::BOTTOM);
 			version->setSize(SDL_Rect{
-				Frame::virtualScreenX - 200,
+				Frame::virtualScreenX - 204,
 				Frame::virtualScreenY - 54,
 				200,
 				50
@@ -11926,26 +11961,36 @@ bind_failed:
 			version->setColor(0xffffffff);
 
 #ifdef STEAMWORKS
-			if (SteamUser()->BLoggedOn()) {
-			    bool bFailed = false;
-                NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
-				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
-				SteamUtils()->GetAPICallResult(
-				    SteamAPICall_NumPlayersOnline,
-				    &NumberOfCurrentPlayers,
-				    sizeof(NumberOfCurrentPlayers_t),
-				    1107, &bFailed);
-				if (NumberOfCurrentPlayers.m_bSuccess) {
-					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
-				}
-			}
+		    class GetPlayersOnline {
+		    public:
+		        GetPlayersOnline() {
+		            (*this)();
+		        }
+		        void operator()() {
+	                printlog("SteamUserStats()->GetNumberOfCurrentPlayers()\n");
+			        SteamAPICall_t call = SteamUserStats()->GetNumberOfCurrentPlayers();
+			        result.Set(call, this, &OnGetNumberOfCurrentPlayers);
+		        }
+		        int current() {
+		            return players;
+		        }
+		    private:
+		        void OnGetNumberOfCurrentPlayers
+		        (NumberOfCurrentPlayers_t* callback, bool failure) {
+                    if (failure || !callback->m_bSuccess) {
+	                    printlog("NumberOfCurrentPlayers_t failed!\n");
+	                    return;
+                    }
+	                players = callback->m_cPlayers;
+	                printlog("Number of players currently online: %d\n", players);
+		        }
+		        CCallResult<GetPlayersOnline, NumberOfCurrentPlayers_t> result;
+		        int players = 0;
+		    };
+		    static GetPlayersOnline getPlayersOnline;
 
-			int num_online_players = steamOnlinePlayers;
-
-			std::string online_players_text = std::string("Players online: ") + std::to_string(num_online_players);
 			auto online_players = main_menu_frame->addField("online_players", 32);
 			online_players->setFont(smallfont_outline);
-			online_players->setText(online_players_text.c_str());
 			online_players->setHJustify(Field::justify_t::RIGHT);
 			online_players->setVJustify(Field::justify_t::TOP);
 			online_players->setSize(SDL_Rect{
@@ -11955,6 +12000,21 @@ bind_failed:
 				50
 				});
 			online_players->setColor(0xffffffff);
+			online_players->setTickCallback([](Widget& widget){
+			    auto online_players = static_cast<Field*>(&widget);
+                NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
+                if (ticks % (TICKS_PER_SECOND * 5) == 0) {
+                    getPlayersOnline();
+                }
+                int players = getPlayersOnline.current();
+                if (players == 0) {
+                    online_players->setText("Players online: ...");
+                } else {
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "Players online: %d", players);
+                    online_players->setText(buf);
+                }
+			    });
 #endif
 		}
 	}
