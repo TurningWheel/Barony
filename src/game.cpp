@@ -3303,7 +3303,11 @@ void handleEvents(void)
 					}
 					else if ( event.key.keysym.sym == SDLK_v && SDL_GetModState()&KMOD_CTRL )
 					{
-						strncpy(inputstr, SDL_GetClipboardText(), inputlen);
+					    size_t destlen = strlen(inputstr);
+					    size_t remaining = inputlen - destlen - 1;
+					    size_t srclen = std::min(strlen(SDL_GetClipboardText()), remaining);
+					    memcpy(inputstr + destlen, SDL_GetClipboardText(), srclen);
+					    inputstr[destlen + srclen] = '\0';
 						cursorflash = ticks;
 					}
 				}
