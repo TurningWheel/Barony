@@ -4249,6 +4249,9 @@ bind_failed:
     static void createLeaderboards() {
         assert(main_menu_frame);
 
+        static score_t* selectedScore;
+        selectedScore = nullptr;
+
         auto dimmer = main_menu_frame->addFrame("dimmer");
         dimmer->setSize(SDL_Rect{
             0, 0,
@@ -4302,12 +4305,468 @@ bind_failed:
 		banner->setSize(SDL_Rect{330, 30, 338, 24});
 		banner->setJustify(Field::justify_t::CENTER);
 
+        auto list = window->addFrame("list");
+        list->setSize(SDL_Rect{76, 148, 278, 468});
+        list->setActualSize(SDL_Rect{0, 0, 278, 468});
+        list->setScrollBarsEnabled(false);
+        list->setBorder(0);
+        list->setColor(0);
+
+        auto subframe = window->addFrame("subframe");
+        subframe->setSize(SDL_Rect{354, 148, 608, 468});
+        subframe->setBorder(0);
+        subframe->setColor(0);
+        subframe->setInvisible(true);
+        subframe->setTickCallback([](Widget& widget){
+            widget.setInvisible(selectedScore == nullptr);
+            });
+
+        auto portrait = subframe->addFrame("portrait");
+        portrait->setSize(SDL_Rect{0, 0, 284, 282});
+        portrait->setBorder(0);
+        portrait->setColor(0);
+        portrait->setDrawCallback([](const Widget&, const SDL_Rect rect){
+			drawCharacterPreview(0, rect, 50, 0.0);
+            });
+
+		auto conduct_panel = subframe->addImage(
+		    SDL_Rect{4, 348, 276, 116},
+		    0xffffffff,
+		    "*images/ui/Main Menus/Leaderboards/AA_Box_AdventurerInfo_00.png",
+		    "conduct_panel"
+		    );
+
+		auto conduct = subframe->addField("conduct", 1024);
+	    conduct->setFont(smallfont_outline);
+	    conduct->setSize(SDL_Rect{12, 364, 266, 98});
+	    conduct->setText("Conduct:");
+	    conduct->setColor(makeColor(203, 171, 101, 255));
+
+        auto victory_plate = subframe->addImage(
+            SDL_Rect{2, 280, 280, 82},
+            0xffffffff,
+            "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Plate_00A.png",
+            "victory_plate"
+            );
+
+        auto victory_plate_header = subframe->addImage(
+            SDL_Rect{34, 222, 214, 72},
+            0xffffffff,
+            "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+            "victory_plate_header"
+            );
+        victory_plate_header->ontop = true;
+
+        auto victory_plate_text = subframe->addField("victory_plate_text", 1024);
+        victory_plate_text->setSize(SDL_Rect{26, 290, 232, 62});
+        victory_plate_text->setFont(smallfont_outline);
+        victory_plate_text->setJustify(Field::justify_t::CENTER);
+
+        struct Victory {
+            const char* text;
+            const char* plate_image;
+            const char* header_image;
+            Uint32 textColor;
+            Uint32 outlineColor;
+        };
+        static Victory victories[] = {
+            {
+                "Here lies\n%s\nRequiescat In Pace",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Plate_00A.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Image_00.png",
+                makeColor(151, 115, 58, 255),
+                makeColor(21, 9, 8, 255)
+            },
+            {
+                "Make Way For\n%s\nthe Triumphant!",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+                makeColor(230, 183, 20, 255),
+                makeColor(82, 31, 4, 255)
+            },
+            {
+                "Bow Before\n%s\nthe Eternal!",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+                makeColor(230, 183, 20, 255),
+                makeColor(82, 31, 4, 255)
+            },
+            {
+                "Long Live\n%s\nthe Baron!",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+                makeColor(230, 183, 20, 255),
+                makeColor(82, 31, 4, 255)
+            },
+            {
+                "All Hail\n%s\nthe Baron!",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Plate_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Image_00.png",
+                makeColor(110, 107, 224, 255),
+                makeColor(22, 16, 30, 255)
+            },
+            {
+                "Tremble Before\n%s\nthe Baron!",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Plate_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Image_00.png",
+                makeColor(223, 42, 42, 255),
+                makeColor(52, 10, 28, 255)
+            },
+        };
+        static constexpr int num_victories = sizeof(victories) / sizeof(victories[0]);
+
+        auto right_panel = subframe->addImage(
+			SDL_Rect{284, 0, 338, 476},
+			0xffffffff,
+			"*images/ui/Main Menus/Leaderboards/AA_Window_SubwindowR_00.png",
+		    "right_panel"
+		    );
+
+		auto character_title = subframe->addField("character_title", 256);
+		character_title->setFont(smallfont_outline);
+		character_title->setSize(SDL_Rect{296, 2, 306, 26});
+		character_title->setColor(makeColor(203, 171, 101, 255));
+		character_title->setJustify(Field::justify_t::CENTER);
+
+		auto character_counters_titles = subframe->addField("character_counters_titles", 256);
+		character_counters_titles->setFont(smallfont_outline);
+		character_counters_titles->setSize(SDL_Rect{346, 28, 206, 62});
+		character_counters_titles->setColor(makeColor(151, 115, 58, 255));
+		character_counters_titles->setHJustify(Field::justify_t::LEFT);
+		character_counters_titles->setVJustify(Field::justify_t::TOP);
+		character_counters_titles->setText("XP:\nGold:\nDungeon Level:");
+
+		auto character_counters = subframe->addField("character_counters", 256);
+		character_counters->setFont(smallfont_outline);
+		character_counters->setSize(SDL_Rect{346, 28, 206, 62});
+		character_counters->setColor(makeColor(151, 115, 58, 255));
+		character_counters->setHJustify(Field::justify_t::RIGHT);
+		character_counters->setVJustify(Field::justify_t::TOP);
+		//character_counters->setText("62/100\n86360\n30");
+
+		Field* character_attributes[6];
+        for (int c = 0; c < 6; ++c) {
+            std::string name = std::string("character_attribute") + std::to_string(c);
+		    character_attributes[c] = subframe->addField(name.c_str(), 32);
+		    character_attributes[c]->setFont(smallfont_outline);
+		    character_attributes[c]->setSize(SDL_Rect{360 + 124 * (c / 3), 93 + (30 * (c % 3)), 96, 28});
+		    character_attributes[c]->setColor(makeColor(151, 115, 58, 255));
+		    character_attributes[c]->setHJustify(Field::justify_t::LEFT);
+		    character_attributes[c]->setVJustify(Field::justify_t::CENTER);
+		}
+
+		auto kills_banner = subframe->addField("kills_banner", 64);
+		kills_banner->setFont(bigfont_outline);
+		kills_banner->setSize(SDL_Rect{426, 188, 182, 34});
+		kills_banner->setColor(makeColor(151, 115, 58, 255));
+		kills_banner->setHJustify(Field::justify_t::LEFT);
+		kills_banner->setVJustify(Field::justify_t::CENTER);
+		kills_banner->setText("Kills:");
+
+		auto kills_left = subframe->addField("kills_left", 1024);
+		kills_left->setFont(smallfont_outline);
+		kills_left->setSize(SDL_Rect{300, 222, 144, 182});
+		kills_left->setColor(makeColor(151, 115, 58, 255));
+		kills_left->setHJustify(Field::justify_t::LEFT);
+		kills_left->setVJustify(Field::justify_t::TOP);
+		//kills_left->setText("5 rats\n14 goblins\n7 slimes");
+
+		auto kills_right = subframe->addField("kills_right", 1024);
+		kills_right->setFont(smallfont_outline);
+		kills_right->setSize(SDL_Rect{446, 222, 144, 182});
+		kills_right->setColor(makeColor(151, 115, 58, 255));
+		kills_right->setHJustify(Field::justify_t::LEFT);
+		kills_right->setVJustify(Field::justify_t::TOP);
+		//kills_right->setText("5 rats\n14 goblins\n7 slimes");
+
+		auto time_and_score_titles = subframe->addField("time_and_score_titles", 256);
+		time_and_score_titles->setFont(bigfont_outline);
+		time_and_score_titles->setSize(SDL_Rect{350, 408, 194, 60});
+		time_and_score_titles->setColor(makeColor(203, 171, 101, 255));
+		time_and_score_titles->setHJustify(Field::justify_t::LEFT);
+		time_and_score_titles->setVJustify(Field::justify_t::CENTER);
+		time_and_score_titles->setText("Time:\nScore:");
+
+		auto time_and_score = subframe->addField("time_and_score", 256);
+		time_and_score->setFont(bigfont_outline);
+		time_and_score->setSize(SDL_Rect{350, 408, 194, 60});
+		time_and_score->setColor(makeColor(203, 171, 101, 255));
+		time_and_score->setHJustify(Field::justify_t::RIGHT);
+		time_and_score->setVJustify(Field::justify_t::CENTER);
+		//time_and_score->setText("03:48:76\n37801131");
+
+        static auto updateStats = [](score_t* score){
+            if (!score) {
+                return;
+            }
+
+            assert(main_menu_frame);
+            auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
+            auto subframe = window->findFrame("subframe"); assert(subframe);
+            auto victory_plate_text = subframe->findField("victory_plate_text"); assert(victory_plate_text);
+
+            if (score->victory < 0 || score->victory >= num_victories) {
+                return;
+            }
+            auto& victory = victories[score->victory];
+
+            char victory_text[1024];
+            snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
+
+            victory_plate_text->setText(victory_text);
+            victory_plate_text->setTextColor(victory.textColor);
+            victory_plate_text->setOutlineColor(victory.outlineColor);
+
+            auto victory_plate = subframe->findImage("victory_plate");
+            assert(victory_plate);
+            victory_plate->path = victory.plate_image;
+
+            auto victory_plate_header = subframe->findImage("victory_plate_header");
+            assert(victory_plate_header);
+            victory_plate_header->path = victory.header_image;
+
+            std::string conduct_str = "Conduct:\n";
+
+		    auto conduct = subframe->findField("conduct");
+		    assert(conduct);
+
+		    /*if (score->conductPenniless) {
+		        conduct_str += "
+		    }*/
+
+            char buf[1024];
+
+            auto character_title = subframe->findField("character_title");
+            assert(character_title);
+            snprintf(buf, sizeof(buf), "LVL %d %s %s",
+                score->stats->LVL,
+                language[3821 + score->stats->playerRace],
+                language[1900 + score->classnum]);
+            character_title->setText(buf);
+
+            auto character_counters = subframe->findField("character_counters");
+            assert(character_counters);
+            snprintf(buf, sizeof(buf), "%d/100\n%d\n%d",
+                score->stats->EXP,
+                score->stats->GOLD,
+                score->dungeonlevel);
+            character_counters->setText(buf);
+
+            const char* attributes[6] = {"STR", "DEX", "CON", "INT", "PER", "CHR"};
+            const Sint32 attr_i[6] = {
+                score->stats->STR, score->stats->DEX, score->stats->CON,
+                score->stats->INT, score->stats->PER, score->stats->CHR,
+            };
+		    Field* character_attributes[6];
+            for (int c = 0; c < 6; ++c) {
+                std::string name = std::string("character_attribute") + std::to_string(c);
+		        character_attributes[c] = subframe->findField(name.c_str());
+		        assert(character_attributes[c]);
+                snprintf(buf, sizeof(buf), "  %s %4d",
+                    attributes[c], attr_i[c]);
+                character_attributes[c]->setText(buf);
+		    }
+
+            auto kills_left = subframe->findField("kills_left");
+            assert(kills_left);
+            std::string kills_str;
+            int monster_index = 0;
+            int monster_counter = 0;
+            for (; monster_index < NUMMONSTERS && monster_counter < 10; ++monster_index) {
+                if (score->kills[monster_index] <= 0) {
+                    continue;
+                }
+                if (score->kills[monster_index] == 1) {
+                    snprintf(buf, sizeof(buf), "%3d %s\n",
+                        score->kills[monster_index], language[90 + monster_index]);
+                } else {
+                    snprintf(buf, sizeof(buf), "%3d %s\n",
+                        score->kills[monster_index], language[111 + monster_index]);
+                }
+                kills_str += buf;
+                ++monster_counter;
+            }
+            kills_left->setText(kills_str.c_str());
+
+		    auto kills_right = subframe->findField("kills_right");
+		    assert(kills_right);
+            kills_str = "";
+            for (; monster_index < NUMMONSTERS; ++monster_index) {
+                if (score->kills[monster_index] <= 0) {
+                    continue;
+                }
+                if (score->kills[monster_index] == 1) {
+                    snprintf(buf, sizeof(buf), "%3d %s\n",
+                        score->kills[monster_index], language[90 + monster_index]);
+                } else {
+                    snprintf(buf, sizeof(buf), "%3d %s\n",
+                        score->kills[monster_index], language[111 + monster_index]);
+                }
+                kills_str += buf;
+            }
+            kills_right->setText(kills_str.c_str());
+
+            const Uint32 time = score->completionTime / TICKS_PER_SECOND;
+            const Uint32 hour = time / 3600;
+            const Uint32 min = (time / 60) % 60;
+            const Uint32 sec = time % 60;
+
+            int total_score = totalScore(score);
+
+		    auto time_and_score = subframe->findField("time_and_score");
+		    assert(time_and_score);
+            snprintf(buf, sizeof(buf), "%.2u:%.2u:%.2u\n%d",
+                hour, min, sec, total_score);
+            time_and_score->setText(buf);
+            };
+
+        enum BoardType {
+            LOCAL,
+            LAN,
+            FRIENDS,
+            WORLD
+        };
+        static BoardType boardType;
+        boardType = BoardType::LOCAL;
+
+        static auto repopulate_list = [](BoardType type){
+            boardType = type;
+            auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
+            auto list = window->findFrame("list"); assert(list);
+            list->clear();
+            selectedScore = nullptr;
+            if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
+                auto scores = boardType == BoardType::LOCAL ?
+                    &topscores : &topscoresMultiplayer;
+                int index = 0;
+                int y = 6;
+                if (scores->first) {
+                    (void)window->remove("none_found");
+                    for (auto node = scores->first; node != nullptr;
+                        node = node->next, ++index) {
+                        auto score = (score_t*)node->element;
+
+                        const char* fmt = "  #%d %s";
+
+                        char buf[128];
+                        snprintf(buf, sizeof(buf), fmt, index + 1, score->stats->name);
+
+                        auto button = list->addButton(buf);
+                        button->setUserData(score);
+                        button->setHJustify(Button::justify_t::LEFT);
+                        button->setVJustify(Button::justify_t::CENTER);
+                        button->setFont(smallfont_outline);
+                        button->setText(buf);
+                        button->setColor(makeColor(255,255,255,255));
+                        button->setHighlightColor(makeColor(255,255,255,255));
+                        button->setTextColor(makeColor(203,171,101,255));
+                        button->setTextHighlightColor(makeColor(231,213,173,255));
+                        button->setWidgetSearchParent("leaderboards");
+                        if (node->prev) {
+                            char buf[128];
+                            auto prev = (score_t*)node->prev->element;
+                            snprintf(buf, sizeof(buf), fmt, index, prev->stats->name);
+                            button->setWidgetUp(buf);
+                        }
+                        if (node->next) {
+                            char buf[128];
+                            auto next = (score_t*)node->next->element;
+                            snprintf(buf, sizeof(buf), fmt, index + 2, next->stats->name);
+                            button->setWidgetDown(buf);
+                        }
+                        button->setSize(SDL_Rect{0, y, 278, 36});
+                        button->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
+                        button->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
+                        button->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
+                        button->setCallback([](Button& button){
+                            soundActivate();
+                            auto list = static_cast<Frame*>(button.getParent());
+                            button.setTextColor(makeColor(231,213,173,255));
+                            button.setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
+                            for (auto b : list->getButtons()) {
+                                if (b == &button) {
+                                    continue;
+                                }
+                                b->setTextColor(makeColor(203,171,101,255));
+                                b->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
+                            }
+                            auto score = (score_t*)button.getUserData();
+                            selectedScore = score;
+                            updateStats(score);
+                            loadScore(score);
+                            });
+
+                        if (index == 0) {
+                            button->select();
+                            button->activate();
+                        }
+
+                        y += 38;
+                    }
+                } else {
+                    if (!window->findField("none_found")) {
+                        auto field = window->addField("none_found", 1024);
+                        field->setFont(bigfont_outline);
+                        field->setText("No scores found.");
+                        field->setSize(SDL_Rect{30, 148, 932, 468});
+                        field->setJustify(Field::justify_t::CENTER);
+                    }
+                }
+                auto size = list->getActualSize();
+                size.h = std::max(list->getSize().h, y);
+                list->setActualSize(size);
+            } else {
+#ifdef STEAMWORKS
+#endif
+            }
+            };
+
+#define TAB_FN(X) [](Button& button){soundActivate(); repopulate_list(X);}
+        struct Tab {
+            const char* name;
+            const char* text;
+            void (*func)(Button& button);
+        };
+        static const Tab tabs[] = {
+            {"local", "Your Top 30\nLocal", TAB_FN(BoardType::LOCAL)},
+            {"lan", "Your Top 30\nLAN", TAB_FN(BoardType::LAN)},
+#ifdef STEAMWORKS
+            {"friends", "Friends\nLeaderboard", TAB_FN(BoardType::FRIENDS)},
+            {"world", "World\nLeaderboard", TAB_FN(BoardType::WORLD)},
+#endif
+        };
+        constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
+        for (int c = 0; c < num_tabs; ++c) {
+            Button* tab = window->addButton(tabs[c].name);
+            tab->setText(tabs[c].text);
+            tab->setFont(bigfont_outline);
+			tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
+			tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
+			tab->setColor(makeColor(255, 255, 255, 255));
+			tab->setHighlightColor(makeColor(255, 255, 255, 255));
+			tab->setCallback(tabs[c].func);
+
+            constexpr int fullw = 184 * num_tabs + 20 * (num_tabs - 1);
+            constexpr int xbegin = (992 - fullw) / 2;
+            const int x = xbegin + (184 + 20) * c;
+            tab->setSize(SDL_Rect{x, 70, 184, 64});
+        }
+
 		auto tab_left = window->addButton("tab_left");
 		tab_left->setSize(SDL_Rect{40, 72, 38, 58});
 		tab_left->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_LArrow_00.png");
 		tab_left->setColor(makeColor(255, 255, 255, 255));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_left->setGlyphPosition(Widget::glyph_position_t::BOTTOM_LEFT);
+		tab_left->setWidgetSearchParent(window->getName());
+		tab_left->setCallback([](Button& button){
+		    auto window = static_cast<Frame*>(button.getParent());
+            int tab_index = static_cast<int>(boardType);
+            if (tab_index > 0) {
+                auto tab = window->findButton(tabs[tab_index - 1].name); assert(tab);
+                tab->activate();
+            }
+		    });
 
 		auto tab_right = window->addButton("tab_right");
 		tab_right->setSize(SDL_Rect{914, 72, 38, 58});
@@ -4315,31 +4774,136 @@ bind_failed:
 		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_right->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+		tab_right->setWidgetSearchParent(window->getName());
+		tab_right->setCallback([](Button& button){
+		    auto window = static_cast<Frame*>(button.getParent());
+            int tab_index = static_cast<int>(boardType);
+            if (tab_index < num_tabs - 1) {
+                auto tab = window->findButton(tabs[tab_index + 1].name); assert(tab);
+                tab->activate();
+            }
+		    });
 
-        constexpr const char* tabs[][2] = {
-            {"local", "Your Top 30\nLocal"},
-            {"lan", "Your Top 30\nLAN"},
-#ifdef STEAMWORKS
-            {"friends", "Friends\nLeaderboard"},
-            {"world", "World\nLeaderboard"},
-#endif
-        };
-        constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
+        auto slider = window->addSlider("scroll_slider");
+        slider->setRailSize(SDL_Rect{38, 170, 30, 420});
+        slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+		slider->setRailImage("*images/ui/Main Menus/Leaderboards/AA_Scroll_Bar_00.png");
+		slider->setHandleImage("*images/ui/Main Menus/Leaderboards/AA_Scroll_Slider_00.png");
+		slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
+		slider->setBorder(24);
+		slider->setValue(0.f);
+		slider->setMinValue(0.f);
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			Frame* list = frame->findFrame("list"); assert(list);
+			auto actualSize = list->getActualSize();
+			actualSize.y = slider.getValue();
+			list->setActualSize(actualSize);
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			Frame* list = frame->findFrame("list"); assert(list);
+			auto actualSize = list->getActualSize();
+			slider->setValue(actualSize.y);
+		    slider->setMaxValue((float)std::max(0, actualSize.h - list->getSize().h));
+			});
+		slider->setWidgetSearchParent(window->getName());
 
-        for (int c = 0; c < num_tabs; ++c) {
-            Button* tab = window->addButton(tabs[c][0]);
-            tab->setText(tabs[c][1]);
-            tab->setFont(bigfont_outline);
-			tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
-			tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
-			tab->setColor(makeColor(255, 255, 255, 255));
-			tab->setHighlightColor(makeColor(255, 255, 255, 255));
+		auto delete_entry = window->addButton("delete");
+		delete_entry->setSize(SDL_Rect{740, 630, 164, 62});
+		delete_entry->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_00.png");
+		delete_entry->setColor(makeColor(255, 255, 255, 255));
+		delete_entry->setHighlightColor(makeColor(255, 255, 255, 255));
+		delete_entry->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		delete_entry->setFont(smallfont_outline);
+		delete_entry->setText("Delete Entry");
+		delete_entry->setTickCallback([](Widget& widget){
+            if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
+                auto scores = boardType == BoardType::LOCAL ?
+                    &topscores : &topscoresMultiplayer;
+                widget.setInvisible(scores->first == nullptr);
+            }
+            else if (boardType == BoardType::FRIENDS || boardType == BoardType::WORLD) {
+                widget.setInvisible(true);
+            }
+		    });
+		delete_entry->setCallback([](Button& button){
+            soundActivate();
+            if (boardType != BoardType::LOCAL && boardType != BoardType::LAN) {
+                // don't ever delete online scores
+                return;
+            }
+            if (selectedScore) {
+                char prompt[1024];
+                const char* fmt = "Are you sure you want to delete\n\"%s\"?";
+                snprintf(prompt, sizeof(prompt), fmt, selectedScore->stats->name);
+                binaryPrompt(
+                    prompt,
+                    "Yes", "No",
+                    [](Button& button){ // Yes
+		                soundActivate();
+		                soundDeleteSave();
+		                assert(main_menu_frame);
+		                auto prompt = main_menu_frame->findFrame("binary_prompt");
+		                if (prompt) {
+			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                dimmer->removeSelf();
+		                }
+		                auto leaderboards = main_menu_frame->findFrame("leaderboards");
+		                auto list = leaderboards->findFrame("list");
 
-            constexpr int fullw = 184 * num_tabs + 20 * (num_tabs - 1);
-            constexpr int xbegin = (992 - fullw) / 2;
-            const int x = xbegin + (184 + 20) * c;
-            tab->setSize(SDL_Rect{x, 70, 184, 64});
-        }
+		                int index = 0;
+		                for (auto b : list->getButtons()) {
+		                    if (b->getUserData() == selectedScore) {
+		                        break;
+		                    }
+		                    ++index;
+		                }
+		                (void)deleteScore(boardType == BoardType::LAN, index);
+
+                        int tab_index = static_cast<int>(boardType);
+                        auto tab = leaderboards->findButton(tabs[tab_index].name); assert(tab);
+                        tab->select();
+                        tab->activate();
+                        },
+                    [](Button& button){ // No
+		                soundCancel();
+		                assert(main_menu_frame);
+		                auto prompt = main_menu_frame->findFrame("binary_prompt");
+		                if (prompt) {
+			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                dimmer->removeSelf();
+		                }
+                        int tab_index = static_cast<int>(boardType);
+		                auto leaderboards = main_menu_frame->findFrame("leaderboards");
+                        auto tab = leaderboards->findButton(tabs[tab_index].name); assert(tab);
+                        tab->select();
+                        tab->activate();
+                        });
+                auto scores = boardType == BoardType::LOCAL ?
+                    &topscores : &topscoresMultiplayer;
+            } else {
+                monoPrompt(
+                    "Please select a score\nto delete first", "Okay",
+                    [](Button& button){
+		                soundCancel();
+		                assert(main_menu_frame);
+		                auto prompt = main_menu_frame->findFrame("mono_prompt");
+		                if (prompt) {
+			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+			                dimmer->removeSelf();
+		                }
+                        int tab_index = static_cast<int>(boardType);
+		                auto leaderboards = main_menu_frame->findFrame("leaderboards");
+                        auto tab = leaderboards->findButton(tabs[tab_index].name); assert(tab);
+                        tab->select();
+                        tab->activate();
+                        });
+            }
+		    });
+
+		repopulate_list(boardType);
     }
 
 /******************************************************************************/
@@ -7003,7 +7567,7 @@ bind_failed:
 		subframe->setHollow(true);
 		subframe->setBorder(0);
 
-		if (subframe->getActualSize().h > 258) {
+		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
 			slider->setRailSize(SDL_Rect{260, 160, 30, 266});
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
@@ -7012,7 +7576,7 @@ bind_failed:
 			slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
 			slider->setBorder(24);
 			slider->setMinValue(0.f);
-			slider->setMaxValue(subframe->getActualSize().h - 258);
+			slider->setMaxValue(subframe->getActualSize().h - subframe->getSize().h);
 			slider->setCallback([](Slider& slider){
 				Frame* frame = static_cast<Frame*>(slider.getParent());
 				Frame* subframe = frame->findFrame("subframe"); assert(subframe);

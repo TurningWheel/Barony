@@ -415,22 +415,9 @@ int totalScore(score_t* score)
 
 -------------------------------------------------------------------------------*/
 
-void loadScore(int scorenum)
+void loadScore(score_t* score)
 {
 	node_t* node = nullptr;
-	if ( scoreDisplayMultiplayer )
-	{
-		node = list_Node(&topscoresMultiplayer, scorenum);
-	}
-	else
-	{
-		node = list_Node(&topscores, scorenum);
-	}
-	if ( !node )
-	{
-		return;
-	}
-	score_t* score = (score_t*)node->element;
 	stats[0]->clearStats();
 
 	int c;
@@ -557,6 +544,25 @@ void loadScore(int scorenum)
 	{
 		gameStatistics[c] = score->gameStatistics[c];
 	}
+}
+
+void loadScore(int scorenum)
+{
+	node_t* node = nullptr;
+	if ( scoreDisplayMultiplayer )
+	{
+		node = list_Node(&topscoresMultiplayer, scorenum);
+	}
+	else
+	{
+		node = list_Node(&topscores, scorenum);
+	}
+	if ( !node )
+	{
+		return;
+	}
+	score_t* score = (score_t*)node->element;
+	loadScore(score);
 }
 
 /*-------------------------------------------------------------------------------
@@ -789,6 +795,18 @@ void saveAllScores(const std::string& scoresfilename)
 	}
 
 	FileIO::close(fp);
+}
+
+bool deleteScore(bool multiplayer, int index)
+{
+    auto node = list_Node(multiplayer ?
+        &topscoresMultiplayer : &topscores, index);
+    if (node) {
+        list_RemoveNode(node);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /*-------------------------------------------------------------------------------

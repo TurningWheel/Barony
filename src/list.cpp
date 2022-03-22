@@ -457,14 +457,11 @@ Uint32 list_Index(node_t* node)
 
 node_t* list_Node(list_t* list, int index)
 {
-	if ( index < 0 || index >= list_Size(list) )
-	{
+	if (index < 0) {
 		return NULL;
 	}
-
-	int i;
+    int i = 0;
 	node_t* node = list->first;
-
-	for ( i = 0; i != index; node = node->next, i++ );
+	for (; i != index && node; node = node->next, i++ );
 	return node;
 }
