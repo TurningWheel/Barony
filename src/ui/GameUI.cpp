@@ -13415,19 +13415,19 @@ void createPlayerSpellList(const int player)
 		//bg->disabled = false;
 
 		auto slider = bgFrame->addSlider("spell slider");
-		slider->setBorder(24);
+		slider->setBorder(16);
 		slider->setMinValue(0);
 		slider->setMaxValue(100);
 		slider->setValue(0);
-		SDL_Rect sliderPos{ basePos.w - 38, 8, 30, 234 };
+		SDL_Rect sliderPos{ basePos.w - 30, 8, 24, 234 };
 		slider->setRailSize(sliderPos);
-		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+		slider->setHandleSize(SDL_Rect{ 0, 0, 24, 24 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
 		//slider->setCallback(callback);
 		slider->setColor(makeColor(255, 255, 255, 255));
 		slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
-		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+		slider->setHandleImage("images/ui/Sliders/HUD_MiniSlider_Boulder_00.png");
+		slider->setRailImage("images/ui/Sliders/HUD_MiniSlider_Backing_234px_00.png");
 		slider->setHideGlyphs(true);
 		slider->setHideKeyboardGlyphs(true);
 		slider->setHideSelectors(true);
@@ -13471,7 +13471,7 @@ void createPlayerSpellList(const int player)
 
 	players[player]->inventoryUI.spellSlotFrames.clear();
 
-	const int baseSlotOffsetX = 0;
+	const int baseSlotOffsetX = 14;
 	const int baseSlotOffsetY = 0;
 
 	SDL_Rect invSlotsPos{ basePos.x + 4, basePos.y + 4, basePos.w, 242 };
