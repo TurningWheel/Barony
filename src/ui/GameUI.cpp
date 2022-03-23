@@ -17556,6 +17556,8 @@ void Player::HUD_t::updateMPBar()
 	real_t& mpFadedValue = MPBar.animateValue2;
 
 	MPBar.animateSetpoint = stats[player.playernum]->MP;
+
+	bool flashAnimationPreviouslyPlaying = MPBar.flashTicks > 0;
 	if ( MPBar.animateSetpoint < MPBar.animatePreviousSetpoint ) // insta-change as losing health
 	{
 		mpForegroundValue = MPBar.animateSetpoint;
@@ -17563,6 +17565,7 @@ void Player::HUD_t::updateMPBar()
 
 		// flash for taking damage
 		MPBar.flashTicks = ticks;
+		MPBar.flashProcessedOnTick = 0;
 		MPBar.flashAnimState = -1;
 		MPBar.flashType = FLASH_ON_DAMAGE;
 	}
@@ -17713,12 +17716,13 @@ void Player::HUD_t::updateMPBar()
 		else
 		{
 			mpProgressEndCapFlash->disabled = mpProgressEndCap->disabled;
+			bool processedOnTick = MPBar.flashProcessedOnTick == ticks;
 			if ( ticks == MPBar.flashTicks )
 			{
 				MPBar.flashAnimState = 1;
 				MPBar.flashProcessedOnTick = ticks;
 			}
-			else if ( (MPBar.flashProcessedOnTick != ticks)
+			else if ( (!processedOnTick)
 				&& (ticks > MPBar.flashTicks)
 				&& (ticks - MPBar.flashTicks) % framesPerAnimation == 0 )
 			{
@@ -17735,6 +17739,7 @@ void Player::HUD_t::updateMPBar()
 				else if ( MPBar.flashAnimState == 0 )
 				{
 					mpProgressEndCapFlash->color = makeColor(255, 255, 255, 0);
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
 				}
 
 				if ( MPBar.flashAnimState <= 9 )
@@ -17755,8 +17760,28 @@ void Player::HUD_t::updateMPBar()
 					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
 
 					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
 					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+
+					if ( MPBar.flashAnimState % 2 == 0
+						&& !processedOnTick )
+					{
+						if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png" )
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png";
+						}
+						else if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png" )
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png";
+						}
+						else if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png" )
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00d.png";
+						}
+						else 
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+						}
+					}
 				}
 				else if ( MPBar.flashAnimState <= 10 )
 				{
