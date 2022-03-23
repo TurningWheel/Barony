@@ -354,15 +354,15 @@ void createHPMPBars(const int player)
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
 
-		//auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-		//	"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 25pc");
-		//div25Percent->disabled = true;
-		//auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-		//	"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 50pc");
-		//div50Percent->disabled = true;
-		//auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-		//	"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
-		//div75Percent->disabled = true;
+		auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 25pc");
+		div25Percent->disabled = true;
+		auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 50pc");
+		div50Percent->disabled = true;
+		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
+		div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto mptext = foregroundFrame->addField("mp text", 16);
@@ -17146,6 +17146,8 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 	whichFrame->setDisabled(true);
 }
 
+const int HPMPdividerThresholdInterval = 20;
+
 void Player::HUD_t::updateHPBar()
 {
 	if ( !hpFrame )
@@ -17349,6 +17351,20 @@ void Player::HUD_t::updateHPBar()
 		auto div75Percent = hpForegroundFrame->findImage("hp img div 75pc");
 		div75Percent->disabled = false;
 		div75Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .75 - 2;
+
+		if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+		{
+			div75Percent->disabled = true;
+			// 2 dividers 33%/66%
+			div25Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .33 - 2;
+			div50Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .66 - 2;
+			if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+			{
+				// 1 divider 50%
+				div25Percent->disabled = true;
+				div50Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .5 - 2;
+			}
+		}
 	}
 
 	hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
@@ -17652,16 +17668,30 @@ void Player::HUD_t::updateMPBar()
 
 	// dividers
 	{
-		//const int fullBarWidth = mpProgressBot->pos.w + progressWidth + mpEndcap->pos.w / 2;
-		//auto div25Percent = mpForegroundFrame->findImage("mp img div 25pc");
-		//div25Percent->disabled = true;
-		//div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .25 - 2;
-		//auto div50Percent = mpForegroundFrame->findImage("mp img div 50pc");
-		//div50Percent->disabled = true;
-		//div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
-		//auto div75Percent = mpForegroundFrame->findImage("mp img div 75pc");
-		//div75Percent->disabled = true;
-		//div75Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .75 - 2;
+		const int fullBarWidth = mpProgressBot->pos.w + progressWidth + mpEndcap->pos.w / 2;
+		auto div25Percent = mpForegroundFrame->findImage("mp img div 25pc");
+		div25Percent->disabled = false;
+		div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .25 - 2;
+		auto div50Percent = mpForegroundFrame->findImage("mp img div 50pc");
+		div50Percent->disabled = false;
+		div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
+		auto div75Percent = mpForegroundFrame->findImage("mp img div 75pc");
+		div75Percent->disabled = false;
+		div75Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .75 - 2;
+
+		if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+		{
+			div75Percent->disabled = true;
+			// 2 dividers 33%/66%
+			div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .33 - 2;
+			div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .66 - 2;
+			if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+			{
+				// 1 divider 50%
+				div25Percent->disabled = true;
+				div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
+			}
+		}
 	}
 
 	mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
