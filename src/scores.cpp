@@ -30,7 +30,7 @@
 // definitions
 list_t topscores;
 list_t topscoresMultiplayer;
-int victory = false;
+int victory = 0;
 Uint32 completionTime = 0;
 bool conductPenniless = true;
 bool conductFoodless = true;
@@ -389,7 +389,8 @@ int totalScore(score_t* score)
 		{
 			amount *= 2;
 		}
-		if ( score->conductGameChallenges[CONDUCT_KEEPINVENTORY] )
+		if ( score->conductGameChallenges[CONDUCT_KEEPINVENTORY] &&
+		    score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 		{
 			amount /= 2;
 		}
@@ -3763,7 +3764,7 @@ void updatePlayerConductsInMainLoop()
 	{
 		if ( (svFlags & SV_FLAG_KEEPINVENTORY) )
 		{
-			if ( multiplayer != SINGLE )
+			if ( multiplayer != SINGLE || splitscreen )
 			{
 				conductGameChallenges[CONDUCT_KEEPINVENTORY] = 1;
 			}
@@ -3792,7 +3793,7 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( !conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
-		if ( multiplayer != SINGLE )
+		if ( multiplayer != SINGLE || splitscreen )
 		{
 			conductGameChallenges[CONDUCT_MULTIPLAYER] = 1;
 		}

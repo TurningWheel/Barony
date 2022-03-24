@@ -4321,12 +4321,26 @@ bind_failed:
             widget.setInvisible(selectedScore == nullptr);
             });
 
+        static real_t portrait_rotation;
+        portrait_rotation = (2.0 * PI) - (PI / 6.0);
+
         auto portrait = subframe->addFrame("portrait");
-        portrait->setSize(SDL_Rect{0, 0, 284, 282});
+        portrait->setSize(SDL_Rect{0, 0, 284, 280});
         portrait->setBorder(0);
         portrait->setColor(0);
         portrait->setDrawCallback([](const Widget&, const SDL_Rect rect){
-			drawCharacterPreview(0, rect, 50, 0.0);
+			drawCharacterPreview(0, rect, 50, portrait_rotation);
+            });
+        portrait->setTickCallback([](Widget& widget){
+            auto frame = static_cast<Frame*>(&widget);
+            auto& input = Input::inputs[widget.getOwner()];
+            real_t speed = PI / fpsLimit;
+            if (frame->capturesMouse()) {
+                portrait_rotation += input.analogToggle("MenuMouseWheelDown") * speed * 10;
+                portrait_rotation -= input.analogToggle("MenuMouseWheelUp") * speed * 10;
+            }
+            portrait_rotation += input.analog("MenuScrollRight") * speed;
+            portrait_rotation -= input.analog("MenuScrollLeft") * speed;
             });
 
 		auto conduct_panel = subframe->addImage(
@@ -4338,13 +4352,14 @@ bind_failed:
 
 		auto conduct = subframe->addFrame("conduct");
 		conduct->setFont(smallfont_outline);
-		conduct->setSize(SDL_Rect{12, 364, 266, 98});
-		conduct->setActualSize(SDL_Rect{0, 0, 266, 98});
+		conduct->setSize(SDL_Rect{6, 360, 272, 102});
+		conduct->setActualSize(SDL_Rect{0, 0, 272, 102});
 		conduct->setScrollBarsEnabled(false);
-		conduct->setEntrySize(20);
+		conduct->setListOffset(SDL_Rect{0, 4, 0, 0});
+		conduct->setEntrySize(28);
 		conduct->setBorder(0);
 		conduct->setColor(0);
-		conduct->setSelectorOffset(SDL_Rect{-6, -6, 0, 0,});
+		conduct->setSelectorOffset(SDL_Rect{0, -6, 0, 0,});
 		conduct->setWidgetSearchParent("leaderboards");
 		conduct->addWidgetMovement("MenuListCancel", "conduct");
 		conduct->addWidgetAction("MenuCancel", "back_button");
@@ -4365,7 +4380,7 @@ bind_failed:
             );
 
         auto victory_plate_header = subframe->addImage(
-            SDL_Rect{34, 222, 214, 72},
+            SDL_Rect{34, 194, 214, 100},
             0xffffffff,
             "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
             "victory_plate_header"
@@ -4388,42 +4403,42 @@ bind_failed:
             {
                 "Here lies\n%s\nRequiescat In Pace",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Plate_00A.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Image_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Image_01B.png",
                 makeColor(151, 115, 58, 255),
                 makeColor(21, 9, 8, 255)
             },
             {
                 "Make Way For\n%s\nthe Triumphant!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
                 makeColor(230, 183, 20, 255),
                 makeColor(82, 31, 4, 255)
             },
             {
                 "Bow Before\n%s\nthe Eternal!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
                 makeColor(230, 183, 20, 255),
                 makeColor(82, 31, 4, 255)
             },
             {
                 "Long Live\n%s\nthe Baron!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
                 makeColor(230, 183, 20, 255),
                 makeColor(82, 31, 4, 255)
             },
             {
                 "All Hail\n%s\nthe Baron!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Image_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Image_01B.png",
                 makeColor(110, 107, 224, 255),
                 makeColor(22, 16, 30, 255)
             },
             {
                 "Tremble Before\n%s\nthe Baron!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Plate_00.png",
-                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Image_00.png",
+                "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Image_01B.png",
                 makeColor(223, 42, 42, 255),
                 makeColor(52, 10, 28, 255)
             },
@@ -4480,9 +4495,10 @@ bind_failed:
 		auto kills_left = subframe->addFrame("kills_left");
 		kills_left->setScrollBarsEnabled(false);
 		kills_left->setFont(smallfont_outline);
-		kills_left->setSize(SDL_Rect{300, 222, 290, 182});
+		kills_left->setSize(SDL_Rect{300, 226, 290, 182});
 		kills_left->setActualSize(SDL_Rect{0, 0, 144, 182});
-		kills_left->setEntrySize(20);
+		kills_left->setListOffset(SDL_Rect{0, 4, 0, 0});
+		kills_left->setEntrySize(28);
 		kills_left->setBorder(0);
 		kills_left->setColor(0);
 		kills_left->setWidgetSearchParent("leaderboards");
@@ -4501,12 +4517,13 @@ bind_failed:
 		auto kills_right = subframe->addFrame("kills_right");
 		kills_right->setScrollBarsEnabled(false);
 		kills_right->setAllowScrollBinds(false);
-		kills_right->setFont(smallfont_outline);
-		kills_right->setSize(SDL_Rect{446, 222, 144, 182});
-		kills_right->setActualSize(SDL_Rect{0, 0, 144, 182});
 		kills_right->setHideSelectors(true);
 		kills_right->setHollow(true);
-		kills_right->setEntrySize(20);
+		kills_right->setFont(smallfont_outline);
+		kills_right->setSize(SDL_Rect{446, 226, 144, 182});
+		kills_right->setActualSize(SDL_Rect{0, 0, 144, 182});
+		kills_right->setListOffset(SDL_Rect{0, 4, 0, 0});
+		kills_right->setEntrySize(28);
 		kills_right->setBorder(0);
 		kills_right->setColor(0);
 
@@ -4558,67 +4575,53 @@ bind_failed:
 		    auto conduct = subframe->findFrame("conduct");
 		    assert(conduct);
 		    conduct->clearEntries();
-		    conduct->setActualSize(SDL_Rect{0, 0, 266, 98});
+		    conduct->setActualSize(SDL_Rect{0, 0, 272, 102});
 		    auto conduct_header = conduct->addEntry("header", true);
-		    conduct_header->text = "Voluntary Challenges:";
+		    conduct_header->text = " Voluntary Challenges:";
 		    conduct_header->color = makeColor(203, 171, 101, 255);
 
-		    const char* conduct_strs[][2] = {
-		        {"penniless", "You were penniless."},
-		        {"foodless", "You ate nothing."},
-		        {"vegetarian", "You were vegetarian."},
-		        {"illiterate", "You were illiterate."},
-		        {"hardcore", "You were hardcore."},
-		        {"cheats_enabled", "You cheated."},
-		        {"multiplayer", "You played with friends."},
-		        {"classic_mode", "You played Classic Mode."},
-		        {"modded", "You played with mods."},
-		        {"brawler", "You used no weapons."},
-		        {"blessed_boots_speed", "You were very efficient."},
-		        {"boots_speed", "You were very quick."},
-		        {"keep_inventory", "You kept items after death."},
-		        {"life_saving", "You had an extra life."},
-		        {"accursed", "You were a vampire."},
-		        {"ranged_only", "You only used ranged weapons."},
+		    struct Conduct {
+		        bool achieved;
+		        const char* name;
+		        const char* text;
 		    };
 
-		    bool conducts[] = {
-		        score->conductPenniless,
-		        score->conductFoodless,
-		        score->conductVegetarian,
-		        score->conductIlliterate,
-		        (bool)score->conductGameChallenges[CONDUCT_HARDCORE],
-		        (bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED],
-		        (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER],
-		        (bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE],
-		        (bool)score->conductGameChallenges[CONDUCT_MODDED],
-		        (bool)score->conductGameChallenges[CONDUCT_BRAWLER],
-		        (bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED],
-		        (bool)score->conductGameChallenges[CONDUCT_BOOTS_SPEED],
-		        (bool)score->conductGameChallenges[CONDUCT_KEEPINVENTORY],
-		        (bool)score->conductGameChallenges[CONDUCT_LIFESAVING],
-		        (bool)score->conductGameChallenges[CONDUCT_ACCURSED],
-		        (bool)score->conductGameChallenges[CONDUCT_RANGED_ONLY],
+		    Conduct conducts[] = {
+		        {(bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED], "cheats_enabled", u8" \x1E You cheated."},
+		        {(bool)score->conductGameChallenges[CONDUCT_MODDED], "modded", u8" \x1E You played with mods."},
+		        {(bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "multiplayer", u8" \x1E You played with friends."},
+		        {(bool)score->conductGameChallenges[CONDUCT_HARDCORE], "hardcore", u8" \x1E You were hardcore."},
+		        {(bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE], "classic_mode", u8" \x1E You played Classic Mode."},
+		        {score->conductPenniless, "penniless", u8" \x1E You were penniless."},
+		        {score->conductFoodless, "foodless", u8" \x1E You ate nothing."},
+		        {score->conductVegetarian &&
+		            !score->conductFoodless, "vegetarian", u8" \x1E You were vegetarian."},
+		        {score->conductIlliterate, "illiterate", u8" \x1E You were illiterate."},
+		        {(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "brawler", u8" \x1E You used no weapons."},
+		        {(bool)score->conductGameChallenges[CONDUCT_RANGED_ONLY] &&
+		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", u8" \x1E You only used ranged weapons."},
+		        {(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "blessed_boots_speed", u8" \x1E You were extremely quick."},
+		        {(bool)score->conductGameChallenges[CONDUCT_BOOTS_SPEED] &&
+		            !(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "boots_speed", u8" \x1E You were very quick."},
+		        {(bool)score->conductGameChallenges[CONDUCT_KEEPINVENTORY] &&
+		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", u8" \x1E You kept items after death."},
+		        {(bool)score->conductGameChallenges[CONDUCT_LIFESAVING], "life_saving", u8" \x1E You had an extra life."},
+		        {(bool)score->conductGameChallenges[CONDUCT_ACCURSED], "accursed", u8" \x1E You were accursed."},
 		    };
 		    constexpr int num_conducts = sizeof(conducts) / sizeof(conducts[0]);
 
             bool atLeastOneConduct = false;
             for (int c = 0; c < num_conducts; ++c) {
-		        if (conducts[c]) {
-		            if (c == 15 && conducts[9]) {
-		                // skip the "ranged only" conduct
-		                // if we already established no weapons used!
-		                continue;
-		            }
+		        if (conducts[c].achieved) {
 		            atLeastOneConduct = true;
-		            auto entry = conduct->addEntry(conduct_strs[c][0], true);
-		            entry->text = conduct_strs[c][1];
+		            auto entry = conduct->addEntry(conducts[c].name, true);
+		            entry->text = conducts[c].text;
 		            entry->color = makeColor(203, 171, 101, 255);
 		        }
 		    }
 		    if (!atLeastOneConduct) {
 	            auto entry = conduct->addEntry("none", true);
-	            entry->text = "None";
+	            entry->text = " None";
 	            entry->color = makeColor(203, 171, 101, 255);
 		    }
 
@@ -4666,16 +4669,20 @@ bind_failed:
             bool noKillsAtAll = true;
             auto kills = kills_left;
             for (int c = 0; c < NUMMONSTERS; ++c) {
-                if (score->kills[c] <= 0) {
+                int num_kills = score->kills[c];
+                if (c == LICH_FIRE || c == LICH_ICE) {
                     continue;
                 }
-                if (score->kills[c] == 1) {
-                    snprintf(buf, sizeof(buf), "%3d %s",
-                        score->kills[c], language[90 + c]);
-                } else {
-                    snprintf(buf, sizeof(buf), "%3d %s",
-                        score->kills[c], language[111 + c]);
+                if (c == LICH) {
+                    num_kills += score->kills[LICH_FIRE] + score->kills[LICH_ICE];
                 }
+                if (num_kills <= 0) {
+                    continue;
+                }
+                auto name = num_kills == 1 ?
+                    getMonsterLocalizedName((Monster)c) :
+                    getMonsterLocalizedPlural((Monster)c);
+                snprintf(buf, sizeof(buf), "%3d %s", num_kills, name.c_str());
                 auto kill = kills->addEntry(buf, true);
                 kill->color = makeColor(151, 115, 58, 255);
                 kill->text = buf;
@@ -4686,7 +4693,7 @@ bind_failed:
             if (noKillsAtAll) {
                 auto entry = kills_left->addEntry("no_kills", true);
                 entry->color = makeColor(151, 115, 58, 255);
-                entry->text = "None";
+                entry->text = " None";
             }
 
             const Uint32 time = score->completionTime / TICKS_PER_SECOND;
@@ -11589,7 +11596,6 @@ bind_failed:
 		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
 		        destroyMainMenu();
 				if (ingame) {
-				    victory = 0;
 				    doEndgame();
 				}
 	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
@@ -11598,7 +11604,6 @@ bind_failed:
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
 				if (ingame) {
-				    victory = 0;
 				    doEndgame();
 				}
 	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);

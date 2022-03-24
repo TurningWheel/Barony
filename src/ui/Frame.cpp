@@ -414,8 +414,8 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			// draw highlighted background
 		    if (activated || mouseActive) {
 		        SDL_Rect pos;
-		        pos.x = _size.x + border + listOffset.x - scroll.x;
-		        pos.y = _size.y + border + listOffset.y + i * entrySize - scroll.y;
+		        pos.x = _size.x + border - scroll.x;
+		        pos.y = _size.y + border + i * entrySize - scroll.y;
 		        pos.w = _size.w;
 		        pos.h = entrySize;
 
@@ -1761,6 +1761,7 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 		actualSize.y = (index + 1) * entrySize - size.h;
 		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 	}
+	syncScroll();
 }
 
 void Frame::activateEntry(entry_t& entry) {
