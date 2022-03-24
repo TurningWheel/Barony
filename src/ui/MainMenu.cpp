@@ -252,7 +252,7 @@ namespace MainMenu {
 	};
 
 	void soundToggleMenu() {
-		playSound(500, 48);
+		playSound(500, 96);
 	}
 
 	static inline void soundMove() {
@@ -4344,7 +4344,7 @@ bind_failed:
 		conduct->setEntrySize(20);
 		conduct->setBorder(0);
 		conduct->setColor(0);
-		conduct->setSelectorOffset(SDL_Rect{-4, -4, 0, 0,});
+		conduct->setSelectorOffset(SDL_Rect{-6, -6, 0, 0,});
 		conduct->setWidgetSearchParent("leaderboards");
 		conduct->addWidgetMovement("MenuListCancel", "conduct");
 		conduct->addWidgetAction("MenuCancel", "back_button");
@@ -4355,6 +4355,7 @@ bind_failed:
         conduct->setSelectedEntryColor(makeColor(151, 115, 58, 255));
 		conduct->setScrollWithLeftControls(false);
 		conduct->setClickable(true);
+        conduct->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
 
         auto victory_plate = subframe->addImage(
             SDL_Rect{2, 280, 280, 82},
@@ -4493,7 +4494,7 @@ bind_failed:
 		kills_left->setWidgetLeft("conduct");
 		kills_left->addSyncScrollTarget("kills_right");
         kills_left->setSelectedEntryColor(makeColor(101, 78, 39, 255));
-		kills_left->setSelectorOffset(SDL_Rect{-4, -4, 0, 0,});
+		kills_left->setSelectorOffset(SDL_Rect{-12, -4, 18, 0,});
 		kills_left->setScrollWithLeftControls(false);
 		kills_left->setClickable(true);
 
@@ -4743,6 +4744,7 @@ bind_failed:
                         button->setHighlightColor(makeColor(255,255,255,255));
                         button->setTextColor(makeColor(203,171,101,255));
                         button->setTextHighlightColor(makeColor(231,213,173,255));
+                        button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
                         button->setWidgetSearchParent("leaderboards");
 		                button->addWidgetAction("MenuCancel", "back_button");
 		                button->addWidgetAction("MenuAlt1", "delete_entry");
@@ -4785,7 +4787,9 @@ bind_failed:
 
                         if (index == 0) {
                             button->select();
-                            button->activate();
+                            selectedScore = score;
+                            updateStats(score);
+                            loadScore(score);
                         }
 
                         y += 38;
@@ -4825,7 +4829,12 @@ bind_failed:
 		    }
             };
 
-#define TAB_FN(X) [](Button& button){soundActivate(); button.select(); repopulate_list(X);}
+#define TAB_FN(X) [](Button& button){\
+    soundActivate();\
+    button.select();\
+    repopulate_list(X);\
+}
+
         struct Tab {
             const char* name;
             const char* text;
@@ -4849,6 +4858,21 @@ bind_failed:
 			tab->setColor(makeColor(255, 255, 255, 255));
 			tab->setHighlightColor(makeColor(255, 255, 255, 255));
 			tab->setCallback(tabs[c].func);
+
+			tab->setTickCallback([](Widget& widget){
+			    auto tab = static_cast<Button*>(&widget);
+			    int index = 0;
+			    for (; index < num_tabs; ++index) {
+			        if (!strcmp(tabs[index].name, tab->getName())) {
+			            break;
+			        }
+			    }
+			    if (index == (int)boardType) {
+			        tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
+			    } else {
+			        tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
+			    }
+			    });
 
             constexpr int fullw = 184 * num_tabs + 20 * (num_tabs - 1);
             constexpr int xbegin = (992 - fullw) / 2;
@@ -4962,7 +4986,6 @@ bind_failed:
             }
 		    });
 		delete_entry->setCallback([](Button& button){
-            soundActivate();
             if (boardType != BoardType::LOCAL && boardType != BoardType::LAN) {
                 // don't ever delete online scores
                 return;
@@ -4975,7 +4998,7 @@ bind_failed:
                     prompt,
                     "Yes", "No",
                     [](Button& button){ // Yes
-		                soundActivate();
+                        soundActivate();
 		                soundDeleteSave();
 		                assert(main_menu_frame);
 		                auto prompt = main_menu_frame->findFrame("binary_prompt");
@@ -4994,11 +5017,7 @@ bind_failed:
 		                    ++index;
 		                }
 		                (void)deleteScore(boardType == BoardType::LAN, index);
-
-                        int tab_index = static_cast<int>(boardType);
-                        auto tab = leaderboards->findButton(tabs[tab_index].name); assert(tab);
-                        tab->select();
-                        tab->activate();
+		                repopulate_list(boardType);
                         },
                     [](Button& button){ // No
 		                soundCancel();
@@ -5008,11 +5027,7 @@ bind_failed:
 			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
 			                dimmer->removeSelf();
 		                }
-                        int tab_index = static_cast<int>(boardType);
-		                auto leaderboards = main_menu_frame->findFrame("leaderboards");
-                        auto tab = leaderboards->findButton(tabs[tab_index].name); assert(tab);
-                        tab->select();
-                        tab->activate();
+		                repopulate_list(boardType);
                         });
                 auto scores = boardType == BoardType::LOCAL ?
                     &topscores : &topscoresMultiplayer;
@@ -5027,11 +5042,7 @@ bind_failed:
 			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
 			                dimmer->removeSelf();
 		                }
-                        int tab_index = static_cast<int>(boardType);
-		                auto leaderboards = main_menu_frame->findFrame("leaderboards");
-                        auto tab = leaderboards->findButton(tabs[tab_index].name); assert(tab);
-                        tab->select();
-                        tab->activate();
+		                repopulate_list(boardType);
                         });
             }
 		    });
@@ -5042,15 +5053,17 @@ bind_failed:
         delete_entry->addWidgetAction("MenuPageLeft", "tab_left");
         delete_entry->addWidgetAction("MenuPageRight", "tab_right");
 
-		repopulate_list(boardType);
+        Button* tab = window->findButton(tabs[0].name);
+        tab->select();
+        tab->activate();
     }
 
 /******************************************************************************/
 
 	static void archivesLeaderboards(Button& button) {
-		soundActivate();
 		if (0) {
 		    // test cutscene
+		    soundActivate();
 		    destroyMainMenu();
 		    createDummyMainMenu();
 		    beginFade(MainMenu::FadeDestination::EndingHuman);
