@@ -106,7 +106,7 @@ void Player::BookGUI_t::createBookGUI()
 		"", "prompt prev img");
 	promptPrevPageImg->disabled = true;
 
-	std::string bookFont = "fonts/pixel_maz.ttf#30";
+	std::string bookFont = "fonts/pixel_maz.ttf#32";
 	Field* bookLeftColumnText = bookBackground->addField("left column text", 1024);
 	bookLeftColumnText->setText("Nothing");
 	const int pageWidth = BOOK_PAGE_WIDTH;
