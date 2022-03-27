@@ -11633,6 +11633,7 @@ bind_failed:
 			    return;
 			}
 			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
+	            skipintro = true; // so the user doesn't get prompted to play the tutorial again
 				destroyMainMenu();
 				multiplayer = SINGLE;
 				numplayers = 0;
