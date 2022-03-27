@@ -736,6 +736,17 @@ namespace MainMenu {
 		return frame;
 	}
 
+	static void closePrompt(const char* name) {
+        assert(main_menu_frame);
+        auto prompt = main_menu_frame->findFrame(name);
+        if (prompt) {
+            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+            dimmer->removeSelf();
+        } else {
+            printlog("no '%s' to delete!\n", name);
+        }
+	}
+
 	static void textFieldPrompt(
 		const char* field_text,
 		const char* guide_text,
@@ -807,6 +818,15 @@ namespace MainMenu {
 		cancel->setCallback(cancel_callback);
 	}
 
+	static const char* closeTextField() {
+        assert(main_menu_frame);
+        auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
+        auto field = prompt->findField("field"); assert(field);
+        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
+        dimmer->removeSelf();
+	    return field->getText(); // note: this will only be valid for one frame!
+	}
+
 	static void binaryPrompt(
 		const char* window_text,
 		const char* okay_text,
@@ -855,6 +875,10 @@ namespace MainMenu {
 		cancel->setCallback(cancel_callback);
 	}
 
+	static void closeBinary() {
+	    closePrompt("binary_prompt");
+	}
+
 	static void monoPrompt(
 		const char* window_text,
 		const char* okay_text,
@@ -884,6 +908,10 @@ namespace MainMenu {
 		okay->select();
 	}
 
+	static void closeMono() {
+	    closePrompt("mono_prompt");
+	}
+
 	static void textPrompt(const char* window_text) {
 		soundActivate();
 
@@ -900,15 +928,17 @@ namespace MainMenu {
 		text->select();
 	}
 
+	static void closeText() {
+	    closePrompt("text_prompt");
+	}
+
     static void connectionErrorPrompt(const char* str) {
         soundError();
         monoPrompt(str, "Okay",
             [](Button& button) {
             soundCancel();
-            auto prompt = static_cast<Frame*>(button.getParent()); assert(prompt);
-            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-            dimmer->removeSelf();
             multiplayer = SINGLE;
+            closeMono();
             });
     };
 
@@ -918,13 +948,8 @@ namespace MainMenu {
             "Okay",
             [](Button& button){
                 soundCancel();
-                assert(main_menu_frame);
-                auto prompt = main_menu_frame->findFrame("mono_prompt");
-                if (prompt) {
-                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-                    dimmer->removeSelf();
-                }
                 beginFade(FadeDestination::RootMainMenu);
+                closeMono();
             }
         );
     }
@@ -5008,11 +5033,6 @@ bind_failed:
                         soundActivate();
 		                soundDeleteSave();
 		                assert(main_menu_frame);
-		                auto prompt = main_menu_frame->findFrame("binary_prompt");
-		                if (prompt) {
-			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                dimmer->removeSelf();
-		                }
 		                auto leaderboards = main_menu_frame->findFrame("leaderboards");
 		                auto list = leaderboards->findFrame("list");
 
@@ -5025,16 +5045,12 @@ bind_failed:
 		                }
 		                (void)deleteScore(boardType == BoardType::LAN, index);
 		                repopulate_list(boardType);
+		                closeBinary();
                         },
                     [](Button& button){ // No
 		                soundCancel();
-		                assert(main_menu_frame);
-		                auto prompt = main_menu_frame->findFrame("binary_prompt");
-		                if (prompt) {
-			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                dimmer->removeSelf();
-		                }
 		                repopulate_list(boardType);
+		                closeBinary();
                         });
                 auto scores = boardType == BoardType::LOCAL ?
                     &topscores : &topscoresMultiplayer;
@@ -5043,13 +5059,8 @@ bind_failed:
                     "Please select a score\nto delete first", "Okay",
                     [](Button& button){
 		                soundCancel();
-		                assert(main_menu_frame);
-		                auto prompt = main_menu_frame->findFrame("mono_prompt");
-		                if (prompt) {
-			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                dimmer->removeSelf();
-		                }
 		                repopulate_list(boardType);
+		                closeMono();
                         });
             }
 		    });
@@ -5673,13 +5684,6 @@ bind_failed:
 
 	static void handlePacketsAsClient() {
 	    if (receivedclientnum == false) {
-            static auto close_text_prompt = [](){
-                assert(main_menu_frame);
-                auto prompt = main_menu_frame->findFrame("text_prompt"); assert(prompt);
-                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-                dimmer->removeSelf();
-                };
-
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -5689,7 +5693,7 @@ bind_failed:
 						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 						disconnectFromLobby();
-						close_text_prompt();
+						closeText();
 						connectionErrorPrompt(error_str.c_str());
 						connectingToLobbyStatus = EResult::k_EResultOK;
 					}
@@ -5705,7 +5709,7 @@ bind_failed:
 						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code).c_str();
 						disconnectFromLobby();
-						close_text_prompt();
+						closeText();
 						connectionErrorPrompt(error_str);
 						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 					}
@@ -5871,7 +5875,7 @@ bind_failed:
                     }
 
 					// display error message
-                    close_text_prompt();
+                    closeText();
                     connectionErrorPrompt(error_str);
 
                     // reset connection
@@ -5902,7 +5906,7 @@ bind_failed:
 					}
 
 					// open lobby
-                    close_text_prompt();
+                    closeText();
 					createLobby(LobbyType::LobbyJoined);
 
                     // TODO subscribe to mods!
@@ -6188,27 +6192,8 @@ bind_failed:
 	    Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
 
 	    // resolve local host's address
-	    if (SDLNet_ResolveHost(&net_server, NULL, port) == -1) {
-	        char buf[1024];
-	        snprintf(buf, sizeof(buf), "Failed to resolve localhost:%hu.", port);
-		    printlog("%s\n", buf);
-            monoPrompt(buf, "Okay",
-                [](Button& button){
-		            soundCancel();
-		            assert(main_menu_frame);
-		            auto hall_of_trials = main_menu_frame->findFrame("hall_of_trials_menu"); assert(hall_of_trials);
-		            auto subwindow = hall_of_trials->findFrame("subwindow"); assert(subwindow);
-		            auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
-		            tutorial->select();
-		            auto prompt = main_menu_frame->findFrame("mono_prompt");
-		            if (prompt) {
-			            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			            dimmer->removeSelf();
-		            }
-                }
-            );
-		    return false;
-	    }
+	    int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
+	    assert(resolve != -1);
 
 	    // open sockets
 	    if (!(net_sock = SDLNet_UDP_Open(port))) {
@@ -6272,15 +6257,6 @@ bind_failed:
 		    loadGame(getSaveGameClientnum(false));
 	    }
 
-	    assert(main_menu_frame);
-
-        static auto close_text_prompt = [](){
-	        assert(main_menu_frame);
-	        auto prompt = main_menu_frame->findFrame("text_prompt"); assert(prompt);
-	        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-	        dimmer->removeSelf();
-            };
-
         // copy address
         char address_copy[128];
         int address_len = (int)strlen(address);
@@ -6323,7 +6299,7 @@ bind_failed:
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
 			    printlog(buf);
-			    close_text_prompt();
+			    closeText();
 			    connectionErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
@@ -6336,7 +6312,7 @@ bind_failed:
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
 			    printlog(buf);
-			    close_text_prompt();
+			    closeText();
 			    connectionErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
@@ -9223,11 +9199,7 @@ bind_failed:
 		            createHallofTrialsMenu();
 
                     // remove prompt
-			        auto prompt = main_menu_frame->findFrame("binary_prompt");
-			        if (prompt) {
-				        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				        dimmer->removeSelf();
-			        }
+			        closeBinary();
 	            },
 	            [](Button& button) { // No button
 			        soundCancel();
@@ -9240,11 +9212,7 @@ bind_failed:
                     tutorial->select();
 
                     // remove prompt
-			        auto prompt = main_menu_frame->findFrame("binary_prompt");
-			        if (prompt) {
-				        auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				        dimmer->removeSelf();
-			        }
+			        closeBinary();
 	            }
 	        );
             });
@@ -9272,11 +9240,7 @@ bind_failed:
 			            auto subwindow = hall_of_trials->findFrame("subwindow"); assert(subwindow);
 			            auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
 			            tutorial->select();
-			            auto prompt = main_menu_frame->findFrame("mono_prompt");
-			            if (prompt) {
-				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				            dimmer->removeSelf();
-			            }
+		                closeMono();
 	                }
 	            );
 		    }
@@ -9374,15 +9338,7 @@ bind_failed:
 		new_button->setTextHighlightColor(makeColor(180, 133, 13, 255));
 		new_button->setText(" \nNEW");
 		new_button->setFont(smallfont_outline);
-		new_button->setCallback([](Button& button){
-		    soundActivate();
-		    playNew(button);
-
-		    // remove "Play Game" window
-		    auto frame = static_cast<Frame*>(button.getParent());
-		    frame = static_cast<Frame*>(frame->getParent());
-		    frame->removeSelf();
-		    });
+		new_button->setCallback(playNew);
 		new_button->setWidgetSearchParent(window->getName());
 		new_button->setWidgetLeft("continue");
 		new_button->setWidgetDown("hall_of_trials");
@@ -9399,6 +9355,200 @@ bind_failed:
 		} else {
 			hall_of_trials_button->select();
 		}
+	}
+
+	static void createLocalOrNetworkMenu() {
+		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
+		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
+		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
+		allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
+		allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
+		allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
+		allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
+		allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+		allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		// create "Local or Network" window
+		auto window = dimmer->addFrame("local_or_network_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 436) / 2 - 38,
+			(Frame::virtualScreenY - 494) / 2,
+			496,
+			494});
+		window->setActualSize(SDL_Rect{0, 0, 496, 494});
+		window->setColor(0);
+		window->setBorder(0);
+		window->setTickCallback([](Widget& widget){
+		    auto window = static_cast<Frame*>(&widget); assert(window);
+		    auto tooltip = window->findField("tooltip"); assert(tooltip);
+		    auto local_button = window->findButton("local"); assert(local_button);
+		    auto local_image = window->findImage("local_image"); assert(local_image);
+		    if (local_button->isSelected()) {
+		        tooltip->setText("Play singleplayer or with 2-4\nplayers in splitscreen multiplayer");
+                local_image->path =
+#ifdef NINTENDO
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00.png";
+#else
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00_NoNX.png";
+#endif
+		    } else {
+                local_image->path =
+#ifdef NINTENDO
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png";
+#else
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png";
+#endif
+		    }
+		    auto host_lan_button = window->findButton("host_lan"); assert(host_lan_button);
+		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
+		    if (host_lan_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
+                host_lan_image->path =
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00.png";
+		    } else {
+                host_lan_image->path =
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png";
+		    }
+		    auto host_online_button = window->findButton("host_online"); assert(host_online_button);
+		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
+		    if (host_online_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover the internet");
+                host_online_image->path =
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00.png";
+		    } else {
+                host_online_image->path =
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png";
+		    }
+		    auto join_button = window->findButton("join"); assert(join_button);
+		    auto join_image = window->findImage("join_image"); assert(join_image);
+		    if (join_button->isSelected()) {
+		        tooltip->setText("Join a multiplayer game");
+                join_image->path =
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00.png";
+		    } else {
+                join_image->path =
+		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png";
+		    }
+		    });
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			"*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Window_00.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 32);
+		banner_title->setSize(SDL_Rect{180, 24, 152, 18});
+		banner_title->setText("NEW ADVENTURER");
+		banner_title->setFont(smallfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		(void)createBackWidget(window, [](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			createPlayWindow();
+			}, SDL_Rect{42, 4, 0, 0});
+
+		auto local_button = window->addButton("local");
+		local_button->setSize(SDL_Rect{96, 72, 164, 62});
+		local_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		local_button->setColor(makeColor(255, 255, 255, 255));
+		local_button->setText("Local Adventure");
+		local_button->setFont(smallfont_outline);
+		local_button->setWidgetSearchParent(window->getName());
+		local_button->setWidgetBack("back_button");
+		local_button->setWidgetDown("host_lan");
+		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
+
+		local_button->select();
+
+		(void)window->addImage(
+		    SDL_Rect{278, 76, 104, 52},
+		    0xffffffff,
+#ifdef NINTENDO
+		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png",
+#else
+		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png",
+#endif
+		    "local_image"
+		);
+
+		auto host_lan_button = window->addButton("host_lan");
+		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
+		host_lan_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_lan_button->setColor(makeColor(255, 255, 255, 255));
+		host_lan_button->setText("Host LAN Party");
+		host_lan_button->setFont(smallfont_outline);
+		host_lan_button->setWidgetSearchParent(window->getName());
+		host_lan_button->setWidgetBack("back_button");
+		host_lan_button->setWidgetUp("local");
+		host_lan_button->setWidgetDown("host_online");
+		host_lan_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLAN);});
+
+		(void)window->addImage(
+		    SDL_Rect{270, 170, 126, 50},
+		    0xffffffff,
+		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png",
+		    "host_lan_image"
+		);
+
+		auto host_online_button = window->addButton("host_online");
+		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
+		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		host_online_button->setColor(makeColor(255, 255, 255, 255));
+		host_online_button->setText("Host Online Party");
+		host_online_button->setFont(smallfont_outline);
+		host_online_button->setWidgetSearchParent(window->getName());
+		host_online_button->setWidgetBack("back_button");
+		host_online_button->setWidgetUp("host_lan");
+		host_online_button->setWidgetDown("join");
+		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+
+		(void)window->addImage(
+		    SDL_Rect{270, 234, 126, 50},
+		    0xffffffff,
+		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png",
+		    "host_online_image"
+		);
+
+		auto join_button = window->addButton("join");
+		join_button->setSize(SDL_Rect{96, 326, 164, 62});
+		join_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		join_button->setColor(makeColor(255, 255, 255, 255));
+		join_button->setText("Lobby Browser");
+		join_button->setFont(smallfont_outline);
+		join_button->setWidgetSearchParent(window->getName());
+		join_button->setWidgetBack("back_button");
+		join_button->setWidgetUp("host_online");
+		join_button->setCallback(createLobbyBrowser);
+
+		(void)window->addImage(
+		    SDL_Rect{270, 324, 120, 68},
+		    0xffffffff,
+		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png",
+		    "join_image"
+		);
+
+		auto tooltip = window->addField("tooltip", 1024);
+		tooltip->setSize(SDL_Rect{106, 398, 300, 48});
+		tooltip->setFont(smallfont_no_outline);
+		tooltip->setColor(makeColor(91, 76, 50, 255));
+		tooltip->setJustify(Field::justify_t::CENTER);
+		tooltip->setText("Help text goes here.");
 	}
 
 	static void createLobbyBrowser(Button& button) {
@@ -9648,7 +9798,7 @@ bind_failed:
 		(void)createBackWidget(window, [](Button& button){
 		    soundCancel();
 		    closeNetworkInterfaces();
-		    playNew(button);
+		    createLocalOrNetworkMenu();
 
 		    // remove parent window
 		    auto frame = static_cast<Frame*>(button.getParent());
@@ -9778,12 +9928,7 @@ bind_failed:
 		    guide = strcmp(button.getText(), "Enter IP\nAddress") ? roomcode : ipaddr;
             textFieldPrompt("", guide, "Connect", "Cancel",
                 [](Button&){ // connect
-                    assert(main_menu_frame);
-                    auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
-                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-                    dimmer->removeSelf();
-                    auto field = prompt->findField("field");
-                    const char* address = field->getText();
+                    const char* address = closeTextField(); // only valid for one frame
                     if (guide == ipaddr) {
                         soundActivate();
                         connectToServer(address, LobbyType::LobbyLAN);
@@ -9797,12 +9942,10 @@ bind_failed:
                 [](Button&){ // cancel
                     soundCancel();
                     assert(main_menu_frame);
-                    auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
-                    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-                    dimmer->removeSelf();
                     auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
                     auto enter_code = window->findButton("enter_code"); assert(enter_code);
                     enter_code->select();
+                    (void)closeTextField();
                 });
 		    };
 
@@ -9849,11 +9992,7 @@ bind_failed:
 	                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
 	                    auto names = window->findFrame("names"); assert(names);
 	                    names->select();
-		                auto prompt = main_menu_frame->findFrame("mono_prompt");
-		                if (prompt) {
-			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                dimmer->removeSelf();
-		                }
+		                closeMono();
 	                });
             }
 		    };
@@ -10064,197 +10203,44 @@ bind_failed:
 	}
 
 	static void playNew(Button& button) {
-		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
-		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
-		allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
-		allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
-		allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
-		allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
-		allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
-		allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
-		allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+	    if (skipintro) {
+	        soundActivate();
+	        createLocalOrNetworkMenu();
 
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(makeColor(0, 0, 0, 63));
-		dimmer->setBorder(0);
+	        // remove "Play Game" window
+	        auto frame = static_cast<Frame*>(button.getParent());
+	        frame = static_cast<Frame*>(frame->getParent());
+	        frame->removeSelf();
+	    } else {
+	        skipintro = true;
+	        binaryPrompt(
+	            "Barony is a challenging game.\nWould you like to play a tutorial?",
+	            "Yes", "No",
+	            [](Button& button){ // Yes
+				    soundActivate();
+				    destroyMainMenu();
+				    createDummyMainMenu();
+				    tutorial_map_destination = "tutorial1";
+				    beginFade(MainMenu::FadeDestination::HallOfTrials);
+	            },
+	            [](Button& button){ // No
+			        closeBinary();
+	                monoPrompt(
+	                    "You can try the tutorial any time\nin the Hall of Trials menu.",
+	                    "Okay",
+	                    [](Button&){
+	                        soundCancel();
+	                        createLocalOrNetworkMenu();
 
-		// create "Local or Network" window
-		auto window = dimmer->addFrame("local_or_network_window");
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 436) / 2 - 38,
-			(Frame::virtualScreenY - 494) / 2,
-			496,
-			494});
-		window->setActualSize(SDL_Rect{0, 0, 496, 494});
-		window->setColor(0);
-		window->setBorder(0);
-		window->setTickCallback([](Widget& widget){
-		    auto window = static_cast<Frame*>(&widget); assert(window);
-		    auto tooltip = window->findField("tooltip"); assert(tooltip);
-		    auto local_button = window->findButton("local"); assert(local_button);
-		    auto local_image = window->findImage("local_image"); assert(local_image);
-		    if (local_button->isSelected()) {
-		        tooltip->setText("Play singleplayer or with 2-4\nplayers in splitscreen multiplayer");
-                local_image->path =
-#ifdef NINTENDO
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00.png";
-#else
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00_NoNX.png";
-#endif
-		    } else {
-                local_image->path =
-#ifdef NINTENDO
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png";
-#else
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png";
-#endif
-		    }
-		    auto host_lan_button = window->findButton("host_lan"); assert(host_lan_button);
-		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
-		    if (host_lan_button->isSelected()) {
-		        tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
-                host_lan_image->path =
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00.png";
-		    } else {
-                host_lan_image->path =
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png";
-		    }
-		    auto host_online_button = window->findButton("host_online"); assert(host_online_button);
-		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
-		    if (host_online_button->isSelected()) {
-		        tooltip->setText("Host a game with 2-4 players\nover the internet");
-                host_online_image->path =
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00.png";
-		    } else {
-                host_online_image->path =
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png";
-		    }
-		    auto join_button = window->findButton("join"); assert(join_button);
-		    auto join_image = window->findImage("join_image"); assert(join_image);
-		    if (join_button->isSelected()) {
-		        tooltip->setText("Join a multiplayer game");
-                join_image->path =
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00.png";
-		    } else {
-                join_image->path =
-		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png";
-		    }
-		    });
+	                        assert(main_menu_frame);
+	                        auto window = main_menu_frame->findFrame("play_game_window"); assert(window);
+	                        auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
+	                        dimmer->removeSelf();
 
-		auto background = window->addImage(
-			window->getActualSize(),
-			0xffffffff,
-			"*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Window_00.png",
-			"background"
-		);
-
-		auto banner_title = window->addField("banner", 32);
-		banner_title->setSize(SDL_Rect{180, 24, 152, 18});
-		banner_title->setText("NEW ADVENTURER");
-		banner_title->setFont(smallfont_outline);
-		banner_title->setJustify(Field::justify_t::CENTER);
-
-		(void)createBackWidget(window, [](Button& button){
-			soundCancel();
-			auto frame = static_cast<Frame*>(button.getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame->removeSelf();
-			createPlayWindow();
-			}, SDL_Rect{42, 4, 0, 0});
-
-		auto local_button = window->addButton("local");
-		local_button->setSize(SDL_Rect{96, 72, 164, 62});
-		local_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		local_button->setColor(makeColor(255, 255, 255, 255));
-		local_button->setText("Local Adventure");
-		local_button->setFont(smallfont_outline);
-		local_button->setWidgetSearchParent(window->getName());
-		local_button->setWidgetBack("back_button");
-		local_button->setWidgetDown("host_lan");
-		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
-
-		local_button->select();
-
-		(void)window->addImage(
-		    SDL_Rect{278, 76, 104, 52},
-		    0xffffffff,
-#ifdef NINTENDO
-		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected.png",
-#else
-		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00B_Unselected_NoNX.png",
-#endif
-		    "local_image"
-		);
-
-		auto host_lan_button = window->addButton("host_lan");
-		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
-		host_lan_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_lan_button->setColor(makeColor(255, 255, 255, 255));
-		host_lan_button->setText("Host LAN Party");
-		host_lan_button->setFont(smallfont_outline);
-		host_lan_button->setWidgetSearchParent(window->getName());
-		host_lan_button->setWidgetBack("back_button");
-		host_lan_button->setWidgetUp("local");
-		host_lan_button->setWidgetDown("host_online");
-		host_lan_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLAN);});
-
-		(void)window->addImage(
-		    SDL_Rect{270, 170, 126, 50},
-		    0xffffffff,
-		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png",
-		    "host_lan_image"
-		);
-
-		auto host_online_button = window->addButton("host_online");
-		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
-		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		host_online_button->setColor(makeColor(255, 255, 255, 255));
-		host_online_button->setText("Host Online Party");
-		host_online_button->setFont(smallfont_outline);
-		host_online_button->setWidgetSearchParent(window->getName());
-		host_online_button->setWidgetBack("back_button");
-		host_online_button->setWidgetUp("host_lan");
-		host_online_button->setWidgetDown("join");
-		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
-
-		(void)window->addImage(
-		    SDL_Rect{270, 234, 126, 50},
-		    0xffffffff,
-		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png",
-		    "host_online_image"
-		);
-
-		auto join_button = window->addButton("join");
-		join_button->setSize(SDL_Rect{96, 326, 164, 62});
-		join_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_button->setColor(makeColor(255, 255, 255, 255));
-		join_button->setText("Lobby Browser");
-		join_button->setFont(smallfont_outline);
-		join_button->setWidgetSearchParent(window->getName());
-		join_button->setWidgetBack("back_button");
-		join_button->setWidgetUp("host_online");
-		join_button->setCallback(createLobbyBrowser);
-
-		(void)window->addImage(
-		    SDL_Rect{270, 324, 120, 68},
-		    0xffffffff,
-		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_LobbyBrowser_00B_Unselected.png",
-		    "join_image"
-		);
-
-		auto tooltip = window->addField("tooltip", 1024);
-		tooltip->setSize(SDL_Rect{106, 398, 300, 48});
-		tooltip->setFont(smallfont_no_outline);
-		tooltip->setColor(makeColor(91, 76, 50, 255));
-		tooltip->setJustify(Field::justify_t::CENTER);
-		tooltip->setText("Help text goes here.");
+			                closeMono();
+	                    });
+	            });
+        }
 	}
 
 	static Button* savegame_selected = nullptr;
@@ -10315,13 +10301,7 @@ bind_failed:
                         b->select();
 	                }
 	            }
-
-                // remove prompt
-			    auto prompt = main_menu_frame->findFrame("binary_prompt");
-			    if (prompt) {
-				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				    dimmer->removeSelf();
-			    }
+			    closeBinary();
 	        },
 	        [](Button& button) { // No button
 			    soundCancel();
@@ -10338,12 +10318,7 @@ bind_failed:
                         b->select();
 	                }
 			    }
-			    assert(main_menu_frame);
-			    auto prompt = main_menu_frame->findFrame("binary_prompt");
-			    if (prompt) {
-				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				    dimmer->removeSelf();
-			    }
+			    closeBinary();
 	        }
 	    );
 	}
@@ -10396,12 +10371,7 @@ bind_failed:
                         b->select();
 	                }
 			    }
-			    assert(main_menu_frame);
-			    auto prompt = main_menu_frame->findFrame("binary_prompt");
-			    if (prompt) {
-				    auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				    dimmer->removeSelf();
-			    }
+			    closeBinary();
 	        }
 	    );
 	}
@@ -10766,12 +10736,7 @@ bind_failed:
                                 multiplayer->select();
 	                        }
 			            }
-			            assert(main_menu_frame);
-			            auto prompt = main_menu_frame->findFrame("mono_prompt");
-			            if (prompt) {
-				            auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-				            dimmer->removeSelf();
-			            }
+		                closeMono();
 	                }
 	            );
 	        }
@@ -10820,12 +10785,7 @@ bind_failed:
                                 multiplayer->select();
                             }
 		                }
-		                assert(main_menu_frame);
-		                auto prompt = main_menu_frame->findFrame("mono_prompt");
-		                if (prompt) {
-			                auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
-			                dimmer->removeSelf();
-		                }
+		                closeMono();
                     }
                 );
 	        }
@@ -11409,11 +11369,7 @@ bind_failed:
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("END LIFE"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
-				if (quit_confirm) {
-					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
+			    closeBinary();
 			});
 	}
 
@@ -11450,11 +11406,7 @@ bind_failed:
 				    quit_button = buttons->findButton("RESTART TRIAL"); assert(quit_button);
 				}
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
-				if (quit_confirm) {
-					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
+			    closeBinary();
 			});
 	}
 
@@ -11487,11 +11439,7 @@ bind_failed:
 				    quit_button = buttons->findButton("RESET HALL OF TRIALS"); assert(quit_button);
 				}
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
-				if (quit_confirm) {
-					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
+			    closeBinary();
 			});
 	}
 
@@ -11519,11 +11467,7 @@ bind_failed:
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
-				if (quit_confirm) {
-					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
+			    closeBinary();
 			});
 	}
 
@@ -11568,11 +11512,7 @@ bind_failed:
 				}
 				assert(quit_button);
 				quit_button->select();
-				auto quit_confirm = main_menu_frame->findFrame("binary_prompt");
-				if (quit_confirm) {
-					auto dimmer = static_cast<Frame*>(quit_confirm->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
+			    closeBinary();
 			});
 	}
 
