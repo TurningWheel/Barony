@@ -78,6 +78,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->uid = itemuids;
 	item->ownerUid = 0;
 	item->isDroppable = true;
+	item->playerSoldItemToShop = false;
 	if ( inventory )
 	{
 		Player::Inventory_t* playerInventoryUI = nullptr;

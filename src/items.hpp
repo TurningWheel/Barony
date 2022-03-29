@@ -407,6 +407,7 @@ public:
 	Uint32 interactNPCUid; // if NPC is interacting with item
 	bool forcedPickupByPlayer; // player used interact on NPC with item on floor
 	bool isDroppable; // if item should drop on death
+	bool playerSoldItemToShop = false; // if item was sold to a shopkeeper
 
 	// weight, category and other generic info reported by function calls
 
