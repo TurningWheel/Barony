@@ -4534,7 +4534,8 @@ void ingameHud()
 		// inventory and stats
 		if ( players[player]->shootmode == false )
 		{
-			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
+			if ( players[player]->gui_mode == GUI_MODE_INVENTORY
+				|| players[player]->gui_mode == GUI_MODE_SHOP )
 			{
 				//updateCharacterSheet(player);
 				GenericGUI[player].updateGUI();
@@ -4542,16 +4543,17 @@ void ingameHud()
 				//updateRightSidebar(); -- 06/12/20 we don't use this but it still somehow displays stuff :D
 
 			}
-			else if ( players[player]->gui_mode == GUI_MODE_MAGIC )
-			{
-				updateCharacterSheet(player);
-				//updateMagicGUI();
-			}
-			else if ( players[player]->gui_mode == GUI_MODE_SHOP )
-			{
-				updateCharacterSheet(player);
-				updateShopWindow(player);
-			}
+			//else if ( players[player]->gui_mode == GUI_MODE_MAGIC )
+			//{
+			//	updateCharacterSheet(player);
+			//	//updateMagicGUI();
+			//}
+			//else if ( players[player]->gui_mode == GUI_MODE_SHOP
+			//	|| )
+			//{
+			//	//updateCharacterSheet(player);
+			//	//updateShopWindow(player);
+			//}
 		}
 
 
@@ -5988,7 +5990,7 @@ int main(int argc, char** argv)
 			}
 			if ( enableDebugKeys )
 			{
-				printTextFormatted(font8x8_bmp, 8, 20, "gui mode: %d", players[0]->GUI.activeModule);
+				printTextFormatted(font8x8_bmp, 8, 20, "gui module: %d\ngui mode: %d", players[0]->GUI.activeModule, players[0]->gui_mode);
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();

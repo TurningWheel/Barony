@@ -184,33 +184,33 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				}
 			}
 		}
-		else if ( players[player]->gui_mode == GUI_MODE_MAGIC)
-		{
-			if (magic_GUI_state == 0)
-			{
-				//Right, now calculate the spell list's height (the same way it calculates it for itself).
-				int height = spell_list_titlebar_bmp->h;
-				int numspells = 0;
-				node_t* node;
-				for (node = players[player]->magic.spellList.first; node != NULL; node = node->next)
-				{
-					numspells++;
-				}
-				int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
-				numspells = std::min(numspells, maxSpellsOnscreen);
-				height += numspells * spell_list_gui_slot_bmp->h;
-				int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
+		//else if ( players[player]->gui_mode == GUI_MODE_MAGIC)
+		//{
+		//	if (magic_GUI_state == 0)
+		//	{
+		//		//Right, now calculate the spell list's height (the same way it calculates it for itself).
+		//		int height = spell_list_titlebar_bmp->h;
+		//		int numspells = 0;
+		//		node_t* node;
+		//		for (node = players[player]->magic.spellList.first; node != NULL; node = node->next)
+		//		{
+		//			numspells++;
+		//		}
+		//		int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
+		//		numspells = std::min(numspells, maxSpellsOnscreen);
+		//		height += numspells * spell_list_gui_slot_bmp->h;
+		//		int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 
-				if (mouseInBounds(player, MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
-				{
-					if ( clickedOnGUI )
-					{
-						*clickedOnGUI = true;
-					}
-					return NULL;
-				}
-			}
-		}
+		//		if (mouseInBounds(player, MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
+		//		{
+		//			if ( clickedOnGUI )
+		//			{
+		//				*clickedOnGUI = true;
+		//			}
+		//			return NULL;
+		//		}
+		//	}
+		//}
 		SDL_Rect& interfaceCharacterSheet = players[player]->characterSheet.characterSheetBox;
 		SDL_Rect& interfaceMessageStatusBar = players[player]->statusBarUI.messageStatusBarBox;
 		SDL_Rect& interfaceSkillsSheet = players[player]->characterSheet.skillsSheetBox;

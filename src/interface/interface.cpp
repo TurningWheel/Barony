@@ -1361,31 +1361,8 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		}
 	}
 
-	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP && shopkeeper[playernum] != 0 )
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP )
 	{
-		if ( multiplayer != CLIENT )
-		{
-			Entity* entity = uidToEntity(shopkeeper[playernum]);
-			if ( entity )
-			{
-				entity->skill[0] = 0;
-				if ( uidToEntity(entity->skill[1]) )
-				{
-					monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-				}
-				entity->skill[1] = 0;
-			}
-		}
-		else
-		{
-			// inform server that we're done talking to shopkeeper
-			strcpy((char*)net_packet->data, "SHPC");
-			SDLNet_Write32((Uint32)shopkeeper[playernum], &net_packet->data[4]);
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 8;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-		}
 		closeShop(playernum);
 	}
 	gui_mode = GUI_MODE_NONE;
