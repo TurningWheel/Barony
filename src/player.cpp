@@ -2288,7 +2288,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	hotbar(*this),
 	bookGUI(*this),
 	paperDoll(*this),
-	minimap(*this)
+	minimap(*this),
+	shopGUI(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -3853,9 +3854,28 @@ Frame* Player::Inventory_t::getChestSlotFrame(int x, int y) const
 	return nullptr;
 }
 
+Frame* Player::ShopGUI_t::getShopSlotFrame(int x, int y) const
+{
+	if ( shopFrame )
+	{
+		int key = x + y * 100;
+		if ( shopSlotFrames.find(key) != shopSlotFrames.end() )
+		{
+			return shopSlotFrames.at(key);
+		}
+		//assert(shopSlotFrames.find(key) == shopSlotFrames.end());
+	}
+	return nullptr;
+}
+
+
 Frame* Player::Inventory_t::getItemSlotFrame(Item* item, int x, int y) const
 {
-	if ( item && isItemFromChest(item) )
+	if ( item && player.shopGUI.isItemFromShop(item) )
+	{
+		return player.shopGUI.getShopSlotFrame(x, y);
+	}
+	else if ( item && isItemFromChest(item) )
 	{
 		return getChestSlotFrame(x, y);
 	}

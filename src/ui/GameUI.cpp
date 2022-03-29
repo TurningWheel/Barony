@@ -24,6 +24,7 @@
 #include "../collision.hpp"
 #include "../monster.hpp"
 #include "../classdescriptions.hpp"
+#include "../shops.hpp"
 
 #include <assert.h>
 
@@ -695,12 +696,14 @@ void createUINavigation(const int player)
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				players[button.getOwner()]->gui_mode = GUI_MODE_INVENTORY;
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 				players[button.getOwner()]->inventoryUI.spellPanel.openSpellPanel();
 			}
 			else if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+				players[button.getOwner()]->gui_mode = GUI_MODE_INVENTORY;
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 				players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 			}
@@ -11448,6 +11451,17 @@ void resetInventorySlotFrames(const int player)
 			}
 		}
 	}
+
+	for ( int x = 0; x < Player::ShopGUI_t::MAX_SHOP_X; ++x )
+	{
+		for ( int y = 0; y < Player::ShopGUI_t::MAX_SHOP_Y; ++y )
+		{
+			if ( auto slotFrame = players[player]->shopGUI.getShopSlotFrame(x, y) )
+			{
+				slotFrame->setDisabled(true);
+			}
+		}
+	}
 }
 
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells)
@@ -13855,6 +13869,290 @@ void createChestGUI(const int player)
 	}
 }
 
+const int Player::ShopGUI_t::MAX_SHOP_X = 5;
+const int Player::ShopGUI_t::MAX_SHOP_Y = 5;
+
+void closeShopGUIAction(const int player)
+{
+	players[player]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+	if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_INVENTORY )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(player)->draw_cursor )
+		{
+			players[player]->GUI.warpControllerToModule(false);
+		}
+	}
+	if ( uidToEntity(shopkeeper[player]) )
+	{
+		closeShop(player);
+	}
+	else
+	{
+		players[player]->shopGUI.closeShop();
+	}
+}
+
+void createShopGUI(const int player)
+{
+	if ( !gui )
+	{
+		return;
+	}
+
+	auto& shopGUI = players[player]->shopGUI;
+
+	if ( shopGUI.shopFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+
+	SDL_Rect basePos{ 0, 0, 512, 328 };
+
+	Frame* frame = players[player]->inventoryUI.frame->addFrame("shop");
+	shopGUI.shopFrame = frame;
+	frame->setSize(SDL_Rect{ players[player]->camera_virtualx1(),
+		players[player]->camera_virtualy1(),
+		basePos.w,
+		basePos.h });
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player);
+	frame->setInheritParentFrameOpacity(false);
+
+	{
+		auto bgFrame = frame->addFrame("shop base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
+		const auto bgSize = bgFrame->getSize();
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Shop/Shop_Window_03C.png", "shop base img");
+
+		const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto titleText = bgFrame->addField("shop name", 64);
+		titleText->setFont(font);
+		titleText->setText("Xander's\nFedora Empora");
+		titleText->setHJustify(Field::justify_t::CENTER);
+		titleText->setVJustify(Field::justify_t::CENTER);
+		titleText->setSize(SDL_Rect{ basePos.w - 288, 14, 184, 82 });
+		titleText->setColor(makeColor(188, 154, 114, 255));
+
+		auto shopkeeperImg = bgFrame->addImage(SDL_Rect{ basePos.w - 14 - 80, 14, 80, 80 }, 0xFFFFFFFF,
+			"images/ui/Shop/shopkeeper.png", "shopkeeper img");
+
+		auto closeBtn = bgFrame->addButton("close shop button");
+		SDL_Rect closeBtnPos{ basePos.w - 34, 8, 26, 26 };
+		closeBtn->setSize(closeBtnPos);
+		closeBtn->setColor(makeColor(255, 255, 255, 255));
+		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		closeBtn->setText("X");
+		closeBtn->setFont(font);
+		closeBtn->setHideGlyphs(true);
+		closeBtn->setHideKeyboardGlyphs(true);
+		closeBtn->setHideSelectors(true);
+		closeBtn->setMenuConfirmControlType(0);
+		closeBtn->setBackground("images/ui/Shop/Button_X_00.png");
+		closeBtn->setBackgroundHighlighted("images/ui/Shop/Button_XHigh_00.png");
+		closeBtn->setBackgroundActivated("images/ui/Shop/Button_XPress_00.png");
+		closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+		closeBtn->setCallback([](Button& button) {
+			closeShopGUIAction(button.getOwner());
+		});
+
+		auto buyTooltipFrame = bgFrame->addFrame("buy tooltip frame");
+		buyTooltipFrame->setHollow(true);
+		buyTooltipFrame->setBorder(0);
+		buyTooltipFrame->setSize(SDL_Rect{ 0, basePos.h - 66, 310, 66 });
+		buyTooltipFrame->setDisabled(true);
+
+		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
+			"images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
+
+		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
+			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
+
+		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 52 }, 0xFFFFFFFF,
+			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
+
+		auto slotFrame = buyTooltipFrame->addFrame("item slot frame");
+		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+		slotFrame->setSize(slotPos);
+		slotFrame->setDisabled(true);
+		createPlayerInventorySlotFrameElements(slotFrame);
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemNameText = buyTooltipFrame->addField("item display name", 1024);
+		itemNameText->setFont(itemFont);
+		itemNameText->setText("");
+		itemNameText->setHJustify(Field::justify_t::TOP);
+		itemNameText->setVJustify(Field::justify_t::LEFT);
+		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemNameText->setColor(makeColor(201, 162, 100, 255));
+		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
+		itemValueText->setFont(itemFont);
+		itemValueText->setText("");
+		itemValueText->setHJustify(Field::justify_t::TOP);
+		itemValueText->setVJustify(Field::justify_t::LEFT);
+		itemValueText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemValueText->setColor(makeColor(201, 162, 100, 255));
+
+		auto buyPromptText = buyTooltipFrame->addField("buy prompt txt", 128);
+		buyPromptText->setFont(itemFont);
+		buyPromptText->setText("Buy");
+		buyPromptText->setHJustify(Field::justify_t::TOP);
+		buyPromptText->setVJustify(Field::justify_t::LEFT);
+		buyPromptText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		buyPromptText->setColor(makeColor(255, 255, 255, 255));
+		auto buyPromptGlyph = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"", "buy prompt glyph");
+
+		auto chatWindow = bgFrame->addFrame("chatter");
+		auto tl = chatWindow->addImage(SDL_Rect{ 0, 0, 34, 34 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_TLWings00.png", "top left img");
+		auto tm = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 6 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_WingsT_00.png", "top img");
+		auto tr = chatWindow->addImage(SDL_Rect{ 0, 0, 14, 28 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_TR00.png", "top right img");
+
+		auto ml = chatWindow->addImage(SDL_Rect{ 0, 0, 6, 0 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_WingsL_00.png", "middle left img");
+		auto mm1 = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 2 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_CenterColor_00.png", "middle 1 img");
+		auto mm2 = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 2 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_CenterColor_00.png", "middle 2 img");
+		auto mr = chatWindow->addImage(SDL_Rect{ 0, 0, 6, 0 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_WingsR_00.png", "middle right img");
+
+		auto bl = chatWindow->addImage(SDL_Rect{ 0, 0, 28, 14 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_BL00.png", "bottom left img");
+		auto bm = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 6 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_WingsB_00.png", "bottom img");
+		auto br = chatWindow->addImage(SDL_Rect{ 0, 0, 14, 14 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_BR00.png", "bottom right img");
+
+		auto pointer = chatWindow->addImage(SDL_Rect{ 0, 0, 20, 22 }, 0xFFFFFFFF,
+			"images/ui/Shop/Textbox_SpeakerPointer_TR01.png", "pointer img");
+
+		auto bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto chatText = chatWindow->addField("chat body", 1024);
+		chatText->setFont(bodyFont);
+		chatText->setText("Blank");
+		chatText->setHJustify(Field::justify_t::TOP);
+		chatText->setVJustify(Field::justify_t::LEFT);
+		chatText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		//chatText->setColor(makeColor(29, 16, 11, 255));
+		chatText->setTextColor(makeColor(29, 16, 11, 255));
+		chatText->setOutlineColor(makeColor(0, 0, 0, 1));
+		//chatText->setColor(makeColor(29, 16, 11, 255));
+
+		/*auto chatText = chatWindow->addField("chat header", 1024);
+		chatText->setFont(font);
+		chatText->setText("Header");
+		chatText->setHJustify(Field::justify_t::TOP);
+		chatText->setVJustify(Field::justify_t::LEFT);
+		chatText->setSize(SDL_Rect{ 0, 0, 184, 82 });
+		chatText->setColor(makeColor(188, 154, 114, 255));*/
+		/*auto grabAllBtn = bgFrame->addButton("grab all button");
+		SDL_Rect grabBtnPos = titleText->getSize();
+		grabBtnPos.x = closeBtnPos.x + closeBtnPos.w - 86;
+		grabBtnPos.w = 86;
+		grabBtnPos.h = 26;
+		grabAllBtn->setSize(grabBtnPos);
+		grabAllBtn->setColor(makeColor(255, 255, 255, 255));
+		grabAllBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		grabAllBtn->setText("Take All");
+		grabAllBtn->setFont(font);
+		grabAllBtn->setHideGlyphs(true);
+		grabAllBtn->setHideKeyboardGlyphs(true);
+		grabAllBtn->setHideSelectors(true);
+		grabAllBtn->setMenuConfirmControlType(0);
+		grabAllBtn->setBackground("images/ui/Inventory/chests/Button_TakeAll_00.png");
+		grabAllBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_TakeAllHigh_00.png");
+		grabAllBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_TakeAllPress_00.png");
+		grabAllBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+		grabAllBtn->setCallback([](Button& button) {
+			takeAllChestGUIAction(button.getOwner());
+		});*/
+
+		//std::string promptFont = "fonts/pixel_maz.ttf#32#2";
+		//const int promptWidth = 60;
+		//const int promptHeight = 27;
+		//auto promptBack = bgFrame->addField("prompt back txt", 16);
+		//promptBack->setSize(SDL_Rect{ 0, 0, promptWidth, promptHeight });
+		//promptBack->setFont(promptFont.c_str());
+		//promptBack->setHJustify(Field::justify_t::RIGHT);
+		//promptBack->setVJustify(Field::justify_t::CENTER);
+		//promptBack->setText(language[4053]);
+		////promptBack->setOntop(true);
+		//promptBack->setColor(makeColor(201, 162, 100, 255));
+
+		//auto promptBackImg = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		//	"", "prompt back img");
+		//promptBackImg->disabled = true;
+
+		//auto promptGrabAll = bgFrame->addField("prompt grab txt", 16);
+		//promptGrabAll->setSize(SDL_Rect{ 0, 0, promptWidth, promptHeight });
+		//promptGrabAll->setFont(promptFont.c_str());
+		//promptGrabAll->setHJustify(Field::justify_t::RIGHT);
+		//promptGrabAll->setVJustify(Field::justify_t::CENTER);
+		//promptGrabAll->setText(language[4091]);
+		////promptBack->setOntop(true);
+		//promptGrabAll->setColor(makeColor(201, 162, 100, 255));
+
+		//auto promptGrabImg = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		//	"", "prompt grab img");
+		//promptBackImg->disabled = true;
+	}
+
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	shopGUI.shopSlotFrames.clear();
+
+	const int baseSlotOffsetX = 0;
+	const int baseSlotOffsetY = 0;
+
+	SDL_Rect invSlotsPos{ 12, 16, 208, 216 };
+	{
+		const auto shopSlotsFrame = frame->addFrame("shop slots");
+		shopSlotsFrame->setSize(invSlotsPos);
+		shopSlotsFrame->setHollow(true);
+
+		/*auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
+			makeColor(255, 255, 255, 32), "images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
+		gridImg->tiled = true;*/
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+		const int maxShopX = Player::ShopGUI_t::MAX_SHOP_X;
+		const int maxShopY = Player::ShopGUI_t::MAX_SHOP_Y;
+
+		int accumulateSlotOffsetX = 0;
+		for ( int x = 0; x < maxShopX; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize) + accumulateSlotOffsetX;
+			for ( int y = 0; y < maxShopY; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * (inventorySlotSize + 4));
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "shop %d %d", x, y);
+
+				auto slotFrame = shopSlotsFrame->addFrame(slotname);
+				shopGUI.shopSlotFrames[x + y * 100] = slotFrame;
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+
+			if ( x == 0 || x == 3 )
+			{
+				accumulateSlotOffsetX += 4;
+			}
+		}
+	}
+}
+
 void createPlayerInventory(const int player)
 {
 	char name[32];
@@ -13872,6 +14170,7 @@ void createPlayerInventory(const int player)
 
 	createInventoryTooltipFrame(player);
 	createChestGUI(player);
+	createShopGUI(player);
 
 	SDL_Rect basePos{ 0, 0, 210, 448 };
 	{
@@ -14614,6 +14913,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 //PROMPT_RETRIEVE_CHEST,
 	//PROMPT_APPRAISE,
 	//PROMPT_DROP
+
+	bool sellingItemToShop = false;
+	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT
+		&& players[player]->shopGUI.bOpen && uidToEntity(shopkeeper[player]) )
+	{
+		sellingItemToShop = true;
+	}
+
 	if ( prompt == PROMPT_APPRAISE )
 	{
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
@@ -14626,6 +14933,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_SELL )
 	{
+		if ( sellingItemToShop )
+		{
+			sellItemToShop(player, item);
+		}
+		return;
 	}
 	else if ( prompt == PROMPT_RETRIEVE_CHEST || prompt == PROMPT_RETRIEVE_CHEST_ALL )
 	{
@@ -15856,6 +16168,8 @@ void Player::Inventory_t::processInventory()
 	bool tooltipWasDisabled = tooltipFrame->isDisabled();
 
 	updateInventory();
+
+	player.shopGUI.updateShop();
 
 	if ( tooltipWasDisabled && !tooltipFrame->isDisabled() )
 	{

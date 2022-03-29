@@ -2962,8 +2962,11 @@ void clientHandlePacket()
 	// open shop
 	else if (packetId == 'SHOP')
 	{
-		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		//players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		//players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
 		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		players[clientnum]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+
 		shopkeeper[clientnum] = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		shopkeepertype[clientnum] = net_packet->data[8];
 		strcpy( shopkeepername_client[clientnum], (char*)(&net_packet->data[9]) );
@@ -2973,16 +2976,8 @@ void clientHandlePacket()
 		shopinventorycategory[clientnum] = 7;
 		sellitem[clientnum] = NULL;
 		shopitemscroll[clientnum] = 0;
-		//Initialize shop gamepad code here.
-		if ( shopinvitems[clientnum][0] != nullptr )
-		{
-			selectedShopSlot[clientnum] = 0;
-			warpMouseToSelectedShopSlot(clientnum);
-		}
-		else
-		{
-			selectedShopSlot[clientnum] = -1;
-		}
+
+		players[clientnum]->shopGUI.openShop();
 		return;
 	}
 

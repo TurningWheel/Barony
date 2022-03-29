@@ -42,7 +42,34 @@ std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 
 void closeShop(const int player)
 {
-	if ( multiplayer == CLIENT )
+	if ( shopkeeper[player] != 0 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			Entity* entity = uidToEntity(shopkeeper[player]);
+			if ( entity )
+			{
+				entity->skill[0] = 0;
+				if ( uidToEntity(entity->skill[1]) )
+				{
+					monsterMoveAside(entity, uidToEntity(entity->skill[1]));
+				}
+				entity->skill[1] = 0;
+			}
+		}
+		else
+		{
+			// inform server that we're done talking to shopkeeper
+			strcpy((char*)net_packet->data, "SHPC");
+			SDLNet_Write32((Uint32)shopkeeper[player], &net_packet->data[4]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+	}
+
+	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
 	{
 		list_FreeAll(shopInv[player]);
 		shopInv[player]->first = nullptr;
@@ -55,7 +82,7 @@ void closeShop(const int player)
 	shopkeeper[player] = 0;
 
 	//Clean up shopkeeper gamepad code here.
-	selectedShopSlot[player] = -1;
+	players[player]->shopGUI.closeShop();
 }
 
 /*-------------------------------------------------------------------------------
@@ -89,32 +116,22 @@ void startTradingServer(Entity* entity, int player)
 
 	if ( players[player]->isLocalPlayer() )
 	{
-		players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		//players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		//players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
+		players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+
 		shopInv[player] = &stats->inventory;
 		shopkeeper[player] = entity->getUID();
 		shoptimer[player] = ticks - 1;
 		shopspeech[player] = language[194 + rand() % 3];
 		shopinventorycategory[player] = 7;
 		sellitem[player] = NULL;
-		Entity* entity = uidToEntity(shopkeeper[player]);
-		if ( entity )
-		{
-			shopkeepertype[player] = entity->monsterStoreType;
-		}
+		shopkeepertype[player] = entity->monsterStoreType;
 		shopkeepername[player] = stats->name;
 		shopitemscroll[player] = 0;
 
-		//Initialize shop gamepad code here.
-		if ( shopinvitems[player][0] != nullptr )
-		{
-			selectedShopSlot[player] = 0;
-			warpMouseToSelectedShopSlot(player);
-		}
-		else
-		{
-			selectedShopSlot[player] = -1;
-		}
+		players[player]->shopGUI.openShop();
 	}
 	else if ( multiplayer == SERVER )
 	{
