@@ -748,6 +748,37 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					break;
 			}
 		}
+
+		node_t* nextnode;
+		// sort items into slots
+		std::vector<std::pair<int, Item*>> priceAndItems;
+		for ( node_t* node = myStats->inventory.first; node != nullptr; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( !item ) { continue; }
+
+			priceAndItems.push_back(std::make_pair(item->buyValue(clientnum), item));
+		}
+
+		std::sort(priceAndItems.begin(), priceAndItems.end(), [](std::pair<int, Item*> lhs, std::pair<int, Item*> rhs) {
+			return lhs.first > rhs.first;
+		});
+
+		int slotx = 0;
+		int sloty = 0;
+		for ( auto& v : priceAndItems )
+		{
+			Item* item = v.second;
+			item->x = slotx;
+			item->y = sloty;
+			++slotx;
+			if ( slotx >= Player::ShopGUI_t::MAX_SHOP_X )
+			{
+				slotx = 0;
+				++sloty;
+			}
+		}
 	}
 
 	// torso
