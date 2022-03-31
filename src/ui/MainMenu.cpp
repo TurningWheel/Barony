@@ -832,7 +832,9 @@ namespace MainMenu {
 		const char* okay_text,
 		const char* cancel_text,
 		void (*okay_callback)(Button&),
-		void (*cancel_callback)(Button&)
+		void (*cancel_callback)(Button&),
+		bool leftRed = true,
+		bool rightRed = false
 	) {
 		soundActivate();
 
@@ -846,8 +848,10 @@ namespace MainMenu {
 		text->setJustify(Field::justify_t::CENTER);
 
 		auto okay = frame->addButton("okay");
-		okay->setSize(SDL_Rect{58, 78, 130, 52});
-		okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		okay->setSize(SDL_Rect{leftRed ? 58 : 72, 78, leftRed ? 130 : 108, 52});
+		okay->setBackground(leftRed ?
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
 		okay->setColor(makeColor(255, 255, 255, 255));
 		okay->setHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setTextColor(makeColor(255, 255, 255, 255));
@@ -861,8 +865,10 @@ namespace MainMenu {
 		okay->select();
 
 		auto cancel = frame->addButton("cancel");
-		cancel->setSize(SDL_Rect{196, 78, 108, 52});
-		cancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setSize(SDL_Rect{leftRed ? 196 : 188, 78, rightRed ? 130 : 108, 52});
+		cancel->setBackground(rightRed ?
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
 		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
 		cancel->setTextColor(makeColor(255, 255, 255, 255));
@@ -4391,6 +4397,8 @@ bind_failed:
 		conduct->addWidgetAction("MenuAlt1", "delete_entry");
         conduct->addWidgetAction("MenuPageLeft", "tab_left");
         conduct->addWidgetAction("MenuPageRight", "tab_right");
+        conduct->addWidgetAction("MenuPageLeftAlt", "category_left");
+        conduct->addWidgetAction("MenuPageRightAlt", "category_right");
         conduct->setWidgetRight("kills_left");
         conduct->setSelectedEntryColor(makeColor(151, 115, 58, 255));
 		conduct->setScrollWithLeftControls(false);
@@ -4532,6 +4540,8 @@ bind_failed:
 		kills_left->addWidgetAction("MenuAlt1", "delete_entry");
         kills_left->addWidgetAction("MenuPageLeft", "tab_left");
         kills_left->addWidgetAction("MenuPageRight", "tab_right");
+        kills_left->addWidgetAction("MenuPageLeftAlt", "category_left");
+        kills_left->addWidgetAction("MenuPageRightAlt", "category_right");
 		kills_left->setWidgetLeft("conduct");
 		kills_left->addSyncScrollTarget("kills_right");
         kills_left->setSelectedEntryColor(makeColor(101, 78, 39, 255));
@@ -4657,7 +4667,7 @@ bind_failed:
             snprintf(buf, sizeof(buf), "LVL %d %s %s",
                 score->stats->LVL,
                 language[3821 + score->stats->playerRace],
-                language[1900 + score->classnum]);
+                playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
             auto character_counters = subframe->findField("character_counters");
@@ -4744,122 +4754,345 @@ bind_failed:
         static BoardType boardType;
         boardType = BoardType::LOCAL;
 
+        static const char* categories[CSteamLeaderboards::k_numLeaderboards] = {
+	        "None",
+	        "Fastest Time\nNormal", "Highest Score\nNormal",
+	        "Fastest Time\nMultiplayer", "Highest Score\nMultiplayer",
+	        "Fastest Time\nHell Route", "Highest Score\nHell Route",
+	        "Fastest Time\nHardcore", "Highest Score\nHardcore",
+	        "Fastest Time\nClassic", "Highest Score\nClassic",
+	        "Fastest Time\nClassic Hardcore", "Highest Score\nClassic Hardcore",
+	        "Fastest Time\nMultiplayer Classic", "Highest Score\nMultiplayer Classic",
+	        "Fastest Time\nMultiplayer Hell Route", "Highest Score\nMultiplayer Hell Route",
+	        "Fastest Time\nNormal - Monsters Only", "Highest Score\nNormal - Monsters Only",
+	        "Fastest Time\nMultiplayer - Monsters Only", "Highest Score\nMultiplayer - Monsters Only",
+	        "Fastest Time\nHell Route - Monsters Only", "Highest Score\nHell Route - Monsters Only",
+	        "Fastest Time\nHardcore - Monsters Only", "Highest Score\nHardcore - Monsters Only",
+	        "Fastest Time\nClassic - Monsters Only", "Highest Score\nClassic - Monsters Only",
+	        "Fastest Time\nClassic Hardcore - Monsters Only", "Highest Score\nClassic Hardcore - Monsters Only",
+            "Fastest Time\nMultiplayer Classic - Monsters Only", "Highest Score\nMultiplayer Classic - Monsters Only",
+	        "Fastest Time\nMultiplayer Hell Route - Monsters Only", "Highest Score\nMultiplayer Hell Route - Monsters Only",
+        };
+        constexpr int num_categories = sizeof(categories) / sizeof(categories[0]);
+        static int category;
+        category = 1;
+
+        static const char* fmt = "  #%d %s";
+
+        static auto add_score = [](score_t* score, const char* name, const char* prev, const char* next, int index){
+            auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
+            auto list = window->findFrame("list"); assert(list);
+
+            const int y = 6 + 38 * index;
+
+            char buf[128];
+            snprintf(buf, sizeof(buf), fmt, index + 1, name);
+
+            auto button = list->addButton(buf);
+            button->setUserData(score);
+            button->setHJustify(Button::justify_t::LEFT);
+            button->setVJustify(Button::justify_t::CENTER);
+            button->setFont(smallfont_outline);
+            button->setText(buf);
+            button->setColor(makeColor(255,255,255,255));
+            button->setHighlightColor(makeColor(255,255,255,255));
+            button->setTextColor(makeColor(203,171,101,255));
+            button->setTextHighlightColor(makeColor(231,213,173,255));
+            button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+            button->setWidgetSearchParent("leaderboards");
+            button->addWidgetAction("MenuCancel", "back_button");
+            button->addWidgetAction("MenuAlt1", "delete_entry");
+            button->addWidgetAction("MenuPageLeft", "tab_left");
+            button->addWidgetAction("MenuPageRight", "tab_right");
+            button->addWidgetAction("MenuPageLeftAlt", "category_left");
+            button->addWidgetAction("MenuPageRightAlt", "category_right");
+            button->setWidgetRight("conduct");
+            button->setWidgetUp(prev);
+            button->setWidgetDown(next);
+            button->setSize(SDL_Rect{0, y, 278, 36});
+            button->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
+            button->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
+            button->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
+            button->setCallback([](Button& button){
+                soundActivate();
+                auto list = static_cast<Frame*>(button.getParent());
+                button.setTextColor(makeColor(231,213,173,255));
+                button.setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
+                for (auto b : list->getButtons()) {
+                    if (b == &button) {
+                        continue;
+                    }
+                    b->setTextColor(makeColor(203,171,101,255));
+                    b->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
+                }
+                auto score = (score_t*)button.getUserData();
+                selectedScore = score;
+                updateStats(score);
+                loadScore(score);
+                });
+
+            if (index == 0) {
+                button->select();
+                selectedScore = score;
+                updateStats(score);
+                loadScore(score);
+            }
+
+            auto size = list->getActualSize();
+            size.h = std::max(list->getSize().h, y + 38);
+            list->setActualSize(size);
+            };
+
+        struct DownloadedScores {
+            void deleteAll() {
+                for (auto score : scores) {
+                    scoreDeconstructor(score);
+                }
+                scores.clear();
+            }
+            DownloadedScores() = default;
+            ~DownloadedScores() {
+                deleteAll();
+            }
+            std::vector<score_t*> scores;
+        };
+        static DownloadedScores downloadedScores;
+        static int scores_loaded;
+        scores_loaded = 0;
+
         static auto repopulate_list = [](BoardType type){
+            downloadedScores.deleteAll();
+            selectedScore = nullptr;
             boardType = type;
+
             auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
             auto list = window->findFrame("list"); assert(list);
             list->clear();
-            selectedScore = nullptr;
+
+            auto size = list->getActualSize();
+            size.h = list->getSize().h;
+            list->setActualSize(size);
+
             if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
                 auto scores = boardType == BoardType::LOCAL ?
                     &topscores : &topscoresMultiplayer;
-                int index = 0;
-                int y = 6;
                 if (scores->first) {
-                    (void)window->remove("none_found");
+                    (void)window->remove("wait_message");
+                    int index = 0;
                     for (auto node = scores->first; node != nullptr;
                         node = node->next, ++index) {
                         auto score = (score_t*)node->element;
-
-                        const char* fmt = "  #%d %s";
-
-                        char buf[128];
-                        snprintf(buf, sizeof(buf), fmt, index + 1, score->stats->name);
-
-                        auto button = list->addButton(buf);
-                        button->setUserData(score);
-                        button->setHJustify(Button::justify_t::LEFT);
-                        button->setVJustify(Button::justify_t::CENTER);
-                        button->setFont(smallfont_outline);
-                        button->setText(buf);
-                        button->setColor(makeColor(255,255,255,255));
-                        button->setHighlightColor(makeColor(255,255,255,255));
-                        button->setTextColor(makeColor(203,171,101,255));
-                        button->setTextHighlightColor(makeColor(231,213,173,255));
-                        button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-                        button->setWidgetSearchParent("leaderboards");
-		                button->addWidgetAction("MenuCancel", "back_button");
-		                button->addWidgetAction("MenuAlt1", "delete_entry");
-		                button->addWidgetAction("MenuPageLeft", "tab_left");
-		                button->addWidgetAction("MenuPageRight", "tab_right");
-		                button->setWidgetRight("conduct");
+                        char prev_buf[128] = "";
                         if (node->prev) {
-                            char buf[128];
                             auto prev = (score_t*)node->prev->element;
-                            snprintf(buf, sizeof(buf), fmt, index, prev->stats->name);
-                            button->setWidgetUp(buf);
+                            snprintf(prev_buf, sizeof(prev_buf), fmt, index, prev->stats->name);
                         }
+                        char next_buf[128] = "";
                         if (node->next) {
-                            char buf[128];
                             auto next = (score_t*)node->next->element;
-                            snprintf(buf, sizeof(buf), fmt, index + 2, next->stats->name);
-                            button->setWidgetDown(buf);
+                            snprintf(next_buf, sizeof(next_buf), fmt, index + 2, next->stats->name);
                         }
-                        button->setSize(SDL_Rect{0, y, 278, 36});
-                        button->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
-                        button->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
-                        button->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
-                        button->setCallback([](Button& button){
-                            soundActivate();
-                            auto list = static_cast<Frame*>(button.getParent());
-                            button.setTextColor(makeColor(231,213,173,255));
-                            button.setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
-                            for (auto b : list->getButtons()) {
-                                if (b == &button) {
-                                    continue;
-                                }
-                                b->setTextColor(makeColor(203,171,101,255));
-                                b->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
-                            }
-                            auto score = (score_t*)button.getUserData();
-                            selectedScore = score;
-                            updateStats(score);
-                            loadScore(score);
-                            });
-
-                        if (index == 0) {
-                            button->select();
-                            selectedScore = score;
-                            updateStats(score);
-                            loadScore(score);
-                        }
-
-                        y += 38;
+                        add_score(score, score->stats->name, prev_buf, next_buf, index);
                     }
                 } else {
-                    if (!window->findField("none_found")) {
-                        auto field = window->addField("none_found", 1024);
+                    auto field = window->findField("wait_message");
+                    if (!field) {
+                        field = window->addField("wait_message", 1024);
                         field->setFont(bigfont_outline);
                         field->setText("No scores found.");
                         field->setSize(SDL_Rect{30, 148, 932, 468});
                         field->setJustify(Field::justify_t::CENTER);
+                    } else {
+                        field->setText("No scores found.");
                     }
                 }
-                auto size = list->getActualSize();
-                size.h = std::max(list->getSize().h, y);
-                list->setActualSize(size);
             } else {
 #ifdef STEAMWORKS
+                scores_loaded = 0;
+                g_SteamLeaderboards->FindLeaderboard(
+                    CSteamLeaderboards::leaderboardNames[category].c_str());
+                auto field = window->findField("wait_message");
+                if (!field) {
+                    field = window->addField("wait_message", 1024);
+                    field->setFont(bigfont_outline);
+                    field->setText("Downloading scores...");
+                    field->setSize(SDL_Rect{30, 148, 932, 468});
+                    field->setJustify(Field::justify_t::CENTER);
+                } else {
+                    field->setText("Downloading scores...");
+                }
 #endif
             }
 
-            auto subframe = window->findFrame("subframe"); assert(subframe);
+		    auto category_right = window->findButton("category_right"); assert(category_right);
+		    auto category_left = window->findButton("category_left"); assert(category_left);
 		    auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
             auto slider = window->findSlider("scroll_slider"); assert(slider);
+            auto subframe = window->findFrame("subframe"); assert(subframe);
             auto conduct = subframe->findFrame("conduct"); assert(conduct);
 		    if (list->getButtons().empty()) {
-		        delete_entry->setWidgetLeft("");
+		        category_right->setWidgetUp("");
+		        category_left->setWidgetUp("");
 		        delete_entry->setWidgetUp("");
 		        slider->setWidgetRight("");
 		        conduct->setWidgetLeft("");
 		    } else {
 		        auto name = list->getButtons()[0]->getName();
-		        delete_entry->setWidgetLeft(name);
+		        category_right->setWidgetUp(name);
+		        category_left->setWidgetUp(name);
 		        delete_entry->setWidgetUp(name);
 		        slider->setWidgetRight(name);
 		        conduct->setWidgetLeft(name);
 		    }
             };
+
+        auto disableIfNotOnline = [](Widget& widget){
+            bool invisible = boardType == BoardType::LOCAL ||
+                boardType == BoardType::LAN;
+            widget.setInvisible(invisible);
+            auto window = static_cast<Frame*>(widget.getParent());
+            auto category_panel = window->findImage("category_panel");
+            if (category_panel) {
+                category_panel->disabled = invisible;
+            }
+            };
+
+        auto category_panel = window->addImage(
+            SDL_Rect{
+                (window->getSize().w - 400) / 2,
+                630, 400, 62,
+            },
+            0xffffffff,
+            "*images/ui/Main Menus/Leaderboards/AA_Plate_ModeSelector_00.png",
+            "category_panel"
+        );
+        category_panel->disabled = true;
+
+        auto panel_pos = category_panel->pos;
+
+        auto category_text = window->addField("category_text", 256);
+        category_text->setSize(panel_pos);
+        category_text->setJustify(Field::justify_t::CENTER);
+        category_text->setFont(smallfont_outline);
+        category_text->setColor(makeColor(170, 134, 102, 255));
+        category_text->setText(categories[category]);
+        category_text->setTickCallback(disableIfNotOnline);
+        category_text->setInvisible(true);
+
+        auto category_left = window->addButton("category_left");
+        category_left->setSize(SDL_Rect{panel_pos.x - 24, 646, 20, 30});
+		category_left->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTiny_00.png");
+		category_left->setColor(makeColor(255, 255, 255, 255));
+		category_left->setHighlightColor(makeColor(255, 255, 255, 255));
+		category_left->setWidgetSearchParent(window->getName());
+		category_left->setTickCallback(disableIfNotOnline);
+		category_left->setCallback([](Button& button){
+		    soundActivate();
+		    --category;
+		    if (category <= 0) {
+		        category = num_categories - 1;
+		    }
+		    repopulate_list(boardType);
+		    auto window = static_cast<Frame*>(button.getParent());
+		    auto category_text = window->findField("category_text");
+		    if (category_text) {
+		        category_text->setText(categories[category]);
+		    }
+		    });
+        category_left->addWidgetAction("MenuCancel", "back_button");
+        category_left->addWidgetAction("MenuAlt1", "delete_entry");
+        category_left->addWidgetAction("MenuPageLeft", "tab_left");
+        category_left->addWidgetAction("MenuPageRight", "tab_right");
+        category_left->addWidgetAction("MenuPageLeftAlt", "category_left");
+        category_left->addWidgetAction("MenuPageRightAlt", "category_right");
+        category_left->setWidgetRight("category_right");
+        category_left->setInvisible(true);
+
+        auto category_right = window->addButton("category_right");
+        category_right->setSize(SDL_Rect{panel_pos.x + panel_pos.w + 4, 646, 20, 30});
+		category_right->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTiny_00.png");
+		category_right->setColor(makeColor(255, 255, 255, 255));
+		category_right->setHighlightColor(makeColor(255, 255, 255, 255));
+		category_right->setTickCallback(disableIfNotOnline);
+		category_right->setCallback([](Button& button){
+		    soundActivate();
+		    ++category;
+		    if (category >= num_categories) {
+		        category = 1;
+		    }
+		    repopulate_list(boardType);
+		    auto window = static_cast<Frame*>(button.getParent());
+		    auto category_text = window->findField("category_text");
+		    if (category_text) {
+		        category_text->setText(categories[category]);
+		    }
+		    });
+		category_right->setWidgetSearchParent(window->getName());
+        category_right->addWidgetAction("MenuCancel", "back_button");
+        category_right->addWidgetAction("MenuAlt1", "delete_entry");
+        category_right->addWidgetAction("MenuPageLeft", "tab_left");
+        category_right->addWidgetAction("MenuPageRight", "tab_right");
+        category_right->addWidgetAction("MenuPageLeftAlt", "category_left");
+        category_right->addWidgetAction("MenuPageRightAlt", "category_right");
+        category_right->setWidgetRight("delete_entry");
+        category_right->setWidgetLeft("category_left");
+        category_right->setInvisible(true);
+
+        // poll for downloaded scores
+#ifdef STEAMWORKS
+        list->setTickCallback([](Widget& widget){
+            if (boardType != BoardType::FRIENDS &&
+                boardType != BoardType::WORLD) {
+                return;
+            }
+            auto window = static_cast<Frame*>(widget.getParent());
+            if (scores_loaded == 0 && g_SteamLeaderboards->b_LeaderboardInit) {
+                scores_loaded++;
+                g_SteamLeaderboards->DownloadScores(
+                    boardType == BoardType::FRIENDS ?
+                    k_ELeaderboardDataRequestFriends :
+                    k_ELeaderboardDataRequestGlobal,
+                    0, CSteamLeaderboards::k_numEntriesToRetrieve);
+            }
+            else if (scores_loaded == 1 && g_SteamLeaderboards->b_ScoresDownloaded) {
+                scores_loaded++;
+                if (g_SteamLeaderboards->m_nLeaderboardEntries == 0) {
+                    auto field = window->findField("wait_message");
+                    if (!field) {
+                        field = window->addField("wait_message", 1024);
+                        field->setFont(bigfont_outline);
+                        field->setText("No scores found.");
+                        field->setSize(SDL_Rect{30, 148, 932, 468});
+                        field->setJustify(Field::justify_t::CENTER);
+                    } else {
+                        field->setText("No scores found.");
+                    }
+                } else {
+                    (void)window->remove("wait_message");
+                    int num_scores = g_SteamLeaderboards->m_nLeaderboardEntries;
+                    for (int index = 0; index < num_scores; ++index) {
+                        steamLeaderboardReadScore(g_SteamLeaderboards->downloadedTags[index]);
+                        auto score = scoreConstructor();
+                        downloadedScores.scores.push_back(score);
+                        auto name = g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str();
+                        add_score(score, name, "", "", index);
+                    }
+                    loadScore(selectedScore);
+                    auto list = window->findFrame("list"); assert(list);
+                    for (int index = 0; index < list->getButtons().size(); ++index) {
+                        if (index > 0) {
+                            list->getButtons()[index]->setWidgetUp(
+                                list->getButtons()[index - 1]->getName());
+                        }
+                        if (index < list->getButtons().size() - 1) {
+                            list->getButtons()[index]->setWidgetDown(
+                                list->getButtons()[index + 1]->getName());
+                        }
+                    }
+                }
+            }
+            });
+#endif
 
 #define TAB_FN(X) [](Button& button){\
     soundActivate();\
@@ -4916,6 +5149,8 @@ bind_failed:
             tab->addWidgetAction("MenuAlt1", "delete_entry");
             tab->addWidgetAction("MenuPageLeft", "tab_left");
             tab->addWidgetAction("MenuPageRight", "tab_right");
+            tab->addWidgetAction("MenuPageLeftAlt", "category_left");
+            tab->addWidgetAction("MenuPageRightAlt", "category_right");
             if (c > 0) {
                 tab->setWidgetLeft(tabs[c - 1].name);
             }
@@ -4930,7 +5165,6 @@ bind_failed:
 		tab_left->setColor(makeColor(255, 255, 255, 255));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_left->setGlyphPosition(Widget::glyph_position_t::BOTTOM_LEFT);
-		tab_left->setWidgetSearchParent(window->getName());
 		tab_left->setCallback([](Button& button){
 		    auto window = static_cast<Frame*>(button.getParent());
             int tab_index = static_cast<int>(boardType);
@@ -4944,6 +5178,8 @@ bind_failed:
         tab_left->addWidgetAction("MenuAlt1", "delete_entry");
         tab_left->addWidgetAction("MenuPageLeft", "tab_left");
         tab_left->addWidgetAction("MenuPageRight", "tab_right");
+        tab_left->addWidgetAction("MenuPageLeftAlt", "category_left");
+        tab_left->addWidgetAction("MenuPageRightAlt", "category_right");
         tab_left->setWidgetRight(tabs[0].name);
 
 		auto tab_right = window->addButton("tab_right");
@@ -4952,7 +5188,6 @@ bind_failed:
 		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_right->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
-		tab_right->setWidgetSearchParent(window->getName());
 		tab_right->setCallback([](Button& button){
 		    auto window = static_cast<Frame*>(button.getParent());
             int tab_index = static_cast<int>(boardType);
@@ -4966,6 +5201,8 @@ bind_failed:
         tab_right->addWidgetAction("MenuAlt1", "delete_entry");
         tab_right->addWidgetAction("MenuPageLeft", "tab_left");
         tab_right->addWidgetAction("MenuPageRight", "tab_right");
+        tab_right->addWidgetAction("MenuPageLeftAlt", "category_left");
+        tab_right->addWidgetAction("MenuPageRightAlt", "category_right");
         tab_right->setWidgetLeft(tabs[num_tabs - 1].name);
 
         auto slider = window->addSlider("scroll_slider");
@@ -4998,6 +5235,8 @@ bind_failed:
         slider->addWidgetAction("MenuAlt1", "delete_entry");
         slider->addWidgetAction("MenuPageLeft", "tab_left");
         slider->addWidgetAction("MenuPageRight", "tab_right");
+        slider->addWidgetAction("MenuPageLeftAlt", "category_left");
+        slider->addWidgetAction("MenuPageRightAlt", "category_right");
 
 		auto delete_entry = window->addButton("delete_entry");
 		delete_entry->setSize(SDL_Rect{740, 630, 164, 62});
@@ -5065,11 +5304,13 @@ bind_failed:
             }
 		    });
 		delete_entry->setWidgetSearchParent(window->getName());
-        delete_entry->setWidgetSearchParent("leaderboards");
         delete_entry->addWidgetAction("MenuCancel", "back_button");
         delete_entry->addWidgetAction("MenuAlt1", "delete_entry");
         delete_entry->addWidgetAction("MenuPageLeft", "tab_left");
         delete_entry->addWidgetAction("MenuPageRight", "tab_right");
+        delete_entry->addWidgetAction("MenuPageLeftAlt", "category_left");
+        delete_entry->addWidgetAction("MenuPageRightAlt", "category_right");
+        delete_entry->setWidgetLeft("category_right");
 
         Button* tab = window->findButton(tabs[0].name);
         tab->select();
@@ -8945,7 +9186,7 @@ bind_failed:
 		window_title->setFont(banner_font);
 		window_title->setSize(SDL_Rect{412, 24, 338, 24});
 		window_title->setJustify(Field::justify_t::CENTER);
-		window_title->setText("HALL OF TRIALS");
+		window_title->setText("TUTORIALS");
 
 		auto subtitle = window->addField("subtitle", 1024);
 		subtitle->setFont(bigfont_no_outline);
@@ -9284,7 +9525,7 @@ bind_failed:
 		hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
 		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
-		hall_of_trials_button->setText("HALL OF TRIALS");
+		hall_of_trials_button->setText("TUTORIALS");
 		hall_of_trials_button->setFont(smallfont_outline);
 		hall_of_trials_button->setWidgetSearchParent(window->getName());
 		if (continueAvailable) {
@@ -10203,7 +10444,7 @@ bind_failed:
 	}
 
 	static void playNew(Button& button) {
-	    if (skipintro) {
+	    if (0) {
 	        soundActivate();
 	        createLocalOrNetworkMenu();
 
@@ -10220,13 +10461,13 @@ bind_failed:
 				    soundActivate();
 				    destroyMainMenu();
 				    createDummyMainMenu();
-				    tutorial_map_destination = "tutorial1";
+				    tutorial_map_destination = "tutorial_hub";
 				    beginFade(MainMenu::FadeDestination::HallOfTrials);
 	            },
 	            [](Button& button){ // No
 			        closeBinary();
 	                monoPrompt(
-	                    "You can try the tutorial any time\nin the Hall of Trials menu.",
+	                    "You can find the Tutorials\nin the Play Game menu.",
 	                    "Okay",
 	                    [](Button&){
 	                        soundCancel();
@@ -10239,7 +10480,8 @@ bind_failed:
 
 			                closeMono();
 	                    });
-	            });
+	            },
+	            false, false); // both buttons are yellow
         }
 	}
 
@@ -10372,8 +10614,8 @@ bind_failed:
 	                }
 			    }
 			    closeBinary();
-	        }
-	    );
+	        },
+	        false, false); // both buttons are yellow
 	}
 
 	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
@@ -11833,6 +12075,38 @@ bind_failed:
 		    });
 	}
 
+#ifdef STEAMWORKS
+    class GetPlayersOnline {
+    private:
+        void OnGetNumberOfCurrentPlayers
+        (NumberOfCurrentPlayers_t* callback, bool failure) {
+            if (failure || !callback->m_bSuccess) {
+                printlog("NumberOfCurrentPlayers_t failed!\n");
+                return;
+            }
+            players = callback->m_cPlayers;
+            printlog("Number of players currently online: %d\n", players);
+        }
+        CCallResult<GetPlayersOnline, NumberOfCurrentPlayers_t> result;
+        int players = 0;
+        Uint32 lastUpdate = 0;
+    public:
+        void operator()() {
+            if (lastUpdate == ticks) {
+                return;
+            }
+            printlog("SteamUserStats()->GetNumberOfCurrentPlayers()\n");
+	        SteamAPICall_t call = SteamUserStats()->GetNumberOfCurrentPlayers();
+	        result.Set(call, this, &MainMenu::GetPlayersOnline::OnGetNumberOfCurrentPlayers);
+	        lastUpdate = ticks;
+        }
+        int current() {
+            return players;
+        }
+    };
+    static GetPlayersOnline getPlayersOnline;
+#endif
+
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
@@ -12059,34 +12333,6 @@ bind_failed:
 			version->setColor(0xffffffff);
 
 #ifdef STEAMWORKS
-		    class GetPlayersOnline {
-		    public:
-		        GetPlayersOnline() {
-		            (*this)();
-		        }
-		        void operator()() {
-	                printlog("SteamUserStats()->GetNumberOfCurrentPlayers()\n");
-			        SteamAPICall_t call = SteamUserStats()->GetNumberOfCurrentPlayers();
-			        result.Set(call, this, &OnGetNumberOfCurrentPlayers);
-		        }
-		        int current() {
-		            return players;
-		        }
-		    private:
-		        void OnGetNumberOfCurrentPlayers
-		        (NumberOfCurrentPlayers_t* callback, bool failure) {
-                    if (failure || !callback->m_bSuccess) {
-	                    printlog("NumberOfCurrentPlayers_t failed!\n");
-	                    return;
-                    }
-	                players = callback->m_cPlayers;
-	                printlog("Number of players currently online: %d\n", players);
-		        }
-		        CCallResult<GetPlayersOnline, NumberOfCurrentPlayers_t> result;
-		        int players = 0;
-		    };
-		    static GetPlayersOnline getPlayersOnline;
-
 			auto online_players = main_menu_frame->addField("online_players", 32);
 			online_players->setFont(smallfont_outline);
 			online_players->setHJustify(Field::justify_t::RIGHT);
@@ -12106,10 +12352,10 @@ bind_failed:
                 }
                 int players = getPlayersOnline.current();
                 if (players == 0) {
-                    online_players->setText("Players online: ...");
+                    online_players->setText("Players online: ... ");
                 } else {
                     char buf[256];
-                    snprintf(buf, sizeof(buf), "Players online: %d", players);
+                    snprintf(buf, sizeof(buf), "Players online: %d ", players);
                     online_players->setText(buf);
                 }
 			    });
