@@ -5948,10 +5948,10 @@ bind_failed:
 					if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
 					    // 15 second timeout
 						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
-						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code).c_str();
+						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 						disconnectFromLobby();
 						closeText();
-						connectionErrorPrompt(error_str);
+						connectionErrorPrompt(error_str.c_str());
 						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 					}
 				}
@@ -10444,7 +10444,7 @@ bind_failed:
 	}
 
 	static void playNew(Button& button) {
-	    if (0) {
+	    if (skipintro) {
 	        soundActivate();
 	        createLocalOrNetworkMenu();
 
