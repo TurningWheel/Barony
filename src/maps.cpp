@@ -394,6 +394,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		printlog(generationLog, levelset, seed);
 
 		conductGameChallenges[CONDUCT_MODDED] = 1;
+		gamemods_disableSteamAchievements = true;
 	}
 
 	std::string fullMapPath;
@@ -408,6 +409,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( checkMapHash == 0 )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
+		gamemods_disableSteamAchievements = true;
 	}
 
 	// store this map's seed
@@ -582,6 +584,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( checkMapHash == 0 )
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
+				gamemods_disableSteamAchievements = true;
 			}
 		}
 		else
@@ -625,6 +628,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( checkMapHash == 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
+			gamemods_disableSteamAchievements = true;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -730,6 +734,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( checkMapHash == 0 )
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
+				gamemods_disableSteamAchievements = true;
 			}
 
 			// level is successfully loaded, add it to the pool
@@ -906,6 +911,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( checkMapHash == 0 )
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
+					gamemods_disableSteamAchievements = true;
 				}
 
 				levelnum = 0;

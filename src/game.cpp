@@ -1780,6 +1780,7 @@ void gameLogic(void)
 					if ( checkMapHash == 0 )
 					{
 						conductGameChallenges[CONDUCT_MODDED] = 1;
+						gamemods_disableSteamAchievements = true;
 					}
 
 					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
@@ -5456,6 +5457,7 @@ int main(int argc, char** argv)
 							if ( checkMapHash == 0 )
 							{
 								conductGameChallenges[CONDUCT_MODDED] = 1;
+						        gamemods_disableSteamAchievements = true;
 							}
 						}
 						else
@@ -5468,6 +5470,7 @@ int main(int argc, char** argv)
 								if ( checkMapHash == 0 )
 								{
 									conductGameChallenges[CONDUCT_MODDED] = 1;
+						            gamemods_disableSteamAchievements = true;
 								}
 							}
 							else

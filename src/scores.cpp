@@ -3810,6 +3810,7 @@ void updatePlayerConductsInMainLoop()
 		if ( gamemods_numCurrentModsLoaded > 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
+			gamemods_disableSteamAchievements = true;
 		}
 	}
 
