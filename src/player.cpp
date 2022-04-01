@@ -770,7 +770,8 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	if ( !Input::inputs[player].binaryToggle("InventoryMoveUp")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveLeft")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveRight")
-		&& !Input::inputs[player].binaryToggle("InventoryMoveDown") )
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDown")
+		|| isDropdownActive() )
 	{
 		return false;
 	}
@@ -2505,6 +2506,16 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			//messagePlayer(0, "%.2f", tangent - playerYaw);
 			if ( !followerSelectInteract )
 			{
+				Entity* ohitentity = hit.entity;
+				real_t tangent2 = atan2(players[player.playernum]->entity->y - tooltip.y, players[player.playernum]->entity->x - tooltip.x);
+				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, players[player.playernum]->entity);
+				if ( hit.entity != players[player.playernum]->entity )
+				{
+					// no line of sight through walls
+					hit.entity = ohitentity;
+					return 0.0;
+				}
+				hit.entity = ohitentity;
 				return dist;
 			}
 

@@ -712,7 +712,8 @@ public:
 			MODULE_SKILLS_LIST,
 			MODULE_BOOK_VIEW,
 			MODULE_HOTBAR,
-			MODULE_SPELLS
+			MODULE_SPELLS,
+			MODULE_STATUS_EFFECTS
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -1143,7 +1144,7 @@ public:
 		static void loadCharacterSheetJSON();
 		static std::string defaultString;
 		static std::string& getHoverTextString(std::string key);
-		void updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos);
+		void updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT);
 	} characterSheet;
 
 	class SkillSheet_t
@@ -1308,6 +1309,11 @@ public:
 			ANIMATE_LEVELUP_FALLING
 		};
 
+		enum AnimateFlashEffects_t : int {
+			FLASH_ON_DAMAGE,
+			FLASH_ON_RECOVERY
+		};
+
 		struct Bar_t
 		{
 			real_t animateValue = 0.0;
@@ -1321,6 +1327,11 @@ public:
 			real_t fadeIn = 0.0;
 			real_t fadeOut = 0.0;
 			real_t widthMultiplier = 1.0;
+
+			Uint32 flashTicks = 0;
+			Uint32 flashProcessedOnTick = 0;
+			int flashAnimState = -1;
+			AnimateFlashEffects_t flashType = FLASH_ON_DAMAGE;
 		};
 		Bar_t xpBar;
 		Bar_t HPBar;
@@ -1385,6 +1396,7 @@ public:
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
 		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
+		void updateStatusEffectTooltip();
 		void updateCursor();
 		void updateActionPrompts();
 		void updateWorldTooltipPrompts();

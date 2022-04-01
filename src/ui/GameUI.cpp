@@ -27,6 +27,7 @@
 
 #include <assert.h>
 
+Frame* gameUIFrame[MAXPLAYERS] = { nullptr };
 bool newui = true;
 int selectedCursorOpacity = 255;
 int oldSelectedCursorOpacity = 255;
@@ -79,6 +80,13 @@ struct CustomColors_t
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
 } hudColors;
 EnemyBarSettings_t enemyBarSettings;
+StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3} };
+std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
+std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allSustainedSpells;
+Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipDescColor = 0xFFFFFFFF;
+Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipHeadingColor = 0xFFFFFFFF;
+Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::notificationTextColor = 0xFFFFFFFF;
+std::string StatusEffectQueue_t::StatusEffectDefinitions_t::notificationFont = "fonts/pixelmix.ttf#16#2";
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue);
 
@@ -89,6 +97,18 @@ void capitalizeString(std::string& str)
 	if ( letter >= 'a' && letter <= 'z' )
 	{
 		str[0] = toupper(letter);
+	}
+}
+
+void uppercaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'a' && letter <= 'z' )
+		{
+			letter = toupper(letter);
+		}
 	}
 }
 
@@ -256,10 +276,24 @@ void createHPMPBars(const int player)
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
+		auto currentProgressEndCapFlash = foregroundFrame->addImage(SDL_Rect{
+			currentProgress->pos.x + currentProgress->pos.w - 14, 6, 22, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png", "hp img progress endcap flash");
+		currentProgressEndCapFlash->disabled = true;
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
+
+		auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 25pc");
+		div25Percent->disabled = true;
+		auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 50pc");
+		div50Percent->disabled = true;
+		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 75pc");
+		div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto hptext = foregroundFrame->addField("hp text", 16);
@@ -311,10 +345,24 @@ void createHPMPBars(const int player)
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
+		auto currentProgressEndCapFlash = foregroundFrame->addImage(SDL_Rect{
+			currentProgress->pos.x + currentProgress->pos.w - 14, 6, 22, progressBarHeight }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png", "mp img progress endcap flash");
+		currentProgressEndCapFlash->disabled = true;
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
 			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
+
+		auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 25pc");
+		div25Percent->disabled = true;
+		auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 50pc");
+		div50Percent->disabled = true;
+		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
+			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
+		div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto mptext = foregroundFrame->addField("mp text", 16);
@@ -639,6 +687,11 @@ void createUINavigation(const int player)
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Magic button clicked", button.getOwner());
+			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+			{
+				// prevent 1 frame flickering of hud.cursor after click
+				players[button.getOwner()]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+			}
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_ITEM )
 			{
 				players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
@@ -673,6 +726,11 @@ void createUINavigation(const int player)
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
 			}
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_CHARSHEET;
+			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+			{
+				// prevent 1 frame flickering of hud.cursor after click
+				players[button.getOwner()]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+			}
 			players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_CHARACTERSHEET);
 			if ( players[button.getOwner()]->characterSheet.selectedElement == Player::CharacterSheet_t::SHEET_UNSELECTED )
 			{
@@ -697,6 +755,11 @@ void createUINavigation(const int player)
 		itemsButton->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Item button clicked", button.getOwner());
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+			{
+				// prevent 1 frame flickering of hud.cursor after click
+				players[button.getOwner()]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+			}
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL
 				&& players[button.getOwner()]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 			{
@@ -770,6 +833,15 @@ void createUINavigation(const int player)
 		auto rightTriggerNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
 			0xFFFFFFFF, "images/system/white.png", "right trigger img");
 		rightTriggerNavigationImg->disabled = true;
+
+		auto additionalNavigationTxt = uiNavFrame->addField("additional txt", 64);
+		additionalNavigationTxt->setFont(navFont);
+		additionalNavigationTxt->setVJustify(Field::justify_t::CENTER);
+		additionalNavigationTxt->setHJustify(Field::justify_t::LEFT);
+
+		auto additionalNavigationImg = uiNavFrame->addImage(SDL_Rect{ 0, 0, glyphSize, glyphSize },
+			0xFFFFFFFF, "images/system/white.png", "additional img");
+		additionalNavigationImg->disabled = true;
 	}
 }
 
@@ -829,44 +901,120 @@ void Player::HUD_t::updateUINavigation()
 	rightTriggerTxt->setDisabled(true);
 	auto rightTriggerGlyph = uiNavFrame->findImage("right trigger img");
 	rightTriggerGlyph->disabled = true;
+
+	auto additionalTxt = uiNavFrame->findField("additional txt");
+	additionalTxt->setDisabled(true);
+	auto additionalGlyph = uiNavFrame->findImage("additional img");
+	additionalGlyph->disabled = true;
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth()
-		&& leftBumperModule != Player::GUI_t::MODULE_NONE )
+		&& !player.bUseCompactGUIWidth() )
 	{
-		switch ( leftBumperModule )
+		if ( leftBumperModule != Player::GUI_t::MODULE_NONE )
 		{
-			case Player::GUI_t::MODULE_INVENTORY:
-			case Player::GUI_t::MODULE_SPELLS:
-			case Player::GUI_t::MODULE_HOTBAR:
-			case Player::GUI_t::MODULE_CHARACTERSHEET:
-			case Player::GUI_t::MODULE_CHEST:
-				leftBumperTxt->setDisabled(false);
-				leftBumperTxt->setText("/");
-				break;
-			default:
-				break;
+			switch ( leftBumperModule )
+			{
+				case Player::GUI_t::MODULE_INVENTORY:
+				case Player::GUI_t::MODULE_SPELLS:
+				case Player::GUI_t::MODULE_HOTBAR:
+				case Player::GUI_t::MODULE_CHARACTERSHEET:
+				case Player::GUI_t::MODULE_CHEST:
+					leftBumperTxt->setDisabled(false);
+					leftBumperTxt->setText("/");
+					break;
+				default:
+					break;
+			}
 		}
-	}
-	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth()
-		&& rightBumperModule != Player::GUI_t::MODULE_NONE )
-	{
-		switch ( rightBumperModule )
+		if ( rightBumperModule != Player::GUI_t::MODULE_NONE )
 		{
-			case Player::GUI_t::MODULE_INVENTORY:
-			case Player::GUI_t::MODULE_SPELLS:
-			case Player::GUI_t::MODULE_HOTBAR:
-			case Player::GUI_t::MODULE_CHARACTERSHEET:
-			case Player::GUI_t::MODULE_CHEST:
-				rightBumperTxt->setDisabled(false);
-				rightBumperTxt->setText(language[4092]);
-				break;
-			default:
-				break;
+			switch ( rightBumperModule )
+			{
+				case Player::GUI_t::MODULE_INVENTORY:
+				case Player::GUI_t::MODULE_SPELLS:
+				case Player::GUI_t::MODULE_HOTBAR:
+				case Player::GUI_t::MODULE_CHARACTERSHEET:
+				case Player::GUI_t::MODULE_CHEST:
+					rightBumperTxt->setDisabled(false);
+					rightBumperTxt->setText(language[4092]);
+					break;
+				default:
+					break;
+			}
+		}
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		{
+			auto selectedElement = player.characterSheet.selectedElement;
+			if ( selectedElement >= Player::CharacterSheet_t::SHEET_STR && selectedElement <= Player::CharacterSheet_t::SHEET_WGT )
+			{
+				additionalTxt->setDisabled(false);
+				additionalTxt->setText(language[4111]);
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_DUNGEON_FLOOR )
+			{
+				additionalTxt->setDisabled(false);
+				additionalTxt->setText(language[4112]);
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_SKILL_LIST
+				|| selectedElement == Player::CharacterSheet_t::SHEET_OPEN_LOG 
+				|| selectedElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
+			{
+				additionalTxt->setDisabled(false);
+				// options to use specific text 'open log' etc
+				//if ( selectedElement == Player::CharacterSheet_t::SHEET_SKILL_LIST )
+				//{
+				//	additionalTxt->setText(language[4095]);
+				//}
+				//else if ( selectedElement == Player::CharacterSheet_t::SHEET_OPEN_LOG )
+				//{
+				//	additionalTxt->setText(language[4106]);
+				//}
+				//else if ( selectedElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
+				//{
+				//	additionalTxt->setText(language[4105]);
+				//}
+				additionalTxt->setText(language[4107]); // activate
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_GOLD )
+			{
+				additionalTxt->setDisabled(false);
+				if ( player.GUI.isDropdownActive() )
+				{
+					additionalTxt->setText(language[4053]);
+				}
+				else
+				{
+					additionalTxt->setText(language[4108]);
+				}
+			}
+			else if ( selectedElement == Player::CharacterSheet_t::SHEET_TIMER )
+			{
+				additionalTxt->setDisabled(false);
+				if ( player.characterSheet.showGameTimerAlways )
+				{
+					additionalTxt->setText(language[4110]);
+				}
+				else
+				{
+					additionalTxt->setText(language[4109]);
+				}
+			}
+			if ( !additionalTxt->isDisabled() )
+			{
+				if ( selectedElement == Player::CharacterSheet_t::SHEET_GOLD
+					&& player.GUI.isDropdownActive() )
+				{
+					additionalGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+				}
+				else
+				{
+					additionalGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuConfirm");
+				}
+			}
 		}
 	}
 
 	int lowestLeftY = 8;
+	int lowestRightY = 8;
 
 	int leftAnchorX = 0;
 	int rightAnchorX = 0;
@@ -994,6 +1142,43 @@ void Player::HUD_t::updateUINavigation()
 				}
 				rightTriggerTxt->setDisabled(false);
 				rightTriggerTxt->setText(language[4095]);
+
+				if ( !additionalTxt->isDisabled() )
+				{
+					if ( justify == PANEL_JUSTIFY_LEFT )
+					{
+						additionalTxt->setHJustify(Field::justify_t::LEFT);
+					}
+					else
+					{
+						additionalTxt->setHJustify(Field::justify_t::RIGHT);
+					}
+					additionalGlyph->disabled = false;
+					SDL_Rect textPos;
+					textPos.w = additionalTxt->getTextObject()->getWidth();
+					textPos.h = Font::get(additionalTxt->getFont())->height() + 8;
+					if ( justify == PANEL_JUSTIFY_LEFT )
+					{
+						textPos.x = rightTriggerTxt->getSize().x;
+					}
+					else
+					{
+						textPos.x = rightTriggerTxt->getSize().x + rightTriggerTxt->getSize().w - textPos.w;
+					}
+					textPos.y = std::max(lowestRightY, rightTriggerTxt->getSize().y + rightTriggerTxt->getSize().h);
+
+					SDL_Rect imgPos;
+					if ( auto imgGet = Image::get(additionalGlyph->path.c_str()) )
+					{
+						imgPos.w = imgGet->getWidth();
+						imgPos.h = imgGet->getHeight();
+					}
+					imgPos.x = rightTriggerGlyph->pos.x + rightTriggerGlyph->pos.w / 2 - imgPos.w / 2;
+					imgPos.y = textPos.y - (imgPos.h - textPos.h) / 2;
+					additionalGlyph->pos = imgPos;
+
+					additionalTxt->setSize(textPos);
+				}
 			}
 		}
 
@@ -1037,6 +1222,11 @@ void Player::HUD_t::updateUINavigation()
 		{
 			lowestLeftY = std::max(lowestLeftY, leftTriggerTxt->getSize().y + leftTriggerTxt->getSize().h);
 			lowestLeftY = std::max(lowestLeftY, leftTriggerGlyph->pos.y + leftTriggerGlyph->pos.h);
+		}
+		if ( !rightTriggerTxt->isDisabled() )
+		{
+			lowestRightY = std::max(lowestRightY, rightTriggerTxt->getSize().y + rightTriggerTxt->getSize().h);
+			lowestRightY = std::max(lowestRightY, rightTriggerGlyph->pos.y + rightTriggerGlyph->pos.h);
 		}
 
 		if ( !leftBumperTxt->isDisabled() )
@@ -1339,6 +1529,1915 @@ void Player::HUD_t::updateUINavigation()
 			}
 		}
 	}
+}
+
+bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
+{
+	if ( spellID >= 0 && spellID < NUM_SPELLS )
+	{
+		effectID = spellID + kSpellEffectOffset;
+		if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+		{
+			if ( StatusEffectDefinitions_t::getSustainedSpell(effectID).neverDisplay )
+			{
+				return false;
+			}
+		}
+	}
+	if ( (effectID >= 0 && effectID < NUMEFFECTS) 
+		|| effectID == kEffectBread 
+		|| effectID == kEffectBloodHunger
+		|| effectID == kEffectAutomatonHunger
+		|| effectID >= kSpellEffectOffset )
+	{
+		if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+		{
+			if ( StatusEffectDefinitions_t::getEffect(effectID).neverDisplay )
+			{
+				return false;
+			}
+		}
+		for ( auto& q : effectQueue )
+		{
+			if ( effectID == q.effect )
+			{
+				return false;
+			}
+		}
+	}
+
+	effectQueue.push_back(StatusEffectQueueEntry_t(effectID));
+	effectQueue.back().pos.x = getBaseEffectPosX();
+	effectQueue.back().pos.y = getBaseEffectPosY();
+	notificationQueue.push_back(StatusEffectQueueEntry_t(effectID));
+	notificationQueue.back().pos.x = getBaseEffectPosX();
+	notificationQueue.back().pos.y = getBaseEffectPosY();
+
+	// fall back if notificationTargetPosition doesn't have an effect to go to.
+	notificationQueue.back().notificationTargetPosition.x = 0;
+	notificationQueue.back().notificationTargetPosition.y = statusEffectFrame->getSize().h - notificationQueue.back().notificationTargetPosition.h;
+	requiresAnimUpdate = true;
+	return true;
+}
+
+std::string StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(StatusEffectQueue_t::EffectDefinitionEntry_t& entry, int variation)
+{
+	if ( entry.imgPath == "" )
+	{
+		if ( entry.imgPathVariations.size() > 0 && variation >= 0 )
+		{
+			return entry.imgPathVariations[std::min(variation, (int)entry.imgPathVariations.size() - 1)];
+		}
+		node_t* spellImageNode = nullptr;
+		int spellID = entry.useSpellIDForImg;
+		if ( variation >= 0 )
+		{
+			spellID = entry.useSpellIDForImgVariations[std::min(variation, (int)entry.useSpellIDForImgVariations.size() - 1)];
+		}
+		if ( spellID >= 0 && spellID < NUM_SPELLS )
+		{
+			if ( arachnophobia_filter )
+			{
+				if ( spellID == SPELL_SPIDER_FORM )
+				{
+					spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_FORM);
+				}
+				else if ( spellID == SPELL_SPRAY_WEB )
+				{
+					spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_WEB);
+				}
+				else
+				{
+					spellImageNode = list_Node(&items[SPELL_ITEM].images, spellID);
+				}
+			}
+			else
+			{
+				spellImageNode = list_Node(&items[SPELL_ITEM].images, spellID);
+			}
+		}
+		if ( spellImageNode )
+		{
+			string_t* string = (string_t*)spellImageNode->element;
+			if ( string )
+			{
+				return string->data;
+			}
+		}
+		return "images/sprites/null.png";
+	}
+	if ( entry.imgPath == "" )
+	{
+		return "images/sprites/null.png";
+	}
+	return entry.imgPath;
+}
+
+void StatusEffectQueueEntry_t::setAnimatePosition(int destx, int desty, int destw, int desth)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = destw;
+	animateSetpointH = desth;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void StatusEffectQueueEntry_t::setAnimatePosition(int destx, int desty)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = 0;
+	animateSetpointH = 0;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+const real_t kStatusEffectQueueAnimSpeedMult = 4.0;
+
+void StatusEffectQueueEntry_t::animate()
+{
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0 / kStatusEffectQueueAnimSpeedMult);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0 / kStatusEffectQueueAnimSpeedMult);
+	animateX += setpointDiffX;
+	animateY += setpointDiffY;
+	animateX = std::min(1.0, animateX);
+	animateY = std::min(1.0, animateY);
+
+	int destX = animateSetpointX - animateStartX;
+	int destY = animateSetpointY - animateStartY;
+
+	pos.x = animateStartX + destX * animateX;
+	pos.y = animateStartY + destY * animateY;
+}
+
+void StatusEffectQueue_t::loadStatusEffectsJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/status_effects.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/status_effects.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/status_effects.json");
+		inputPath.append("/data/status_effects.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				StatusEffectDefinitions_t::reset();
+				int defaultTooltipWidth = 200;
+				if ( d.HasMember("default_tooltip_width") )
+				{
+					defaultTooltipWidth = d["default_tooltip_width"].GetInt();
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("notification_text") )
+					{
+						StatusEffectDefinitions_t::notificationTextColor = makeColor(
+							d["colors"]["notification_text"]["r"].GetInt(),
+							d["colors"]["notification_text"]["g"].GetInt(),
+							d["colors"]["notification_text"]["b"].GetInt(),
+							d["colors"]["notification_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("tooltip_desc_text") )
+					{
+						StatusEffectDefinitions_t::tooltipDescColor = makeColor(
+							d["colors"]["tooltip_desc_text"]["r"].GetInt(),
+							d["colors"]["tooltip_desc_text"]["g"].GetInt(),
+							d["colors"]["tooltip_desc_text"]["b"].GetInt(),
+							d["colors"]["tooltip_desc_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("tooltip_heading_text") )
+					{
+						StatusEffectDefinitions_t::tooltipHeadingColor = makeColor(
+							d["colors"]["tooltip_heading_text"]["r"].GetInt(),
+							d["colors"]["tooltip_heading_text"]["g"].GetInt(),
+							d["colors"]["tooltip_heading_text"]["b"].GetInt(),
+							d["colors"]["tooltip_heading_text"]["a"].GetInt());
+					}
+				}
+				if ( d.HasMember("notification_font") )
+				{
+					StatusEffectDefinitions_t::notificationFont = d["notification_font"].GetString();
+				}
+				if ( d.HasMember("sustained_effects") )
+				{
+					for ( rapidjson::Value::ConstMemberIterator itr = d["sustained_effects"].MemberBegin();
+						itr != d["sustained_effects"].MemberEnd(); ++itr )
+					{
+						int id = -1;
+						if ( itr->value.HasMember("id") )
+						{
+							id = itr->value["id"].GetInt();
+						}
+						int spellID = -1;
+						if ( itr->value.HasMember("spell_id") )
+						{
+							spellID = itr->value["spell_id"].GetInt();
+						}
+						StatusEffectDefinitions_t::allSustainedSpells.insert(
+							std::make_pair(spellID, EffectDefinitionEntry_t()));
+						auto& entry = StatusEffectDefinitions_t::allSustainedSpells[spellID];
+						entry.effect_id = id;
+						entry.spell_id = spellID;
+						entry.internal_name = itr->name.GetString();
+						if ( itr->value["name"].IsArray() )
+						{
+							for ( auto arr = itr->value["name"].Begin();
+								arr != itr->value["name"].End(); ++arr )
+							{
+								entry.nameVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.name = itr->value["name"].GetString();
+						}
+						std::string buf = itr->value["desc"].GetString();
+						entry.desc = "\x1E ";
+						int index = 0;
+						for ( auto s : buf )
+						{
+							if ( index == 0 && (buf[0] == '+' || buf[0] == '-') )
+							{
+								entry.desc = "";
+							}
+							entry.desc += s;
+							if ( s == '\n' )
+							{
+								if ( index + 1 < buf.size() )
+								{
+									if ( buf[index + 1] == '+' || buf[index + 1] == '-' )
+									{
+										// skip adding dot
+										++index;
+										continue;
+									}
+								}
+								entry.desc += "\x1E ";
+							}
+							++index;
+						}
+						entry.imgPath = itr->value["img_path"].GetString();
+						entry.useSpellIDForImg = itr->value["img_from_spell_id"].GetInt();
+						entry.neverDisplay = false;
+						if ( itr->value.HasMember("never_display") )
+						{
+							entry.neverDisplay = itr->value["never_display"].GetBool();
+						}
+						entry.tooltipWidth = defaultTooltipWidth;
+						if ( itr->value.HasMember("tooltip_width") )
+						{
+							entry.tooltipWidth = itr->value["tooltip_width"].GetInt();
+						}
+					}
+				}
+				if ( d.HasMember("effects") )
+				{
+					for ( rapidjson::Value::ConstMemberIterator itr = d["effects"].MemberBegin();
+						itr != d["effects"].MemberEnd(); ++itr )
+					{
+						int id = -1;
+						if ( itr->value.HasMember("id") )
+						{
+							id = itr->value["id"].GetInt();
+						}
+						StatusEffectDefinitions_t::allEffects.insert(
+							std::make_pair(id, EffectDefinitionEntry_t()));
+						auto& entry = StatusEffectDefinitions_t::allEffects[id];
+						entry.effect_id = id;
+						if ( itr->value["name"].IsArray() )
+						{
+							for ( auto arr = itr->value["name"].Begin();
+								arr != itr->value["name"].End(); ++arr )
+							{
+								entry.nameVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.name = itr->value["name"].GetString();
+						}
+						if ( itr->value["desc"].IsArray() )
+						{
+							for ( auto arr = itr->value["desc"].Begin();
+								arr != itr->value["desc"].End(); ++arr )
+							{
+								std::string buf = arr->GetString();
+								int index = 0;
+								std::string formattedStr = "\x1E ";
+								for ( auto s : buf )
+								{
+									if ( index == 0 && (buf[0] == '+' || buf[0] == '-') )
+									{
+										formattedStr = "";
+									}
+									formattedStr += s;
+									if ( s == '\n' )
+									{
+										if ( index + 1 < buf.size() )
+										{
+											if ( buf[index + 1] == '+' || buf[index + 1] == '-' )
+											{
+												// skip adding dot
+												++index;
+												continue;
+											}
+										}
+										formattedStr += "\x1E ";
+									}
+									++index;
+								}
+								entry.descVariations.push_back(formattedStr);
+							}
+						}
+						else
+						{
+							std::string buf = itr->value["desc"].GetString();
+							entry.desc = "\x1E ";
+							int index = 0;
+							for ( auto s : buf )
+							{
+								if ( index == 0 && (buf[0] == '+' || buf[0] == '-') )
+								{
+									entry.desc = "";
+								}
+								entry.desc += s;
+								if ( s == '\n' )
+								{
+									if ( index + 1 < buf.size() )
+									{
+										if ( buf[index + 1] == '+' || buf[index + 1] == '-' )
+										{
+											// skip adding dot
+											++index;
+											continue;
+										}
+									}
+									entry.desc += "\x1E ";
+								}
+								++index;
+							}
+						}
+						entry.internal_name = itr->name.GetString();
+						if ( itr->value["img_path"].IsArray() )
+						{
+							for ( auto arr = itr->value["img_path"].Begin();
+								arr != itr->value["img_path"].End(); ++arr )
+							{
+								entry.imgPathVariations.push_back(arr->GetString());
+							}
+						}
+						else
+						{
+							entry.imgPath = itr->value["img_path"].GetString();
+						}
+						if ( itr->value["img_from_spell_id"].IsArray() )
+						{
+							for ( auto arr = itr->value["img_from_spell_id"].Begin();
+								arr != itr->value["img_from_spell_id"].End(); ++arr )
+							{
+								entry.useSpellIDForImgVariations.push_back(arr->GetInt());
+							}
+						}
+						else
+						{
+							entry.useSpellIDForImg = itr->value["img_from_spell_id"].GetInt();
+						}
+						entry.sustainedSpellID = -1;
+						if ( itr->value.HasMember("use_entry_for_sustained_spell") )
+						{
+							entry.sustainedSpellID = itr->value["use_entry_for_sustained_spell"].GetInt();
+						}
+						entry.neverDisplay = false;
+						if ( itr->value.HasMember("never_display") )
+						{
+							entry.neverDisplay = itr->value["never_display"].GetBool();
+						}
+						entry.tooltipWidth = defaultTooltipWidth;
+						if ( itr->value.HasMember("tooltip_width") )
+						{
+							entry.tooltipWidth = itr->value["tooltip_width"].GetInt();
+						}
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
+}
+
+int StatusEffectQueue_t::getBaseEffectPosX()
+{
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		return statusEffectFrame->getSize().w / 2 - 100;
+	}
+	return statusEffectFrame->getSize().w / 2 - 100;
+}
+int StatusEffectQueue_t::getBaseEffectPosY()
+{
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		return statusEffectFrame->getSize().h / 2;
+	}
+	return statusEffectFrame->getSize().h / 2 - 50;
+}
+
+int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread )
+	{
+		return 64;
+	}
+	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	{
+		return 64;
+	}
+	return 32;
+}
+int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread )
+	{
+		return 60;
+	}
+	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	{
+		return 64;
+	}
+	return 32;
+}
+
+int getStatusEffectMovementAmount(int player)
+{
+	int movementAmount = 50;
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		movementAmount = 25;
+	}
+	return movementAmount;
+}
+
+real_t StatusEffectQueueEntry_t::getStatusEffectLargestScaling(int player)
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread 
+		|| effect == StatusEffectQueue_t::kEffectBloodHunger 
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	{
+		return 2.0;
+	}
+	return 3.0;
+}
+
+real_t StatusEffectQueueEntry_t::getStatusEffectMidScaling(int player)
+{
+	if ( effect == StatusEffectQueue_t::kEffectBread 
+		|| effect == StatusEffectQueue_t::kEffectBloodHunger
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	{
+		return 1.5;
+	}
+	return 2.0;
+}
+
+void StatusEffectQueueEntry_t::animateNotification(int player)
+{
+	auto& statusEffectQueue = StatusEffectQueue[player];
+	real_t animspeed = 5.0 / kStatusEffectQueueAnimSpeedMult;
+	const int movementAmount = getStatusEffectMovementAmount(player);
+	switch ( notificationState )
+	{
+		case STATE_1:
+			if ( notificationStateInit == STATE_1 )
+			{
+				notificationStateInit = STATE_2;
+				setAnimatePosition(
+					statusEffectQueue.getBaseEffectPosX() - movementAmount,
+					statusEffectQueue.getBaseEffectPosY() - movementAmount,
+					getEffectSpriteNormalWidth(), getEffectSpriteNormalHeight());
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_2;
+			}
+			animspeed *= 2.0;
+			break;
+		case STATE_2:
+			if ( notificationStateInit == STATE_2 )
+			{
+				notificationStateInit = STATE_3;
+				setAnimatePosition(
+					statusEffectQueue.getBaseEffectPosX() - movementAmount - (getStatusEffectLargestScaling(player) - 1.0) * getEffectSpriteNormalWidth() / 2,
+					statusEffectQueue.getBaseEffectPosY() - movementAmount - (getStatusEffectLargestScaling(player) - 1.0) * getEffectSpriteNormalHeight() / 2,
+					getEffectSpriteNormalWidth() * getStatusEffectLargestScaling(player),
+					getEffectSpriteNormalHeight() * getStatusEffectLargestScaling(player));
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_3;
+			}
+			animspeed *= 4.0;
+			break;
+		case STATE_3:
+			if ( notificationStateInit == STATE_3 )
+			{
+				notificationStateInit = STATE_4;
+				setAnimatePosition(
+					statusEffectQueue.getBaseEffectPosX() - movementAmount - (getStatusEffectMidScaling(player) - 1.0) * getEffectSpriteNormalWidth() / 2,
+					statusEffectQueue.getBaseEffectPosY() - movementAmount - (getStatusEffectMidScaling(player) - 1.0) * getEffectSpriteNormalHeight() / 2,
+					getEffectSpriteNormalWidth() * getStatusEffectMidScaling(player),
+					getEffectSpriteNormalHeight() * getStatusEffectMidScaling(player));
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_4;
+			}
+			animspeed *= 4.0;
+			break;
+		case STATE_4:
+			if ( notificationStateInit == STATE_4 )
+			{
+				notificationStateInit = STATE_END;
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( notificationTargetPosition.x != animateSetpointX
+				|| notificationTargetPosition.y != animateSetpointY
+				|| notificationTargetPosition.w != animateSetpointW
+				|| notificationTargetPosition.h != animateSetpointH )
+			{
+				// re update this as our target moved.
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_END;
+			}
+			animspeed *= 2.0;
+			break;
+		case STATE_END:
+			return;
+		default:
+			break;
+	}
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
+	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - animateW)) / (animspeed);
+	real_t setpointDiffH = fpsScale * std::max(.1, (1.0 - animateH)) / (animspeed);
+	animateX += setpointDiffX;
+	animateY += setpointDiffY;
+	animateX = std::min(1.0, animateX);
+	animateY = std::min(1.0, animateY);
+	animateW += setpointDiffW;
+	animateH += setpointDiffH;
+	animateW = std::min(1.0, animateW);
+	animateH = std::min(1.0, animateH);
+
+	int destX = animateSetpointX - animateStartX;
+	int destY = animateSetpointY - animateStartY;
+	int destW = animateSetpointW - animateStartW;
+	int destH = animateSetpointH - animateStartH;
+
+	pos.x = animateStartX + destX * animateX;
+	pos.y = animateStartY + destY * animateY;
+	pos.w = animateStartW + destW * animateW;
+	pos.h = animateStartH + destH * animateH;
+}
+
+void createStatusEffectQueue(const int player)
+{
+	auto& statusEffectQueue = StatusEffectQueue[player];
+	if ( statusEffectQueue.statusEffectFrame )
+	{
+		return;
+	}
+	auto& hud_t = players[player]->hud;
+	statusEffectQueue.statusEffectFrame = hud_t.hudFrame->addFrame("status effects");
+	statusEffectQueue.statusEffectFrame->setHollow(true);
+	statusEffectQueue.statusEffectFrame->setBorder(0);
+	statusEffectQueue.statusEffectFrame->setOwner(player);
+	statusEffectQueue.statusEffectFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+	auto automatonHungerFrame = statusEffectQueue.statusEffectFrame->addFrame("automaton hunger notification");
+	automatonHungerFrame->setHollow(true);
+	automatonHungerFrame->setDisabled(true);
+	automatonHungerFrame->setSize(SDL_Rect{ 0, 0, 64, 64 });
+	auto automaton_flame_img = automatonHungerFrame->addImage(SDL_Rect{ 0, 0, 64, 64 }, 0xFFFFFFFF, "images/system/Hunger_boiler_fire.png", "flame");
+
+	auto notif_frame = statusEffectQueue.statusEffectFrame->addFrame("notification frame");
+	notif_frame->setHollow(true);
+	notif_frame->setDisabled(true);
+	notif_frame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	auto notif = notif_frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "notification img");
+	notif->disabled = true;
+	auto notif_txt = notif_frame->addField("notification txt", 128);
+	//notif_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+	notif_txt->setFont("fonts/pixelmix.ttf#16#2");
+	notif_txt->setText("");
+	notif_txt->setDisabled(true);
+	notif_txt->setColor(makeColor(255, 255, 255, 255));
+	notif_txt->setVJustify(Field::justify_t::CENTER);
+	notif_txt->setHJustify(Field::justify_t::CENTER);
+
+	auto innerFrame = statusEffectQueue.statusEffectFrame->addFrame("effects");
+	innerFrame->setHollow(true);
+}
+const int breadStatusEffectWidth = 64;
+const int breadStatusEffectHeight = 60;
+
+std::string& StatusEffectQueue_t::EffectDefinitionEntry_t::getName(int variation)
+{
+	if ( variation >= 0 )
+	{
+		return nameVariations[std::min(variation, (int)nameVariations.size() - 1)];
+	}
+	return name;
+}
+
+std::string& StatusEffectQueue_t::EffectDefinitionEntry_t::getDesc(int variation)
+{
+	if ( variation >= 0 )
+	{
+		return descVariations[std::min(variation, (int)nameVariations.size() - 1)];
+	}
+	return desc;
+}
+
+void StatusEffectQueue_t::createStatusEffectTooltip()
+{
+	auto& tooltipFrame = statusEffectTooltipFrame;
+	if ( tooltipFrame )
+	{
+		return;
+	}
+	char name[32];
+	snprintf(name, sizeof(name), "player statusfx tooltip %d", player);
+	tooltipFrame = gameUIFrame[player]->addFrame(name);
+	tooltipFrame->setHollow(true);
+	tooltipFrame->setDisabled(true);
+	tooltipFrame->setInheritParentFrameOpacity(false);
+	tooltipFrame->setBorder(0);
+	tooltipFrame->setOwner(player);
+	tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+	{
+		Uint32 color = makeColor(255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+
+		auto heading_txt = tooltipFrame->addField("heading txt", 128);
+		heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		heading_txt->setText("");
+		heading_txt->setColor(makeColor(255, 255, 255, 255));
+		heading_txt->setVJustify(Field::justify_t::CENTER);
+		heading_txt->setHJustify(Field::justify_t::LEFT);
+
+		auto desc_txt = tooltipFrame->addField("desc txt", 1024);
+		desc_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		desc_txt->setText("");
+		desc_txt->setColor(makeColor(0, 192, 255, 255));
+		desc_txt->setVJustify(Field::justify_t::LEFT);
+		desc_txt->setHJustify(Field::justify_t::LEFT);
+	}
+}
+
+void Player::HUD_t::updateStatusEffectTooltip()
+{
+	StatusEffectQueue[player.playernum].createStatusEffectTooltip();
+}
+
+void StatusEffectQueue_t::animateStatusEffectTooltip(bool showTooltip)
+{
+	if ( !statusEffectTooltipFrame )
+	{
+		return;
+	}
+	auto tooltipFrame = statusEffectTooltipFrame;
+	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipOpacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipOpacitySetpoint == 0 )
+		{
+			if ( ticks - tooltipDeselectedTick > 5 )
+			{
+				real_t factor = 10.0;
+				real_t setpointDiff = fpsScale * std::max(.05, (tooltipOpacityAnimate)) / (factor);
+				tooltipOpacityAnimate -= setpointDiff;
+				tooltipOpacityAnimate = std::max(0.0, tooltipOpacityAnimate);
+			}
+		}
+		else
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipOpacityAnimate)) / (1);
+			tooltipOpacityAnimate += setpointDiff;
+			tooltipOpacityAnimate = std::min(1.0, tooltipOpacityAnimate);
+		}
+		tooltipFrame->setOpacity(tooltipOpacityAnimate * 100);
+	}
+	else
+	{
+		tooltipFrame->setOpacity(tooltipOpacitySetpoint);
+	}
+
+	if ( players[player]->hud.hudFrame && players[player]->hud.hudFrame->isDisabled() )
+	{
+		tooltipFrame->setDisabled(true);
+	}
+
+	if ( tooltipFrame->isDisabled() || !showTooltip )
+	{
+		tooltipShowingEffectID = -1;
+		tooltipShowingEffectVariable = -1;
+		return;
+	}
+
+	tooltipOpacitySetpoint = 0;
+	tooltipOpacityAnimate = 1.0;
+	tooltipFrame->setDisabled(false);
+	tooltipFrame->setOpacity(100.0);
+	tooltipDeselectedTick = ticks;
+}
+
+bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry, SDL_Rect pos)
+{
+	auto tooltipFrame = statusEffectTooltipFrame;
+	if ( !tooltipFrame )
+	{
+		return false;
+	}
+	auto tooltipHeader = tooltipFrame->findField("heading txt");
+	tooltipHeader->setColor(StatusEffectDefinitions_t::tooltipHeadingColor);
+	auto tooltipDesc = tooltipFrame->findField("desc txt");
+	tooltipDesc->setColor(StatusEffectDefinitions_t::tooltipDescColor);
+	int fontHeight = Font::get(tooltipDesc->getFont())->height(true);
+	int tooltipInnerWidth = 200;
+
+	bool refreshTooltip = (tooltipShowingEffectID != entry.effect) || (tooltipShowingEffectVariable != entry.customVariable);
+	if ( refreshTooltip )
+	{
+		if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
+		{
+			int effectID = entry.effect - StatusEffectQueue_t::kSpellEffectOffset;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+				if ( effectID == SPELL_SHADOW_TAG )
+				{
+					int variation = 2;
+					if ( players[player] && players[player]->entity )
+					{
+						if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+							&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+						{
+							variation = 1;
+							std::string formatString = definition.getName(variation).c_str();
+							char buf[256] = "";
+							Entity* tagged = uidToEntity(players[player]->entity->creatureShadowTaggedThisUid);
+							if ( tagged->behavior == &actMonster )
+							{
+								int type = tagged->getMonsterTypeFromSprite();
+								if ( type != NOTHING )
+								{
+									snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+								}
+								else
+								{
+									strcpy(buf, "");
+								}
+							}
+							else if ( tagged->behavior == &actPlayer )
+							{
+								snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+							}
+							std::string formattedName = buf;
+							uppercaseString(formattedName);
+							tooltipHeader->setText(formattedName.c_str());
+						}
+					}
+					if ( variation == 2 )
+					{
+						std::string newHeader = definition.getName(variation).c_str();
+						uppercaseString(newHeader);
+						tooltipHeader->setText(newHeader.c_str());
+					}
+					tooltipDesc->setText(definition.getDesc(-1).c_str()); // always -1 default desc
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else
+				{
+					int variation = -1;
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(variation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+			}
+		}
+		else
+		{
+			int effectID = entry.effect;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+				int variation = -1;
+				if ( effectID == EFF_SHAPESHIFT )
+				{
+					if ( players[player] && players[player]->entity )
+					{
+						switch ( players[player]->entity->effectShapeshift )
+						{
+							case RAT:
+								variation = 0;
+								break;
+							case SPIDER:
+								variation = 1;
+								break;
+							case TROLL:
+								variation = 2;
+								break;
+							case CREATURE_IMP:
+								variation = 3;
+								break;
+							default:
+								break;
+						}
+					}
+				}
+				else if ( effectID == EFF_VAMPIRICAURA )
+				{
+					bool sustained = false;
+					for ( node_t* node = channeledSpells[player].first; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+						{
+							sustained = true;
+							break;
+						}
+					}
+					if ( sustained )
+					{
+						variation = 1;
+					}
+					else
+					{
+						variation = 0;
+					}
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectBread
+					|| effectID == StatusEffectQueue_t::kEffectBloodHunger )
+				{
+					if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+					{
+						variation = 0;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+					{
+						variation = 3;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+					{
+						variation = 2;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+					{
+						variation = 1;
+					}
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectAutomatonHunger )
+				{
+					int nameVariation = 1;
+					int descVariation = 1;
+					if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED) )
+					{
+						nameVariation = 3;
+						descVariation = 0;
+					}
+					else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+					{
+						nameVariation = 5;
+						if ( svFlags & SV_FLAG_HUNGER )
+						{
+							descVariation = 2;
+						}
+						else
+						{
+							descVariation = 3;
+						}
+					}
+					else
+					{
+						nameVariation = 4;
+						descVariation = 1;
+					}
+
+					std::string newHeader = definition.getName(nameVariation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(descVariation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+
+				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger )
+				{
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(variation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+			}
+		}
+	}
+	else
+	{
+		if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
+		{
+			int effectID = entry.effect - StatusEffectQueue_t::kSpellEffectOffset;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+				tooltipInnerWidth = definition.tooltipWidth;
+			}
+		}
+		else
+		{
+			int effectID = entry.effect;
+			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+			{
+				auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+				tooltipInnerWidth = definition.tooltipWidth;
+			}
+		}
+	}
+
+	tooltipInnerWidth = std::max(tooltipInnerWidth, (int)tooltipHeader->getTextObject()->getWidth() + (tooltipHeader->getSize().x * 2));
+
+	const int padx = 16;
+	const int pady1 = 4;
+	tooltipHeader->setSize(SDL_Rect{ padx, pady1, tooltipInnerWidth, fontHeight + 4 });
+
+	auto descPos = tooltipDesc->getSize();
+	descPos.w = tooltipInnerWidth;
+	tooltipDesc->setSize(descPos);
+	if ( refreshTooltip )
+	{
+		tooltipDesc->reflowTextToFit(0);
+	}
+
+	const int pady2 = 6;
+	descPos.x = padx + 4;
+	descPos.y = tooltipHeader->getSize().y + tooltipHeader->getSize().h + pady2;
+	descPos.h = tooltipDesc->getNumTextLines() * fontHeight + 4;
+	tooltipDesc->setSize(descPos);
+
+	tooltipFrame->setDisabled(false);
+	SDL_Rect tooltipPos;
+	tooltipPos.w = tooltipInnerWidth + padx * 2;
+	tooltipPos.h = tooltipHeader->getSize().y + tooltipHeader->getSize().h + pady2 + descPos.h + 8;
+	tooltipPos.x = pos.x + pos.w / 2;
+	tooltipPos.y = pos.y - tooltipPos.h - 8;
+	tooltipFrame->setSize(tooltipPos);
+	imageResizeToContainer9x9(tooltipFrame, SDL_Rect{0, 0, tooltipPos.w, tooltipPos.h}, skillsheetEffectBackgroundImages);
+	tooltipShowingEffectID = entry.effect;
+	tooltipShowingEffectVariable = entry.customVariable;
+	return true;
+}
+
+void StatusEffectQueue_t::updateAllQueuedEffects()
+{
+	std::unordered_set<int> effectSet;
+	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+	{
+		effectSet.insert((*it).effect);
+	}
+
+	std::unordered_set<int> spellsActive;
+	int count = 0; //This is just for debugging purposes.
+	for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
+	{
+		spell_t* spell = (spell_t*)node->element;
+		if ( !spell )
+		{
+			break;
+		}
+		spellsActive.insert(spell->ID);
+		if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(spell->ID) )
+		{
+			if ( StatusEffectDefinitions_t::getSustainedSpell(spell->ID).effect_id == -1 )
+			{
+				// unique sustained effect
+				int effectID = spell->ID + kSpellEffectOffset;
+				if ( effectSet.find(effectID) == effectSet.end() )
+				{
+					insertEffect(-1, spell->ID);
+				}
+			}
+		}
+	}
+	for ( auto& eff : effectSet )
+	{
+		if ( eff >= kSpellEffectOffset && (eff - kSpellEffectOffset) == SPELL_SHADOW_TAG )
+		{
+			if ( players[player] && players[player]->entity
+				&& players[player]->entity->creatureShadowTaggedThisUid != 0
+				&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+			{
+				// shadow tag still active, check uid
+				for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+				{
+					if ( (*it).effect == kSpellEffectOffset + SPELL_SHADOW_TAG )
+					{
+						if ( (*it).customVariable != players[player]->entity->creatureShadowTaggedThisUid )
+						{
+							deleteEffect(eff);
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				deleteEffect(eff);
+			}
+		}
+		else if ( eff >= kSpellEffectOffset && spellsActive.find(eff - kSpellEffectOffset) == spellsActive.end() )
+		{
+			// effect has expired.
+			deleteEffect(eff);
+		}
+	}
+
+	for ( int i = 0; i <= NUMEFFECTS; ++i )
+	{
+		if ( i == NUMEFFECTS )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+				{
+					if ( insertEffect(-1, SPELL_SHADOW_TAG) )
+					{
+						effectQueue.back().customVariable = players[player]->entity->creatureShadowTaggedThisUid;
+						notificationQueue.back().customVariable = players[player]->entity->creatureShadowTaggedThisUid;
+					}
+				}
+			}
+		}
+		if ( stats[player]->EFFECTS[i] )
+		{
+			if ( effectSet.find(i) == effectSet.end() )
+			{
+				insertEffect(i, -1);
+			}
+		}
+		else
+		{
+			if ( effectSet.find(i) != effectSet.end() )
+			{
+				deleteEffect(i);
+			}
+		}
+	}
+
+	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() 
+		|| effectSet.find(kEffectBloodHunger) != effectSet.end()
+		|| effectSet.find(kEffectAutomatonHunger) != effectSet.end());
+
+	auto automatonHungerFrame = statusEffectFrame->findFrame("automaton hunger notification");
+	automatonHungerFrame->setDisabled(true);
+	auto automatonFlameImg = automatonHungerFrame->findImage("flame");
+
+	int iconSize = 32;
+	int movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
+	int movey = statusEffectFrame->getSize().h - iconSize;
+	const int spacing = 36;
+	int numEffectsOnLine = 0;
+
+	auto notificationFrame = statusEffectFrame->findFrame("notification frame");
+	notificationFrame->setDisabled(true);
+	auto notificationImg = notificationFrame->findImage("notification img");
+	notificationImg->disabled = true;
+	auto notificationTxt = notificationFrame->findField("notification txt");
+	notificationTxt->setDisabled(true);
+	notificationTxt->setFont(StatusEffectDefinitions_t::notificationFont.c_str());
+	notificationTxt->setColor(StatusEffectDefinitions_t::notificationTextColor);
+	if ( notificationQueue.size() >= 1 )
+	{
+		auto& notif = notificationQueue.front();
+		notif.animateNotification(player);
+		updateEntryImage(notif, notificationImg);
+		if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_2
+			|| notif.notificationState == StatusEffectQueueEntry_t::STATE_3 )
+		{
+			if ( notif.effect >= kSpellEffectOffset )
+			{
+				int effectID = notif.effect - kSpellEffectOffset;
+				if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+				{
+					auto& definition = StatusEffectDefinitions_t::getSustainedSpell(effectID);
+					if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_2 )
+					{
+						int variation = -1;
+						if ( effectID == SPELL_SHADOW_TAG )
+						{
+							variation = 0;
+							notificationTxt->setText("");
+							if ( players[player] && players[player]->entity )
+							{
+								if ( players[player]->entity->creatureShadowTaggedThisUid != 0
+									&& uidToEntity(players[player]->entity->creatureShadowTaggedThisUid) )
+								{
+									std::string formatString = definition.getName(variation).c_str();
+									char buf[256] = "";
+									Entity* tagged = uidToEntity(players[player]->entity->creatureShadowTaggedThisUid);
+									if ( tagged->behavior == &actMonster )
+									{
+										int type = tagged->getMonsterTypeFromSprite();
+										if ( type != NOTHING )
+										{
+											snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+										}
+										else
+										{
+											strcpy(buf, "");
+										}
+									}
+									else if ( tagged->behavior == &actPlayer )
+									{
+										snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+									}
+									std::string formattedName = buf;
+									notificationTxt->setText(formattedName.c_str());
+								}
+							}
+						}
+						else
+						{
+							notificationTxt->setText(definition.getName(variation).c_str());
+						}
+					}
+					notificationTxt->setDisabled(false);
+				}
+			}
+			else
+			{
+				int effectID = notif.effect;
+				if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					auto& definition = StatusEffectDefinitions_t::getEffect(effectID);
+					if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_2 )
+					{
+						int variation = -1;
+						if ( effectID == EFF_SHAPESHIFT )
+						{
+							if ( players[player] && players[player]->entity )
+							{
+								switch ( players[player]->entity->effectShapeshift )
+								{
+									case RAT:
+										variation = 0;
+										break;
+									case SPIDER:
+										variation = 1;
+										break;
+									case TROLL:
+										variation = 2;
+										break;
+									case CREATURE_IMP:
+										variation = 3;
+										break;
+									default:
+										break;
+								}
+							}
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectBread
+							|| effectID == StatusEffectQueue_t::kEffectBloodHunger )
+						{
+							if ( notif.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+							{
+								variation = 0;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+							{
+								variation = 3;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+							{
+								variation = 2;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+							{
+								variation = 1;
+							}
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectAutomatonHunger )
+						{
+							if ( notif.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED) )
+							{
+								variation = 0;
+							}
+							else if ( notif.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+							{
+								variation = 2;
+							}
+							else
+							{
+								variation = 1;
+							}
+						}
+						else if ( effectID == EFF_VAMPIRICAURA )
+						{
+							bool sustained = false;
+							for ( node_t* node = channeledSpells[player].first; node != nullptr; node = node->next )
+							{
+								spell_t* spell = (spell_t*)node->element;
+								if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+								{
+									sustained = true;
+									break;
+								}
+							}
+							if ( sustained )
+							{
+								variation = 1;
+							}
+							else
+							{
+								variation = 0;
+							}
+						}
+						notificationTxt->setText(definition.getName(variation).c_str());
+					}
+					notificationTxt->setDisabled(false);
+				}
+			}
+			if ( auto textGet = notificationTxt->getTextObject() )
+			{
+				SDL_Rect txtPos;
+				txtPos.w = textGet->getWidth();
+				txtPos.h = textGet->getHeight() * textGet->getNumTextLines() + 4;
+
+				const int movementAmount = getStatusEffectMovementAmount(player);
+				txtPos.x = (getBaseEffectPosX() - movementAmount - (notif.getStatusEffectLargestScaling(player) - 1.0) * notif.getEffectSpriteNormalWidth() / 2)
+					+ (notif.getEffectSpriteNormalWidth() * notif.getStatusEffectLargestScaling(player)) / 2 - txtPos.w / 2;
+				txtPos.y = getBaseEffectPosY() - movementAmount - txtPos.h;
+				notificationTxt->setSize(txtPos);
+			}
+		}
+		if ( notif.notificationState == StatusEffectQueueEntry_t::STATE_END )
+		{
+			notificationQueue.pop_front();
+		}
+
+		if ( notif.effect == kEffectAutomatonHunger )
+		{
+			automatonHungerFrame->setDisabled(false);
+			automatonHungerFrame->setSize(notificationImg->pos);
+		}
+	}
+
+	if ( !notificationImg->disabled || !notificationTxt->isDisabled() )
+	{
+		notificationFrame->setDisabled(false);
+		notificationFrame->setSize(SDL_Rect{ 0, 0, statusEffectFrame->getSize().w, statusEffectFrame->getSize().h });
+	}
+
+
+	auto innerFrame = statusEffectFrame->findFrame("effects");
+	int numFrameImages = innerFrame->getImages().size();
+	while ( effectQueue.size() > numFrameImages )
+	{
+		auto img = innerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "inner img");
+		img->disabled = true;
+		numFrameImages = innerFrame->getImages().size();
+	}
+	while ( effectQueue.size() < numFrameImages )
+	{
+		innerFrame->getImages().erase(innerFrame->getImages().begin());
+		numFrameImages = innerFrame->getImages().size();
+	}
+	auto& frameImages = innerFrame->getImages();
+	for ( auto img : frameImages )
+	{
+		img->disabled = true;
+	}
+
+	auto frameImagesIterator = frameImages.begin();
+	bool bFrameCapturesMouse = false;
+	if ( !players[player]->shootmode && inputs.getVirtualMouse(player)->draw_cursor 
+		&& !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive() )
+	{
+		bFrameCapturesMouse = statusEffectFrame->capturesMouse();
+	}
+	bool tooltipShowing = false;
+	bool bStatusEffectModuleActive = players[player]->GUI.activeModule == Player::GUI_t::MODULE_STATUS_EFFECTS;
+	Sint32 mousex = (inputs.getMouse(player, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (inputs.getMouse(player, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+
+	for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); )
+	{
+		auto& q = (*it);
+
+		Frame::image_t* frameImg = nullptr;
+		if ( frameImagesIterator != frameImages.end() )
+		{
+			frameImg = *frameImagesIterator;
+		}
+
+		bool existsInNotifications = false;
+		for ( auto it2 = notificationQueue.begin(); it2 != notificationQueue.end(); ++it2 )
+		{
+			if ( (*it2).effect == q.effect )
+			{
+				existsInNotifications = true;
+				break;
+			}
+		}
+		if ( !existsInNotifications )
+		{
+			updateEntryImage(q, frameImg);
+
+			if ( q.effect == kEffectAutomatonHunger )
+			{
+				automatonHungerFrame->setDisabled(false);
+				automatonHungerFrame->setSize(frameImg->pos);
+			}
+
+			if ( bFrameCapturesMouse && !tooltipShowing )
+			{
+				SDL_Rect size = statusEffectFrame->getAbsoluteSize();
+				int mouseDetectionPadding = 2;
+				size.x += frameImg->pos.x - (mouseDetectionPadding);
+				size.y += frameImg->pos.y - (mouseDetectionPadding);
+				size.w = frameImg->pos.w + (mouseDetectionPadding * 2);
+				size.h = frameImg->pos.h + (mouseDetectionPadding * 2);
+				if ( rectContainsPoint(size, mousex, mousey) )
+				{
+					if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_STATUS_EFFECTS )
+					{
+						tooltipShowing = doStatusEffectTooltip(q, size);
+					}
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_STATUS_EFFECTS);
+					players[player]->hud.setCursorDisabled(false);
+					players[player]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding, 
+						frameImg->pos.w, frameImg->pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+				}
+			}
+		}
+		int animatePosX = movex;
+		int animatePosY = movey;
+		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger )
+		{
+			animatePosX = 0;
+			animatePosY = statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
+		}
+		else if ( q.effect == kEffectAutomatonHunger )
+		{
+			animatePosX = 0;
+			animatePosY = 4 + statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
+		}
+
+		// low duration flash
+		bool effectIsSustained = false;
+		if ( StatusEffectDefinitions_t::effectDefinitionExists(q.effect) )
+		{
+			auto& definition = StatusEffectDefinitions_t::getEffect(q.effect);
+			if ( definition.sustainedSpellID >= 0 )
+			{
+				if ( spellsActive.find(definition.sustainedSpellID) != spellsActive.end() )
+				{
+					effectIsSustained = true;
+				}
+			}
+		}
+
+		q.lowDuration = false;
+		if ( !effectIsSustained && q.effect >= 0 && q.effect < NUMEFFECTS )
+		{
+			bool lowDuration = stats[player]->EFFECTS_TIMERS[q.effect] > 0 &&
+				(stats[player]->EFFECTS_TIMERS[q.effect] < TICKS_PER_SECOND * 5);
+			q.lowDuration = lowDuration;
+			if ( lowDuration && lowDurationFlash )
+			{
+				frameImg->disabled = true;
+			}
+		}
+		else if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger || q.effect == kEffectAutomatonHunger )
+		{
+			if ( q.effect == kEffectAutomatonHunger )
+			{
+				if ( q.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+				{
+					q.lowDuration = true;
+					if ( lowDurationFlash )
+					{
+						frameImg->disabled = true;
+						automatonHungerFrame->setDisabled(true);
+					}
+				}
+			}
+			else
+			{
+				if ( q.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+				{
+					q.lowDuration = true;
+					if ( lowDurationFlash )
+					{
+						frameImg->disabled = true;
+					}
+				}
+			}
+		}
+
+		if ( requiresAnimUpdate )
+		{
+			q.setAnimatePosition(animatePosX, animatePosY);
+		}
+		for ( auto it2 = notificationQueue.begin(); it2 != notificationQueue.end(); ++it2 )
+		{
+			if ( (*it2).effect == q.effect )
+			{
+				(*it2).notificationTargetPosition.x = animatePosX;
+				(*it2).notificationTargetPosition.y = animatePosY;
+				break;
+			}
+		}
+
+		++it;
+		if ( frameImagesIterator != frameImages.end() )
+		{
+			++frameImagesIterator;
+		}
+
+		q.animate();
+		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger || q.effect == kEffectAutomatonHunger )
+		{
+			continue; // don't advance position as this is fixed
+		}
+		movex += spacing;
+		++numEffectsOnLine;
+		if ( numEffectsOnLine >= effectsPerRow )
+		{
+			numEffectsOnLine = 0;
+			movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
+			movey -= spacing;
+		}
+	}
+
+	if ( stats[player] && stats[player]->type == AUTOMATON && !automatonHungerFrame->isDisabled() )
+	{
+		SDL_Rect automatonHungerFramePos = automatonHungerFrame->getSize();
+		SDL_Rect boilerFlamePos = automatonHungerFramePos;
+		boilerFlamePos.x = 0;
+		boilerFlamePos.y = 0;
+		if ( stats[player]->HUNGER > 300 )
+		{
+			if ( stats[player]->HUNGER > 1200 )
+			{
+				automatonFlameImg->path = "images/system/Hunger_boiler_hotfire.png";
+				automatonFlameImg->pos = boilerFlamePos;
+			}
+			else
+			{
+				automatonFlameImg->path = "images/system/Hunger_boiler_fire.png";
+				if ( stats[player]->HUNGER > 600 )
+				{
+					automatonFlameImg->pos = boilerFlamePos;
+				}
+				else
+				{
+					float percent = (stats[player]->HUNGER - 200) / 400.f; // always show a little bit more at the bottom (10-20%)
+					automatonFlameImg->pos = boilerFlamePos;
+					int newHeight = boilerFlamePos.h * percent;
+					int heightDiff = boilerFlamePos.h - newHeight;
+					automatonFlameImg->pos.y -= heightDiff;
+					automatonHungerFramePos.y += heightDiff;
+					automatonHungerFramePos.h -= heightDiff;
+					automatonHungerFrame->setSize(automatonHungerFramePos);
+				}
+			}
+		}
+		else
+		{
+			automatonHungerFrame->setDisabled(true);
+		}
+	}
+
+	animateStatusEffectTooltip(tooltipShowing);
+
+	if ( bStatusEffectModuleActive )
+	{
+		if ( !tooltipShowing )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_NONE);
+		}
+	}
+
+	requiresAnimUpdate = false;
+}
+
+void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Frame::image_t* img)
+{
+	if ( img )
+	{
+		img->path = "";
+		if ( entry.effect == kEffectBread || entry.effect == kEffectBloodHunger )
+		{
+			if ( StatusEffectDefinitions_t::effectDefinitionExists(entry.effect) )
+			{
+				int variation = -1;
+				if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+				{
+					variation = 0;
+				}
+				else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING) )
+				{
+					variation = 3;
+				}
+				else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+				{
+					variation = 2;
+				}
+				else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+				{
+					variation = 1;
+				}
+				if ( variation >= 0 )
+				{
+					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
+				}
+				else
+				{
+					img->path = "";
+				}
+			}
+		}
+		else if ( entry.effect == kEffectAutomatonHunger )
+		{
+			int variation = 1;
+			if ( entry.customVariable >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED) )
+			{
+				variation = 0;
+			}
+			else if ( entry.customVariable <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL) )
+			{
+				variation = 2;
+			}
+			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
+		}
+		else
+		{
+			if ( entry.effect >= kSpellEffectOffset )
+			{
+				int effectID = entry.effect - kSpellEffectOffset;
+				if ( StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+				{
+					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getSustainedSpell(effectID));
+				}
+			}
+			else
+			{
+				int effectID = entry.effect;
+				if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					if ( effectID == EFF_SHAPESHIFT )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							switch ( players[player]->entity->effectShapeshift )
+							{
+								case RAT:
+									variation = 0;
+									break;
+								case SPIDER:
+									variation = 1;
+									break;
+								case TROLL:
+									variation = 2;
+									break;
+								case CREATURE_IMP:
+									variation = 3;
+									break;
+								default:
+									break;
+							}
+						}
+					}
+					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+				}
+			}
+		}
+
+		SDL_Rect dest{ 0, 0, entry.pos.w, entry.pos.h };
+		dest.x = entry.pos.x;
+		dest.y = entry.pos.y;
+		img->pos = dest;
+		img->disabled = false;
+
+		if ( img->path.size() > 1 && img->path[0] != '*' )
+		{
+			img->path.insert(0, 1, '*');
+		}
+	}
+}
+
+void updateStatusEffectQueue(const int player)
+{
+	auto& statusEffectQueue = StatusEffectQueue[player];
+	if ( !statusEffectQueue.statusEffectFrame )
+	{
+		return;
+	}
+	auto& hud_t = players[player]->hud;
+	SDL_Rect mainFramePos{ 0, 0, players[player]->camera_virtualWidth(), players[player]->camera_virtualHeight() / 2 };
+	mainFramePos.x = hud_t.hpFrame->getSize().x;
+	mainFramePos.y = hud_t.hpFrame->getSize().y - mainFramePos.h;
+	mainFramePos.w -= mainFramePos.x;
+	statusEffectQueue.statusEffectFrame->setSize(mainFramePos);
+	auto innerFrame = statusEffectQueue.statusEffectFrame->findFrame("effects");
+	innerFrame->setSize(SDL_Rect{ 0, 0, statusEffectQueue.statusEffectFrame->getSize().w, statusEffectQueue.statusEffectFrame->getSize().h });
+
+	const int hungerEffectID = ((stats[player] && stats[player]->type == AUTOMATON) ? StatusEffectQueue_t::kEffectAutomatonHunger
+		: (playerRequiresBloodToSustain(player) ? StatusEffectQueue_t::kEffectBloodHunger : StatusEffectQueue_t::kEffectBread));
+
+	// hunger icon
+	if ( stats[player] && stats[player]->type != AUTOMATON )
+	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
+	}
+
+	if ( stats[player] && stats[player]->type != AUTOMATON
+		&& (svFlags & SV_FLAG_HUNGER) 
+		&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) 
+			|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)) )
+	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectBloodHunger )
+		{
+			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread); // delete opposite if present
+		}
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectBread )
+		{
+			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger); // delete opposite if present
+		}
+
+		const int HUNGER_NONE = 1000;
+		const int HUNGER_OVERSATIATED = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED);
+		const int HUNGER_HUNGRY = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY);
+		const int HUNGER_WEAK = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK);
+		const int HUNGER_STARVING = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING);
+		int hungerStateToSet = HUNGER_NONE;
+		if ( stats[player]->HUNGER >= HUNGER_OVERSATIATED )
+		{
+			hungerStateToSet = HUNGER_OVERSATIATED;
+		}
+		else if ( stats[player]->HUNGER <= HUNGER_STARVING )
+		{
+			hungerStateToSet = HUNGER_STARVING;
+		}
+		else if ( stats[player]->HUNGER <= HUNGER_WEAK )
+		{
+			hungerStateToSet = HUNGER_WEAK;
+		}
+		else if ( stats[player]->HUNGER <= HUNGER_HUNGRY )
+		{
+			hungerStateToSet = HUNGER_HUNGRY;
+		}
+		StatusEffectQueueEntry_t* entry = nullptr;
+		StatusEffectQueueEntry_t* notif = nullptr;
+
+
+		for ( auto& q : statusEffectQueue.effectQueue )
+		{
+			if ( q.effect == hungerEffectID )
+			{
+				entry = &(q);
+				for ( auto& n : statusEffectQueue.notificationQueue )
+				{
+					if ( n.effect == hungerEffectID )
+					{
+						notif = &(n);
+					}
+					break;
+				}
+				break;
+			}
+		}
+		if ( entry && entry->customVariable != hungerStateToSet )
+		{
+			if ( notif && notif->customVariable != hungerStateToSet )
+			{
+				// reset the notification
+				bool erased = false;
+				for ( auto it = statusEffectQueue.notificationQueue.begin(); it != statusEffectQueue.notificationQueue.end(); ++it )
+				{
+					if ( (*it).effect == hungerEffectID )
+					{
+						statusEffectQueue.notificationQueue.erase(it);
+						erased = true;
+						break;
+					}
+				}
+				statusEffectQueue.notificationQueue.push_back(StatusEffectQueueEntry_t(hungerEffectID));
+				statusEffectQueue.notificationQueue.back().pos.x = statusEffectQueue.getBaseEffectPosX();
+				statusEffectQueue.notificationQueue.back().pos.y = statusEffectQueue.getBaseEffectPosY();
+
+				// fall back if notificationTargetPosition doesn't have an effect to go to.
+				statusEffectQueue.notificationQueue.back().notificationTargetPosition.x = 0;
+				statusEffectQueue.notificationQueue.back().notificationTargetPosition.y = statusEffectQueue.statusEffectFrame->getSize().h 
+					- statusEffectQueue.notificationQueue.back().notificationTargetPosition.h;
+				statusEffectQueue.requiresAnimUpdate = true;
+				entry->customVariable = hungerStateToSet;
+				statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+			}
+			else
+			{
+				// else, delete and reapply
+				statusEffectQueue.deleteEffect(hungerEffectID);
+				if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
+				{
+					if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+					{
+						statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+						statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+					}
+				}
+			}
+		}
+		else
+		{
+			// new effect, does not exist
+			if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
+			{
+				if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+				{
+					statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+					statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+				}
+			}
+		}
+	}
+	else
+	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
+
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectAutomatonHunger )
+		{
+			const int HUNGER_NONE = 1000;
+			const int HUNGER_SUPERHEATED = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_SUPERHEATED);
+			const int HUNGER_CRITICAL = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_AUTOMATON_CRITICAL);
+			int hungerStateToSet = HUNGER_NONE;
+			if ( stats[player]->HUNGER >= HUNGER_SUPERHEATED )
+			{
+				hungerStateToSet = HUNGER_SUPERHEATED;
+			}
+			else if ( stats[player]->HUNGER <= HUNGER_CRITICAL )
+			{
+				hungerStateToSet = HUNGER_CRITICAL;
+			}
+			StatusEffectQueueEntry_t* entry = nullptr;
+			StatusEffectQueueEntry_t* notif = nullptr;
+
+			for ( auto& q : statusEffectQueue.effectQueue )
+			{
+				if ( q.effect == hungerEffectID )
+				{
+					entry = &(q);
+					for ( auto& n : statusEffectQueue.notificationQueue )
+					{
+						if ( n.effect == hungerEffectID )
+						{
+							notif = &(n);
+						}
+						break;
+					}
+					break;
+				}
+			}
+			if ( entry && entry->customVariable != hungerStateToSet )
+			{
+				if ( notif && notif->customVariable != hungerStateToSet )
+				{
+					// reset the notification
+					bool erased = false;
+					for ( auto it = statusEffectQueue.notificationQueue.begin(); it != statusEffectQueue.notificationQueue.end(); ++it )
+					{
+						if ( (*it).effect == hungerEffectID )
+						{
+							statusEffectQueue.notificationQueue.erase(it);
+							erased = true;
+							break;
+						}
+					}
+					statusEffectQueue.notificationQueue.push_back(StatusEffectQueueEntry_t(hungerEffectID));
+					statusEffectQueue.notificationQueue.back().pos.x = statusEffectQueue.getBaseEffectPosX();
+					statusEffectQueue.notificationQueue.back().pos.y = statusEffectQueue.getBaseEffectPosY();
+
+					// fall back if notificationTargetPosition doesn't have an effect to go to.
+					statusEffectQueue.notificationQueue.back().notificationTargetPosition.x = 0;
+					statusEffectQueue.notificationQueue.back().notificationTargetPosition.y = statusEffectQueue.statusEffectFrame->getSize().h
+						- statusEffectQueue.notificationQueue.back().notificationTargetPosition.h;
+					statusEffectQueue.requiresAnimUpdate = true;
+					entry->customVariable = hungerStateToSet;
+					statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+				}
+				else
+				{
+					// else, delete and reapply
+					statusEffectQueue.deleteEffect(hungerEffectID);
+					if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
+					{
+						if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+						{
+							statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+							statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+						}
+					}
+				}
+			}
+			else
+			{
+				// new effect, does not exist
+				if ( statusEffectQueue.insertEffect(hungerEffectID, -1) )
+				{
+					if ( statusEffectQueue.effectQueue.back().effect == hungerEffectID )
+					{
+						statusEffectQueue.effectQueue.back().customVariable = hungerStateToSet;
+						statusEffectQueue.notificationQueue.back().customVariable = hungerStateToSet;
+					}
+				}
+			}
+		}
+	}
+
+	statusEffectQueue.updateAllQueuedEffects();
 }
 
 void createWorldTooltipPrompts(const int player)
@@ -2333,7 +4432,7 @@ void Player::HUD_t::processHUD()
 	snprintf(name, sizeof(name), "player hud %d", player.playernum);
 	if ( !hudFrame )
 	{
-		hudFrame = gui->addFrame(name);
+		hudFrame = gameUIFrame[player.playernum]->addFrame(name);
 		hudFrame->setHollow(true);
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
@@ -2373,6 +4472,10 @@ void Player::HUD_t::processHUD()
 	{
 		createEnemyBar(player.playernum, enemyBarFrameHUD);
 	}
+	if ( !StatusEffectQueue[player.playernum].statusEffectFrame )
+	{
+		createStatusEffectQueue(player.playernum);
+	}
 
 	updateXPBar();
 	updateHPBar();
@@ -2386,15 +4489,16 @@ void Player::HUD_t::processHUD()
 	{
 		updateEnemyBar2(enemyBarFrame, &HPBar.second);
 	}
+	updateStatusEffectQueue(player.playernum);
 }
 
 void Player::MessageZone_t::createChatbox()
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player chat %d", player.playernum);
-	if ( !gui->findFrame(name) )
+	if ( !gameUIFrame[player.playernum]->findFrame(name) )
 	{
-		Frame* chatMainFrame = gui->addFrame(name);
+		Frame* chatMainFrame = gameUIFrame[player.playernum]->addFrame(name);
 		chatMainFrame->setHollow(true);
 		chatMainFrame->setBorder(0);
 		chatMainFrame->setOwner(player.playernum);
@@ -2760,16 +4864,25 @@ const int NUM_CHARSHEET_TOOLTIP_TEXT_FIELDS = 16;
 std::map<int, Field*> characterSheetTooltipTextFields[MAXPLAYERS];
 std::map<int, Frame*> characterSheetTooltipTextBackingFrames[MAXPLAYERS];
 
+static auto charsheet_deselect_fn = [](Widget& widget) {
+	if ( widget.isSelected()
+		&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
+		&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+	{
+		widget.deselect();
+	}
+};
+
 void Player::CharacterSheet_t::createCharacterSheet()
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player sheet %d", player.playernum);
-	if ( !gui->findFrame(name) )
+	if ( !gameUIFrame[player.playernum]->findFrame(name) )
 	{
 		characterSheetTooltipTextFields[player.playernum].clear();
 		characterSheetTooltipTextBackingFrames[player.playernum].clear();
 
-		Frame* sheetFrame = gui->addFrame(name);
+		Frame* sheetFrame = gameUIFrame[player.playernum]->addFrame(name);
 		sheetFrame->setHollow(true);
 		sheetFrame->setBorder(0);
 		sheetFrame->setOwner(player.playernum);
@@ -2844,12 +4957,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			    openMinimap(button.getOwner());
 			});
 			mapButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected()
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
@@ -2873,12 +4981,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Log button clicked", button.getOwner());
 			});
 			logButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected()
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
@@ -2938,12 +5041,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				bShowTimer = !bShowTimer;
 			});
 			timerButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected() 
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 
 			SDL_Rect textPos = timerImg->pos;
@@ -2975,12 +5073,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				players[button.getOwner()]->skillSheet.openSkillSheet();
 			});
 			skillsButton->setTickCallback([](Widget& widget) {
-				if ( widget.isSelected()
-					&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
-					&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
-				{
-					widget.deselect();
-				}
+				charsheet_deselect_fn(widget);
 			});
 		}
 
@@ -2999,6 +5092,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			dungeonButton->setHideKeyboardGlyphs(true);
 			dungeonButton->setHideSelectors(true);
 			dungeonButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			dungeonButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
@@ -3074,6 +5170,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classButton->setHideKeyboardGlyphs(true);
 			classButton->setHideSelectors(true);
 			classButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			classButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
@@ -3119,6 +5218,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			raceButton->setHideKeyboardGlyphs(true);
 			raceButton->setHideSelectors(true);
 			raceButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			raceButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -3151,7 +5253,10 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldButton->setHideGlyphs(true);
 			goldButton->setHideKeyboardGlyphs(true);
 			goldButton->setHideSelectors(true);
-			goldButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+			goldButton->setMenuConfirmControlType(0);
+			goldButton->setTickCallback([](Widget& widget) {
+				charsheet_deselect_fn(widget);
+			});
 		}
 
 		{
@@ -3207,6 +5312,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3245,6 +5353,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3283,6 +5394,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3321,6 +5435,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3359,6 +5476,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3397,6 +5517,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				statButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 		}
 
@@ -3444,6 +5567,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			const int rowSpacing = 4;
@@ -3475,6 +5601,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3505,6 +5634,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3535,6 +5667,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3587,6 +5722,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 
 				auto attributeButton2 = attributesInnerFrame->addButton("rgn mp button");
 				attributeButton2->setSize(SDL_Rect{ attributeButton->getSize().x + attributeButton->getSize().w,
@@ -3597,6 +5735,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton2->setHideKeyboardGlyphs(true);
 				attributeButton2->setHideSelectors(true);
 				attributeButton2->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -3627,6 +5768,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
+				attributeButton->setTickCallback([](Widget& widget) {
+					charsheet_deselect_fn(widget);
+				});
 			}
 		}
 
@@ -3743,25 +5887,25 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 		if ( dropdown.options[option].action == "gold_drop_10" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 10);
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, 10);
 			consoleCommand(dropCommand);
 		}
 		else if ( dropdown.options[option].action == "gold_drop_100" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 100);
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, 100);
 			consoleCommand(dropCommand);
 		}
 		else if ( dropdown.options[option].action == "gold_drop_1000" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", 1000);
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, 1000);
 			consoleCommand(dropCommand);
 		}
 		else if ( dropdown.options[option].action == "gold_drop_all" )
 		{
 			char dropCommand[32] = "";
-			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d", std::max(0, stats[player.playernum]->GOLD));
+			snprintf(dropCommand, sizeof(dropCommand), "/dropgold %d %d", player.playernum, std::max(0, stats[player.playernum]->GOLD));
 			consoleCommand(dropCommand);
 		}
 		messagePlayer(player.playernum, MESSAGE_DEBUG, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
@@ -4173,6 +6317,7 @@ void Player::GUIDropdown_t::process()
 		dropDownOptionSelected = -1;
 		dropDownX = 0;
 		dropDownY = 0;
+		dropDownToggleClick = false;
 		return;
 	}
 	else
@@ -4214,6 +6359,26 @@ void Player::GUIDropdown_t::process()
 		}
 	}
 
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown") )
+		{
+			++dropDownOptionSelected;
+			if ( dropDownOptionSelected >= dropDown.options.size() )
+			{
+				dropDownOptionSelected = 0;
+			}
+		}
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp") )
+		{
+			--dropDownOptionSelected;
+			if ( dropDownOptionSelected < 0 )
+			{
+				dropDownOptionSelected = dropDown.options.size() - 1;
+			}
+		}
+	}
+
 	std::vector<std::tuple<Frame::image_t*, Field*, Frame::image_t*>> optionFrames;
 	index = 1;
 	for ( auto& option : dropDown.options )
@@ -4231,7 +6396,20 @@ void Player::GUIDropdown_t::process()
 		txt->setDisabled(false);
 		img->disabled = true;
 
-		if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			if ( dropDownOptionSelected + 1 == index )
+			{
+				img->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuConfirm");
+				if ( auto imgGet = Image::get(img->path.c_str()) )
+				{
+					img->pos.w = imgGet->getWidth();
+					img->pos.h = imgGet->getHeight();
+					img->disabled = false;
+				}
+			}
+		}
+		/*if ( option.controllerGlyph != "" && inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 		{
 			img->path = Input::inputs[player.playernum].getGlyphPathForBinding(option.controllerGlyph.c_str());
 			img->disabled = false;
@@ -4240,7 +6418,7 @@ void Player::GUIDropdown_t::process()
 		{
 			img->path = Input::inputs[player.playernum].getGlyphPathForBinding(option.keyboardGlyph.c_str());
 			img->disabled = false;
-		}
+		}*/
 
 		txt->setText(option.text.c_str());
 		if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
@@ -4250,7 +6428,7 @@ void Player::GUIDropdown_t::process()
 
 			SDL_Rect size = txt->getSize();
 			size.w = textGet->getWidth();
-			if ( img->disabled )
+			if ( img->disabled || true )
 			{
 				size.x = textPaddingX;
 				txt->setHJustify(Field::justify_t::CENTER);
@@ -4285,26 +6463,32 @@ void Player::GUIDropdown_t::process()
 			txt->setSize(size);
 		}
 
-		auto ml = dropdownFrame->findImage("interact middle left");
-		SDL_Rect absoluteSize = txt->getAbsoluteSize();
-		absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
-		absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
-		absoluteSize.y += 4;
-		absoluteSize.h -= 4;
-		if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
-			&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+		img->pos.x = txt->getSize().x - 8;
+		img->pos.y = txt->getSize().y + txt->getSize().h / 2 - img->pos.h / 2;
+
+		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			dropDownOptionSelected = index;
+			auto ml = dropdownFrame->findImage("interact middle left");
+			SDL_Rect absoluteSize = txt->getAbsoluteSize();
+			absoluteSize.x -= (4 + ml->pos.w) + (alignRight ? rightClickProtectBuffer : 0);
+			absoluteSize.w += ((4 + ml->pos.w) * 2 + rightClickProtectBuffer);
+			absoluteSize.y += 4;
+			absoluteSize.h -= 4;
+			if ( mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
+				&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h )
+			{
+				dropDownOptionSelected = index;
+			}
 		}
 		++index;
 	}
 
 	int textStartX = textPaddingX;
-	if ( optionFrames.size() > 0 )
-	{
-		auto img = std::get<0>(optionFrames[0]);
-		textStartX += (img->disabled ? 0 : img->pos.x + img->pos.w);
-	}
+	//if ( optionFrames.size() > 0 )
+	//{
+	//	auto img = std::get<0>(optionFrames[0]);
+	//	textStartX += (img->disabled ? 0 : img->pos.x + img->pos.w);
+	//}
 	const int frameWidth = maxWidth + textStartX + textPaddingX;
 
 	SDL_Rect frameSize = dropdownFrame->getSize();
@@ -4364,14 +6548,17 @@ void Player::GUIDropdown_t::process()
 	}
 	dropdownFrame->setSize(frameSize);
 
-	SDL_Rect absoluteSize = dropdownFrame->getAbsoluteSize();
-	// right click protect uses exact border, else there is 10 px buffer
-	absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
-	absoluteSize.w += rightClickProtectBuffer;
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		SDL_Rect absoluteSize = dropdownFrame->getAbsoluteSize();
+		// right click protect uses exact border, else there is 10 px buffer
+		absoluteSize.x -= (alignRight ? rightClickProtectBuffer : 0);
+		absoluteSize.w += rightClickProtectBuffer;
 	if ( !(mousex >= absoluteSize.x && mousex < absoluteSize.x + absoluteSize.w
 		&& mousey >= absoluteSize.y && mousey < absoluteSize.y + absoluteSize.h) )
 	{
 		dropDownOptionSelected = -1;
+	}
 	}
 
 	if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
@@ -4397,9 +6584,24 @@ void Player::GUIDropdown_t::process()
 	}
 
 	bool activate = false;
-	if ( !Input::inputs[player.playernum].binary("MenuRightClick") && !dropDownToggleClick )
+	if ( !dropDownToggleClick && !Input::inputs[player.playernum].binary("MenuRightClick") )
 	{
 		activate = true;
+	}
+	else if ( dropDownToggleClick )
+	{
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuRightClick") )
+		{
+			close();
+		}
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm") )
+		{
+			activate = true;
+		}
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel") )
+		{
+			close();
+		}
 	}
 	if ( activate )
 	{
@@ -4475,13 +6677,16 @@ void Player::GUIDropdown_t::open(const std::string name)
 	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
 	itemMenuOpen = false;
 
-	dropDownX = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + (getDropDownAlignRight(name) ? 8 : -8);
-	dropDownY = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
-	if ( auto interactMenuTop = dropdownFrame->findImage("interact top background") )
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		// 10px is slot half height, minus the top interact text height
-		// mouse will be situated halfway in first menu option
-		dropDownY -= (interactMenuTop->pos.h + 10 + 2);
+		dropDownX = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX + (getDropDownAlignRight(name) ? 8 : -8);
+		dropDownY = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+		if ( auto interactMenuTop = dropdownFrame->findImage("interact top background") )
+		{
+			// 10px is slot half height, minus the top interact text height
+			// mouse will be situated halfway in first menu option
+			dropDownY -= (interactMenuTop->pos.h + 10 + 2);
+		}
 	}
 	dropDownOptionSelected = 0;
 	if ( allDropDowns[name].defaultOption > 0 && allDropDowns[name].options.size() > allDropDowns[name].defaultOption )
@@ -4531,7 +6736,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 
 	char dropdownBlockClickName[64] = "";
 	snprintf(dropdownBlockClickName, sizeof(dropdownBlockClickName), "player dropdown block click %d", player.playernum);
-	dropdownBlockClickFrame = gui->addFrame(dropdownBlockClickName);
+	dropdownBlockClickFrame = gameUIFrame[player.playernum]->addFrame(dropdownBlockClickName);
 	dropdownBlockClickFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),
 		players[player.playernum]->camera_virtualWidth(),
@@ -4540,7 +6745,7 @@ void Player::GUIDropdown_t::create(const std::string name)
 
 	char dropdownName[64] = "";
 	snprintf(dropdownName, sizeof(dropdownName), "player dropdown %d", player.playernum);
-	dropdownFrame = gui->addFrame(dropdownName);
+	dropdownFrame = gameUIFrame[player.playernum]->addFrame(dropdownName);
 	const int interactWidth = 106;
 	dropdownFrame->setSize(SDL_Rect{ 0, 0, interactWidth + 6 * 2, 100 });
 	dropdownFrame->setDisabled(true);
@@ -4901,7 +7106,8 @@ void Player::CharacterSheet_t::updateGameTimer()
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
 
-	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() )
+	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() 
+		&& inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
 		updateCharacterSheetTooltip(SHEET_TIMER, sheetFrame->findFrame("game timer")->getSize());
 	}
@@ -5434,7 +7640,7 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	return regen * 100.0;
 }
 
-void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos)
+void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify)
 {
 	if ( !sheetFrame )
 	{
@@ -5467,6 +7673,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			tooltipOpacityAnimate = std::min(1.0, tooltipOpacityAnimate);
 		}
 		tooltipFrame->setOpacity(tooltipOpacityAnimate * 100);
+	}
+	else
+	{
+		tooltipFrame->setOpacity(tooltipOpacitySetpoint);
 	}
 
 	if ( element == SHEET_ENUM_END || element == SHEET_UNSELECTED
@@ -6239,7 +8449,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		tooltipPos.h = pady1 + currentHeight + pady2;
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -8102,7 +10319,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		tooltipPos.h = pady1 + currentHeight + pady2;
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 		tooltipFrame->setSize(tooltipPos);
 		if ( tooltipPos.y + tooltipPos.h > sheetFrame->getSize().h )
@@ -8180,7 +10404,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			tooltipPos.h = pady1 + txtPos.h + pady2;
 		}
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -8314,7 +10545,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		{
 			tooltipPos.h = pady1 + currentHeight + pady2;
 		}
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -8330,7 +10568,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padyMid = 4;
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
-		if ( inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
+		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+		if ( !usingMouse )
 		{
 			txt->setText(getHoverTextString("game_timer_controller").c_str());
 		}
@@ -8412,7 +10651,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 		tooltipPos.w = txtPos.w + padx * 2;
 		tooltipPos.h = pady1 + currentHeight + pady2;
-		tooltipPos.x = pos.x - tooltipPos.w;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
 		tooltipPos.y = pos.y;
 
 		tooltipFrame->setSize(tooltipPos);
@@ -8435,6 +10681,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	{
 		enableTooltips = false;
 	}
+
+	bool bCompactView = player.bUseCompactGUIHeight();
 
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
@@ -8596,7 +10844,15 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
 				if ( selectedElement == SHEET_DUNGEON_FLOOR && enableTooltips )
 				{
-					updateCharacterSheetTooltip(selectedElement, floorFrame->getSize());
+					SDL_Rect tooltipPos = characterInfoFrame->getSize();
+					tooltipPos.y = floorFrame->getSize().y;
+					Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT;
+					if ( panelJustify == PANEL_JUSTIFY_LEFT || (panelJustify == PANEL_JUSTIFY_RIGHT && bCompactView) )
+					{
+						tooltipJustify = PANEL_JUSTIFY_LEFT;
+						tooltipPos.x += tooltipPos.w;
+					}
+					updateCharacterSheetTooltip(selectedElement, tooltipPos, tooltipJustify);
 				}
 			}
 			else
@@ -8611,17 +10867,49 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		gold->setText(buf);
 		if ( selectedElement == SHEET_GOLD )
 		{
-			if ( Input::inputs[player.playernum].binary("MenuRightClick") 
+			if ( Input::inputs[player.playernum].binary("MenuRightClick")
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive() )
 			{
 				player.GUI.dropdownMenu.open("drop_gold");
 			}
-			if ( enableTooltips )
+			else if ( (!inputs.getVirtualMouse(player.playernum)->draw_cursor
+					&& inputs.hasController(player.playernum)
+					&& Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm"))
+				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+				&& !player.GUI.isDropdownActive() )
+			{
+				player.GUI.dropdownMenu.open("drop_gold");
+				player.GUI.dropdownMenu.dropDownToggleClick = true;
+				SDL_Rect dropdownPos = characterInfoFrame->getSize();
+				dropdownPos.y += gold->getSize().y + gold->getSize().h / 2;
+				if ( auto interactMenuTop = player.GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+				{
+					// 10px is slot half height, move by 1.5 slots, minus the top interact text height
+					dropdownPos.y -= (interactMenuTop->pos.h + (3 * 10) + 4);
+				}
+				if ( !player.GUI.dropdownMenu.getDropDownAlignRight("drop_gold") )
+				{
+					player.GUI.dropdownMenu.dropDownX = dropdownPos.x;
+				}
+				else
+				{
+					player.GUI.dropdownMenu.dropDownX = dropdownPos.x + dropdownPos.w;
+				}
+				player.GUI.dropdownMenu.dropDownX += player.camera_virtualx1();
+				player.GUI.dropdownMenu.dropDownY = dropdownPos.y + player.camera_virtualy1();
+			}
+			if ( enableTooltips && !inputs.getVirtualMouse(player.playernum)->lastMovementFromController )
 			{
 				SDL_Rect tooltipPos = characterInfoFrame->getSize();
 				tooltipPos.y += gold->getSize().y;
-				updateCharacterSheetTooltip(selectedElement, tooltipPos);
+				Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT;
+				if ( panelJustify == PANEL_JUSTIFY_LEFT || (panelJustify == PANEL_JUSTIFY_RIGHT && bCompactView) )
+				{
+					tooltipJustify = PANEL_JUSTIFY_LEFT;
+					tooltipPos.x += tooltipPos.w;
+				}
+				updateCharacterSheetTooltip(selectedElement, tooltipPos, tooltipJustify);
 			}
 		}
 	}
@@ -9033,7 +11321,7 @@ void Player::Hotbar_t::processHotbar()
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
-		hotbarFrame = gui->addFrame(name);
+		hotbarFrame = gameUIFrame[player.playernum]->addFrame(name);
 		hotbarFrame->setHollow(true);
 		hotbarFrame->setBorder(0);
 		hotbarFrame->setOwner(player.playernum);
@@ -9117,7 +11405,7 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	auto equippedIconFrame = slotFrame->addFrame("equipped icon frame");
 	equippedIconFrame->setSize(slotSize);
 	equippedIconFrame->setHollow(true);
-	SDL_Rect equippedImgPos = { 3, slotSize.h - 17, 16, 16 };
+	SDL_Rect equippedImgPos = { 2, slotSize.h - 18, 18, 18 };
 	equippedIconFrame->addImage(equippedImgPos, 0xFFFFFFFF, "images/system/Equipped.png", "equipped icon img");
 
 	auto brokenIconFrame = slotFrame->addFrame("broken icon frame");
@@ -9418,7 +11706,20 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 					}
 					else
 					{
-						beatitudeImg->path = "images/system/white.png";
+						beatitudeImg->color = makeColor(255, 255, 255, 255);
+						if ( !item->identified )
+						{
+							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+						}
+						else if ( item->beatitude > 0 )
+						{
+							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+						}
+						else if ( item->beatitude < 0 )
+						{
+							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+						}
+						//beatitudeImg->path = "images/system/white.png";
 					}
 				}
 			}
@@ -9527,7 +11828,7 @@ void createInventoryTooltipFrame(const int player)
 
 	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
-		players[player]->inventoryUI.tooltipFrame = gui->addFrame(name);
+		players[player]->inventoryUI.tooltipFrame = gameUIFrame[player]->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
@@ -9834,7 +12135,7 @@ void createInventoryTooltipFrame(const int player)
 	tooltipPromptImg->disabled = true;
 
 	snprintf(name, sizeof(name), "player interact %d", player);
-	if ( auto interactFrame = gui->addFrame(name) )
+	if ( auto interactFrame = gameUIFrame[player]->addFrame(name) )
 	{
 		players[player]->inventoryUI.interactFrame = interactFrame;
 		const int interactWidth = 106;
@@ -9988,7 +12289,7 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	snprintf(name, sizeof(name), "player item prompt %d", player);
-	if ( auto promptFrame = gui->addFrame(name) )
+	if ( auto promptFrame = gameUIFrame[player]->addFrame(name) )
 	{
 		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
 		const int interactWidth = 0;
@@ -11114,19 +13415,19 @@ void createPlayerSpellList(const int player)
 		//bg->disabled = false;
 
 		auto slider = bgFrame->addSlider("spell slider");
-		slider->setBorder(24);
+		slider->setBorder(16);
 		slider->setMinValue(0);
 		slider->setMaxValue(100);
 		slider->setValue(0);
-		SDL_Rect sliderPos{ basePos.w - 38, 8, 30, 234 };
+		SDL_Rect sliderPos{ basePos.w - 30, 8, 24, 234 };
 		slider->setRailSize(sliderPos);
-		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+		slider->setHandleSize(SDL_Rect{ 0, 0, 24, 24 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
 		//slider->setCallback(callback);
 		slider->setColor(makeColor(255, 255, 255, 255));
 		slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
-		slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+		slider->setHandleImage("images/ui/Sliders/HUD_MiniSlider_Boulder_00.png");
+		slider->setRailImage("images/ui/Sliders/HUD_MiniSlider_Backing_234px_00.png");
 		slider->setHideGlyphs(true);
 		slider->setHideKeyboardGlyphs(true);
 		slider->setHideSelectors(true);
@@ -11170,7 +13471,7 @@ void createPlayerSpellList(const int player)
 
 	players[player]->inventoryUI.spellSlotFrames.clear();
 
-	const int baseSlotOffsetX = 0;
+	const int baseSlotOffsetX = 14;
 	const int baseSlotOffsetY = 0;
 
 	SDL_Rect invSlotsPos{ basePos.x + 4, basePos.y + 4, basePos.w, 242 };
@@ -11558,7 +13859,7 @@ void createPlayerInventory(const int player)
 {
 	char name[32];
 	snprintf(name, sizeof(name), "player inventory %d", player);
-	Frame* frame = gui->addFrame(name);
+	Frame* frame = gameUIFrame[player]->addFrame(name);
 	players[player]->inventoryUI.frame = frame;
 	frame->setSize(SDL_Rect{ players[player]->camera_virtualx1(),
 		players[player]->camera_virtualy1(),
@@ -12884,6 +15185,10 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 		}
 		tooltipFrame->setOpacity(tooltipDisplay.opacityAnimate * 100);
 	}
+	else
+	{
+		tooltipFrame->setOpacity(tooltipDisplay.opacitySetpoint);
+	}
 
 	if ( tooltipPromptFrame )
 	{
@@ -12910,6 +15215,10 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 		}
 		double t = tooltipDisplay.expandAnimate;
 		tooltipDisplay.expandCurrent = t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1);
+	}
+	else
+	{
+		tooltipDisplay.expandCurrent = tooltipDisplay.expandSetpoint / 100.0;
 	}
 }
 
@@ -12995,7 +15304,7 @@ void Player::Inventory_t::updateItemContextMenuClickFrame()
 	{
 		char interactBlockClickName[64] = "";
 		snprintf(interactBlockClickName, sizeof(interactBlockClickName), "player inventory dropdown block click %d", player.playernum);
-		if ( interactBlockClickFrame = gui->addFrame(interactBlockClickName) )
+		if ( interactBlockClickFrame = gameUIFrame[player.playernum]->addFrame(interactBlockClickName) )
 		{
 			interactBlockClickFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
 				player.camera_virtualy1(),
@@ -13296,7 +15605,7 @@ void Player::HUD_t::updateCursor()
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player hud cursor %d", player.playernum);
-		cursorFrame = gui->addFrame(name);
+		cursorFrame = gameUIFrame[player.playernum]->addFrame(name);
 		cursorFrame->setHollow(true);
 		cursorFrame->setBorder(0);
 		cursorFrame->setOwner(player.playernum);
@@ -13571,6 +15880,8 @@ void Player::HUD_t::resetBars()
 		HPBar.animateValue2 = HPBar.animateSetpoint;
 		HPBar.animatePreviousSetpoint = HPBar.animateSetpoint;
 		HPBar.animateState = ANIMATE_NONE;
+		HPBar.flashAnimState = -1;
+		HPBar.flashTicks = 0;
 	}
 	if ( mpFrame )
 	{
@@ -13579,6 +15890,8 @@ void Player::HUD_t::resetBars()
 		MPBar.animateValue2 = MPBar.animateSetpoint;
 		MPBar.animatePreviousSetpoint = MPBar.animateSetpoint;
 		MPBar.animateState = ANIMATE_NONE;
+		MPBar.flashAnimState = -1;
+		MPBar.flashTicks = 0;
 	}
 }
 
@@ -13905,15 +16218,49 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		{
 			if ( (enemy_statusEffects1 & (1 << i)) != 0 )
 			{
-				if ( SDL_Surface* srcSurf = getStatusEffectSprite(entity,
-					(entity ? entity->getStats() : nullptr), i, playernum) )
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(i) )
 				{
-					bool blinking = false;
-					if ( (enemy_statusEffectsLowDuration1 & (1 << i)) != 0 )
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
 					{
-						blinking = true;
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+								case RAT:
+									variation = 0;
+									break;
+								case SPIDER:
+									variation = 1;
+									break;
+								case TROLL:
+									variation = 2;
+									break;
+								case CREATURE_IMP:
+									variation = 3;
+									break;
+								default:
+									break;
+							}
+						}
 					}
-					statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(i);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration1 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
 				}
 			}
 		}
@@ -13924,15 +16271,50 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		{
 			if ( (enemy_statusEffects2 & (1 << i)) != 0 )
 			{
-				if ( SDL_Surface* srcSurf = getStatusEffectSprite(entity,
-					(entity ? entity->getStats() : nullptr), i + 32, playernum) )
+				int effectID = i + 32;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
 				{
-					bool blinking = false;
-					if ( (enemy_statusEffectsLowDuration2 & (1 << i)) != 0 )
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
 					{
-						blinking = true;
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+								case RAT:
+									variation = 0;
+									break;
+								case SPIDER:
+									variation = 1;
+									break;
+								case TROLL:
+									variation = 2;
+									break;
+								case CREATURE_IMP:
+									variation = 3;
+									break;
+								default:
+									break;
+							}
+						}
 					}
-					statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration2 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
 				}
 			}
 		}
@@ -14764,6 +17146,8 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 	whichFrame->setDisabled(true);
 }
 
+const int HPMPdividerThresholdInterval = 20;
+
 void Player::HUD_t::updateHPBar()
 {
 	if ( !hpFrame )
@@ -14836,6 +17220,11 @@ void Player::HUD_t::updateHPBar()
 	{
 		hpForegroundValue = HPBar.animateSetpoint;
 		HPBar.animateTicks = ticks;
+
+		// flash for taking damage
+		HPBar.flashTicks = ticks;
+		HPBar.flashAnimState = -1;
+		HPBar.flashType = FLASH_ON_DAMAGE;
 	}
 
 	if ( HPBar.maxValue > stats[player.playernum]->MAXHP )
@@ -14847,6 +17236,14 @@ void Player::HUD_t::updateHPBar()
 
 	if ( hpForegroundValue < HPBar.animateSetpoint ) // gaining HP, animate
 	{
+		// flash for gaining HP, provided not already flashing
+		/*if ( HPBar.flashAnimState == -1 || (HPBar.flashAnimState >= 0 && HPBar.flashType != FLASH_ON_DAMAGE) )
+		{
+			HPBar.flashTicks = ticks;
+			HPBar.flashAnimState = -1;
+			HPBar.flashType = FLASH_ON_RECOVERY;
+		}*/
+
 		real_t setpointDiff = std::max(0.0, HPBar.animateSetpoint - hpForegroundValue);
 		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
 		hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
@@ -14941,6 +17338,154 @@ void Player::HUD_t::updateHPBar()
 		hpProgressEndCap->disabled = false;
 		hpProgressBot->disabled = false;
 	}
+
+	// dividers
+	{
+		const int fullBarWidth = hpProgressBot->pos.w + progressWidth + hpEndcap->pos.w / 2;
+		auto div25Percent = hpForegroundFrame->findImage("hp img div 25pc");
+		div25Percent->disabled = false;
+		div25Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .25 - 2;
+		auto div50Percent = hpForegroundFrame->findImage("hp img div 50pc");
+		div50Percent->disabled = false;
+		div50Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .5 - 2;
+		auto div75Percent = hpForegroundFrame->findImage("hp img div 75pc");
+		div75Percent->disabled = false;
+		div75Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .75 - 2;
+
+		if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+		{
+			div75Percent->disabled = true;
+			// 2 dividers 33%/66%
+			div25Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .33 - 2;
+			div50Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .66 - 2;
+			if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+			{
+				// 1 divider 50%
+				div25Percent->disabled = true;
+				div50Percent->pos.x = hpProgressBot->pos.x + fullBarWidth * .5 - 2;
+			}
+		}
+	}
+
+	hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+	hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
+	hpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png";
+	auto hpProgressEndCapFlash = hpForegroundFrame->findImage("hp img progress endcap flash");
+	hpProgressEndCapFlash->disabled = true;
+	const int framesPerAnimation = HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
+	const int numAnimationFrames = HPBar.flashType == FLASH_ON_DAMAGE ? 20 : 2;
+	if ( HPBar.flashTicks > 0 )
+	{
+		//messagePlayer(0, MESSAGE_DEBUG, "ticks: %d, animticks: %d, state: %d", ticks, HPBarFlashTicks, HPBarFlashAnimState);
+		if ( HPBar.flashAnimState > numAnimationFrames || hpProgress->disabled )
+		{
+			HPBar.flashTicks = 0;
+			HPBar.flashType = FLASH_ON_DAMAGE;
+			HPBar.flashAnimState = -1;
+			hpProgressEndCapFlash->disabled = true;
+		}
+		else
+		{
+			hpProgressEndCapFlash->disabled = hpProgressEndCap->disabled;
+			if ( ticks == HPBar.flashTicks )
+			{
+				HPBar.flashAnimState = 1;
+				HPBar.flashProcessedOnTick = ticks;
+			}
+			else if ( (HPBar.flashProcessedOnTick != ticks)
+				&& (ticks > HPBar.flashTicks) 
+				&& (ticks - HPBar.flashTicks) % framesPerAnimation == 0 )
+			{
+				++HPBar.flashAnimState;
+				HPBar.flashProcessedOnTick = ticks;
+			}
+
+			if ( HPBar.flashType == 0 )
+			{
+				if ( HPBar.flashAnimState <= 6 )
+				{
+					hpProgressEndCapFlash->color = 0xFFFFFFFF;
+				}
+
+				if ( HPBar.flashAnimState == 0 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
+				}
+				else if ( HPBar.flashAnimState >= 1 && HPBar.flashAnimState <= 2 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
+				}
+				else if ( HPBar.flashAnimState == 3 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_02.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F02.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_02.png";
+				}
+				else if ( HPBar.flashAnimState >= 4 && HPBar.flashAnimState <= 5 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
+				}
+				else if ( HPBar.flashAnimState == 6 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F03.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
+				}
+				else
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					Uint8 r, g, b, a;
+					getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
+					int decrement = 20;
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					decrement *= fpsScale;
+					a = std::max(0, (int)a - decrement);
+					hpProgressEndCapFlash->color = makeColor(r, g, b, a);
+				}
+			}
+			else
+			{
+				hpProgressEndCapFlash->color = 0xFFFFFFFF;
+				hpProgressEndCapFlash->disabled = true;
+				if ( HPBar.flashAnimState == 1 )
+				{
+					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
+					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
+					hpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_01.png";
+				}
+			}
+		}
+	}
+	else
+	{
+		HPBar.flashAnimState = -1;
+		hpProgressEndCapFlash->disabled = true;
+	}
+	{
+		hpProgressEndCapFlash->pos.w = 22;
+		hpProgressEndCapFlash->section.x = 0;
+		hpProgressEndCapFlash->section.w = 0;
+		if ( !hpProgressEndCap->disabled )
+		{
+			hpProgressEndCapFlash->pos.x = hpProgressEndCap->pos.x - (hpProgressEndCapFlash->pos.w - hpProgressEndCap->pos.w);
+		}
+		if ( hpProgressEndCapFlash->pos.x < hpProgressBot->pos.x )
+		{
+			// adjust end cap flash to clip correctly sliding past end of bar
+			int overflowx = (hpProgressBot->pos.x - hpProgressEndCapFlash->pos.x);
+			hpProgressEndCapFlash->section.x = (overflowx);
+			hpProgressEndCapFlash->pos.x += overflowx;
+			hpProgressEndCapFlash->pos.w -= overflowx;
+			hpProgressEndCapFlash->section.w = hpProgressEndCapFlash->pos.w;
+		}
+	}
 }
 
 void Player::HUD_t::updateMPBar()
@@ -15011,10 +17556,18 @@ void Player::HUD_t::updateMPBar()
 	real_t& mpFadedValue = MPBar.animateValue2;
 
 	MPBar.animateSetpoint = stats[player.playernum]->MP;
+
+	bool flashAnimationPreviouslyPlaying = MPBar.flashTicks > 0;
 	if ( MPBar.animateSetpoint < MPBar.animatePreviousSetpoint ) // insta-change as losing health
 	{
 		mpForegroundValue = MPBar.animateSetpoint;
 		MPBar.animateTicks = ticks;
+
+		// flash for taking damage
+		MPBar.flashTicks = ticks;
+		MPBar.flashProcessedOnTick = 0;
+		MPBar.flashAnimState = -1;
+		MPBar.flashType = FLASH_ON_DAMAGE;
 	}
 
 	if ( MPBar.maxValue > stats[player.playernum]->MAXMP )
@@ -15025,6 +17578,14 @@ void Player::HUD_t::updateMPBar()
 	MPBar.maxValue = stats[player.playernum]->MAXMP;
 	if ( mpForegroundValue < MPBar.animateSetpoint ) // gaining MP, animate
 	{
+		// flash for gaining MP, provided not already flashing
+		/*if ( MPBar.flashAnimState == -1 || (MPBar.flashAnimState >= 0 && MPBar.flashType != FLASH_ON_DAMAGE) )
+		{
+			MPBar.flashTicks = ticks;
+			MPBar.flashAnimState = -1;
+			MPBar.flashType = FLASH_ON_RECOVERY;
+		}*/
+
 		real_t setpointDiff = std::max(.1, MPBar.animateSetpoint - mpForegroundValue);
 		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
 		mpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
@@ -15106,6 +17667,201 @@ void Player::HUD_t::updateMPBar()
 		mpProgress->disabled = false;
 		mpProgressEndCap->disabled = false;
 		mpProgressBot->disabled = false;
+	}
+
+	// dividers
+	{
+		const int fullBarWidth = mpProgressBot->pos.w + progressWidth + mpEndcap->pos.w / 2;
+		auto div25Percent = mpForegroundFrame->findImage("mp img div 25pc");
+		div25Percent->disabled = false;
+		div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .25 - 2;
+		auto div50Percent = mpForegroundFrame->findImage("mp img div 50pc");
+		div50Percent->disabled = false;
+		div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
+		auto div75Percent = mpForegroundFrame->findImage("mp img div 75pc");
+		div75Percent->disabled = false;
+		div75Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .75 - 2;
+
+		if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+		{
+			div75Percent->disabled = true;
+			// 2 dividers 33%/66%
+			div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .33 - 2;
+			div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .66 - 2;
+			if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
+			{
+				// 1 divider 50%
+				div25Percent->disabled = true;
+				div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
+			}
+		}
+	}
+
+	mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+	mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+	mpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
+	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
+	mpProgressEndCapFlash->disabled = true;
+	const int framesPerAnimation = MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
+	const int numAnimationFrames = MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2;
+	if ( MPBar.flashTicks > 0 )
+	{
+		if ( MPBar.flashAnimState > numAnimationFrames || mpProgress->disabled )
+		{
+			MPBar.flashTicks = 0;
+			MPBar.flashType = FLASH_ON_DAMAGE;
+			MPBar.flashAnimState = -1;
+			mpProgressEndCapFlash->disabled = true;
+		}
+		else
+		{
+			mpProgressEndCapFlash->disabled = mpProgressEndCap->disabled;
+			bool processedOnTick = MPBar.flashProcessedOnTick == ticks;
+			if ( ticks == MPBar.flashTicks )
+			{
+				MPBar.flashAnimState = 1;
+				MPBar.flashProcessedOnTick = ticks;
+			}
+			else if ( (!processedOnTick)
+				&& (ticks > MPBar.flashTicks)
+				&& (ticks - MPBar.flashTicks) % framesPerAnimation == 0 )
+			{
+				++MPBar.flashAnimState;
+				MPBar.flashProcessedOnTick = ticks;
+			}
+
+			if ( MPBar.flashType == 0 )
+			{
+				if ( MPBar.flashAnimState <= 16 && MPBar.flashAnimState >= 10 )
+				{
+					mpProgressEndCapFlash->color = 0xFFFFFFFF;
+				}
+				else if ( MPBar.flashAnimState == 0 )
+				{
+					mpProgressEndCapFlash->color = makeColor(255, 255, 255, 0);
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+				}
+
+				if ( MPBar.flashAnimState <= 9 )
+				{
+					if ( MPBar.flashAnimState == 7 )
+					{
+						// we need the MP bar to flash long enough for long spellcast times
+						// can adjust how many animStates we skip here to play with timing,
+						// without changing other state machine code
+						MPBar.flashAnimState = 9; // 1, 2 skip a few..
+					}
+					Uint8 r, g, b, a;
+					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
+					int increment = 10;
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					increment *= fpsScale;
+					a = std::min(255, (int)a + increment);
+					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
+
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+
+					if ( MPBar.flashAnimState % 2 == 0
+						&& !processedOnTick )
+					{
+						if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png" )
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png";
+						}
+						else if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png" )
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png";
+						}
+						else if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png" )
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00d.png";
+						}
+						else 
+						{
+							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+						}
+					}
+				}
+				else if ( MPBar.flashAnimState <= 10 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+				}
+				else if ( MPBar.flashAnimState >= 11 && MPBar.flashAnimState <= 12 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+				}
+				else if ( MPBar.flashAnimState == 13 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_02.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F02.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_02.png";
+				}
+				else if ( MPBar.flashAnimState >= 14 && MPBar.flashAnimState <= 15 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+				}
+				else if ( MPBar.flashAnimState == 16 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F03.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+				}
+				else
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					Uint8 r, g, b, a;
+					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
+					int decrement = 20;
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					decrement *= fpsScale;
+					a = std::max(0, (int)a - decrement);
+					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
+				}
+			}
+			else
+			{
+				mpProgressEndCapFlash->color = 0xFFFFFFFF;
+				mpProgressEndCapFlash->disabled = true;
+				if ( MPBar.flashAnimState == 1 )
+				{
+					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
+					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+					mpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_01.png";
+				}
+			}
+		}
+	}
+	else
+	{
+		MPBar.flashAnimState = -1;
+		mpProgressEndCapFlash->disabled = true;
+	}
+
+	{
+		mpProgressEndCapFlash->pos.w = 22;
+		mpProgressEndCapFlash->section.x = 0;
+		mpProgressEndCapFlash->section.w = 0;
+		if ( !mpProgressEndCap->disabled )
+		{
+			mpProgressEndCapFlash->pos.x = mpProgressEndCap->pos.x - (mpProgressEndCapFlash->pos.w - mpProgressEndCap->pos.w);
+		}
+		if ( mpProgressEndCapFlash->pos.x < mpProgressBot->pos.x )
+		{
+			// adjust end cap flash to clip correctly sliding past end of bar
+			int overflowx = (mpProgressBot->pos.x - mpProgressEndCapFlash->pos.x);
+			mpProgressEndCapFlash->section.x = (overflowx);
+			mpProgressEndCapFlash->pos.x += overflowx;
+			mpProgressEndCapFlash->pos.w -= overflowx;
+			mpProgressEndCapFlash->section.w = mpProgressEndCapFlash->pos.w;
+		}
 	}
 }
 
@@ -15629,7 +18385,7 @@ void Player::SkillSheet_t::createSkillSheet()
 
 	char name[32];
 	snprintf(name, sizeof(name), "player skills %d", player.playernum);
-	Frame* frame = gui->addFrame(name);
+	Frame* frame = gameUIFrame[player.playernum]->addFrame(name);
 	skillFrame = frame;
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),

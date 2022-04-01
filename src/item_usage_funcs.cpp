@@ -4076,7 +4076,7 @@ void item_Food(Item*& item, int player)
 	pukeChance = item->foodGetPukeChance(stats[player]);
 
 	if ( players[player] 
-		&& players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
+		&& players[player]->entity && playerRequiresBloodToSustain(player) )
 	{
 		if ( item->type == FOOD_BLOOD )
 		{
@@ -4175,7 +4175,7 @@ void item_Food(Item*& item, int player)
 				break;
 			case FOOD_BLOOD:
 				if ( players[player] && players[player]->entity 
-					&& players[player]->entity->playerRequiresBloodToSustain() )
+					&& playerRequiresBloodToSustain(player) )
 				{
 					hungerIncrease = 250;
 				}
@@ -4222,7 +4222,7 @@ void item_Food(Item*& item, int player)
 						break;
 					case FOOD_BLOOD:
 						if ( players[player] && players[player]->entity
-							&& players[player]->entity->playerRequiresBloodToSustain() )
+							&& playerRequiresBloodToSustain(player) )
 						{
 							manaRegenPercent = 0.25;
 						}
@@ -4459,6 +4459,10 @@ void item_FoodTin(Item*& item, int player)
 		messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[966]);
 		stats[player]->EFFECTS[EFF_GREASY] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_GREASY] = TICKS_PER_SECOND * (60 + rand() % 60); // 1-2 minutes of greasy
+	}
+
+	if ( slippery || hpBuff || mpBuff )
+	{
 		serverUpdateEffects(player);
 	}
 
@@ -5244,7 +5248,7 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 	}
 	if ( (svFlags & SV_FLAG_HUNGER) )
 	{
-		if ( myStats->HUNGER <= 250 )
+		if ( myStats->HUNGER <= getEntityHungerInterval(my->skill[2], nullptr, stats[my->skill[2]], HUNGER_INTERVAL_HUNGRY) )
 		{
 			messagePlayer(my->skill[2], MESSAGE_STATUS, language[912]);
 		}

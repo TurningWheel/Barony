@@ -209,13 +209,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool sellVampireBlood = false;
 			for ( c = 0; c < MAXPLAYERS; ++c )
 			{
-				if ( players[c] && players[c]->entity )
+				if ( playerRequiresBloodToSustain(c) )
 				{
-					if ( players[c]->entity->playerRequiresBloodToSustain() )
-					{
-						sellVampireBlood = true;
-						break;
-					}
+					sellVampireBlood = true;
+					break;
 				}
 			}
 

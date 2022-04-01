@@ -3221,7 +3221,10 @@ void actMonster(Entity* my)
 		{
 			snprintf(namesays, 63, language[1302], myStats->name);
 		}
-		snprintf(namesays, 63, language[513], getMonsterLocalizedName(myStats->type).c_str());
+		else
+		{
+			snprintf(namesays, 63, language[513], getMonsterLocalizedName(myStats->type).c_str());
+		}
 	}
 	else
 	{

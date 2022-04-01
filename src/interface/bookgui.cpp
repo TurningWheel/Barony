@@ -22,6 +22,7 @@
 #include "../ui/Field.hpp"
 #include "../ui/Text.hpp"
 #include "../ui/Image.hpp"
+#include "../ui/GameUI.hpp"
 
 void Player::BookGUI_t::createBookGUI()
 {
@@ -32,7 +33,7 @@ void Player::BookGUI_t::createBookGUI()
 
 	char name[32];
 	snprintf(name, sizeof(name), "player book %d", player.playernum);
-	Frame* frame = gui->addFrame(name);
+	Frame* frame = gameUIFrame[player.playernum]->addFrame(name);
 	bookFrame = frame;
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),

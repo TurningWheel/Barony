@@ -2088,46 +2088,47 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_dropgold("/dropgold", "drop some gold", []CCMD{
-		if (argc < 2)
+		if (argc < 3)
         {
-            messagePlayer(clientnum, MESSAGE_MISC, "Please include the amount of gold to drop. (eg: /dropgold 10)");
+            messagePlayer(clientnum, MESSAGE_MISC, "Please include the amount of gold to drop and player num. (eg: /dropgold 0 10)");
             return;
         }
-		int amount = atoi(argv[1]);
-		if ( !stats[clientnum] )
+		int amount = atoi(argv[2]);
+		int player = atoi(argv[1]);
+		if ( !stats[player] )
 		{
 			return;
 		}
-		else if ( stats[clientnum]->HP <= 0 || !players[clientnum] || !players[clientnum]->entity )
+		else if ( stats[player]->HP <= 0 || !players[player] || !players[player]->entity )
 		{
 			return;
 		}
-		if ( stats[clientnum]->GOLD < 0 )
+		if ( stats[player]->GOLD < 0 )
 		{
-			stats[clientnum]->GOLD = 0;
+			stats[player]->GOLD = 0;
 		}
 
 		//Drop gold.
-		int x = std::min<int>(std::max(0, (int)(players[clientnum]->entity->x / 16)), map.width - 1);
-		int y = std::min<int>(std::max(0, (int)(players[clientnum]->entity->y / 16)), map.height - 1);
+		int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
+		int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
 		{
-			if ( stats[clientnum]->GOLD - amount < 0 )
+			if ( stats[player]->GOLD - amount < 0 )
 			{
-				amount = stats[clientnum]->GOLD;
+				amount = stats[player]->GOLD;
 			}
 			if ( amount == 0 )
 			{
-				messagePlayer(clientnum, MESSAGE_INVENTORY, language[2593]);
+				messagePlayer(player, MESSAGE_INVENTORY, language[2593]);
 				return;
 			}
-			stats[clientnum]->GOLD -= amount;
-			stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+			stats[player]->GOLD -= amount;
+			stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
 			if ( multiplayer == CLIENT )
 			{
 				//Tell the server we dropped some gold.
 				strcpy((char*)net_packet->data, "DGLD");
-				net_packet->data[4] = clientnum;
+				net_packet->data[4] = player;
 				SDLNet_Write32(amount, &net_packet->data[5]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -2136,12 +2137,12 @@ namespace ConsoleCommands {
 			}
 			else
 			{
-				playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
+				playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
 				auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
 				entity->sizex = 4;
 				entity->sizey = 4;
-				entity->x = players[clientnum]->entity->x;
-				entity->y = players[clientnum]->entity->y;
+				entity->x = players[player]->entity->x;
+				entity->y = players[player]->entity->y;
 				entity->z = 6;
 				entity->yaw = (rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
@@ -2149,11 +2150,11 @@ namespace ConsoleCommands {
 				entity->behavior = &actGoldBag;
 				entity->goldAmount = amount; // amount
 			}
-			messagePlayer(clientnum, MESSAGE_INVENTORY, language[2594], amount);
+			messagePlayer(player, MESSAGE_INVENTORY, language[2594], amount);
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_INVENTORY | MESSAGE_MISC, language[4085]); // invalid location to drop gold
+			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_MISC, language[4085]); // invalid location to drop gold
 		}
 		});
 
@@ -3679,5 +3680,10 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_renderglyphs("/renderglyphs", "", []CCMD{
 		GlyphHelper.renderGlyphsToPNGs();
 		messagePlayer(clientnum, MESSAGE_MISC, "Re-rendering keyboard glyphs...");
+	});
+
+	static ConsoleCommand ccmd_loadstatusfx("/loadstatusfx", "", []CCMD{
+		StatusEffectQueue_t::loadStatusEffectsJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded status_effects.json");
 	});
 }

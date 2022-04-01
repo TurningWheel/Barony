@@ -305,6 +305,7 @@ int initGame()
 		loadHUDSettingsJSON();
 		Player::SkillSheet_t::loadSkillSheetJSON();
 		Player::CharacterSheet_t::loadCharacterSheetJSON();
+		StatusEffectQueue_t::loadStatusEffectsJSON();
 
 		updateLoadingScreen(94);
 

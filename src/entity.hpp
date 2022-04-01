@@ -918,7 +918,6 @@ public:
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
-	bool playerRequiresBloodToSustain(); // vampire type or accursed class
 	bool isBossMonster(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
 	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 	void setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask);
@@ -1113,6 +1112,18 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
+
+bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
+enum EntityHungerIntervals : int
+{
+	HUNGER_INTERVAL_OVERSATIATED,
+	HUNGER_INTERVAL_HUNGRY,
+	HUNGER_INTERVAL_WEAK,
+	HUNGER_INTERVAL_STARVING,
+	HUNGER_INTERVAL_AUTOMATON_SUPERHEATED,
+	HUNGER_INTERVAL_AUTOMATON_CRITICAL
+};
+int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerIntervals hungerInterval);
 
 //Fountain potion drop chance variables.
 extern const std::vector<int> fountainPotionDropChances;
