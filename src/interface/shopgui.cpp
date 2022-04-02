@@ -22,6 +22,7 @@
 #include "../mod_tools.hpp"
 #include "../ui/GameUI.hpp"
 #include "../ui/Image.hpp"
+#include "../ui/Button.hpp"
 
 #include <assert.h>
 
@@ -267,7 +268,8 @@ inline void checkBuyItem(const int player)
 			{
 				inputs.mouseClearLeft(player);
 				inputs.controllerClearInput(player, INJOY_MENU_USE);
-				buyItemFromShop(player, shopinvitems[player][i]);
+				bool consumedEntireStack = false;
+				buyItemFromShop(player, shopinvitems[player][i], consumedEntireStack);
 				//Check if no more items after this slot & deal accordingly.
 				rebuildShopInventory(player);
 				if ( shopinvitems[player][i] == nullptr )
@@ -927,6 +929,65 @@ void cycleShopCategories(const int player, int direction)
 	}
 }
 
+void shopChangeGoldEvent(const int player, Sint32 amount)
+{
+	if ( !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
+	bool addedToCurrentTotal = false;
+	bool isAnimatingValue = ((ticks - players[player]->shopGUI.animGoldStartTicks) > TICKS_PER_SECOND / 2);
+	if ( amount < 0 )
+	{
+		if ( players[player]->shopGUI.playerChangeGold < 0 
+			&& !isAnimatingValue 
+			&& abs(amount) > 0 )
+		{
+			addedToCurrentTotal = true;
+			if ( stats[player]->GOLD + amount < 0 )
+			{
+				players[player]->shopGUI.playerChangeGold -= stats[player]->GOLD;
+			}
+			else
+			{
+				players[player]->shopGUI.playerChangeGold += amount;
+			}
+		}
+		else
+		{
+			if ( stats[player]->GOLD + amount < 0 )
+			{
+				players[player]->shopGUI.playerChangeGold = -stats[player]->GOLD;
+			}
+			else
+			{
+				players[player]->shopGUI.playerChangeGold = amount;
+			}
+		}
+	}
+	else
+	{
+		if ( players[player]->shopGUI.playerChangeGold > 0 
+			&& !isAnimatingValue
+			&& abs(amount) > 0 )
+		{
+			addedToCurrentTotal = true;
+			players[player]->shopGUI.playerChangeGold += amount;
+		}
+		else
+		{
+			players[player]->shopGUI.playerChangeGold = amount;
+		}
+	}
+	players[player]->shopGUI.animGoldStartTicks = ticks;
+	players[player]->shopGUI.animGold = 0.0;
+	if ( !addedToCurrentTotal )
+	{
+		players[player]->shopGUI.playerCurrentGold = stats[player]->GOLD;
+	}
+}
+
 void Player::ShopGUI_t::openShop()
 {
 	if ( shopFrame )
@@ -936,14 +997,15 @@ void Player::ShopGUI_t::openShop()
 		if ( wasDisabled )
 		{
 			animx = 0.0;
+			animTooltip = 0.0;
 			isInteractable = false;
 			bFirstTimeSnapCursor = false;
 		}
-		/*if ( player.inventoryUI.getSelectedChestX() < 0 || player.inventoryUI.getSelectedChestX() >= MAX_SHOP_X
-			|| player.inventoryUI.getSelectedChestY() < 0 || player.inventoryUI.getSelectedChestY() >= MAX_SHOP_Y )
+		if ( getSelectedShopX() < 0 || getSelectedShopX() >= MAX_SHOP_X
+			|| getSelectedShopY() < 0 || getSelectedShopY() >= MAX_SHOP_Y )
 		{
-			player.inventoryUI.selectChestSlot(0, 0);
-		}*/
+			selectShopSlot(0, 0);
+		}
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_ITEM;
 		player.gui_mode = GUI_MODE_SHOP;
@@ -956,6 +1018,7 @@ void Player::ShopGUI_t::openShop()
 	}
 	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
 	clearItemDisplayed();
+	shopChangeGoldEvent(player.playernum, 0);
 }
 
 void Player::ShopGUI_t::selectShopSlot(const int x, const int y)
@@ -971,6 +1034,7 @@ void Player::ShopGUI_t::closeShop()
 		shopFrame->setDisabled(true);
 	}
 	animx = 0.0;
+	animTooltip = 0.0;
 	isInteractable = false;
 	bool wasOpen = bOpen;
 	bOpen = false;
@@ -1002,7 +1066,9 @@ void Player::ShopGUI_t::closeShop()
 			players[player.playernum]->gui_mode = GUI_MODE_INVENTORY;
 		}
 	}
+
 	clearItemDisplayed();
+	shopChangeGoldEvent(player.playernum, 0);
 }
 
 bool Player::ShopGUI_t::isShopSelected()
@@ -1025,6 +1091,135 @@ bool Player::ShopGUI_t::isShopSelected()
 }
 
 int Player::ShopGUI_t::heightOffsetWhenNotCompact = 172;
+
+void updatePlayerGold(const int player)
+{
+	auto shopFrame = players[player]->shopGUI.shopFrame;
+	if ( !shopFrame )
+	{
+		return;
+	}
+
+	auto bgFrame = shopFrame->findFrame("shop base");
+	assert(bgFrame);
+	auto currentGoldText = bgFrame->findField("current gold");
+	auto changeGoldText = bgFrame->findField("change gold");
+
+	SDL_Rect changeGoldPos = changeGoldText->getSize();
+	const int changePosAnimHeight = 10;
+	changeGoldPos.y = bgFrame->getSize().h - 92 - 16;
+
+	real_t& animGold = players[player]->shopGUI.animGold;
+	bool pauseChangeGoldAnim = false;
+
+	real_t& animNoDeal = players[player]->shopGUI.animNoDeal;
+	Uint32& animNoDealTicks = players[player]->shopGUI.animNoDealTicks;
+
+	if ( players[player]->shopGUI.playerChangeGold != 0 )
+	{
+		if ( ((ticks - players[player]->shopGUI.animGoldStartTicks) > TICKS_PER_SECOND / 2) )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (animGold)) / 10.0;
+			animGold -= setpointDiffX;
+			animGold = std::max(0.0, animGold);
+
+			if ( animGold <= 0.0001 )
+			{
+				players[player]->shopGUI.playerChangeGold = 0;
+			}
+		}
+		else
+		{
+			pauseChangeGoldAnim = true;
+
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animGold)) / 10.0;
+			animGold += setpointDiffX;
+			animGold = std::min(1.0, animGold);
+
+			changeGoldPos.y += changePosAnimHeight;
+			changeGoldPos.y -= animGold * changePosAnimHeight;
+		}
+	}
+
+	changeGoldText->setSize(changeGoldPos);
+
+	{ 
+		// constant decay for animation
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+		animNoDeal -= setpointDiffX;
+		animNoDeal = std::max(0.0, animNoDeal);
+
+		SDL_Rect currentGoldTextPos = currentGoldText->getSize();
+		currentGoldTextPos.x = bgFrame->getSize().w - 80 - 18;
+		currentGoldTextPos.x += -2 + 2 * (cos(animNoDeal * 4 * PI));
+		currentGoldText->setSize(currentGoldTextPos);
+		if ( animNoDeal > 0.001 || (ticks - animNoDealTicks) < TICKS_PER_SECOND * .8 )
+		{
+			currentGoldText->setColor(makeColor(215, 38, 61, 255)); // red
+		}
+		else
+		{
+			currentGoldText->setColor(makeColor(201, 162, 100, 255));
+		}
+	}
+
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		{
+			shopChangeGoldEvent(player, -(50 + rand() % 50));
+			if ( keystatus[SDL_SCANCODE_RSHIFT] )
+			{
+				shopChangeGoldEvent(player, 0);
+			}
+		}
+		else if ( keystatus[SDL_SCANCODE_RSHIFT] )
+		{
+			shopspeech[clientnum] = language[217];
+		}
+		else
+		{
+			shopChangeGoldEvent(player, 50 + rand() % 50);
+		}
+		keystatus[SDL_SCANCODE_G] = 0;
+	}
+
+	bool showChangedGold = false;
+	if ( players[player]->shopGUI.playerChangeGold != 0 )
+	{
+		Sint32 displayedChangeGold = animGold * players[player]->shopGUI.playerChangeGold;
+		if ( pauseChangeGoldAnim )
+		{
+			displayedChangeGold = players[player]->shopGUI.playerChangeGold;
+		}
+		if ( abs(displayedChangeGold) > 0 )
+		{
+			showChangedGold = true;
+			changeGoldText->setDisabled(false);
+			std::string s = "+";
+			if ( players[player]->shopGUI.playerChangeGold < 0 )
+			{
+				s = "";
+			}
+			s += std::to_string(displayedChangeGold);
+			changeGoldText->setText(s.c_str());
+			Sint32 displayedCurrentGold = players[player]->shopGUI.playerCurrentGold 
+				+ (players[player]->shopGUI.playerChangeGold - displayedChangeGold);
+			currentGoldText->setText(std::to_string(displayedCurrentGold).c_str());
+		}
+	}
+	
+	if ( !showChangedGold )
+	{
+		Sint32 displayedChangeGold = 0;
+		changeGoldText->setDisabled(true);
+		changeGoldText->setText(std::to_string(displayedChangeGold).c_str());
+		currentGoldText->setText(std::to_string(stats[player]->GOLD).c_str());
+	}
+}
 
 void updateShopGUIChatter(const int player)
 {
@@ -1054,10 +1249,10 @@ void updateShopGUIChatter(const int player)
 
 	auto pointer = chatWindow->findImage("pointer img");
 
-	int width = 280;
+	int width = 288;
 	int height = 200;
 	const int pointerHeightAddition = 10;
-	SDL_Rect chatPos{ bgFrame->getSize().w - 12 - width, 92, width, height + pointerHeightAddition };
+	SDL_Rect chatPos{ bgFrame->getSize().w - 12 - width, 88, width, height + pointerHeightAddition };
 
 	if ( !players[player]->shopGUI.bOpen )
 	{
@@ -1077,7 +1272,7 @@ void updateShopGUIChatter(const int player)
 			players[player]->shopGUI.chatTicks = ticks;
 
 			SDL_Rect textPos{ 22, 18 + pointerHeightAddition, 0, 0 };
-			textPos.w = chatPos.w - textPos.x - 14;
+			textPos.w = chatPos.w - textPos.x - 14 - 8;
 			textPos.h = chatPos.h - 14 - textPos.y;
 			chatText->setSize(textPos);
 
@@ -1238,19 +1433,6 @@ void Player::ShopGUI_t::updateShop()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( keystatus[SDL_SCANCODE_G] )
-	{
-		if ( bOpen )
-		{
-			closeShop();
-		}
-		else
-		{
-			openShop();
-		}
-		keystatus[SDL_SCANCODE_G] = 0;
-	}
-
 	if ( !shopFrame->isDisabled() && bOpen )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -1265,7 +1447,7 @@ void Player::ShopGUI_t::updateShop()
 				if ( !inputs.getUIInteraction(player.playernum)->selectedItem
 					&& player.GUI.activeModule == Player::GUI_t::MODULE_SHOP )
 				{
-					player.inventoryUI.warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER));
+					warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
 			}
 			isInteractable = true;
@@ -1360,6 +1542,9 @@ void Player::ShopGUI_t::updateShop()
 
 	shopFrame->setSize(shopFramePos);
 
+	bool purchaseItemAction = false;
+	bool usingGamepad = (inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor);
+
 	if ( (player.gui_mode != GUI_MODE_SHOP && player.inventory_mode != INVENTORY_MODE_SPELL) 
 		// cycleInventoryTab() sets proper gui mode after spell list viewing with INVENTORY_MODE_SPELL
 		// this allows us to browse spells while shop is open.
@@ -1371,6 +1556,65 @@ void Player::ShopGUI_t::updateShop()
 		return;
 	}
 
+	if ( bOpen && isInteractable )
+	{
+		if ( !inputs.getUIInteraction(player.playernum)->selectedItem
+			&& !player.GUI.isDropdownActive()
+			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP)
+			&& !player.inventoryUI.chestGUI.bOpen )
+		{
+			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+				::closeShop(player.playernum);
+				return;
+			}
+			else
+			{
+				if ( usingGamepad && Input::inputs[player.playernum].binaryToggle("MenuConfirm") )
+				{
+					purchaseItemAction = true;
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[player.playernum].binaryToggle("MenuRightClick") )
+				{
+					purchaseItemAction = true;
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuRightClick");
+				}
+			}
+		}
+	}
+
+	if ( purchaseItemAction && itemPrice >= 0 && player.GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+	{
+		for ( node_t* node = shopInv[player.playernum]->first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( !hideItemFromShopView(*item)
+					&& item->x == getSelectedShopX()
+					&& item->y == getSelectedShopY()
+					&& getSelectedShopX() >= 0 && getSelectedShopX() < MAX_SHOP_X
+					&& getSelectedShopY() >= 0 && getSelectedShopX() < MAX_SHOP_Y )
+				{
+					int oldQty = item->count;
+					bool consumedEntireStack = false;
+					if ( buyItemFromShop(player.playernum, item, consumedEntireStack) )
+					{
+						if ( consumedEntireStack )
+						{
+							animTooltipTicks = 0;
+							animTooltip = 0.0;
+							clearItemDisplayed();
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+
 	auto bgFrame = shopFrame->findFrame("shop base");
 	assert(bgFrame);
 
@@ -1378,21 +1622,91 @@ void Player::ShopGUI_t::updateShop()
 	buyTooltipFrame->setDisabled(false);
 
 	auto displayItemName = buyTooltipFrame->findField("item display name");
-	displayItemName->setDisabled(true);
 	auto displayItemValue = buyTooltipFrame->findField("item display value");
-	displayItemValue->setDisabled(true);
 	auto itemTooltipImg = buyTooltipFrame->findImage("tooltip img");
 	itemTooltipImg->disabled = false;
 	auto itemGoldImg = buyTooltipFrame->findImage("gold img");
-	itemGoldImg->disabled = true;
 	auto itemSlotFrame = buyTooltipFrame->findFrame("item slot frame");
-	itemSlotFrame->setDisabled(true);
 	auto buyPromptText = buyTooltipFrame->findField("buy prompt txt");
-	buyPromptText->setDisabled(true);
-	auto buyPromptGlyph = buyTooltipFrame->findImage("buy prompt glyph");
-	buyPromptGlyph->disabled = true;
+	auto buyPromptGlyphFrame = buyTooltipFrame->findFrame("buy prompt frame");
+	auto buyPromptGlyph = buyPromptGlyphFrame->findImage("buy prompt glyph");
 	auto itemBgImg = buyTooltipFrame->findImage("item bg img");
 	itemBgImg->pos.y = itemTooltipImg->pos.y + itemTooltipImg->pos.h / 2 - itemBgImg->pos.h / 2 - 1;
+	if ( animTooltip <= 0.0001 )
+	{
+		displayItemName->setDisabled(true);
+		displayItemValue->setDisabled(true);
+		itemGoldImg->disabled = true;
+		itemSlotFrame->setDisabled(true);
+		buyPromptText->setDisabled(true);
+		buyPromptGlyph->disabled = true;
+		buyPromptGlyphFrame->setDisabled(true);
+	}
+
+	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor;
+	auto closeBtn = bgFrame->findButton("close shop button");
+	auto buybackBtn = bgFrame->findButton("buyback button");
+	auto buybackPromptTxt = bgFrame->findField("buyback txt");
+	auto buybackPromptGlyph = bgFrame->findImage("buyback glyph");
+	auto closePromptTxt = bgFrame->findField("close shop prompt");
+	auto closePromptGlyph = bgFrame->findImage("close shop glyph");
+	if ( !drawGlyphs )
+	{
+		closeBtn->setInvisible(false);
+		buybackBtn->setInvisible(false);
+		buybackBtn->setDisabled(!isInteractable);
+		closeBtn->setDisabled(!isInteractable);
+
+		closePromptGlyph->disabled = true;
+		closePromptTxt->setDisabled(true);
+		buybackPromptGlyph->disabled = true;
+		buybackPromptTxt->setDisabled(true);
+	}
+	else
+	{
+		closeBtn->setInvisible(true);
+		buybackBtn->setInvisible(true);
+		buybackBtn->setDisabled(true);
+		closeBtn->setDisabled(true);
+
+		closePromptTxt->setDisabled(false);
+		closePromptTxt->setText(language[4121]);
+		buybackPromptTxt->setDisabled(false);
+		buybackPromptTxt->setText(language[4120]);
+
+		closePromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+		closePromptGlyph->disabled = true;
+		if ( auto imgGet = Image::get(closePromptGlyph->path.c_str()) )
+		{
+			closePromptGlyph->pos.w = imgGet->getWidth();
+			closePromptGlyph->pos.h = imgGet->getHeight();
+			closePromptGlyph->disabled = false;
+		}
+		closePromptGlyph->pos.x = closePromptTxt->getSize().x - 4 - closePromptGlyph->pos.w;
+		closePromptGlyph->pos.y = closePromptTxt->getSize().y 
+			+ closePromptTxt->getSize().h / 2 - closePromptGlyph->pos.h / 2;
+
+		buybackPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageRightAlt");
+		buybackPromptGlyph->disabled = true;
+		if ( auto imgGet = Image::get(buybackPromptGlyph->path.c_str()) )
+		{
+			buybackPromptGlyph->pos.w = imgGet->getWidth();
+			buybackPromptGlyph->pos.h = imgGet->getHeight();
+			buybackPromptGlyph->disabled = false;
+		}
+		buybackPromptGlyph->pos.x = buybackPromptTxt->getSize().x - 4 - buybackPromptGlyph->pos.w;
+		buybackPromptGlyph->pos.y = buybackPromptTxt->getSize().y 
+			+ buybackPromptTxt->getSize().h / 2 - buybackPromptGlyph->pos.h / 2;
+		if ( buybackPromptGlyph->pos.y + buybackPromptGlyph->pos.h >= closePromptGlyph->pos.y )
+		{
+			// touching below glyph, move this up
+			buybackPromptGlyph->pos.y -= 2;
+		}
+		if ( buybackPromptGlyph->pos.y % 2 == 1 ) // odd numbered pixel, move up
+		{
+			buybackPromptGlyph->pos.y -= 1;
+		}
+	}
 
 	if ( itemPrice >= 0 && itemDesc.size() > 1 )
 	{
@@ -1403,11 +1717,19 @@ void Player::ShopGUI_t::updateShop()
 		itemGoldImg->disabled = false;
 		itemSlotFrame->setDisabled(false);
 
+		if ( isInteractable )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			animTooltip += setpointDiffX;
+			animTooltip = std::min(1.0, animTooltip);
+			animTooltipTicks = ticks;
+		}
 
 		SDL_Rect buyTooltipFramePos = buyTooltipFrame->getSize();
-		buyTooltipFramePos.x = 0;
+		buyTooltipFramePos.x = 4;
 
-		SDL_Rect namePos{ 76, 0, 218, 24 };
+		SDL_Rect namePos{ 76, 0, 208, 24 };
 		displayItemName->setSize(namePos);
 		displayItemName->setText(itemDesc.c_str());
 		displayItemName->reflowTextToFit(0);
@@ -1436,8 +1758,8 @@ void Player::ShopGUI_t::updateShop()
 
 		itemBgImg->pos.y = itemTooltipImg->pos.y + itemTooltipImg->pos.h / 2 - itemBgImg->pos.h / 2 - 1;
 		SDL_Rect slotFramePos = itemSlotFrame->getSize();
-		slotFramePos.x = itemBgImg->pos.x + itemBgImg->pos.w / 2 - slotFramePos.w / 2;
-		slotFramePos.y = itemBgImg->pos.y + itemBgImg->pos.h / 2 - slotFramePos.h / 2;
+		slotFramePos.x = itemBgImg->pos.x + itemBgImg->pos.w / 2 - slotFramePos.w / 2 - 1;
+		slotFramePos.y = itemBgImg->pos.y + itemBgImg->pos.h / 2 - slotFramePos.h / 2 - 1;
 		itemSlotFrame->setSize(slotFramePos);
 
 		char priceFormat[64];
@@ -1450,10 +1772,20 @@ void Player::ShopGUI_t::updateShop()
 		displayItemValue->setSize(valuePos);
 		displayItemValue->setText(priceFormat);
 
+		Uint32 negativeColor = makeColor(215, 38, 61, 255);
+		displayItemValue->setColor(makeColor(201, 162, 100, 255));
+		if ( itemPrice > 0 && itemPrice > stats[player.playernum]->GOLD )
+		{
+			if ( !strcmp(buyPromptText->getText(), language[4113]) ) // buy prompt
+			{
+				displayItemValue->setColor(negativeColor);
+			}
+		}
+
 		itemGoldImg->pos.x = 76;
 		itemGoldImg->pos.y = buyTooltipFramePos.h - 36;
 
-		buyTooltipFramePos.y = bgFrame->getSize().h - buyTooltipFramePos.h;
+		buyTooltipFramePos.y = bgFrame->getSize().h - (buyTooltipFramePos.h + 4) * animTooltip;
 		buyTooltipFrame->setSize(buyTooltipFramePos);
 
 		buyPromptText->setSize(SDL_Rect{ buyTooltipFramePos.w - 60, valuePos.y, 52, 24 });
@@ -1474,14 +1806,76 @@ void Player::ShopGUI_t::updateShop()
 			buyPromptGlyph->pos.h = imgGet->getHeight();
 			buyPromptGlyph->disabled = false;
 		}
+		buyPromptGlyphFrame->setDisabled(buyPromptGlyph->disabled);
 		buyPromptGlyph->pos.x = buyPromptText->getSize().x - 8 - buyPromptGlyph->pos.w;
 		buyPromptGlyph->pos.y = buyPromptText->getSize().y + buyPromptText->getSize().h / 2 - buyPromptGlyph->pos.h / 2;
 		if ( buyPromptGlyph->pos.y % 2 == 1 )
 		{
 			buyPromptGlyph->pos.y -= 1;
 		}
+		buyPromptGlyphFrame->setSize(buyPromptGlyph->pos);
+		buyPromptGlyph->pos.x = 0;
+		buyPromptGlyph->pos.y = 0;
+
+		/*SDL_Rect buyPromptGlyphFramePos = buyPromptGlyphFrame->getSize();
+		int maxPromptHeight = buyTooltipFramePos.h - 6; // if we want to prevent glyph spilling over too much on border
+		if ( buyPromptGlyphFramePos.y + buyPromptGlyphFramePos.h > (maxPromptHeight) )
+		{
+			buyPromptGlyphFramePos.h -= (buyPromptGlyphFramePos.y + buyPromptGlyphFramePos.h) - (maxPromptHeight);
+			buyPromptGlyphFrame->setSize(buyPromptGlyphFramePos);
+		}*/
+	}
+	else
+	{
+		if ( ticks - animTooltipTicks > TICKS_PER_SECOND / 3
+			|| animTooltip < 0.9999 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
+			animTooltip -= setpointDiffX;
+			animTooltip = std::max(0.0, animTooltip);
+		}
+
+		SDL_Rect buyTooltipFramePos = buyTooltipFrame->getSize();
+		buyTooltipFramePos.y = bgFrame->getSize().h - (buyTooltipFramePos.h + 4) * animTooltip;
+		buyTooltipFrame->setSize(buyTooltipFramePos);
 	}
 
+	// discount values
+	auto discountLabelText = bgFrame->findField("discount label");
+	auto discountValue = bgFrame->findField("discount");
+	real_t shopModifier = 0.0;
+	if ( player.GUI.activeModule == Player::GUI_t::MODULE_SHOP ) // buy prompt
+	{
+		discountLabelText->setText(language[4122]);
+		shopModifier = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+		shopModifier /= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
+		shopModifier = std::max(1.0, shopModifier);
+		shopModifier = shopModifier * 100.0 - 100.0;
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%+.f%%", shopModifier);
+		discountValue->setText(buf);
+	}
+	else
+	{
+		discountLabelText->setText(language[4123]);
+		shopModifier = (50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+		shopModifier *= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
+		shopModifier = std::min(1.0, shopModifier);
+		shopModifier = shopModifier * 100.0 - 100.0;
+		char buf[32];
+		if ( shopModifier < 0.0 )
+		{
+			snprintf(buf, sizeof(buf), "%+.f%%", shopModifier);
+		}
+		else
+		{
+			snprintf(buf, sizeof(buf), "%.f%%", shopModifier);
+		}
+		discountValue->setText(buf);
+	}
+
+	updatePlayerGold(player.playernum);
 	updateShopGUIChatter(player.playernum);
 }
 

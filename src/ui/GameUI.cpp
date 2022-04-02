@@ -676,7 +676,7 @@ void createUINavigation(const int player)
 		const int glyphSize = 32;
 		const char* buttonFont = "fonts/pixel_maz.ttf#32#2";
 		auto magicButton = uiNavFrame->addButton("magic button");
-		magicButton->setText("Magic");
+		magicButton->setText(language[4115]);
 		magicButton->setFont(buttonFont);
 		magicButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		magicButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
@@ -712,7 +712,7 @@ void createUINavigation(const int player)
 			0xFFFFFFFF, "images/system/white.png", "magic button glyph")->disabled = true;
 
 		auto statusButton = uiNavFrame->addButton("status button");
-		statusButton->setText("Status");
+		statusButton->setText(language[4118]);
 		statusButton->setFont(buttonFont);
 		statusButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		statusButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
@@ -745,7 +745,7 @@ void createUINavigation(const int player)
 			0xFFFFFFFF, "images/system/white.png", "status button glyph")->disabled = true;
 
 		auto itemsButton = uiNavFrame->addButton("items button");
-		itemsButton->setText("Items");
+		itemsButton->setText(language[4116]);
 		itemsButton->setFont(buttonFont);
 		itemsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		itemsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
@@ -778,7 +778,7 @@ void createUINavigation(const int player)
 			0xFFFFFFFF, "images/system/white.png", "items button glyph")->disabled = true;
 
 		auto skillsButton = uiNavFrame->addButton("skills button");
-		skillsButton->setText("Skills");
+		skillsButton->setText(language[4117]);
 		skillsButton->setFont(buttonFont);
 		skillsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
 		skillsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
@@ -13423,7 +13423,7 @@ void createPlayerSpellList(const int player)
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 294 },
 			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
 		//bg->disabled = false;
@@ -13907,7 +13907,7 @@ void createShopGUI(const int player)
 		return;
 	}
 
-	SDL_Rect basePos{ 0, 0, 512, 328 };
+	SDL_Rect basePos{ 0, 0, 520, 334 };
 
 	Frame* frame = players[player]->inventoryUI.frame->addFrame("shop");
 	shopGUI.shopFrame = frame;
@@ -13928,6 +13928,11 @@ void createShopGUI(const int player)
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
 			"images/ui/Shop/Shop_Window_03C.png", "shop base img");
+
+		auto bottomEdgeCover = bgFrame->addImage(SDL_Rect{ 0, basePos.h - 10, 316, 10 },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
+		bottomEdgeCover->ontop = true;
 
 		const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto titleText = bgFrame->addField("shop name", 64);
@@ -13963,7 +13968,7 @@ void createShopGUI(const int player)
 		auto buyTooltipFrame = bgFrame->addFrame("buy tooltip frame");
 		buyTooltipFrame->setHollow(true);
 		buyTooltipFrame->setBorder(0);
-		buyTooltipFrame->setSize(SDL_Rect{ 0, basePos.h - 66, 310, 66 });
+		buyTooltipFrame->setSize(SDL_Rect{ 4, basePos.h - 66, 310, 66 });
 		buyTooltipFrame->setDisabled(true);
 
 		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
@@ -13985,26 +13990,31 @@ void createShopGUI(const int player)
 		auto itemNameText = buyTooltipFrame->addField("item display name", 1024);
 		itemNameText->setFont(itemFont);
 		itemNameText->setText("");
-		itemNameText->setHJustify(Field::justify_t::TOP);
-		itemNameText->setVJustify(Field::justify_t::LEFT);
+		itemNameText->setHJustify(Field::justify_t::LEFT);
+		itemNameText->setVJustify(Field::justify_t::TOP);
 		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		itemNameText->setColor(makeColor(201, 162, 100, 255));
 		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
 		itemValueText->setFont(itemFont);
 		itemValueText->setText("");
-		itemValueText->setHJustify(Field::justify_t::TOP);
-		itemValueText->setVJustify(Field::justify_t::LEFT);
+		itemValueText->setHJustify(Field::justify_t::LEFT);
+		itemValueText->setVJustify(Field::justify_t::TOP);
 		itemValueText->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		itemValueText->setColor(makeColor(201, 162, 100, 255));
 
 		auto buyPromptText = buyTooltipFrame->addField("buy prompt txt", 128);
 		buyPromptText->setFont(itemFont);
-		buyPromptText->setText("Buy");
-		buyPromptText->setHJustify(Field::justify_t::TOP);
-		buyPromptText->setVJustify(Field::justify_t::LEFT);
+		buyPromptText->setText("");
+		buyPromptText->setHJustify(Field::justify_t::LEFT);
+		buyPromptText->setVJustify(Field::justify_t::TOP);
 		buyPromptText->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		buyPromptText->setColor(makeColor(255, 255, 255, 255));
-		auto buyPromptGlyph = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		auto buyPromptFrame = buyTooltipFrame->addFrame("buy prompt frame");
+		buyPromptFrame->setHollow(true);
+		buyPromptFrame->setBorder(0);
+		buyPromptFrame->setSize(SDL_Rect{0, 0, 0, 0});
+		buyPromptFrame->setDisabled(true);
+		auto buyPromptGlyph = buyPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 			"", "buy prompt glyph");
 
 		auto chatWindow = bgFrame->addFrame("chatter");
@@ -14037,15 +14047,106 @@ void createShopGUI(const int player)
 		auto bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto chatText = chatWindow->addField("chat body", 1024);
 		chatText->setFont(bodyFont);
-		chatText->setText("Blank");
+		chatText->setText("");
 		chatText->setHJustify(Field::justify_t::TOP);
 		chatText->setVJustify(Field::justify_t::LEFT);
 		chatText->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		//chatText->setColor(makeColor(29, 16, 11, 255));
 		chatText->setTextColor(makeColor(29, 16, 11, 255));
 		chatText->setOutlineColor(makeColor(0, 0, 0, 1));
-		//chatText->setColor(makeColor(29, 16, 11, 255));
 
+		{
+			auto valueFont = "fonts/pixel_maz.ttf#32#2";
+
+			auto discountLabelText = bgFrame->addField("discount label", 32);
+			discountLabelText->setFont(valueFont);
+			discountLabelText->setText(language[4122]);
+			discountLabelText->setHJustify(Field::justify_t::RIGHT);
+			discountLabelText->setVJustify(Field::justify_t::TOP);
+			discountLabelText->setSize(SDL_Rect{ bgFrame->getSize().w - 106 - 180 - 12, bgFrame->getSize().h - 92 - 30, 180, 24 });
+			discountLabelText->setTextColor(makeColor(201, 162, 100, 255));
+			discountLabelText->setOutlineColor(makeColor(29, 16, 11, 255));
+
+			auto discountValue = bgFrame->addField("discount", 32);
+			discountValue->setFont(valueFont);
+			discountValue->setText("300%");
+			discountValue->setHJustify(Field::justify_t::RIGHT);
+			discountValue->setVJustify(Field::justify_t::TOP);
+			discountValue->setSize(SDL_Rect{ bgFrame->getSize().w - 80 - 18, bgFrame->getSize().h - 92 - 30, 80, 24 });
+			discountValue->setColor(makeColor(201, 162, 100, 255));
+
+			auto currentGoldText = bgFrame->addField("current gold", 32);
+			currentGoldText->setFont(valueFont);
+			currentGoldText->setText("");
+			currentGoldText->setHJustify(Field::justify_t::RIGHT);
+			currentGoldText->setVJustify(Field::justify_t::TOP);
+			currentGoldText->setSize(SDL_Rect{ bgFrame->getSize().w - 80 - 18, bgFrame->getSize().h - 92, 80, 24 });
+			currentGoldText->setColor(makeColor(201, 162, 100, 255));
+
+			auto currentGoldLabelText = bgFrame->addField("current gold label", 32);
+			currentGoldLabelText->setFont(valueFont);
+			currentGoldLabelText->setText(language[4119]);
+			currentGoldLabelText->setHJustify(Field::justify_t::RIGHT);
+			currentGoldLabelText->setVJustify(Field::justify_t::TOP);
+			currentGoldLabelText->setSize(SDL_Rect{ bgFrame->getSize().w - 106 - 100 - 12, bgFrame->getSize().h - 92, 100, 24 });
+			currentGoldLabelText->setTextColor(makeColor(201, 162, 100, 255));
+			currentGoldLabelText->setOutlineColor(makeColor(29, 16, 11, 255));
+
+			auto changeGoldText = bgFrame->addField("change gold", 32);
+			changeGoldText->setFont(valueFont);
+			changeGoldText->setText("");
+			changeGoldText->setHJustify(Field::justify_t::RIGHT);
+			changeGoldText->setVJustify(Field::justify_t::TOP);
+			changeGoldText->setSize(SDL_Rect{ bgFrame->getSize().w - 80 - 18, bgFrame->getSize().h - 92, 80, 24 });
+			changeGoldText->setColor(makeColor(233, 220, 70, 255));
+		}
+
+		{
+			auto promptFont = "fonts/pixel_maz.ttf#32#2";
+			auto buybackText = bgFrame->addField("buyback txt", 32);
+			buybackText->setFont(promptFont);
+			buybackText->setText(language[4120]);
+			buybackText->setHJustify(Field::justify_t::LEFT);
+			buybackText->setVJustify(Field::justify_t::TOP);
+			buybackText->setSize(SDL_Rect{ bgFrame->getSize().w - 178, bgFrame->getSize().h - 58, 178, 24 });
+			buybackText->setTextColor(makeColor(201, 162, 100, 255));
+			//buybackText->setOutlineColor(makeColor(29, 16, 11, 255));
+			buybackText->setOutlineColor(makeColor(0, 0, 0, 255));
+
+			auto buybackGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+				"", "buyback glyph");
+			buybackGlyph->disabled = true;
+
+			auto buybackBtn = bgFrame->addButton("buyback button");
+			buybackBtn->setSize(SDL_Rect{ bgFrame->getSize().w - 208, bgFrame->getSize().h - 50, 194, 26 });
+			buybackBtn->setFont(promptFont);
+			buybackBtn->setText(language[4120]);
+			buybackBtn->setColor(makeColor(255, 255, 255, 255));
+			buybackBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			buybackBtn->setHideGlyphs(true);
+			buybackBtn->setHideKeyboardGlyphs(true);
+			buybackBtn->setHideSelectors(true);
+			buybackBtn->setMenuConfirmControlType(0);
+			buybackBtn->setBackground("images/ui/Shop/Shop_Buyback_Button_00.png");
+			buybackBtn->setBackgroundHighlighted("images/ui/Shop/Shop_Buyback_ButtonHigh_00.png");
+			buybackBtn->setBackgroundActivated("images/ui/Shop/Shop_Buyback_ButtonPress_00.png");
+			buybackBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+
+			auto closeText = bgFrame->addField("close shop prompt", 32);
+			closeText->setFont(promptFont);
+			closeText->setText(language[4121]);
+			closeText->setHJustify(Field::justify_t::LEFT);
+			closeText->setVJustify(Field::justify_t::TOP);
+			closeText->setSize(SDL_Rect{ bgFrame->getSize().w - 178, bgFrame->getSize().h - 36, 178, 24 });
+			closeText->setTextColor(makeColor(201, 162, 100, 255));
+			//closeText->setOutlineColor(makeColor(29, 16, 11, 255));
+			closeText->setOutlineColor(makeColor(0, 0, 0, 255));
+
+			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+				"", "close shop glyph");
+			closeGlyph->disabled = true;
+			//closeText->setColor(makeColor(233, 220, 70, 255));
+		}
 		/*auto chatText = chatWindow->addField("chat header", 1024);
 		chatText->setFont(font);
 		chatText->setText("Header");
@@ -15702,6 +15803,23 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 			else if ( chestGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SHOP )
+		{
+			auto& shopGUI = player.shopGUI;
+			if ( !shopGUI.shopFrame
+				|| shopGUI.shopFrame->isDisabled()
+				|| player.inventory_mode != INVENTORY_MODE_ITEM
+				|| !shopGUI.bOpen )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( shopGUI.isInteractable )
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
@@ -22271,7 +22389,9 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	}
 
 	bool closeChestAction = false;
-	if ( !inputs.getUIInteraction(player.playernum)->selectedItem && player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST) )
+	if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
+		&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
+		&& !player.GUI.isDropdownActive() )
 	{
 		if ( openedChest[player.playernum] || bOpen )
 		{
