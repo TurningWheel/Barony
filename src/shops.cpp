@@ -185,11 +185,12 @@ void startTradingServer(Entity* entity, int player)
 
 -------------------------------------------------------------------------------*/
 
-void buyItemFromShop(const int player, Item* item)
+bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack)
 {
+	bOutConsumedEntireStack = false;
 	if ( !item )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats[player]->GOLD >= item->buyValue(player) )
@@ -210,6 +211,7 @@ void buyItemFromShop(const int player, Item* item)
 		}
 		itemPickup(player, itemToPickup);
 
+		shopChangeGoldEvent(player, -item->buyValue(player));
 		stats[player]->GOLD -= item->buyValue(player);
 
 		if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
@@ -300,14 +302,29 @@ void buyItemFromShop(const int player, Item* item)
 		{
 			item->count = 1; // so we consume it all up.
 		}
+		if ( item->count > 1 )
+		{
+			bOutConsumedEntireStack = false;
+		}
+		else
+		{
+			bOutConsumedEntireStack = true;
+		}
 		consumeItem(item, player);
+		return true;
 	}
 	else
 	{
 		shopspeech[player] = language[203 + rand() % 3];
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
+		if ( players[player]->isLocalPlayer() )
+		{
+			players[player]->shopGUI.animNoDeal = 1.0;
+			players[player]->shopGUI.animNoDealTicks = ticks;
+		}
 	}
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -318,11 +335,11 @@ void buyItemFromShop(const int player, Item* item)
 
 -------------------------------------------------------------------------------*/
 
-void sellItemToShop(const int player, Item* item)
+bool sellItemToShop(const int player, Item* item)
 {
 	if ( !item )
 	{
-		return;
+		return false;
 	}
 	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
 		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
@@ -337,7 +354,7 @@ void sellItemToShop(const int player, Item* item)
 			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
 		}
 		playSound(90, 64);
-		return;
+		return false;
 	}
 
 	bool deal = true;
@@ -458,7 +475,7 @@ void sellItemToShop(const int player, Item* item)
 		}
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
-		return;
+		return false;
 	}
 
 	if ( !deal )
@@ -466,7 +483,7 @@ void sellItemToShop(const int player, Item* item)
 		shopspeech[player] = language[212 + rand() % 3];
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
-		return;
+		return false;
 	}
 
 	if ( items[item->type].value * .75 <= item->sellValue(player) )
@@ -483,6 +500,8 @@ void sellItemToShop(const int player, Item* item)
 	{
 		sold->count = item->count;
 	}
+
+	shopChangeGoldEvent(player, item->sellValue(player));
 	stats[player]->GOLD += item->sellValue(player);
 
 	if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
@@ -557,6 +576,7 @@ void sellItemToShop(const int player, Item* item)
 	}
 	consumeItem(item, player);
 	sellitem[player] = NULL;
+	return true;
 }
 
 bool shopIsMysteriousShopkeeper(Entity* entity)

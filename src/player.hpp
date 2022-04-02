@@ -281,12 +281,6 @@ public:
 	float y_forceMaxStrafeThreshold = 0.7;
 
 	/*
-	 * Uses dpad to move the cursor around a shop's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleShopMovement(const int player);
-
-	/*
 	* Uses dpad to move the cursor through the item context menu and select entries.
 	* Returns true if moved.
 	*/
@@ -1033,6 +1027,14 @@ public:
 		std::string chatStrFull = "";
 		Sint32 itemPrice = -1;
 		std::string itemDesc = "";
+		Sint32 playerCurrentGold = 0;
+		Sint32 playerChangeGold = 0;
+		real_t animGold = 0.0;
+		Uint32 animGoldStartTicks = 0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animNoDeal = 0.0;
+		Uint32 animNoDealTicks = 0;
 
 		int selectedShopSlotX = -1;
 		int selectedShopSlotY = -1;
@@ -1048,6 +1050,7 @@ public:
 		void setItemDisplayNameAndPrice(Item* item);
 		const bool isItemSelectedFromShop(Item* item) const;
 		const bool isItemSelectedToSellToShop(Item* item) const;
+		bool warpMouseToSelectedShopItem(Item* snapToItem, Uint32 flags);
 		void clearItemDisplayed();
 
 		static int heightOffsetWhenNotCompact;

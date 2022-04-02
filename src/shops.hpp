@@ -31,8 +31,8 @@ extern char* shopkeepername[MAXPLAYERS];
 extern char shopkeepername_client[MAXPLAYERS][64];
 
 void startTradingServer(Entity* entity, int player);
-void buyItemFromShop(const int player, Item* item);
-void sellItemToShop(const int player, Item* item);
+bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack);
+bool sellItemToShop(const int player, Item* item);
 bool shopIsMysteriousShopkeeper(Entity* entity);
 extern int selectedShopSlot[MAXPLAYERS];
 extern std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems;
@@ -46,5 +46,6 @@ void closeShop(const int player);
  * Positive: Right.
  */
 void cycleShopCategories(const int player, int direction);
+void shopChangeGoldEvent(const int player, Sint32 amount);
 
 static const int NUM_SHOP_CATEGORIES = 8;

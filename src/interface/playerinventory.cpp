@@ -1483,6 +1483,37 @@ void select_chest_slot(int player, int currentx, int currenty, int diffx, int di
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	int lowestItemY = players[player]->shopGUI.MAX_SHOP_Y - 1;
+	if ( y < 0 )
+	{
+		y = lowestItemY;
+	}
+	if ( y > lowestItemY )
+	{
+		y = 0;
+	}
+
+	if ( x < 0 )
+	{
+		players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, y);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		return;
+	}
+	if ( x >= players[player]->shopGUI.MAX_SHOP_X )
+	{
+		players[player]->inventoryUI.selectSlot(0, y);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		return;
+	}
+	players[player]->shopGUI.selectShopSlot(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	int x = currentx + diffx;
@@ -1777,6 +1808,20 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 			return;
 		}
+		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
+		{
+			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
+			{
+				y = players[player]->shopGUI.MAX_SHOP_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			select_shop_slot(player, players[player]->shopGUI.MAX_SHOP_X - 1, y, 0, 0);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+			return;
+		}
 		else
 		{
 			x = inventoryUI.getSizeX() - 1;
@@ -1797,6 +1842,20 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			}
 			select_chest_slot(player, 0, y, 0, 0);
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+			return;
+		}
+		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
+		{
+			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
+			{
+				y = players[player]->shopGUI.MAX_SHOP_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			select_shop_slot(player, 0, y, 0, 0);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
 			return;
 		}
 		else
@@ -1867,19 +1926,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
-		if ( players[player]->gui_mode == GUI_MODE_SHOP )
-		{
-			warpInv = false;
-			y = inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
-
-			//Warp into shop inventory if shopkeep has any items.
-			if ( shopinvitems[player][0] )
-			{
-				selectedShopSlot[player] = 0;
-				warpMouseToSelectedShopSlot(player);
-			}
-		}
-		else if ( GenericGUI[player].isGUIOpen() )
+		if ( GenericGUI[player].isGUIOpen() )
 		{
 			warpInv = false;
 			y = inventoryUI.getSizeY() - 1;
@@ -6170,30 +6217,14 @@ void Player::Inventory_t::updateInventory()
 	if ( inputs.hasController(player) )
 	{
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
-		if ( players[player]->gui_mode == GUI_MODE_SHOP )
-		{
-			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_LEFT) )
-			{
-				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_LEFT);
-				cycleShopCategories(player, -1);
-			}
-			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_RIGHT) )
-			{
-				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_RIGHT);
-				cycleShopCategories(player, 1);
-			}
-		}
-
 		if ( radialMenuOpen )
 		{
 			// do nothing?
 		}
-		else if ( selectedShopSlot[player] < 0
-			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
+		else if ( !itemMenuOpen && GenericGUI[player].selectedSlot < 0
 			&& players[player]->GUI.handleInventoryMovement() ) // handleInventoryMovement should be at the end of this check
 		{
-			if ( selectedShopSlot[player] < 0
-				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
+			if ( GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
@@ -6207,17 +6238,14 @@ void Player::Inventory_t::updateInventory()
 				{
 					warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+				{
+					players[player]->shopGUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
 				}
-			}
-		}
-		else if ( selectedShopSlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
-		{
-			if ( selectedShopSlot[player] < 0 )
-			{
-				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
 		else if ( GenericGUI[player].selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
@@ -6621,7 +6649,6 @@ void Player::Inventory_t::updateInventory()
 	// draw contents of each slot
 	auto oldSelectedSlotFrame = frame->findFrame("inventory old selected item");
 	oldSelectedSlotFrame->setDisabled(true);
-
 	if ( shopGUI.bOpen && uidToEntity(shopkeeper[player]) )
 	{
 		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
@@ -6668,7 +6695,21 @@ void Player::Inventory_t::updateInventory()
 			{
 				if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 				{
-					updateSlotFrameFromItem(slotFrame, item);
+					static ConsoleVariable<bool> cvar_shop_backgrounds("/shopbackgrounds", false);
+					if ( *cvar_shop_backgrounds )
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else
+					{
+						bool oldIdentified = item->identified;
+						Sint32 oldBeatitude = item->beatitude;
+						item->identified = true;
+						item->beatitude = 0;
+						updateSlotFrameFromItem(slotFrame, item);
+						item->identified = oldIdentified;
+						item->beatitude = oldBeatitude;
+					}
 				}
 			}
 		}
