@@ -378,7 +378,7 @@ off over time.#
 
 224 Beware of picture books. I
 knew someone who touched one:
-thenext thing they knew, they
+the next thing they knew, they
 were all alone on a tiny island.#
 
 225 Thy skills shall improve as
@@ -4975,7 +4975,7 @@ for this option. (Required: %s, Current: %s)#
 3678 Your %s needs to be higher quality detect more object types.#
 3679 Your Tinkering skill is not high enough to decipher 
 any more gyrobot findings.#
-3680 Your Tinkering skill is are not high enough to decipher 
+3680 Your Tinkering skill is not high enough to decipher 
 any gyrobot findings.#
 3681 You can't repair equipped items!#
 3682 You repair the %s.#
@@ -6067,5 +6067,17 @@ Cast#
 4110 Unpin Timer From HUD#
 4111 Show Tooltip (Hold)#
 4112 Show Level Info (Hold)#
+4113 Buy#
+4114 Sell#
+4115 Spells#
+4116 Items#
+4117 Skills#
+4118 Status#
+4119 Your gold:#
+4120 View Buyback Items#
+4121 Stop Trading#
+4122 Store Markup:#
+4123 Resale Penalty:#
+
 
 4199 end#
