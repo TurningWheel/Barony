@@ -364,7 +364,7 @@ int totalScore(score_t* score)
 	}
 
 	amount += score->dungeonlevel * 500;
-	if ( score->victory == 3 )
+	if ( score->victory >= 3 )
 	{
 		amount += score->victory * 20000;
 	}

@@ -9587,7 +9587,7 @@ bind_failed:
 		new_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		new_button->setButtonsOffset(SDL_Rect{0, 29, 0, 0,});
 
-		if (skipintro) {
+		if (!gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
 			if (continueAvailable) {
 				continue_button->select();
 			} else {
@@ -9792,9 +9792,91 @@ bind_failed:
 		tooltip->setText("Help text goes here.");
 	}
 
-	static void createLobbyBrowser(Button& button) {
-		soundActivate();
+	static void refreshOnlineLobbies() {
+	    return; // WIP
 
+	    // close current window
+    #ifdef STEAMWORKS
+	    bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
+	    if ( connectingToLobbyWindow )
+	    {
+		    // we quit the connection window before joining lobby, but invite was mid-flight.
+		    denyLobbyJoinEvent = true;
+	    }
+	    else if ( joinLobbyWaitingForHostResponse )
+	    {
+	        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(
+	            static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED));
+
+		    // we quit the connection window after lobby join, but before host has accepted us.
+		    joinLobbyWaitingForHostResponse = false;
+
+		    return;
+	    }
+    #endif
+    #if defined USE_EOS
+	    if ( EOS.bConnectingToLobbyWindow )
+	    {
+		    // we quit the connection window before joining lobby, but invite was mid-flight.
+		    EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
+	    }
+	    else if ( EOS.bJoinLobbyWaitingForHostResponse )
+	    {
+		    // we quit the connection window after lobby join, but before host has accepted us.
+		    EOS.bJoinLobbyWaitingForHostResponse = false;
+		    buttonDisconnect(nullptr);
+		    openFailedConnectionWindow(CLIENT);
+		    strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
+		    return;
+	    }
+    #endif
+
+
+	    buttonCloseSubwindow(NULL);
+	    list_FreeAll(&button_l);
+	    deleteallbuttons = true;
+
+	    // create new window
+	    subwindow = 1;
+    #ifdef STEAMWORKS
+	    requestingLobbies = true;
+    #endif
+    #if defined USE_EOS
+	    EOS.bRequestingLobbies = true;
+    #endif // USE_EOS
+
+	    subx1 = xres / 2 - 256;
+	    subx2 = xres / 2 + 256;
+	    suby1 = yres / 2 - 64;
+	    suby2 = yres / 2 + 64;
+	    strcpy(subtext, language[1444]);
+    #ifdef STEAMWORKS
+	    //c_SteamMatchmaking_RequestLobbyList();
+	    //SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
+	    cpp_SteamMatchmaking_RequestLobbyList();
+    #endif
+
+	    LobbyHandler.selectedLobbyInList = 0;
+
+    #if defined USE_EOS
+    #ifdef STEAMWORKS
+	    if ( EOS.CurrentUserInfo.bUserLoggedIn )
+	    {
+		    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+			    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+	    }
+	    else
+	    {
+		    EOS.bRequestingLobbies = false; // don't attempt search if not logged in
+	    }
+    #else
+	    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+		    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+    #endif
+    #endif // USE_EOS
+	}
+
+	static void createLobbyBrowser(Button& button) {
 		static int selectedLobby;
 		selectedLobby = -1;
 
@@ -9983,7 +10065,7 @@ bind_failed:
                 SDLNet_Write16(DEFAULT_PORT, &net_packet->address.port);
                 sendPacket(net_sock, -1, net_packet, 0);
             } else {
-                // TODO
+                refreshOnlineLobbies();
             }
 
 		    assert(main_menu_frame);
@@ -10444,16 +10526,9 @@ bind_failed:
 	}
 
 	static void playNew(Button& button) {
-	    if (skipintro) {
-	        soundActivate();
-	        createLocalOrNetworkMenu();
-
-	        // remove "Play Game" window
-	        auto frame = static_cast<Frame*>(button.getParent());
-	        frame = static_cast<Frame*>(frame->getParent());
-	        frame->removeSelf();
-	    } else {
-	        skipintro = true;
+	    if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
+	        gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+			gameModeManager.Tutorial.writeToDocument();
 	        binaryPrompt(
 	            "Barony is a challenging game.\nWould you like to play a tutorial?",
 	            "Yes", "No",
@@ -10482,6 +10557,14 @@ bind_failed:
 	                    });
 	            },
 	            false, false); // both buttons are yellow
+        } else {
+	        soundActivate();
+	        createLocalOrNetworkMenu();
+
+	        // remove "Play Game" window
+	        auto frame = static_cast<Frame*>(button.getParent());
+	        frame = static_cast<Frame*>(frame->getParent());
+	        frame->removeSelf();
         }
 	}
 
@@ -11867,6 +11950,12 @@ bind_failed:
 				}
 				doNewGame(false);
 				destroyMainMenu();
+
+                // don't show the first time prompt anymore
+				if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
+					gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+					gameModeManager.Tutorial.writeToDocument();
+				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStartDummy) {
 			    // do nothing.
@@ -11875,7 +11964,6 @@ bind_failed:
 			    return;
 			}
 			else if (main_menu_fade_destination == FadeDestination::HallOfTrials) {
-	            skipintro = true; // so the user doesn't get prompted to play the tutorial again
 				destroyMainMenu();
 				multiplayer = SINGLE;
 				numplayers = 0;
