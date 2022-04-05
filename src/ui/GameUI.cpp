@@ -2565,6 +2565,11 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 	return true;
 }
 
+const int StatusEffectQueue_t::kEffectBread = -2;
+const int StatusEffectQueue_t::kEffectBloodHunger = -3;
+const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
+const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
+
 void StatusEffectQueue_t::updateAllQueuedEffects()
 {
 	std::unordered_set<int> effectSet;

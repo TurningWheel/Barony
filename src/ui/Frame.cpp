@@ -80,6 +80,7 @@ void Frame::guiInit() {
 	gui->setActualSize(guiRect);
 	gui->setHollow(true);
 
+#ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		char name[32] = "";
@@ -91,11 +92,13 @@ void Frame::guiInit() {
 		gameUIFrame[i]->setOwner(i);
 		gameUIFrame[i]->setDisabled(true);
 	}
+#endif
 
 	fboInit();
 }
 
 void Frame::guiDestroy() {
+#ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( gameUIFrame[i] )
@@ -103,6 +106,7 @@ void Frame::guiDestroy() {
 			gameUIFrame[i] = nullptr;
 		}
 	}
+#endif
 
 	if (gui) {
 		delete gui;
