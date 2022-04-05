@@ -287,6 +287,8 @@ void scoreDeconstructor(void* data);
 int saveScore();
 int totalScore(score_t* score);
 void loadScore(int score);
+void loadScore(score_t* score);
+bool deleteScore(bool multiplayer, int index);
 void saveAllScores(const std::string& scoresfilename);
 void loadAllScores(const std::string& scoresfilename);
 extern int savegameCurrentFileIndex;

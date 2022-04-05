@@ -80,6 +80,7 @@ void Frame::guiInit() {
 	gui->setActualSize(guiRect);
 	gui->setHollow(true);
 
+#ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		char name[32] = "";
@@ -91,11 +92,13 @@ void Frame::guiInit() {
 		gameUIFrame[i]->setOwner(i);
 		gameUIFrame[i]->setDisabled(true);
 	}
+#endif
 
 	fboInit();
 }
 
 void Frame::guiDestroy() {
+#ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( gameUIFrame[i] )
@@ -103,6 +106,7 @@ void Frame::guiDestroy() {
 			gameUIFrame[i] = nullptr;
 		}
 	}
+#endif
 
 	if (gui) {
 		delete gui;
@@ -412,14 +416,10 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			entry_t& entry = *list[i];
 
 			// draw highlighted background
-#ifndef EDITOR
-		    if (activated || !inputs.hasController(owner)) {
-#else
-            {
-#endif
+		    if (activated || mouseActive) {
 		        SDL_Rect pos;
-		        pos.x = _size.x + border + listOffset.x - scroll.x;
-		        pos.y = _size.y + border + listOffset.y + i * entrySize - scroll.y;
+		        pos.x = _size.x + border - scroll.x;
+		        pos.y = _size.y + border + i * entrySize - scroll.y;
 		        pos.w = _size.w;
 		        pos.h = entrySize;
 
@@ -1120,9 +1120,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			entryRect.x = _size.x + border - actualSize.x + listOffset.x; entryRect.w = _size.w - border * 2;
 			entryRect.y = _size.y + border + i * entrySize - actualSize.y + listOffset.y; entryRect.h = entrySize;
 
-			if ( mouseActive 
+			if (mouseActive && entry->clickable
 				&& rectContainsPoint(_size, omousex, omousey) 
-				&& rectContainsPoint(entryRect, omousex, omousey) ) {
+				&& rectContainsPoint(entryRect, omousex, omousey)) {
 				result.highlightTime = entry->highlightTime;
 				result.tooltip = entry->tooltip.c_str();
 				if (mouseActive) {
@@ -1134,6 +1134,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						entry->pressed = true;
 						activateEntry(*entry);
+						activate();
 					}
 				} else {
 					entry->pressed = false;
@@ -1204,7 +1205,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// scroll with arrows or left stick
-	if (usable && allowScrolling && allowScrollBinds) {
+	if (usable && allowScrolling && allowScrollBinds && scrollWithLeftControls) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
@@ -1764,6 +1765,7 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 		actualSize.y = (index + 1) * entrySize - size.h;
 		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 	}
+	syncScroll();
 }
 
 void Frame::activateEntry(entry_t& entry) {

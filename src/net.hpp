@@ -75,16 +75,16 @@ void closeNetworkInterfaces();
 // server/game flags
 extern Uint32 svFlags;
 extern Uint32 settings_svFlags;
+const Uint32 SV_FLAG_CHEATS  = 1 << 0;
+const Uint32 SV_FLAG_FRIENDLYFIRE = 1 << 1;
+const Uint32 SV_FLAG_MINOTAURS = 1 << 2;
+const Uint32 SV_FLAG_HUNGER  = 1 << 3;
+const Uint32 SV_FLAG_TRAPS = 1 << 4;
+const Uint32 SV_FLAG_HARDCORE = 1 << 5;
+const Uint32 SV_FLAG_CLASSIC = 1 << 6;
+const Uint32 SV_FLAG_KEEPINVENTORY = 1 << 7;
+const Uint32 SV_FLAG_LIFESAVING = 1 << 8;
 const Uint32 NUM_SERVER_FLAGS =  9;
-const Uint32 SV_FLAG_CHEATS  = 1;
-const Uint32 SV_FLAG_FRIENDLYFIRE = 2;
-const Uint32 SV_FLAG_MINOTAURS = 4;
-const Uint32 SV_FLAG_HUNGER  = 8;
-const Uint32 SV_FLAG_TRAPS = 16;
-const Uint32 SV_FLAG_HARDCORE = 32;
-const Uint32 SV_FLAG_CLASSIC = 64;
-const Uint32 SV_FLAG_KEEPINVENTORY = 128;
-const Uint32 SV_FLAG_LIFESAVING = 256;
 
 class SteamPacketWrapper
 {

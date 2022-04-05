@@ -394,6 +394,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		printlog(generationLog, levelset, seed);
 
 		conductGameChallenges[CONDUCT_MODDED] = 1;
+		gamemods_disableSteamAchievements = true;
 	}
 
 	std::string fullMapPath;
@@ -408,6 +409,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( checkMapHash == 0 )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
+		gamemods_disableSteamAchievements = true;
 	}
 
 	// store this map's seed
@@ -582,6 +584,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( checkMapHash == 0 )
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
+				gamemods_disableSteamAchievements = true;
 			}
 		}
 		else
@@ -625,6 +628,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( checkMapHash == 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
+			gamemods_disableSteamAchievements = true;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -730,6 +734,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( checkMapHash == 0 )
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
+				gamemods_disableSteamAchievements = true;
 			}
 
 			// level is successfully loaded, add it to the pool
@@ -906,6 +911,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( checkMapHash == 0 )
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
+					gamemods_disableSteamAchievements = true;
 				}
 
 				levelnum = 0;
@@ -5477,7 +5483,7 @@ void assignActions(map_t* map)
 				break;
 			}
 			// expansion end game portal:
-			case 129:
+			case 129: {
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 614;
@@ -5488,9 +5494,27 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				//entity->flags[INVISIBLE] = true;
-				entity->portalVictoryType = 3;
+				int victoryType;
+				switch (stats[clientnum]->playerRace) {
+				default: victoryType = 3; break;
+	            case RACE_HUMAN: victoryType = 4; break;
+	            case RACE_SKELETON: victoryType = 5; break;
+	            case RACE_VAMPIRE: victoryType = 5; break;
+	            case RACE_SUCCUBUS: victoryType = 5; break;
+	            case RACE_GOATMAN: victoryType = 3; break;
+	            case RACE_AUTOMATON: victoryType = 4; break;
+	            case RACE_INCUBUS: victoryType = 5; break;
+	            case RACE_GOBLIN: victoryType = 3; break;
+	            case RACE_INSECTOID: victoryType = 3; break;
+	            case RACE_RAT: victoryType = 3; break;
+	            case RACE_TROLL: victoryType = 3; break;
+	            case RACE_SPIDER: victoryType = 3; break;
+	            case RACE_IMP: victoryType = 5; break;
+				}
+				entity->portalVictoryType = victoryType;
 				entity->skill[28] = 1; // is a mechanism
 				break;
+			}
 			//sound source
 			case 130: 
 				entity->sizex = 2;
