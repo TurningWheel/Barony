@@ -86,6 +86,7 @@ public:
 		Uint32 color;
 		std::string image;
 
+        bool clickable = true;
 		bool pressed = false;
 		bool highlighted = false;
 		Uint32 highlightTime = 0;
@@ -341,6 +342,7 @@ public:
 	void    setDontTickChildren(const bool b) { dontTickChildren = b; }
 	void    setEntrySize(int _size) { entrySize = _size; }
 	void    setActivation(entry_t* entry) { activation = entry; }
+	void    setScrollWithLeftControls(const bool b) { scrollWithLeftControls = b; }
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -376,6 +378,7 @@ private:
 	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
 	bool dontTickChildren = false;                      //!< enable to prevent children from running their tick functions
 	int entrySize = 0;                                  //!< the height of every entry in the list (if 0, derived from font instead)
+	bool scrollWithLeftControls = true;                 //!< if true, left stick and left d-pad can scroll the frame if no items can be selected
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;

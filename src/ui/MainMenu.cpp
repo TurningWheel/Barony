@@ -4336,11 +4336,25 @@ bind_failed:
 		    "conduct_panel"
 		    );
 
-		auto conduct = subframe->addField("conduct", 1024);
-	    conduct->setFont(smallfont_outline);
-	    conduct->setSize(SDL_Rect{12, 364, 266, 98});
-	    conduct->setText("Conduct:");
-	    conduct->setColor(makeColor(203, 171, 101, 255));
+		auto conduct = subframe->addFrame("conduct");
+		conduct->setFont(smallfont_outline);
+		conduct->setSize(SDL_Rect{12, 364, 266, 98});
+		conduct->setActualSize(SDL_Rect{0, 0, 266, 98});
+		conduct->setScrollBarsEnabled(false);
+		conduct->setEntrySize(20);
+		conduct->setBorder(0);
+		conduct->setColor(0);
+		conduct->setSelectorOffset(SDL_Rect{-4, -4, 0, 0,});
+		conduct->setWidgetSearchParent("leaderboards");
+		conduct->addWidgetMovement("MenuListCancel", "conduct");
+		conduct->addWidgetAction("MenuCancel", "back_button");
+		conduct->addWidgetAction("MenuAlt1", "delete_entry");
+        conduct->addWidgetAction("MenuPageLeft", "tab_left");
+        conduct->addWidgetAction("MenuPageRight", "tab_right");
+        conduct->setWidgetRight("kills_left");
+        conduct->setSelectedEntryColor(makeColor(151, 115, 58, 255));
+		conduct->setScrollWithLeftControls(false);
+		conduct->setClickable(true);
 
         auto victory_plate = subframe->addImage(
             SDL_Rect{2, 280, 280, 82},
@@ -4442,7 +4456,6 @@ bind_failed:
 		character_counters->setColor(makeColor(151, 115, 58, 255));
 		character_counters->setHJustify(Field::justify_t::RIGHT);
 		character_counters->setVJustify(Field::justify_t::TOP);
-		//character_counters->setText("62/100\n86360\n30");
 
 		Field* character_attributes[6];
         for (int c = 0; c < 6; ++c) {
@@ -4463,21 +4476,38 @@ bind_failed:
 		kills_banner->setVJustify(Field::justify_t::CENTER);
 		kills_banner->setText("Kills:");
 
-		auto kills_left = subframe->addField("kills_left", 1024);
+		auto kills_left = subframe->addFrame("kills_left");
+		kills_left->setScrollBarsEnabled(false);
 		kills_left->setFont(smallfont_outline);
-		kills_left->setSize(SDL_Rect{300, 222, 144, 182});
-		kills_left->setColor(makeColor(151, 115, 58, 255));
-		kills_left->setHJustify(Field::justify_t::LEFT);
-		kills_left->setVJustify(Field::justify_t::TOP);
-		//kills_left->setText("5 rats\n14 goblins\n7 slimes");
+		kills_left->setSize(SDL_Rect{300, 222, 290, 182});
+		kills_left->setActualSize(SDL_Rect{0, 0, 144, 182});
+		kills_left->setEntrySize(20);
+		kills_left->setBorder(0);
+		kills_left->setColor(0);
+		kills_left->setWidgetSearchParent("leaderboards");
+		kills_left->addWidgetMovement("MenuListCancel", "kills_left");
+		kills_left->addWidgetAction("MenuCancel", "back_button");
+		kills_left->addWidgetAction("MenuAlt1", "delete_entry");
+        kills_left->addWidgetAction("MenuPageLeft", "tab_left");
+        kills_left->addWidgetAction("MenuPageRight", "tab_right");
+		kills_left->setWidgetLeft("conduct");
+		kills_left->addSyncScrollTarget("kills_right");
+        kills_left->setSelectedEntryColor(makeColor(101, 78, 39, 255));
+		kills_left->setSelectorOffset(SDL_Rect{-4, -4, 0, 0,});
+		kills_left->setScrollWithLeftControls(false);
+		kills_left->setClickable(true);
 
-		auto kills_right = subframe->addField("kills_right", 1024);
+		auto kills_right = subframe->addFrame("kills_right");
+		kills_right->setScrollBarsEnabled(false);
+		kills_right->setAllowScrollBinds(false);
 		kills_right->setFont(smallfont_outline);
 		kills_right->setSize(SDL_Rect{446, 222, 144, 182});
-		kills_right->setColor(makeColor(151, 115, 58, 255));
-		kills_right->setHJustify(Field::justify_t::LEFT);
-		kills_right->setVJustify(Field::justify_t::TOP);
-		//kills_right->setText("5 rats\n14 goblins\n7 slimes");
+		kills_right->setActualSize(SDL_Rect{0, 0, 144, 182});
+		kills_right->setHideSelectors(true);
+		kills_right->setHollow(true);
+		kills_right->setEntrySize(20);
+		kills_right->setBorder(0);
+		kills_right->setColor(0);
 
 		auto time_and_score_titles = subframe->addField("time_and_score_titles", 256);
 		time_and_score_titles->setFont(bigfont_outline);
@@ -4493,7 +4523,6 @@ bind_failed:
 		time_and_score->setColor(makeColor(203, 171, 101, 255));
 		time_and_score->setHJustify(Field::justify_t::RIGHT);
 		time_and_score->setVJustify(Field::justify_t::CENTER);
-		//time_and_score->setText("03:48:76\n37801131");
 
         static auto updateStats = [](score_t* score){
             if (!score) {
@@ -4525,14 +4554,72 @@ bind_failed:
             assert(victory_plate_header);
             victory_plate_header->path = victory.header_image;
 
-            std::string conduct_str = "Conduct:\n";
-
-		    auto conduct = subframe->findField("conduct");
+		    auto conduct = subframe->findFrame("conduct");
 		    assert(conduct);
+		    conduct->clearEntries();
+		    conduct->setActualSize(SDL_Rect{0, 0, 266, 98});
+		    auto conduct_header = conduct->addEntry("header", true);
+		    conduct_header->text = "Voluntary Challenges:";
+		    conduct_header->color = makeColor(203, 171, 101, 255);
 
-		    /*if (score->conductPenniless) {
-		        conduct_str += "
-		    }*/
+		    const char* conduct_strs[][2] = {
+		        {"penniless", "You were penniless."},
+		        {"foodless", "You ate nothing."},
+		        {"vegetarian", "You were vegetarian."},
+		        {"illiterate", "You were illiterate."},
+		        {"hardcore", "You were hardcore."},
+		        {"cheats_enabled", "You cheated."},
+		        {"multiplayer", "You played with friends."},
+		        {"classic_mode", "You played Classic Mode."},
+		        {"modded", "You played with mods."},
+		        {"brawler", "You used no weapons."},
+		        {"blessed_boots_speed", "You were very efficient."},
+		        {"boots_speed", "You were very quick."},
+		        {"keep_inventory", "You kept items after death."},
+		        {"life_saving", "You had an extra life."},
+		        {"accursed", "You were a vampire."},
+		        {"ranged_only", "You only used ranged weapons."},
+		    };
+
+		    bool conducts[] = {
+		        score->conductPenniless,
+		        score->conductFoodless,
+		        score->conductVegetarian,
+		        score->conductIlliterate,
+		        (bool)score->conductGameChallenges[CONDUCT_HARDCORE],
+		        (bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED],
+		        (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER],
+		        (bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE],
+		        (bool)score->conductGameChallenges[CONDUCT_MODDED],
+		        (bool)score->conductGameChallenges[CONDUCT_BRAWLER],
+		        (bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED],
+		        (bool)score->conductGameChallenges[CONDUCT_BOOTS_SPEED],
+		        (bool)score->conductGameChallenges[CONDUCT_KEEPINVENTORY],
+		        (bool)score->conductGameChallenges[CONDUCT_LIFESAVING],
+		        (bool)score->conductGameChallenges[CONDUCT_ACCURSED],
+		        (bool)score->conductGameChallenges[CONDUCT_RANGED_ONLY],
+		    };
+		    constexpr int num_conducts = sizeof(conducts) / sizeof(conducts[0]);
+
+            bool atLeastOneConduct = false;
+            for (int c = 0; c < num_conducts; ++c) {
+		        if (conducts[c]) {
+		            if (c == 15 && conducts[9]) {
+		                // skip the "ranged only" conduct
+		                // if we already established no weapons used!
+		                continue;
+		            }
+		            atLeastOneConduct = true;
+		            auto entry = conduct->addEntry(conduct_strs[c][0], true);
+		            entry->text = conduct_strs[c][1];
+		            entry->color = makeColor(203, 171, 101, 255);
+		        }
+		    }
+		    if (!atLeastOneConduct) {
+	            auto entry = conduct->addEntry("none", true);
+	            entry->text = "None";
+	            entry->color = makeColor(203, 171, 101, 255);
+		    }
 
             char buf[1024];
 
@@ -4567,44 +4654,39 @@ bind_failed:
                 character_attributes[c]->setText(buf);
 		    }
 
-            auto kills_left = subframe->findField("kills_left");
-            assert(kills_left);
-            std::string kills_str;
-            int monster_index = 0;
-            int monster_counter = 0;
-            for (; monster_index < NUMMONSTERS && monster_counter < 10; ++monster_index) {
-                if (score->kills[monster_index] <= 0) {
-                    continue;
-                }
-                if (score->kills[monster_index] == 1) {
-                    snprintf(buf, sizeof(buf), "%3d %s\n",
-                        score->kills[monster_index], language[90 + monster_index]);
-                } else {
-                    snprintf(buf, sizeof(buf), "%3d %s\n",
-                        score->kills[monster_index], language[111 + monster_index]);
-                }
-                kills_str += buf;
-                ++monster_counter;
-            }
-            kills_left->setText(kills_str.c_str());
+            auto kills_left = subframe->findFrame("kills_left"); assert(kills_left);
+		    kills_left->setActualSize(SDL_Rect{0, 0, 144, 182});
+		    kills_left->clearEntries();
 
-		    auto kills_right = subframe->findField("kills_right");
-		    assert(kills_right);
-            kills_str = "";
-            for (; monster_index < NUMMONSTERS; ++monster_index) {
-                if (score->kills[monster_index] <= 0) {
+            auto kills_right = subframe->findFrame("kills_right"); assert(kills_right);
+		    kills_right->setActualSize(SDL_Rect{0, 0, 144, 182});
+		    kills_right->clearEntries();
+
+            bool noKillsAtAll = true;
+            auto kills = kills_left;
+            for (int c = 0; c < NUMMONSTERS; ++c) {
+                if (score->kills[c] <= 0) {
                     continue;
                 }
-                if (score->kills[monster_index] == 1) {
-                    snprintf(buf, sizeof(buf), "%3d %s\n",
-                        score->kills[monster_index], language[90 + monster_index]);
+                if (score->kills[c] == 1) {
+                    snprintf(buf, sizeof(buf), "%3d %s",
+                        score->kills[c], language[90 + c]);
                 } else {
-                    snprintf(buf, sizeof(buf), "%3d %s\n",
-                        score->kills[monster_index], language[111 + monster_index]);
+                    snprintf(buf, sizeof(buf), "%3d %s",
+                        score->kills[c], language[111 + c]);
                 }
-                kills_str += buf;
+                auto kill = kills->addEntry(buf, true);
+                kill->color = makeColor(151, 115, 58, 255);
+                kill->text = buf;
+                kill->clickable = (kills == kills_left);
+                kills = (kills == kills_left) ? kills_right : kills_left;
+                noKillsAtAll = false;
             }
-            kills_right->setText(kills_str.c_str());
+            if (noKillsAtAll) {
+                auto entry = kills_left->addEntry("no_kills", true);
+                entry->color = makeColor(151, 115, 58, 255);
+                entry->text = "None";
+            }
 
             const Uint32 time = score->completionTime / TICKS_PER_SECOND;
             const Uint32 hour = time / 3600;
@@ -4662,6 +4744,11 @@ bind_failed:
                         button->setTextColor(makeColor(203,171,101,255));
                         button->setTextHighlightColor(makeColor(231,213,173,255));
                         button->setWidgetSearchParent("leaderboards");
+		                button->addWidgetAction("MenuCancel", "back_button");
+		                button->addWidgetAction("MenuAlt1", "delete_entry");
+		                button->addWidgetAction("MenuPageLeft", "tab_left");
+		                button->addWidgetAction("MenuPageRight", "tab_right");
+		                button->setWidgetRight("conduct");
                         if (node->prev) {
                             char buf[128];
                             auto prev = (score_t*)node->prev->element;
@@ -4719,9 +4806,26 @@ bind_failed:
 #ifdef STEAMWORKS
 #endif
             }
+
+            auto subframe = window->findFrame("subframe"); assert(subframe);
+		    auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
+            auto slider = window->findSlider("scroll_slider"); assert(slider);
+            auto conduct = subframe->findFrame("conduct"); assert(conduct);
+		    if (list->getButtons().empty()) {
+		        delete_entry->setWidgetLeft("");
+		        delete_entry->setWidgetUp("");
+		        slider->setWidgetRight("");
+		        conduct->setWidgetLeft("");
+		    } else {
+		        auto name = list->getButtons()[0]->getName();
+		        delete_entry->setWidgetLeft(name);
+		        delete_entry->setWidgetUp(name);
+		        slider->setWidgetRight(name);
+		        conduct->setWidgetLeft(name);
+		    }
             };
 
-#define TAB_FN(X) [](Button& button){soundActivate(); repopulate_list(X);}
+#define TAB_FN(X) [](Button& button){soundActivate(); button.select(); repopulate_list(X);}
         struct Tab {
             const char* name;
             const char* text;
@@ -4750,6 +4854,18 @@ bind_failed:
             constexpr int xbegin = (992 - fullw) / 2;
             const int x = xbegin + (184 + 20) * c;
             tab->setSize(SDL_Rect{x, 70, 184, 64});
+
+		    tab->setWidgetSearchParent(window->getName());
+            tab->addWidgetAction("MenuCancel", "back_button");
+            tab->addWidgetAction("MenuAlt1", "delete_entry");
+            tab->addWidgetAction("MenuPageLeft", "tab_left");
+            tab->addWidgetAction("MenuPageRight", "tab_right");
+            if (c > 0) {
+                tab->setWidgetLeft(tabs[c - 1].name);
+            }
+            if (c < num_tabs - 1) {
+                tab->setWidgetRight(tabs[c + 1].name);
+            }
         }
 
 		auto tab_left = window->addButton("tab_left");
@@ -4767,6 +4883,12 @@ bind_failed:
                 tab->activate();
             }
 		    });
+		tab_left->setWidgetSearchParent(window->getName());
+        tab_left->addWidgetAction("MenuCancel", "back_button");
+        tab_left->addWidgetAction("MenuAlt1", "delete_entry");
+        tab_left->addWidgetAction("MenuPageLeft", "tab_left");
+        tab_left->addWidgetAction("MenuPageRight", "tab_right");
+        tab_left->setWidgetRight(tabs[0].name);
 
 		auto tab_right = window->addButton("tab_right");
 		tab_right->setSize(SDL_Rect{914, 72, 38, 58});
@@ -4783,6 +4905,12 @@ bind_failed:
                 tab->activate();
             }
 		    });
+		tab_right->setWidgetSearchParent(window->getName());
+        tab_right->addWidgetAction("MenuCancel", "back_button");
+        tab_right->addWidgetAction("MenuAlt1", "delete_entry");
+        tab_right->addWidgetAction("MenuPageLeft", "tab_left");
+        tab_right->addWidgetAction("MenuPageRight", "tab_right");
+        tab_right->setWidgetLeft(tabs[num_tabs - 1].name);
 
         auto slider = window->addSlider("scroll_slider");
         slider->setRailSize(SDL_Rect{38, 170, 30, 420});
@@ -4809,13 +4937,18 @@ bind_failed:
 		    slider->setMaxValue((float)std::max(0, actualSize.h - list->getSize().h));
 			});
 		slider->setWidgetSearchParent(window->getName());
+        slider->setWidgetSearchParent("leaderboards");
+        slider->addWidgetAction("MenuCancel", "back_button");
+        slider->addWidgetAction("MenuAlt1", "delete_entry");
+        slider->addWidgetAction("MenuPageLeft", "tab_left");
+        slider->addWidgetAction("MenuPageRight", "tab_right");
 
-		auto delete_entry = window->addButton("delete");
+		auto delete_entry = window->addButton("delete_entry");
 		delete_entry->setSize(SDL_Rect{740, 630, 164, 62});
 		delete_entry->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_00.png");
 		delete_entry->setColor(makeColor(255, 255, 255, 255));
 		delete_entry->setHighlightColor(makeColor(255, 255, 255, 255));
-		delete_entry->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		delete_entry->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 		delete_entry->setFont(smallfont_outline);
 		delete_entry->setText("Delete Entry");
 		delete_entry->setTickCallback([](Widget& widget){
@@ -4902,6 +5035,12 @@ bind_failed:
                         });
             }
 		    });
+		delete_entry->setWidgetSearchParent(window->getName());
+        delete_entry->setWidgetSearchParent("leaderboards");
+        delete_entry->addWidgetAction("MenuCancel", "back_button");
+        delete_entry->addWidgetAction("MenuAlt1", "delete_entry");
+        delete_entry->addWidgetAction("MenuPageLeft", "tab_left");
+        delete_entry->addWidgetAction("MenuPageRight", "tab_right");
 
 		repopulate_list(boardType);
     }
