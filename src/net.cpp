@@ -2988,7 +2988,22 @@ void clientHandlePacket()
 		{
 			return;
 		}
-		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv[clientnum]);
+
+		ItemType type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
+		Status status = static_cast<Status>((char)net_packet->data[8]);
+		Sint16 beatitude = (char)net_packet->data[9];
+		Sint16 count = (unsigned char)net_packet->data[10];
+		Uint32 appearance = SDLNet_Read32(&net_packet->data[11]);
+		bool identified = (bool)(net_packet->data[15] & 1);
+		bool buybackItem = (bool)((net_packet->data[15] >> 4) & 1);
+		int x = (char)net_packet->data[16];
+		int y = (char)net_packet->data[17];
+		if ( Item* item = newItem(type, status, beatitude, count, appearance, identified, shopInv[clientnum]) )
+		{
+			item->x = x;
+			item->y = y;
+			item->playerSoldItemToShop = buybackItem;
+		}
 	}
 
 	// close shop
@@ -4550,11 +4565,11 @@ void serverHandlePacket()
 		return;
 	}
 
-	node_t* node;
-	Entity* entity;
+	node_t* node = nullptr;
+	Entity* entity = nullptr;
 	int c = 0;
 	Uint32 j;
-	Item* item;
+	Item* item = nullptr;
 	double dx, dy, velx, vely, yaw, pitch, dist;
 	deleteent_t* deleteent;
 
@@ -5011,47 +5026,69 @@ void serverHandlePacket()
 		Entity* entity = uidToEntity(uidnum);
 		if ( !entity )
 		{
-			printlog("warning: client %d bought item from non-existent shop! (uid=%d)\n", client, uidnum);
+			printlog("[Shops]: warning: client %d bought item from non-existent shop! (uid=%d)\n", client, uidnum);
 			return;
 		}
 		Stat* entitystats = entity->getStats();
 		if ( !entitystats )
 		{
-			printlog("warning: client %d bought item from a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
+			printlog("[Shops]: warning: client %d bought item from a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
 			return;
 		}
 		Item* item = (Item*) malloc(sizeof(Item));
 		item->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8]));
 		item->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[12]));
-		item->beatitude = SDLNet_Read32(&net_packet->data[16]);
+		item->beatitude = SDLNet_Read16(&net_packet->data[16]);
 		item->appearance = SDLNet_Read32(&net_packet->data[20]);
 		item->count = SDLNet_Read32(&net_packet->data[24]);
-		if ( net_packet->data[28] )
+		item->identified = false;
+		if ( net_packet->data[28] & 1 )
 		{
 			item->identified = true;
 		}
-		else
+		item->playerSoldItemToShop = false;
+		if ( (net_packet->data[28] >> 4) & 1 )
 		{
-			item->identified = false;
+			item->playerSoldItemToShop = true;
 		}
+		item->x = (char)net_packet->data[18];
+		item->y = (char)net_packet->data[19];
 		node_t* nextnode;
 		for ( node = entitystats->inventory.first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
 			Item* item2 = (Item*)node->element;
+			if ( !item2 )
+			{
+				continue;
+			}
+			if ( item2->playerSoldItemToShop != item->playerSoldItemToShop )
+			{
+				continue;
+			}
+			if ( item2->x != item->x || item2->y != item->y )
+			{
+				continue;
+			}
 			if (!itemCompare(item, item2, false))
 			{
-				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
+				printlog("[Shops]: client %d bought item from shop (uid=%d)\n", client, uidnum);
 				if ( shopIsMysteriousShopkeeper(entity) )
 				{
 					buyItemFromMysteriousShopkeepConsumeOrb(client, *entity, *item2);
+				}
+				if ( itemTypeIsQuiver(item2->type) )
+				{
+					item2->count = 1; // so we consume it all up
 				}
 				consumeItem(item2, client);
 				break;
 			}
 		}
-		entitystats->GOLD += item->buyValue(client);
-		stats[client]->GOLD -= item->buyValue(client);
+
+		Sint32 buyValue = item->buyValue(client);
+		entitystats->GOLD += buyValue;
+		stats[client]->GOLD -= buyValue;
 		if ( players[client] && players[client]->entity )
 		{
 			if ( rand() % 2 )
@@ -5069,9 +5106,9 @@ void serverHandlePacket()
 					players[client]->entity->increaseSkill(PRO_TRADING);
 				}
 			}
-			else if ( item->buyValue(client) >= 150 )
+			else if ( buyValue >= 150 )
 			{
-				if ( item->buyValue(client) >= 300 || rand() % 2 )
+				if ( buyValue >= 300 || rand() % 2 )
 				{
 					players[client]->entity->increaseSkill(PRO_TRADING);
 				}
@@ -5110,39 +5147,56 @@ void serverHandlePacket()
 		Entity* entity = uidToEntity(uidnum);
 		if ( !entity )
 		{
-			printlog("warning: client %d sold item to non-existent shop! (uid=%d)\n", client, uidnum);
+			printlog("[Shops]: warning: client %d sold item to non-existent shop! (uid=%d)\n", client, uidnum);
 			return;
 		}
 		Stat* entitystats = entity->getStats();
 		if ( !entitystats )
 		{
-			printlog("warning: client %d sold item to a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
-			return;
-		}
-		if ( net_packet->data[28] )
-		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
-				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
-		}
-		else
-		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
-				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
-		}
-		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
-		
-		if ( !item )
-		{
-			printlog("SHPS: client %d sold item to shop (uid=%d) but could not create item!\n");
+			printlog("[Shops]: warning: client %d sold item to a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
 			return;
 		}
 
-		stats[client]->GOLD += item->sellValue(client);
+		bool identified = net_packet->data[28] == 1;
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])),
+			SDLNet_Read16(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), identified, nullptr);
+
+		if ( !item )
+		{
+			printlog("[Shops]: client %d sold item to shop (uid=%d) but could not create item!\n", client, uidnum);
+			return;
+		}
+
+		Sint32 goldValue = item->sellValue(client);
+		int xout = Player::ShopGUI_t::MAX_SHOP_X;
+		int yout = Player::ShopGUI_t::MAX_SHOP_Y;
+		Item* itemToStackInto = nullptr;
+		getShopFreeSlot(-1, &entitystats->inventory, item, xout, yout, itemToStackInto);
+		if ( itemToStackInto )
+		{
+			itemToStackInto->count += item->count;
+			itemToStackInto->playerSoldItemToShop = true;
+			free(item);
+			item = nullptr;
+			printlog("[Shops]: client %d sold item to shop (uid=%d), added to existing item x: %d y: %d\n", client, uidnum, itemToStackInto->x, itemToStackInto->y);
+		}
+		else
+		{
+			Item* item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &entitystats->inventory);
+			item2->x = xout;
+			item2->y = yout;
+			item2->playerSoldItemToShop = true;
+			free(item);
+			item = nullptr;
+			printlog("[Shops]: client %d sold item to shop (uid=%d), new item stack x: %d y: %d\n", client, uidnum, item2->x, item2->y);
+		}
+
+		stats[client]->GOLD += goldValue;
 		if ( players[client] && players[client]->entity )
 		{
 			if ( rand() % 2 )
 			{
-				if ( item->sellValue(client) <= 1 )
+				if ( goldValue <= 1 )
 				{
 					// selling cheap items does not increase trading past basic
 					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )

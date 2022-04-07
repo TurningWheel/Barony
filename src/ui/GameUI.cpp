@@ -921,6 +921,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_HOTBAR:
 				case Player::GUI_t::MODULE_CHARACTERSHEET:
 				case Player::GUI_t::MODULE_CHEST:
+				case Player::GUI_t::MODULE_SHOP:
 					leftBumperTxt->setDisabled(false);
 					leftBumperTxt->setText("/");
 					break;
@@ -937,6 +938,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_HOTBAR:
 				case Player::GUI_t::MODULE_CHARACTERSHEET:
 				case Player::GUI_t::MODULE_CHEST:
+				case Player::GUI_t::MODULE_SHOP:
 					rightBumperTxt->setDisabled(false);
 					rightBumperTxt->setText(language[4092]);
 					break;
@@ -1050,8 +1052,9 @@ void Player::HUD_t::updateUINavigation()
 		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
-			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)
-			&& !player.inventoryUI.chestGUI.bOpen )
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
 			{
 				justify = PANEL_JUSTIFY_LEFT;
@@ -1103,6 +1106,8 @@ void Player::HUD_t::updateUINavigation()
 					leftTriggerTxt->setText(language[4094]);
 				}
 			}
+
+			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
@@ -1193,7 +1198,9 @@ void Player::HUD_t::updateUINavigation()
 				&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 					|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
 					|| player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
-					|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET)) )
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST
+					|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP)) )
 			{
 				player.gui_mode = GUI_MODE_INVENTORY;
 				if ( player.shootmode )
@@ -12311,7 +12318,7 @@ void createInventoryTooltipFrame(const int player)
 		promptFrame->setDisabled(true);
 		promptFrame->setInheritParentFrameOpacity(false);
 
-		Uint32 color = makeColor( 255, 255, 255, 64);
+		Uint32 color = makeColor( 255, 255, 255, 192);
 
 		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
 			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
@@ -13394,6 +13401,8 @@ void loadHUDSettingsJSON()
 	}
 }
 
+const int kSpellListHeight = 294;
+const int kSpellListGridY = 2;
 void createPlayerSpellList(const int player)
 {
 	if ( !gui )
@@ -13411,82 +13420,20 @@ void createPlayerSpellList(const int player)
 	frame->setSize(SDL_Rect{ 0,
 		0,
 		210,
-		250 });
+		kSpellListHeight });
 	frame->setHollow(true);
 	frame->setBorder(0);
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
 
-	SDL_Rect basePos{ 0, 0, 210, 250 };
-	{
-		auto bgFrame = frame->addFrame("spell base");
-		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
-		const auto bgSize = bgFrame->getSize();
-		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 294 },
-			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
-		//bg->disabled = false;
-
-		auto slider = bgFrame->addSlider("spell slider");
-		slider->setBorder(16);
-		slider->setMinValue(0);
-		slider->setMaxValue(100);
-		slider->setValue(0);
-		SDL_Rect sliderPos{ basePos.w - 30, 8, 24, 234 };
-		slider->setRailSize(sliderPos);
-		slider->setHandleSize(SDL_Rect{ 0, 0, 24, 24 });
-		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		//slider->setCallback(callback);
-		slider->setColor(makeColor(255, 255, 255, 255));
-		slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		slider->setHandleImage("images/ui/Sliders/HUD_MiniSlider_Boulder_00.png");
-		slider->setRailImage("images/ui/Sliders/HUD_MiniSlider_Backing_234px_00.png");
-		slider->setHideGlyphs(true);
-		slider->setHideKeyboardGlyphs(true);
-		slider->setHideSelectors(true);
-		slider->setMenuConfirmControlType(0);
-
-		const char* font = "fonts/pixel_maz.ttf#32#2";
-		auto titleText = bgFrame->addField("title txt", 64);
-		titleText->setFont(font);
-		titleText->setText("Spell List");
-		titleText->setHJustify(Field::justify_t::CENTER);
-		titleText->setVJustify(Field::justify_t::CENTER);
-		titleText->setSize(SDL_Rect{ basePos.x + 4, 0, 162, 32 });
-		titleText->setColor(makeColor(188, 154, 114, 255));
-
-		auto closeBtn = bgFrame->addButton("close spell button");
-		SDL_Rect closeBtnPos = titleText->getSize();
-		closeBtnPos.x = closeBtnPos.x + closeBtnPos.w - 98;
-		closeBtnPos.w = 98;
-		closeBtnPos.h = 38;
-		closeBtn->setSize(closeBtnPos);
-		closeBtn->setColor(makeColor(255, 255, 255, 255));
-		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-		closeBtn->setText(language[4053]);
-		closeBtn->setFont(font);
-		closeBtn->setHideGlyphs(true);
-		closeBtn->setHideKeyboardGlyphs(true);
-		closeBtn->setHideSelectors(true);
-		closeBtn->setMenuConfirmControlType(0);
-		closeBtn->setBackground("images/ui/Inventory/HUD_Button_Base_Small_00.png");
-		closeBtn->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
-			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
-			{
-				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
-			}
-			players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
-		});
-	}
-
+	SDL_Rect basePos{ 0, 0, 210, kSpellListHeight };
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
 	players[player]->inventoryUI.spellSlotFrames.clear();
 
-	const int baseSlotOffsetX = 14;
-	const int baseSlotOffsetY = 0;
+	const int baseSlotOffsetX = 18;
+	const int baseSlotOffsetY = 36;
+	const int baseGridOffsetY = kSpellListGridY;
 
 	SDL_Rect invSlotsPos{ basePos.x + 4, basePos.y + 4, basePos.w, 242 };
 	{
@@ -13498,7 +13445,7 @@ void createPlayerSpellList(const int player)
 		spellSlotsFrame->setHollow(true);
 		spellSlotsFrame->setAllowScrollBinds(false);
 
-		auto gridImg = spellSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, 242 * numGrids },
+		auto gridImg = spellSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, 242 * numGrids },
 			0xFFFFFFFF, "images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;
 
@@ -13524,6 +13471,77 @@ void createPlayerSpellList(const int player)
 				createPlayerInventorySlotFrameElements(slotFrame);
 			}
 		}
+	}
+
+	{
+		auto bgFrame = frame->addFrame("spell base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
+		const auto bgSize = bgFrame->getSize();
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, kSpellListHeight },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
+
+		auto bgHeader = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 22 },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Inventory/HUD_Magic_TopHeader.png", "spell header img");
+		//bg->disabled = false;
+
+		auto slider = bgFrame->addSlider("spell slider");
+		slider->setBorder(16);
+		slider->setMinValue(0);
+		slider->setMaxValue(100);
+		slider->setValue(0);
+		SDL_Rect sliderPos{ basePos.w - 26, 8, 20, 234 };
+		slider->setRailSize(sliderPos);
+		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		//slider->setCallback(callback);
+		slider->setColor(makeColor(255, 255, 255, 255));
+		slider->setHighlightColor(makeColor(255, 255, 255, 255));
+		slider->setHandleImage("images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setRailImage("images/ui/Sliders/HUD_Slider_Blank.png");
+		slider->setHideGlyphs(true);
+		slider->setHideKeyboardGlyphs(true);
+		slider->setHideSelectors(true);
+		slider->setMenuConfirmControlType(0);
+
+		const char* font = "fonts/pixel_maz.ttf#32#2";
+		auto titleText = bgFrame->addField("title txt", 64);
+		titleText->setFont(font);
+		titleText->setText("SPELLS");
+		titleText->setHJustify(Field::justify_t::CENTER);
+		titleText->setVJustify(Field::justify_t::TOP);
+		titleText->setSize(SDL_Rect{ 56, 62, 96, 24 });
+		titleText->setColor(makeColor(236, 175, 28, 255));
+
+		auto closeBtn = bgFrame->addButton("close spell button");
+		SDL_Rect closeBtnPos;
+		closeBtnPos.x = 154;
+		closeBtnPos.y = 60;
+		closeBtnPos.w = 26;
+		closeBtnPos.h = 26;
+		closeBtn->setSize(closeBtnPos);
+		closeBtn->setColor(makeColor(255, 255, 255, 255));
+		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		closeBtn->setText("X");
+		closeBtn->setFont(font);
+		closeBtn->setHideGlyphs(true);
+		closeBtn->setHideKeyboardGlyphs(true);
+		closeBtn->setHideSelectors(true);
+		closeBtn->setMenuConfirmControlType(0);
+		closeBtn->setBackground("images/ui/Inventory/chests/Button_X_00.png");
+		closeBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_XHigh_00.png");
+		closeBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_XPress_00.png");
+
+		closeBtn->setCallback([](Button& button) {
+			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
+			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
+			}
+			players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
+		});
 	}
 }
 
@@ -13893,6 +13911,11 @@ void closeShopGUIAction(const int player)
 	}
 }
 
+void toggleShopBuybackView(const int player)
+{
+	players[player]->shopGUI.buybackView = !players[player]->shopGUI.buybackView;
+}
+
 void createShopGUI(const int player)
 {
 	if ( !gui )
@@ -13928,6 +13951,9 @@ void createShopGUI(const int player)
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
 			"images/ui/Shop/Shop_Window_03C.png", "shop base img");
+		auto bgGrid = bgFrame->addImage(SDL_Rect{ 12, 18, 206, 214},
+			makeColor(255, 255, 255, 64),
+			"images/ui/Shop/Shop_ItemSlots_Areas03.png", "shop grid img");
 
 		auto bottomEdgeCover = bgFrame->addImage(SDL_Rect{ 0, basePos.h - 10, 316, 10 },
 			makeColor(255, 255, 255, 255),
@@ -13980,6 +14006,10 @@ void createShopGUI(const int player)
 		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 52 }, 0xFFFFFFFF,
 			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
 
+		auto orbImg = buyTooltipFrame->addImage(SDL_Rect{ 210 - 8, 38, 16, 16 }, 0xFFFFFFFF,
+			"", "orb img");
+		orbImg->disabled = true;
+
 		auto slotFrame = buyTooltipFrame->addFrame("item slot frame");
 		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
 		slotFrame->setSize(slotPos);
@@ -14016,6 +14046,12 @@ void createShopGUI(const int player)
 		buyPromptFrame->setDisabled(true);
 		auto buyPromptGlyph = buyPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 			"", "buy prompt glyph");
+
+		auto discountFrame = bgFrame->addFrame("discount frame");
+		discountFrame->setHollow(true);
+		discountFrame->setBorder(0);
+		discountFrame->setSize(SDL_Rect{ bgFrame->getSize().w - 112, bgFrame->getSize().h - 124, 98, 24 });
+		discountFrame->setDisabled(false);
 
 		auto chatWindow = bgFrame->addFrame("chatter");
 		auto tl = chatWindow->addImage(SDL_Rect{ 0, 0, 34, 34 }, 0xFFFFFFFF,
@@ -14067,12 +14103,15 @@ void createShopGUI(const int player)
 			discountLabelText->setTextColor(makeColor(201, 162, 100, 255));
 			discountLabelText->setOutlineColor(makeColor(29, 16, 11, 255));
 
-			auto discountValue = bgFrame->addField("discount", 32);
+			auto discountImg = discountFrame->addImage(SDL_Rect{ 0, 0, 98, 24 }, 0xFFFFFFFF,
+				"images/ui/Shop/Shop_DiscountLabel_00.png", "discount img");
+
+			auto discountValue = discountFrame->addField("discount", 32);
 			discountValue->setFont(valueFont);
-			discountValue->setText("300%");
+			discountValue->setText("");
 			discountValue->setHJustify(Field::justify_t::RIGHT);
 			discountValue->setVJustify(Field::justify_t::TOP);
-			discountValue->setSize(SDL_Rect{ bgFrame->getSize().w - 80 - 18, bgFrame->getSize().h - 92 - 30, 80, 24 });
+			discountValue->setSize(SDL_Rect{ 14, 2, 80, 24 });
 			discountValue->setColor(makeColor(201, 162, 100, 255));
 
 			auto currentGoldText = bgFrame->addField("current gold", 32);
@@ -14099,6 +14138,7 @@ void createShopGUI(const int player)
 			changeGoldText->setVJustify(Field::justify_t::TOP);
 			changeGoldText->setSize(SDL_Rect{ bgFrame->getSize().w - 80 - 18, bgFrame->getSize().h - 92, 80, 24 });
 			changeGoldText->setColor(makeColor(233, 220, 70, 255));
+			changeGoldText->setOntop(true);
 		}
 
 		{
@@ -14131,6 +14171,9 @@ void createShopGUI(const int player)
 			buybackBtn->setBackgroundHighlighted("images/ui/Shop/Shop_Buyback_ButtonHigh_00.png");
 			buybackBtn->setBackgroundActivated("images/ui/Shop/Shop_Buyback_ButtonPress_00.png");
 			buybackBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			buybackBtn->setCallback([](Button& button) {
+				toggleShopBuybackView(button.getOwner());
+			});
 
 			auto closeText = bgFrame->addField("close shop prompt", 32);
 			closeText->setFont(promptFont);
@@ -14481,7 +14524,7 @@ void createPlayerInventory(const int player)
 		auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
 			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
-
+		//flourishImg->disabled = true;
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -21717,9 +21760,10 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	auto slider = baseFrame->findSlider("spell slider");
 	auto spellSlotsFrame = spellFrame->findFrame("spell slots");
 	auto baseBackgroundImg = baseFrame->findImage("spell base img");
+	auto baseHeaderImg = baseFrame->findImage("spell header img");
 	// handle height changing..
 	{
-		int frameHeight = 250;
+		int frameHeight = kSpellListHeight;
 		int totalFrameHeightChange = 0;
 		if ( !player.bUseCompactGUIHeight() )
 		{
@@ -21728,6 +21772,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		spellFramePos.h = frameHeight + totalFrameHeightChange;
 		spellFrame->setSize(spellFramePos);
 		baseBackgroundImg->pos.y = totalFrameHeightChange;
+		baseHeaderImg->pos.y = baseBackgroundImg->pos.y - baseHeaderImg->pos.h + 8;
 		SDL_Rect spellBasePos = baseFrame->getSize();
 		spellBasePos.h = spellFramePos.h;
 		baseFrame->setSize(spellBasePos);
@@ -21748,7 +21793,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 			(spellSlotsFramePos.h) * numGrids });
 		spellSlotsFrame->setSize(spellSlotsFramePos);
 		auto gridImg = spellSlotsFrame->findImage("grid img");
-		gridImg->pos.y = 0;
+		gridImg->pos.y = kSpellListGridY;
 		gridImg->pos.h = (spellSlotsFramePos.h) * numGrids;
 
 		SDL_Rect sliderPos = slider->getRailSize();
@@ -21847,8 +21892,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 		if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
 			&& !player.GUI.isDropdownActive()
-			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS)
-			&& !player.inventoryUI.chestGUI.bOpen )
+			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{
@@ -22354,7 +22398,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				promptGrab->setSize(textPos);
 				glyphPos.x = promptGrab->getSize().x + promptGrab->getSize().w - textGet->getWidth() - 4;
 			}
-			promptGrabImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+			promptGrabImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageRightAlt");
 			Image* glyphImage = Image::get(promptGrabImg->path.c_str());
 			if ( glyphImage )
 			{
@@ -22391,7 +22435,8 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	bool closeChestAction = false;
 	if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
 		&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
-		&& !player.GUI.isDropdownActive() )
+		&& !player.GUI.isDropdownActive()
+		&& !player.inventoryUI.spellPanel.bOpen )
 	{
 		if ( openedChest[player.playernum] || bOpen )
 		{
@@ -22400,7 +22445,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 				closeChestAction = true;
 			}
-			else if ( !promptGrab->isDisabled() && Input::inputs[player.playernum].consumeBinaryToggle("MenuPageLeftAlt") )
+			else if ( !promptGrab->isDisabled() && Input::inputs[player.playernum].consumeBinaryToggle("MenuPageRightAlt") )
 			{
 				takeAllChestGUIAction(player.playernum);
 			}

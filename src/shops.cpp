@@ -166,9 +166,15 @@ void startTradingServer(Entity* entity, int player)
 			{
 				net_packet->data[15] = 0;
 			}
+			if ( item->playerSoldItemToShop )
+			{
+				net_packet->data[15] |= (1 << 4);
+			}
+			net_packet->data[16] = (char)item->x;
+			net_packet->data[17] = (char)item->y;
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 16;
+			net_packet->len = 18;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
@@ -270,7 +276,9 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 			// send item that was bought to server
 			SDLNet_Write32(item->type, &net_packet->data[8]);
 			SDLNet_Write32(item->status, &net_packet->data[12]);
-			SDLNet_Write32(item->beatitude, &net_packet->data[16]);
+			SDLNet_Write16(item->beatitude, &net_packet->data[16]);
+			net_packet->data[18] = (char)item->x;
+			net_packet->data[19] = (char)item->y;
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 			if ( itemTypeIsQuiver(item->type) )
 			{
@@ -287,6 +295,10 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 			else
 			{
 				net_packet->data[28] = 0;
+			}
+			if ( item->playerSoldItemToShop )
+			{
+				net_packet->data[28] |= (1 << 4);
 			}
 			net_packet->data[29] = player;
 			net_packet->address.host = net_server.host;
@@ -335,25 +347,10 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 
 -------------------------------------------------------------------------------*/
 
-bool sellItemToShop(const int player, Item* item)
+bool isItemSellableToShop(const int player, Item* item)
 {
 	if ( !item )
 	{
-		return false;
-	}
-	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
-		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
-		&& itemIsEquipped(item, player) )
-	{
-		if ( item->beatitude > 0 )
-		{
-			messagePlayer(player, MESSAGE_INVENTORY, language[3219], item->getName());
-		}
-		else
-		{
-			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
-		}
-		playSound(90, 64);
 		return false;
 	}
 
@@ -361,7 +358,7 @@ bool sellItemToShop(const int player, Item* item)
 	if ( stats[player]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
 		//Skill capstone: Can sell anything to any shop.
-		if (shopkeepertype[player] == 10)
+		if ( shopkeepertype[player] == 10 )
 		{
 			deal = false;
 		}
@@ -419,7 +416,7 @@ bool sellItemToShop(const int player, Item* item)
 				}
 				break;
 			case 8: // hunting
-				if ( itemCategory(item) != WEAPON 
+				if ( itemCategory(item) != WEAPON
 					&& itemCategory(item) != THROWN
 					&& !itemTypeIsQuiver(item->type)
 					&& item->type != BRASS_KNUCKLES
@@ -435,6 +432,62 @@ bool sellItemToShop(const int player, Item* item)
 			default:
 				break;
 		}
+	}
+	return deal;
+}
+
+bool sellItemToShop(const int player, Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	bool deal = isItemSellableToShop(player, item);
+
+	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
+		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
+		&& itemIsEquipped(item, player) )
+	{
+		if ( item->beatitude > 0 )
+		{
+			messagePlayer(player, MESSAGE_INVENTORY, language[3219], item->getName());
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
+		}
+		playSound(90, 64);
+		return false;
+	}
+
+	if ( !deal )
+	{
+		if ( shopkeepertype[player] == 10 && 
+			(item->type == ARTIFACT_ORB_BLUE
+			|| item->type == ARTIFACT_ORB_GREEN
+			|| item->type == ARTIFACT_ORB_RED) )
+		{
+			shopspeech[player] = language[4126];
+		}
+		else
+		{
+			shopspeech[player] = language[212 + rand() % 3];
+		}
+		shoptimer[player] = ticks - 1;
+		playSound(90, 64);
+		return false;
+	}
+
+	int xout = Player::ShopGUI_t::MAX_SHOP_X;
+	int yout = Player::ShopGUI_t::MAX_SHOP_Y;
+	Item* itemToStackInto = nullptr;
+	if ( !getShopFreeSlot(player, nullptr, item, xout, yout, itemToStackInto) )
+	{
+		shopspeech[player] = language[4125];
+		shoptimer[player] = ticks - 1;
+		playSound(90, 64);
+		return false;
 	}
 
 	if ( itemIsEquipped(item, player) )
@@ -478,14 +531,6 @@ bool sellItemToShop(const int player, Item* item)
 		return false;
 	}
 
-	if ( !deal )
-	{
-		shopspeech[player] = language[212 + rand() % 3];
-		shoptimer[player] = ticks - 1;
-		playSound(90, 64);
-		return false;
-	}
-
 	if ( items[item->type].value * .75 <= item->sellValue(player) )
 	{
 		shopspeech[player] = language[209 + rand() % 3];
@@ -495,10 +540,26 @@ bool sellItemToShop(const int player, Item* item)
 		shopspeech[player] = language[206 + rand() % 3];
 	}
 	shoptimer[player] = ticks - 1;
-	Item* sold = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv[player]);
-	if ( itemTypeIsQuiver(item->type) )
+
+	if ( itemToStackInto != nullptr )
 	{
-		sold->count = item->count;
+		int addQty = 1;
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			addQty = item->count;
+		}
+		itemToStackInto->count += addQty;
+	}
+	else
+	{
+		Item* sold = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv[player]);
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			sold->count = item->count;
+		}
+		sold->playerSoldItemToShop = true;
+		sold->x = xout;
+		sold->y = yout;
 	}
 
 	shopChangeGoldEvent(player, item->sellValue(player));
@@ -546,7 +607,9 @@ bool sellItemToShop(const int player, Item* item)
 		// send item that was sold to server
 		SDLNet_Write32(item->type, &net_packet->data[8]);
 		SDLNet_Write32(item->status, &net_packet->data[12]);
-		SDLNet_Write32(item->beatitude, &net_packet->data[16]);
+		SDLNet_Write16(item->beatitude, &net_packet->data[16]);
+		net_packet->data[18] = (Sint8)xout;
+		net_packet->data[19] = (Sint8)yout;
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 		if ( itemTypeIsQuiver(item->type) )
 		{

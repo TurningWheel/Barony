@@ -1240,6 +1240,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
@@ -1415,6 +1419,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);

@@ -31,6 +31,8 @@ extern char* shopkeepername[MAXPLAYERS];
 extern char shopkeepername_client[MAXPLAYERS][64];
 
 void startTradingServer(Entity* entity, int player);
+bool isItemSellableToShop(const int player, Item* item);
+bool hideItemFromShopView(Item& item);
 bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack);
 bool sellItemToShop(const int player, Item* item);
 bool shopIsMysteriousShopkeeper(Entity* entity);

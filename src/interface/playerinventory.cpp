@@ -3789,7 +3789,9 @@ void Player::Inventory_t::cycleInventoryTab()
 	{
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_SPELL;
-		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP )
 		{
 			player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 			if ( auto selectedItem = inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -5636,7 +5638,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor && !players[player]->shootmode )
+	if ( !itemMenuOpen 
+		&& !selectedItem 
+		&& !inputs.getVirtualMouse(player)->draw_cursor 
+		&& !players[player]->shootmode
+		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{
 		auto options = getContextTooltipOptionsForItem(player, item);
 
@@ -6657,33 +6663,12 @@ void Player::Inventory_t::updateInventory()
 			Item* item = (Item*)node->element;
 			if ( !item ) { continue; }
 
-			if ( item == selectedItem )
+			if ( shopGUI.buybackView && !item->playerSoldItemToShop )
 			{
-				if ( shopGUI.isInteractable )
-				{
-					//Draw blue border around the slot if it's the currently grabbed item.
-					//drawBlueInventoryBorder(player, *item, x, y);
-					Frame* slotFrame = nullptr;
-
-					SDL_Rect borderPos{ 0, 0, oldSelectedSlotFrame->getSize().w, oldSelectedSlotFrame->getSize().h };
-					if ( slotFrame = getItemSlotFrame(selectedItem, selectedItem->x, selectedItem->y) )
-					{
-						borderPos.x = slotFrame->getAbsoluteSize().x;
-						borderPos.y = slotFrame->getAbsoluteSize().y;
-					}
-					if ( slotFrame )
-					{
-						++borderPos.x;
-						++borderPos.y;
-
-						oldSelectedSlotFrame->setDisabled(false);
-						oldSelectedSlotFrame->setSize(borderPos);
-
-						auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
-						oldSelectedSlotItem->disabled = false;
-						oldSelectedSlotItem->path = getItemSpritePath(player, *item);
-					}
-				}
+				continue;
+			}
+			else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
+			{
 				continue;
 			}
 
@@ -6691,7 +6676,8 @@ void Player::Inventory_t::updateInventory()
 			int itemy = item->y;
 
 			if ( itemx >= 0 && itemx < shopGUI.MAX_SHOP_X
-				&& itemy >= 0 && itemy < shopGUI.MAX_SHOP_Y )
+				&& itemy >= 0 && itemy < shopGUI.MAX_SHOP_Y
+				&& !hideItemFromShopView(*item) )
 			{
 				if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 				{
@@ -6959,6 +6945,19 @@ void Player::Inventory_t::updateInventory()
 			if ( stats[player]->HP <= 0 )
 			{
 				break;
+			}
+
+			if ( hideItemFromShopView(*item) )
+			{
+				continue;
+			}
+			if ( shopGUI.buybackView && !item->playerSoldItemToShop )
+			{
+				continue;
+			}
+			else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
+			{
+				continue;
 			}
 
 			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )

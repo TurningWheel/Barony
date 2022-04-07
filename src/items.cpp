@@ -79,6 +79,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->ownerUid = 0;
 	item->isDroppable = true;
 	item->playerSoldItemToShop = false;
+	item->itemHiddenFromShop = false;
 	if ( inventory )
 	{
 		Player::Inventory_t* playerInventoryUI = nullptr;
@@ -3248,6 +3249,10 @@ Item** itemSlot(Stat* const myStats, Item* const item)
 
 bool itemIsEquipped(const Item* const item, const int player)
 {
+	if ( player < 0 || !stats[player] )
+	{
+		return false;
+	}
 	if ( !item->node || item->node->list != &stats[player]->inventory )
 	{
 		return false;
@@ -5133,6 +5138,15 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 		}
 	}
 	return false;
+}
+
+bool Item::shouldItemStackInShop(bool ignoreStackLimit)
+{
+	node_t* itemNode = node;
+	node = nullptr; // to make isEquipped return false in shouldItemStack
+	bool result = shouldItemStack(clientnum, ignoreStackLimit);
+	node = itemNode;
+	return result;
 }
 
 

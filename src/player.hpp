@@ -1015,6 +1015,7 @@ public:
 		Player& player;
 		Frame* shopFrame = nullptr;
 		PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+		bool buybackView = false;
 		real_t animx = 0.0;
 		bool isInteractable = true;
 		bool bOpen = false;
@@ -1027,6 +1028,7 @@ public:
 		std::string chatStrFull = "";
 		Sint32 itemPrice = -1;
 		std::string itemDesc = "";
+		bool itemRequiresTitleReflow = true;
 		Sint32 playerCurrentGold = 0;
 		Sint32 playerChangeGold = 0;
 		real_t animGold = 0.0;

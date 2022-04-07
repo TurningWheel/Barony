@@ -706,44 +706,64 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					}
 					break;
 				case 10:
+				{
 					// mysterious merchant.
 					// general store
 					numitems = 15;
+					int itemx = 0;
+					int itemy = 0;
 					while ( numitems > 0 )
 					{
 						for ( auto orbCategories : shopkeeperMysteriousItems )
 						{
-							for (auto itemInCategory : orbCategories.second)
+							for ( auto itemInCategory : orbCategories.second )
 							{
-								if (itemInCategory == ENCHANTED_FEATHER)
+								if ( itemInCategory == ENCHANTED_FEATHER )
 								{
-									newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, true, &myStats->inventory);
+									Item* item = newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, true, &myStats->inventory);
+									item->x = itemx;
+									item->y = itemy;
 								}
-								else if (itemTypeIsQuiver(static_cast<ItemType>(itemInCategory)))
+								else if ( itemTypeIsQuiver(static_cast<ItemType>(itemInCategory)) )
 								{
-									newItem(static_cast<ItemType>(itemInCategory), SERVICABLE, 0, 50, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
+									Item* item = newItem(static_cast<ItemType>(itemInCategory), SERVICABLE, 0, 50, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
+									item->x = itemx;
+									item->y = itemy;
 								}
 								else
 								{
 									int bless = 0;
 									Status status = SERVICABLE;
-									if (itemInCategory >= CRYSTAL_SWORD && itemInCategory <= CRYSTAL_MACE)
+									if ( itemInCategory >= CRYSTAL_SWORD && itemInCategory <= CRYSTAL_MACE )
 									{
 										bless = 3;
 										status = EXCELLENT;
 									}
-									else if (itemInCategory >= ARTIFACT_SWORD && itemInCategory <= ARTIFACT_BOW)
+									else if ( itemInCategory >= ARTIFACT_SWORD && itemInCategory <= ARTIFACT_BOW )
 									{
 										status = SERVICABLE;
 									}
-									newItem(static_cast<ItemType>(itemInCategory), status, bless, 1, rand(), true, &myStats->inventory);
+									Item* item = newItem(static_cast<ItemType>(itemInCategory), status, bless, 1, rand(), true, &myStats->inventory);
+									item->x = itemx;
+									item->y = itemy;
 								}
 								--numitems;
+								++itemx;
+								if ( itemx >= Player::ShopGUI_t::MAX_SHOP_X )
+								{
+									itemx = 0;
+									++itemy;
+									itemy = std::min(itemy, Player::ShopGUI_t::MAX_SHOP_Y);
+								}
 							}
+							++itemy;
+							itemy = std::min(itemy, Player::ShopGUI_t::MAX_SHOP_Y);
+							itemx = 0;
 						}
 						break;
 					}
 					break;
+				}
 				default:
 					break;
 			}
@@ -751,32 +771,35 @@ void initShopkeeper(Entity* my, Stat* myStats)
 
 		node_t* nextnode;
 		// sort items into slots
-		std::vector<std::pair<int, Item*>> priceAndItems;
-		for ( node_t* node = myStats->inventory.first; node != nullptr; node = nextnode )
+		if ( my->monsterStoreType != 10 )
 		{
-			nextnode = node->next;
-			Item* item = (Item*)node->element;
-			if ( !item ) { continue; }
-
-			priceAndItems.push_back(std::make_pair(item->buyValue(clientnum), item));
-		}
-
-		std::sort(priceAndItems.begin(), priceAndItems.end(), [](std::pair<int, Item*> lhs, std::pair<int, Item*> rhs) {
-			return lhs.first > rhs.first;
-		});
-
-		int slotx = 0;
-		int sloty = 0;
-		for ( auto& v : priceAndItems )
-		{
-			Item* item = v.second;
-			item->x = slotx;
-			item->y = sloty;
-			++slotx;
-			if ( slotx >= Player::ShopGUI_t::MAX_SHOP_X )
+			std::vector<std::pair<int, Item*>> priceAndItems;
+			for ( node_t* node = myStats->inventory.first; node != nullptr; node = nextnode )
 			{
-				slotx = 0;
-				++sloty;
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( !item ) { continue; }
+
+				priceAndItems.push_back(std::make_pair(item->buyValue(clientnum), item));
+			}
+
+			std::sort(priceAndItems.begin(), priceAndItems.end(), [](std::pair<int, Item*> lhs, std::pair<int, Item*> rhs) {
+				return lhs.first > rhs.first;
+			});
+
+			int slotx = 0;
+			int sloty = 0;
+			for ( auto& v : priceAndItems )
+			{
+				Item* item = v.second;
+				item->x = slotx;
+				item->y = sloty;
+				++slotx;
+				if ( slotx >= Player::ShopGUI_t::MAX_SHOP_X )
+				{
+					slotx = 0;
+					++sloty;
+				}
 			}
 		}
 	}
