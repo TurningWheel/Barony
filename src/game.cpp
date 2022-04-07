@@ -6016,7 +6016,11 @@ int main(int argc, char** argv)
 			DebugTimers.printAllTimepoints();
 			DebugTimers.clearAllTimepoints();
 
-			//printTextFormatted(font8x8_bmp, 8, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
+			static ConsoleVariable<bool> cvar_frame_search_count("/framesearchcount", false);
+			if ( *cvar_frame_search_count )
+			{
+				printTextFormatted(font8x8_bmp, 300, 32, "findFrame() calls: %d / loop", Frame::numFindFrameCalls);
+			}
 
 			UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), false);
 
