@@ -32,6 +32,10 @@ bool hideItemFromShopView(Item& item)
 	{
 		return true;
 	}
+	if ( item.itemHiddenFromShop )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -316,6 +320,98 @@ void warpMouseToSelectedShopSlot(const int player)
 	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }
 
+bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, int& xout, int& yout, Item*& itemToStackInto)
+{
+	xout = Player::ShopGUI_t::MAX_SHOP_X;
+	yout = Player::ShopGUI_t::MAX_SHOP_Y;
+
+	list_t* shopkeeperInv = nullptr;
+	if ( player >= 0 )
+	{
+		shopkeeperInv = shopInv[player];
+	}
+	else
+	{
+		shopkeeperInv = shopInventory;
+	}
+	if ( !itemToSell || !shopkeeperInv )
+	{
+		return false;
+	}
+
+	bool lookForStackableItem = itemToSell->shouldItemStackInShop();
+	if ( lookForStackableItem )
+	{
+		if ( itemTypeIsQuiver(itemToSell->type) )
+		{
+			lookForStackableItem = false; // don't stack, as we always buy the whole stack
+		}
+	}
+	if ( lookForStackableItem )
+	{
+		for ( node_t* node = shopkeeperInv->first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( hideItemFromShopView(*item) )
+				{
+					continue;
+				}
+				if ( !item->playerSoldItemToShop )
+				{
+					continue;
+				}
+				if ( !itemCompare(item, itemToSell, false) )
+				{
+					xout = item->x;
+					yout = item->y;
+					itemToStackInto = item;
+					return true;
+				}
+			}
+		}
+	}
+
+	std::unordered_set<int> takenSlots;
+	for ( node_t* node = shopkeeperInv->first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item )
+		{
+			if ( hideItemFromShopView(*item) )
+			{
+				continue;
+			}
+			if ( !item->playerSoldItemToShop )
+			{
+				continue;
+			}
+			int key = item->x + 100 * item->y;
+			if ( item->x >= 0 && item->x < Player::ShopGUI_t::MAX_SHOP_X
+				&& item->y >= 0 && item->y < Player::ShopGUI_t::MAX_SHOP_Y )
+			{
+				takenSlots.insert(key);
+			}
+		}
+	}
+
+	for ( int y = 0; y < Player::ShopGUI_t::MAX_SHOP_Y; ++y )
+	{
+		for ( int x = 0; x < Player::ShopGUI_t::MAX_SHOP_X; ++x )
+		{
+			int key = x + 100 * y;
+			if ( takenSlots.find(key) == takenSlots.end() )
+			{
+				xout = x;
+				yout = y;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /*-------------------------------------------------------------------------------
 
 	updateShopWindow
@@ -364,90 +460,41 @@ void updateShopWindow(const int player)
 				if ( item->type == ARTIFACT_ORB_BLUE )
 				{
 					mysteriousShopkeeperBlueOrb = true;
+					item->itemHiddenFromShop = true;
 				}
 				else if ( item->type == ARTIFACT_ORB_RED )
 				{
 					mysteriousShopkeeperRedOrb = true;
+					item->itemHiddenFromShop = true;
 				}
 				else if ( item->type == ARTIFACT_ORB_GREEN )
 				{
 					mysteriousShopkeeperGreenOrb = true;
+					item->itemHiddenFromShop = true;
 				}
 			}
 		}
-	}
-
-	std::unordered_set<int> takenSlots;
-	std::vector<Item*> itemsToRearrange;
-	for ( node = shopInv[player]->first; node != NULL; node = node->next )
-	{
-		Item* item = (Item*)node->element;
-		if ( item )
+		for ( node = shopInv[player]->first; node != NULL; node = node->next )
 		{
-			if ( hideItemFromShopView(*item) )
+			Item* item = (Item*)node->element;
+			if ( item )
 			{
-				item->x = players[player]->shopGUI.MAX_SHOP_X;
-				item->y = players[player]->shopGUI.MAX_SHOP_Y;
-				continue;
-			}
-			if ( mysteriousShopkeeper )
-			{
-				if ( !mysteriousShopkeeperBlueOrb
-					&& shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].end() )
+				if ( shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].end() )
 				{
-					item->x = players[player]->shopGUI.MAX_SHOP_X;
-					item->y = players[player]->shopGUI.MAX_SHOP_Y;
+					item->itemHiddenFromShop = !mysteriousShopkeeperBlueOrb;
 					continue;
 				}
-				if ( !mysteriousShopkeeperGreenOrb
-					&& shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].end() )
+				if ( shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].end() )
 				{
-					item->x = players[player]->shopGUI.MAX_SHOP_X;
-					item->y = players[player]->shopGUI.MAX_SHOP_Y;
+					item->itemHiddenFromShop = !mysteriousShopkeeperGreenOrb;
 					continue;
 				}
-				if ( !mysteriousShopkeeperRedOrb
-					&& shopkeeperMysteriousItems[ARTIFACT_ORB_RED].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_RED].end() )
+				if ( shopkeeperMysteriousItems[ARTIFACT_ORB_RED].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_RED].end() )
 				{
-					item->x = players[player]->shopGUI.MAX_SHOP_X;
-					item->y = players[player]->shopGUI.MAX_SHOP_Y;
+					item->itemHiddenFromShop = !mysteriousShopkeeperRedOrb;
 					continue;
 				}
 			}
-			int key = item->x + 100 * item->y;
-			if ( item->x >= 0 && item->x < players[player]->shopGUI.MAX_SHOP_X
-				&& item->y >= 0 && item->y < players[player]->shopGUI.MAX_SHOP_Y
-				&& takenSlots.find(key) == takenSlots.end() )
-			{
-				takenSlots.insert(key);
-			}
-			else
-			{
-				itemsToRearrange.push_back(item);
-			}
-		}
-	}
-	for ( auto item : itemsToRearrange )
-	{
-		bool foundSlot = false;
-		for ( int y = 0; y < players[player]->shopGUI.MAX_SHOP_Y && !foundSlot; ++y )
-		{
-			for ( int x = 0; x < players[player]->shopGUI.MAX_SHOP_X && !foundSlot; ++x )
-			{
-				int key = x + 100 * y;
-				if ( takenSlots.find(key) == takenSlots.end() )
-				{
-					foundSlot = true;
-					takenSlots.insert(key);
-					item->x = x;
-					item->y = y;
-				}
-			}
-		}
-		if ( !foundSlot )
-		{
-			item->x = players[player]->shopGUI.MAX_SHOP_X;
-			item->y = players[player]->shopGUI.MAX_SHOP_Y;
 		}
 	}
 
@@ -761,54 +808,7 @@ void updateShopWindow(const int player)
 			}
 		}
 	}
-
-	// draw black box for shopkeeper
-	pos.x = x1 + 16;
-	pos.y = y1 + 16;
-	pos.w = 160;
-	pos.h = 160;
-	drawRect(&pos, 0, 255);
-
-	// draw shopkeeper
-	if ( uidToEntity(shopkeeper[player]) )
-	{
-		Entity* entity = uidToEntity(shopkeeper[player]);
-		if ( !entity->flags[INVISIBLE] )
-		{
-			pos.x = x1 + 16;
-			pos.y = y1 + 16;
-			pos.w = 160;
-			pos.h = 160;
-			if ( mysteriousShopkeeper )
-			{
-				drawImage(shopkeeper2_bmp, NULL, &pos);
-			}
-			else
-			{
-				drawImage(shopkeeper_bmp, NULL, &pos);
-			}
-		}
-		else
-		{
-			pos.x = x1 + 16;
-			pos.y = y1 + 16;
-			pos.w = 160;
-			pos.h = 160;
-			drawRect(&pos, 0, 255);
-		}
-	}
 }
-
-/*void warpMouseToselectedShopSlot() {
-	//Shop window boundaries.
-	int x1 = xres/2 - SHOPWINDOW_SIZEX/2, x2 = xres/2 + SHOPWINDOW_SIZEX/2;
-	int y1 = yres/2 - SHOPWINDOW_SIZEY/2, y2 = yres/2 + SHOPWINDOW_SIZEY/2;
-
-	//Calculate x that will be halfway in slot.
-	int x = x1 + (x2 - x1)/2 - inventory_bmp->w/2;
-	int y = y1 + 16 + 160 + (inventoryoption_bmp->h * selectedShopSlot[player]) + (inventoryoption_bmp->h / 2);
-	SDL_WarpMouseInWindow(screen, x, y);
-}*/
 
 inline Item* getItemInfoFromShop(const int player, int slot)
 {
@@ -1019,6 +1019,7 @@ void Player::ShopGUI_t::openShop()
 	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
 	clearItemDisplayed();
 	shopChangeGoldEvent(player.playernum, 0);
+	buybackView = false;
 }
 
 void Player::ShopGUI_t::selectShopSlot(const int x, const int y)
@@ -1067,8 +1068,23 @@ void Player::ShopGUI_t::closeShop()
 		}
 	}
 
+	if ( auto bgFrame = shopFrame->findFrame("shop base") )
+	{
+		if ( auto discountFrame = bgFrame->findFrame("discount frame") )
+		{
+			if ( auto discountValue = discountFrame->findField("discount") )
+			{
+				discountValue->setText("");
+			}
+		}
+	}
 	clearItemDisplayed();
+	itemRequiresTitleReflow = true;
 	shopChangeGoldEvent(player.playernum, 0);
+	buybackView = false;
+	chatStrFull = "";
+	chatStringLength = 0;
+	chatTicks = 0;
 }
 
 bool Player::ShopGUI_t::isShopSelected()
@@ -1249,6 +1265,16 @@ void updateShopGUIChatter(const int player)
 
 	auto pointer = chatWindow->findImage("pointer img");
 
+	auto shopkeeperImg = bgFrame->findImage("shopkeeper img");
+	if ( shopkeepertype[player] == 10 )
+	{
+		shopkeeperImg->path = "images/ui/Shop/shopkeeper2.png";
+	}
+	else
+	{
+		shopkeeperImg->path = "images/ui/Shop/shopkeeper.png";
+	}
+
 	int width = 288;
 	int height = 200;
 	const int pointerHeightAddition = 10;
@@ -1354,7 +1380,6 @@ void updateShopGUIChatter(const int player)
 void Player::ShopGUI_t::clearItemDisplayed()
 {
 	itemPrice = -1;
-	itemDesc = "";
 }
 
 void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
@@ -1365,9 +1390,13 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 	}
 	auto bgFrame = shopFrame->findFrame("shop base");
 	Field* buyOrSellPrompt = nullptr;
+	Frame::image_t* orbImg = nullptr;
 	if ( bgFrame )
 	{
-		buyOrSellPrompt = bgFrame->findFrame("buy tooltip frame")->findField("buy prompt txt");
+		auto buyTooltipFrame = bgFrame->findFrame("buy tooltip frame");
+		orbImg = buyTooltipFrame->findImage("orb img");
+		orbImg->disabled = true;
+		buyOrSellPrompt = buyTooltipFrame->findField("buy prompt txt");
 	}
 	if ( isItemFromShop(item) )
 	{
@@ -1381,10 +1410,29 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 		{
 			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
 		}
+		if ( itemDesc != buf )
+		{
+			itemRequiresTitleReflow = true;
+		}
 		itemDesc = buf;
 		if ( buyOrSellPrompt )
 		{
 			buyOrSellPrompt->setText(language[4113]); // 'buy'
+		}
+		if ( shopkeepertype[player.playernum] == 10 )
+		{
+			for ( auto orbCategories : shopkeeperMysteriousItems )
+			{
+				if ( orbCategories.second.find(item->type) != orbCategories.second.end() )
+				{
+					ItemType oldType = item->type;
+					item->type = (ItemType)orbCategories.first;
+					orbImg->path = getItemSpritePath(player.playernum, *item);
+					orbImg->disabled = false;
+					item->type = oldType;
+					break;
+				}
+			}
 		}
 	}
 	else
@@ -1398,6 +1446,10 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 		else
 		{
 			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+		}
+		if ( itemDesc != buf )
+		{
+			itemRequiresTitleReflow = true;
 		}
 		itemDesc = buf;
 		if ( buyOrSellPrompt )
@@ -1421,13 +1473,13 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 
 void Player::ShopGUI_t::updateShop()
 {
+	DebugTimers.addTimePoint("shop", "1");
 	updateShopWindow(player.playernum);
 
 	if ( !shopFrame )
 	{
 		return;
 	}
-
 	shopFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),
 		players[player.playernum]->camera_virtualWidth(),
@@ -1452,29 +1504,15 @@ void Player::ShopGUI_t::updateShop()
 			}
 			isInteractable = true;
 		}
-
-		//{
-		//	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		//	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx2)) / 2.0;
-		//	animx2 += setpointDiffX;
-		//	animx2 = std::min(1.0, animx2);
-		//}
 	}
 	else
 	{
 		animx = 0.0;
 		isInteractable = false;
-
-		//{
-		//	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		//	real_t setpointDiffX = fpsScale * std::max(.01, (animx2)) / 2.0;
-		//	animx2 -= setpointDiffX;
-		//	animx2 = std::max(0.0, animx2);
-		//}
 	}
 
 	auto shopFramePos = shopFrame->getSize();
-
+	DebugTimers.addTimePoint("shop", "2");
 	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
 		if ( !player.inventoryUI.bCompactView )
@@ -1545,7 +1583,8 @@ void Player::ShopGUI_t::updateShop()
 	bool purchaseItemAction = false;
 	bool usingGamepad = (inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor);
 
-	if ( (player.gui_mode != GUI_MODE_SHOP && player.inventory_mode != INVENTORY_MODE_SPELL) 
+	if ( !player.isLocalPlayerAlive()
+		|| (player.gui_mode != GUI_MODE_SHOP && player.inventory_mode != INVENTORY_MODE_SPELL) 
 		// cycleInventoryTab() sets proper gui mode after spell list viewing with INVENTORY_MODE_SPELL
 		// this allows us to browse spells while shop is open.
 		|| stats[player.playernum]->HP <= 0
@@ -1555,13 +1594,14 @@ void Player::ShopGUI_t::updateShop()
 		::closeShop(player.playernum);
 		return;
 	}
-
-	if ( bOpen && isInteractable )
+	DebugTimers.addTimePoint("shop", "3");
+	if ( bOpen && isInteractable && shopInv[player.playernum] )
 	{
 		if ( !inputs.getUIInteraction(player.playernum)->selectedItem
 			&& !player.GUI.isDropdownActive()
 			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP)
-			&& !player.inventoryUI.chestGUI.bOpen )
+			&& !player.inventoryUI.chestGUI.bOpen
+			&& !player.inventoryUI.spellPanel.bOpen )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{
@@ -1581,6 +1621,11 @@ void Player::ShopGUI_t::updateShop()
 					purchaseItemAction = true;
 					Input::inputs[player.playernum].consumeBinaryToggle("MenuRightClick");
 				}
+				else if ( usingGamepad && Input::inputs[player.playernum].binaryToggle("MenuPageRightAlt") )
+				{
+					toggleShopBuybackView(player.playernum);
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuPageRightAlt");
+				}
 			}
 		}
 	}
@@ -1592,6 +1637,18 @@ void Player::ShopGUI_t::updateShop()
 			Item* item = (Item*)node->element;
 			if ( item )
 			{
+				if ( hideItemFromShopView(*item) )
+				{
+					continue;
+				}
+				if ( buybackView && !item->playerSoldItemToShop )
+				{
+					continue;
+				}
+				else if ( !buybackView && item->playerSoldItemToShop )
+				{
+					continue;
+				}
 				if ( !hideItemFromShopView(*item)
 					&& item->x == getSelectedShopX()
 					&& item->y == getSelectedShopY()
@@ -1615,8 +1672,38 @@ void Player::ShopGUI_t::updateShop()
 		}
 	}
 
+	int buybackItems = 0;
+	if ( bOpen && shopInv[player.playernum] )
+	{
+		for ( node_t* node = shopInv[player.playernum]->first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( hideItemFromShopView(*item) )
+				{
+					continue;
+				}
+				if ( item->playerSoldItemToShop )
+				{
+					++buybackItems;
+				}
+			}
+		}
+	}
+	DebugTimers.addTimePoint("shop", "4");
 	auto bgFrame = shopFrame->findFrame("shop base");
 	assert(bgFrame);
+
+	auto bgGrid = bgFrame->findImage("shop grid img");
+	if ( buybackView )
+	{
+		bgGrid->path = "images/ui/Shop/Shop_ItemSlots_Buyback_Areas03.png";
+	}
+	else
+	{
+		bgGrid->path = "images/ui/Shop/Shop_ItemSlots_Areas03.png";
+	}
 
 	auto buyTooltipFrame = bgFrame->findFrame("buy tooltip frame");
 	buyTooltipFrame->setDisabled(false);
@@ -1650,11 +1737,29 @@ void Player::ShopGUI_t::updateShop()
 	auto buybackPromptGlyph = bgFrame->findImage("buyback glyph");
 	auto closePromptTxt = bgFrame->findField("close shop prompt");
 	auto closePromptGlyph = bgFrame->findImage("close shop glyph");
+	DebugTimers.addTimePoint("shop", "5");
+	char buybackText[32];
+	if ( buybackItems > 0 )
+	{
+		snprintf(buybackText, sizeof(buybackText), "%s (%d)", language[4120], buybackItems);
+	}
+	else
+	{
+		snprintf(buybackText, sizeof(buybackText), "%s", language[4120]);
+	}
 	if ( !drawGlyphs )
 	{
 		closeBtn->setInvisible(false);
 		buybackBtn->setInvisible(false);
 		buybackBtn->setDisabled(!isInteractable);
+		if ( buybackView )
+		{
+			buybackBtn->setText(language[4124]);
+		}
+		else
+		{
+			buybackBtn->setText(buybackText);
+		}
 		closeBtn->setDisabled(!isInteractable);
 
 		closePromptGlyph->disabled = true;
@@ -1672,7 +1777,14 @@ void Player::ShopGUI_t::updateShop()
 		closePromptTxt->setDisabled(false);
 		closePromptTxt->setText(language[4121]);
 		buybackPromptTxt->setDisabled(false);
-		buybackPromptTxt->setText(language[4120]);
+		if ( buybackView )
+		{
+			buybackPromptTxt->setText(language[4124]);
+		}
+		else
+		{
+			buybackPromptTxt->setText(buybackText);
+		}
 
 		closePromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
 		closePromptGlyph->disabled = true;
@@ -1708,6 +1820,7 @@ void Player::ShopGUI_t::updateShop()
 		}
 	}
 
+	DebugTimers.addTimePoint("shop", "6");
 	if ( itemPrice >= 0 && itemDesc.size() > 1 )
 	{
 		buyTooltipFrame->setDisabled(false);
@@ -1731,8 +1844,30 @@ void Player::ShopGUI_t::updateShop()
 
 		SDL_Rect namePos{ 76, 0, 208, 24 };
 		displayItemName->setSize(namePos);
-		displayItemName->setText(itemDesc.c_str());
-		displayItemName->reflowTextToFit(0);
+		if ( itemRequiresTitleReflow )
+		{
+			displayItemName->setText(itemDesc.c_str());
+			displayItemName->reflowTextToFit(0);
+			if ( displayItemName->getNumTextLines() > 2 )
+			{
+				// more than 2 lines, append ...
+				std::string copiedName = displayItemName->getText();
+				auto lastNewline = copiedName.find_last_of('\n');
+				copiedName = copiedName.substr(0U, lastNewline);
+				copiedName += "...";
+				displayItemName->setText(copiedName.c_str());
+				displayItemName->reflowTextToFit(0);
+				if ( displayItemName->getNumTextLines() > 2 )
+				{
+					// ... doesn't fit, replace last 3 characters with ...
+					copiedName = copiedName.substr(0U, copiedName.size() - 6);
+					copiedName += "...";
+					displayItemName->setText(copiedName.c_str());
+					displayItemName->reflowTextToFit(0);
+				}
+			}
+			itemRequiresTitleReflow = false;
+		}
 		namePos.h = displayItemName->getNumTextLines() * 24;
 
 		itemBgImg->pos.x = 10;
@@ -1840,43 +1975,61 @@ void Player::ShopGUI_t::updateShop()
 		buyTooltipFramePos.y = bgFrame->getSize().h - (buyTooltipFramePos.h + 4) * animTooltip;
 		buyTooltipFrame->setSize(buyTooltipFramePos);
 	}
+	DebugTimers.addTimePoint("shop", "7");
+	auto orbImg = buyTooltipFrame->findImage("orb img");
+	orbImg->pos.y = buyTooltipFrame->getSize().h - 28;
 
 	// discount values
+	auto discountFrame = bgFrame->findFrame("discount frame");
 	auto discountLabelText = bgFrame->findField("discount label");
-	auto discountValue = bgFrame->findField("discount");
+	auto discountValue = discountFrame->findField("discount");
 	real_t shopModifier = 0.0;
-	if ( player.GUI.activeModule == Player::GUI_t::MODULE_SHOP ) // buy prompt
+
+	discountFrame->setDisabled(false);
+	discountLabelText->setDisabled(false);
+	//discountValue->setDisabled(true);
+	if ( animTooltip > 0.0001 )
 	{
-		discountLabelText->setText(language[4122]);
-		shopModifier = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
-		shopModifier /= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
-		shopModifier = std::max(1.0, shopModifier);
-		shopModifier = shopModifier * 100.0 - 100.0;
-		char buf[32];
-		snprintf(buf, sizeof(buf), "%+.f%%", shopModifier);
-		discountValue->setText(buf);
+		discountValue->setDisabled(false);
 	}
-	else
+
+	if ( (itemPrice >= 0 && itemDesc.size() > 1) || !strcmp(discountValue->getText(), "") )
 	{
-		discountLabelText->setText(language[4123]);
-		shopModifier = (50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
-		shopModifier *= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
-		shopModifier = std::min(1.0, shopModifier);
-		shopModifier = shopModifier * 100.0 - 100.0;
-		char buf[32];
-		if ( shopModifier < 0.0 )
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_SHOP ) // buy prompt
 		{
+			discountLabelText->setText(language[4122]);
+			shopModifier = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+			shopModifier /= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
+			shopModifier = std::max(1.0, shopModifier);
+			shopModifier = shopModifier * 100.0 - 100.0;
+			char buf[32];
 			snprintf(buf, sizeof(buf), "%+.f%%", shopModifier);
+			discountValue->setText(buf);
 		}
 		else
 		{
-			snprintf(buf, sizeof(buf), "%.f%%", shopModifier);
+			discountLabelText->setText(language[4123]);
+			shopModifier = (50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+			shopModifier *= 1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f;
+			shopModifier = std::min(1.0, shopModifier);
+			shopModifier = shopModifier * 100.0 - 100.0;
+			char buf[32];
+			if ( shopModifier < 0.0 )
+			{
+				snprintf(buf, sizeof(buf), "%+.f%%", shopModifier);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%.f%%", shopModifier);
+			}
+			discountValue->setText(buf);
 		}
-		discountValue->setText(buf);
 	}
-
+	DebugTimers.addTimePoint("shop", "8");
 	updatePlayerGold(player.playernum);
+	DebugTimers.addTimePoint("shop", "9");
 	updateShopGUIChatter(player.playernum);
+	DebugTimers.addTimePoint("shop", "10");
 }
 
 const bool Player::ShopGUI_t::isItemFromShop(Item* item) const
