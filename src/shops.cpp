@@ -23,16 +23,12 @@
 list_t* shopInv[MAXPLAYERS] = { nullptr };
 Uint32 shopkeeper[MAXPLAYERS] = { 0 };
 Uint32 shoptimer[MAXPLAYERS] = { 0 };
-char* shopspeech[MAXPLAYERS] = { nullptr };
-int shopinventorycategory[MAXPLAYERS];
-int shopitemscroll[MAXPLAYERS] = { 0 };
-Item* shopinvitems[MAXPLAYERS][NUM_SHOP_GUI_SLOTS];
+std::string shopspeech[MAXPLAYERS] = { "" };
 Item* sellitem[MAXPLAYERS] = { nullptr };
 int shopkeepertype[MAXPLAYERS] = { 0 };
 char* shopkeepername[MAXPLAYERS] = { nullptr };
 char shopkeepername_client[MAXPLAYERS][64];
 
-int selectedShopSlot[MAXPLAYERS];
 std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 {
 	{ ARTIFACT_ORB_GREEN, { ARTIFACT_BOW, QUIVER_HUNTING, QUIVER_PIERCE } },
@@ -125,11 +121,9 @@ void startTradingServer(Entity* entity, int player)
 		shopkeeper[player] = entity->getUID();
 		shoptimer[player] = ticks - 1;
 		shopspeech[player] = language[194 + rand() % 3];
-		shopinventorycategory[player] = 7;
 		sellitem[player] = NULL;
 		shopkeepertype[player] = entity->monsterStoreType;
 		shopkeepername[player] = stats->name;
-		shopitemscroll[player] = 0;
 
 		players[player]->shopGUI.openShop();
 	}

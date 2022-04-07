@@ -2369,8 +2369,6 @@ void Player::init() // for use on new/restart game, UI related
 	hud.resetBars();
 	hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
 	inventoryUI.resetInventory();
-	selectedShopSlot[playernum] = -1;
-	shopinventorycategory[playernum] = -1;
 	characterSheet.setDefaultSkillsSheetBox();
 	characterSheet.setDefaultPartySheetBox();
 	characterSheet.setDefaultCharacterSheetBox();
@@ -2381,8 +2379,6 @@ void Player::cleanUpOnEntityRemoval()
 {
 	if ( isLocalPlayer() )
 	{
-		//selectedShopSlot[playernum] = -1;
-		//shopinventorycategory[playernum] = -1;
 		hud.reset();
 		movement.reset();
 		worldUI.reset();

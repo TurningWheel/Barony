@@ -2973,9 +2973,7 @@ void clientHandlePacket()
 		shopkeepername[clientnum] = shopkeepername_client[clientnum];
 		shoptimer[clientnum] = ticks - 1;
 		shopspeech[clientnum] = language[194 + rand() % 3];
-		shopinventorycategory[clientnum] = 7;
 		sellitem[clientnum] = NULL;
-		shopitemscroll[clientnum] = 0;
 
 		players[clientnum]->shopGUI.openShop();
 		return;

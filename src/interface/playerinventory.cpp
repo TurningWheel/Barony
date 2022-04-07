@@ -7086,7 +7086,6 @@ void Player::Inventory_t::updateInventory()
 
 					if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
 						&& !itemMenuOpen && !selectedItem
-						&& selectedShopSlot[player] < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
@@ -7383,7 +7382,6 @@ void Player::Inventory_t::updateInventory()
 					|| bIsTooltipDelayed()
 					|| sellingItemToShop)
 					&& !itemMenuOpen && !selectedItem
-					&& selectedShopSlot[player] < 0
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
 					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
