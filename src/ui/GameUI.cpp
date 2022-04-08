@@ -14203,63 +14203,6 @@ void createShopGUI(const int player)
 			closeGlyph->disabled = true;
 			//closeText->setColor(makeColor(233, 220, 70, 255));
 		}
-		/*auto chatText = chatWindow->addField("chat header", 1024);
-		chatText->setFont(font);
-		chatText->setText("Header");
-		chatText->setHJustify(Field::justify_t::TOP);
-		chatText->setVJustify(Field::justify_t::LEFT);
-		chatText->setSize(SDL_Rect{ 0, 0, 184, 82 });
-		chatText->setColor(makeColor(188, 154, 114, 255));*/
-		/*auto grabAllBtn = bgFrame->addButton("grab all button");
-		SDL_Rect grabBtnPos = titleText->getSize();
-		grabBtnPos.x = closeBtnPos.x + closeBtnPos.w - 86;
-		grabBtnPos.w = 86;
-		grabBtnPos.h = 26;
-		grabAllBtn->setSize(grabBtnPos);
-		grabAllBtn->setColor(makeColor(255, 255, 255, 255));
-		grabAllBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-		grabAllBtn->setText("Take All");
-		grabAllBtn->setFont(font);
-		grabAllBtn->setHideGlyphs(true);
-		grabAllBtn->setHideKeyboardGlyphs(true);
-		grabAllBtn->setHideSelectors(true);
-		grabAllBtn->setMenuConfirmControlType(0);
-		grabAllBtn->setBackground("images/ui/Inventory/chests/Button_TakeAll_00.png");
-		grabAllBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_TakeAllHigh_00.png");
-		grabAllBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_TakeAllPress_00.png");
-		grabAllBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
-		grabAllBtn->setCallback([](Button& button) {
-			takeAllChestGUIAction(button.getOwner());
-		});*/
-
-		//std::string promptFont = "fonts/pixel_maz.ttf#32#2";
-		//const int promptWidth = 60;
-		//const int promptHeight = 27;
-		//auto promptBack = bgFrame->addField("prompt back txt", 16);
-		//promptBack->setSize(SDL_Rect{ 0, 0, promptWidth, promptHeight });
-		//promptBack->setFont(promptFont.c_str());
-		//promptBack->setHJustify(Field::justify_t::RIGHT);
-		//promptBack->setVJustify(Field::justify_t::CENTER);
-		//promptBack->setText(language[4053]);
-		////promptBack->setOntop(true);
-		//promptBack->setColor(makeColor(201, 162, 100, 255));
-
-		//auto promptBackImg = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-		//	"", "prompt back img");
-		//promptBackImg->disabled = true;
-
-		//auto promptGrabAll = bgFrame->addField("prompt grab txt", 16);
-		//promptGrabAll->setSize(SDL_Rect{ 0, 0, promptWidth, promptHeight });
-		//promptGrabAll->setFont(promptFont.c_str());
-		//promptGrabAll->setHJustify(Field::justify_t::RIGHT);
-		//promptGrabAll->setVJustify(Field::justify_t::CENTER);
-		//promptGrabAll->setText(language[4091]);
-		////promptBack->setOntop(true);
-		//promptGrabAll->setColor(makeColor(201, 162, 100, 255));
-
-		//auto promptGrabImg = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-		//	"", "prompt grab img");
-		//promptBackImg->disabled = true;
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();

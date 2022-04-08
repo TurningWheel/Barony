@@ -687,7 +687,7 @@ void updateShopGUIChatter(const int player)
 				{
 					if ( textGet->getWidth() >= textPos.w )
 					{
-						chatText->reflowTextToFit(0);
+						chatText->reflowTextToFit(0); // if we want auto-reflowed text, but shop lines are currently aligned manually in lang file
 					}
 				}*/
 			}
