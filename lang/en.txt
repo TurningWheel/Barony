@@ -5775,20 +5775,20 @@ fine wares.#
 3908 #
 3909 #
 
-3910 Remove thy garment
-before we deal!#
-3911 Sheathe thy weapon
-before we deal!#
-3912 Stow away thy tool
-before we deal!#
-3913 Unhand thy potion
-before we deal!#
-3914 Unwield thy jewels
-before we deal!#
+3910 Remove thy garment before
+we deal!#
+3911 Sheathe thy weapon before
+we deal!#
+3912 Stow away thy tool before we
+deal!#
+3913 Unhand thy potion before we
+deal!#
+3914 Unwield thy jewels before we
+deal!#
 3915 Set down thy parchment
 before we deal!#
-3916 Unhand thy lunch
-before we deal!#
+3916 Unhand thy lunch before we
+deal!#
 3917 Locked - Legends & Pariahs DLC Required!
 Left click to view on the store page.#
 3918 disable mouse rotation speed limit#
