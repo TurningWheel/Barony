@@ -247,19 +247,19 @@ void updateShopWindow(const int player)
 	}
 
 	// draw speech
-	char buf[1024];
-	if ( sellitem[clientnum] && shopspeech[player] == language[215] )
-	{
-		// "I would sell that for %d gold"
-		snprintf(buf, sizeof(buf), shopspeech[player].c_str(), sellitem[player]->sellValue(player));
-		if ( players[player]->shopGUI.chatStrFull != buf )
-		{
-			players[player]->shopGUI.chatTicks = ticks;
-			players[player]->shopGUI.chatStrFull = buf;
-			players[player]->shopGUI.chatStringLength = 0;
-		}
-	}
-	else
+	char buf[1024] = "";
+	//if ( sellitem[clientnum] && shopspeech[player] == language[215] )
+	//{
+	//	// "I would sell that for %d gold"
+	//	snprintf(buf, sizeof(buf), shopspeech[player].c_str(), sellitem[player]->sellValue(player));
+	//	if ( players[player]->shopGUI.chatStrFull != buf )
+	//	{
+	//		players[player]->shopGUI.chatTicks = ticks;
+	//		players[player]->shopGUI.chatStrFull = buf;
+	//		players[player]->shopGUI.chatStringLength = 0;
+	//	}
+	//}
+	//else
 	{
 		if ( shopspeech[player] == language[194] // greetings
 			|| shopspeech[player] == language[195]

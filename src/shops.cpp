@@ -24,7 +24,6 @@ list_t* shopInv[MAXPLAYERS] = { nullptr };
 Uint32 shopkeeper[MAXPLAYERS] = { 0 };
 Uint32 shoptimer[MAXPLAYERS] = { 0 };
 std::string shopspeech[MAXPLAYERS] = { "" };
-Item* sellitem[MAXPLAYERS] = { nullptr };
 int shopkeepertype[MAXPLAYERS] = { 0 };
 std::string shopkeepername[MAXPLAYERS] = { "" };
 char shopkeepername_client[MAXPLAYERS][64];
@@ -121,7 +120,6 @@ void startTradingServer(Entity* entity, int player)
 		shopkeeper[player] = entity->getUID();
 		shoptimer[player] = ticks - 1;
 		shopspeech[player] = language[194 + rand() % 3];
-		sellitem[player] = NULL;
 		shopkeepertype[player] = entity->monsterStoreType;
 		shopkeepername[player] = stats->name;
 
@@ -637,7 +635,6 @@ bool sellItemToShop(const int player, Item* item)
 		item->count = 1; // so we consume it all up.
 	}
 	consumeItem(item, player);
-	sellitem[player] = NULL;
 	return true;
 }
 

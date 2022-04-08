@@ -21,7 +21,6 @@ extern list_t* shopInv[MAXPLAYERS];
 extern Uint32 shopkeeper[MAXPLAYERS];
 extern Uint32 shoptimer[MAXPLAYERS];
 extern std::string shopspeech[MAXPLAYERS];
-extern Item* sellitem[MAXPLAYERS];
 extern int shopkeepertype[MAXPLAYERS];
 extern std::string shopkeepername[MAXPLAYERS];
 extern char shopkeepername_client[MAXPLAYERS][64];

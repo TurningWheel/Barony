@@ -2973,7 +2973,6 @@ void clientHandlePacket()
 		shopkeepername[clientnum] = shopkeepername_client[clientnum];
 		shoptimer[clientnum] = ticks - 1;
 		shopspeech[clientnum] = language[194 + rand() % 3];
-		sellitem[clientnum] = NULL;
 
 		players[clientnum]->shopGUI.openShop();
 		return;
