@@ -26,7 +26,7 @@ Uint32 shoptimer[MAXPLAYERS] = { 0 };
 std::string shopspeech[MAXPLAYERS] = { "" };
 Item* sellitem[MAXPLAYERS] = { nullptr };
 int shopkeepertype[MAXPLAYERS] = { 0 };
-char* shopkeepername[MAXPLAYERS] = { nullptr };
+std::string shopkeepername[MAXPLAYERS] = { "" };
 char shopkeepername_client[MAXPLAYERS][64];
 
 std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
@@ -344,6 +344,11 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 bool isItemSellableToShop(const int player, Item* item)
 {
 	if ( !item )
+	{
+		return false;
+	}
+
+	if ( items[item->type].hasAttribute("UNSELLABLE") )
 	{
 		return false;
 	}

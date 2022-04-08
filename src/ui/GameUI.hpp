@@ -9,7 +9,7 @@ void doFrames();
 
 void doSharedMinimap();
 extern Frame* gameUIFrame[MAXPLAYERS];
-void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
+void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable = false);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
 void resetInventorySlotFrames(const int player);

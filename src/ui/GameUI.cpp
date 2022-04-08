@@ -11556,7 +11556,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	return false;
 }
 
-void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
+void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable)
 {
 	if ( !itemPtr || !slotFrame )
 	{
@@ -11770,7 +11770,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr)
 
 	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
 	{
-		bool greyedOut = false;
+		bool greyedOut = forceUnusable;
 		unusableFrame->setDisabled(true);
 
 		if ( !disableBackgrounds )
@@ -13961,13 +13961,26 @@ void createShopGUI(const int player)
 		bottomEdgeCover->ontop = true;
 
 		const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+		Uint32 titleColor = makeColor(219, 157, 20, 255);
+		Uint32 titleOutline = makeColor(29, 16, 11, 255);
 		auto titleText = bgFrame->addField("shop name", 64);
 		titleText->setFont(font);
-		titleText->setText("Xander's\nFedora Empora");
+		titleText->setText("");
 		titleText->setHJustify(Field::justify_t::CENTER);
-		titleText->setVJustify(Field::justify_t::CENTER);
-		titleText->setSize(SDL_Rect{ basePos.w - 288, 14, 184, 82 });
-		titleText->setColor(makeColor(188, 154, 114, 255));
+		titleText->setVJustify(Field::justify_t::TOP);
+		titleText->setSize(SDL_Rect{ 228, 29, 184, 24 });
+		titleText->setTextColor(titleColor);
+		titleText->setOutlineColor(titleOutline);
+
+		const char* shoptypefont = "fonts/pixelmix.ttf#16#2";
+		auto shopTypeText = bgFrame->addField("shop type", 64);
+		shopTypeText->setFont(shoptypefont);
+		shopTypeText->setText("");
+		shopTypeText->setHJustify(Field::justify_t::CENTER);
+		shopTypeText->setVJustify(Field::justify_t::TOP);
+		shopTypeText->setSize(SDL_Rect{ 228, 48, 184, 82 });
+		shopTypeText->setTextColor(titleColor);
+		shopTypeText->setOutlineColor(titleOutline);
 
 		auto shopkeeperImg = bgFrame->addImage(SDL_Rect{ basePos.w - 14 - 80, 14, 80, 80 }, 0xFFFFFFFF,
 			"images/ui/Shop/shopkeeper.png", "shopkeeper img");
@@ -20028,14 +20041,16 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			val = 1 / ((50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f); // buy value
 			val /= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
 			val = std::max(1.0, val);
-			snprintf(buf, sizeof(buf), rawValue.c_str(), val * 100.0);
+			val = val * 100.0 - 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		else if ( tag == "TRADING_SELL_PRICE" )
 		{
 			val = (50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f; // sell value
 			val *= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
 			val = std::min(1.0, val);
-			snprintf(buf, sizeof(buf), rawValue.c_str(), val * 100.0);
+			val = val * 100.0 - 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
 		return buf;
 	}

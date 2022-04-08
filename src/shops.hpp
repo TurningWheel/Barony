@@ -23,7 +23,7 @@ extern Uint32 shoptimer[MAXPLAYERS];
 extern std::string shopspeech[MAXPLAYERS];
 extern Item* sellitem[MAXPLAYERS];
 extern int shopkeepertype[MAXPLAYERS];
-extern char* shopkeepername[MAXPLAYERS];
+extern std::string shopkeepername[MAXPLAYERS];
 extern char shopkeepername_client[MAXPLAYERS][64];
 
 void startTradingServer(Entity* entity, int player);

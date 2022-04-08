@@ -6655,8 +6655,10 @@ void Player::Inventory_t::updateInventory()
 	// draw contents of each slot
 	auto oldSelectedSlotFrame = frame->findFrame("inventory old selected item");
 	oldSelectedSlotFrame->setDisabled(true);
-	if ( shopGUI.bOpen && uidToEntity(shopkeeper[player]) )
+	bool shopOpen = false;
+	if ( shopGUI.bOpen && shopGUI.shopFrame && shopInv[player] && uidToEntity(shopkeeper[player]) )
 	{
+		shopOpen = true;
 		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
@@ -6854,7 +6856,14 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 			{
-				updateSlotFrameFromItem(slotFrame, item);
+				if ( shopOpen && !isItemSellableToShop(player, item) )
+				{
+					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+				}
+				else
+				{
+					updateSlotFrameFromItem(slotFrame, item);
+				}
 			}
 		}
 	}
@@ -6904,7 +6913,7 @@ void Player::Inventory_t::updateInventory()
 	bool noPreviousSelectedItem = (selectedItem == nullptr);
 
 	shopGUI.clearItemDisplayed();
-	if ( !selectedItem && shopGUI.bOpen && shopGUI.shopFrame && uidToEntity(shopkeeper[player]) )
+	if ( !selectedItem && shopOpen )
 	{
 		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
 		{

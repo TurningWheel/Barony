@@ -39,6 +39,19 @@ bool hideItemFromShopView(Item& item)
 	return false;
 }
 
+std::string getShopTypeLangEntry(int shopType)
+{
+	if ( shopType < 10 )
+	{
+		return language[184 + shopType];
+	}
+	else if ( shopType == 10 )
+	{
+		return language[4128];
+	}
+	return "";
+}
+
 bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, int& xout, int& yout, Item*& itemToStackInto)
 {
 	xout = Player::ShopGUI_t::MAX_SHOP_X;
@@ -224,6 +237,15 @@ void updateShopWindow(const int player)
 		shoptimer[player]--;
 	}
 
+
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		keystatus[SDL_SCANCODE_G] = 0;
+
+		static ConsoleVariable<int> cvar_shop_name("/shopchatter", 0);
+		shopspeech[player] = language[216 + *cvar_shop_name];
+	}
+
 	// draw speech
 	char buf[1024];
 	if ( sellitem[clientnum] && shopspeech[player] == language[215] )
@@ -256,7 +278,7 @@ void updateShopWindow(const int player)
 			else
 			{
 				char shopnamebuf[1024];
-				snprintf(shopnamebuf, sizeof(shopnamebuf), language[358], shopkeepername[player], language[184 + shopkeepertype[player]]);
+				snprintf(shopnamebuf, sizeof(shopnamebuf), language[358], shopkeepername[player].c_str(), getShopTypeLangEntry(shopkeepertype[player]).c_str());
 
 				snprintf(buf, sizeof(buf), "%s\n%s", shopspeech[player].c_str(), shopnamebuf); // greetings, welcome to %s's shop
 				if ( players[player]->shopGUI.chatStrFull != buf )
@@ -362,6 +384,27 @@ void Player::ShopGUI_t::openShop()
 		player.inventory_mode = INVENTORY_MODE_ITEM;
 		player.gui_mode = GUI_MODE_SHOP;
 		bOpen = true;
+
+		if ( auto bgFrame = shopFrame->findFrame("shop base") )
+		{
+			if ( auto shopName = bgFrame->findField("shop name") )
+			{
+				if ( shopkeepertype[player.playernum] == 10 ) // mysterious shopkeep
+				{
+					shopName->setText(language[4129]); // '???'s'
+				}
+				else
+				{
+					char buf[64];
+					snprintf(buf, sizeof(buf), language[4127], shopkeepername[player.playernum].c_str());
+					shopName->setText(buf);
+				}
+			}
+			if ( auto shopType = bgFrame->findField("shop type") )
+			{
+				shopType->setText(getShopTypeLangEntry(shopkeepertype[player.playernum]).c_str());
+			}
+		}
 	}
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 	{
@@ -629,7 +672,7 @@ void updateShopGUIChatter(const int player)
 			players[player]->shopGUI.chatTicks = ticks;
 
 			SDL_Rect textPos{ 22, 18 + pointerHeightAddition, 0, 0 };
-			textPos.w = chatPos.w - textPos.x - 14 - 8;
+			textPos.w = chatPos.w - textPos.x - 14 - 4;
 			textPos.h = chatPos.h - 14 - textPos.y;
 			chatText->setSize(textPos);
 
@@ -640,13 +683,13 @@ void updateShopGUIChatter(const int player)
 			{
 				chatText->setText(players[player]->shopGUI.chatStrFull.substr(0U, currentLen + 1).c_str());
 				++currentLen;
-				if ( auto textGet = chatText->getTextObject() )
+				/*if ( auto textGet = chatText->getTextObject() )
 				{
 					if ( textGet->getWidth() >= textPos.w )
 					{
 						chatText->reflowTextToFit(0);
 					}
-				}
+				}*/
 			}
 			else if ( currentLen > fullLen )
 			{
