@@ -919,7 +919,10 @@ namespace MainMenu {
 	    closePrompt("mono_prompt");
 	}
 
-	static void textPrompt(const char* window_text) {
+	static void textPrompt(
+	    const char* window_text,
+	    void (*tick_callback)(Widget&)
+	    ) {
 		soundActivate();
 
 	    Frame* frame = createPrompt("text_prompt");
@@ -932,6 +935,7 @@ namespace MainMenu {
 		text->setJustify(Field::justify_t::CENTER);
 		text->setHideSelectors(true);
 		text->setHideGlyphs(true);
+		text->setTickCallback(tick_callback);
 		text->select();
 	}
 
@@ -6464,10 +6468,28 @@ bind_failed:
 	        soundError();
 	        return;
 	    }
-        textPrompt("Connecting to server...");
 
 	    // reset keepalive
 	    client_keepalive[0] = ticks;
+
+	    // open wait prompt
+        textPrompt("", [](Widget& widget){
+            char buf[256];
+            int diff = ticks - client_keepalive[0];
+            int part = diff % TICKS_PER_SECOND;
+            int seconds = diff / TICKS_PER_SECOND;
+            auto text = static_cast<Field*>(&widget);
+            if (part < TICKS_PER_SECOND / 4) {
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss", seconds);
+            } else if (part < 2 * TICKS_PER_SECOND / 4) {
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss.", seconds);
+            } else if (part < 3 * TICKS_PER_SECOND / 4) {
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss..", seconds);
+            } else {
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss...", seconds);
+            }
+            text->setText(buf);
+            });
 
 	    // setup connecting states
 	    bool temp1 = false;
@@ -10161,19 +10183,57 @@ bind_failed:
 			"lobby_slider_topper"
 		);
 
-		auto filters_window = window->addImage(
-			SDL_Rect{716, 28, 304, 414},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Filters00.png",
-			"filters_window"
-		);
+		auto frame_right = window->addFrame("frame_right");
+		frame_right->setInvisible(true);
+		frame_right->setSize(SDL_Rect{716, 28, 304, 414});
+		frame_right->setActualSize(SDL_Rect{0, 0, 304, 414});
+		frame_right->setBorder(0);
+		frame_right->setColor(0);
+		{
+		    frame_right->addImage(
+			    frame_right->getActualSize(),
+			    0xffffffff,
+			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Filters00.png",
+			    "background"
+		    );
 
-		auto left_window = window->addImage(
-			SDL_Rect{0, 28, 304, 414},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Left00.png",
-			"left_window"
-		);
+		    auto label = frame_right->addField("label", 128);
+		    label->setJustify(Field::justify_t::CENTER);
+		    label->setSize(SDL_Rect{80, 48, 146, 22});
+		    label->setFont(smallfont_outline);
+		    label->setText("Filters");
+
+		}
+
+		auto frame_left = window->addFrame("frame_left");
+		frame_left->setInvisible(true);
+		frame_left->setSize(SDL_Rect{0, 28, 304, 414});
+		frame_left->setActualSize(SDL_Rect{0, 0, 304, 414});
+		frame_left->setBorder(0);
+		frame_left->setColor(0);
+		frame_left->setTickCallback([](Widget& widget){
+		    //auto frame = static_cast<Frame*>(&widget);
+	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
+                //const auto& lobby = lobbies[selectedLobby];
+                widget.setInvisible(false);
+            } else {
+                widget.setInvisible(true);
+            }
+		    });
+		{
+		    frame_left->addImage(
+			    frame_left->getActualSize(),
+			    0xffffffff,
+			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Left00.png",
+			    "background"
+		    );
+
+		    auto label = frame_left->addField("label", 128);
+		    label->setJustify(Field::justify_t::CENTER);
+		    label->setSize(SDL_Rect{78, 48, 146, 22});
+		    label->setFont(smallfont_outline);
+		    label->setText("Lobby");
+		}
 
 		auto online_tab = window->addButton("online_tab");
 		online_tab->setSize(SDL_Rect{392, 70, 106, 38});
@@ -10339,7 +10399,7 @@ bind_failed:
 		join_lobby->addWidgetAction("MenuAlt2", "refresh");
 		join_lobby->setWidgetBack("back_button");
 		join_lobby->setWidgetLeft("enter_code");
-		join_lobby->setWidgetUp("names");
+		join_lobby->setWidgetUp("crossplay");
 		join_lobby->setCallback(join_lobby_fn);
 
 		static auto tick_callback = [](Widget& widget){
@@ -10505,7 +10565,65 @@ bind_failed:
 			slider->updateHandlePosition();
 			});
 
-        if (0) {
+		auto filter_settings = window->addButton("filter_settings");
+		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
+		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
+		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
+		filter_settings->setColor(makeColor(255, 255, 255, 255));
+		filter_settings->setText("Filter Settings");
+		filter_settings->setFont(smallfont_outline);
+		filter_settings->setWidgetSearchParent(window->getName());
+		filter_settings->addWidgetAction("MenuPageLeft", "online_tab");
+		filter_settings->addWidgetAction("MenuPageRight", "lan_tab");
+		filter_settings->addWidgetAction("MenuStart", "join_lobby");
+		filter_settings->addWidgetAction("MenuAlt1", "enter_code");
+		filter_settings->addWidgetAction("MenuAlt2", "refresh");
+		filter_settings->setWidgetBack("back_button");
+		filter_settings->setWidgetDown("crossplay");
+		filter_settings->setWidgetUp("names");
+		filter_settings->setCallback([](Button& button){
+		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
+		    frame_right->setInvisible(frame_right->isInvisible()==false);
+		    });
+
+		auto crossplay_fn = [](Button&){};
+
+		auto crossplay_label = window->addField("crossplay_label", 128);
+		crossplay_label->setJustify(Field::justify_t::CENTER);
+		crossplay_label->setSize(SDL_Rect{378, 378, 96, 48});
+		crossplay_label->setFont(smallfont_outline);
+		crossplay_label->setText("Crossplay");
+
+		auto crossplay = window->addButton("crossplay");
+		crossplay->setSize(SDL_Rect{474, 378, 158, 48});
+		crossplay->setJustify(Button::justify_t::CENTER);
+		crossplay->setPressed(LobbyHandler.crossplayEnabled);
+		crossplay->setStyle(Button::style_t::STYLE_TOGGLE);
+		crossplay->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Toggle_Off00.png");
+		crossplay->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Toggle_On00.png");
+		crossplay->setHighlightColor(makeColor(255,255,255,255));
+		crossplay->setColor(makeColor(255,255,255,255));
+		crossplay->setTextHighlightColor(makeColor(255,255,255,255));
+		crossplay->setTextColor(makeColor(255,255,255,255));
+		crossplay->setText("Off          On");
+		crossplay->setFont(smallfont_outline);
+		crossplay->setWidgetSearchParent(window->getName());
+		crossplay->addWidgetAction("MenuPageLeft", "online_tab");
+		crossplay->addWidgetAction("MenuPageRight", "lan_tab");
+		crossplay->addWidgetAction("MenuStart", "join_lobby");
+		crossplay->addWidgetAction("MenuAlt1", "enter_code");
+		crossplay->addWidgetAction("MenuAlt2", "refresh");
+		crossplay->setWidgetBack("back_button");
+		crossplay->setWidgetDown("join_lobby");
+		crossplay->setWidgetUp("filter_settings");
+		crossplay->setCallback(crossplay_fn);
+
+#ifdef NDEBUG
+	    // scan for lobbies immediately
+	    refresh->activate();
+#else
+        if (1) {
             // test lobbies
 		    add_lobby(LobbyInfo("Ben", 1, 50, false));
 		    add_lobby(LobbyInfo("Sheridan", 3, 50, false));
@@ -10524,9 +10642,9 @@ bind_failed:
 		    add_lobby(LobbyInfo("a very unsuspicious lobby", 2, 130, false));
 		    add_lobby(LobbyInfo("cool lobby bro!", 3, 240, false));
 		} else {
-	        // scan for lobbies immediately
 		    refresh->activate();
 		}
+#endif
 	}
 
 	static void playNew(Button& button) {
