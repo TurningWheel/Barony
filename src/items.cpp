@@ -25,6 +25,8 @@
 #include "net.hpp"
 #include "player.hpp"
 
+#include <assert.h>
+
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
@@ -2796,6 +2798,9 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		}
 		if ( !appearancesOfSimilarItems.empty() )
 		{
+			Uint32 originalAppearance = item->appearance;
+			int originalVariation = originalAppearance % items[item->type].variations;
+
 			int tries = 100;
 			bool robot = false;
 			// we need to find a unique appearance within the list.
@@ -2808,6 +2813,18 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 			else
 			{
 				item->appearance = rand();
+				if ( item->appearance % items[item->type].variations != originalVariation )
+				{
+					// we need to match the variation for the new appearance, take the difference so new varation matches
+					int change = (item->appearance % items[item->type].variations - originalVariation);
+					if ( item->appearance < change ) // underflow protection
+					{
+						item->appearance += items[item->type].variations;
+					}
+					item->appearance -= change;
+					int newVariation = item->appearance % items[item->type].variations;
+					assert(newVariation == originalVariation);
+				}
 			}
 			auto it = appearancesOfSimilarItems.find(item->appearance);
 			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
@@ -2819,6 +2836,18 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				else
 				{
 					item->appearance = rand();
+					if ( item->appearance % items[item->type].variations != originalVariation )
+					{
+						// we need to match the variation for the new appearance, take the difference so new varation matches
+						int change = (item->appearance % items[item->type].variations - originalVariation);
+						if ( item->appearance < change ) // underflow protection
+						{
+							item->appearance += items[item->type].variations;
+						}
+						item->appearance -= change;
+						int newVariation = item->appearance % items[item->type].variations;
+						assert(newVariation == originalVariation);
+					}
 				}
 				it = appearancesOfSimilarItems.find(item->appearance);
 				--tries;
