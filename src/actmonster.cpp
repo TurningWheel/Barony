@@ -4618,6 +4618,11 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
+									else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
+									{
+										// asplode the rock
+										magicDig(nullptr, nullptr, 0, 1);
+									}
 									else
 									{
 										if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
@@ -5669,6 +5674,11 @@ timeToGoAgain:
 										}
 										playSoundEntity(hit.entity, 28, 64);
 									}
+								}
+								else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
+								{
+									// asplode the rock
+									magicDig(nullptr, nullptr, 0, 1);
 								}
 								else if ( hit.entity->behavior == &actMonster )
 								{

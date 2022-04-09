@@ -351,6 +351,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
+		if ( entity->behavior == &actBoulder && stats && stats->type == MINOTAUR )
+		{
+			// minotaurs bust through boulders, not an obstacle
+			continue;
+		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		pathMap[y + x * map.height] = 0;
