@@ -20472,8 +20472,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		createSkillSheet();
 	}
 
-	// these hardcoded keypresses are evil, WOJ remove this eventually please
-	if ( !command && keystatus[SDL_SCANCODE_K] )
+	if ( !command && Input::inputs[player.playernum].consumeBinaryToggle("Skill Sheet") )
 	{
 		if ( !bSkillSheetOpen )
 		{
@@ -20483,7 +20482,6 @@ void Player::SkillSheet_t::processSkillSheet()
 		{
 			closeSkillSheet();
 		}
-		keystatus[SDL_SCANCODE_K] = 0;
 	}
 
 	if ( !bSkillSheetOpen )
