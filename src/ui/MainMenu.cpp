@@ -4753,7 +4753,7 @@ bind_failed:
         };
         static BoardType boardType;
         boardType = BoardType::LOCAL;
-
+#ifdef STEAMWORKS
         static const char* categories[CSteamLeaderboards::k_numLeaderboards] = {
 	        "None",
 	        "Fastest Time\nNormal", "Highest Score\nNormal",
@@ -4773,7 +4773,10 @@ bind_failed:
             "Fastest Time\nMultiplayer Classic - Monsters Only", "Highest Score\nMultiplayer Classic - Monsters Only",
 	        "Fastest Time\nMultiplayer Hell Route - Monsters Only", "Highest Score\nMultiplayer Hell Route - Monsters Only",
         };
-        constexpr int num_categories = sizeof(categories) / sizeof(categories[0]);
+#else
+		static const char* categories[1] = { "None" };
+#endif
+        static constexpr int num_categories = sizeof(categories) / sizeof(categories[0]);
         static int category;
         category = 1;
 
@@ -5113,7 +5116,7 @@ bind_failed:
             {"world", "World\nLeaderboard", TAB_FN(BoardType::WORLD)},
 #endif
         };
-        constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
+        static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
         for (int c = 0; c < num_tabs; ++c) {
             Button* tab = window->addButton(tabs[c].name);
             tab->setText(tabs[c].text);
