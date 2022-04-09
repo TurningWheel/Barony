@@ -8510,22 +8510,22 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		AttackHoverText_t attackHoverTextInfo;
 		Sint32 attackPower = displayAttackPower(player.playernum, attackHoverTextInfo);
 
-#ifndef NDEBUG
-		if ( keystatus[SDL_SCANCODE_V] )
-		{
-			keystatus[SDL_SCANCODE_V] = 0;
-			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
-			stats[player.playernum]->playerRace = RACE_AUTOMATON;
-			stats[player.playernum]->appearance = 0;
-		}
-		if ( keystatus[SDL_SCANCODE_B] )
-		{
-			keystatus[SDL_SCANCODE_B] = 0;
-			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
-			stats[player.playernum]->playerRace = RACE_INSECTOID;
-			stats[player.playernum]->appearance = 0;
-		}
-#endif // !NDEBUG
+//#ifndef NDEBUG
+//		if ( keystatus[SDL_SCANCODE_V] )
+//		{
+//			keystatus[SDL_SCANCODE_V] = 0;
+//			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
+//			stats[player.playernum]->playerRace = RACE_AUTOMATON;
+//			stats[player.playernum]->appearance = 0;
+//		}
+//		if ( keystatus[SDL_SCANCODE_B] )
+//		{
+//			keystatus[SDL_SCANCODE_B] = 0;
+//			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
+//			stats[player.playernum]->playerRace = RACE_INSECTOID;
+//			stats[player.playernum]->appearance = 0;
+//		}
+//#endif // !NDEBUG
 
 		bool isAutomatonHTRegen = stats[player.playernum]->type == AUTOMATON;
 		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0);
