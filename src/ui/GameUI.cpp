@@ -5777,7 +5777,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton2->setHideKeyboardGlyphs(true);
 				attributeButton2->setHideSelectors(true);
 				attributeButton2->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
+				attributeButton2->setTickCallback([](Widget& widget) {
 					charsheet_deselect_fn(widget);
 				});
 			}
