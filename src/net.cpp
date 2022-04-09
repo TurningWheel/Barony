@@ -3606,6 +3606,7 @@ void clientHandlePacket()
 		if ( checkMapHash == 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
+			gamemods_disableSteamAchievements = true;
 		}
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )

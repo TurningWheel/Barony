@@ -96,6 +96,12 @@ struct StatusEffectQueueEntry_t
 
 struct StatusEffectQueue_t
 {
+    // defined in GameUI.cpp (linkage problems)
+	static const int kEffectBread;
+	static const int kEffectBloodHunger;
+	static const int kEffectAutomatonHunger;
+	static const int kSpellEffectOffset;
+
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;
 	int player = -1;
@@ -103,10 +109,6 @@ struct StatusEffectQueue_t
 	std::deque<StatusEffectQueueEntry_t> notificationQueue;
 	int getBaseEffectPosX();
 	int getBaseEffectPosY();
-	static const int kEffectBread = -2;
-	static const int kEffectBloodHunger = -3;
-	static const int kEffectAutomatonHunger = -4;
-	static const int kSpellEffectOffset = 10000;
 	real_t tooltipOpacitySetpoint = 100;
 	real_t tooltipOpacityAnimate = 1.0;
 	Uint32 tooltipDeselectedTick = 0;

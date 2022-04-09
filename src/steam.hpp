@@ -109,7 +109,7 @@ private:
 	SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
 public:
 	int m_nLeaderboardEntries; // How many entries do we have?
-	static const int k_numEntriesToRetrieve = 50;
+	static const int k_numEntriesToRetrieve = 100;
 	LeaderboardEntry_t m_leaderboardEntries[k_numEntriesToRetrieve]; // The entries
 	std::string leaderBoardSteamUsernames[k_numEntriesToRetrieve];
 	static const int k_numLeaderboardTags = 64;

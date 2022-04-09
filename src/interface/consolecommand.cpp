@@ -2668,6 +2668,66 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_gimmevictory("/gimmevictory", "win without trying", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		if (argc > 1) {
+		    victory = (int)strtol(argv[1], nullptr, 10);
+		}
+
+		messagePlayer(clientnum, MESSAGE_MISC, "Victory is %d", victory);
+	    });
+
+	static ConsoleCommand ccmd_gimmeconducts("/gimmeconducts", "inflate your ego", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		for (int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c) {
+		    ++conductGameChallenges[c];
+		}
+
+		messagePlayer(clientnum, MESSAGE_MISC, "Gave you some conducts");
+	    });
+
+	static ConsoleCommand ccmd_gimmekills("/gimmekills", "inflate your kill stats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		for (int c = 0; c < NUMMONSTERS; ++c) {
+		    ++kills[c];
+		}
+
+		messagePlayer(clientnum, MESSAGE_MISC, "Gave you some kills");
+	    });
+
 	static ConsoleCommand ccmd_gimmepotions("/gimmepotions", "give the player some potions (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{

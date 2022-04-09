@@ -30,7 +30,7 @@
 // definitions
 list_t topscores;
 list_t topscoresMultiplayer;
-int victory = false;
+int victory = 0;
 Uint32 completionTime = 0;
 bool conductPenniless = true;
 bool conductFoodless = true;
@@ -364,7 +364,7 @@ int totalScore(score_t* score)
 	}
 
 	amount += score->dungeonlevel * 500;
-	if ( score->victory == 3 )
+	if ( score->victory >= 3 )
 	{
 		amount += score->victory * 20000;
 	}
@@ -389,7 +389,8 @@ int totalScore(score_t* score)
 		{
 			amount *= 2;
 		}
-		if ( score->conductGameChallenges[CONDUCT_KEEPINVENTORY] )
+		if ( score->conductGameChallenges[CONDUCT_KEEPINVENTORY] &&
+		    score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 		{
 			amount /= 2;
 		}
@@ -415,22 +416,9 @@ int totalScore(score_t* score)
 
 -------------------------------------------------------------------------------*/
 
-void loadScore(int scorenum)
+void loadScore(score_t* score)
 {
 	node_t* node = nullptr;
-	if ( scoreDisplayMultiplayer )
-	{
-		node = list_Node(&topscoresMultiplayer, scorenum);
-	}
-	else
-	{
-		node = list_Node(&topscores, scorenum);
-	}
-	if ( !node )
-	{
-		return;
-	}
-	score_t* score = (score_t*)node->element;
 	stats[0]->clearStats();
 
 	int c;
@@ -557,6 +545,25 @@ void loadScore(int scorenum)
 	{
 		gameStatistics[c] = score->gameStatistics[c];
 	}
+}
+
+void loadScore(int scorenum)
+{
+	node_t* node = nullptr;
+	if ( scoreDisplayMultiplayer )
+	{
+		node = list_Node(&topscoresMultiplayer, scorenum);
+	}
+	else
+	{
+		node = list_Node(&topscores, scorenum);
+	}
+	if ( !node )
+	{
+		return;
+	}
+	score_t* score = (score_t*)node->element;
+	loadScore(score);
 }
 
 /*-------------------------------------------------------------------------------
@@ -789,6 +796,18 @@ void saveAllScores(const std::string& scoresfilename)
 	}
 
 	FileIO::close(fp);
+}
+
+bool deleteScore(bool multiplayer, int index)
+{
+    auto node = list_Node(multiplayer ?
+        &topscoresMultiplayer : &topscores, index);
+    if (node) {
+        list_RemoveNode(node);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -3745,7 +3764,7 @@ void updatePlayerConductsInMainLoop()
 	{
 		if ( (svFlags & SV_FLAG_KEEPINVENTORY) )
 		{
-			if ( multiplayer != SINGLE )
+			if ( multiplayer != SINGLE || splitscreen )
 			{
 				conductGameChallenges[CONDUCT_KEEPINVENTORY] = 1;
 			}
@@ -3774,7 +3793,7 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( !conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
-		if ( multiplayer != SINGLE )
+		if ( multiplayer != SINGLE || splitscreen )
 		{
 			conductGameChallenges[CONDUCT_MULTIPLAYER] = 1;
 		}
@@ -3791,6 +3810,7 @@ void updatePlayerConductsInMainLoop()
 		if ( gamemods_numCurrentModsLoaded > 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
+			gamemods_disableSteamAchievements = true;
 		}
 	}
 

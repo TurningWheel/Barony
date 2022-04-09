@@ -9717,6 +9717,7 @@ void doNewGame(bool makeHighscore) {
 			if ( checkMapHash == 0 )
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
+				gamemods_disableSteamAchievements = true;
 			}
 		}
 		else
@@ -9728,6 +9729,7 @@ void doNewGame(bool makeHighscore) {
 				if ( checkMapHash == 0 )
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
+					gamemods_disableSteamAchievements = true;
 				}
 			}
 			else
@@ -9987,6 +9989,7 @@ void doNewGame(bool makeHighscore) {
 			if ( checkMapHash == 0 )
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
+				gamemods_disableSteamAchievements = true;
 			}
 		}
 		else
@@ -9998,6 +10001,7 @@ void doNewGame(bool makeHighscore) {
 				if ( checkMapHash == 0 )
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
+					gamemods_disableSteamAchievements = true;
 				}
 			}
 			else

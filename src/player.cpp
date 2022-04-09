@@ -4073,7 +4073,7 @@ void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 	// todo: add condition like getMouse()? && (!getVirtualMouse(player)->lastMovementFromController 
 	// || (players[player]->shootmode && !gamePaused && !intro))
 	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController
-		|| (players[player]->shootmode && !gamePaused && !intro)) )
+		|| (players[player]->shootmode && !gamePaused && !intro)) || intro )
 	{
 		switch ( input )
 		{
@@ -4133,7 +4133,7 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 		&& 
 		(!getVirtualMouse(player)->lastMovementFromController 
 			|| (players[player]->shootmode && !gamePaused && !intro)
-			|| gamePaused
+			|| gamePaused || intro
 			) 
 		)
 	{
