@@ -1991,7 +1991,7 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 {
 	if ( effect == StatusEffectQueue_t::kEffectBread )
 	{
-		return 64;
+		return 76;
 	}
 	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
 		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
@@ -2195,7 +2195,7 @@ void createStatusEffectQueue(const int player)
 	auto innerFrame = statusEffectQueue.statusEffectFrame->addFrame("effects");
 	innerFrame->setHollow(true);
 }
-const int breadStatusEffectWidth = 64;
+
 const int breadStatusEffectHeight = 60;
 
 std::string& StatusEffectQueue_t::EffectDefinitionEntry_t::getName(int variation)
@@ -2686,7 +2686,20 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	auto automatonFlameImg = automatonHungerFrame->findImage("flame");
 
 	int iconSize = 32;
-	int movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
+	int movex = 0;
+	if ( hungerIconActive )
+	{
+		if ( effectSet.find(kEffectBread) != effectSet.end() )
+		{
+			movex = 76;
+		}
+		else
+		{
+			movex = 64;
+		}
+		movex += 4;
+	}
+	const int startrowx = movex;
 	int movey = statusEffectFrame->getSize().h - iconSize;
 	const int spacing = 36;
 	int numEffectsOnLine = 0;
@@ -3059,7 +3072,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		if ( numEffectsOnLine >= effectsPerRow )
 		{
 			numEffectsOnLine = 0;
-			movex = hungerIconActive ? breadStatusEffectWidth + 4 : 0;
+			movex = startrowx;
 			movey -= spacing;
 		}
 	}
