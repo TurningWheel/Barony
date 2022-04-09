@@ -453,22 +453,6 @@ bool sellItemToShop(const int player, Item* item)
 
 	bool deal = isItemSellableToShop(player, item);
 
-	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
-		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
-		&& itemIsEquipped(item, player) )
-	{
-		if ( item->beatitude > 0 )
-		{
-			messagePlayer(player, MESSAGE_INVENTORY, language[3219], item->getName());
-		}
-		else
-		{
-			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
-		}
-		playSound(90, 64);
-		return false;
-	}
-
 	if ( !deal )
 	{
 		if ( shopkeepertype[player] == 10 && 
@@ -485,6 +469,20 @@ bool sellItemToShop(const int player, Item* item)
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
 		return false;
+	}
+
+	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]))
+		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[player])))
+		&& itemIsEquipped(item, player) )
+	{
+		if ( item->beatitude > 0 )
+		{
+			messagePlayer(player, MESSAGE_INVENTORY, language[3219], item->getName());
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_INVENTORY, language[1124], item->getName());
+		}
 	}
 
 	int xout = Player::ShopGUI_t::MAX_SHOP_X;
