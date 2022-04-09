@@ -236,28 +236,39 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 
 			if ( players[player] && players[player]->entity )
 			{
-				if ( rand() % 2 )
+				if ( item->buyValue(player) <= 1 )
 				{
-					if ( item->buyValue(player) <= 1 )
-					{
-						// buying cheap items does not increase trading past basic
-						if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-						{
-							players[player]->entity->increaseSkill(PRO_TRADING);
-						}
-					}
-					else
+					if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
 					{
 						players[player]->entity->increaseSkill(PRO_TRADING);
 					}
 				}
-				else if ( item->buyValue(player) >= 150 )
+				else
 				{
-					if ( item->buyValue(player) >= 300 || rand() % 2 )
-					{
-						players[player]->entity->increaseSkill(PRO_TRADING);
-					}
+					players[player]->entity->increaseSkill(PRO_TRADING);
 				}
+				//if ( rand() % 2 )
+				//{
+				//	if ( item->buyValue(player) <= 1 )
+				//	{
+				//		// buying cheap items does not increase trading past basic
+				//		if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				//		{
+				//			players[player]->entity->increaseSkill(PRO_TRADING);
+				//		}
+				//	}
+				//	else
+				//	{
+				//		players[player]->entity->increaseSkill(PRO_TRADING);
+				//	}
+				//}
+				//else if ( item->buyValue(player) >= 150 )
+				//{
+				//	if ( item->buyValue(player) >= 300 || rand() % 2 )
+				//	{
+				//		players[player]->entity->increaseSkill(PRO_TRADING);
+				//	}
+				//}
 			}
 		}
 		else if ( multiplayer == CLIENT )
@@ -577,24 +588,24 @@ bool sellItemToShop(const int player, Item* item)
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{
-		if ( players[player] && players[player]->entity )
-		{
-			if ( rand() % 2 )
-			{
-				if ( item->sellValue(player) <= 1 )
-				{
-					// selling cheap items does not increase trading past basic
-					if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-					{
-						players[player]->entity->increaseSkill(PRO_TRADING);
-					}
-				}
-				else
-				{
-					players[player]->entity->increaseSkill(PRO_TRADING);
-				}
-			}
-		}
+		//if ( players[player] && players[player]->entity )
+		//{
+		//	if ( rand() % 2 )
+		//	{
+		//		if ( item->sellValue(player) <= 1 )
+		//		{
+		//			// selling cheap items does not increase trading past basic
+		//			if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+		//			{
+		//				players[player]->entity->increaseSkill(PRO_TRADING);
+		//			}
+		//		}
+		//		else
+		//		{
+		//			players[player]->entity->increaseSkill(PRO_TRADING);
+		//		}
+		//	}
+		//}
 	}
 	else
 	{

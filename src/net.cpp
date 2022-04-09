@@ -5088,28 +5088,39 @@ void serverHandlePacket()
 		stats[client]->GOLD -= buyValue;
 		if ( players[client] && players[client]->entity )
 		{
-			if ( rand() % 2 )
+			if ( buyValue <= 1 )
 			{
-				if ( item->buyValue(client) <= 1 )
-				{
-					// buying cheap items does not increase trading past basic
-					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-					{
-						players[client]->entity->increaseSkill(PRO_TRADING);
-					}
-				}
-				else
+				if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
 				{
 					players[client]->entity->increaseSkill(PRO_TRADING);
 				}
 			}
-			else if ( buyValue >= 150 )
+			else
 			{
-				if ( buyValue >= 300 || rand() % 2 )
-				{
-					players[client]->entity->increaseSkill(PRO_TRADING);
-				}
+				players[client]->entity->increaseSkill(PRO_TRADING);
 			}
+			//if ( rand() % 2 )
+			//{
+			//	if ( item->buyValue(client) <= 1 )
+			//	{
+			//		// buying cheap items does not increase trading past basic
+			//		if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+			//		{
+			//			players[client]->entity->increaseSkill(PRO_TRADING);
+			//		}
+			//	}
+			//	else
+			//	{
+			//		players[client]->entity->increaseSkill(PRO_TRADING);
+			//	}
+			//}
+			//else if ( buyValue >= 150 )
+			//{
+			//	if ( buyValue >= 300 || rand() % 2 )
+			//	{
+			//		players[client]->entity->increaseSkill(PRO_TRADING);
+			//	}
+			//}
 		}
 		free(item);
 		return;
@@ -5189,24 +5200,24 @@ void serverHandlePacket()
 		}
 
 		stats[client]->GOLD += goldValue;
-		if ( players[client] && players[client]->entity )
-		{
-			if ( rand() % 2 )
-			{
-				if ( goldValue <= 1 )
-				{
-					// selling cheap items does not increase trading past basic
-					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-					{
-						players[client]->entity->increaseSkill(PRO_TRADING);
-					}
-				}
-				else
-				{
-					players[client]->entity->increaseSkill(PRO_TRADING);
-				}
-			}
-		}
+		//if ( players[client] && players[client]->entity )
+		//{
+		//	if ( rand() % 2 )
+		//	{
+		//		if ( goldValue <= 1 )
+		//		{
+		//			// selling cheap items does not increase trading past basic
+		//			if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+		//			{
+		//				players[client]->entity->increaseSkill(PRO_TRADING);
+		//			}
+		//		}
+		//		else
+		//		{
+		//			players[client]->entity->increaseSkill(PRO_TRADING);
+		//		}
+		//	}
+		//}
 		return;
 	}
 

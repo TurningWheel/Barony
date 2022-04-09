@@ -7802,7 +7802,14 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 					{
-						updateSlotFrameFromItem(slotFrame, item);
+						if ( shopOpen && !isItemSellableToShop(player, item) )
+						{
+							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else
+						{
+							updateSlotFrameFromItem(slotFrame, item);
+						}
 					}
 				}
 			}
