@@ -6207,6 +6207,17 @@ void Player::CharacterSheet_t::processCharacterSheet()
 		Button* rgnButton = attributesInnerFrame->findButton("rgn button");
 		Button* rgnMpButton = attributesInnerFrame->findButton("rgn mp button");
 		Button* wgtButton = attributesInnerFrame->findButton("wgt button");
+
+		auto sheetTimer = sheetFrame->findFrame("game timer");
+		if ( bCompactView )
+		{
+			sheetTimer->setDisabled(true);
+		}
+		else
+		{
+			sheetTimer->setDisabled(false);
+		}
+
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor
 			&& (!player.GUI.isDropdownActive())
 			&& isInteractable )
@@ -6223,7 +6234,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			{
 				targetElement = SHEET_OPEN_MAP;
 			}
-			else if ( sheetFrame->findFrame("game timer")->findButton("timer selector")->isHighlighted() )
+			else if ( !sheetTimer->isDisabled() && sheetTimer->findButton("timer selector")->isHighlighted() )
 			{
 				targetElement = SHEET_TIMER;
 			}
@@ -7138,7 +7149,9 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 
 void Player::CharacterSheet_t::updateGameTimer()
 {
-	auto timerText = sheetFrame->findFrame("game timer")->findField("timer text");
+	auto characterInfoFrame = sheetFrame->findFrame("character info");
+	auto timerFrame = sheetFrame->findFrame("game timer");
+	auto timerText = timerFrame->findField("timer text");
 	char buf[32];
 
 	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
@@ -7148,10 +7161,25 @@ void Player::CharacterSheet_t::updateGameTimer()
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
 
-	if ( selectedElement == SHEET_TIMER && !player.GUI.isDropdownActive() 
-		&& inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	bool enableTooltips = !player.GUI.isDropdownActive() && !player.GUI.dropdownMenu.bClosedThisTick && inputs.getVirtualMouse(player.playernum)->draw_cursor;
+
+	bool bCompactView = player.bUseCompactGUIHeight();
+	if ( bCompactView )
 	{
-		updateCharacterSheetTooltip(SHEET_TIMER, sheetFrame->findFrame("game timer")->getSize());
+		enableTooltips = false;
+	}
+
+	if ( selectedElement == SHEET_TIMER && enableTooltips )
+	{
+		SDL_Rect tooltipPos = characterInfoFrame->getSize();
+		tooltipPos.y = timerFrame->getSize().y;
+		Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT;
+		if ( panelJustify == PANEL_JUSTIFY_LEFT || (panelJustify == PANEL_JUSTIFY_RIGHT && bCompactView) )
+		{
+			tooltipJustify = PANEL_JUSTIFY_LEFT;
+			tooltipPos.x += tooltipPos.w;
+		}
+		updateCharacterSheetTooltip(SHEET_TIMER, tooltipPos, tooltipJustify);
 	}
 }
 
@@ -10470,123 +10498,22 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
-		if ( !usingMouse )
-		{
-			txt->setText(getHoverTextString("gold_controller").c_str());
-		}
-		else
-		{
-			txt->setText(getHoverTextString("gold_mouse").c_str());
-		}
+		txt->setText(getHoverTextString("gold_mouse").c_str());
+
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
 		txt->reflowTextToFit(0);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
-		if ( !usingMouse )
-		{
-			txtPos.h = txtHeight + padyMid;
-		}
-		else
-		{
-			txtPos.h = txtHeight;
-		}
+		txtPos.h = txtHeight + padyMid;
 		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
 			txt->getTextColor(), txt->getOutlineColor());
 		txtPos.w = txtGet->getWidth();
 		txt->setSize(txtPos);
 		
 		tooltipPos.w = txtPos.w + padx * 2;
+		tooltipPos.h = pady1 + txtPos.h + pady2;
 
-		int currentHeight = txtPos.y + txtPos.h;
-		for ( int i = 1; i < 5; ++i )
-		{
-			if ( usingMouse ) { break; }
-			currentHeight += padyMid;
-			char glyphName[32] = "";
-			snprintf(glyphName, sizeof(glyphName), "glyph %d", i);
-			char entryName[32] = "";
-			snprintf(entryName, sizeof(entryName), "txt %d", i);
-			auto glyph = tooltipFrame->findImage(glyphName); assert(glyph);
-			glyph->disabled = false;
-			auto entry = tooltipFrame->findField(entryName); assert(entry);
-			entry->setDisabled(false);
-			glyph->pos.x = padx;
-			glyph->pos.y = currentHeight;
-            // The A/B/X/Y buttons are arranged differently on Nintendo.
-            // So, we have a separate layout in that case.
-            // TODO @wallofjustice check on this
-#ifdef NINTENDO
-			switch ( i )
-			{
-				case 1:
-					glyph->path = Input::getGlyphPathForInput("ButtonB");
-					entry->setText(getHoverTextString("gold_option_10").c_str());
-					break;
-				case 2:
-					glyph->path = Input::getGlyphPathForInput("ButtonA");
-					entry->setText(getHoverTextString("gold_option_100").c_str());
-					break;
-				case 3:
-					glyph->path = Input::getGlyphPathForInput("ButtonY");
-					entry->setText(getHoverTextString("gold_option_1000").c_str());
-					break;
-				case 4:
-					glyph->path = Input::getGlyphPathForInput("ButtonX");
-					entry->setText(getHoverTextString("gold_option_all").c_str());
-					break;
-				default:
-					break;
-			}
-#else
-			switch ( i )
-			{
-				case 1:
-					glyph->path = Input::getGlyphPathForInput("ButtonA");
-					entry->setText(getHoverTextString("gold_option_10").c_str());
-					break;
-				case 2:
-					glyph->path = Input::getGlyphPathForInput("ButtonB");
-					entry->setText(getHoverTextString("gold_option_100").c_str());
-					break;
-				case 3:
-					glyph->path = Input::getGlyphPathForInput("ButtonX");
-					entry->setText(getHoverTextString("gold_option_1000").c_str());
-					break;
-				case 4:
-					glyph->path = Input::getGlyphPathForInput("ButtonY");
-					entry->setText(getHoverTextString("gold_option_all").c_str());
-					break;
-				default:
-					break;
-			}
-#endif
-			if ( auto imgGet = Image::get(glyph->path.c_str()) )
-			{
-				glyph->pos.w = (int)imgGet->getWidth();
-				glyph->pos.h = (int)imgGet->getHeight();
-			}
-			SDL_Rect entryPos = entry->getSize();
-			entryPos.x = glyph->pos.x + glyph->pos.w + padxMid;
-			entryPos.y = glyph->pos.y + glyph->pos.h / 2;
-			if ( auto textGet = Text::get(entry->getText(), entry->getFont(), entry->getTextColor(), entry->getOutlineColor()) )
-			{
-				entryPos.h = textGet->getHeight() * entry->getNumTextLines();
-				entryPos.y -= entryPos.h / 2;
-				entryPos.w = textGet->getWidth();
-			}
-			entry->setSize(entryPos);
-			currentHeight = std::max(entryPos.y + entryPos.h, glyph->pos.y + glyph->pos.h);
-		}
-
-		if ( usingMouse )
-		{
-			tooltipPos.h = pady1 + txtPos.h + pady2;
-		}
-		else
-		{
-			tooltipPos.h = pady1 + currentHeight + pady2;
-		}
 		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
 		{
 			tooltipPos.x = pos.x - tooltipPos.w;
@@ -10603,7 +10530,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	}
 	else if ( element == Player::CharacterSheet_t::SHEET_TIMER )
 	{
-		const int maxWidth = 200;
+		const int maxWidth = 240;
 		const int padx = 16;
 		const int pady1 = 8;
 		const int pady2 = 8;
@@ -10611,69 +10538,21 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
-		if ( !usingMouse )
+
+		if ( player.characterSheet.showGameTimerAlways )
 		{
-			txt->setText(getHoverTextString("game_timer_controller").c_str());
+			std::string tooltiptxt = getHoverTextString("game_timer_mouse") + getHoverTextString("game_timer_unpin");
+			txt->setText(tooltiptxt.c_str());
 		}
 		else
 		{
-			txt->setText(getHoverTextString("game_timer_mouse").c_str());
+			std::string tooltiptxt = getHoverTextString("game_timer_mouse") + getHoverTextString("game_timer_pin");
+			txt->setText(tooltiptxt.c_str());
 		}
 
 		int currentHeight = padyMid;
-		SDL_Rect entry1Pos { padx, currentHeight, 0, 0 };
-		SDL_Rect entry2Pos { padx, currentHeight, 0, 0 };
-		for ( int i = 1; i <= 2; ++i )
-		{
-			char entryName[32] = "";
-			snprintf(entryName, sizeof(entryName), "txt %d", i);
-			auto entry = tooltipFrame->findField(entryName); assert(entry);
-			entry->setDisabled(false);
-			
-			switch ( i )
-			{
-				case 1:
-					entry->setText(getHoverTextString("game_timer_state_desc").c_str());
-					break;
-				case 2:
-					if ( showGameTimerAlways )
-					{
-						entry->setText(getHoverTextString("game_timer_state_enabled").c_str());
-						entry->setColor(makeColor(0, 255, 0, 255));
-					}
-					else
-					{
-						entry->setText(getHoverTextString("game_timer_state_disabled").c_str());
-						entry->setColor(makeColor(255, 0, 0, 255));
-					}
-					break;
-				default:
-					break;
-			}
-
-			SDL_Rect* entryPos = nullptr;
-			if ( i == 1 )
-			{
-				entryPos = &entry1Pos;
-			}
-			else
-			{
-				entryPos = &entry2Pos;
-				entry2Pos.x = entry1Pos.x + entry1Pos.w;
-			}
-			if ( Font* actualFont = Font::get(entry->getFont()) )
-			{
-				entryPos->h = entry->getNumTextLines() * actualFont->height(true);
-			}
-			if ( auto textGet = Text::get(entry->getText(), entry->getFont(), entry->getTextColor(), entry->getOutlineColor()) )
-			{
-				entryPos->w = textGet->getWidth();
-			}
-			entry->setSize(*entryPos);
-		}
 
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
-		txtPos.w = std::max(entry1Pos.w + entry2Pos.w, txtPos.w);
 		txt->setSize(txtPos);
 		txt->reflowTextToFit(0);
 		Font* actualFont = Font::get(txt->getFont());
@@ -10683,13 +10562,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			txt->getTextColor(), txt->getOutlineColor());
 		txtPos.w = txtGet->getWidth();
 		txt->setSize(txtPos);
-
 		
-		entry1Pos.y += txtPos.h;
-		entry2Pos.y += txtPos.h;
-		tooltipFrame->findField("txt 1")->setSize(entry1Pos);
-		tooltipFrame->findField("txt 2")->setSize(entry2Pos);
-		currentHeight = std::max(currentHeight, entry1Pos.y + entry1Pos.h);
+		currentHeight = std::max(currentHeight, txtPos.h);
 
 		tooltipPos.w = txtPos.w + padx * 2;
 		tooltipPos.h = pady1 + currentHeight + pady2;
