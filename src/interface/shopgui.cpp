@@ -237,15 +237,6 @@ void updateShopWindow(const int player)
 		shoptimer[player]--;
 	}
 
-
-	if ( keystatus[SDL_SCANCODE_G] )
-	{
-		keystatus[SDL_SCANCODE_G] = 0;
-
-		static ConsoleVariable<int> cvar_shop_name("/shopchatter", 0);
-		shopspeech[player] = language[216 + *cvar_shop_name];
-	}
-
 	// draw speech
 	char buf[1024] = "";
 	//if ( sellitem[clientnum] && shopspeech[player] == language[215] )
