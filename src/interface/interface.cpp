@@ -7903,7 +7903,25 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 			if ( repairedItem )
 			{
-				itemPickup(gui_player, repairedItem);
+				Item* pickedUp = itemPickup(gui_player, repairedItem);
+				if ( pickedUp && item->count == 1 )
+				{
+					// item* will be consumed, so pickedUp can take the inventory slot of it.
+					pickedUp->x = item->x;
+					pickedUp->y = item->y;
+					for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
+					{
+						if ( hotbarSlot.item == item->uid )
+						{
+							hotbarSlot.item = pickedUp->uid;
+						}
+						else if ( hotbarSlot.item == pickedUp->uid )
+						{
+							// this was auto placed by itemPickup just above, undo it.
+							hotbarSlot.item = 0;
+						}
+					}
+				}
 				free(repairedItem);
 			}
 			consumeItem(item, gui_player);
