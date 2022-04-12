@@ -1514,6 +1514,33 @@ void select_shop_slot(int player, int currentx, int currenty, int diffx, int dif
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
+	int lowestItemY = tinkerGUI.MAX_TINKER_Y - 1;
+	if ( y < 0 )
+	{
+		y = lowestItemY;
+	}
+	if ( y > lowestItemY )
+	{
+		y = 0;
+	}
+	if ( x < 0 )
+	{
+		x = tinkerGUI.MAX_TINKER_X - 1;
+	}
+	if ( x >= tinkerGUI.MAX_TINKER_X )
+	{
+		x = 0;
+	}
+	tinkerGUI.selectTinkerSlot(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	int x = currentx + diffx;
@@ -1558,6 +1585,15 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 
 	int x = currentx + diffx;
 	int y = currenty + diffy;
+
+	if ( !selectedItem && GenericGUI[player].tinkerGUI.isConstructMenuActive()
+		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_TINKERING )
+	{
+		// prevent inventory moving if tinkering not selected when it should be
+		select_tinkering_slot(player, x, y, 0, 0);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+		return;
+	}
 
 	if ( selectedItem )
 	{
@@ -6111,6 +6147,7 @@ void Player::Inventory_t::updateInventory()
 	assert(tooltipFrame);
 
 	auto& shopGUI = this->player.shopGUI;
+	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
@@ -6248,6 +6285,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					players[player]->shopGUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+				{
+					tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
@@ -6283,6 +6324,8 @@ void Player::Inventory_t::updateInventory()
 	auto selectedSlotFrame = frame->findFrame("inventory selected item");
 	auto selectedSlotCursor = selectedItemCursorFrame;
 
+	bool tinkerCraftableListOpen = tinkerGUI.isConstructMenuActive();
+
 	if ( GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
@@ -6291,6 +6334,43 @@ void Player::Inventory_t::updateInventory()
 		Frame* slotFrameToHighlight = nullptr;
 		int startx = 0;
 		int starty = 0;
+
+		if ( tinkerCraftableListOpen && players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING) )
+		{
+			for ( int x = 0; x < tinkerGUI.MAX_TINKER_X; ++x )
+			{
+				for ( int y = 0; y < tinkerGUI.MAX_TINKER_Y; ++y )
+				{
+					if ( auto slotFrame = tinkerGUI.getTinkerSlotFrame(x, y) )
+					{
+						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						{
+							if ( tinkerGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								tinkerGUI.selectTinkerSlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+								}
+							}
+						}
+
+						if ( x == tinkerGUI.getSelectedTinkerSlotX()
+							&& y == tinkerGUI.getSelectedTinkerSlotY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+							&& tinkerGUI.isInteractable )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
 
 		if ( shopGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP) )
@@ -6369,6 +6449,7 @@ void Player::Inventory_t::updateInventory()
 		}
 
 		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& !tinkerCraftableListOpen
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
@@ -6406,6 +6487,7 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL
+			&& !tinkerCraftableListOpen
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
 		{
 			for ( int x = 0; x < MAX_SPELLS_X; ++x )
@@ -6913,6 +6995,81 @@ void Player::Inventory_t::updateInventory()
 	bool noPreviousSelectedItem = (selectedItem == nullptr);
 
 	shopGUI.clearItemDisplayed();
+	tinkerGUI.clearItemDisplayed();
+
+	if ( !selectedItem && tinkerCraftableListOpen )
+	{
+		list_t* player_inventory = nullptr;
+		player_inventory = &GenericGUI[player].tinkeringTotalItems;
+		if ( player_inventory )
+		{
+			for ( node = player_inventory->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( !item ) { continue; }
+
+				if ( !GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
+				{
+					continue;
+				}
+
+				bool mouseOverSlot = false;
+
+				int itemx = item->x;
+				int itemy = item->y;
+
+				auto slotFrame = getItemSlotFrame(item, itemx, itemy);
+				if ( !slotFrame ) { continue; }
+
+				if ( itemCategory(item) == SPELL_CAT
+					|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL) )
+				{
+					continue;    //Skip over this item if not in inventory mode
+				}
+
+				mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING)
+					&& slotFrame->capturesMouse();
+
+				if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
+				{
+					// mouse movement captures the inventory
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+				}
+
+				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+					&& (!tinkerGUI.isInteractable) )
+				{
+					// don't do anything while in motion
+					break;
+				}
+
+				if ( stats[player]->HP <= 0 )
+				{
+					break;
+				}
+
+				//if ( hideItemFromShopView(*item) )
+				//{
+				//	continue;
+				//}
+				//if ( shopGUI.buybackView && !item->playerSoldItemToShop )
+				//{
+				//	continue;
+				//}
+				//else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
+				//{
+				//	continue;
+				//}
+
+				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
+				{
+					tinkerGUI.setItemDisplayNameAndPrice(item);
+					break;
+				}
+			}
+		}
+	}
 	if ( !selectedItem && shopOpen )
 	{
 		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
@@ -7218,7 +7375,7 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
-	if ( !selectedItem )
+	if ( !selectedItem && !tinkerCraftableListOpen )
 	{
 		for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 		{
@@ -7227,6 +7384,14 @@ void Player::Inventory_t::updateInventory()
 			if ( !item )
 			{
 				continue;
+			}
+
+			if ( GenericGUI[player].isGUIOpen() )
+			{
+				if ( !GenericGUI[player].isNodeFromPlayerInventory(item->node) )
+				{
+					continue;
+				}
 			}
 
 			bool mouseOverSlot = false;
@@ -7287,6 +7452,18 @@ void Player::Inventory_t::updateInventory()
 			}
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST
 				&& !chestGUI.isInteractable )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+				&& !tinkerGUI.isInteractable )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
+				&& (!shopGUI.isInteractable) )
 			{
 				// don't do anything while in motion
 				break;

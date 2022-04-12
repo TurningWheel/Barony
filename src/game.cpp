@@ -4512,6 +4512,7 @@ void ingameHud()
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();

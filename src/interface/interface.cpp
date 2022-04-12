@@ -33,6 +33,8 @@
 #include "../ui/GameUI.hpp"
 #include "../ui/MainMenu.hpp"
 #include "../json.hpp"
+#include "../mod_tools.hpp"
+#include "../ui/Field.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -1210,6 +1212,24 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		}
 		return true;
 	}
+	else if ( activeModule == MODULE_TINKERING )
+	{
+		auto& tinkerGUI = GenericGUI[player.playernum].tinkerGUI;
+		auto& inventoryUI = player.inventoryUI;
+		if ( tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = tinkerGUI.getTinkerSlotFrame(tinkerGUI.getSelectedTinkerSlotX(), tinkerGUI.getSelectedTinkerSlotY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
+		return true;
+	}
 	else if ( activeModule == MODULE_HOTBAR )
 	{
 		warpMouseToSelectedHotbarSlot(player.playernum);
@@ -1243,12 +1263,14 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| oldModule == MODULE_HOTBAR 
 					|| oldModule == MODULE_SPELLS
 					|| oldModule == MODULE_CHEST 
-					|| oldModule == MODULE_SHOP )
+					|| oldModule == MODULE_SHOP
+					|| oldModule == MODULE_TINKERING)
 				&& !(activeModule == MODULE_INVENTORY 
 					|| activeModule == MODULE_HOTBAR 
 					|| activeModule == MODULE_SPELLS
 					|| activeModule == MODULE_CHEST
-					|| activeModule == MODULE_SHOP)
+					|| activeModule == MODULE_SHOP
+					|| activeModule == MODULE_TINKERING)
 				&& !bActiveModuleHasNoCursor()
 				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
@@ -1259,12 +1281,14 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 				|| activeModule == MODULE_HOTBAR 
 				|| activeModule == MODULE_SPELLS
 				|| oldModule == MODULE_CHEST
-				|| oldModule == MODULE_SHOP)
+				|| oldModule == MODULE_SHOP
+				|| oldModule == MODULE_TINKERING)
 				&& !(oldModule == MODULE_INVENTORY 
 					|| oldModule == MODULE_HOTBAR 
 					|| oldModule == MODULE_SPELLS
 					|| activeModule == MODULE_CHEST
-					|| activeModule == MODULE_SHOP))
+					|| activeModule == MODULE_SHOP
+					|| activeModule == MODULE_TINKERING))
 				|| hoveringOverModuleButton() != MODULE_NONE )
 			{
 				SDL_Rect size = hudCursor->getSize();
@@ -3360,6 +3384,27 @@ void GenericGUIMenu::rebuildGUIInventory()
 				}
 			}
 		}
+
+		if ( guiType == GUI_TYPE_TINKERING && tinkeringFilter == TinkeringFilter::TINKER_FILTER_CRAFTABLE )
+		{
+			for ( node = player_inventory->first; node != nullptr; node = node->next )
+			{
+				if ( node->element )
+				{
+					item = (Item*)node->element;
+					if ( isNodeTinkeringCraftableItem(node)
+						&& item->x >= 0 && item->x < TinkerGUI_t::MAX_TINKER_X
+						&& item->y >= 0 && item->y < TinkerGUI_t::MAX_TINKER_Y )
+					{
+						if ( auto slotFrame = tinkerGUI.getTinkerSlotFrame(item->x, item->y) )
+						{
+							bool unusable = !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1);
+							updateSlotFrameFromItem(slotFrame, item, unusable);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -3452,7 +3497,7 @@ void GenericGUIMenu::updateGUI()
 			}
 		}
 
-		gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
+		gui_starty = (players[gui_player]->camera_midx() + (inventoryChest_bmp->w / 2)) + offsetx;
 		gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 		//Center the GUI.
@@ -3461,6 +3506,7 @@ void GenericGUIMenu::updateGUI()
 
 		windowX1 = gui_starty;
 		windowX2 = gui_starty + identifyGUI_img->w;
+
 		windowY1 = gui_startx;
 		windowY2 = gui_startx + identifyGUI_img->h;
 		if ( guiType == GUI_TYPE_TINKERING )
@@ -4485,6 +4531,7 @@ void GenericGUIMenu::closeGUI()
 	repairItemType = 0;
 	removeCurseUsingSpell = false;
 	identifyUsingSpell = false;
+	tinkerGUI.closeTinkerMenu();
 }
 
 inline Item* GenericGUIMenu::getItemInfo(int slot)
@@ -4671,6 +4718,11 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	{
 		tinkeringKitItem = itemOpenedWith;
 		tinkeringCreateCraftableItemList();
+		tinkerGUI.openTinkerMenu();
+		if ( tinkerGUI.isConstructMenuActive() )
+		{
+			players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+		}
 	}
 	else if ( guiType == GUI_TYPE_SCRIBING )
 	{
@@ -5709,21 +5761,53 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	}*/
 	std::vector<Item*> items;
 	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 1;
+	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 2;
+	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 3;
+	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 4;
+	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 1;
+	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 2;
+	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 3;
+	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 4;
+	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 2;
 	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 1;
+	items[items.size() - 1]->y = 2;
 	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 2;
+	items[items.size() - 1]->y = 2;
 	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 3;
+	items[items.size() - 1]->y = 2;
 	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 4;
+	items[items.size() - 1]->y = 2;
 	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = -1;
+	items[items.size() - 1]->y = -1;
 	for ( auto it = items.begin(); it != items.end(); ++it )
 	{
 		Item* item = *it;
@@ -8297,4 +8381,723 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 			}
 		}
 	}
+}
+
+const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_X = 5;
+const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_Y = 3;
+
+void GenericGUIMenu::TinkerGUI_t::openTinkerMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( tinkerFrame )
+	{
+		bool wasDisabled = tinkerFrame->isDisabled();
+		tinkerFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			isInteractable = false;
+			bFirstTimeSnapCursor = false;
+		}
+		if ( getSelectedTinkerSlotX () < 0 || getSelectedTinkerSlotX() >= MAX_TINKER_X
+			|| getSelectedTinkerSlotY() < 0 || getSelectedTinkerSlotY() >= MAX_TINKER_Y )
+		{
+			selectTinkerSlot(0, 0);
+		}
+		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		player.inventory_mode = INVENTORY_MODE_ITEM;
+		bOpen = true;
+	}
+	if ( inputs.getUIInteraction(playernum)->selectedItem )
+	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
+	}
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	clearItemDisplayed();
+}
+
+void GenericGUIMenu::TinkerGUI_t::closeTinkerMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( tinkerFrame )
+	{
+		tinkerFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	isInteractable = false;
+	bool wasOpen = bOpen;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	if ( wasOpen )
+	{
+		if ( inputs.getUIInteraction(playernum)->selectedItem )
+		{
+			inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+			inputs.getUIInteraction(playernum)->toggleclick = false;
+		}
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	}
+	if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+		&& !players[playernum]->shootmode )
+	{
+		// reset to inventory mode if still hanging in tinker GUI
+		players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			players[playernum]->GUI.warpControllerToModule(false);
+		}
+	}
+	clearItemDisplayed();
+	itemRequiresTitleReflow = true;
+}
+
+int GenericGUIMenu::TinkerGUI_t::heightOffsetWhenNotCompact = 200;
+const int tinkerBaseWidth = 350;
+
+bool GenericGUIMenu::TinkerGUI_t::tinkerGUIHasBeenCreated() const
+{
+	if ( tinkerFrame && !tinkerFrame->getFrames().empty() )
+	{
+		for ( auto f : tinkerFrame->getFrames() )
+		{
+			if ( f->isToBeDeleted() )
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::TinkerGUI_t::isConstructMenuActive() const
+{
+	if ( !parentGUI.isGUIOpen() || !tinkerGUIHasBeenCreated() )
+	{
+		return false;
+	}
+	if ( bOpen && parentGUI.guiType == GUICurrentType::GUI_TYPE_TINKERING
+		&& parentGUI.tinkeringFilter == TinkeringFilter::TINKER_FILTER_CRAFTABLE )
+	{
+		return true;
+	}
+	return false;
+}
+
+void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( !player.isLocalPlayer() )
+	{
+		closeTinkerMenu();
+		return;
+	}
+
+	if ( !tinkerFrame )
+	{
+		return;
+	}
+
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		keystatus[SDL_SCANCODE_G] = 0;
+		if ( !bOpen )
+		{
+			openTinkerMenu();
+		}
+		else
+		{
+			closeTinkerMenu();
+			return;
+		}
+	}
+
+	tinkerFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
+		players[playernum]->camera_virtualy1(),
+		tinkerBaseWidth,
+		players[playernum]->camera_virtualHeight() });
+
+	bool bConstructDrawerOpen = isConstructMenuActive();
+
+	if ( !tinkerFrame->isDisabled() && bOpen )
+	{
+		if ( !tinkerGUIHasBeenCreated() )
+		{
+			createTinkerMenu();
+		}
+
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		bool mainPanelReady = false;
+		if ( animx >= .9999 )
+		{
+			if ( !bConstructDrawerOpen )
+			{
+				if ( !bFirstTimeSnapCursor )
+				{
+					bFirstTimeSnapCursor = true;
+					if ( !inputs.getUIInteraction(playernum)->selectedItem
+						&& player.GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+					{
+						warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
+					}
+				}
+				isInteractable = true;
+			}
+			mainPanelReady = true;
+		}
+
+		if ( bConstructDrawerOpen && mainPanelReady )
+		{
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animDrawer)) / 3.0;
+			animDrawer += setpointDiffX;
+			animDrawer = std::min(1.0, animDrawer);
+			if ( animDrawer >= .9999 )
+			{
+				if ( !bFirstTimeSnapCursor )
+				{
+					bFirstTimeSnapCursor = true;
+					if ( !inputs.getUIInteraction(playernum)->selectedItem
+						&& player.GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+					{
+						warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
+					}
+				}
+				isInteractable = true;
+			}
+			else
+			{
+				isInteractable = false;
+			}
+		}
+		else
+		{
+			real_t setpointDiffX = fpsScale * std::max(.01, (animDrawer)) / 2.0;
+			animDrawer -= setpointDiffX;
+			animDrawer = std::max(0.0, animDrawer);
+		}
+	}
+	else
+	{
+		animDrawer = 0.0;
+		animx = 0.0;
+		isInteractable = false;
+	}
+
+	bool usingConstructMenu = true;
+
+	auto tinkerFramePos = tinkerFrame->getSize();
+	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		if ( !player.inventoryUI.bCompactView )
+		{
+			const int fullWidth = tinkerFramePos.w + 210 + (usingConstructMenu ? 40 : 0); // inventory width 210
+			tinkerFramePos.x = -tinkerFramePos.w + animx * fullWidth;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				tinkerFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			tinkerFramePos.x = player.camera_virtualWidth() - animx * tinkerFramePos.w;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				tinkerFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+	{
+		if ( !player.inventoryUI.bCompactView )
+		{
+			tinkerFramePos.x = player.camera_virtualWidth() - animx * tinkerFramePos.w * 2;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				tinkerFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			tinkerFramePos.x = -tinkerFramePos.w + animx * tinkerFramePos.w;
+			if ( player.bUseCompactGUIWidth() )
+			{
+				if ( player.inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				tinkerFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
+			}
+		}
+	}
+
+	if ( !player.bUseCompactGUIHeight() )
+	{
+		tinkerFramePos.y = heightOffsetWhenNotCompact;
+	}
+	else
+	{
+		tinkerFramePos.y = 0;
+	}
+
+	if ( !tinkerGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	auto drawerFrame = tinkerFrame->findFrame("tinker drawer");
+	drawerFrame->setDisabled(true);
+	auto baseFrame = tinkerFrame->findFrame("tinker base");
+
+	tinkerFrame->setSize(tinkerFramePos);
+
+	SDL_Rect baseFramePos = baseFrame->getSize();
+	baseFramePos.x = 0;
+	baseFramePos.w = tinkerBaseWidth;
+	baseFrame->setSize(baseFramePos);
+
+	{
+		drawerFrame->setDisabled(!bConstructDrawerOpen);
+		SDL_Rect drawerFramePos = drawerFrame->getSize();
+		const int widthDifference = animDrawer * (drawerFramePos.w - 8);
+		drawerFramePos.x = 0;
+		drawerFramePos.y = 20;
+		drawerFrame->setSize(drawerFramePos);
+
+		tinkerFramePos.x -= widthDifference;
+		int adjustx = 0;
+		if ( tinkerFramePos.x < 0 )
+		{
+			adjustx = -tinkerFramePos.x; // to not slide off-frame
+			tinkerFramePos.x += adjustx;
+		}
+		tinkerFramePos.w += (widthDifference);
+		tinkerFrame->setSize(tinkerFramePos);
+
+		baseFramePos.x = tinkerFramePos.w - baseFramePos.w;
+		baseFrame->setSize(baseFramePos);
+	}
+
+	if ( !bOpen )
+	{
+		return;
+	}
+
+	for ( int x = 0; x < MAX_TINKER_X; ++x )
+	{
+		for ( int y = 0; y < MAX_TINKER_Y; ++y )
+		{
+			if ( auto slotFrame = getTinkerSlotFrame(x, y) )
+			{
+				slotFrame->setDisabled(true);
+			}
+		}
+	}
+
+	if ( !parentGUI.isGUIOpen() 
+		|| parentGUI.guiType != GUICurrentType::GUI_TYPE_TINKERING
+		|| stats[playernum]->HP <= 0
+		|| !player.entity
+		|| player.shootmode )
+	{
+		closeTinkerMenu();
+		return;
+	}
+
+	auto displayItemName = baseFrame->findField("item display name");
+	auto metalText = baseFrame->findField("item metal value");
+	auto magicText = baseFrame->findField("item magic value");
+	displayItemName->setDisabled(true);
+	metalText->setDisabled(true);
+	magicText->setDisabled(true);
+	if ( metalScrapPrice >= 0 && magicScrapPrice >= 0 && itemDesc.size() > 1 )
+	{
+		displayItemName->setDisabled(false);
+		metalText->setDisabled(false);
+		magicText->setDisabled(false);
+
+		SDL_Rect namePos{ 30, 0, 208, 24 };
+		displayItemName->setSize(namePos);
+		if ( itemRequiresTitleReflow )
+		{
+			displayItemName->setText(itemDesc.c_str());
+			displayItemName->reflowTextToFit(0);
+			if ( displayItemName->getNumTextLines() > 2 )
+			{
+				// more than 2 lines, append ...
+				std::string copiedName = displayItemName->getText();
+				auto lastNewline = copiedName.find_last_of('\n');
+				copiedName = copiedName.substr(0U, lastNewline);
+				copiedName += "...";
+				displayItemName->setText(copiedName.c_str());
+				displayItemName->reflowTextToFit(0);
+				if ( displayItemName->getNumTextLines() > 2 )
+				{
+					// ... doesn't fit, replace last 3 characters with ...
+					copiedName = copiedName.substr(0U, copiedName.size() - 6);
+					copiedName += "...";
+					displayItemName->setText(copiedName.c_str());
+					displayItemName->reflowTextToFit(0);
+				}
+			}
+			itemRequiresTitleReflow = false;
+		}
+		namePos.h = displayItemName->getNumTextLines() * 24;
+		if ( displayItemName->getNumTextLines() > 1 )
+		{
+			//itemTooltipImg->path = "images/ui/Shop/Shop_Tooltip_3Row_00.png";
+			//itemTooltipImg->pos.h = 86;
+			//buyTooltipFramePos.h = 86;
+			//itemTooltipImg->pos.y = 0;
+
+			//namePos.y = buyTooltipFramePos.h - 77;
+		}
+		else
+		{
+			//itemTooltipImg->path = "images/ui/Shop/Shop_Tooltip_2Row_00.png";
+			//itemTooltipImg->pos.h = 66;
+			//buyTooltipFramePos.h = 66;
+			//itemTooltipImg->pos.y = 0;
+
+			//namePos.y = buyTooltipFramePos.h - 57;
+		}
+		displayItemName->setSize(namePos);
+
+		SDL_Rect metalPos{ 230 - 50, 180, 50, 24 };
+		SDL_Rect magicPos{ 302 - 50, 180, 50, 24 };
+		metalText->setText(std::to_string(metalScrapPrice).c_str());
+		metalText->setSize(metalPos);
+		magicText->setText(std::to_string(magicScrapPrice).c_str());
+		magicText->setSize(magicPos);
+	}
+
+	bool usingGamepad = (inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor);
+	bool activateSelection = false;
+	if ( isInteractable )
+	{
+		if ( !inputs.getUIInteraction(playernum)->selectedItem
+			&& !player.GUI.isDropdownActive()
+			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING) )
+		{
+			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
+				::closeShop(playernum);
+				return;
+			}
+			else
+			{
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuRightClick") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuRightClick");
+				}
+				/*else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageRightAlt") )
+				{
+					toggleShopBuybackView(playernum);
+					Input::inputs[playernum].consumeBinaryToggle("MenuPageRightAlt");
+				}*/
+			}
+		}
+	}
+
+	if ( activateSelection 
+		&& player.GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+		&& isConstructMenuActive() )
+	{
+		node_t* nextnode = nullptr;
+		list_t* player_inventory = &parentGUI.tinkeringTotalItems;
+		if ( player_inventory )
+		{
+			for ( node_t* node = player_inventory->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				if ( node->element )
+				{
+					Item* item = (Item*)node->element;
+					if ( isTinkerConstructItemSelected(item) )
+					{
+						parentGUI.executeOnItemClick(item);
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
+{
+	const int player = parentGUI.getPlayer();
+	if ( !gui || !tinkerFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+	if ( tinkerGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 258 };
+	{
+		auto drawerFrame = tinkerFrame->addFrame("tinker drawer");
+		SDL_Rect drawerPos{ 0, 0, 258, 228 };
+		drawerFrame->setSize(drawerPos);
+		drawerFrame->setHollow(true);
+		auto bg = drawerFrame->addImage(drawerPos,
+			makeColor(255, 255, 255, 255),
+			"images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "tinker drawer img");
+		drawerFrame->setDisabled(true);
+
+		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+		tinkerSlotFrames.clear();
+
+		const int baseSlotOffsetX = 0;
+		const int baseSlotOffsetY = 0;
+
+		SDL_Rect tinkerSlotsPos{ 0, 38, 258, 150 };
+		{
+			const auto drawerSlotsFrame = drawerFrame->addFrame("drawer slots");
+			drawerSlotsFrame->setSize(tinkerSlotsPos);
+			drawerSlotsFrame->setHollow(true);
+
+			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
+			makeColor(255, 255, 255, 255), "images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
+
+			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+			const int maxTinkerX = MAX_TINKER_X;
+			const int maxTinkerY = MAX_TINKER_Y;
+
+			const int slotInnerWidth = inventorySlotSize - 2;
+			std::vector<std::pair<int, int>> slotCoords =
+			{
+				std::make_pair(28 + (slotInnerWidth + 2) * 0, 0),
+				std::make_pair(28 + (slotInnerWidth + 2) * 1, 0),
+				std::make_pair(28 + (slotInnerWidth + 2) * 2, 0),
+				std::make_pair(28 + (slotInnerWidth + 2) * 3, 0),
+				std::make_pair(28 + (slotInnerWidth + 2) * 4, 0),
+
+				std::make_pair(22, 48),
+				std::make_pair(22 + (slotInnerWidth + 6), 48),
+				std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 1, 48),
+				std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 2, 48),
+				std::make_pair(22 + (slotInnerWidth + 6) * 2 + (slotInnerWidth + 4) * 2, 48),
+
+				std::make_pair(14, 110),
+				std::make_pair(14 + (slotInnerWidth + 10), 110),
+				std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 1, 110),
+				std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 2, 110),
+				std::make_pair(14 + (slotInnerWidth + 10) * 2 + (slotInnerWidth + 8) * 2, 110)
+			};
+			auto slotCoordsIt = slotCoords.begin();
+			for ( int y = 0; y < maxTinkerY; ++y )
+			{
+				for ( int x = 0; x < maxTinkerX; ++x )
+				{
+					currentSlotPos.x = slotCoordsIt->first;
+					currentSlotPos.y = slotCoordsIt->second;
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "tinker %d %d", x, y);
+
+					auto slotFrame = drawerSlotsFrame->addFrame(slotname);
+					tinkerSlotFrames[x + y * 100] = slotFrame;
+					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+					slotFrame->setSize(slotPos);
+
+					createPlayerInventorySlotFrameElements(slotFrame);
+					if ( slotCoordsIt != slotCoords.end() )
+					{
+						++slotCoordsIt;
+					}
+					//slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
+					//	"images/system/white.png", "tmp");
+					slotFrame->setDisabled(true);
+				}
+			}
+		}
+	}
+
+	{
+		auto bgFrame = tinkerFrame->addFrame("tinker base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Tinkering/Tinker_Construct_Base_00.png", "tinker base img");
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemNameText = bgFrame->addField("item display name", 1024);
+		itemNameText->setFont(itemFont);
+		itemNameText->setText("");
+		itemNameText->setHJustify(Field::justify_t::LEFT);
+		itemNameText->setVJustify(Field::justify_t::TOP);
+		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemNameText->setColor(makeColor(201, 162, 100, 255));
+		auto metalText = bgFrame->addField("item metal value", 32);
+		metalText->setFont(itemFont);
+		metalText->setText("");
+		metalText->setHJustify(Field::justify_t::RIGHT);
+		metalText->setVJustify(Field::justify_t::TOP);
+		metalText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		metalText->setColor(makeColor(201, 162, 100, 255));
+		auto magicText = bgFrame->addField("item magic value", 32);
+		magicText->setFont(itemFont);
+		magicText->setText("");
+		magicText->setHJustify(Field::justify_t::RIGHT);
+		magicText->setVJustify(Field::justify_t::TOP);
+		magicText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		magicText->setColor(makeColor(201, 162, 100, 255));
+	}
+}
+
+bool GenericGUIMenu::TinkerGUI_t::isTinkerConstructItemSelected(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( !isConstructMenuActive() || !parentGUI.isNodeTinkeringCraftableItem(item->node) )
+	{
+		return false;
+	}
+
+	if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+	{
+		if ( selectedTinkerSlotX >= 0 && selectedTinkerSlotX < MAX_TINKER_X
+			&& selectedTinkerSlotY >= 0 && selectedTinkerSlotY < MAX_TINKER_Y
+			&& item->x == selectedTinkerSlotX && item->y == selectedTinkerSlotY )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::TinkerGUI_t::selectTinkerSlot(const int x, const int y)
+{
+	selectedTinkerSlotX = x;
+	selectedTinkerSlotY = y;
+}
+
+Frame* GenericGUIMenu::TinkerGUI_t::getTinkerSlotFrame(int x, int y) const
+{
+	if ( tinkerFrame )
+	{
+		int key = x + y * 100;
+		if ( tinkerSlotFrames.find(key) != tinkerSlotFrames.end() )
+		{
+			return tinkerSlotFrames.at(key);
+		}
+		//assert(tinkerSlotFrames.find(key) == tinkerSlotFrames.end());
+	}
+	return nullptr;
+}
+
+void GenericGUIMenu::TinkerGUI_t::setItemDisplayNameAndPrice(Item* item)
+{
+	if ( !item || item->type == SPELL_ITEM )
+	{
+		clearItemDisplayed();
+	}
+	
+	char buf[1024];
+	if ( !item->identified )
+	{
+		snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+	}
+	else
+	{
+		snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+	}
+	if ( itemDesc != buf )
+	{
+		itemRequiresTitleReflow = true;
+	}
+	itemDesc = buf;
+
+	const int player = parentGUI.getPlayer();
+	if ( parentGUI.isNodeTinkeringCraftableItem(item->node) && parentGUI.tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+	{
+		tinkeringGetCraftingCost(item, &metalScrapPrice, &magicScrapPrice);
+	}
+	else if ( parentGUI.isItemSalvageable(item, player) && parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+	{
+		tinkeringGetItemValue(item, &metalScrapPrice, &magicScrapPrice);
+	}
+	else if ( parentGUI.tinkeringIsItemRepairable(item, player) && parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+	{
+		parentGUI.tinkeringGetRepairCost(item, &metalScrapPrice, &magicScrapPrice);
+	}
+}
+
+bool GenericGUIMenu::TinkerGUI_t::warpMouseToSelectedTinkerItem(Item* snapToItem, Uint32 flags)
+{
+	if ( tinkerGUIHasBeenCreated() )
+	{
+		int x = getSelectedTinkerSlotX();
+		int y = getSelectedTinkerSlotY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( auto slot = getTinkerSlotFrame(x, y) )
+		{
+			int playernum = parentGUI.getPlayer();
+			auto& player = *players[playernum];
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select item queued");
+				player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_TINKERING;
+				player.inventoryUI.cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select item warped");
+				player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				player.inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+				slot->warpMouseToFrame(playernum, flags);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
+{
+	metalScrapPrice = -1;
+	magicScrapPrice = -1;
 }

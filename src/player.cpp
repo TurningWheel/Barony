@@ -1092,7 +1092,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 {
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
-		|| moduleToAccess == MODULE_SHOP )
+		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING )
 	{
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
@@ -1634,6 +1634,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->shopGUI.getSelectedShopY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+		{
+			select_tinkering_slot(player,
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotX(),
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1681,6 +1688,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_shop_slot(player,
 				players[player]->shopGUI.getSelectedShopX(),
 				players[player]->shopGUI.getSelectedShopY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+		{
+			select_tinkering_slot(player,
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotX(),
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -1785,6 +1799,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->shopGUI.getSelectedShopY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+		{
+			select_tinkering_slot(player,
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotX(),
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1885,6 +1906,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_shop_slot(player,
 				players[player]->shopGUI.getSelectedShopX(),
 				players[player]->shopGUI.getSelectedShopY(),
+				0, 1);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+		{
+			select_tinkering_slot(player,
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotX(),
+				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
 				0, 1);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -3960,7 +3988,11 @@ Frame* Player::ShopGUI_t::getShopSlotFrame(int x, int y) const
 
 Frame* Player::Inventory_t::getItemSlotFrame(Item* item, int x, int y) const
 {
-	if ( item && player.shopGUI.isItemFromShop(item) )
+	if ( item && GenericGUI[player.playernum].isNodeTinkeringCraftableItem(item->node) )
+	{
+		return GenericGUI[player.playernum].tinkerGUI.getTinkerSlotFrame(x, y);
+	}
+	else if ( item && player.shopGUI.isItemFromShop(item) )
 	{
 		return player.shopGUI.getShopSlotFrame(x, y);
 	}

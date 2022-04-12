@@ -14,6 +14,7 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../draw.hpp"
+#include "../ui/Frame.hpp"
 
 class Item;
 
@@ -195,6 +196,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_chest_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -392,7 +394,8 @@ public:
 		scribingBlankScrollTarget(nullptr),
 		scribingLastUsageAmount(0),
 		scribingLastUsageDisplayTimer(0),
-		repairItemType(0)
+		repairItemType(0),
+		tinkerGUI(*this)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -521,6 +524,50 @@ public:
 		}
 	}
 	bool isNodeFromPlayerInventory(node_t* node);
+
+	struct TinkerGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		TinkerGUI_t(GenericGUIMenu& g) :
+			parentGUI(g) 
+		{}
+
+		Frame* tinkerFrame = nullptr;
+		real_t animx = 0.0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openTinkerMenu();
+		void closeTinkerMenu();
+		void updateTinkerMenu();
+		void createTinkerMenu();
+		bool tinkerGUIHasBeenCreated() const;
+		bool isConstructMenuActive() const;
+		Sint32 metalScrapPrice = 0;
+		Sint32 magicScrapPrice = 0;
+		std::string itemDesc = "";
+		bool itemRequiresTitleReflow = true;
+		Sint32 playerCurrentMetalScrap = 0;
+		Sint32 playerCurrentMagicScrap = 0;
+		real_t animDrawer = 0.0;
+
+		int selectedTinkerSlotX = -1;
+		int selectedTinkerSlotY = -1;
+		static const int MAX_TINKER_X;
+		static const int MAX_TINKER_Y;
+		std::unordered_map<int, Frame*> tinkerSlotFrames;
+		bool isTinkerConstructItemSelected(Item* item);
+		void selectTinkerSlot(const int x, const int y);
+		const int getSelectedTinkerSlotX() const { return selectedTinkerSlotX; }
+		const int getSelectedTinkerSlotY() const { return selectedTinkerSlotY; }
+		Frame* getTinkerSlotFrame(int x, int y) const;
+		void setItemDisplayNameAndPrice(Item* item);
+		bool warpMouseToSelectedTinkerItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+
+		static int heightOffsetWhenNotCompact;
+	};
+	TinkerGUI_t tinkerGUI;
 };
 extern GenericGUIMenu GenericGUI[MAXPLAYERS];
 

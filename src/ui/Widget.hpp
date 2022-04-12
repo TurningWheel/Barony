@@ -48,6 +48,7 @@ public:
     bool                isHideGlyphs() const { return hideGlyphs; }
     bool                isHideKeyboardGlyphs() const { return hideKeyboardGlyphs; }
     bool                isHideSelectors() const { return hideSelectors; }
+	bool				isToBeDeleted() const { return toBeDeleted; }
     Uint32              getHighlightTime() const { return highlightTime; }
     Sint32              getOwner() const { return owner; }
     void			    (*getTickCallback() const)(Widget&) { return tickCallback; }

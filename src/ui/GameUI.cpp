@@ -14387,6 +14387,14 @@ void createPlayerInventory(const int player)
 			makeColor( 255, 255, 255, 255),
 			"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
 		//flourishImg->disabled = true;
+
+		GenericGUI[player].tinkerGUI.tinkerFrame = frame->addFrame("tinker");
+		GenericGUI[player].tinkerGUI.tinkerFrame->setHollow(true);
+		GenericGUI[player].tinkerGUI.tinkerFrame->setBorder(0);
+		GenericGUI[player].tinkerGUI.tinkerFrame->setOwner(player);
+		GenericGUI[player].tinkerGUI.tinkerFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].tinkerGUI.tinkerFrame->setDisabled(true);
+
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -15725,6 +15733,22 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 			else if ( shopGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_TINKERING )
+		{
+			auto& tinkerGUI = GenericGUI[player.playernum].tinkerGUI;
+			if ( !tinkerGUI.tinkerGUIHasBeenCreated()
+				|| tinkerGUI.tinkerFrame->isDisabled()
+				|| !tinkerGUI.isConstructMenuActive() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( tinkerGUI.isInteractable )
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
