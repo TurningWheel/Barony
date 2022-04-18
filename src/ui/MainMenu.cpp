@@ -20,6 +20,7 @@
 #include "../classdescriptions.hpp"
 #include "../lobbies.hpp"
 #include "../interface/consolecommand.hpp"
+#include "../eos.hpp"
 
 #include <cassert>
 #include <functional>
@@ -344,6 +345,7 @@ namespace MainMenu {
 	static void createCountdownTimer();
 	static void createLobby(LobbyType);
 	static void createLobbyBrowser(Button&);
+	static void createLocalOrNetworkMenu();
 
     static void sendPlayerOverNet();
     static void sendReadyOverNet(int index, bool ready);
@@ -920,12 +922,13 @@ namespace MainMenu {
 	}
 
 	static void textPrompt(
+	    const char* name,
 	    const char* window_text,
 	    void (*tick_callback)(Widget&)
 	    ) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("text_prompt");
+	    Frame* frame = createPrompt(name);
 	    assert(frame);
 
 		auto text = frame->addField("text", 128);
@@ -939,8 +942,8 @@ namespace MainMenu {
 		text->select();
 	}
 
-	static void closeText() {
-	    closePrompt("text_prompt");
+	static void closeText(const char* name = "text_prompt") {
+	    closePrompt(name);
 	}
 
     static void connectionErrorPrompt(const char* str) {
@@ -5942,7 +5945,7 @@ bind_failed:
 						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 						disconnectFromLobby();
-						closeText();
+						closeText("connect_prompt");
 						connectionErrorPrompt(error_str.c_str());
 						connectingToLobbyStatus = EResult::k_EResultOK;
 					}
@@ -5958,7 +5961,7 @@ bind_failed:
 						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 						disconnectFromLobby();
-						closeText();
+						closeText("connect_prompt");
 						connectionErrorPrompt(error_str.c_str());
 						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 					}
@@ -6124,7 +6127,7 @@ bind_failed:
                     }
 
 					// display error message
-                    closeText();
+                    closeText("connect_prompt");
                     connectionErrorPrompt(error_str);
 
                     // reset connection
@@ -6155,7 +6158,7 @@ bind_failed:
 					}
 
 					// open lobby
-                    closeText();
+                    closeText("connect_prompt");
 					createLobby(LobbyType::LobbyJoined);
 
                     // TODO subscribe to mods!
@@ -6463,76 +6466,91 @@ bind_failed:
 		return true;
 	}
 
-	static void connectToServer(const char* address, LobbyType lobbyType) {
+	static bool connectToServer(const char* address, LobbyType lobbyType) {
 	    if (!address || address[0] == '\0') {
 	        soundError();
-	        return;
+	        return false;
 	    }
 
 	    // reset keepalive
 	    client_keepalive[0] = ticks;
 
 	    // open wait prompt
-        textPrompt("", [](Widget& widget){
+        textPrompt("connect_prompt", "", [](Widget& widget){
             char buf[256];
             int diff = ticks - client_keepalive[0];
             int part = diff % TICKS_PER_SECOND;
             int seconds = diff / TICKS_PER_SECOND;
             auto text = static_cast<Field*>(&widget);
             if (part < TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss", seconds);
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds", seconds);
             } else if (part < 2 * TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss.", seconds);
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds.", seconds);
             } else if (part < 3 * TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss..", seconds);
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds..", seconds);
             } else {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ss...", seconds);
+                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds...", seconds);
             }
             text->setText(buf);
             });
-
-	    // setup connecting states
-	    bool temp1 = false;
-	    bool temp2 = false;
-	    bool temp3 = false;
-	    bool temp4 = false;
-#ifdef STEAMWORKS
-	    temp1 = connectingToLobby;
-	    temp2 = connectingToLobbyWindow;
-	    if (!directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-		    joinLobbyWaitingForHostResponse = true;
-	    }
-#endif
-#if defined USE_EOS
-	    temp3 = EOS.bConnectingToLobby;
-	    temp4 = EOS.bConnectingToLobbyWindow;
-	    if (!directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-		    EOS.bJoinLobbyWaitingForHostResponse = true;
-	    }
-#endif
-#ifdef STEAMWORKS
-	    connectingToLobby = temp1;
-	    connectingToLobbyWindow = temp2;
-#endif
-#if defined USE_EOS
-	    EOS.bConnectingToLobby = temp3;
-	    EOS.bConnectingToLobbyWindow = temp4;
-#endif
 
 	    multiplayer = CLIENT;
 	    if (loadingsavegame) {
 		    loadGame(getSaveGameClientnum(false));
 	    }
 
-        // copy address
-        char address_copy[128];
-        int address_len = (int)strlen(address);
-        address_len = std::min(address_len, (int)(sizeof(address_copy) - 1));
-        memcpy(address_copy, address, address_len);
-        address_copy[address_len] = '\0';
-        Uint16 port;
+	    // close any existing net interfaces
+	    closeNetworkInterfaces();
 
-	    if (lobbyType == LobbyType::LobbyLAN) {
+	    // allocate packet data
+	    net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
+	    assert(net_packet);
+
+        // initialize connection
+	    if (lobbyType == LobbyType::LobbyOnline) {
+	        if (strncmp(address, "steam:", 6) == 0) {
+		        selectedSteamLobby = (int)strtol(address + 6, nullptr, 10);
+	        }
+	        else if (strncmp(address, "epic:", 5) == 0) {
+		        // TODO
+	        }
+
+	        // setup connecting states
+	        bool temp1 = false;
+	        bool temp2 = false;
+	        bool temp3 = false;
+	        bool temp4 = false;
+#ifdef STEAMWORKS
+	        temp1 = connectingToLobby;
+	        temp2 = connectingToLobbyWindow;
+	        if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+		        joinLobbyWaitingForHostResponse = true;
+	        }
+#endif
+#if defined USE_EOS
+	        temp3 = EOS.bConnectingToLobby;
+	        temp4 = EOS.bConnectingToLobbyWindow;
+	        if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+		        EOS.bJoinLobbyWaitingForHostResponse = true;
+	        }
+#endif
+#ifdef STEAMWORKS
+	        connectingToLobby = temp1;
+	        connectingToLobbyWindow = temp2;
+#endif
+#if defined USE_EOS
+	        EOS.bConnectingToLobby = temp3;
+	        EOS.bConnectingToLobbyWindow = temp4;
+#endif
+        } else if (lobbyType == LobbyType::LobbyLAN) {
+            // copy address
+            char address_copy[128];
+            int address_len = (int)strlen(address);
+            address_len = std::min(address_len, (int)(sizeof(address_copy) - 1));
+            memcpy(address_copy, address, address_len);
+            address_copy[address_len] = '\0';
+            Uint16 port;
+
             // find appended port number
             int port_index = 0;
 	        for (; port_index <= address_len; ++port_index) {
@@ -6554,23 +6572,18 @@ bind_failed:
 		    // TODO save address for next time
 		    //strcpy(last_ip, connectaddress);
 		    //saveConfig("default.cfg");
-	    }
 
-	    // close any existing net interfaces
-	    closeNetworkInterfaces();
-
-	    if (lobbyType == LobbyType::LobbyLAN) {
 		    // resolve host's address
 		    printlog("resolving host's address at %s...\n", address);
 		    if (SDLNet_ResolveHost(&net_server, address_copy, port) == -1) {
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
 			    printlog(buf);
-			    closeText();
+			    closeText("connect_prompt");
 			    connectionErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
-			    return;
+			    return false;
 		    }
 
 		    // open sockets
@@ -6579,19 +6592,13 @@ bind_failed:
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
 			    printlog(buf);
-			    closeText();
+			    closeText("connect_prompt");
 			    connectionErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
-			    return;
+			    return false;
 		    }
-	    }
 
-	    // allocate packet data
-	    net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
-	    assert(net_packet);
-
-	    if (lobbyType == LobbyType::LobbyLAN) {
 		    printlog("successfully contacted server at %s.\n", address);
 	    }
 
@@ -6632,7 +6639,6 @@ bind_failed:
 	    net_packet->address.port = net_server.port;
 	    net_packet->len = 57;
 	    if (lobbyType == LobbyType::LobbyOnline) {
-#if (defined STEAMWORKS || defined USE_EOS)
 		    sendPacket(net_sock, -1, net_packet, 0);
 		    SDL_Delay(5);
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -6643,10 +6649,11 @@ bind_failed:
 		    SDL_Delay(5);
 		    sendPacket(net_sock, -1, net_packet, 0);
 		    SDL_Delay(5);
-#endif
 	    } else {
 		    sendPacket(net_sock, -1, net_packet, 0);
 	    }
+
+	    return true;
 	}
 
 /******************************************************************************/
@@ -9157,6 +9164,862 @@ bind_failed:
 
 /******************************************************************************/
 
+	struct LobbyInfo {
+	    std::string name;
+	    int players;
+	    int ping;
+	    bool locked;
+	    std::string address;
+	    LobbyInfo(
+	        const char* _name = "Barony",
+	        int _players = 0,
+	        int _ping = 0,
+	        bool _locked = false,
+	        const char* _address = ""):
+	        name(_name),
+	        players(_players),
+	        ping(_ping),
+	        locked(_locked),
+	        address(_address)
+	    {}
+	};
+
+	static std::vector<LobbyInfo> lobbies;
+	static int selectedLobby = 0;
+
+	static void addLobby(const LobbyInfo& info) {
+	    if (info.ping < 0) {
+	        // probably the result of an out-of-date network scan
+	        return;
+	    }
+
+	    assert(main_menu_frame);
+	    auto window = main_menu_frame->findFrame("lobby_browser_window");
+	    if (!window) {
+	        return;
+	    }
+
+	    auto names = window->findFrame("names"); assert(names);
+	    auto players = window->findFrame("players"); assert(players);
+	    auto pings = window->findFrame("pings"); assert(pings);
+
+	    // function to make highlight the same on all columns...
+	    static auto selection_fn = [](Frame::entry_t& entry){
+	        assert(main_menu_frame);
+	        auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+	        auto names = window->findFrame("names"); assert(names);
+	        auto players = window->findFrame("players"); assert(players);
+	        auto pings = window->findFrame("pings"); assert(pings);
+	        names->setSelection(entry.parent.getSelection());
+	        players->setSelection(entry.parent.getSelection());
+	        pings->setSelection(entry.parent.getSelection());
+            };
+
+        // function to choose a specific lobby
+        static auto activate_fn = [](Frame::entry_t& entry){
+	        assert(main_menu_frame);
+	        auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+	        auto names = window->findFrame("names"); assert(names);
+	        auto players = window->findFrame("players"); assert(players);
+	        auto pings = window->findFrame("pings"); assert(pings);
+	        auto selection = entry.parent.getSelection();
+            names->setActivation(names->getEntries()[selection]);
+            players->setActivation(players->getEntries()[selection]);
+            pings->setActivation(pings->getEntries()[selection]);
+            selectedLobby = selection;
+            };
+
+        // name cell
+        auto entry_name = names->addEntry(info.name.c_str(), true);
+        entry_name->click = activate_fn;
+        entry_name->ctrlClick = activate_fn;
+        entry_name->highlight = selection_fn;
+        entry_name->selected = selection_fn;
+        entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
+        entry_name->text = info.name;
+
+        // players cell
+        const char* players_image;
+        if (info.locked) {
+            players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_Grey.png";
+        } else {
+            switch (info.players) {
+            case 0: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_0.png"; break;
+            case 1: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_1.png"; break;
+            case 2: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_2.png"; break;
+            case 3: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_3.png"; break;
+            case 4: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
+            default: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
+            }
+        }
+        auto entry_players = players->addEntry(info.name.c_str(), true);
+        entry_players->click = activate_fn;
+        entry_players->ctrlClick = activate_fn;
+        entry_players->highlight = selection_fn;
+        entry_players->selected = selection_fn;
+        entry_players->color = 0xffffffff;
+        entry_players->image = players_image;
+
+        // ping cell
+        auto entry_ping = pings->addEntry(info.name.c_str(), true);
+        entry_ping->click = activate_fn;
+        entry_ping->ctrlClick = activate_fn;
+        entry_ping->highlight = selection_fn;
+        entry_ping->selected = selection_fn;
+        entry_ping->color = 0xffffffff;
+        if (!info.locked) {
+            if (info.ping < 100) {
+                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
+            } else if (info.ping < 200) {
+                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Yellow00.png";
+            } else if (info.ping < 300) {
+                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Orange00.png";
+            } else {
+                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Red00.png";
+            }
+        }
+
+        auto slider = window->findSlider("scroll_slider");
+        slider->setMaxValue(names->getActualSize().h - names->getSize().h);
+		slider->updateHandlePosition();
+
+        lobbies.push_back(info);
+	}
+
+	static void clearLobbies() {
+	    assert(main_menu_frame);
+	    auto window = main_menu_frame->findFrame("lobby_browser_window");
+	    if (!window) {
+	        return;
+	    }
+	    auto names = window->findFrame("names"); assert(names);
+	    auto players = window->findFrame("players"); assert(players);
+	    auto pings = window->findFrame("pings"); assert(pings);
+	    names->clearEntries();
+	    players->clearEntries();
+	    pings->clearEntries();
+	    lobbies.clear();
+	    selectedLobby = -1;
+	}
+
+	static void refreshOnlineLobbies() {
+	    // close current window
+#ifdef STEAMWORKS
+	    if ( connectingToLobbyWindow )
+	    {
+		    // we quit the connection window before joining lobby, but invite was mid-flight.
+		    denyLobbyJoinEvent = true;
+	    }
+	    else if ( joinLobbyWaitingForHostResponse )
+	    {
+		    // we quit the connection window after lobby join, but before host has accepted us.
+		    joinLobbyWaitingForHostResponse = false;
+	        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(
+	            static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED));
+	        connectionErrorPrompt(error_str.c_str());
+	        disconnectFromLobby();
+		    return;
+	    }
+#endif
+#if defined USE_EOS
+	    if ( EOS.bConnectingToLobbyWindow )
+	    {
+		    // we quit the connection window before joining lobby, but invite was mid-flight.
+		    EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
+	    }
+	    else if ( EOS.bJoinLobbyWaitingForHostResponse )
+	    {
+		    // we quit the connection window after lobby join, but before host has accepted us.
+		    EOS.bJoinLobbyWaitingForHostResponse = false;
+	        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(
+	            static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED));
+	        connectionErrorPrompt(error_str.c_str());
+	        disconnectFromLobby();
+		    return;
+	    }
+#endif
+
+        // set state
+#ifdef STEAMWORKS
+	    requestingLobbies = true;
+#endif
+#if defined USE_EOS
+	    EOS.bRequestingLobbies = true;
+#endif
+	    LobbyHandler.selectedLobbyInList = 0;
+
+	    // create new window
+	    textPrompt("lobby_list_request", "Requesting lobby list...",
+	        [](Widget& widget){
+#ifdef STEAMWORKS
+#if defined(USE_EOS)
+            if (!requestingLobbies && !EOS.bRequestingLobbies) {
+#else
+            if (!requestingLobbies) {
+#endif
+                // lobby list has returned
+                closeText("lobby_list_request");
+
+	            for (Uint32 c = 0; c < numSteamLobbies; ++c) {
+	                LobbyInfo info;
+	                info.name = lobbyText[c];
+	                info.players = lobbyPlayers[c];
+	                info.ping = 100; // TODO
+	                info.locked = false; // TODO
+	                info.address = "steam:" + std::to_string(c);
+	                addLobby(info);
+	            }
+#ifdef USE_EOS
+                //for (Uint32 c =
+#endif
+#endif
+            }
+	        });
+
+        // request new lobbies
+#ifdef STEAMWORKS
+	    cpp_SteamMatchmaking_RequestLobbyList();
+#endif
+#ifdef USE_EOS
+#ifdef STEAMWORKS
+	    if ( EOS.CurrentUserInfo.bUserLoggedIn )
+	    {
+		    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+			    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+	    }
+	    else
+	    {
+		    EOS.bRequestingLobbies = false; // don't attempt search if not logged in
+	    }
+#else
+	    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+		    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
+#endif
+#endif // USE_EOS
+	}
+
+	static void createLobbyBrowser(Button& button) {
+		selectedLobby = -1;
+		lobbies.clear();
+
+		enum class BrowserMode {
+			Online,
+			LAN,
+		};
+		static BrowserMode mode;
+		mode = BrowserMode::Online;
+		directConnect = false;
+
+	    closeNetworkInterfaces();
+
+        // open a socket for network scanning
+	    net_sock = SDLNet_UDP_Open(0);
+	    assert(net_sock);
+
+        // allocate packet data
+        net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
+        assert(net_packet);
+
+		// remove "Local or Network" window
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		// create lobby browser window
+		auto window = dimmer->addFrame("lobby_browser_window");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1020) / 2,
+			(Frame::virtualScreenY - 552) / 2,
+			1020,
+			552});
+		window->setActualSize(SDL_Rect{0, 0, 1020, 552});
+		window->setColor(0);
+		window->setBorder(0);
+
+		static Uint32 scan_ticks;
+		scan_ticks = ticks;
+
+		static auto refresh_fn = [](Button& button){
+		    soundActivate();
+		    clearLobbies();
+		    scan_ticks = ticks;
+            if (directConnect) {
+                memcpy(net_packet->data, "SCAN", 4);
+                net_packet->len = 4;
+                //SDLNet_ResolveHost(&net_packet->address, "255.255.255.255", DEFAULT_PORT);
+                net_packet->address.host = 0xffffffff;
+                SDLNet_Write16(DEFAULT_PORT, &net_packet->address.port);
+                sendPacket(net_sock, -1, net_packet, 0);
+            } else {
+                refreshOnlineLobbies();
+                button.deselect();
+            }
+
+		    assert(main_menu_frame);
+		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+            auto slider = window->findSlider("scroll_slider");
+		    slider->setValue(0.f);
+		    slider->setMinValue(0.f);
+		    slider->setMaxValue(0.f);
+			slider->updateHandlePosition();
+		    };
+
+		// while the window is open, listen for SCAN packets
+		window->setTickCallback([](Widget& widget){
+		    if (multiplayer != CLIENT && directConnect) {
+			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
+				    Uint32 packetId = SDLNet_Read32(net_packet->data);
+				    if (packetId == 'SCAN') {
+                        if (net_packet->len > 4) {
+				            char hostname[256] = { '\0' };
+				            Uint32 hostname_len;
+				            hostname_len = SDLNet_Read32(&net_packet->data[4]);
+				            memcpy(hostname, &net_packet->data[8], hostname_len);
+
+				            Uint32 offset = 8 + hostname_len;
+				            int players = (int)SDLNet_Read32(&net_packet->data[offset]);
+
+				            int ping = (int)(ticks - scan_ticks);
+
+				            // there's a server on the network!
+				            LobbyInfo info;
+				            info.name = hostname;
+				            info.players = players;
+				            info.ping = ping;
+				            info.locked = net_packet->data[offset + 4];
+
+                            Uint32 host = net_packet->address.host;
+				            char buf[16];
+				            snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
+				                (host & 0x000000ff) >> 0,
+				                (host & 0x0000ff00) >> 8,
+				                (host & 0x00ff0000) >> 16,
+				                (host & 0xff000000) >> 24);
+				            info.address = buf;
+				            addLobby(info);
+
+				            printlog("got a SCAN packet from %s\n", buf);
+				        }
+				    }
+			    }
+			}
+		    });
+
+		(void)createBackWidget(window, [](Button& button){
+		    soundCancel();
+		    closeNetworkInterfaces();
+		    createLocalOrNetworkMenu();
+
+		    // remove parent window
+		    auto frame = static_cast<Frame*>(button.getParent());
+		    frame = static_cast<Frame*>(frame->getParent());
+		    frame = static_cast<Frame*>(frame->getParent());
+		    frame->removeSelf();
+		    }, SDL_Rect{292, 4, 0, 0});
+
+		auto background = window->addImage(
+			SDL_Rect{288, 0, 444, 552},
+			0xffffffff,
+			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window01.png",
+			"background"
+		);
+
+		auto banner_title = window->addField("banner", 64);
+		banner_title->setSize(SDL_Rect{408, 24, 204, 18});
+		banner_title->setText("ONLINE LOBBY BROWSER");
+		banner_title->setFont(smallfont_outline);
+		banner_title->setJustify(Field::justify_t::CENTER);
+
+		auto interior = window->addImage(
+			SDL_Rect{330, 70, 358, 380},
+			0xffffffff,
+			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png",
+			"interior"
+		);
+
+		auto lobby_slider_topper = window->addImage(
+			SDL_Rect{640, 116, 38, 20},
+			0xffffffff,
+			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Topper00.png",
+			"lobby_slider_topper"
+		);
+
+		auto frame_right = window->addFrame("frame_right");
+		frame_right->setInvisible(true);
+		frame_right->setSize(SDL_Rect{716, 28, 304, 414});
+		frame_right->setActualSize(SDL_Rect{0, 0, 304, 414});
+		frame_right->setBorder(0);
+		frame_right->setColor(0);
+		{
+		    frame_right->addImage(
+			    frame_right->getActualSize(),
+			    0xffffffff,
+			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Filters00.png",
+			    "background"
+		    );
+
+		    auto label = frame_right->addField("label", 128);
+		    label->setJustify(Field::justify_t::CENTER);
+		    label->setSize(SDL_Rect{80, 48, 146, 22});
+		    label->setFont(smallfont_outline);
+		    label->setText("Filters");
+
+		}
+
+		auto frame_left = window->addFrame("frame_left");
+		frame_left->setInvisible(true);
+		frame_left->setSize(SDL_Rect{0, 28, 304, 414});
+		frame_left->setActualSize(SDL_Rect{0, 0, 304, 414});
+		frame_left->setBorder(0);
+		frame_left->setColor(0);
+		frame_left->setTickCallback([](Widget& widget){
+		    //auto frame = static_cast<Frame*>(&widget);
+	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
+                //const auto& lobby = lobbies[selectedLobby];
+                widget.setInvisible(false);
+            } else {
+                widget.setInvisible(true);
+            }
+		    });
+		{
+		    frame_left->addImage(
+			    frame_left->getActualSize(),
+			    0xffffffff,
+			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Left00.png",
+			    "background"
+		    );
+
+		    auto label = frame_left->addField("label", 128);
+		    label->setJustify(Field::justify_t::CENTER);
+		    label->setSize(SDL_Rect{78, 48, 146, 22});
+		    label->setFont(smallfont_outline);
+		    label->setText("Lobby");
+		}
+
+		auto online_tab = window->addButton("online_tab");
+		online_tab->setSize(SDL_Rect{392, 70, 106, 38});
+		online_tab->setHighlightColor(0);
+		online_tab->setBorder(0);
+		online_tab->setColor(0);
+		online_tab->setText("ONLINE");
+		online_tab->setFont(smallfont_outline);
+		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		online_tab->setWidgetSearchParent(window->getName());
+		online_tab->addWidgetAction("MenuPageLeft", "online_tab");
+		online_tab->addWidgetAction("MenuPageRight", "lan_tab");
+		online_tab->addWidgetAction("MenuStart", "join_lobby");
+		online_tab->addWidgetAction("MenuAlt1", "enter_code");
+		online_tab->addWidgetAction("MenuAlt2", "refresh");
+		online_tab->setWidgetBack("back_button");
+		online_tab->setWidgetRight("lan_tab");
+		online_tab->setWidgetDown("names");
+		online_tab->setCallback([](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent());
+			auto interior = frame->findImage("interior");
+			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png";
+			mode = BrowserMode::Online;
+			directConnect = false;
+			refresh_fn(button);
+			});
+
+		auto lan_tab = window->addButton("lan_tab");
+		lan_tab->setSize(SDL_Rect{502, 70, 128, 38});
+		lan_tab->setHighlightColor(0);
+		lan_tab->setBorder(0);
+		lan_tab->setColor(0);
+#if defined(NINTENDO)
+		lan_tab->setText("WIRELESS");
+#else
+		lan_tab->setText("LAN");
+#endif
+		lan_tab->setFont(smallfont_outline);
+		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		lan_tab->setWidgetSearchParent(window->getName());
+		lan_tab->addWidgetAction("MenuPageLeft", "online_tab");
+		lan_tab->addWidgetAction("MenuPageRight", "lan_tab");
+		lan_tab->addWidgetAction("MenuStart", "join_lobby");
+		lan_tab->addWidgetAction("MenuAlt1", "enter_code");
+		lan_tab->addWidgetAction("MenuAlt2", "refresh");
+		lan_tab->setWidgetBack("back_button");
+		lan_tab->setWidgetLeft("online_tab");
+		lan_tab->setWidgetRight("refresh");
+		lan_tab->setWidgetDown("names");
+		lan_tab->setCallback([](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent());
+			auto interior = frame->findImage("interior");
+			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png";
+			mode = BrowserMode::LAN;
+			directConnect = true;
+			refresh_fn(button);
+			});
+
+		auto refresh = window->addButton("refresh");
+		refresh->setSize(SDL_Rect{634, 62, 40, 40});
+		refresh->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_Refresh00.png");
+		refresh->setHighlightColor(makeColor(255, 255, 255, 255));
+		refresh->setColor(makeColor(255, 255, 255, 255));
+		refresh->setWidgetSearchParent(window->getName());
+		refresh->addWidgetAction("MenuPageLeft", "online_tab");
+		refresh->addWidgetAction("MenuPageRight", "lan_tab");
+		refresh->addWidgetAction("MenuStart", "join_lobby");
+		refresh->addWidgetAction("MenuAlt1", "enter_code");
+		refresh->addWidgetAction("MenuAlt2", "refresh");
+		refresh->setWidgetBack("back_button");
+		refresh->setWidgetLeft("lan_tab");
+		refresh->setWidgetDown("names");
+		refresh->setCallback(refresh_fn);
+
+		static auto enter_code_fn = [](Button& button){
+		    static const char* guide;
+		    static const char* ipaddr = "Enter an IP address to connect to.";
+		    static const char* roomcode = "Enter the code to a lobby you wish to connect to.";
+		    guide = strcmp(button.getText(), "Enter IP\nAddress") ? roomcode : ipaddr;
+            textFieldPrompt("", guide, "Connect", "Cancel",
+                [](Button&){ // connect
+                    const char* address = closeTextField(); // only valid for one frame
+                    if (guide == ipaddr) {
+                        soundActivate();
+                        (void)connectToServer(address, LobbyType::LobbyLAN);
+                    } else if (guide == roomcode) {
+                        soundActivate();
+                        (void)connectToServer(address, LobbyType::LobbyOnline);
+                    } else {
+                        soundError();
+                    }
+                },
+                [](Button&){ // cancel
+                    soundCancel();
+                    assert(main_menu_frame);
+                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+                    auto enter_code = window->findButton("enter_code"); assert(enter_code);
+                    enter_code->select();
+                    (void)closeTextField();
+                });
+		    };
+
+		auto enter_code = window->addButton("enter_code");
+		enter_code->setSize(SDL_Rect{342, 454, 164, 62});
+		enter_code->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
+		enter_code->setColor(makeColor(255, 255, 255, 255));
+		enter_code->setText("Enter Lobby\nCode");
+		enter_code->setFont(smallfont_outline);
+		enter_code->setWidgetSearchParent(window->getName());
+		enter_code->addWidgetAction("MenuPageLeft", "online_tab");
+		enter_code->addWidgetAction("MenuPageRight", "lan_tab");
+		enter_code->addWidgetAction("MenuStart", "join_lobby");
+		enter_code->addWidgetAction("MenuAlt1", "enter_code");
+		enter_code->addWidgetAction("MenuAlt2", "refresh");
+		enter_code->setWidgetBack("back_button");
+		enter_code->setWidgetRight("join_lobby");
+		enter_code->setWidgetUp("names");
+		enter_code->setTickCallback([](Widget& widget){
+		    auto button = static_cast<Button*>(&widget);
+		    if (mode == BrowserMode::Online) {
+		        button->setText("Enter Lobby\nCode");
+		    } else if (mode == BrowserMode::LAN) {
+		        button->setText("Enter IP\nAddress");
+		    }
+		    });
+		enter_code->setCallback(enter_code_fn);
+
+		static auto join_lobby_fn = [](Button& button){
+	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
+                const auto& lobby = lobbies[selectedLobby];
+                if (!lobby.locked) {
+                    if (connectToServer(lobby.address.c_str(), LobbyType::LobbyLAN)) {
+                        // we only want to deselect the button if the
+                        // "connecting to server" prompt actually raises
+                        button.deselect();
+                    }
+                } else {
+                    soundWarning();
+                }
+            } else {
+	            monoPrompt("Select a lobby to join first.",
+	                "Okay",
+	                [](Button&){
+		                soundCancel();
+	                    assert(main_menu_frame);
+	                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
+	                    auto names = window->findFrame("names"); assert(names);
+	                    names->select();
+		                closeMono();
+	                });
+            }
+		    };
+
+		auto join_lobby = window->addButton("join_lobby");
+		join_lobby->setSize(SDL_Rect{514, 454, 164, 62});
+		join_lobby->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		join_lobby->setHighlightColor(makeColor(255, 255, 255, 255));
+		join_lobby->setColor(makeColor(255, 255, 255, 255));
+		join_lobby->setText("Join Lobby");
+		join_lobby->setFont(smallfont_outline);
+		join_lobby->setWidgetSearchParent(window->getName());
+		join_lobby->addWidgetAction("MenuPageLeft", "online_tab");
+		join_lobby->addWidgetAction("MenuPageRight", "lan_tab");
+		join_lobby->addWidgetAction("MenuStart", "join_lobby");
+		join_lobby->addWidgetAction("MenuAlt1", "enter_code");
+		join_lobby->addWidgetAction("MenuAlt2", "refresh");
+		join_lobby->setWidgetBack("back_button");
+		join_lobby->setWidgetLeft("enter_code");
+		join_lobby->setWidgetUp("crossplay");
+		join_lobby->setCallback(join_lobby_fn);
+
+		static auto tick_callback = [](Widget& widget){
+		    widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
+	        };
+
+        // name column
+        {
+		    auto name_column_header = window->addField("name_column_header", 32);
+		    name_column_header->setHJustify(Field::justify_t::LEFT);
+		    name_column_header->setVJustify(Field::justify_t::CENTER);
+		    name_column_header->setFont(smallfont_no_outline);
+		    name_column_header->setSize(SDL_Rect{340, 116, 172, 20});
+		    name_column_header->setColor(makeColor(102, 69, 36, 255));
+		    name_column_header->setText(" Lobby Name");
+
+		    auto list = window->addFrame("names");
+		    list->setScrollBarsEnabled(false);
+		    list->setSize(SDL_Rect{342, 140, 168, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 168, 200});
+		    list->setFont(smallfont_no_outline);
+		    list->setColor(0);
+		    list->setBorder(0);
+		    list->setEntrySize(18);
+		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
+		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setTickCallback(tick_callback);
+		    list->setWidgetSearchParent(window->getName());
+		    list->addWidgetMovement("MenuListCancel", list->getName());
+		    list->addWidgetAction("MenuPageLeft", "online_tab");
+		    list->addWidgetAction("MenuPageRight", "lan_tab");
+		    list->addWidgetAction("MenuStart", "join_lobby");
+		    list->addWidgetAction("MenuAlt1", "enter_code");
+		    list->addWidgetAction("MenuAlt2", "refresh");
+		    list->setWidgetBack("back_button");
+		    list->setWidgetUp("online_tab");
+		    list->setWidgetRight("players");
+		    list->setWidgetDown("enter_code");
+		    list->addSyncScrollTarget("players");
+		    list->addSyncScrollTarget("pings");
+		    list->select();
+		}
+
+        // players column
+        {
+		    auto players_column_header = window->addField("players_column_header", 32);
+		    players_column_header->setHJustify(Field::justify_t::LEFT);
+		    players_column_header->setVJustify(Field::justify_t::CENTER);
+		    players_column_header->setFont(smallfont_no_outline);
+		    players_column_header->setSize(SDL_Rect{514, 116, 76, 20});
+		    players_column_header->setColor(makeColor(102, 69, 36, 255));
+		    players_column_header->setText(" Players");
+
+		    auto list = window->addFrame("players");
+		    list->setScrollBarsEnabled(false);
+		    list->setSize(SDL_Rect{516, 140, 72, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 72, 200});
+		    list->setFont(smallfont_no_outline);
+		    list->setColor(0);
+		    list->setBorder(0);
+		    list->setEntrySize(18);
+		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
+		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setTickCallback(tick_callback);
+		    list->setWidgetSearchParent(window->getName());
+		    list->addWidgetMovement("MenuListCancel", list->getName());
+		    list->addWidgetAction("MenuPageLeft", "online_tab");
+		    list->addWidgetAction("MenuPageRight", "lan_tab");
+		    list->addWidgetAction("MenuStart", "join_lobby");
+		    list->addWidgetAction("MenuAlt1", "enter_code");
+		    list->addWidgetAction("MenuAlt2", "refresh");
+		    list->setWidgetBack("back_button");
+		    list->setWidgetUp("online_tab");
+		    list->setWidgetRight("pings");
+		    list->setWidgetLeft("names");
+		    list->setWidgetDown("enter_code");
+		    list->addSyncScrollTarget("names");
+		    list->addSyncScrollTarget("pings");
+		}
+
+        // ping column
+        {
+		    auto ping_column_header = window->addField("ping_column_header", 32);
+		    ping_column_header->setHJustify(Field::justify_t::LEFT);
+		    ping_column_header->setVJustify(Field::justify_t::CENTER);
+		    ping_column_header->setFont(smallfont_no_outline);
+		    ping_column_header->setSize(SDL_Rect{592, 116, 48, 20});
+		    ping_column_header->setColor(makeColor(102, 69, 36, 255));
+		    ping_column_header->setText(" Ping");
+
+		    auto list = window->addFrame("pings");
+		    list->setScrollBarsEnabled(false);
+		    list->setSize(SDL_Rect{594, 140, 44, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 44, 200});
+		    list->setFont(smallfont_no_outline);
+		    list->setColor(0);
+		    list->setBorder(0);
+		    list->setEntrySize(18);
+		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
+		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setTickCallback(tick_callback);
+		    list->setWidgetSearchParent(window->getName());
+		    list->addWidgetMovement("MenuListCancel", list->getName());
+		    list->addWidgetAction("MenuPageLeft", "online_tab");
+		    list->addWidgetAction("MenuPageRight", "lan_tab");
+		    list->addWidgetAction("MenuStart", "join_lobby");
+		    list->addWidgetAction("MenuAlt1", "enter_code");
+		    list->addWidgetAction("MenuAlt2", "refresh");
+		    list->setWidgetBack("back_button");
+		    list->setWidgetUp("online_tab");
+		    list->setWidgetLeft("players");
+		    list->setWidgetDown("enter_code");
+		    list->addSyncScrollTarget("names");
+		    list->addSyncScrollTarget("players");
+		}
+
+		auto slider = window->addSlider("scroll_slider");
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		slider->setRailSize(SDL_Rect{640, 138, 38, 234});
+		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+		slider->setRailImage("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Backing01B.png");
+		slider->setHandleImage("*images/ui/Main Menus/Play/LobbyBrowser/UI_Slider_Boulder00.png");
+		slider->setBorder(24);
+		slider->setWidgetSearchParent(window->getName());
+	    slider->addWidgetAction("MenuPageLeft", "online_tab");
+	    slider->addWidgetAction("MenuPageRight", "lan_tab");
+	    slider->addWidgetAction("MenuStart", "join_lobby");
+	    slider->addWidgetAction("MenuAlt1", "enter_code");
+	    slider->addWidgetAction("MenuAlt2", "refresh");
+	    slider->setWidgetBack("back_button");
+	    slider->setWidgetUp("wireless_tab");
+	    slider->setWidgetDown("join_lobby");
+	    slider->setWidgetLeft("pings");
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent()); assert(frame);
+			{
+			    Frame* column = frame->findFrame("names"); assert(column);
+			    auto actualSize = column->getActualSize();
+			    actualSize.y = slider.getValue();
+			    column->setActualSize(actualSize);
+			}
+			{
+			    Frame* column = frame->findFrame("players"); assert(column);
+			    auto actualSize = column->getActualSize();
+			    actualSize.y = slider.getValue();
+			    column->setActualSize(actualSize);
+			}
+			{
+			    Frame* column = frame->findFrame("pings"); assert(column);
+			    auto actualSize = column->getActualSize();
+			    actualSize.y = slider.getValue();
+			    column->setActualSize(actualSize);
+			}
+			slider.updateHandlePosition();
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent()); assert(frame);
+			Frame* names = frame->findFrame("names"); assert(names);
+			auto actualSize = names->getActualSize();
+			slider->setValue(actualSize.y);
+			slider->updateHandlePosition();
+			});
+
+		auto filter_settings = window->addButton("filter_settings");
+		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
+		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
+		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
+		filter_settings->setColor(makeColor(255, 255, 255, 255));
+		filter_settings->setText("Filter Settings");
+		filter_settings->setFont(smallfont_outline);
+		filter_settings->setWidgetSearchParent(window->getName());
+		filter_settings->addWidgetAction("MenuPageLeft", "online_tab");
+		filter_settings->addWidgetAction("MenuPageRight", "lan_tab");
+		filter_settings->addWidgetAction("MenuStart", "join_lobby");
+		filter_settings->addWidgetAction("MenuAlt1", "enter_code");
+		filter_settings->addWidgetAction("MenuAlt2", "refresh");
+		filter_settings->setWidgetBack("back_button");
+		filter_settings->setWidgetDown("crossplay");
+		filter_settings->setWidgetUp("names");
+		filter_settings->setCallback([](Button& button){
+		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
+		    frame_right->setInvisible(frame_right->isInvisible()==false);
+		    });
+
+		auto crossplay_fn = [](Button&){};
+
+		auto crossplay_label = window->addField("crossplay_label", 128);
+		crossplay_label->setJustify(Field::justify_t::CENTER);
+		crossplay_label->setSize(SDL_Rect{378, 378, 96, 48});
+		crossplay_label->setFont(smallfont_outline);
+		crossplay_label->setText("Crossplay");
+
+		auto crossplay = window->addButton("crossplay");
+		crossplay->setSize(SDL_Rect{474, 378, 158, 48});
+		crossplay->setJustify(Button::justify_t::CENTER);
+		crossplay->setPressed(LobbyHandler.crossplayEnabled);
+		crossplay->setStyle(Button::style_t::STYLE_TOGGLE);
+		crossplay->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Toggle_Off00.png");
+		crossplay->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Toggle_On00.png");
+		crossplay->setHighlightColor(makeColor(255,255,255,255));
+		crossplay->setColor(makeColor(255,255,255,255));
+		crossplay->setTextHighlightColor(makeColor(255,255,255,255));
+		crossplay->setTextColor(makeColor(255,255,255,255));
+		crossplay->setText("Off          On");
+		crossplay->setFont(smallfont_outline);
+		crossplay->setWidgetSearchParent(window->getName());
+		crossplay->addWidgetAction("MenuPageLeft", "online_tab");
+		crossplay->addWidgetAction("MenuPageRight", "lan_tab");
+		crossplay->addWidgetAction("MenuStart", "join_lobby");
+		crossplay->addWidgetAction("MenuAlt1", "enter_code");
+		crossplay->addWidgetAction("MenuAlt2", "refresh");
+		crossplay->setWidgetBack("back_button");
+		crossplay->setWidgetDown("join_lobby");
+		crossplay->setWidgetUp("filter_settings");
+		crossplay->setCallback(crossplay_fn);
+
+#ifdef NDEBUG
+	    // scan for lobbies immediately
+	    refresh->activate();
+#else
+        if (1) {
+            // test lobbies
+		    addLobby(LobbyInfo("Ben", 1, 50, false));
+		    addLobby(LobbyInfo("Sheridan", 3, 50, false));
+		    addLobby(LobbyInfo("Paulie", 2, 250, false));
+		    addLobby(LobbyInfo("Fart_Face", 1, 420, false));
+		    addLobby(LobbyInfo("Tim", 3, 90, true));
+		    addLobby(LobbyInfo("Johnny", 3, 30, false));
+		    addLobby(LobbyInfo("Boaty McBoatFace", 2, 20, false));
+		    addLobby(LobbyInfo("RIP_Morgan_", 0, 120, false));
+		    addLobby(LobbyInfo("What is the longest name we can fit in a Barony lobby?", 4, 150, false));
+		    addLobby(LobbyInfo("16 PLAYER SMASH FEST", 16, 90, false));
+		    addLobby(LobbyInfo("ur mom", 16, 160, true));
+		    addLobby(LobbyInfo("waow more lobbies", 16, 160, true));
+		    addLobby(LobbyInfo("snobby lobby", 16, 260, true));
+		    addLobby(LobbyInfo("gAmERs RiSe uP!!", 16, 0, false));
+		    addLobby(LobbyInfo("a very unsuspicious lobby", 2, 130, false));
+		    addLobby(LobbyInfo("cool lobby bro!", 3, 240, false));
+		} else {
+		    refresh->activate();
+		}
+#endif
+	}
+
+/******************************************************************************/
+
     static void createHallofTrialsMenu() {
         assert(main_menu_frame);
 
@@ -9816,835 +10679,6 @@ bind_failed:
 		tooltip->setColor(makeColor(91, 76, 50, 255));
 		tooltip->setJustify(Field::justify_t::CENTER);
 		tooltip->setText("Help text goes here.");
-	}
-
-	static void refreshOnlineLobbies() {
-	    return; // WIP
-
-	    // close current window
-    #ifdef STEAMWORKS
-	    bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
-	    if ( connectingToLobbyWindow )
-	    {
-		    // we quit the connection window before joining lobby, but invite was mid-flight.
-		    denyLobbyJoinEvent = true;
-	    }
-	    else if ( joinLobbyWaitingForHostResponse )
-	    {
-	        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(
-	            static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED));
-
-		    // we quit the connection window after lobby join, but before host has accepted us.
-		    joinLobbyWaitingForHostResponse = false;
-
-		    return;
-	    }
-    #endif
-    #if defined USE_EOS
-	    if ( EOS.bConnectingToLobbyWindow )
-	    {
-		    // we quit the connection window before joining lobby, but invite was mid-flight.
-		    EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
-	    }
-	    else if ( EOS.bJoinLobbyWaitingForHostResponse )
-	    {
-		    // we quit the connection window after lobby join, but before host has accepted us.
-		    EOS.bJoinLobbyWaitingForHostResponse = false;
-		    buttonDisconnect(nullptr);
-		    openFailedConnectionWindow(CLIENT);
-		    strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
-		    return;
-	    }
-    #endif
-
-
-	    buttonCloseSubwindow(NULL);
-	    list_FreeAll(&button_l);
-	    deleteallbuttons = true;
-
-	    // create new window
-	    subwindow = 1;
-    #ifdef STEAMWORKS
-	    requestingLobbies = true;
-    #endif
-    #if defined USE_EOS
-	    EOS.bRequestingLobbies = true;
-    #endif // USE_EOS
-
-	    subx1 = xres / 2 - 256;
-	    subx2 = xres / 2 + 256;
-	    suby1 = yres / 2 - 64;
-	    suby2 = yres / 2 + 64;
-	    strcpy(subtext, language[1444]);
-    #ifdef STEAMWORKS
-	    //c_SteamMatchmaking_RequestLobbyList();
-	    //SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
-	    cpp_SteamMatchmaking_RequestLobbyList();
-    #endif
-
-	    LobbyHandler.selectedLobbyInList = 0;
-
-    #if defined USE_EOS
-    #ifdef STEAMWORKS
-	    if ( EOS.CurrentUserInfo.bUserLoggedIn )
-	    {
-		    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-			    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
-	    }
-	    else
-	    {
-		    EOS.bRequestingLobbies = false; // don't attempt search if not logged in
-	    }
-    #else
-	    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-		    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
-    #endif
-    #endif // USE_EOS
-	}
-
-	static void createLobbyBrowser(Button& button) {
-		static int selectedLobby;
-		selectedLobby = -1;
-
-		enum class BrowserMode {
-			Online,
-			LAN,
-		};
-		static BrowserMode mode;
-		mode = BrowserMode::Online;
-		directConnect = false;
-
-	    closeNetworkInterfaces();
-
-        // open a socket for network scanning
-	    net_sock = SDLNet_UDP_Open(0);
-	    assert(net_sock);
-
-        // allocate packet data
-        net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
-        assert(net_packet);
-
-		// remove "Local or Network" window
-		auto frame = static_cast<Frame*>(button.getParent());
-		frame = static_cast<Frame*>(frame->getParent());
-		frame->removeSelf();
-
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(makeColor(0, 0, 0, 63));
-		dimmer->setBorder(0);
-
-		// create lobby browser window
-		auto window = dimmer->addFrame("lobby_browser_window");
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 1020) / 2,
-			(Frame::virtualScreenY - 552) / 2,
-			1020,
-			552});
-		window->setActualSize(SDL_Rect{0, 0, 1020, 552});
-		window->setColor(0);
-		window->setBorder(0);
-
-		struct LobbyInfo {
-		    std::string name;
-		    int players;
-		    int ping;
-		    bool locked;
-		    std::string address;
-		    LobbyInfo(
-		        const char* _name = "Barony",
-		        int _players = 0,
-		        int _ping = 0,
-		        bool _locked = false,
-		        const char* _address = ""):
-		        name(_name),
-		        players(_players),
-		        ping(_ping),
-		        locked(_locked),
-		        address(_address)
-		    {}
-		};
-
-		static std::vector<LobbyInfo> lobbies;
-		lobbies.clear();
-
-		static auto add_lobby = [](const LobbyInfo& info){
-		    if (info.ping < 0) {
-		        // probably the result of an out-of-date network scan
-		        return;
-		    }
-		    assert(main_menu_frame);
-		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-		    auto names = window->findFrame("names"); assert(names);
-		    auto players = window->findFrame("players"); assert(players);
-		    auto pings = window->findFrame("pings"); assert(pings);
-
-		    // function to make highlight the same on all columns...
-		    static auto selection_fn = [](Frame::entry_t& entry){
-		        assert(main_menu_frame);
-		        auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-		        auto names = window->findFrame("names"); assert(names);
-		        auto players = window->findFrame("players"); assert(players);
-		        auto pings = window->findFrame("pings"); assert(pings);
-		        names->setSelection(entry.parent.getSelection());
-		        players->setSelection(entry.parent.getSelection());
-		        pings->setSelection(entry.parent.getSelection());
-                };
-
-            // function to choose a specific lobby
-            static auto activate_fn = [](Frame::entry_t& entry){
-		        assert(main_menu_frame);
-		        auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-		        auto names = window->findFrame("names"); assert(names);
-		        auto players = window->findFrame("players"); assert(players);
-		        auto pings = window->findFrame("pings"); assert(pings);
-		        auto selection = entry.parent.getSelection();
-                names->setActivation(names->getEntries()[selection]);
-                players->setActivation(players->getEntries()[selection]);
-                pings->setActivation(pings->getEntries()[selection]);
-                selectedLobby = selection;
-                };
-
-            // name cell
-            auto entry_name = names->addEntry(info.name.c_str(), true);
-            entry_name->click = activate_fn;
-            entry_name->ctrlClick = activate_fn;
-            entry_name->highlight = selection_fn;
-            entry_name->selected = selection_fn;
-            entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
-            entry_name->text = info.name;
-
-            // players cell
-            const char* players_image;
-            if (info.locked) {
-                players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_Grey.png";
-            } else {
-                switch (info.players) {
-                case 0: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_0.png"; break;
-                case 1: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_1.png"; break;
-                case 2: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_2.png"; break;
-                case 3: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_3.png"; break;
-                case 4: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
-                default: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
-                }
-            }
-            auto entry_players = players->addEntry(info.name.c_str(), true);
-            entry_players->click = activate_fn;
-            entry_players->ctrlClick = activate_fn;
-            entry_players->highlight = selection_fn;
-            entry_players->selected = selection_fn;
-            entry_players->color = 0xffffffff;
-            entry_players->image = players_image;
-
-            // ping cell
-            auto entry_ping = pings->addEntry(info.name.c_str(), true);
-            entry_ping->click = activate_fn;
-            entry_ping->ctrlClick = activate_fn;
-            entry_ping->highlight = selection_fn;
-            entry_ping->selected = selection_fn;
-            entry_ping->color = 0xffffffff;
-            if (!info.locked) {
-                if (info.ping < 100) {
-                    entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
-                } else if (info.ping < 200) {
-                    entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Yellow00.png";
-                } else if (info.ping < 300) {
-                    entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Orange00.png";
-                } else {
-                    entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Red00.png";
-                }
-            }
-
-            auto slider = window->findSlider("scroll_slider");
-            slider->setMaxValue(names->getActualSize().h - names->getSize().h);
-			slider->updateHandlePosition();
-
-            lobbies.push_back(info);
-		    };
-
-		static auto clear_lobbies = [](){
-		    assert(main_menu_frame);
-		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-		    auto names = window->findFrame("names"); assert(names);
-		    auto players = window->findFrame("players"); assert(players);
-		    auto pings = window->findFrame("pings"); assert(pings);
-		    names->clearEntries();
-		    players->clearEntries();
-		    pings->clearEntries();
-		    lobbies.clear();
-		    selectedLobby = -1;
-		    };
-
-		static Uint32 scan_ticks;
-		scan_ticks = ticks;
-
-		static auto refresh_fn = [](Button& button){
-		    soundActivate();
-		    clear_lobbies();
-		    scan_ticks = ticks;
-            if (directConnect) {
-                memcpy(net_packet->data, "SCAN", 4);
-                net_packet->len = 4;
-                //SDLNet_ResolveHost(&net_packet->address, "255.255.255.255", DEFAULT_PORT);
-                net_packet->address.host = 0xffffffff;
-                SDLNet_Write16(DEFAULT_PORT, &net_packet->address.port);
-                sendPacket(net_sock, -1, net_packet, 0);
-            } else {
-                refreshOnlineLobbies();
-            }
-
-		    assert(main_menu_frame);
-		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-            auto slider = window->findSlider("scroll_slider");
-		    slider->setValue(0.f);
-		    slider->setMinValue(0.f);
-		    slider->setMaxValue(0.f);
-			slider->updateHandlePosition();
-		    };
-
-		// while the window is open, listen for SCAN packets
-		window->setTickCallback([](Widget& widget){
-		    if (multiplayer != CLIENT && directConnect) {
-			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
-				    Uint32 packetId = SDLNet_Read32(net_packet->data);
-				    if (packetId == 'SCAN') {
-                        if (net_packet->len > 4) {
-				            char hostname[256] = { '\0' };
-				            Uint32 hostname_len;
-				            hostname_len = SDLNet_Read32(&net_packet->data[4]);
-				            memcpy(hostname, &net_packet->data[8], hostname_len);
-
-				            Uint32 offset = 8 + hostname_len;
-				            int players = (int)SDLNet_Read32(&net_packet->data[offset]);
-
-				            int ping = (int)(ticks - scan_ticks);
-
-				            // there's a server on the network!
-				            LobbyInfo info;
-				            info.name = hostname;
-				            info.players = players;
-				            info.ping = ping;
-				            info.locked = net_packet->data[offset + 4];
-
-                            Uint32 host = net_packet->address.host;
-				            char buf[16];
-				            snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
-				                (host & 0x000000ff) >> 0,
-				                (host & 0x0000ff00) >> 8,
-				                (host & 0x00ff0000) >> 16,
-				                (host & 0xff000000) >> 24);
-				            info.address = buf;
-				            add_lobby(info);
-
-				            printlog("got a SCAN packet from %s\n", buf);
-				        }
-				    }
-			    }
-			}
-		    });
-
-		(void)createBackWidget(window, [](Button& button){
-		    soundCancel();
-		    closeNetworkInterfaces();
-		    createLocalOrNetworkMenu();
-
-		    // remove parent window
-		    auto frame = static_cast<Frame*>(button.getParent());
-		    frame = static_cast<Frame*>(frame->getParent());
-		    frame = static_cast<Frame*>(frame->getParent());
-		    frame->removeSelf();
-		    }, SDL_Rect{292, 4, 0, 0});
-
-		auto background = window->addImage(
-			SDL_Rect{288, 0, 444, 552},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window01.png",
-			"background"
-		);
-
-		auto banner_title = window->addField("banner", 64);
-		banner_title->setSize(SDL_Rect{408, 24, 204, 18});
-		banner_title->setText("ONLINE LOBBY BROWSER");
-		banner_title->setFont(smallfont_outline);
-		banner_title->setJustify(Field::justify_t::CENTER);
-
-		auto interior = window->addImage(
-			SDL_Rect{330, 70, 358, 380},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png",
-			"interior"
-		);
-
-		auto lobby_slider_topper = window->addImage(
-			SDL_Rect{640, 116, 38, 20},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Topper00.png",
-			"lobby_slider_topper"
-		);
-
-		auto frame_right = window->addFrame("frame_right");
-		frame_right->setInvisible(true);
-		frame_right->setSize(SDL_Rect{716, 28, 304, 414});
-		frame_right->setActualSize(SDL_Rect{0, 0, 304, 414});
-		frame_right->setBorder(0);
-		frame_right->setColor(0);
-		{
-		    frame_right->addImage(
-			    frame_right->getActualSize(),
-			    0xffffffff,
-			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Filters00.png",
-			    "background"
-		    );
-
-		    auto label = frame_right->addField("label", 128);
-		    label->setJustify(Field::justify_t::CENTER);
-		    label->setSize(SDL_Rect{80, 48, 146, 22});
-		    label->setFont(smallfont_outline);
-		    label->setText("Filters");
-
-		}
-
-		auto frame_left = window->addFrame("frame_left");
-		frame_left->setInvisible(true);
-		frame_left->setSize(SDL_Rect{0, 28, 304, 414});
-		frame_left->setActualSize(SDL_Rect{0, 0, 304, 414});
-		frame_left->setBorder(0);
-		frame_left->setColor(0);
-		frame_left->setTickCallback([](Widget& widget){
-		    //auto frame = static_cast<Frame*>(&widget);
-	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
-                //const auto& lobby = lobbies[selectedLobby];
-                widget.setInvisible(false);
-            } else {
-                widget.setInvisible(true);
-            }
-		    });
-		{
-		    frame_left->addImage(
-			    frame_left->getActualSize(),
-			    0xffffffff,
-			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Left00.png",
-			    "background"
-		    );
-
-		    auto label = frame_left->addField("label", 128);
-		    label->setJustify(Field::justify_t::CENTER);
-		    label->setSize(SDL_Rect{78, 48, 146, 22});
-		    label->setFont(smallfont_outline);
-		    label->setText("Lobby");
-		}
-
-		auto online_tab = window->addButton("online_tab");
-		online_tab->setSize(SDL_Rect{392, 70, 106, 38});
-		online_tab->setHighlightColor(0);
-		online_tab->setBorder(0);
-		online_tab->setColor(0);
-		online_tab->setText("ONLINE");
-		online_tab->setFont(smallfont_outline);
-		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
-		online_tab->setWidgetSearchParent(window->getName());
-		online_tab->addWidgetAction("MenuPageLeft", "online_tab");
-		online_tab->addWidgetAction("MenuPageRight", "lan_tab");
-		online_tab->addWidgetAction("MenuStart", "join_lobby");
-		online_tab->addWidgetAction("MenuAlt1", "enter_code");
-		online_tab->addWidgetAction("MenuAlt2", "refresh");
-		online_tab->setWidgetBack("back_button");
-		online_tab->setWidgetRight("lan_tab");
-		online_tab->setWidgetDown("names");
-		online_tab->setCallback([](Button& button){
-			auto frame = static_cast<Frame*>(button.getParent());
-			auto interior = frame->findImage("interior");
-			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png";
-			mode = BrowserMode::Online;
-			directConnect = false;
-			refresh_fn(button);
-			});
-
-		auto lan_tab = window->addButton("lan_tab");
-		lan_tab->setSize(SDL_Rect{502, 70, 128, 38});
-		lan_tab->setHighlightColor(0);
-		lan_tab->setBorder(0);
-		lan_tab->setColor(0);
-#if defined(NINTENDO)
-		lan_tab->setText("WIRELESS");
-#else
-		lan_tab->setText("LAN");
-#endif
-		lan_tab->setFont(smallfont_outline);
-		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
-		lan_tab->setWidgetSearchParent(window->getName());
-		lan_tab->addWidgetAction("MenuPageLeft", "online_tab");
-		lan_tab->addWidgetAction("MenuPageRight", "lan_tab");
-		lan_tab->addWidgetAction("MenuStart", "join_lobby");
-		lan_tab->addWidgetAction("MenuAlt1", "enter_code");
-		lan_tab->addWidgetAction("MenuAlt2", "refresh");
-		lan_tab->setWidgetBack("back_button");
-		lan_tab->setWidgetLeft("online_tab");
-		lan_tab->setWidgetRight("refresh");
-		lan_tab->setWidgetDown("names");
-		lan_tab->setCallback([](Button& button){
-			auto frame = static_cast<Frame*>(button.getParent());
-			auto interior = frame->findImage("interior");
-			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png";
-			mode = BrowserMode::LAN;
-			directConnect = true;
-			refresh_fn(button);
-			});
-
-		auto refresh = window->addButton("refresh");
-		refresh->setSize(SDL_Rect{634, 62, 40, 40});
-		refresh->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_Refresh00.png");
-		refresh->setHighlightColor(makeColor(255, 255, 255, 255));
-		refresh->setColor(makeColor(255, 255, 255, 255));
-		refresh->setWidgetSearchParent(window->getName());
-		refresh->addWidgetAction("MenuPageLeft", "online_tab");
-		refresh->addWidgetAction("MenuPageRight", "lan_tab");
-		refresh->addWidgetAction("MenuStart", "join_lobby");
-		refresh->addWidgetAction("MenuAlt1", "enter_code");
-		refresh->addWidgetAction("MenuAlt2", "refresh");
-		refresh->setWidgetBack("back_button");
-		refresh->setWidgetLeft("lan_tab");
-		refresh->setWidgetDown("names");
-		refresh->setCallback(refresh_fn);
-
-		static auto enter_code_fn = [](Button& button){
-		    static const char* guide;
-		    static const char* ipaddr = "Enter an IP address to connect to.";
-		    static const char* roomcode = "Enter the code to a lobby you wish to connect to.";
-		    guide = strcmp(button.getText(), "Enter IP\nAddress") ? roomcode : ipaddr;
-            textFieldPrompt("", guide, "Connect", "Cancel",
-                [](Button&){ // connect
-                    const char* address = closeTextField(); // only valid for one frame
-                    if (guide == ipaddr) {
-                        soundActivate();
-                        connectToServer(address, LobbyType::LobbyLAN);
-                    } else if (guide == roomcode) {
-                        soundActivate();
-                        connectToServer(address, LobbyType::LobbyOnline);
-                    } else {
-                        soundError();
-                    }
-                },
-                [](Button&){ // cancel
-                    soundCancel();
-                    assert(main_menu_frame);
-                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-                    auto enter_code = window->findButton("enter_code"); assert(enter_code);
-                    enter_code->select();
-                    (void)closeTextField();
-                });
-		    };
-
-		auto enter_code = window->addButton("enter_code");
-		enter_code->setSize(SDL_Rect{342, 454, 164, 62});
-		enter_code->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
-		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
-		enter_code->setColor(makeColor(255, 255, 255, 255));
-		enter_code->setText("Enter Lobby\nCode");
-		enter_code->setFont(smallfont_outline);
-		enter_code->setWidgetSearchParent(window->getName());
-		enter_code->addWidgetAction("MenuPageLeft", "online_tab");
-		enter_code->addWidgetAction("MenuPageRight", "lan_tab");
-		enter_code->addWidgetAction("MenuStart", "join_lobby");
-		enter_code->addWidgetAction("MenuAlt1", "enter_code");
-		enter_code->addWidgetAction("MenuAlt2", "refresh");
-		enter_code->setWidgetBack("back_button");
-		enter_code->setWidgetRight("join_lobby");
-		enter_code->setWidgetUp("names");
-		enter_code->setTickCallback([](Widget& widget){
-		    auto button = static_cast<Button*>(&widget);
-		    if (mode == BrowserMode::Online) {
-		        button->setText("Enter Lobby\nCode");
-		    } else if (mode == BrowserMode::LAN) {
-		        button->setText("Enter IP\nAddress");
-		    }
-		    });
-		enter_code->setCallback(enter_code_fn);
-
-		static auto join_lobby_fn = [](Button& button){
-	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
-                const auto& lobby = lobbies[selectedLobby];
-                if (!lobby.locked) {
-                    connectToServer(lobby.address.c_str(), LobbyType::LobbyLAN);
-                } else {
-                    soundWarning();
-                }
-            } else {
-	            monoPrompt("Select a lobby to join first.",
-	                "Okay",
-	                [](Button&){
-		                soundCancel();
-	                    assert(main_menu_frame);
-	                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-	                    auto names = window->findFrame("names"); assert(names);
-	                    names->select();
-		                closeMono();
-	                });
-            }
-		    };
-
-		auto join_lobby = window->addButton("join_lobby");
-		join_lobby->setSize(SDL_Rect{514, 454, 164, 62});
-		join_lobby->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
-		join_lobby->setHighlightColor(makeColor(255, 255, 255, 255));
-		join_lobby->setColor(makeColor(255, 255, 255, 255));
-		join_lobby->setText("Join Lobby");
-		join_lobby->setFont(smallfont_outline);
-		join_lobby->setWidgetSearchParent(window->getName());
-		join_lobby->addWidgetAction("MenuPageLeft", "online_tab");
-		join_lobby->addWidgetAction("MenuPageRight", "lan_tab");
-		join_lobby->addWidgetAction("MenuStart", "join_lobby");
-		join_lobby->addWidgetAction("MenuAlt1", "enter_code");
-		join_lobby->addWidgetAction("MenuAlt2", "refresh");
-		join_lobby->setWidgetBack("back_button");
-		join_lobby->setWidgetLeft("enter_code");
-		join_lobby->setWidgetUp("crossplay");
-		join_lobby->setCallback(join_lobby_fn);
-
-		static auto tick_callback = [](Widget& widget){
-		    widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
-	        };
-
-        // name column
-        {
-		    auto name_column_header = window->addField("name_column_header", 32);
-		    name_column_header->setHJustify(Field::justify_t::LEFT);
-		    name_column_header->setVJustify(Field::justify_t::CENTER);
-		    name_column_header->setFont(smallfont_no_outline);
-		    name_column_header->setSize(SDL_Rect{340, 116, 172, 20});
-		    name_column_header->setColor(makeColor(102, 69, 36, 255));
-		    name_column_header->setText(" Lobby Name");
-
-		    auto list = window->addFrame("names");
-		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{342, 140, 168, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 168, 200});
-		    list->setFont(smallfont_no_outline);
-		    list->setColor(0);
-		    list->setBorder(0);
-		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
-		    list->setTickCallback(tick_callback);
-		    list->setWidgetSearchParent(window->getName());
-		    list->addWidgetMovement("MenuListCancel", list->getName());
-		    list->addWidgetAction("MenuPageLeft", "online_tab");
-		    list->addWidgetAction("MenuPageRight", "lan_tab");
-		    list->addWidgetAction("MenuStart", "join_lobby");
-		    list->addWidgetAction("MenuAlt1", "enter_code");
-		    list->addWidgetAction("MenuAlt2", "refresh");
-		    list->setWidgetBack("back_button");
-		    list->setWidgetUp("online_tab");
-		    list->setWidgetRight("players");
-		    list->setWidgetDown("enter_code");
-		    list->addSyncScrollTarget("players");
-		    list->addSyncScrollTarget("pings");
-		    list->select();
-		}
-
-        // players column
-        {
-		    auto players_column_header = window->addField("players_column_header", 32);
-		    players_column_header->setHJustify(Field::justify_t::LEFT);
-		    players_column_header->setVJustify(Field::justify_t::CENTER);
-		    players_column_header->setFont(smallfont_no_outline);
-		    players_column_header->setSize(SDL_Rect{514, 116, 76, 20});
-		    players_column_header->setColor(makeColor(102, 69, 36, 255));
-		    players_column_header->setText(" Players");
-
-		    auto list = window->addFrame("players");
-		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{516, 140, 72, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 72, 200});
-		    list->setFont(smallfont_no_outline);
-		    list->setColor(0);
-		    list->setBorder(0);
-		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
-		    list->setTickCallback(tick_callback);
-		    list->setWidgetSearchParent(window->getName());
-		    list->addWidgetMovement("MenuListCancel", list->getName());
-		    list->addWidgetAction("MenuPageLeft", "online_tab");
-		    list->addWidgetAction("MenuPageRight", "lan_tab");
-		    list->addWidgetAction("MenuStart", "join_lobby");
-		    list->addWidgetAction("MenuAlt1", "enter_code");
-		    list->addWidgetAction("MenuAlt2", "refresh");
-		    list->setWidgetBack("back_button");
-		    list->setWidgetUp("online_tab");
-		    list->setWidgetRight("pings");
-		    list->setWidgetLeft("names");
-		    list->setWidgetDown("enter_code");
-		    list->addSyncScrollTarget("names");
-		    list->addSyncScrollTarget("pings");
-		}
-
-        // ping column
-        {
-		    auto ping_column_header = window->addField("ping_column_header", 32);
-		    ping_column_header->setHJustify(Field::justify_t::LEFT);
-		    ping_column_header->setVJustify(Field::justify_t::CENTER);
-		    ping_column_header->setFont(smallfont_no_outline);
-		    ping_column_header->setSize(SDL_Rect{592, 116, 48, 20});
-		    ping_column_header->setColor(makeColor(102, 69, 36, 255));
-		    ping_column_header->setText(" Ping");
-
-		    auto list = window->addFrame("pings");
-		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{594, 140, 44, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 44, 200});
-		    list->setFont(smallfont_no_outline);
-		    list->setColor(0);
-		    list->setBorder(0);
-		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
-		    list->setTickCallback(tick_callback);
-		    list->setWidgetSearchParent(window->getName());
-		    list->addWidgetMovement("MenuListCancel", list->getName());
-		    list->addWidgetAction("MenuPageLeft", "online_tab");
-		    list->addWidgetAction("MenuPageRight", "lan_tab");
-		    list->addWidgetAction("MenuStart", "join_lobby");
-		    list->addWidgetAction("MenuAlt1", "enter_code");
-		    list->addWidgetAction("MenuAlt2", "refresh");
-		    list->setWidgetBack("back_button");
-		    list->setWidgetUp("online_tab");
-		    list->setWidgetLeft("players");
-		    list->setWidgetDown("enter_code");
-		    list->addSyncScrollTarget("names");
-		    list->addSyncScrollTarget("players");
-		}
-
-		auto slider = window->addSlider("scroll_slider");
-		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		slider->setRailSize(SDL_Rect{640, 138, 38, 234});
-		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
-		slider->setRailImage("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Backing01B.png");
-		slider->setHandleImage("*images/ui/Main Menus/Play/LobbyBrowser/UI_Slider_Boulder00.png");
-		slider->setBorder(24);
-		slider->setWidgetSearchParent(window->getName());
-	    slider->addWidgetAction("MenuPageLeft", "online_tab");
-	    slider->addWidgetAction("MenuPageRight", "lan_tab");
-	    slider->addWidgetAction("MenuStart", "join_lobby");
-	    slider->addWidgetAction("MenuAlt1", "enter_code");
-	    slider->addWidgetAction("MenuAlt2", "refresh");
-	    slider->setWidgetBack("back_button");
-	    slider->setWidgetUp("wireless_tab");
-	    slider->setWidgetDown("join_lobby");
-	    slider->setWidgetLeft("pings");
-		slider->setCallback([](Slider& slider){
-			Frame* frame = static_cast<Frame*>(slider.getParent()); assert(frame);
-			{
-			    Frame* column = frame->findFrame("names"); assert(column);
-			    auto actualSize = column->getActualSize();
-			    actualSize.y = slider.getValue();
-			    column->setActualSize(actualSize);
-			}
-			{
-			    Frame* column = frame->findFrame("players"); assert(column);
-			    auto actualSize = column->getActualSize();
-			    actualSize.y = slider.getValue();
-			    column->setActualSize(actualSize);
-			}
-			{
-			    Frame* column = frame->findFrame("pings"); assert(column);
-			    auto actualSize = column->getActualSize();
-			    actualSize.y = slider.getValue();
-			    column->setActualSize(actualSize);
-			}
-			slider.updateHandlePosition();
-			});
-		slider->setTickCallback([](Widget& widget){
-			Slider* slider = static_cast<Slider*>(&widget);
-			Frame* frame = static_cast<Frame*>(slider->getParent()); assert(frame);
-			Frame* names = frame->findFrame("names"); assert(names);
-			auto actualSize = names->getActualSize();
-			slider->setValue(actualSize.y);
-			slider->updateHandlePosition();
-			});
-
-		auto filter_settings = window->addButton("filter_settings");
-		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
-		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
-		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
-		filter_settings->setColor(makeColor(255, 255, 255, 255));
-		filter_settings->setText("Filter Settings");
-		filter_settings->setFont(smallfont_outline);
-		filter_settings->setWidgetSearchParent(window->getName());
-		filter_settings->addWidgetAction("MenuPageLeft", "online_tab");
-		filter_settings->addWidgetAction("MenuPageRight", "lan_tab");
-		filter_settings->addWidgetAction("MenuStart", "join_lobby");
-		filter_settings->addWidgetAction("MenuAlt1", "enter_code");
-		filter_settings->addWidgetAction("MenuAlt2", "refresh");
-		filter_settings->setWidgetBack("back_button");
-		filter_settings->setWidgetDown("crossplay");
-		filter_settings->setWidgetUp("names");
-		filter_settings->setCallback([](Button& button){
-		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
-		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
-		    frame_right->setInvisible(frame_right->isInvisible()==false);
-		    });
-
-		auto crossplay_fn = [](Button&){};
-
-		auto crossplay_label = window->addField("crossplay_label", 128);
-		crossplay_label->setJustify(Field::justify_t::CENTER);
-		crossplay_label->setSize(SDL_Rect{378, 378, 96, 48});
-		crossplay_label->setFont(smallfont_outline);
-		crossplay_label->setText("Crossplay");
-
-		auto crossplay = window->addButton("crossplay");
-		crossplay->setSize(SDL_Rect{474, 378, 158, 48});
-		crossplay->setJustify(Button::justify_t::CENTER);
-		crossplay->setPressed(LobbyHandler.crossplayEnabled);
-		crossplay->setStyle(Button::style_t::STYLE_TOGGLE);
-		crossplay->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Toggle_Off00.png");
-		crossplay->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Toggle_On00.png");
-		crossplay->setHighlightColor(makeColor(255,255,255,255));
-		crossplay->setColor(makeColor(255,255,255,255));
-		crossplay->setTextHighlightColor(makeColor(255,255,255,255));
-		crossplay->setTextColor(makeColor(255,255,255,255));
-		crossplay->setText("Off          On");
-		crossplay->setFont(smallfont_outline);
-		crossplay->setWidgetSearchParent(window->getName());
-		crossplay->addWidgetAction("MenuPageLeft", "online_tab");
-		crossplay->addWidgetAction("MenuPageRight", "lan_tab");
-		crossplay->addWidgetAction("MenuStart", "join_lobby");
-		crossplay->addWidgetAction("MenuAlt1", "enter_code");
-		crossplay->addWidgetAction("MenuAlt2", "refresh");
-		crossplay->setWidgetBack("back_button");
-		crossplay->setWidgetDown("join_lobby");
-		crossplay->setWidgetUp("filter_settings");
-		crossplay->setCallback(crossplay_fn);
-
-#ifdef NDEBUG
-	    // scan for lobbies immediately
-	    refresh->activate();
-#else
-        if (1) {
-            // test lobbies
-		    add_lobby(LobbyInfo("Ben", 1, 50, false));
-		    add_lobby(LobbyInfo("Sheridan", 3, 50, false));
-		    add_lobby(LobbyInfo("Paulie", 2, 250, false));
-		    add_lobby(LobbyInfo("Fart_Face", 1, 420, false));
-		    add_lobby(LobbyInfo("Tim", 3, 90, true));
-		    add_lobby(LobbyInfo("Johnny", 3, 30, false));
-		    add_lobby(LobbyInfo("Boaty McBoatFace", 2, 20, false));
-		    add_lobby(LobbyInfo("RIP_Morgan_", 0, 120, false));
-		    add_lobby(LobbyInfo("What is the longest name we can fit in a Barony lobby?", 4, 150, false));
-		    add_lobby(LobbyInfo("16 PLAYER SMASH FEST", 16, 90, false));
-		    add_lobby(LobbyInfo("ur mom", 16, 160, true));
-		    add_lobby(LobbyInfo("waow more lobbies", 16, 160, true));
-		    add_lobby(LobbyInfo("snobby lobby", 16, 260, true));
-		    add_lobby(LobbyInfo("gAmERs RiSe uP!!", 16, 0, false));
-		    add_lobby(LobbyInfo("a very unsuspicious lobby", 2, 130, false));
-		    add_lobby(LobbyInfo("cool lobby bro!", 3, 240, false));
-		} else {
-		    refresh->activate();
-		}
-#endif
 	}
 
 	static void playNew(Button& button) {
