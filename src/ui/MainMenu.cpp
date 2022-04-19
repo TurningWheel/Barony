@@ -302,6 +302,28 @@ namespace MainMenu {
 
 /******************************************************************************/
 
+	static void resetLobbyJoinFlowState() {
+#ifdef STEAMWORKS
+	    requestingLobbies = false;
+        connectingToLobby = false;
+        connectingToLobbyWindow = false;
+        joinLobbyWaitingForHostResponse = false;
+        if (lobbyToConnectTo) {
+            // cancel lobby invitation acceptance
+            cpp_Free_CSteamID(lobbyToConnectTo);
+            lobbyToConnectTo = nullptr;
+        }
+#endif
+#ifdef USE_EOS
+	    EOS.bRequestingLobbies = false;
+	    EOS.bJoinLobbyWaitingForHostResponse = false;
+	    EOS.bConnectingToLobby = false;
+	    EOS.bConnectingToLobbyWindow = false;
+#endif
+	}
+
+/******************************************************************************/
+
 	static void settingsUI(Button&);
 	static void settingsVideo(Button&);
 	static void settingsAudio(Button&);
@@ -948,6 +970,7 @@ namespace MainMenu {
 
     void connectionErrorPrompt(const char* str) {
         soundError();
+        resetLobbyJoinFlowState();
         monoPrompt(str, "Okay",
             [](Button& button) {
             soundCancel();
@@ -5404,6 +5427,8 @@ bind_failed:
 	        }
 	    }
 
+        resetLobbyJoinFlowState();
+
 	    // reset multiplayer status
 	    clientnum = 0;
 	    multiplayer = SINGLE;
@@ -6018,32 +6043,28 @@ bind_failed:
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-				if (joinLobbyWaitingForHostResponse) {
-					if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
-					    // 15 second timeout
-						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
-						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
-						disconnectFromLobby();
-						closeText("connect_prompt");
-						connectionErrorPrompt(error_str.c_str());
-						connectingToLobbyStatus = EResult::k_EResultOK;
-					}
+				if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
+				    // 15 second timeout
+					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
+					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
+					disconnectFromLobby();
+					closeText("connect_prompt");
+					connectionErrorPrompt(error_str.c_str());
+					connectingToLobbyStatus = EResult::k_EResultOK;
 				}
 			}
 #endif
 #if defined USE_EOS
 			EOS_ProductUserId newRemoteProductId = nullptr;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-				if ( EOS.bJoinLobbyWaitingForHostResponse ) {
-					if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
-					    // 15 second timeout
-						auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
-						auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
-						disconnectFromLobby();
-						closeText("connect_prompt");
-						connectionErrorPrompt(error_str.c_str());
-						EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
-					}
+				if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
+				    // 15 second timeout
+					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
+					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
+					disconnectFromLobby();
+					closeText("connect_prompt");
+					connectionErrorPrompt(error_str.c_str());
+					EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 				}
 			}
 #endif
@@ -6590,7 +6611,8 @@ bind_failed:
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
 	    net_packet->len = 57;
-	    if (!directConnect) {
+
+	    /*if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
 		    SDL_Delay(5);
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -6603,7 +6625,8 @@ bind_failed:
 		    SDL_Delay(5);
 	    } else {
 		    sendPacket(net_sock, -1, net_packet, 0);
-	    }
+		}*/
+		sendPacket(net_sock, -1, net_packet, 0);
     }
 
 	static bool connectToServer(const char* address, LobbyType lobbyType) {
@@ -6634,8 +6657,10 @@ bind_failed:
             text->setText(buf);
 
             // here is the connection polling loop for online lobbies
-            if (!directConnect) {
-		        if ( connectingToLobbyStatus != EResult::k_EResultOK ) {
+            if (!directConnect && joinLobbyWaitingForHostResponse) {
+		        if (connectingToLobbyStatus != EResult::k_EResultOK) {
+		            resetLobbyJoinFlowState();
+
 			        // close current window
 			        auto frame = static_cast<Frame*>(widget.getParent());
 			        auto dimmer = static_cast<Frame*>(frame->getParent());
@@ -6647,14 +6672,10 @@ bind_failed:
 			        return;
 		        }
 		        if (!connectingToLobby) {
-		            // close current window
-		            auto frame = static_cast<Frame*>(widget.getParent());
-		            auto dimmer = static_cast<Frame*>(frame->getParent());
-		            dimmer->removeSelf();
 		            if (connectingToLobbyWindow) {
-		                connectingToLobbyWindow = false;
+		                resetLobbyJoinFlowState();
 
-			            // record CSteamID of lobby owner (and nobody else)
+			            // record CSteamID of lobby owner (and everybody else)
 			            int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
 			            for (int c = 0; c < MAXPLAYERS; ++c) {
 				            if (steamIDRemote[c]) {
@@ -6665,8 +6686,15 @@ bind_failed:
 			            for (int c = 0; c < lobbyMembers; ++c) {
 				            steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 			            }
+
 			            sendJoinRequest();
 			        } else {
+		                resetLobbyJoinFlowState();
+
+		                // close current window
+		                auto frame = static_cast<Frame*>(widget.getParent());
+		                auto dimmer = static_cast<Frame*>(frame->getParent());
+		                dimmer->removeSelf();
 		                connectionErrorPrompt("Failed to join lobby.");
 		                // TODO localize, get error message, etc.
 			        }
@@ -9514,6 +9542,25 @@ bind_failed:
 #endif // USE_EOS
 	}
 
+	struct ScanNetworkResources {
+	    ~ScanNetworkResources() {
+	        close();
+	    }
+	    void close() {
+	        if (packet != nullptr) {
+		        SDLNet_FreePacket(packet);
+		        packet = nullptr;
+	        }
+	        if (sock != nullptr) {
+		        SDLNet_UDP_Close(sock);
+		        sock = nullptr;
+	        }
+	    }
+        UDPsocket sock = nullptr;
+        UDPpacket* packet = nullptr;
+	};
+	static ScanNetworkResources scan;
+
 	static void createLobbyBrowser(Button& button) {
 		selectedLobby = -1;
 		lobbies.clear();
@@ -9526,15 +9573,16 @@ bind_failed:
 		mode = BrowserMode::Online;
 		directConnect = false;
 
-	    closeNetworkInterfaces();
+        closeNetworkInterfaces();
+        scan.close();
 
         // open a socket for network scanning
-	    net_sock = SDLNet_UDP_Open(0);
-	    assert(net_sock);
+	    scan.sock = SDLNet_UDP_Open(0);
+	    assert(scan.sock);
 
-        // allocate packet data
-        net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
-        assert(net_packet);
+        // allocate packet data for scanning
+        scan.packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
+        assert(scan.packet);
 
 		// remove "Local or Network" window
 		auto frame = static_cast<Frame*>(button.getParent());
@@ -9566,12 +9614,12 @@ bind_failed:
 		    clearLobbies();
 		    scan_ticks = ticks;
             if (directConnect) {
-                memcpy(net_packet->data, "SCAN", 4);
-                net_packet->len = 4;
-                //SDLNet_ResolveHost(&net_packet->address, "255.255.255.255", DEFAULT_PORT);
-                net_packet->address.host = 0xffffffff;
-                SDLNet_Write16(DEFAULT_PORT, &net_packet->address.port);
-                sendPacket(net_sock, -1, net_packet, 0);
+                memcpy(scan.packet->data, "SCAN", 4);
+                scan.packet->len = 4;
+                //SDLNet_ResolveHost(&scan.packet->address, "255.255.255.255", DEFAULT_PORT);
+                scan.packet->address.host = 0xffffffff;
+                SDLNet_Write16(DEFAULT_PORT, &scan.packet->address.port);
+                sendPacket(scan.sock, -1, scan.packet, 0);
             } else {
                 refreshOnlineLobbies();
                 button.deselect();
@@ -9589,17 +9637,17 @@ bind_failed:
 		// while the window is open, listen for SCAN packets
 		window->setTickCallback([](Widget& widget){
 		    if (multiplayer != CLIENT && directConnect) {
-			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
-				    Uint32 packetId = SDLNet_Read32(net_packet->data);
+			    if (SDLNet_UDP_Recv(scan.sock, scan.packet)) {
+				    Uint32 packetId = SDLNet_Read32(scan.packet->data);
 				    if (packetId == 'SCAN') {
-                        if (net_packet->len > 4) {
+                        if (scan.packet->len > 4) {
 				            char hostname[256] = { '\0' };
 				            Uint32 hostname_len;
-				            hostname_len = SDLNet_Read32(&net_packet->data[4]);
-				            memcpy(hostname, &net_packet->data[8], hostname_len);
+				            hostname_len = SDLNet_Read32(&scan.packet->data[4]);
+				            memcpy(hostname, &scan.packet->data[8], hostname_len);
 
 				            Uint32 offset = 8 + hostname_len;
-				            int players = (int)SDLNet_Read32(&net_packet->data[offset]);
+				            int players = (int)SDLNet_Read32(&scan.packet->data[offset]);
 
 				            int ping = (int)(ticks - scan_ticks);
 
@@ -9608,9 +9656,9 @@ bind_failed:
 				            info.name = hostname;
 				            info.players = players;
 				            info.ping = ping;
-				            info.locked = net_packet->data[offset + 4];
+				            info.locked = scan.packet->data[offset + 4];
 
-                            Uint32 host = net_packet->address.host;
+                            Uint32 host = scan.packet->address.host;
 				            char buf[16];
 				            snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
 				                (host & 0x000000ff) >> 0,
@@ -12725,6 +12773,8 @@ bind_failed:
 			main_menu_frame->removeSelf();
 			main_menu_frame = nullptr;
 		}
+		scan.close(); // close network scan resources
+		resetLobbyJoinFlowState();
 		cursor_delete_mode = false;
 		story_active = false;
 		movie = false;
@@ -12746,6 +12796,7 @@ bind_failed:
 	}
 
 	void disconnectedFromServer() {
+		resetLobbyJoinFlowState();
 	    multiplayer = SINGLE;
 	    destroyMainMenu();
 		createDummyMainMenu();
