@@ -84,6 +84,10 @@ public:
 		}
 		return joiningType;
 	}
+	void setLobbyJoinType(LobbyServiceType type)
+	{
+	    joiningType = type;
+	}
 	void setP2PType(LobbyServiceType type)
 	{
 		P2PType = type;

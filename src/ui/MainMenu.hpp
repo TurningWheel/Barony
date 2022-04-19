@@ -84,6 +84,7 @@ namespace MainMenu {
 
 	// special events:
 
+    void connectionErrorPrompt(const char* str);
 	void disconnectedFromServer();
 	void receivedInvite();
 	void handleScanPacket();

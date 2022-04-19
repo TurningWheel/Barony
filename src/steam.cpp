@@ -14,6 +14,7 @@
 #include "stat.hpp"
 #include "net.hpp"
 #include "menu.hpp"
+#include "ui/MainMenu.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
 #include "entity.hpp"
@@ -1892,7 +1893,7 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 		// lobby join failed
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
-		openFailedConnectionWindow(CLIENT);
+		//openFailedConnectionWindow(CLIENT);
 		return;
 	}
 

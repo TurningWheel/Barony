@@ -946,7 +946,7 @@ namespace MainMenu {
 	    closePrompt(name);
 	}
 
-    static void connectionErrorPrompt(const char* str) {
+    void connectionErrorPrompt(const char* str) {
         soundError();
         monoPrompt(str, "Okay",
             [](Button& button) {
@@ -6466,6 +6466,73 @@ bind_failed:
 		return true;
 	}
 
+#ifdef STEAMWORKS
+	CSteamID* getLobbySteamID(const char* name) {
+	    int lobbyID = -1;
+        if (strncmp(name, "steam:", 6) == 0) {
+            lobbyID = (int)strtol(name + 6, nullptr, 10);
+        }
+        if (lobbyID >= 0 && lobbyID < numSteamLobbies) {
+            return (CSteamID*)lobbyIDs[lobbyID];
+        } else {
+            return nullptr;
+        }
+	}
+#endif
+
+    static void sendJoinRequest() {
+	    printlog("sending join request...\n");
+
+	    // send join request
+	    strcpy((char*)net_packet->data, "JOIN");
+	    if (loadingsavegame)
+	    {
+		    strncpy((char*)net_packet->data + 4, stats[getSaveGameClientnum(false)]->name, 22);
+		    SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[27]);
+		    SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[31]);
+		    Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
+		    appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
+		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
+		    strcpy((char*)net_packet->data + 39, VERSION);
+		    net_packet->data[47] = 0;
+		    net_packet->data[48] = getSaveGameClientnum(false);
+	    } else {
+		    strncpy((char*)net_packet->data + 4, stats[0]->name, 22);
+		    SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[27]);
+		    SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[31]);
+		    Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
+		    appearanceAndRace |= ((Uint8)stats[0]->playerRace);
+		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
+		    strcpy((char*)net_packet->data + 39, VERSION);
+		    net_packet->data[47] = 0;
+		    net_packet->data[48] = 0;
+	    }
+	    if (loadingsavegame) {
+		    // send over the map seed being used
+		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[49]);
+	    } else {
+		    SDLNet_Write32(0, &net_packet->data[49]);
+	    }
+	    SDLNet_Write32(loadingsavegame, &net_packet->data[53]); // send unique game key
+	    net_packet->address.host = net_server.host;
+	    net_packet->address.port = net_server.port;
+	    net_packet->len = 57;
+	    if (lobbyType == LobbyType::LobbyOnline) {
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+		    sendPacket(net_sock, -1, net_packet, 0);
+		    SDL_Delay(5);
+	    } else {
+		    sendPacket(net_sock, -1, net_packet, 0);
+	    }
+    }
+
 	static bool connectToServer(const char* address, LobbyType lobbyType) {
 	    if (!address || address[0] == '\0') {
 	        soundError();
@@ -6492,8 +6559,48 @@ bind_failed:
                 snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds...", seconds);
             }
             text->setText(buf);
+
+            // here is the connection polling loop for online lobbies
+            if (!directConnect) {
+		        if ( connectingToLobbyStatus != EResult::k_EResultOK ) {
+			        // close current window
+			        auto frame = static_cast<Frame*>(widget.getParent());
+			        auto dimmer = static_cast<Frame*>(frame->getParent());
+			        dimmer->removeSelf();
+
+			        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus);
+			        connectionErrorPrompt(error_str.c_str());
+			        connectingToLobbyStatus = EResult::k_EResultOK;
+			        return;
+		        }
+		        if (!connectingToLobby) {
+		            // close current window
+		            auto frame = static_cast<Frame*>(widget.getParent());
+		            auto dimmer = static_cast<Frame*>(frame->getParent());
+		            dimmer->removeSelf();
+		            if (connectingToLobbyWindow) {
+			            // record CSteamID of lobby owner (and nobody else)
+			            int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
+			            for (int c = 0; c < MAXPLAYERS; c++ ) {
+				            if ( steamIDRemote[c] ) {
+					            cpp_Free_CSteamID(steamIDRemote[c]);
+					            steamIDRemote[c] = NULL;
+				            }
+			            }
+			            for ( c = 0; c < lobbyMembers; ++c ) {
+				            steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+			            }
+			            sendJoinRequest();
+			        } else {
+		                connectionErrorPrompt("Failed to join lobby.");
+		                // TODO localize, get error message, etc.
+			        }
+			        return;
+		        }
+            }
             });
 
+        // setup game state
 	    multiplayer = CLIENT;
 	    if (loadingsavegame) {
 		    loadGame(getSaveGameClientnum(false));
@@ -6508,39 +6615,24 @@ bind_failed:
 
         // initialize connection
 	    if (lobbyType == LobbyType::LobbyOnline) {
+#ifdef STEAMWORKS
 	        if (strncmp(address, "steam:", 6) == 0) {
-		        selectedSteamLobby = (int)strtol(address + 6, nullptr, 10);
+		        auto lobby = getLobbySteamID(address);
+		        if (lobby) {
+				    connectingToLobby = true;
+				    connectingToLobbyWindow = true;
+		            joinLobbyWaitingForHostResponse = true;
+		            selectedSteamLobby = (int)strtol(address + 6, nullptr, 10);
+	                LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+	                LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			        LobbyHandler.steamValidateAndJoinLobby(*lobby);
+			    }
 	        }
-	        else if (strncmp(address, "epic:", 5) == 0) {
+#endif
+#ifdef USE_EOS
+	        if (strncmp(address, "epic:", 5) == 0) {
 		        // TODO
 	        }
-
-	        // setup connecting states
-	        bool temp1 = false;
-	        bool temp2 = false;
-	        bool temp3 = false;
-	        bool temp4 = false;
-#ifdef STEAMWORKS
-	        temp1 = connectingToLobby;
-	        temp2 = connectingToLobbyWindow;
-	        if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-		        joinLobbyWaitingForHostResponse = true;
-	        }
-#endif
-#if defined USE_EOS
-	        temp3 = EOS.bConnectingToLobby;
-	        temp4 = EOS.bConnectingToLobbyWindow;
-	        if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-		        EOS.bJoinLobbyWaitingForHostResponse = true;
-	        }
-#endif
-#ifdef STEAMWORKS
-	        connectingToLobby = temp1;
-	        connectingToLobbyWindow = temp2;
-#endif
-#if defined USE_EOS
-	        EOS.bConnectingToLobby = temp3;
-	        EOS.bConnectingToLobbyWindow = temp4;
 #endif
         } else if (lobbyType == LobbyType::LobbyLAN) {
             // copy address
@@ -6600,59 +6692,8 @@ bind_failed:
 		    }
 
 		    printlog("successfully contacted server at %s.\n", address);
+		    sendJoinRequest();
 	    }
-
-	    printlog("submitting join request...\n");
-
-	    // send join request
-	    strcpy((char*)net_packet->data, "JOIN");
-	    if (loadingsavegame)
-	    {
-		    strncpy((char*)net_packet->data + 4, stats[getSaveGameClientnum(false)]->name, 22);
-		    SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[27]);
-		    SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[31]);
-		    Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
-		    appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
-		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
-		    strcpy((char*)net_packet->data + 39, VERSION);
-		    net_packet->data[47] = 0;
-		    net_packet->data[48] = getSaveGameClientnum(false);
-	    } else {
-		    strncpy((char*)net_packet->data + 4, stats[0]->name, 22);
-		    SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[27]);
-		    SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[31]);
-		    Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
-		    appearanceAndRace |= ((Uint8)stats[0]->playerRace);
-		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
-		    strcpy((char*)net_packet->data + 39, VERSION);
-		    net_packet->data[47] = 0;
-		    net_packet->data[48] = 0;
-	    }
-	    if (loadingsavegame) {
-		    // send over the map seed being used
-		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[49]);
-	    } else {
-		    SDLNet_Write32(0, &net_packet->data[49]);
-	    }
-	    SDLNet_Write32(loadingsavegame, &net_packet->data[53]); // send unique game key
-	    net_packet->address.host = net_server.host;
-	    net_packet->address.port = net_server.port;
-	    net_packet->len = 57;
-	    if (lobbyType == LobbyType::LobbyOnline) {
-		    sendPacket(net_sock, -1, net_packet, 0);
-		    SDL_Delay(5);
-		    sendPacket(net_sock, -1, net_packet, 0);
-		    SDL_Delay(5);
-		    sendPacket(net_sock, -1, net_packet, 0);
-		    SDL_Delay(5);
-		    sendPacket(net_sock, -1, net_packet, 0);
-		    SDL_Delay(5);
-		    sendPacket(net_sock, -1, net_packet, 0);
-		    SDL_Delay(5);
-	    } else {
-		    sendPacket(net_sock, -1, net_packet, 0);
-	    }
-
 	    return true;
 	}
 
