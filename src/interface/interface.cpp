@@ -3652,7 +3652,7 @@ void GenericGUIMenu::updateGUI()
 			{
 				drawImageScaled(smallbutton_bmp, NULL, &highlightBtn);
 			}
-			ttfPrintText(font, highlightBtn.x + (highlightBtn.w - txtWidth) / 2, pos.y - (8 - txtHeight), language[356]);
+			//ttfPrintText(font, highlightBtn.x + (highlightBtn.w - txtWidth) / 2, pos.y - (8 - txtHeight), language[356]);
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
 		{
@@ -8458,7 +8458,7 @@ void GenericGUIMenu::TinkerGUI_t::closeTinkerMenu()
 }
 
 int GenericGUIMenu::TinkerGUI_t::heightOffsetWhenNotCompact = 200;
-const int tinkerBaseWidth = 350;
+const int tinkerBaseWidth = 334;
 
 bool GenericGUIMenu::TinkerGUI_t::tinkerGUIHasBeenCreated() const
 {
@@ -8726,71 +8726,172 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		return;
 	}
 
-	auto displayItemName = baseFrame->findField("item display name");
-	auto metalText = baseFrame->findField("item metal value");
-	auto magicText = baseFrame->findField("item magic value");
-	displayItemName->setDisabled(true);
-	metalText->setDisabled(true);
-	magicText->setDisabled(true);
-	if ( metalScrapPrice >= 0 && magicScrapPrice >= 0 && itemDesc.size() > 1 )
+	// tinker kit status
 	{
-		displayItemName->setDisabled(false);
-		metalText->setDisabled(false);
-		magicText->setDisabled(false);
-
-		SDL_Rect namePos{ 30, 0, 208, 24 };
-		displayItemName->setSize(namePos);
-		if ( itemRequiresTitleReflow )
+		auto tinkerKitTitle = baseFrame->findField("tinker kit title");
+		auto tinkerKitStatus = baseFrame->findField("tinker kit status");
+		if ( auto item = parentGUI.tinkeringKitFindInInventory() )
 		{
-			displayItemName->setText(itemDesc.c_str());
-			displayItemName->reflowTextToFit(0);
-			if ( displayItemName->getNumTextLines() > 2 )
+			char buf[128];
+			if ( !item->identified )
 			{
-				// more than 2 lines, append ...
-				std::string copiedName = displayItemName->getText();
-				auto lastNewline = copiedName.find_last_of('\n');
-				copiedName = copiedName.substr(0U, lastNewline);
-				copiedName += "...";
-				displayItemName->setText(copiedName.c_str());
-				displayItemName->reflowTextToFit(0);
-				if ( displayItemName->getNumTextLines() > 2 )
-				{
-					// ... doesn't fit, replace last 3 characters with ...
-					copiedName = copiedName.substr(0U, copiedName.size() - 6);
-					copiedName += "...";
-					displayItemName->setText(copiedName.c_str());
-					displayItemName->reflowTextToFit(0);
-				}
+				snprintf(buf, sizeof(buf), "%s %s (?)", item->getName());
 			}
-			itemRequiresTitleReflow = false;
-		}
-		namePos.h = displayItemName->getNumTextLines() * 24;
-		if ( displayItemName->getNumTextLines() > 1 )
-		{
-			//itemTooltipImg->path = "images/ui/Shop/Shop_Tooltip_3Row_00.png";
-			//itemTooltipImg->pos.h = 86;
-			//buyTooltipFramePos.h = 86;
-			//itemTooltipImg->pos.y = 0;
-
-			//namePos.y = buyTooltipFramePos.h - 77;
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s (%+d)", item->getName(), item->beatitude);
+			}
+			std::string titleStr = buf;
+			if ( !titleStr.empty() )
+			{
+				if ( titleStr[0] >= 'a' && titleStr[0] <= 'z' )
+				{
+					titleStr[0] = (char)toupper((int)titleStr[0]);
+				}
+				size_t found = titleStr.find(' ');
+				while ( found != std::string::npos )
+				{
+					auto& c = titleStr[std::min(found + 1, titleStr.size() - 1)];
+					if ( c >= 'a' && c <= 'z' )
+					{
+						c = (char)toupper((int)c);
+					}
+					found = titleStr.find(' ', found + 1);
+				}
+				tinkerKitTitle->setText(titleStr.c_str());
+			}
+			else
+			{
+				tinkerKitTitle->setText(buf);
+			}
+			tinkerKitStatus->setText(ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str());
 		}
 		else
 		{
-			//itemTooltipImg->path = "images/ui/Shop/Shop_Tooltip_2Row_00.png";
-			//itemTooltipImg->pos.h = 66;
-			//buyTooltipFramePos.h = 66;
-			//itemTooltipImg->pos.y = 0;
-
-			//namePos.y = buyTooltipFramePos.h - 57;
+			tinkerKitTitle->setText("");
+			tinkerKitStatus->setText("");
 		}
-		displayItemName->setSize(namePos);
 
-		SDL_Rect metalPos{ 230 - 50, 180, 50, 24 };
-		SDL_Rect magicPos{ 302 - 50, 180, 50, 24 };
-		metalText->setText(std::to_string(metalScrapPrice).c_str());
-		metalText->setSize(metalPos);
-		magicText->setText(std::to_string(magicScrapPrice).c_str());
-		magicText->setSize(magicPos);
+		SDL_Rect textPos{ 0, 18, baseFrame->getSize().w, 24 };
+		tinkerKitTitle->setSize(textPos);
+		textPos.y += 20;
+		tinkerKitStatus->setSize(textPos);
+	}
+
+	// held qtys
+	{
+		auto heldScrapText = baseFrame->findField("held scrap label");
+		heldScrapText->setDisabled(false);
+
+		auto heldScrapBg = baseFrame->findImage("held scrap img");
+		heldScrapBg->pos.x = baseFrame->getSize().w - 18 - heldScrapBg->pos.w;
+		heldScrapBg->pos.y = baseFrame->getSize().h - 48;
+
+		auto metalHeldText = baseFrame->findField("held metal txt");
+		auto magicHeldText = baseFrame->findField("held magic txt");
+		SDL_Rect metalPos{ heldScrapBg->pos.x, heldScrapBg->pos.y + 9, 74, 24 };
+		SDL_Rect magicPos{ heldScrapBg->pos.x, heldScrapBg->pos.y + 9, 166, 24 };
+		metalHeldText->setText(std::to_string(parentGUI.tinkeringCountScrapTotal(TOOL_METAL_SCRAP)).c_str());
+		metalHeldText->setSize(metalPos);
+		magicHeldText->setText(std::to_string(parentGUI.tinkeringCountScrapTotal(TOOL_MAGIC_SCRAP)).c_str());
+		magicHeldText->setSize(magicPos);
+
+		SDL_Rect heldScrapTxtPos = heldScrapText->getSize();
+		heldScrapTxtPos.w = heldScrapBg->pos.x - 4;
+		heldScrapTxtPos.x = 0;
+		heldScrapTxtPos.y = metalPos.y;
+		heldScrapTxtPos.h = 24;
+		heldScrapText->setSize(heldScrapTxtPos);
+		heldScrapText->setText(language[4131]);
+	}
+
+	auto itemDisplayTooltip = baseFrame->findFrame("tinker display tooltip");
+	itemDisplayTooltip->setDisabled(true);
+
+	if ( metalScrapPrice >= 0 && magicScrapPrice >= 0 && itemDesc.size() > 1 )
+	{
+		auto displayItemName = itemDisplayTooltip->findField("item display name");
+		auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
+		auto itemSlotFrame = itemDisplayTooltip->findFrame("item slot frame");
+		auto itemSlotBg = itemDisplayTooltip->findImage("item bg img");
+		auto costBg = itemDisplayTooltip->findImage("item cost img");
+		auto metalText = itemDisplayTooltip->findField("item metal value");
+		auto magicText = itemDisplayTooltip->findField("item magic value");
+		auto costScrapText = itemDisplayTooltip->findField("item cost label");
+
+		itemDisplayTooltip->setDisabled(false);
+		SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
+		tooltipPos.x = 30;
+		tooltipPos.y = 76;
+		tooltipPos.w = 280;
+		tooltipPos.h = baseFrame->getSize().h - 100;
+		itemDisplayTooltip->setSize(tooltipPos);
+
+		{
+			// item slot + frame
+			itemSlotBg->pos.x = 0;
+			itemSlotBg->pos.y = 0;
+			SDL_Rect slotFramePos = itemSlotFrame->getSize();
+			slotFramePos.x = itemSlotBg->pos.x + itemSlotBg->pos.w / 2 - slotFramePos.w / 2 - 1;
+			slotFramePos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - slotFramePos.h / 2 - 1;
+			itemSlotFrame->setSize(slotFramePos);
+		}
+
+		{
+			// item name + text bg
+			displayItemTextImg->pos.x = itemSlotBg->pos.x + itemSlotBg->pos.w;
+			displayItemTextImg->pos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - displayItemTextImg->pos.h / 2;
+
+			SDL_Rect namePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
+			displayItemName->setSize(namePos);
+			displayItemName->setVJustify(Field::justify_t::CENTER);
+			if ( itemRequiresTitleReflow )
+			{
+				displayItemName->setText(itemDesc.c_str());
+				displayItemName->reflowTextToFit(0);
+				if ( displayItemName->getNumTextLines() > 2 )
+				{
+					// more than 2 lines, append ...
+					std::string copiedName = displayItemName->getText();
+					auto lastNewline = copiedName.find_last_of('\n');
+					copiedName = copiedName.substr(0U, lastNewline);
+					copiedName += "...";
+					displayItemName->setText(copiedName.c_str());
+					displayItemName->reflowTextToFit(0);
+					if ( displayItemName->getNumTextLines() > 2 )
+					{
+						// ... doesn't fit, replace last 3 characters with ...
+						copiedName = copiedName.substr(0U, copiedName.size() - 6);
+						copiedName += "...";
+						displayItemName->setText(copiedName.c_str());
+						displayItemName->reflowTextToFit(0);
+					}
+				}
+				itemRequiresTitleReflow = false;
+			}
+			namePos.h = 50;
+			displayItemName->setSize(namePos);
+		}
+
+		{
+			// scrap cost img + texts
+			costBg->pos.x = displayItemTextImg->pos.x + displayItemTextImg->pos.w - costBg->pos.w;
+			costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
+			SDL_Rect metalPos{ costBg->pos.x + 12, costBg->pos.y + 9, 50, 24 };
+			SDL_Rect magicPos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
+			metalText->setText(std::to_string(metalScrapPrice).c_str());
+			metalText->setSize(metalPos);
+			magicText->setText(std::to_string(magicScrapPrice).c_str());
+			magicText->setSize(magicPos);
+
+			SDL_Rect costScrapTxtPos = costScrapText->getSize();
+			costScrapTxtPos.w = costBg->pos.x - 4;
+			costScrapTxtPos.x = 0;
+			costScrapTxtPos.y = metalPos.y;
+			costScrapTxtPos.h = 24;
+			costScrapText->setSize(costScrapTxtPos);
+			costScrapText->setText(language[4130]);
+		}
 	}
 
 	bool usingGamepad = (inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor);
@@ -8953,28 +9054,101 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			makeColor(255, 255, 255, 255),
 			"images/ui/Tinkering/Tinker_Construct_Base_00.png", "tinker base img");
 
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto tinkerKitTitle = bgFrame->addField("tinker kit title", 128);
+		tinkerKitTitle->setFont(headerFont);
+		tinkerKitTitle->setText("");
+		tinkerKitTitle->setHJustify(Field::justify_t::CENTER);
+		tinkerKitTitle->setVJustify(Field::justify_t::TOP);
+		tinkerKitTitle->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tinkerKitTitle->setColor(makeColor(201, 162, 100, 255));
+		auto tinkerKitStatus = bgFrame->addField("tinker kit status", 128);
+		tinkerKitStatus->setFont(headerFont);
+		tinkerKitStatus->setText("");
+		tinkerKitStatus->setHJustify(Field::justify_t::CENTER);
+		tinkerKitStatus->setVJustify(Field::justify_t::TOP);
+		tinkerKitStatus->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tinkerKitStatus->setColor(makeColor(201, 162, 100, 255));
+
 		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
-		auto itemNameText = bgFrame->addField("item display name", 1024);
-		itemNameText->setFont(itemFont);
-		itemNameText->setText("");
-		itemNameText->setHJustify(Field::justify_t::LEFT);
-		itemNameText->setVJustify(Field::justify_t::TOP);
-		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		itemNameText->setColor(makeColor(201, 162, 100, 255));
-		auto metalText = bgFrame->addField("item metal value", 32);
-		metalText->setFont(itemFont);
-		metalText->setText("");
-		metalText->setHJustify(Field::justify_t::RIGHT);
-		metalText->setVJustify(Field::justify_t::TOP);
-		metalText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		metalText->setColor(makeColor(201, 162, 100, 255));
-		auto magicText = bgFrame->addField("item magic value", 32);
-		magicText->setFont(itemFont);
-		magicText->setText("");
-		magicText->setHJustify(Field::justify_t::RIGHT);
-		magicText->setVJustify(Field::justify_t::TOP);
-		magicText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		magicText->setColor(makeColor(201, 162, 100, 255));
+		auto itemDisplayTooltip = bgFrame->addFrame("tinker display tooltip");
+		itemDisplayTooltip->setSize(basePos);
+		itemDisplayTooltip->setHollow(true);
+		{
+			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
+			itemNameText->setFont(itemFont);
+			itemNameText->setText("");
+			itemNameText->setHJustify(Field::justify_t::LEFT);
+			itemNameText->setVJustify(Field::justify_t::TOP);
+			itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			itemNameText->setColor(makeColor(201, 162, 100, 255));
+
+			auto itemDisplayTextBg = itemDisplayTooltip->addImage(SDL_Rect{0, 0, 220, 42},
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_LabelName_2Row_00.png", "item text img");
+
+			auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 144, 34 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_CostBacking_00.png", "item cost img");
+
+			auto metalText = itemDisplayTooltip->addField("item metal value", 32);
+			metalText->setFont(itemFont);
+			metalText->setText("");
+			metalText->setHJustify(Field::justify_t::RIGHT);
+			metalText->setVJustify(Field::justify_t::TOP);
+			metalText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			metalText->setColor(makeColor(201, 162, 100, 255));
+			auto magicText = itemDisplayTooltip->addField("item magic value", 32);
+			magicText->setFont(itemFont);
+			magicText->setText("");
+			magicText->setHJustify(Field::justify_t::RIGHT);
+			magicText->setVJustify(Field::justify_t::TOP);
+			magicText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			magicText->setColor(makeColor(201, 162, 100, 255));
+
+			auto costScrapText = itemDisplayTooltip->addField("item cost label", 64);
+			costScrapText->setFont(itemFont);
+			costScrapText->setText("");
+			costScrapText->setHJustify(Field::justify_t::RIGHT);
+			costScrapText->setVJustify(Field::justify_t::TOP);
+			costScrapText->setSize(SDL_Rect{ 0, 0, 90, 0 });
+			costScrapText->setColor(makeColor(201, 162, 100, 255));
+
+			auto itemBgImg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 54, 52 }, 0xFFFFFFFF,
+				"*images/ui/Tinkering/Tinker_ItemBGSurround_00.png", "item bg img");
+
+			auto slotFrame = itemDisplayTooltip->addFrame("item slot frame");
+			SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			createPlayerInventorySlotFrameElements(slotFrame);
+		}
+
+		{
+			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 34 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_ScrapBacking_00.png", "held scrap img");
+
+			auto heldScrapText = bgFrame->addField("held scrap label", 64);
+			heldScrapText->setFont(itemFont);
+			heldScrapText->setText("");
+			heldScrapText->setHJustify(Field::justify_t::RIGHT);
+			heldScrapText->setVJustify(Field::justify_t::TOP);
+			heldScrapText->setSize(SDL_Rect{ 0, 0, 90, 0 });
+			heldScrapText->setColor(makeColor(201, 162, 100, 255));
+
+			auto metalHeldText = bgFrame->addField("held metal txt", 32);
+			metalHeldText->setFont(itemFont);
+			metalHeldText->setText("");
+			metalHeldText->setHJustify(Field::justify_t::RIGHT);
+			metalHeldText->setVJustify(Field::justify_t::TOP);
+			metalHeldText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			metalHeldText->setColor(makeColor(201, 162, 100, 255));
+			auto magicHeldText = bgFrame->addField("held magic txt", 32);
+			magicHeldText->setFont(itemFont);
+			magicHeldText->setText("");
+			magicHeldText->setHJustify(Field::justify_t::RIGHT);
+			magicHeldText->setVJustify(Field::justify_t::TOP);
+			magicHeldText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			magicHeldText->setColor(makeColor(201, 162, 100, 255));
+		}
 	}
 }
 
@@ -9057,6 +9231,20 @@ void GenericGUIMenu::TinkerGUI_t::setItemDisplayNameAndPrice(Item* item)
 	else if ( parentGUI.tinkeringIsItemRepairable(item, player) && parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 	{
 		parentGUI.tinkeringGetRepairCost(item, &metalScrapPrice, &magicScrapPrice);
+	}
+
+	if ( tinkerFrame )
+	{
+		if ( auto baseFrame = tinkerFrame->findFrame("tinker base") )
+		{
+			if ( auto itemTooltipFrame = baseFrame->findFrame("tinker display tooltip") )
+			{
+				auto itemSlotFrame = itemTooltipFrame->findFrame("item slot frame");
+				int oldQty = item->count;
+				updateSlotFrameFromItem(itemSlotFrame, item);
+				item->count = oldQty;
+			}
+		}
 	}
 }
 
