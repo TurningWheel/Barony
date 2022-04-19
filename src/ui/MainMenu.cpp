@@ -5667,6 +5667,81 @@ bind_failed:
 	    }
 	}
 
+	static void updateLobby() {
+	    if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
+#ifdef STEAMWORKS
+			// update server name
+			if ( currentLobby )
+			{
+				const char* lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name");
+				if ( lobbyName )
+				{
+					if ( strcmp(lobbyName, currentLobbyName) )
+					{
+						if ( multiplayer == CLIENT )
+						{
+							// update the lobby name on our end
+							snprintf( currentLobbyName, 31, "%s", lobbyName );
+						}
+						else if ( multiplayer == SERVER )
+						{
+							// update the backend's copy of the lobby name
+							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
+						}
+					}
+				}
+				if ( multiplayer == SERVER )
+				{
+					const char* lobbyTimeStr = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime");
+					if ( lobbyTimeStr )
+					{
+						Uint32 lobbyTime = static_cast<Uint32>(atoi(lobbyTimeStr));
+						if ( SteamUtils()->GetServerRealTime() >= lobbyTime + 3 )
+						{
+							//printlog("Updated server time");
+							char modifiedTime[32];
+							snprintf(modifiedTime, 31, "%d", SteamUtils()->GetServerRealTime());
+							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime);
+						}
+					}
+				}
+			}
+#endif
+		}
+		else if ( !directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
+#if defined USE_EOS
+			// update server name
+			if ( multiplayer == CLIENT )
+			{
+				// update the lobby name on our end
+				snprintf(EOS.currentLobbyName, 31, "%s", EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str());
+			}
+			else if ( multiplayer == SERVER )
+			{
+				// update the backend's copy of the lobby name and other properties
+				if ( ticks % TICKS_PER_SECOND == 0 && EOS.CurrentLobbyData.currentLobbyIsValid() )
+				{
+					if ( EOS.CurrentLobbyData.LobbyAttributes.lobbyName.compare(EOS.currentLobbyName) != 0
+						&& strcmp(EOS.currentLobbyName, "") != 0 )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
+					}
+					else if ( EOS.CurrentLobbyData.LobbyAttributes.serverFlags != svFlags )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
+					}
+					else if ( EOS.CurrentLobbyData.LobbyAttributes.PermissionLevel != static_cast<Uint32>(EOS.currentPermissionLevel) )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
+					}
+				}
+			}
+#endif
+		}
+	}
+
 	static void handlePacketsAsServer() {
 #ifdef STEAMWORKS
 		CSteamID newSteamID;
@@ -5674,6 +5749,8 @@ bind_failed:
 #if defined USE_EOS
 		EOS_ProductUserId newRemoteProductId = nullptr;
 #endif
+
+        updateLobby();
 
 		for (int numpacket = 0; numpacket < PACKET_LIMIT; numpacket++) {
 			if (directConnect) {
@@ -9774,7 +9851,8 @@ bind_failed:
 	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
                 const auto& lobby = lobbies[selectedLobby];
                 if (!lobby.locked) {
-                    if (connectToServer(lobby.address.c_str(), LobbyType::LobbyLAN)) {
+                    if (connectToServer(lobby.address.c_str(),
+                        directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                         // we only want to deselect the button if the
                         // "connecting to server" prompt actually raises
                         button.deselect();
