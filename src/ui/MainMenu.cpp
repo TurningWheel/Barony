@@ -5990,9 +5990,9 @@ bind_failed:
 				client_disconnected[player] = true;
 
 #ifdef STEAMWORKS
-                if (steamIDRemote[player]) {
-                    cpp_Free_CSteamID(steamIDRemote[player]);
-				    steamIDRemote[player] = nullptr;
+                if (steamIDRemote[player - 1]) {
+                    cpp_Free_CSteamID(steamIDRemote[player - 1]);
+				    steamIDRemote[player - 1] = nullptr;
 				}
 #endif
 
