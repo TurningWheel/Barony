@@ -9181,6 +9181,9 @@ bind_failed:
 			auto lobby = static_cast<Frame*>(frame->getParent()); assert(lobby);
 			bool allCardsClosed = true;
 			for (int c = 0; c < 4; ++c) {
+			    if (clientnum != c && multiplayer == SINGLE) {
+			        continue;
+			    }
 				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
 				auto backdrop = card->findImage("backdrop"); assert(backdrop);
 				if (backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
@@ -10170,7 +10173,7 @@ bind_failed:
 	    // scan for lobbies immediately
 	    refresh->activate();
 #else
-        if (1) {
+        if (0) {
             // test lobbies
 		    addLobby(LobbyInfo("Ben", 1, 50, false));
 		    addLobby(LobbyInfo("Sheridan", 3, 50, false));
