@@ -1373,7 +1373,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		if ( net_packet->data[48] == 0 )
 		{
 			// client will enter any player spot
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] == true )
 				{

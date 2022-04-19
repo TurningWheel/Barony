@@ -679,6 +679,7 @@ SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket()
 
 SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList()
 {
+    SteamMatchmaking()->AddRequestLobbyListDistanceFilter(ELobbyDistanceFilter::k_ELobbyDistanceFilterWorldwide);
 	SteamMatchmaking()->AddRequestLobbyListNearValueFilter("lobbyCreationTime", SteamUtils()->GetServerRealTime());
 	SteamMatchmaking()->AddRequestLobbyListNumericalFilter("lobbyModifiedTime", 
 		SteamUtils()->GetServerRealTime() - 8, k_ELobbyComparisonEqualToOrGreaterThan);

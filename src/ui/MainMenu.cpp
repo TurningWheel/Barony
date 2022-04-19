@@ -5471,18 +5471,20 @@ bind_failed:
 			}
 		} else if (multiplayer == CLIENT) {
 			bool hostHasLostP2P = false;
-			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			if (!directConnect && !connectingToLobby && !connectingToLobbyWindow) {
+			    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-				if (!steamIDRemote[0]) {
-					hostHasLostP2P = true;
-				}
+				    if (!steamIDRemote[0]) {
+					    hostHasLostP2P = true;
+				    }
 #endif
-			} else if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-				if (!EOS.P2PConnectionInfo.isPeerStillValid(0)) {
-					hostHasLostP2P = true;
-				}
+				    if (!EOS.P2PConnectionInfo.isPeerStillValid(0)) {
+					    hostHasLostP2P = true;
+				    }
 #endif
+			    }
 			}
 
 			if (hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30)) {
@@ -6069,7 +6071,7 @@ bind_failed:
 					Uint32 bytesRead = 0;
 					if (!SteamNetworking()->ReadP2PPacket(
 					    net_packet->data, packetlen,
-					    &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 23)) {
+					    &bytesRead, &newSteamID, 0) || bytesRead != 8 + MAXPLAYERS * (5 + 23)) {
 						continue;
 					}
 					net_packet->len = packetlen;
@@ -6081,15 +6083,12 @@ bind_failed:
 					if (mySteamID.ConvertToUint64() == newSteamID.ConvertToUint64()) {
 						continue;
 					}
-					if ((int)net_packet->data[3] < '0'
-						&& (int)net_packet->data[0] == 0
-						&& (int)net_packet->data[1] == 0
-						&& (int)net_packet->data[2] == 0) {
-						// data encoded with [0 0 0 clientnum] - directly sends an INT, if the character is < '0', then it is non-alphanumeric character.
-						// likely not some other form of data - like an old "GOTP" from a recently closed session.
-						gotPacket = true;
-					} else {
-						continue;
+
+			        if (!handleSafePacket()) {
+			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+			            if (packetId == 'HELO') {
+					        gotPacket = true;
+					    }
 					}
 					break;
 				}
@@ -6100,15 +6099,12 @@ bind_failed:
 					if (!EOS.HandleReceivedMessages(&newRemoteProductId)) {
 						continue;
 					}
-					if ((int)net_packet->data[3] < '0'
-						&& (int)net_packet->data[0] == 0
-						&& (int)net_packet->data[1] == 0
-						&& (int)net_packet->data[2] == 0) {
-						// data encoded with [0 0 0 clientnum] - directly sends an INT, if the character is < '0', then it is non-alphanumeric character.
-						// likely not some other form of data - like an old "GOTP" from a recently closed session.
-						gotPacket = true;
-					} else {
-						continue;
+
+			        if (!handleSafePacket()) {
+			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+			            if (packetId == 'HELO') {
+					        gotPacket = true;
+					    }
 					}
 					break;
 				}
@@ -6656,6 +6652,8 @@ bind_failed:
 		            auto dimmer = static_cast<Frame*>(frame->getParent());
 		            dimmer->removeSelf();
 		            if (connectingToLobbyWindow) {
+		                connectingToLobbyWindow = false;
+
 			            // record CSteamID of lobby owner (and nobody else)
 			            int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
 			            for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -12702,14 +12700,10 @@ bind_failed:
 			online_players->setVJustify(Field::justify_t::TOP);
 			online_players->setSize(SDL_Rect{
 				Frame::virtualScreenX - 200,
-				4,
-				200,
-				50
-				});
+				4, 200, 50});
 			online_players->setColor(0xffffffff);
 			online_players->setTickCallback([](Widget& widget){
 			    auto online_players = static_cast<Field*>(&widget);
-                NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
                 if (ticks % (TICKS_PER_SECOND * 5) == 0) {
                     getPlayersOnline();
                 }
