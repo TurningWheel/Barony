@@ -6517,7 +6517,7 @@ bind_failed:
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
 	    net_packet->len = 57;
-	    if (lobbyType == LobbyType::LobbyOnline) {
+	    if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
 		    SDL_Delay(5);
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -6568,7 +6568,7 @@ bind_failed:
 			        auto dimmer = static_cast<Frame*>(frame->getParent());
 			        dimmer->removeSelf();
 
-			        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus);
+			        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
 			        connectionErrorPrompt(error_str.c_str());
 			        connectingToLobbyStatus = EResult::k_EResultOK;
 			        return;
@@ -6581,13 +6581,13 @@ bind_failed:
 		            if (connectingToLobbyWindow) {
 			            // record CSteamID of lobby owner (and nobody else)
 			            int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
-			            for (int c = 0; c < MAXPLAYERS; c++ ) {
-				            if ( steamIDRemote[c] ) {
+			            for (int c = 0; c < MAXPLAYERS; ++c) {
+				            if (steamIDRemote[c]) {
 					            cpp_Free_CSteamID(steamIDRemote[c]);
 					            steamIDRemote[c] = NULL;
 				            }
 			            }
-			            for ( c = 0; c < lobbyMembers; ++c ) {
+			            for (int c = 0; c < lobbyMembers; ++c) {
 				            steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 			            }
 			            sendJoinRequest();
