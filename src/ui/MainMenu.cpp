@@ -5986,7 +5986,16 @@ bind_failed:
 
 			// player disconnected
 			else if (packetId == 'DISC') {
-				client_disconnected[net_packet->data[4]] = true;
+			    int player = net_packet->data[4];
+				client_disconnected[player] = true;
+
+#ifdef STEAMWORKS
+                if (steamIDRemote[player]) {
+                    cpp_Free_CSteamID(steamIDRemote[player]);
+				    steamIDRemote[player] = nullptr;
+				}
+#endif
+
 			    // forward to other players
 				for (int c = 1; c < MAXPLAYERS; c++) {
 					if (client_disconnected[c]) {
@@ -5997,8 +6006,10 @@ bind_failed:
 					net_packet->len = 5;
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
+
 				char shortname[32] = { 0 };
-				strncpy(shortname, stats[net_packet->data[4]]->name, 22);
+				strncpy(shortname, stats[player]->name, 22);
+
 				// TODO print the disconnect message somewhere.
 				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 				continue;
