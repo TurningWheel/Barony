@@ -5833,11 +5833,11 @@ bind_failed:
 					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 						bool skipJoin = false;
-						for (int c = 0; c < MAXPLAYERS; c++) {
-							if (client_disconnected[c] || !steamIDRemote[c]) {
+						for (int c = 1; c < MAXPLAYERS; c++) {
+							if (client_disconnected[c] || !steamIDRemote[c - 1]) {
 								continue;
 							}
-							if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c]))->ConvertToUint64()) {
+							if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
 								// we've already accepted this player. NEXT!
 								skipJoin = true;
 								break;
