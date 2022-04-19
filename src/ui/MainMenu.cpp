@@ -6425,7 +6425,7 @@ bind_failed:
 				    steamIDRemote[c] = NULL;
 			    }
 		    }
-		    ::currentLobbyType = k_ELobbyTypePrivate;
+		    ::currentLobbyType = k_ELobbyTypePublic;
 		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
 #endif
 	    } else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {

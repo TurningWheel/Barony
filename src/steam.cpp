@@ -1332,7 +1332,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 }
 
 #ifdef STEAMWORKS
-//#define STEAMDEBUG
+#define STEAMDEBUG
 
 /*-------------------------------------------------------------------------------
 
@@ -1547,39 +1547,40 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 #endif
 	if ( static_cast<EResult>(static_cast<LobbyCreated_t*>(pCallback)->m_eResult) == k_EResultOK )   //TODO: Make sure port from c_EResult to EResult works flawlessly.
 	{
-		if ( currentLobby )
+	    auto lobby = static_cast<CSteamID*>(currentLobby);
+		if ( lobby )
 		{
-			SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
-			cpp_Free_CSteamID(currentLobby); //TODO: BUGGER THIS.
-			currentLobby = nullptr;
+			SteamMatchmaking()->LeaveLobby(*lobby);
+			cpp_Free_CSteamID((void*)lobby); //TODO: BUGGER THIS.
 		}
 		currentLobby = cpp_LobbyCreated_Lobby(pCallback);
+		lobby = static_cast<CSteamID*>(currentLobby);
 
 		// set the name of the lobby
 		snprintf( currentLobbyName, 31, "%s's lobby", SteamFriends()->GetPersonaName() );
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "name", currentLobbyName);
 
 		// set the game version of the lobby
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "ver", VERSION); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "ver", VERSION);
 
 		// set lobby server flags
 		char svFlagsChar[16];
 		snprintf(svFlagsChar, 15, "%d", svFlags);
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "svFlags", svFlagsChar);
 
 		// set load game status on lobby
 		char loadingsavegameChar[16];
 		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "loadingsavegame", loadingsavegameChar); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "loadingsavegame", loadingsavegameChar);
 
 		char svNumMods[16];
 		snprintf(svNumMods, 15, "%d", gamemods_numCurrentModsLoaded);
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods", svNumMods); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "svNumMods", svNumMods);
 
 		char modifiedTime[32];
 		snprintf(modifiedTime, 31, "%d", SteamUtils()->GetServerRealTime());
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime); //TODO: Bugger void pointer!
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyCreationTime", modifiedTime); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyModifiedTime", modifiedTime);
+		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyCreationTime", modifiedTime);
 
 		if ( gamemods_numCurrentModsLoaded > 0 )
 		{
@@ -1595,7 +1596,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 						snprintf(svModFileID, 64, "%d", static_cast<int>(itMap->second));
 						char tagName[32] = "";
 						snprintf(tagName, 32, "svMod%d", count);
-						SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName, svModFileID); //TODO: Bugger void pointer!
+						SteamMatchmaking()->SetLobbyData(*lobby, tagName, svModFileID);
 						++count;
 						break;
 					}
