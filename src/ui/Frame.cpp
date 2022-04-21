@@ -18,7 +18,7 @@
 const Sint32 Frame::sliderSize = 15;
 
 int Frame::_virtualScreenX = 1280;
-int Frame::_virtualScreenY = 960;
+int Frame::_virtualScreenY = 720;
 
 #ifndef EDITOR
 #include "../net.hpp"
