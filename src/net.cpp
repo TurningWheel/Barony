@@ -77,6 +77,9 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 	}
 	else
 	{
+	    if (hostnum < 0 || hostnum >= MAXPLAYERS) {
+	        return 0;
+	    }
 		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
