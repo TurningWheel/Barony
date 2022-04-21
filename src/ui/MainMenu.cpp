@@ -8876,10 +8876,21 @@ bind_failed:
 			"backdrop"
 		);
 
+        // shorten the name
+        constexpr int longest_name = 12;
+		char shortname[16];
+		int len = (int)strlen(stats[index]->name);
+		if (len > longest_name) {
+		    memcpy(shortname, stats[index]->name, longest_name);
+		    memcpy(shortname + longest_name, "...", 4);
+		} else {
+		    strcpy(shortname, stats[index]->name);
+		}
+
 		auto banner = card->addField("banner", 64); assert(banner);
-		banner->setText((std::string("PLAYER ") + std::to_string(index + 1)).c_str());
+		banner->setText(shortname);
 		banner->setFont(banner_font);
-		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 
