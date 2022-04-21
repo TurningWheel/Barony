@@ -17,6 +17,23 @@
 
 const Sint32 Frame::sliderSize = 15;
 
+int Frame::_virtualScreenX = 1280;
+int Frame::_virtualScreenY = 960;
+
+#ifndef EDITOR
+#include "../net.hpp"
+ConsoleCommand myCmd("/resizegui", "change gui size",
+    [](int argc, const char** argv){
+    if (argc < 3) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Needs 2 args eg: /resizegui 1280 720");
+        return;
+    }
+    const int x = (int)strtol(argv[1], nullptr, 10);
+    const int y = (int)strtol(argv[2], nullptr, 10);
+    Frame::guiResize(x, y);
+    });
+#endif
+
 static const Uint32 tooltip_background = 0xEE000000;
 static const Uint32 tooltip_border_color = 0xFFEE00AA;
 static const int tooltip_border_width = 2;
@@ -70,6 +87,8 @@ void Frame::fboDestroy() {
 }
 
 void Frame::guiInit() {
+	fboInit();
+
 	gui = new Frame("root");
 	SDL_Rect guiRect;
 	guiRect.x = 0;
@@ -93,8 +112,6 @@ void Frame::guiInit() {
 		gameUIFrame[i]->setDisabled(true);
 	}
 #endif
-
-	fboInit();
 }
 
 void Frame::guiDestroy() {
@@ -112,7 +129,15 @@ void Frame::guiDestroy() {
 		delete gui;
 		gui = nullptr;
 	}
+
 	fboDestroy();
+}
+
+void Frame::guiResize(int x, int y) {
+    _virtualScreenX = x;
+    _virtualScreenY = y;
+    guiDestroy();
+    guiInit();
 }
 
 Frame::Frame(const char* _name) {
