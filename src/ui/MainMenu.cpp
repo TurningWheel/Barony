@@ -5410,7 +5410,7 @@ bind_failed:
 			    net_packet->address.port = net_clients[c - 1].port;
 			    net_packet->len = 5;
 			    for (int c = 0; c < 5; ++c) {
-		            sendPacket(net_sock, -1, net_packet, 0);
+		            sendPacket(net_sock, -1, net_packet, c - 1);
 		            SDL_Delay(1);
 		        }
 		    }
