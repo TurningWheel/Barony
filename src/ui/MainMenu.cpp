@@ -12033,7 +12033,19 @@ bind_failed:
 			[](Button&){ // okay
 				soundActivate();
 				closeMainMenu();
-				stats[clientnum]->HP = 0;
+		        if (multiplayer == CLIENT) {
+			        // request sweet release.
+			        strcpy((char*)net_packet->data, "IDIE");
+			        net_packet->data[4] = clientnum;
+			        net_packet->address.host = net_server.host;
+			        net_packet->address.port = net_server.port;
+			        net_packet->len = 5;
+			        sendPacketSafe(net_sock, -1, net_packet, 0);
+		        } else {
+			        if (players[pause_menu_owner] && players[pause_menu_owner]->entity) {
+				        players[pause_menu_owner]->entity->setHP(0);
+			        }
+		        }
 			},
 			[](Button&){ // cancel
 				soundCancel();
