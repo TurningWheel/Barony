@@ -5531,7 +5531,7 @@ bind_failed:
                 disconnectFromLobby();
 	            destroyMainMenu();
 	            createMainMenu(false);
-                connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+                connectionErrorPrompt(error_str.c_str());
 			}
 
 			else if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
