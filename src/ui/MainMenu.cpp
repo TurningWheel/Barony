@@ -5399,6 +5399,10 @@ bind_failed:
 /******************************************************************************/
 
 	static void disconnectFromLobby() {
+	    if (multiplayer == SINGLE) {
+	        return;
+	    }
+
 	    if (multiplayer == SERVER) {
 		    // send disconnect message to clients
 		    for (int c = 1; c < MAXPLAYERS; c++) {
@@ -5426,6 +5430,13 @@ bind_failed:
 	            sendPacket(net_sock, -1, net_packet, 0);
 	            SDL_Delay(1);
 	        }
+	    }
+
+	    // this short delay makes sure that the disconnect message gets out
+	    Uint32 timetoshutdown = SDL_GetTicks();
+	    while ( SDL_GetTicks() - timetoshutdown < 200 )
+	    {
+	        pollNetworkForShutdown();
 	    }
 
         resetLobbyJoinFlowState();
@@ -6440,7 +6451,7 @@ bind_failed:
 					    playerDisconnected = net_packet->data[4];
 					    client_disconnected[playerDisconnected] = true;
 				    }
-				    if (playerDisconnected == clientnum || net_packet->data[4] == 0) {
+				    if (playerDisconnected == clientnum || playerDisconnected == 0) {
 					    // we got kicked!
 		                multiplayer = SINGLE;
 		                disconnectFromLobby();

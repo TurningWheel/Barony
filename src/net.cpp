@@ -57,6 +57,39 @@ void packetDeconstructor(void* data)
 	free(data);
 }
 
+void pollNetworkForShutdown() {
+	// handle network messages
+	if ( !(SDL_GetTicks() % 25) && multiplayer )
+	{
+		int j = 0;
+		node_t* node, *nextnode;
+		for ( node = safePacketsSent.first; node != NULL; node = nextnode )
+		{
+			nextnode = node->next;
+
+			packetsend_t* packet = (packetsend_t*)node->element;
+			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
+			packet->tries++;
+			if ( packet->tries >= MAXTRIES )
+			{
+				list_RemoveNode(node);
+			}
+			j++;
+			if ( j >= MAXDELETES )
+			{
+				break;
+			}
+		}
+	}
+#ifdef STEAMWORKS
+	SteamAPI_RunCallbacks();
+#endif // STEAMWORKS
+#ifdef USE_EOS
+	EOS_Platform_Tick(EOS.PlatformHandle);
+	EOS_Platform_Tick(EOS.ServerPlatformHandle);
+#endif // USE_EOS
+}
+
 /*-------------------------------------------------------------------------------
 
 	sendPacket
