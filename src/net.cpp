@@ -6079,6 +6079,14 @@ void closeNetworkInterfaces()
 		SDLNet_FreeSocketSet(tcpset);
 		tcpset = nullptr;
 	}
+#ifdef STEAMWORKS
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (steamIDRemote[c]) {
+            cpp_Free_CSteamID(steamIDRemote[c]);
+            steamIDRemote[c] = NULL;
+        }
+    }
+#endif
 }
 
 
