@@ -5414,10 +5414,7 @@ bind_failed:
 			    net_packet->address.host = net_clients[c - 1].host;
 			    net_packet->address.port = net_clients[c - 1].port;
 			    net_packet->len = 5;
-			    for (int i = 0; i < 5; ++i) {
-		            sendPacket(net_sock, -1, net_packet, c - 1);
-		            SDL_Delay(1);
-		        }
+			    sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		    }
 	    } else if (multiplayer == CLIENT) {
 		    // send disconnect message to server
@@ -5426,10 +5423,7 @@ bind_failed:
 		    net_packet->address.host = net_server.host;
 		    net_packet->address.port = net_server.port;
 		    net_packet->len = 5;
-		    for (int c = 0; c < 5; ++c) {
-	            sendPacket(net_sock, -1, net_packet, 0);
-	            SDL_Delay(1);
-	        }
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 	    }
 
 	    // this short delay makes sure that the disconnect message gets out
