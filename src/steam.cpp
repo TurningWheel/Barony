@@ -1895,6 +1895,21 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 		// lobby join failed
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
+		switch (static_cast<LobbyEnter_t*>(pCallback)->m_EChatRoomEnterResponse) {
+	    case k_EChatRoomEnterResponseSuccess: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NO_ERROR; break; // Success
+	    case k_EChatRoomEnterResponseDoesntExist: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_FOUND; break; // Chat doesn't exist (probably closed)
+	    case k_EChatRoomEnterResponseNotAllowed: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_ALLOWED; break; // General Denied - You don't have the permissions needed to join the chat
+	    case k_EChatRoomEnterResponseFull: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS; break; // Chat room has reached its maximum size
+	    case k_EChatRoomEnterResponseError: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break; // Unexpected Error
+	    case k_EChatRoomEnterResponseBanned: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // You are banned from this chat room and may not join
+	    case k_EChatRoomEnterResponseLimited: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break; // Joining this chat is not allowed because you are a limited user (no value on account)
+	    case k_EChatRoomEnterResponseClanDisabled: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break; // Attempt to join a clan chat when the clan is locked or disabled
+	    case k_EChatRoomEnterResponseCommunityBan: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // Attempt to join a chat when the user has a community lock on their account
+	    case k_EChatRoomEnterResponseMemberBlockedYou: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // Join failed - some member in the chat has blocked you from joining
+	    case k_EChatRoomEnterResponseYouBlockedMember: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // Join failed - you have blocked some member already in the chat
+	    case k_EChatRoomEnterResponseRatelimitExceeded: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_TOO_MANY_JOINS; break; // Join failed - to many join attempts in a very short period of time
+	    default: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break;
+		}
 		//openFailedConnectionWindow(CLIENT);
 		return;
 	}

@@ -1026,6 +1026,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	InitializeOptions.ReleaseMemoryFunction = nullptr;
 	InitializeOptions.Reserved = nullptr;
 	InitializeOptions.SystemInitializeOptions = nullptr;
+	InitializeOptions.OverrideThreadAffinity = nullptr;
 	EOS_EResult result = EOS_Initialize(&InitializeOptions);
 	if ( result != EOS_EResult::EOS_Success )
 	{
@@ -2476,7 +2477,8 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 
 	EOS_Achievements_CopyPlayerAchievementByIndexOptions CopyOptions = {};
 	CopyOptions.ApiVersion = EOS_ACHIEVEMENTS_COPYPLAYERACHIEVEMENTBYINDEX_API_LATEST;
-	CopyOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+	CopyOptions.TargetUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+	CopyOptions.LocalUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 
 	for ( CopyOptions.AchievementIndex = 0; CopyOptions.AchievementIndex < AchievementsCount; ++CopyOptions.AchievementIndex )
 	{
@@ -2649,10 +2651,10 @@ void EOSFuncs::loadAchievementData()
 		achievementHidden.clear();
 		EOS_Achievements_QueryDefinitionsOptions Options = {};
 		Options.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
-		Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
-		Options.UserId = CurrentUserInfo.getProductUserIdHandle();
-		Options.HiddenAchievementsCount = 0;
-		Options.HiddenAchievementIds = nullptr;
+		//Options.EpicUserId = EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str());
+		Options.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+		//Options.HiddenAchievementsCount = 0;
+		//Options.HiddenAchievementIds = nullptr;
 		EOS_Achievements_QueryDefinitions(AchievementsHandle, &Options, nullptr, OnAchievementQueryComplete);
 
 		EOS.StatGlobalManager.queryGlobalStatUser();
@@ -2663,7 +2665,8 @@ void EOSFuncs::loadAchievementData()
 	//achievementUnlockTime.clear();
 	EOS_Achievements_QueryPlayerAchievementsOptions PlayerAchievementOptions = {};
 	PlayerAchievementOptions.ApiVersion = EOS_ACHIEVEMENTS_QUERYPLAYERACHIEVEMENTS_API_LATEST;
-	PlayerAchievementOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
+	PlayerAchievementOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+	PlayerAchievementOptions.TargetUserId = CurrentUserInfo.getProductUserIdHandle();
 	EOS_Achievements_QueryPlayerAchievements(AchievementsHandle, &PlayerAchievementOptions, nullptr, OnPlayerAchievementQueryComplete);
 
 	EOS.queryAllStats();
@@ -2696,7 +2699,8 @@ void EOSFuncs::ingestStat(int stat_num, int value)
 	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
 	Options.Stats = StatsToIngest;
 	Options.StatsCount = sizeof(StatsToIngest) / sizeof(StatsToIngest[0]);
-	Options.UserId = CurrentUserInfo.getProductUserIdHandle();
+	Options.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
+	Options.TargetUserId = CurrentUserInfo.getProductUserIdHandle();
 	EOS_Stats_IngestStat(StatsHandle, &Options, nullptr, OnIngestStatComplete);
 }
 
@@ -2793,7 +2797,8 @@ void EOSFuncs::ingestGlobalStats()
 	Options.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
 	Options.Stats = StatsToIngest;
 	Options.StatsCount = numStats;
-	Options.UserId = StatGlobalManager.getProductUserIdHandle();
+	Options.LocalUserId = StatGlobalManager.getProductUserIdHandle();
+	Options.TargetUserId = StatGlobalManager.getProductUserIdHandle();
 
 	EOS_Stats_IngestStat(EOS_Platform_GetStatsInterface(ServerPlatformHandle), &Options, nullptr, OnIngestGlobalStatComplete);
 
@@ -2813,7 +2818,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 		EOS.StatsHandle = EOS_Platform_GetStatsInterface(EOS.PlatformHandle);
 		EOS_Stats_GetStatCountOptions StatCountOptions = {};
 		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
-		StatCountOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+		StatCountOptions.TargetUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 
 		Uint32 numStats = EOS_Stats_GetStatsCount(EOS.StatsHandle, &StatCountOptions);
 
@@ -2821,7 +2826,7 @@ void EOS_CALL EOSFuncs::OnQueryAllStatsCallback(const EOS_Stats_OnQueryStatsComp
 
 		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions = {};
 		CopyByIndexOptions.ApiVersion = EOS_STATS_COPYSTATBYINDEX_API_LATEST;
-		CopyByIndexOptions.UserId = EOS.CurrentUserInfo.getProductUserIdHandle();
+		CopyByIndexOptions.TargetUserId = EOS.CurrentUserInfo.getProductUserIdHandle();
 
 		EOS_Stats_Stat* copyStat = NULL;
 
@@ -2882,7 +2887,8 @@ void EOSFuncs::queryAllStats()
 	// Query Player Stats
 	EOS_Stats_QueryStatsOptions StatsQueryOptions = {};
 	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
-	StatsQueryOptions.UserId = CurrentUserInfo.getProductUserIdHandle();
+	StatsQueryOptions.TargetUserId = CurrentUserInfo.getProductUserIdHandle();
+	StatsQueryOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 
 	// Optional params
 	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
@@ -3609,7 +3615,7 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 	{
 		EOS_Stats_GetStatCountOptions StatCountOptions = {};
 		StatCountOptions.ApiVersion = EOS_STATS_GETSTATCOUNT_API_LATEST;
-		StatCountOptions.UserId = EOS.StatGlobalManager.getProductUserIdHandle();
+		StatCountOptions.TargetUserId = EOS.StatGlobalManager.getProductUserIdHandle();
 
 		Uint32 numStats = EOS_Stats_GetStatsCount(EOS_Platform_GetStatsInterface(EOS.ServerPlatformHandle), 
 			&StatCountOptions);
@@ -3618,7 +3624,7 @@ static void EOS_CALL OnQueryGlobalStatsCallback(const EOS_Stats_OnQueryStatsComp
 
 		EOS_Stats_CopyStatByIndexOptions CopyByIndexOptions = {};
 		CopyByIndexOptions.ApiVersion = EOS_STATS_COPYSTATBYINDEX_API_LATEST;
-		CopyByIndexOptions.UserId = EOS.StatGlobalManager.getProductUserIdHandle();
+		CopyByIndexOptions.TargetUserId = EOS.StatGlobalManager.getProductUserIdHandle();
 
 		EOS_Stats_Stat* copyStat = NULL;
 
@@ -3670,7 +3676,8 @@ void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 	// Query Player Stats
 	EOS_Stats_QueryStatsOptions StatsQueryOptions = {};
 	StatsQueryOptions.ApiVersion = EOS_STATS_QUERYSTATS_API_LATEST;
-	StatsQueryOptions.UserId = getProductUserIdHandle();
+	StatsQueryOptions.LocalUserId = getProductUserIdHandle();
+	StatsQueryOptions.TargetUserId = getProductUserIdHandle();
 
 	// Optional params
 	StatsQueryOptions.StartTime = EOS_STATS_TIME_UNDEFINED;

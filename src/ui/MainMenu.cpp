@@ -6552,7 +6552,7 @@ bind_failed:
 			    }
 		    }
 		    ::currentLobbyType = k_ELobbyTypePublic;
-		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, 2);
+		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
 #endif
 	    } else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
