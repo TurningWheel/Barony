@@ -5519,7 +5519,22 @@ bind_failed:
 			    }
 			}
 
-			if (hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30)) {
+			if (hostHasLostP2P) {
+#if defined(STEAMWORKS)
+				auto error_code = connectingToLobbyStatus;
+#elif defined(USE_EOS)
+				auto error_code = EOS.ConnectingToLobbyStatus;
+#else
+                auto error_code = -1; // TODO just so this compiles always
+#endif
+				auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
+                disconnectFromLobby();
+	            destroyMainMenu();
+	            createMainMenu(false);
+                connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+			}
+
+			else if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
 			    // timeout after 30 seconds of no messages from server
                 disconnectFromLobby();
 	            destroyMainMenu();
@@ -6537,7 +6552,7 @@ bind_failed:
 			    }
 		    }
 		    ::currentLobbyType = k_ELobbyTypePublic;
-		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
+		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, 2);
 #endif
 	    } else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
