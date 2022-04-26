@@ -8591,6 +8591,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		animDrawer = 0.0;
 		animx = 0.0;
+		animTooltip = 0.0;
 		isInteractable = false;
 	}
 
@@ -8806,7 +8807,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 
 	auto itemDisplayTooltip = baseFrame->findFrame("tinker display tooltip");
-	itemDisplayTooltip->setDisabled(true);
+	itemDisplayTooltip->setDisabled(false);
 
 	if ( metalScrapPrice >= 0 && magicScrapPrice >= 0 && itemDesc.size() > 1 )
 	{
@@ -8819,18 +8820,27 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		auto magicText = itemDisplayTooltip->findField("item magic value");
 		auto costScrapText = itemDisplayTooltip->findField("item cost label");
 
+		if ( isInteractable )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			animTooltip += setpointDiffX;
+			animTooltip = std::min(1.0, animTooltip);
+			animTooltipTicks = ticks;
+		}
+
 		itemDisplayTooltip->setDisabled(false);
 		SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
-		tooltipPos.x = 30;
-		tooltipPos.y = 76;
-		tooltipPos.w = 280;
+		tooltipPos.w = 298;
 		tooltipPos.h = baseFrame->getSize().h - 100;
+		tooltipPos.y = 64;
+		tooltipPos.x = 18 - (tooltipPos.w + 18) * (1.0 - animTooltip);
 		itemDisplayTooltip->setSize(tooltipPos);
 
 		{
 			// item slot + frame
-			itemSlotBg->pos.x = 0;
-			itemSlotBg->pos.y = 0;
+			itemSlotBg->pos.x = 12;
+			itemSlotBg->pos.y = 12;
 			SDL_Rect slotFramePos = itemSlotFrame->getSize();
 			slotFramePos.x = itemSlotBg->pos.x + itemSlotBg->pos.w / 2 - slotFramePos.w / 2 - 1;
 			slotFramePos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - slotFramePos.h / 2 - 1;
@@ -8893,6 +8903,22 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			costScrapText->setText(language[4130]);
 		}
 	}
+	else
+	{
+		if ( ticks - animTooltipTicks > TICKS_PER_SECOND / 3
+			|| animTooltip < 0.9999 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
+			animTooltip -= setpointDiffX;
+			animTooltip = std::max(0.0, animTooltip);
+		}
+
+		SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
+		tooltipPos.x = 18 - (tooltipPos.w + 18) * (1.0 - animTooltip);
+		itemDisplayTooltip->setSize(tooltipPos);
+	}
+	itemDisplayTooltip->setOpacity(100.0 * animTooltip);
 
 	bool usingGamepad = (inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor);
 	bool activateSelection = false;
@@ -9072,9 +9098,13 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 
 		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto itemDisplayTooltip = bgFrame->addFrame("tinker display tooltip");
-		itemDisplayTooltip->setSize(basePos);
+		itemDisplayTooltip->setSize(SDL_Rect{ 0, 0, 298, 108 });
 		itemDisplayTooltip->setHollow(true);
+		itemDisplayTooltip->setInheritParentFrameOpacity(false);
 		{
+			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 108 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Tooltip_00.png", "tooltip img");
+
 			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
 			itemNameText->setFont(itemFont);
 			itemNameText->setText("");

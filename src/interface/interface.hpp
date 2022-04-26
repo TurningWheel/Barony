@@ -550,6 +550,8 @@ public:
 		Sint32 playerCurrentMetalScrap = 0;
 		Sint32 playerCurrentMagicScrap = 0;
 		real_t animDrawer = 0.0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
 
 		int selectedTinkerSlotX = -1;
 		int selectedTinkerSlotY = -1;
