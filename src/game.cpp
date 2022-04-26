@@ -2420,7 +2420,7 @@ void gameLogic(void)
 				{
 					// additional 15 seconds (disconnect time)
 					messageLocalPlayers(MESSAGE_MISC, language[730]);
-                    MainMenu::disconnectedFromServer();
+                    MainMenu::disconnectedFromServer("You have been timed out:\nno response from remote host.");
 					client_disconnected[0] = true;
 				}
 			}

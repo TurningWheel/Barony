@@ -2476,7 +2476,7 @@ void clientHandlePacket()
 			if (!victory)
 			{
 				printlog("The remote server has shut down.\n");
-				MainMenu::disconnectedFromServer();
+				MainMenu::disconnectedFromServer("The remote host has shutdown.");
 			}
 		}
 		return;

@@ -980,9 +980,9 @@ namespace MainMenu {
             });
     };
 
-    static void disconnectPrompt() {
+    static void disconnectPrompt(const char* text) {
         monoPrompt(
-            "You have been disconnected\nfrom the remote server.",
+            text,
             "Okay",
             [](Button& button){
                 soundCancel();
@@ -5438,6 +5438,7 @@ bind_failed:
 	    for ( int c = 1; c < MAXPLAYERS; c++ ) {
 		    client_disconnected[c] = true;
 	    }
+		currentLobbyType = LobbyType::None;
 
 	    closeNetworkInterfaces();
 
@@ -5519,11 +5520,11 @@ bind_failed:
 			}
 
 			if (hostHasLostP2P || (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30)) {
-			    destroyMainMenu();
- 				createDummyMainMenu();
-				disconnectFromLobby();
-                disconnectPrompt();
-			    pauseGame(2, 0);
+			    // timeout after 30 seconds of no messages from server
+                disconnectFromLobby();
+	            destroyMainMenu();
+	            createMainMenu(false);
+                connectionErrorPrompt("You have been timed out:\nno response from remote host.");
 			}
 		}
 
@@ -6447,12 +6448,11 @@ bind_failed:
 				    }
 				    if (playerDisconnected == clientnum || playerDisconnected == 0) {
 					    // we got kicked!
-		                multiplayer = SINGLE;
+		                multiplayer = SINGLE; // so we don't send DISC packets
 		                disconnectFromLobby();
 			            destroyMainMenu();
-			            currentLobbyType = LobbyType::None;
 			            createMainMenu(false);
-		                connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
+		                connectionErrorPrompt("You have been kicked\nfrom the remote server.");
 				    } else {
 				        //TODO announce player disconnect
 					    if (directConnect) {
@@ -12842,13 +12842,13 @@ bind_failed:
 		gamePaused = false;
 	}
 
-	void disconnectedFromServer() {
-		resetLobbyJoinFlowState();
+	void disconnectedFromServer(const char* text) {
+	    // when a player is disconnected from the server in-game
 	    multiplayer = SINGLE;
+		disconnectFromLobby();
 	    destroyMainMenu();
 		createDummyMainMenu();
-		disconnectFromLobby();
-        disconnectPrompt();
+        disconnectPrompt(text);
 	    pauseGame(2, 0);
 	}
 
