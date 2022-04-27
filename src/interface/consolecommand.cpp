@@ -41,11 +41,6 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
-template class ConsoleVariable<std::string>;
-template class ConsoleVariable<int>;
-template class ConsoleVariable<float>;
-template class ConsoleVariable<bool>;
-
 /******************************************************************************/
 
 typedef std::map<std::string, ConsoleCommand> ccmd_map_t;
@@ -106,6 +101,7 @@ typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables
     std::string cvars
 *******************************************************************************/
 
+template class ConsoleVariable<std::string>;
 template<> void ConsoleVariable<std::string>::operator=(const char* arg)
 {
     data = arg;
@@ -117,6 +113,7 @@ template<> void ConsoleVariable<std::string>::operator=(const char* arg)
     int cvars
 *******************************************************************************/
 
+template class ConsoleVariable<int>;
 template<> void ConsoleVariable<int>::operator=(const char* arg)
 {
     if (arg && arg[0] != '\0') {
@@ -130,6 +127,7 @@ template<> void ConsoleVariable<int>::operator=(const char* arg)
     float cvars
 *******************************************************************************/
 
+template class ConsoleVariable<float>;
 template<> void ConsoleVariable<float>::operator=(const char* arg)
 {
     if (arg && arg[0] != '\0') {
@@ -143,6 +141,7 @@ template<> void ConsoleVariable<float>::operator=(const char* arg)
     bool cvars
 *******************************************************************************/
 
+template class ConsoleVariable<bool>;
 template<> void ConsoleVariable<bool>::operator=(const char* arg)
 {
     if (arg && arg[0] != '\0') {

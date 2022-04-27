@@ -27,7 +27,7 @@ if [ $download_zip = true ]; then
 	cd dependencies
 
 	# 1.b) Fetch the encrypted dependencies zip.
-	wget https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.3/dependencies_linux.zip.enc -O dependencies.zip.enc
+	wget https://github.com/TurningWheel/Barony/releases/download/ci_deps_1.4/dependencies_linux.zip.enc -O dependencies.zip.enc
 	RESULT=$?
 	if [ $RESULT -ne 0 ]; then
 		echo "Fetching encrypted dependencies zip failed. Aborting."
@@ -70,8 +70,8 @@ mkdir -p build/release
 cd build/release
 
 export OPTIMIZATION_LEVEL="-O2"
-export CXX=g++
-export CC=gcc
+export CXX=clang++
+export CC=clang
 cmake -DCMAKE_BUILD_TYPE=Release -DFMOD_ENABLED=ON -G "Unix Makefiles" ../..
 RESULT=$?
 if [ $RESULT -ne 0 ]; then
