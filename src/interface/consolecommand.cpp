@@ -41,6 +41,11 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
+template class ConsoleVariable<std::string>;
+template class ConsoleVariable<int>;
+template class ConsoleVariable<float>;
+template class ConsoleVariable<bool>;
+
 /******************************************************************************/
 
 typedef std::map<std::string, ConsoleCommand> ccmd_map_t;
