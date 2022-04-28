@@ -85,8 +85,7 @@ score_t* scoreConstructor()
 	}
 
 	// set all data elements
-	int c;
-	for ( c = 0; c < NUMMONSTERS; c++ )
+	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
 		score->kills[c] = kills[c];
 	}
@@ -114,11 +113,11 @@ score_t* scoreConstructor()
 	score->stats->LVL = stats[clientnum]->LVL;
 	score->stats->GOLD = stats[clientnum]->GOLD;
 	score->stats->HUNGER = stats[clientnum]->HUNGER;
-	for ( c = 0; c < NUMPROFICIENCIES; c++ )
+	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
 		score->stats->PROFICIENCIES[c] = stats[clientnum]->PROFICIENCIES[c];
 	}
-	for ( c = 0; c < NUMEFFECTS; c++ )
+	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
 		score->stats->EFFECTS[c] = stats[clientnum]->EFFECTS[c];
 		score->stats->EFFECTS_TIMERS[c] = stats[clientnum]->EFFECTS_TIMERS[c];
@@ -148,6 +147,7 @@ score_t* scoreConstructor()
 		Item* item = (Item*)node->element;
 		item->node = node;
 	}
+	int c;
 	for ( c = 0, node = stats[clientnum]->inventory.first; node != NULL; node = node->next, c++ )
 	{
 		Item* item = (Item*)node->element;
@@ -220,11 +220,11 @@ score_t* scoreConstructor()
 	score->conductFoodless = conductFoodless;
 	score->conductVegetarian = conductVegetarian;
 	score->conductIlliterate = conductIlliterate;
-	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 	{
 		score->conductGameChallenges[c] = conductGameChallenges[c];
 	}
-	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 	{
 		score->gameStatistics[c] = gameStatistics[c];
 	}
@@ -264,9 +264,6 @@ void scoreDeconstructor(void* data)
 
 int saveScore()
 {
-	node_t* node;
-	int c;
-
 	score_t* currentscore = scoreConstructor();
 	list_t* scoresPtr = &topscores;
 	if ( conductGameChallenges[CONDUCT_MULTIPLAYER] )
@@ -295,6 +292,8 @@ int saveScore()
 	}
 #endif // STEAMWORKS
 
+    int c;
+    node_t* node;
 	for ( c = 0, node = scoresPtr->first; node != NULL; node = node->next, c++ )
 	{
 		score_t* score = (score_t*)node->element;
@@ -346,12 +345,11 @@ int totalScore(score_t* score)
 	amount += score->stats->EXP;
 	amount += score->stats->LVL * 500;
 
-	int c;
-	for ( c = 0; c < NUMPROFICIENCIES; c++ )
+	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
 		amount += score->stats->PROFICIENCIES[c];
 	}
-	for ( c = 0; c < NUMMONSTERS; c++ )
+	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
 		if ( c != HUMAN )
 		{
@@ -418,11 +416,9 @@ int totalScore(score_t* score)
 
 void loadScore(score_t* score)
 {
-	node_t* node = nullptr;
 	stats[0]->clearStats();
 
-	int c;
-	for ( c = 0; c < NUMMONSTERS; c++ )
+	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
 		kills[c] = score->kills[c];
 	}
@@ -457,22 +453,26 @@ void loadScore(score_t* score)
 	stats[0]->LVL = score->stats->LVL;
 	stats[0]->GOLD = score->stats->GOLD;
 	stats[0]->HUNGER = score->stats->HUNGER;
-	for ( c = 0; c < NUMPROFICIENCIES; c++ )
+	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
 		stats[0]->PROFICIENCIES[c] = score->stats->PROFICIENCIES[c];
 	}
-	for ( c = 0; c < NUMEFFECTS; c++ )
+	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
 		stats[0]->EFFECTS[c] = score->stats->EFFECTS[c];
 		stats[0]->EFFECTS_TIMERS[c] = score->stats->EFFECTS_TIMERS[c];
 	}
 	list_FreeAll(&stats[0]->inventory);
 	list_Copy(&stats[0]->inventory, &score->stats->inventory);
-	for ( node = stats[0]->inventory.first; node != NULL; node = node->next )
+
+	for ( node_t* node = stats[0]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;
 	}
+
+	int c;
+	node_t* node;
 	for ( c = 0, node = score->stats->inventory.first; node != NULL; node = node->next, c++ )
 	{
 		Item* item = (Item*)node->element;
@@ -537,11 +537,13 @@ void loadScore(score_t* score)
 			stats[0]->mask = item2;
 		}
 	}
-	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+
+	for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 	{
 		conductGameChallenges[c] = score->conductGameChallenges[c];
 	}
-	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+
+	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 	{
 		gameStatistics[c] = score->gameStatistics[c];
 	}
@@ -576,9 +578,7 @@ void loadScore(int scorenum)
 
 void saveAllScores(const std::string& scoresfilename)
 {
-	node_t* node;
 	File* fp;
-	int c;
 
 	char path[PATH_MAX] = "";
 	completePath(path, scoresfilename.c_str(), outputdir);
@@ -595,40 +595,43 @@ void saveAllScores(const std::string& scoresfilename)
 	fp->printf(VERSION);
 
 	// header info
-	c = list_Size(&booksRead);
-	fp->write(&c, sizeof(Uint32), 1);
-	for ( node = booksRead.first; node != NULL; node = node->next )
+	int booksReadNum = list_Size(&booksRead);
+	fp->write(&booksReadNum, sizeof(Uint32), 1);
+	for ( node_t* node = booksRead.first; node != NULL; node = node->next )
 	{
 		char* book = (char*)node->element;
-		c = strlen(book);
+		int c = strlen(book);
 		fp->write(&c, sizeof(Uint32), 1);
 		fp->puts(book);
 	}
-	for ( c = 0; c < NUMCLASSES; c++ )
+	for ( int c = 0; c < NUMCLASSES; c++ )
 	{
 		fp->write(&usedClass[c], sizeof(bool), 1);
 	}
-	for ( c = 0; c < NUMRACES; c++ )
+	for ( int c = 0; c < NUMRACES; c++ )
 	{
 		fp->write(&usedRace[c], sizeof(bool), 1);
 	}
 
 	// score list
+	node_t* node;
+	int numScoresInFile;
 	if ( scoresfilename.compare(SCORESFILE) == 0 )
 	{
-		c = list_Size(&topscores);
+		numScoresInFile = list_Size(&topscores);
 		node = topscores.first;
 	}
 	else
 	{
-		c = list_Size(&topscoresMultiplayer);
+		numScoresInFile = list_Size(&topscoresMultiplayer);
 		node = topscoresMultiplayer.first;
 	}
-	fp->write(&c, sizeof(Uint32), 1);
+	fp->write(&numScoresInFile, sizeof(Uint32), 1);
+
 	for (; node != NULL; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
-		for ( c = 0; c < NUMMONSTERS; c++ )
+		for ( int c = 0; c < NUMMONSTERS; c++ )
 		{
 			fp->write(&score->kills[c], sizeof(Sint32), 1);
 		}
@@ -661,28 +664,28 @@ void saveAllScores(const std::string& scoresfilename)
 		fp->write(&score->stats->LVL, sizeof(Sint32), 1);
 		fp->write(&score->stats->GOLD, sizeof(Sint32), 1);
 		fp->write(&score->stats->HUNGER, sizeof(Sint32), 1);
-		for ( c = 0; c < NUMPROFICIENCIES; c++ )
+		for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 		{
 			fp->write(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1);
 		}
-		for ( c = 0; c < NUMEFFECTS; c++ )
+		for ( int c = 0; c < NUMEFFECTS; c++ )
 		{
 			fp->write(&score->stats->EFFECTS[c], sizeof(bool), 1);
 			fp->write(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
 		}
-		for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 		{
 			fp->write(&score->conductGameChallenges[c], sizeof(Sint32), 1);
 		}
-		for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 		{
 			fp->write(&score->gameStatistics[c], sizeof(Sint32), 1);
 		}
 
 		// inventory
 		node_t* node2;
-		c = list_Size(&score->stats->inventory);
-		fp->write(&c, sizeof(ItemType), 1);
+		int inventorySize = list_Size(&score->stats->inventory);
+		fp->write(&inventorySize, sizeof(ItemType), 1);
 		for ( node2 = score->stats->inventory.first; node2 != NULL; node2 = node2->next )
 		{
 			Item* item = (Item*)node2->element;
@@ -695,102 +698,102 @@ void saveAllScores(const std::string& scoresfilename)
 		}
 		if ( score->stats->helmet )
 		{
-			c = list_Index(score->stats->helmet->node);
+			int c = list_Index(score->stats->helmet->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->breastplate )
 		{
-			c = list_Index(score->stats->breastplate->node);
+			int c = list_Index(score->stats->breastplate->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->gloves )
 		{
-			c = list_Index(score->stats->gloves->node);
+			int c = list_Index(score->stats->gloves->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->shoes )
 		{
-			c = list_Index(score->stats->shoes->node);
+			int c = list_Index(score->stats->shoes->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->shield )
 		{
-			c = list_Index(score->stats->shield->node);
+			int c = list_Index(score->stats->shield->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->weapon )
 		{
-			c = list_Index(score->stats->weapon->node);
+			int c = list_Index(score->stats->weapon->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->cloak )
 		{
-			c = list_Index(score->stats->cloak->node);
+			int c = list_Index(score->stats->cloak->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->amulet )
 		{
-			c = list_Index(score->stats->amulet->node);
+			int c = list_Index(score->stats->amulet->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->ring )
 		{
-			c = list_Index(score->stats->ring->node);
+			int c = list_Index(score->stats->ring->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		if ( score->stats->mask )
 		{
-			c = list_Index(score->stats->mask->node);
+			int c = list_Index(score->stats->mask->node);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 		else
 		{
-			c = list_Size(&score->stats->inventory);
+			int c = list_Size(&score->stats->inventory);
 			fp->write(&c, sizeof(ItemType), 1);
 		}
 	}
@@ -882,7 +885,7 @@ void loadAllScores(const std::string& scoresfilename)
 	// header info
 	list_FreeAll(&booksRead);
 	fp->read(&c, sizeof(Uint32), 1);
-	for ( i = 0; i < c; i++ )
+	for ( int i = 0; i < c; i++ )
 	{
 		// to investigate
 		Uint32 booknamelen = 0;
@@ -902,7 +905,7 @@ void loadAllScores(const std::string& scoresfilename)
 		node->size = sizeof(char) * (booknamelen + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-	for ( c = 0; c < NUMCLASSES; c++ )
+	for ( int c = 0; c < NUMCLASSES; c++ )
 	{
 		if ( versionNumber < 300 )
 		{
@@ -932,7 +935,7 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 	}
 
-	for ( c = 0; c < NUMRACES; c++ )
+	for ( int c = 0; c < NUMRACES; c++ )
 	{
 		if ( versionNumber <= 325 )
 		{
@@ -948,7 +951,7 @@ void loadAllScores(const std::string& scoresfilename)
 	// read scores
 	Uint32 numscores = 0;
 	fp->read(&numscores, sizeof(Uint32), 1);
-	for ( i = 0; i < numscores; i++ )
+	for ( int i = 0; i < numscores; i++ )
 	{
 		node_t* node = nullptr;
 		if ( scoresfilename.compare(SCORESFILE) == 0 )
@@ -979,7 +982,7 @@ void loadAllScores(const std::string& scoresfilename)
 		if ( versionNumber < 300 )
 		{
 			// legacy nummonsters
-			for ( c = 0; c < NUMMONSTERS; c++ )
+			for ( int c = 0; c < NUMMONSTERS; c++ )
 			{
 				if ( c < 21 )
 				{
@@ -994,7 +997,7 @@ void loadAllScores(const std::string& scoresfilename)
 		else if ( versionNumber < 325 )
 		{
 			// legacy nummonsters
-			for ( c = 0; c < NUMMONSTERS; c++ )
+			for ( int c = 0; c < NUMMONSTERS; c++ )
 			{
 				if ( c < 33 )
 				{
@@ -1008,7 +1011,7 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 		else
 		{
-			for ( c = 0; c < NUMMONSTERS; c++ )
+			for ( int c = 0; c < NUMMONSTERS; c++ )
 			{
 				fp->read(&score->kills[c], sizeof(Sint32), 1);
 			}
@@ -1044,7 +1047,7 @@ void loadAllScores(const std::string& scoresfilename)
 		fp->read(&score->stats->LVL, sizeof(Sint32), 1);
 		fp->read(&score->stats->GOLD, sizeof(Sint32), 1);
 		fp->read(&score->stats->HUNGER, sizeof(Sint32), 1);
-		for ( c = 0; c < NUMPROFICIENCIES; c++ )
+		for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 		{
 			if ( versionNumber < 323 && c >= PRO_UNARMED )
 			{
@@ -1058,7 +1061,7 @@ void loadAllScores(const std::string& scoresfilename)
 		if ( versionNumber < 300 )
 		{
 			// legacy effects
-			for ( c = 0; c < NUMEFFECTS; c++ )
+			for ( int c = 0; c < NUMEFFECTS; c++ )
 			{
 				if ( c < 16 )
 				{
@@ -1074,7 +1077,7 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 		else if ( versionNumber < 302 )
 		{
-			for ( c = 0; c < NUMEFFECTS; c++ )
+			for ( int c = 0; c < NUMEFFECTS; c++ )
 			{
 				if ( c < 19 )
 				{
@@ -1090,7 +1093,7 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 		else if ( versionNumber <= 323 )
 		{
-			for ( c = 0; c < NUMEFFECTS; c++ )
+			for ( int c = 0; c < NUMEFFECTS; c++ )
 			{
 				if ( c < 32 )
 				{
@@ -1106,7 +1109,7 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 		else
 		{
-			for ( c = 0; c < NUMEFFECTS; c++ )
+			for ( int c = 0; c < NUMEFFECTS; c++ )
 			{
 				fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
 				fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
@@ -1115,18 +1118,18 @@ void loadAllScores(const std::string& scoresfilename)
 
 		if ( versionNumber >= 310 )
 		{
-			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 			{
 				fp->read(&score->conductGameChallenges[c], sizeof(Sint32), 1);
 			}
-			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 			{
 				fp->read(&score->gameStatistics[c], sizeof(Sint32), 1);
 			}
 		}
 		else
 		{
-			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 			{
 				score->conductGameChallenges[c] = 0;
 			}
@@ -1144,7 +1147,7 @@ void loadAllScores(const std::string& scoresfilename)
 		fp->read(&numitems, sizeof(Uint32), 1);
 		score->stats->inventory.first = NULL;
 		score->stats->inventory.last = NULL;
-		for ( c = 0; c < numitems; c++ )
+		for ( int c = 0; c < numitems; c++ )
 		{
 			ItemType type;
 			Status status;
@@ -1314,26 +1317,7 @@ int saveGame(int saveIndex)
 	fp->printf("BARONYSAVEGAME");
 	fp->printf(VERSION);
 	fp->write(&uniqueGameKey, sizeof(Uint32), 1);
-	if ( multiplayer > SINGLE && directConnect )
-	{
-		multiplayer += 2;
-		fp->write(&multiplayer, sizeof(Uint32), 1);
-		multiplayer -= 2;
-	}
-	else
-	{
-		if ( multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
-		{
-			multiplayer = SERVERCROSSPLAY;
-			fp->write(&multiplayer, sizeof(Uint32), 1);
-			multiplayer = SERVER;
-		}
-		else
-		{
-		    Uint32 mul = splitscreen ? SPLITSCREEN : multiplayer;
-			fp->write(&mul, sizeof(Uint32), 1);
-		}
-	}
+
 	Uint32 hash = 0;
 #ifdef WINDOWS
 	struct _stat result;
@@ -1362,6 +1346,33 @@ int saveGame(int saveIndex)
 	hash += (currentlevel);
 	Uint32 writeCurrentLevel = (hash << 8);
 	writeCurrentLevel |= (currentlevel & 0xFF);
+
+	Sint16 players_connected = 0;
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+	    if (!client_disconnected[c]) {
+            players_connected |= 1 << c;
+        }
+	}
+	fp->write(&players_connected, sizeof(Sint16), 1);
+
+	Sint16 mul = 0;
+	if ( multiplayer == SINGLE ) {
+		mul = SINGLE;
+	} else {
+	    if (splitscreen) {
+	        mul = SPLITSCREEN;
+	    }
+	    else if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			mul = SERVERCROSSPLAY;
+		}
+	    else if (multiplayer == SERVER || multiplayer == CLIENT) {
+	        mul = directConnect ? multiplayer + 2 : multiplayer;
+	    }
+		else {
+		    assert(0 && "Unknown game save type!");
+		}
+	}
+	fp->write(&mul, sizeof(Sint16), 1);
 
 	fp->write(&clientnum, sizeof(Uint32), 1);
 	fp->write(&mapseed, sizeof(Uint32), 1);
@@ -2020,7 +2031,6 @@ int saveGame(int saveIndex)
 
 int loadGame(int player, int saveIndex)
 {
-	Sint32 mul;
 	File* fp;
 
 	char savefile[PATH_MAX] = "";
@@ -2089,7 +2099,10 @@ int loadGame(int player, int saveIndex)
 
 	// read basic header info
 	fp->read(&uniqueGameKey, sizeof(Uint32), 1);
-	fp->read(&mul, sizeof(Uint32), 1);
+
+	Sint16 mul;
+	fp->seek(sizeof(Sint16), File::SeekMode::ADD);
+	fp->read(&mul, sizeof(Sint16), 1);
 	fp->read(&clientnum, sizeof(Uint32), 1);
 	fp->read(&mapseed, sizeof(Uint32), 1);
 	fp->read(&currentlevel, sizeof(Uint32), 1);
@@ -2161,8 +2174,7 @@ int loadGame(int player, int saveIndex)
             }
             else
             {
-	            fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-                fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+	            fp->seek(sizeof(Uint32) * NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
 
                 int numspells = 0;
                 fp->read(&numspells, sizeof(Uint32), 1);
@@ -2709,7 +2721,7 @@ list_t* loadGameFollowers(int saveIndex)
 	followers->last = NULL;
 
 	// read the follower data
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		list_t* followerList = (list_t*) malloc(sizeof(list_t));
 		followerList->first = NULL;
@@ -2723,8 +2735,7 @@ list_t* loadGameFollowers(int saveIndex)
 		Uint32 numFollowers = 0;
 		fp->read(&numFollowers, sizeof(Uint32), 1);
 
-		int i;
-		for ( i = 0; i < numFollowers; i++ )
+		for ( int i = 0; i < numFollowers; i++ )
 		{
 			// Stat set to 0 as monster type not needed, values will be overwritten by the saved follower data
 			Stat* followerStats = new Stat(0);
@@ -2754,8 +2765,7 @@ list_t* loadGameFollowers(int saveIndex)
 			fp->read(&followerStats->GOLD, sizeof(Sint32), 1);
 			fp->read(&followerStats->HUNGER, sizeof(Sint32), 1);
 
-			int j;
-			for ( j = 0; j < NUMPROFICIENCIES; j++ )
+			for ( int j = 0; j < NUMPROFICIENCIES; j++ )
 			{
 				if ( versionNumber < 323 && j >= PRO_UNARMED )
 				{
@@ -2766,7 +2776,7 @@ list_t* loadGameFollowers(int saveIndex)
 					fp->read(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1);
 				}
 			}
-			for ( j = 0; j < NUMEFFECTS; j++ )
+			for ( int j = 0; j < NUMEFFECTS; j++ )
 			{
 				if ( versionNumber <= 323 ) // legacy
 				{
@@ -2789,7 +2799,7 @@ list_t* loadGameFollowers(int saveIndex)
 			}
 			if ( versionNumber >= 323 )
 			{
-				for ( j = 0; j < 32; ++j )
+				for ( int j = 0; j < 32; ++j )
 				{
 					fp->read(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1);
 				}
@@ -2811,7 +2821,7 @@ list_t* loadGameFollowers(int saveIndex)
 			// read follower inventory
 			Uint32 invSize = 0;
 			fp->read(&invSize, sizeof(Uint32), 1);
-			for ( j = 0; j < invSize; j++ )
+			for ( int j = 0; j < invSize; j++ )
 			{
 				fp->read(&type, sizeof(ItemType), 1);
 				fp->read(&status, sizeof(Status), 1);
@@ -2826,8 +2836,7 @@ list_t* loadGameFollowers(int saveIndex)
 			}
 
 			// read follower equipment
-			int b;
-			for ( b = 0; b < 10; b++ )
+			for ( int b = 0; b < 10; b++ )
 			{
 				fp->read(&type, sizeof(ItemType), 1);
 				if ( (int)type < NUMITEMS )
@@ -2981,13 +2990,11 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 
 SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 {
-	char name[128];
 	File* fp;
-	int c;
 
+	char name[128];
 	int level, class_;
-	int mul, plnum, dungeonlevel;
-	int playerRace, playerAppearance;
+	int plnum, dungeonlevel;
 
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
@@ -3022,7 +3029,22 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	}
 
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->read(&mul, sizeof(Uint32), 1);
+
+	Sint16 mul;
+	Sint16 players_connected;
+	fp->read(&players_connected, sizeof(Sint16), 1);
+	fp->read(&mul, sizeof(Sint16), 1);
+	if (players_connected == 0) {
+	    if (mul == SINGLE) {
+	        players_connected = 1;
+	    } else {
+	        players_connected =
+	            (1 << 0) |
+	            (1 << 1) |
+	            (1 << 2) |
+	            (1 << 3);
+	    }
+	}
 	fp->read(&plnum, sizeof(Uint32), 1);
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
 	fp->read(&dungeonlevel, sizeof(Uint32), 1);
@@ -3040,12 +3062,11 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 
     for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
     {
-	    fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-        fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
+	    fp->seek(sizeof(Uint32) * NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
 
         int numspells = 0;
         fp->read(&numspells, sizeof(Uint32), 1);
-        for ( c = 0; c < numspells; c++ )
+        for ( int c = 0; c < numspells; c++ )
         {
 	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
         }
@@ -3058,7 +3079,7 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	}
 
 	// skip through other player data until you get to the correct player
-	for ( c = 0; c < plnum; c++ )
+	for ( int c = 0; c < plnum; c++ )
 	{
 		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
 		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
@@ -3105,14 +3126,12 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 			fp->seek(sizeof(Sint32) * 32, File::SeekMode::ADD); // stat flags
 		}
 
-		if ( plnum == 0 )
+		if (mul == SPLITSCREEN)
 		{
-			// server needs to skip past its inventory
 			int numitems = 0;
 			fp->read(&numitems, sizeof(Uint32), 1);
 
-			int i;
-			for ( i = 0; i < numitems; i++ )
+			for ( int i = 0; i < numitems; i++ )
 			{
 				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 				fp->seek(sizeof(Status), File::SeekMode::ADD);
@@ -3127,21 +3146,18 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 		}
 		else
 		{
-			// client needs to skip the dummy byte
 			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 		}
 	}
 
 	fp->read(&class_, sizeof(Uint32), 1);
-	for ( c = 0; c < monsters; c++ )
+	for ( int c = 0; c < monsters; c++ )
 	{
 		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 	}
-	fp->seek(sizeof(Monster) + sizeof(sex_t), File::SeekMode::ADD);
-	Uint32 raceAndAppearance = 0;
-	fp->read(&raceAndAppearance, sizeof(Uint32), 1);
-	playerAppearance = raceAndAppearance & 0xFF;
-	playerRace = (raceAndAppearance & 0xFF00) >> 8;
+	fp->seek(sizeof(Monster), File::SeekMode::ADD);
+	fp->seek(sizeof(sex_t), File::SeekMode::ADD);
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
 	fp->read(&name, sizeof(char), 32);
 	name[32] = 0;
 	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD);
@@ -3176,7 +3192,6 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	{
 		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
 	}
-	stats[plnumTemp]->playerRace = playerRace;
 
     SaveGameInfo saveGameInfo = {
         name,
@@ -3184,6 +3199,12 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
         dungeonlevel,
         level,
         plnum,
+        {
+            (bool)(players_connected & (1<<0)),
+            (bool)(players_connected & (1<<1)),
+            (bool)(players_connected & (1<<2)),
+            (bool)(players_connected & (1<<3)),
+        },
         timestamp,
         mul,
     };
@@ -3203,227 +3224,8 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 
 char* getSaveGameName(bool singleplayer, int saveIndex)
 {
-	char name[128];
-	File* fp;
-	int c;
-
-	int level, class_;
-	int mul, plnum, dungeonlevel;
-	int playerRace, playerAppearance;
-
-	char* tempstr = (char*) calloc(1024, sizeof(char));
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to check name in '%s'!\n", path);
-		free(tempstr);
-		return NULL;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		free(tempstr);
-		return NULL;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	printlog("getSaveGameName: '%s' version number %d", savefile, versionNumber);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		free(tempstr);
-		return nullptr;
-	}
-
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->read(&mul, sizeof(Uint32), 1);
-	fp->read(&plnum, sizeof(Uint32), 1);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->read(&dungeonlevel, sizeof(Uint32), 1);
-	dungeonlevel = dungeonlevel & 0xFF;
-	fp->seek(sizeof(bool), File::SeekMode::ADD);
-	if ( versionNumber >= 310 )
-	{
-		fp->seek(sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, File::SeekMode::ADD);
-	}
-	if ( versionNumber >= 335 )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
-	}
-
-    for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
-    {
-	    fp->seek(sizeof(Uint32)*NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-        fp->seek(sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), File::SeekMode::ADD);
-
-        int numspells = 0;
-        fp->read(&numspells, sizeof(Uint32), 1);
-        for ( c = 0; c < numspells; c++ )
-        {
-	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-        }
-    }
-
-	int monsters = NUMMONSTERS;
-	if ( versionNumber < 325 )
-	{
-		monsters = 33;
-	}
-
-	// skip through other player data until you get to the correct player
-	for ( c = 0; c < plnum; c++ )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Monster), File::SeekMode::ADD);
-		fp->seek(sizeof(sex_t), File::SeekMode::ADD);
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-		fp->seek(sizeof(char) * 32, File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		if ( versionNumber >= 323 )
-		{
-			fp->seek(sizeof(Sint32)*NUMPROFICIENCIES, File::SeekMode::ADD);
-		}
-		else
-		{
-			fp->seek(sizeof(Sint32)*14, File::SeekMode::ADD);
-		}
-
-		if ( versionNumber <= 323 )
-		{
-			fp->seek(sizeof(bool)*32, File::SeekMode::ADD);
-			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD);
-		}
-		else
-		{
-			fp->seek(sizeof(bool)*NUMEFFECTS, File::SeekMode::ADD);
-			fp->seek(sizeof(Sint32)*NUMEFFECTS, File::SeekMode::ADD);
-		}
-
-		if ( versionNumber >= 323 )
-		{
-			fp->seek(sizeof(Sint32) * 32, File::SeekMode::ADD); // stat flags
-		}
-
-		if ( plnum == 0 )
-		{
-			// server needs to skip past its inventory
-			int numitems = 0;
-			fp->read(&numitems, sizeof(Uint32), 1);
-
-			int i;
-			for ( i = 0; i < numitems; i++ )
-			{
-				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-				fp->seek(sizeof(Status), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-				fp->seek(sizeof(bool), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-			}
-			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
-		}
-		else
-		{
-			// client needs to skip the dummy byte
-			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-		}
-	}
-
-	fp->read(&class_, sizeof(Uint32), 1);
-	for ( c = 0; c < monsters; c++ )
-	{
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-	}
-	fp->seek(sizeof(Monster) + sizeof(sex_t), File::SeekMode::ADD);
-	Uint32 raceAndAppearance = 0;
-	fp->read(&raceAndAppearance, sizeof(Uint32), 1);
-	playerAppearance = raceAndAppearance & 0xFF;
-	playerRace = (raceAndAppearance & 0xFF00) >> 8;
-	fp->read(&name, sizeof(char), 32);
-	name[32] = 0;
-	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD);
-	fp->read(&level, sizeof(Sint32), 1);
-
-	// assemble string
-	char timestamp[128] = "";
-#ifdef WINDOWS
-	struct _stat result;
-	if ( _stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
-		}
-	}
-#else
-	struct stat result;
-	if ( stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
-		}
-	}
-#endif // WINDOWS
-
-	int plnumTemp = plnum;
-	if ( plnumTemp >= MAXPLAYERS )
-	{
-		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
-	}
-	int oldRace = stats[plnumTemp]->playerRace;
-	stats[plnumTemp]->playerRace = playerRace;
-
-	if ( mul == DIRECTCLIENT || mul == CLIENT )
-	{
-		// include the player number in the printf.
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, plnum, timestamp);
-	}
-	else
-	{
-		if ( mul == SERVERCROSSPLAY )
-		{
-			mul = SERVER;
-		}
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnumTemp), dungeonlevel, timestamp);
-	}
-
-	stats[plnumTemp]->playerRace = oldRace;
-
-	// close file
-	FileIO::close(fp);
-	return tempstr;
+    // deprecated
+    return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3615,7 +3417,8 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 	}
 
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
+	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
 	fp->read(&clientnum, sizeof(Uint32), 1);
 
 	// close file
@@ -3667,7 +3470,8 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 	}
 
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
+	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
 	fp->read(&seed, sizeof(Uint32), 1);
 
@@ -4508,7 +4312,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	int tag = TAG_MONSTER_KILLS_1;
 	int i = 0;
 	int tagWidth = 8;
-	for ( c = 0; c < NUMMONSTERS; ++c )
+	for ( int c = 0; c < NUMMONSTERS; ++c )
 	{
 		g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= (static_cast<Uint8>(score->kills[c]) << (i * tagWidth));
 		++i;
@@ -4522,7 +4326,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	i = 0;
 	tagWidth = 8;
 	tag = TAG_NAME1;
-	for ( c = 0; c < std::min(32, (int)(strlen(score->stats->name))); ++c )
+	for ( int c = 0; c < std::min(32, (int)(strlen(score->stats->name))); ++c )
 	{
 		g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= (Uint8)(score->stats->name[c]) << (i * tagWidth);
 		++i;
@@ -4549,7 +4353,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	tag = TAG_CONDUCT_2W_1;
 	tagWidth = 16;
 	i = 0;
-	for ( c = 0; c < 32; ++c )
+	for ( int c = 0; c < 32; ++c )
 	{
 		if ( c < 16 )
 		{
@@ -4600,7 +4404,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	tagWidth = 8;
 	tag = TAG_PROFICIENCY1;
 	i = 0;
-	for ( c = 0; c < NUMPROFICIENCIES; ++c )
+	for ( int c = 0; c < NUMPROFICIENCIES; ++c )
 	{
 		g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= score->stats->PROFICIENCIES[c] << (i * tagWidth);
 		++i;
@@ -4685,7 +4489,7 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	int tag = TAG_MONSTER_KILLS_1;
 	int tagWidth = 8;
 	int i = 0;
-	for ( c = 0; c < NUMMONSTERS; c++ )
+	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
 		kills[c] = ((tags[tag]) >> (i * tagWidth)) & 0xFF;
 		++i;
@@ -4700,7 +4504,7 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	tagWidth = 8;
 	tag = TAG_NAME1;
 	char name[33] = "";
-	for ( c = 0; c < 32; ++c )
+	for ( int c = 0; c < 32; ++c )
 	{
 		name[c] = ((tags[tag]) >> (i * tagWidth)) & 0xFF;
 		if ( name[c] == 0 )
@@ -4734,7 +4538,7 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	tag = TAG_CONDUCT_2W_1;
 	tagWidth = 2;
 	i = 0;
-	for ( c = 0; c < 32; ++c )
+	for ( int c = 0; c < 32; ++c )
 	{
 		if ( c < 16 )
 		{
@@ -4806,7 +4610,7 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	tagWidth = 8;
 	tag = TAG_PROFICIENCY1;
 	i = 0;
-	for ( c = 0; c < NUMPROFICIENCIES; ++c )
+	for ( int c = 0; c < NUMPROFICIENCIES; ++c )
 	{
 		stats[0]->PROFICIENCIES[c] = (tags[tag] >> (i * tagWidth)) & 0xFF;
 		++i;

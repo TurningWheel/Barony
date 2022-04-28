@@ -5137,8 +5137,8 @@ bind_failed:
             void (*func)(Button& button);
         };
         static const Tab tabs[] = {
-            {"local", "Your Top 30\nLocal", TAB_FN(BoardType::LOCAL)},
-            {"lan", "Your Top 30\nLAN", TAB_FN(BoardType::LAN)},
+            {"local", "Your Top 100\nLocal Scores", TAB_FN(BoardType::LOCAL)},
+            {"lan", "Your Top 100\nLAN Scores", TAB_FN(BoardType::LAN)},
 #ifdef STEAMWORKS
             {"friends", "Friends\nLeaderboard", TAB_FN(BoardType::FRIENDS)},
             {"world", "World\nLeaderboard", TAB_FN(BoardType::WORLD)},
@@ -11035,9 +11035,16 @@ bind_failed:
 	            // TODO handle multiplayer games.
                 soundActivate();
                 destroyMainMenu();
-                savegameCurrentFileIndex = load_save_index;
-                loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
                 beginFade(MainMenu::FadeDestination::GameStart);
+
+                savegameCurrentFileIndex = load_save_index;
+                auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
+                if (info.multiplayer_type == SPLITSCREEN) {
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+                        client_disconnected[c] = info.players_connected[c];
+                    }
+                }
+                loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
 	        },
 	        [](Button& button) { // No button
 			    soundCancel();

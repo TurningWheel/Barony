@@ -9687,7 +9687,7 @@ void doNewGame(bool makeHighscore) {
 	    {
 		    if ( players[c]->isLocalPlayer() )
 		    {
-		        if ( !client_disconnected[c])
+		        if ( !client_disconnected[c] )
 		        {
 		            if ( !loadingsavegame )
 		            {
