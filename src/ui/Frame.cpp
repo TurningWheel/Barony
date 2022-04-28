@@ -76,8 +76,25 @@ void Frame::listener_t::onChangeName(const char* name) {
 	entryCast->text = name;
 }
 
+#ifndef EDITOR
+static ConsoleVariable<bool> uifilter("/uifilter", true);
+static ConsoleCommand uifilter_refresh("/refreshuifilter", "refresh ui filter state",
+    [](int argc, const char** argv){
+    Frame::fboDestroy();
+    Frame::fboInit();
+    });
+#endif
+
 void Frame::fboInit() {
+#ifdef EDITOR
     gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
+#else
+    if (*uifilter) {
+        gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_LINEAR, GL_LINEAR);
+    } else {
+        gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
+    }
+#endif
     gui4x_fb.init(Frame::virtualScreenX * 4, Frame::virtualScreenY * 4, GL_LINEAR, GL_LINEAR);
 }
 
