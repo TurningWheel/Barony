@@ -543,15 +543,37 @@ public:
 		void createTinkerMenu();
 		bool tinkerGUIHasBeenCreated() const;
 		bool isConstructMenuActive() const;
+		bool isSalvageOrRepairMenuActive() const;
 		Sint32 metalScrapPrice = 0;
 		Sint32 magicScrapPrice = 0;
 		std::string itemDesc = "";
+		int itemType = -1;
+		int itemRequirement = -1;
+		enum TinkerActions_t : int 
+		{
+			TINKER_ACTION_NONE,
+			TINKER_ACTION_OK,
+			TINKER_ACTION_OK_UPGRADE,
+			TINKER_ACTION_INVALID_ITEM,
+			TINKER_ACTION_INVALID_ROBOT_TO_SALVAGE,
+			TINKER_ACTION_NO_MATERIALS,
+			TINKER_ACTION_NO_MATERIALS_UPGRADE,
+			TINKER_ACTION_NO_SKILL_LVL,
+			TINKER_ACTION_NO_SKILL_LVL_UPGRADE,
+			TINKER_ACTION_ITEM_FULLY_REPAIRED,
+			TINKER_ACTION_ITEM_FULLY_UPGRADED,
+			TINKER_ACTION_ROBOT_BROKEN,
+			TINKER_ACTION_MUST_BE_UNEQUIPPED,
+			TINKER_ACTION_ALREADY_USING_THIS_TINKERING_KIT
+		};
+		TinkerActions_t itemActionType = TINKER_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;
 		Sint32 playerCurrentMetalScrap = 0;
 		Sint32 playerCurrentMagicScrap = 0;
 		real_t animDrawer = 0.0;
 		real_t animTooltip = 0.0;
 		Uint32 animTooltipTicks = 0;
+		real_t animFilter = 0.0;
 
 		int selectedTinkerSlotX = -1;
 		int selectedTinkerSlotY = -1;

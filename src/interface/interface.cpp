@@ -35,6 +35,8 @@
 #include "../json.hpp"
 #include "../mod_tools.hpp"
 #include "../ui/Field.hpp"
+#include "../ui/Image.hpp"
+#include "../ui/Button.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -6959,6 +6961,17 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 	return false;
 }
 
+void getGeneralItemRepairCostWithoutRequirements(const int player, Item* item, int& metal, int& magic)
+{
+	int metalSalvage = 0;
+	int magicSalvage = 0;
+	GenericGUI[player].tinkeringGetItemValue(item, &metalSalvage, &magicSalvage);
+	metal = metalSalvage * 8;
+	magic = magicSalvage * 8;
+	int blessingOrCurse = abs(item->beatitude);
+	magic += blessingOrCurse * 4;
+}
+
 bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 {
 	if ( !item || !metal || !magic )
@@ -7013,13 +7026,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 				if ( requirement >= 0 && stats[gui_player]
 					&& ((stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity)) >= requirement) )
 				{
-					int metalSalvage = 0;
-					int magicSalvage = 0;
-					tinkeringGetItemValue(item, &metalSalvage, &magicSalvage);
-					*metal = metalSalvage * 8;
-					*magic = magicSalvage * 8;
-					int blessingOrCurse = abs(item->beatitude);
-					*magic += blessingOrCurse * 4;
+					getGeneralItemRepairCostWithoutRequirements(gui_player, item, *metal, *magic);
 				}
 			}
 			break;
@@ -8490,6 +8497,21 @@ bool GenericGUIMenu::TinkerGUI_t::isConstructMenuActive() const
 	return false;
 }
 
+bool GenericGUIMenu::TinkerGUI_t::isSalvageOrRepairMenuActive() const
+{
+	if ( !parentGUI.isGUIOpen() || !tinkerGUIHasBeenCreated() )
+	{
+		return false;
+	}
+	if ( bOpen && parentGUI.guiType == GUICurrentType::GUI_TYPE_TINKERING
+		&& (parentGUI.tinkeringFilter == TinkeringFilter::TINKER_FILTER_REPAIRABLE
+			|| parentGUI.tinkeringFilter == TinkeringFilter::TINKER_FILTER_SALVAGEABLE) )
+	{
+		return true;
+	}
+	return false;
+}
+
 void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 {
 	const int playernum = parentGUI.getPlayer();
@@ -8595,14 +8617,28 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		isInteractable = false;
 	}
 
-	bool usingConstructMenu = true;
+	bool usingConstructMenu = parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE;
+	if ( !usingConstructMenu )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animFilter)) / 2.0;
+		animFilter += setpointDiffX;
+		animFilter = std::min(1.0, animFilter);
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (animFilter)) / 2.0;
+		animFilter -= setpointDiffX;
+		animFilter = std::max(0.0, animFilter);
+	}
 
 	auto tinkerFramePos = tinkerFrame->getSize();
 	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
 		if ( !player.inventoryUI.bCompactView )
 		{
-			const int fullWidth = tinkerFramePos.w + 210 + (usingConstructMenu ? 40 : 0); // inventory width 210
+			const int fullWidth = tinkerFramePos.w + 210 + (40 * (1.0 - animFilter)); // inventory width 210
 			tinkerFramePos.x = -tinkerFramePos.w + animx * fullWidth;
 			if ( player.bUseCompactGUIWidth() )
 			{
@@ -8630,7 +8666,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( !player.inventoryUI.bCompactView )
 		{
-			tinkerFramePos.x = player.camera_virtualWidth() - animx * tinkerFramePos.w * 2;
+			const int fullWidth = tinkerFramePos.w + 210 + (40 * (1.0 - animFilter)); // inventory width 210
+			tinkerFramePos.x = player.camera_virtualWidth() - animx * fullWidth * 2;
 			if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
@@ -8736,7 +8773,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			char buf[128];
 			if ( !item->identified )
 			{
-				snprintf(buf, sizeof(buf), "%s %s (?)", item->getName());
+				snprintf(buf, sizeof(buf), "%s (?)", item->getName());
 			}
 			else
 			{
@@ -8773,7 +8810,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			tinkerKitStatus->setText("");
 		}
 
-		SDL_Rect textPos{ 0, 18, baseFrame->getSize().w, 24 };
+		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
 		tinkerKitTitle->setSize(textPos);
 		textPos.y += 20;
 		tinkerKitStatus->setSize(textPos);
@@ -8786,7 +8823,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 
 		auto heldScrapBg = baseFrame->findImage("held scrap img");
 		heldScrapBg->pos.x = baseFrame->getSize().w - 18 - heldScrapBg->pos.w;
-		heldScrapBg->pos.y = baseFrame->getSize().h - 48;
+		heldScrapBg->pos.y = baseFrame->getSize().h - 48 - 46;
 
 		auto metalHeldText = baseFrame->findField("held metal txt");
 		auto magicHeldText = baseFrame->findField("held magic txt");
@@ -8806,10 +8843,57 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		heldScrapText->setText(language[4131]);
 	}
 
+	{
+		// filters
+		Button* filterBtn = baseFrame->findButton("filter salvage btn");
+		filterBtn->setDisabled(false);
+		filterBtn->setColor(makeColor(255, 255, 255, 0));
+		filterBtn->setText(language[3645]);
+		{
+			SDL_Rect btnPos{ 124, 256, 86, 26 };
+			filterBtn->setSize(btnPos);
+		}
+		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 32));
+		}
+		filterBtn = baseFrame->findButton("filter craft btn");
+		filterBtn->setDisabled(false);
+		filterBtn->setColor(makeColor(255, 255, 255, 0));
+		filterBtn->setText(language[3644]);
+		{
+			SDL_Rect btnPos{ 34, 256, 84, 26 };
+			filterBtn->setSize(btnPos);
+		}
+		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 32));
+		}
+		filterBtn = baseFrame->findButton("filter repair btn");
+		filterBtn->setDisabled(false);
+		filterBtn->setColor(makeColor(255, 255, 255, 0));
+		filterBtn->setText(language[3646]);
+		{
+			SDL_Rect btnPos{ 216, 256, 84, 26 };
+			filterBtn->setSize(btnPos);
+		}
+		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 32));
+		}
+	}
+
 	auto itemDisplayTooltip = baseFrame->findFrame("tinker display tooltip");
 	itemDisplayTooltip->setDisabled(false);
 
-	if ( metalScrapPrice >= 0 && magicScrapPrice >= 0 && itemDesc.size() > 1 )
+	auto actionPromptTxt = baseFrame->findField("action prompt txt");
+	actionPromptTxt->setDisabled(true);
+	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
+	actionPromptImg->disabled = true;
+
+	bool usingGamepad = (inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor);
+
+	if ( itemActionType != TINKER_ACTION_NONE && itemDesc.size() > 1 )
 	{
 		auto displayItemName = itemDisplayTooltip->findField("item display name");
 		auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
@@ -8836,6 +8920,153 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		tooltipPos.y = 64;
 		tooltipPos.x = 18 - (tooltipPos.w + 18) * (1.0 - animTooltip);
 		itemDisplayTooltip->setSize(tooltipPos);
+
+		bool isTinkeringBot = (itemType == TOOL_SENTRYBOT
+			|| itemType == TOOL_SPELLBOT
+			|| itemType == TOOL_DUMMYBOT
+			|| itemType == TOOL_GYROBOT);
+
+		{
+			Uint32 negativeColor = makeColor(215, 38, 61, 255);
+			Uint32 defaultPromptColor = makeColor(255, 255, 255, 255);
+			// prompt + glyph
+			actionPromptTxt->setDisabled(false);
+			if ( itemActionType == TINKER_ACTION_OK || itemActionType == TINKER_ACTION_OK_UPGRADE )
+			{
+				if ( !usingGamepad )
+				{
+					if ( usingGamepad )
+					{
+						actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+					}
+					else
+					{
+						actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
+					}
+				}
+				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
+				{
+					actionPromptImg->pos.w = imgGet->getWidth();
+					actionPromptImg->pos.h = imgGet->getHeight();
+					actionPromptImg->disabled = false;
+				}
+				if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
+				{
+					actionPromptTxt->setText(language[3644]);
+				}
+				else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
+				{
+					if ( itemActionType == TINKER_ACTION_OK_UPGRADE )
+					{
+						actionPromptTxt->setText(language[3684]);
+					}
+					else
+					{
+						actionPromptTxt->setText(language[3646]);
+					}
+				}
+				else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
+				{
+					actionPromptTxt->setText(language[3645]);
+				}
+				else
+				{
+					actionPromptTxt->setText("");
+				}
+				actionPromptTxt->setColor(defaultPromptColor);
+			}
+			else
+			{
+				actionPromptTxt->setText("");
+				switch ( itemActionType )
+				{
+					case TINKER_ACTION_INVALID_ITEM:
+						if ( parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+						{
+							actionPromptTxt->setText(language[4138]);
+						}
+						else if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+						{
+							actionPromptTxt->setText(language[4137]);
+						}
+						break;
+					case TINKER_ACTION_INVALID_ROBOT_TO_SALVAGE:
+						actionPromptTxt->setText(language[4148]);
+						break;
+					case TINKER_ACTION_NO_MATERIALS_UPGRADE:
+						if ( parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+						{
+							actionPromptTxt->setText(language[4142]);
+						}
+						break;
+					case TINKER_ACTION_NO_MATERIALS:
+						if ( parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+						{
+							actionPromptTxt->setText(language[4141]);
+						}
+						else if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+						{
+							actionPromptTxt->setText(language[4137]);
+						}
+						else if ( parentGUI.tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+						{
+							actionPromptTxt->setText(language[4140]);
+						}
+						break;
+					case TINKER_ACTION_NO_SKILL_LVL:
+						if ( parentGUI.tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+						{
+							char buf[128];
+							snprintf(buf, sizeof(buf), language[4147], itemRequirement);
+							actionPromptTxt->setText(buf);
+						}
+						else
+						{
+							char buf[128];
+							snprintf(buf, sizeof(buf), language[4144], itemRequirement);
+							actionPromptTxt->setText(buf);
+						}
+						break;
+					case TINKER_ACTION_NO_SKILL_LVL_UPGRADE:
+						char buf[128];
+						snprintf(buf, sizeof(buf), language[4145], itemRequirement);
+						actionPromptTxt->setText(buf);
+						break;
+					case TINKER_ACTION_ITEM_FULLY_REPAIRED:
+						actionPromptTxt->setText(language[4136]);
+						break;
+					case TINKER_ACTION_ITEM_FULLY_UPGRADED:
+						actionPromptTxt->setText(language[4139]);
+						break;
+					case TINKER_ACTION_ROBOT_BROKEN:
+						actionPromptTxt->setText(language[4143]);
+						break;
+					case TINKER_ACTION_MUST_BE_UNEQUIPPED:
+						actionPromptTxt->setText(language[4132]);
+						break;
+					case TINKER_ACTION_ALREADY_USING_THIS_TINKERING_KIT:
+						actionPromptTxt->setText(language[4146]);
+						break;
+					default:
+						actionPromptTxt->setText("IDK");
+						break;
+				}
+				actionPromptTxt->setColor(negativeColor);
+			}
+			SDL_Rect actionPromptTxtPos{ 0, 178, baseFrame->getSize().w - 18 - 8, 24 };
+			actionPromptTxt->setSize(actionPromptTxtPos);
+			if ( auto textGet = actionPromptTxt->getTextObject() )
+			{
+				actionPromptImg->pos.x = actionPromptTxtPos.x + actionPromptTxtPos.w 
+					- textGet->getWidth() - 8 - actionPromptImg->pos.w;
+				actionPromptImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionPromptImg->pos.h / 2;
+				if ( actionPromptImg->pos.y % 2 == 1 )
+				{
+					actionPromptImg->pos.y -= 1;
+				}
+			}
+		}
+
 
 		{
 			// item slot + frame
@@ -8889,10 +9120,19 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
 			SDL_Rect metalPos{ costBg->pos.x + 12, costBg->pos.y + 9, 50, 24 };
 			SDL_Rect magicPos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
-			metalText->setText(std::to_string(metalScrapPrice).c_str());
 			metalText->setSize(metalPos);
-			magicText->setText(std::to_string(magicScrapPrice).c_str());
 			magicText->setSize(magicPos);
+			if ( itemActionType == TINKER_ACTION_INVALID_ITEM
+				|| (metalScrapPrice == 0 && magicScrapPrice == 0) )
+			{
+				metalText->setText("-");
+				magicText->setText("-");
+			}
+			else
+			{
+				metalText->setText(std::to_string(metalScrapPrice).c_str());
+				magicText->setText(std::to_string(magicScrapPrice).c_str());
+			}
 
 			SDL_Rect costScrapTxtPos = costScrapText->getSize();
 			costScrapTxtPos.w = costBg->pos.x - 4;
@@ -8900,7 +9140,28 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			costScrapTxtPos.y = metalPos.y;
 			costScrapTxtPos.h = 24;
 			costScrapText->setSize(costScrapTxtPos);
-			costScrapText->setText(language[4130]);
+			if ( parentGUI.tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+			{
+				costScrapText->setText(language[4130]);
+			}
+			else if ( parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+			{
+				if ( itemType == TOOL_SENTRYBOT
+					|| itemType == TOOL_SPELLBOT
+					|| itemType == TOOL_DUMMYBOT
+					|| itemType == TOOL_GYROBOT )
+				{
+					costScrapText->setText(language[4135]);
+				}
+				else
+				{
+					costScrapText->setText(language[4134]);
+				}
+			}
+			else if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				costScrapText->setText(language[4133]);
+			}
 		}
 	}
 	else
@@ -8920,7 +9181,6 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 	itemDisplayTooltip->setOpacity(100.0 * animTooltip);
 
-	bool usingGamepad = (inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor);
 	bool activateSelection = false;
 	if ( isInteractable )
 	{
@@ -8992,7 +9252,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		return;
 	}
 
-	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 258 };
+	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 304 };
 	{
 		auto drawerFrame = tinkerFrame->addFrame("tinker drawer");
 		SDL_Rect drawerPos{ 0, 0, 258, 228 };
@@ -9153,6 +9413,64 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		}
 
 		{
+			auto actionPromptTxt = bgFrame->addField("action prompt txt", 64);
+			actionPromptTxt->setFont(itemFont);
+			actionPromptTxt->setText("");
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			actionPromptTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptTxt->setColor(makeColor(255, 255, 255, 255));
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph");
+		}
+
+		{
+			// filter labels
+			Button* filterBtn = bgFrame->addButton("filter salvage btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 0));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 64));
+			filterBtn->setText("Salvage");
+			filterBtn->setFont(itemFont);
+			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].tinkeringFilter = GenericGUIMenu::TINKER_FILTER_SALVAGEABLE;
+			});
+
+			filterBtn = bgFrame->addButton("filter craft btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 0));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 64));
+			filterBtn->setText("Craft");
+			filterBtn->setFont(itemFont);
+			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].tinkeringFilter = GenericGUIMenu::TINKER_FILTER_CRAFTABLE;
+			});
+
+			filterBtn = bgFrame->addButton("filter repair btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 0));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 64));
+			filterBtn->setText("Repair");
+			filterBtn->setFont(itemFont);
+			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].tinkeringFilter = GenericGUIMenu::TINKER_FILTER_REPAIRABLE;
+			});
+		}
+
+		{
 			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 34 },
 				0xFFFFFFFF, "images/ui/Tinkering/Tinker_ScrapBacking_00.png", "held scrap img");
 
@@ -9248,19 +9566,174 @@ void GenericGUIMenu::TinkerGUI_t::setItemDisplayNameAndPrice(Item* item)
 		itemRequiresTitleReflow = true;
 	}
 	itemDesc = buf;
+	itemActionType = TINKER_ACTION_NONE;
+	itemType = item->type;
+	itemRequirement = -1;
+
+	bool isTinkeringBot = (item->type == TOOL_SENTRYBOT
+		|| item->type == TOOL_SPELLBOT
+		|| item->type == TOOL_DUMMYBOT
+		|| item->type == TOOL_GYROBOT);
 
 	const int player = parentGUI.getPlayer();
 	if ( parentGUI.isNodeTinkeringCraftableItem(item->node) && parentGUI.tinkeringFilter == TINKER_FILTER_CRAFTABLE )
 	{
 		tinkeringGetCraftingCost(item, &metalScrapPrice, &magicScrapPrice);
+		if ( parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
+		{
+			itemActionType = TINKER_ACTION_NO_SKILL_LVL;
+			int oldTinkering = stats[player]->PROFICIENCIES[PRO_LOCKPICKING];
+			stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 100;
+			Sint32 oldPER = stats[player]->PER;
+			stats[player]->PER = 0;
+			itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+			stats[player]->PER = oldPER;
+			stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
+		}
+		else if ( !parentGUI.tinkeringPlayerCanAffordCraft(item) )
+		{
+			itemActionType = TINKER_ACTION_NO_MATERIALS;
+		}
+		else
+		{
+			itemActionType = TINKER_ACTION_OK;
+		}
 	}
-	else if ( parentGUI.isItemSalvageable(item, player) && parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+	else if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 	{
-		tinkeringGetItemValue(item, &metalScrapPrice, &magicScrapPrice);
+		bool hasValue = tinkeringGetItemValue(item, &metalScrapPrice, &magicScrapPrice);
+		if ( hasValue && item == parentGUI.tinkeringKitItem )
+		{
+			itemActionType = TINKER_ACTION_ALREADY_USING_THIS_TINKERING_KIT;
+		}
+		else if ( hasValue && parentGUI.isNodeFromPlayerInventory(item->node) && itemIsEquipped(item, player) )
+		{
+			itemActionType = TINKER_ACTION_MUST_BE_UNEQUIPPED;
+		}
+		else if ( !parentGUI.isItemSalvageable(item, player) )
+		{
+			if ( isTinkeringBot )
+			{
+				itemActionType = TINKER_ACTION_INVALID_ROBOT_TO_SALVAGE;
+			}
+			else
+			{
+				itemActionType = TINKER_ACTION_INVALID_ITEM;
+			}
+		}
+		else
+		{
+			itemActionType = TINKER_ACTION_OK;
+		}
 	}
-	else if ( parentGUI.tinkeringIsItemRepairable(item, player) && parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+	else if ( parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 	{
-		parentGUI.tinkeringGetRepairCost(item, &metalScrapPrice, &magicScrapPrice);
+		bool repairable = parentGUI.tinkeringGetRepairCost(item, &metalScrapPrice, &magicScrapPrice);
+		if ( !isTinkeringBot )
+		{
+			int metalTmp = 0;
+			int magicTmp = 0;
+			getGeneralItemRepairCostWithoutRequirements(player, item, metalTmp, magicTmp); // manually grab price
+			if ( metalTmp > 0 || magicTmp > 0 )
+			{
+				metalScrapPrice = metalTmp;
+				magicScrapPrice = magicTmp;
+			}
+		}
+		int requirement = parentGUI.tinkeringRepairGeneralItemSkillRequirement(item);
+
+		int skillLVL = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] 
+			+ statGetPER(stats[player], players[player]->entity);
+		if ( isTinkeringBot && item->status == BROKEN )
+		{
+			itemActionType = TINKER_ACTION_ROBOT_BROKEN;
+		}
+		else if ( isTinkeringBot && (item->tinkeringBotIsMaxHealth() && item->status == EXCELLENT) )
+		{
+			itemActionType = TINKER_ACTION_ITEM_FULLY_UPGRADED;
+		}
+		else if ( !isTinkeringBot && item->status >= EXCELLENT )
+		{
+			itemActionType = TINKER_ACTION_ITEM_FULLY_REPAIRED;
+		}
+		else if ( item->type != TOOL_TINKERING_KIT && !isTinkeringBot
+			&& skillLVL < requirement )
+		{
+			itemActionType = TINKER_ACTION_NO_SKILL_LVL;
+			itemRequirement = requirement;
+		}
+		else if ( isTinkeringBot && !item->tinkeringBotIsMaxHealth()
+			&& (parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) == -1 /*|| parentGUI.tinkeringUpgradeMaxStatus(item) <= item->status)*/) )
+		{
+			itemActionType = TINKER_ACTION_NO_SKILL_LVL;
+			{
+				// can't craft, figure out base requirement
+				int oldTinkering = stats[player]->PROFICIENCIES[PRO_LOCKPICKING];
+				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 100;
+				Sint32 oldPER = stats[player]->PER;
+				stats[player]->PER = 0;
+				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+				stats[player]->PER = oldPER;
+				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
+			}
+		}
+		else if ( isTinkeringBot && item->tinkeringBotIsMaxHealth()
+			&& (parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) == -1 || parentGUI.tinkeringUpgradeMaxStatus(item) <= item->status) )
+		{
+			itemActionType = TINKER_ACTION_NO_SKILL_LVL_UPGRADE;
+
+			bool craftRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item);
+			if ( craftRequirement >= 0 )
+			{
+				// can craft, figure out how much needed to repair
+				int skillLVL = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity)) / 20; // 0 to 5
+
+				Status highestQuality = BROKEN;
+				if ( skillLVL - craftRequirement == 1 )
+				{
+					highestQuality = WORN;
+				}
+				else if ( skillLVL - craftRequirement == 2 )
+				{
+					highestQuality = SERVICABLE;
+				}
+				else if ( skillLVL - craftRequirement >= 3 )
+				{
+					highestQuality = EXCELLENT;
+				}
+				int diff = ((int)item->status - (int)highestQuality) * 20;
+				itemRequirement = craftRequirement * 20 + diff;
+			}
+			else
+			{
+				int oldTinkering = stats[player]->PROFICIENCIES[PRO_LOCKPICKING];
+				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 100;
+				Sint32 oldPER = stats[player]->PER;
+				stats[player]->PER = 0;
+				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+				stats[player]->PER = oldPER;
+				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
+			}
+		}
+		else if ( !parentGUI.tinkeringPlayerCanAffordRepair(item) )
+		{
+			if ( isTinkeringBot && item->tinkeringBotIsMaxHealth() )
+			{
+				itemActionType = TINKER_ACTION_NO_MATERIALS_UPGRADE;
+			}
+			else
+			{
+				itemActionType = TINKER_ACTION_NO_MATERIALS;
+			}
+		}
+		else if ( repairable )
+		{
+			itemActionType = TINKER_ACTION_OK;
+		}
+		else
+		{
+			itemActionType = TINKER_ACTION_INVALID_ITEM; // catch-all
+		}
 	}
 
 	if ( tinkerFrame )
@@ -9318,4 +9791,7 @@ void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
 {
 	metalScrapPrice = -1;
 	magicScrapPrice = -1;
+	itemActionType = TINKER_ACTION_NONE;
+	itemType = -1;
+	itemRequirement = -1;
 }

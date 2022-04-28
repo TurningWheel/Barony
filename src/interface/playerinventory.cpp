@@ -6325,6 +6325,7 @@ void Player::Inventory_t::updateInventory()
 	auto selectedSlotCursor = selectedItemCursorFrame;
 
 	bool tinkerCraftableListOpen = tinkerGUI.isConstructMenuActive();
+	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
 
 	if ( GenericGUI[player].selectedSlot < 0 )
 	{
@@ -6942,6 +6943,31 @@ void Player::Inventory_t::updateInventory()
 				{
 					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 				}
+				else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
+				{
+					if ( tinkerCraftableListOpen
+						&& (!GenericGUI[player].tinkeringPlayerCanAffordCraft(item)
+							|| !GenericGUI[player].tinkeringPlayerHasSkillLVLToCraft(item)) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+					else if ( tinkeringSalvageOrRepairMenuActive
+						&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE
+						&& !GenericGUI[player].tinkeringIsItemRepairable(item, player) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+					else if ( tinkeringSalvageOrRepairMenuActive
+						&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE
+						&& !GenericGUI[player].isItemSalvageable(item, player) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
 				else
 				{
 					updateSlotFrameFromItem(slotFrame, item);
@@ -7062,7 +7088,7 @@ void Player::Inventory_t::updateInventory()
 				//	continue;
 				//}
 
-				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
+				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() && tinkerGUI.isInteractable )
 				{
 					tinkerGUI.setItemDisplayNameAndPrice(item);
 					break;
@@ -7545,7 +7571,12 @@ void Player::Inventory_t::updateInventory()
 
 				bool tooltipOpen = false;
 				bool sellingItemToShop = false;
-				if ( shopGUI.isItemSelectedToSellToShop(item) )
+				if ( tinkeringSalvageOrRepairMenuActive )
+				{
+					tooltipOpen = false;
+					tinkerGUI.setItemDisplayNameAndPrice(item);
+				}
+				else if ( shopGUI.isItemSelectedToSellToShop(item) )
 				{
 					sellingItemToShop = true;
 					shopGUI.setItemDisplayNameAndPrice(item);
@@ -7684,7 +7715,7 @@ void Player::Inventory_t::updateInventory()
 						// force equip potion/spellbook
 						playerTryEquipItemAndUpdateServer(player, item, false);
 					}
-					else
+					else if ( !tinkeringSalvageOrRepairMenuActive )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -7982,6 +8013,31 @@ void Player::Inventory_t::updateInventory()
 						if ( shopOpen && !isItemSellableToShop(player, item) )
 						{
 							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
+						{
+							if ( tinkerCraftableListOpen
+								&& (!GenericGUI[player].tinkeringPlayerCanAffordCraft(item)
+									|| !GenericGUI[player].tinkeringPlayerHasSkillLVLToCraft(item)) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else if ( tinkeringSalvageOrRepairMenuActive
+								&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE
+								&& !GenericGUI[player].tinkeringIsItemRepairable(item, player) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else if ( tinkeringSalvageOrRepairMenuActive
+								&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE
+								&& !GenericGUI[player].isItemSalvageable(item, player) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item);
+							}
 						}
 						else
 						{
