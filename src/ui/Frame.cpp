@@ -39,7 +39,8 @@ static const Uint32 tooltip_border_color = 0xFFEE00AA;
 static const int tooltip_border_width = 2;
 static const Uint32 tooltip_text_color = 0xFFFFFFFF;
 static const char* tooltip_text_font = Font::defaultFont;
-framebuffer gui_fb, gui4x_fb;
+
+static framebuffer gui_fb, gui_fb_upscaled, gui_fb_downscaled;
 
 // root of all widgets
 Frame* gui = nullptr;
@@ -77,8 +78,8 @@ void Frame::listener_t::onChangeName(const char* name) {
 }
 
 #ifndef EDITOR
-static ConsoleVariable<bool> uifilter("/uifilter", true);
-static ConsoleCommand uifilter_refresh("/refreshuifilter", "refresh ui filter state",
+static ConsoleVariable<bool> ui_filter("/ui_filter", false);
+static ConsoleCommand ui_filter_refresh("/ui_filter_refresh", "refresh ui filter state",
     [](int argc, const char** argv){
     Frame::fboDestroy();
     Frame::fboInit();
@@ -89,18 +90,20 @@ void Frame::fboInit() {
 #ifdef EDITOR
     gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
 #else
-    if (*uifilter) {
+    if (*ui_filter) {
         gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_LINEAR, GL_LINEAR);
     } else {
         gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
     }
 #endif
-    gui4x_fb.init(Frame::virtualScreenX * 4, Frame::virtualScreenY * 4, GL_LINEAR, GL_LINEAR);
+    gui_fb_upscaled.init(Frame::virtualScreenX * 3, Frame::virtualScreenY * 3, GL_LINEAR, GL_NEAREST); // 4k resolution
+    gui_fb_downscaled.init(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2, GL_LINEAR, GL_NEAREST); // 360p resolution
 }
 
 void Frame::fboDestroy() {
 	gui_fb.destroy();
-	gui4x_fb.destroy();
+	gui_fb_upscaled.destroy();
+	gui_fb_downscaled.destroy();
 }
 
 void Frame::guiInit() {
@@ -185,20 +188,81 @@ Frame::~Frame() {
 }
 
 #ifndef EDITOR
-static ConsoleVariable<bool> upscale_ui("/upscale_ui", false);
-static ConsoleVariable<bool> scale_ui("/scale_ui", true);
-#else
-static const bool scale_ui_ = true;
-static const bool upscale_ui_ = false;
-static const bool* upscale_ui = &upscale_ui_;
-static const bool* scale_ui = &scale_ui_;
+static ConsoleVariable<bool> ui_scale_native("/ui_scale_native", false);    // if true, causes the UI to blit from a backbuffer even if it's already native res
+static ConsoleVariable<bool> ui_upscale("/ui_upscale", false);              // upscale UI layer to 4k before downscaling to native res
+static ConsoleVariable<bool> ui_downscale("/ui_downscale", false);          // downscale UI layer to 360p before upscaling to native res
+static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // scale the UI layer to native res (should always be on)
 #endif
 
+#if !defined(EDITOR)
 void Frame::predraw() {
-    if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+    if (!*ui_scale_native) {
+        if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+            return;
+        }
+    }
+    if (!*ui_scale) {
         return;
     }
-    if (!*scale_ui) {
+    gui_fb.bindForWriting();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+}
+
+void Frame::postdraw() {
+    if (!*ui_scale_native) {
+        if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+	        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            return;
+        }
+    }
+    if (!*ui_scale) {
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        return;
+    }
+    if (*ui_downscale) {
+	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	    gui_fb.bindForReading();
+        gui_fb_downscaled.bindForWriting();
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    framebuffer::blit();
+
+        framebuffer::unbind();
+        gui_fb_downscaled.bindForReading();
+        framebuffer::blit();
+        framebuffer::unbind();
+
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else if (*ui_upscale) {
+	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	    gui_fb.bindForReading();
+        gui_fb_upscaled.bindForWriting();
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    framebuffer::blit();
+
+        framebuffer::unbind();
+        gui_fb_upscaled.bindForReading();
+        framebuffer::blit();
+        framebuffer::unbind();
+
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else {
+	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        framebuffer::unbind();
+	    gui_fb.bindForReading();
+	    framebuffer::blit();
+        framebuffer::unbind();
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+}
+#else
+// EDITOR ONLY DEFINITIONS:
+void Frame::predraw() {
+    if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
     gui_fb.bindForWriting();
@@ -210,30 +274,14 @@ void Frame::postdraw() {
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
-    if (!*scale_ui) {
-        return;
-    }
-    if (*upscale_ui) {
-        framebuffer::unbind();
-        gui4x_fb.bindForWriting();
-	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	    gui_fb.bindForReading();
-	    gui_fb.blit();
-        framebuffer::unbind();
-        gui4x_fb.bindForReading();
-        gui4x_fb.blit();
-        framebuffer::unbind();
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else {
-        framebuffer::unbind();
-	    gui_fb.bindForReading();
-	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	    gui_fb.blit();
-        framebuffer::unbind();
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    framebuffer::unbind();
+    gui_fb.bindForReading();
+    framebuffer::blit();
+    framebuffer::unbind();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
+#endif
 
 void Frame::draw() const {
 	auto _actualSize = allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h};

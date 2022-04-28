@@ -431,4 +431,3 @@ private:
 // root frame object
 extern Frame* gui;
 void createTestUI();
-extern framebuffer gui_fb, gui4x_fb;

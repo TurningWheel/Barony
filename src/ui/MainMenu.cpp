@@ -116,7 +116,7 @@ namespace MainMenu {
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 	static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
 	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
-	static const char* menu_option_font = "fonts/pixel_maz.ttf#48#2";
+	static const char* menu_option_font = "fonts/pixelmix.ttf#16#2";
 	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
 
     // Inventory sorting options
@@ -1969,7 +1969,7 @@ namespace MainMenu {
 			createMainMenu(false);
 			mainArchives(b);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto credits = buttons->findButton("CREDITS"); assert(credits);
+			auto credits = buttons->findButton("Credits"); assert(credits);
 			credits->select();
 			});
 		back_button->setWidgetBack("back");
@@ -2001,7 +2001,7 @@ namespace MainMenu {
 			    createMainMenu(false);
 			    mainArchives(b);
 			    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			    auto credits = buttons->findButton("CREDITS"); assert(credits);
+			    auto credits = buttons->findButton("Credits"); assert(credits);
 			    credits->select();
 			    });
 		    back->select();
@@ -4342,7 +4342,7 @@ bind_failed:
 			frame->removeSelf();
 			assert(main_menu_frame);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto leaderboards = buttons->findButton("LEADERBOARDS"); assert(leaderboards);
+			auto leaderboards = buttons->findButton("Leaderboards"); assert(leaderboards);
 			leaderboards->select();
 			});
 		back->select();
@@ -5386,7 +5386,7 @@ bind_failed:
         createMainMenu(false);
         assert(main_menu_frame);
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-		auto selection = buttons->findButton("ADVENTURE ARCHIVES");
+		auto selection = buttons->findButton("Adventure Archives");
 		if (selection) {
 			selection->select();
 		}
@@ -10638,7 +10638,7 @@ bind_failed:
 			frame->removeSelf();
 			assert(main_menu_frame);
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto play_button = buttons->findButton("PLAY GAME"); assert(play_button);
+			auto play_button = buttons->findButton("Play Game"); assert(play_button);
 			play_button->select();
 			});
 
@@ -11610,11 +11610,11 @@ bind_failed:
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			{"LEADERBOARDS", archivesLeaderboards},
-			{"DUNGEON COMPENDIUM", archivesDungeonCompendium},
-			{"STORY INTRODUCTION", archivesStoryIntroduction},
-			{"CREDITS", archivesCredits},
-			{"BACK TO MAIN MENU", archivesBackToMainMenu}
+			{"Leaderboards", archivesLeaderboards},
+			{"Dungeon Compendium", archivesDungeonCompendium},
+			{"Story Introduction", archivesStoryIntroduction},
+			{"Credits", archivesCredits},
+			{"Back to Main Menu", archivesBackToMainMenu}
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 
@@ -11661,7 +11661,7 @@ bind_failed:
 		}
 		y += 16;
 
-		auto archives = buttons->findButton("LEADERBOARDS");
+		auto archives = buttons->findButton("Leaderboards");
 		if (archives) {
 			archives->select();
 		}
@@ -11673,7 +11673,7 @@ bind_failed:
 	    static auto return_to_main_menu = [](){
             assert(main_menu_frame);
 	        auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-	        auto button = buttons->findButton("ASSIGN CONTROLLERS"); assert(button);
+	        auto button = buttons->findButton("Assign Controllers"); assert(button);
 	        button->select();
 	    };
 	    if (splitscreen) {
@@ -11973,7 +11973,7 @@ bind_failed:
 			soundCancel();
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
+				auto settings_button = buttons->findButton("Settings"); assert(settings_button);
 				settings_button->select();
 			}
 			auto settings = static_cast<Frame*>(button.getParent());
@@ -12007,7 +12007,7 @@ bind_failed:
 			(void)settingsSave();
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto settings_button = buttons->findButton("SETTINGS"); assert(settings_button);
+				auto settings_button = buttons->findButton("Settings"); assert(settings_button);
 				settings_button->select();
 			}
 			auto settings = static_cast<Frame*>(button.getParent());
@@ -12069,7 +12069,7 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("END LIFE"); assert(quit_button);
+				auto quit_button = buttons->findButton("End Life"); assert(quit_button);
 				quit_button->select();
 			    closeBinary();
 			});
@@ -12103,9 +12103,9 @@ bind_failed:
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				Button* quit_button;
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
-				    quit_button = buttons->findButton("RESTART GAME"); assert(quit_button);
+				    quit_button = buttons->findButton("Restart Game"); assert(quit_button);
 				} else {
-				    quit_button = buttons->findButton("RESTART TRIAL"); assert(quit_button);
+				    quit_button = buttons->findButton("Restart Trial"); assert(quit_button);
 				}
 				quit_button->select();
 			    closeBinary();
@@ -12136,9 +12136,9 @@ bind_failed:
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				Button* quit_button;
 	            if (strcmp(map.filename, "tutorial_hub.lmp")) {
-				    quit_button = buttons->findButton("RETURN TO HALL OF TRIALS"); assert(quit_button);
+				    quit_button = buttons->findButton("Return to Hall of Trials"); assert(quit_button);
 				} else {
-				    quit_button = buttons->findButton("RESET HALL OF TRIALS"); assert(quit_button);
+				    quit_button = buttons->findButton("Reset Hall of Trials"); assert(quit_button);
 				}
 				quit_button->select();
 			    closeBinary();
@@ -12167,7 +12167,7 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("QUIT TO MAIN MENU"); assert(quit_button);
+				auto quit_button = buttons->findButton("Quit to Main Menu"); assert(quit_button);
 				quit_button->select();
 			    closeBinary();
 			});
@@ -12208,9 +12208,9 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto quit_button = buttons->findButton("QUIT");
+				auto quit_button = buttons->findButton("Quit");
 				if (!quit_button) {
-					quit_button = buttons->findButton("QUIT TO DESKTOP");
+					quit_button = buttons->findButton("Quit to Desktop");
 				}
 				assert(quit_button);
 				quit_button->select();
@@ -12628,58 +12628,50 @@ bind_failed:
 		};
 		std::vector<Option> options;
 		if (ingame) {
+	        options.insert(options.begin(), {
+		        {"Back to Game", mainClose},
+		        {"Assign Controllers", mainAssignControllers},
+		        {"Dungeon Compendium", archivesDungeonCompendium},
+		        {"Settings", mainSettings},
+		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 			    options.insert(options.begin(), {
-				    {"BACK TO GAME", mainClose},
-				    {"ASSIGN CONTROLLERS", mainAssignControllers},
-				    {"DUNGEON COMPENDIUM", archivesDungeonCompendium},
-				    {"SETTINGS", mainSettings},
-				    {"END LIFE", mainEndLife},
-				    {"RESTART GAME", mainRestartGame},
-				    {"QUIT TO MAIN MENU", mainQuitToMainMenu},
-				    //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				    {"End Life", mainEndLife},
+				    {"Restart Game", mainRestartGame},
 				    });
 			} else {
 			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
 			        options.insert(options.begin(), {
-				        {"BACK TO GAME", mainClose},
-				        {"ASSIGN CONTROLLERS", mainAssignControllers},
-				        {"DUNGEON COMPENDIUM", archivesDungeonCompendium},
-				        {"SETTINGS", mainSettings},
-				        {"RESTART TRIAL", mainRestartGame},
-				        {"RETURN TO HALL OF TRIALS", mainReturnToHallofTrials},
-				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
-				        //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				        {"Restart Trial", mainRestartGame},
+				        {"Return to Hall of Trials", mainReturnToHallofTrials},
 				        });
 				} else {
 			        options.insert(options.begin(), {
-				        {"BACK TO GAME", mainClose},
-				        {"ASSIGN CONTROLLERS", mainAssignControllers},
-				        {"DUNGEON COMPENDIUM", archivesDungeonCompendium},
-				        {"SETTINGS", mainSettings},
-				        {"RESET HALL OF TRIALS", mainReturnToHallofTrials},
-				        {"QUIT TO MAIN MENU", mainQuitToMainMenu},
-				        //{"QUIT TO DESKTOP", mainQuitToDesktop},
+				        {"Reset Hall of Trials", mainReturnToHallofTrials},
 				        });
 				}
 			}
+	        options.insert(options.begin(), {
+		        {"Quit to Main Menu", mainQuitToMainMenu},
+		        //{"Quit to Desktop", mainQuitToDesktop},
+		        });
 		} else {
 #ifdef NINTENDO
 			options.insert(options.begin(), {
-				{"PLAY GAME", mainPlayGame},
-				{"ADVENTURE ARCHIVES", mainArchives},
-				{"SETTINGS", mainSettings},
+				{"Play", mainPlayGame},
+				{"Adventure Archives", mainArchives},
+				{"Settings", mainSettings},
 				});
 #else
 			options.insert(options.begin(), {
-				{"PLAY GAME", mainPlayGame},
-				{"PLAY MODDED GAME", mainPlayModdedGame},
-				{"ADVENTURE ARCHIVES", mainArchives},
-				{"SETTINGS", mainSettings},
+				{"Play Game", mainPlayGame},
+				{"Play Modded Game", mainPlayModdedGame},
+				{"Adventure Archives", mainArchives},
+				{"Settings", mainSettings},
 #ifndef NDEBUG
-			    {"EDITOR", mainEditor},
+			    {"Editor", mainEditor},
 #endif
-				{"QUIT", mainQuitToDesktop},
+				{"Quit", mainQuitToDesktop},
 				});
 #endif
 		}
@@ -12688,6 +12680,7 @@ bind_failed:
 
 		if (ingame) {
 			y = (Frame::virtualScreenY - num_options * 32) / 2;
+			++y; // fix aliasing nonsense
 		}
 		main_menu_buttons_height = y;
 
@@ -12730,7 +12723,7 @@ bind_failed:
 		}
 		y += 16;
 
-		auto button = buttons->findButton(ingame ? "BACK TO GAME" : "PLAY GAME");
+		auto button = buttons->findButton(ingame ? "Back to Game" : "Play Game");
 		if (button) {
 			button->select();
 			if (main_menu_cursor_x == 0 && main_menu_cursor_y == 0) {
