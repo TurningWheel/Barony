@@ -1284,10 +1284,7 @@ int saveGame(int saveIndex)
 		return 1;
 	}
 
-	int player;
-	node_t* node;
 	File* fp;
-	Sint32 c;
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
 
@@ -1375,11 +1372,11 @@ int saveGame(int saveIndex)
 	fp->write(&conductFoodless, sizeof(bool), 1);
 	fp->write(&conductVegetarian, sizeof(bool), 1);
 	fp->write(&conductIlliterate, sizeof(bool), 1);
-	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 	{
 		fp->write(&conductGameChallenges[c], sizeof(Sint32), 1);
 	}
-	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 	{
 		fp->write(&gameStatistics[c], sizeof(Sint32), 1);
 	}
@@ -1387,7 +1384,7 @@ int saveGame(int saveIndex)
 
     if (splitscreen)
     {
-	    for ( player = 0; player < MAXPLAYERS; player++ )
+	    for ( int player = 0; player < MAXPLAYERS; player++ )
 	    {
 	        // write hotbar items
 	        for ( auto& hotbarSlot : players[player]->hotbar.slots() )
@@ -1404,7 +1401,7 @@ int saveGame(int saveIndex)
 	        // write spells
 	        Uint32 numspells = list_Size(&players[player]->magic.spellList);
 	        fp->write(&numspells, sizeof(Uint32), 1);
-	        for ( node = players[player]->magic.spellList.first; node != NULL; node = node->next )
+	        for ( node_t* node = players[player]->magic.spellList.first; node != NULL; node = node->next )
 	        {
 		        spell_t* spell = (spell_t*)node->element;
 		        fp->write(&spell->ID, sizeof(Uint32), 1);
@@ -1428,7 +1425,7 @@ int saveGame(int saveIndex)
 	    // write spells
 	    Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
 	    fp->write(&numspells, sizeof(Uint32), 1);
-	    for ( node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
+	    for ( node_t* node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
 	    {
 		    spell_t* spell = (spell_t*)node->element;
 		    fp->write(&spell->ID, sizeof(Uint32), 1);
@@ -1436,10 +1433,10 @@ int saveGame(int saveIndex)
     }
 
 	// player data
-	for ( player = 0; player < MAXPLAYERS; player++ )
+	for ( int player = 0; player < MAXPLAYERS; player++ )
 	{
 		fp->write(&client_classes[player], sizeof(Uint32), 1);
-		for ( c = 0; c < NUMMONSTERS; c++ )
+		for ( int c = 0; c < NUMMONSTERS; c++ )
 		{
 			fp->write(&kills[c], sizeof(Sint32), 1);
 		}
@@ -1464,16 +1461,16 @@ int saveGame(int saveIndex)
 		fp->write(&stats[player]->LVL, sizeof(Sint32), 1);
 		fp->write(&stats[player]->GOLD, sizeof(Sint32), 1);
 		fp->write(&stats[player]->HUNGER, sizeof(Sint32), 1);
-		for ( c = 0; c < NUMPROFICIENCIES; c++ )
+		for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 		{
 			fp->write(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1);
 		}
-		for ( c = 0; c < NUMEFFECTS; c++ )
+		for ( int c = 0; c < NUMEFFECTS; c++ )
 		{
 			fp->write(&stats[player]->EFFECTS[c], sizeof(bool), 1);
 			fp->write(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
 		}
-		for ( c = 0; c < 32; c++ )
+		for ( int c = 0; c < 32; c++ )
 		{
 			fp->write(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1);
 		}
@@ -1481,9 +1478,9 @@ int saveGame(int saveIndex)
 		// inventory
 		if ( player == clientnum || splitscreen )
 		{
-			c = list_Size(&stats[player]->inventory);
+			int c = list_Size(&stats[player]->inventory);
 			fp->write(&c, sizeof(Uint32), 1);
-			for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+			for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 			{
 				Item* item = (Item*)node->element;
 				fp->write(&item->type, sizeof(ItemType), 1);
@@ -1612,7 +1609,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->breastplate )
@@ -1627,7 +1624,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->gloves )
@@ -1642,7 +1639,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->shoes )
@@ -1657,7 +1654,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->shield )
@@ -1672,7 +1669,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->weapon )
@@ -1687,7 +1684,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->cloak )
@@ -1702,7 +1699,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->amulet )
@@ -1717,7 +1714,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->ring )
@@ -1732,7 +1729,7 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 				if ( stats[player]->mask )
@@ -1747,13 +1744,13 @@ int saveGame(int saveIndex)
 				}
 				else
 				{
-					c = NUMITEMS;
+					int c = NUMITEMS;
 					fp->write(&c, sizeof(ItemType), 1);
 				}
 			}
 			else
 			{
-				c = NUMITEMS;
+				int c = NUMITEMS;
 				fp->write(&c, sizeof(ItemType), 1);
 			}
 		}
@@ -1786,15 +1783,14 @@ int saveGame(int saveIndex)
 	fp->printf(VERSION);
 
 	// write follower information
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		// record number of followers for this player
 		Uint32 size = list_Size(&stats[c]->FOLLOWERS);
 		fp->write(&size, sizeof(Uint32), 1);
 
 		// get followerStats
-		int i;
-		for ( i = 0; i < size; i++ )
+		for ( int i = 0; i < size; i++ )
 		{
 			node_t* node = list_Node(&stats[c]->FOLLOWERS, i);
 			if ( node )
@@ -1823,17 +1819,16 @@ int saveGame(int saveIndex)
 					fp->write(&followerStats->GOLD, sizeof(Sint32), 1);
 					fp->write(&followerStats->HUNGER, sizeof(Sint32), 1);
 
-					int j;
-					for ( j = 0; j < NUMPROFICIENCIES; j++ )
+					for ( int j = 0; j < NUMPROFICIENCIES; j++ )
 					{
 						fp->write(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1);
 					}
-					for ( j = 0; j < NUMEFFECTS; j++ )
+					for ( int j = 0; j < NUMEFFECTS; j++ )
 					{
 						fp->write(&followerStats->EFFECTS[j], sizeof(bool), 1);
 						fp->write(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1);
 					}
-					for ( j = 0; j < 32; ++j )
+					for ( int j = 0; j < 32; ++j )
 					{
 						fp->write(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1);
 					}
@@ -1841,7 +1836,7 @@ int saveGame(int saveIndex)
 					// record follower inventory
 					Uint32 invSize = list_Size(&followerStats->inventory);
 					fp->write(&invSize, sizeof(Uint32), 1);
-					for ( node = followerStats->inventory.first; node != NULL; node = node->next )
+					for ( node_t* node = followerStats->inventory.first; node != NULL; node = node->next )
 					{
 						Item* item = (Item*)node->element;
 						fp->write(&item->type, sizeof(ItemType), 1);
@@ -2026,9 +2021,7 @@ int saveGame(int saveIndex)
 int loadGame(int player, int saveIndex)
 {
 	Sint32 mul;
-	node_t* node;
 	File* fp;
-	int c;
 
 	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
@@ -2113,11 +2106,11 @@ int loadGame(int player, int saveIndex)
 	fp->read(&conductIlliterate, sizeof(bool), 1);
 	if ( versionNumber >= 310 )
 	{
-		for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 		{
 			fp->read(&conductGameChallenges[c], sizeof(Sint32), 1);
 		}
-		for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 		{
 			fp->read(&gameStatistics[c], sizeof(Sint32), 1);
 		}
@@ -2145,7 +2138,7 @@ int loadGame(int player, int saveIndex)
             if (c == player)
             {
 	            // read hotbar item offsets
-	            for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	            for ( int i = 0; i < NUM_HOTBAR_SLOTS; i++ )
 	            {
 		            fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
 	            }
@@ -2160,7 +2153,7 @@ int loadGame(int player, int saveIndex)
 		            fp->read(&spellnum, sizeof(Uint32), 1);
 		            spell_t* spell = copySpell(getSpellFromID(spellnum));
 
-		            node = list_AddNodeLast(&players[c]->magic.spellList);
+		            node_t* node = list_AddNodeLast(&players[c]->magic.spellList);
 		            node->element = spell;
 		            node->deconstructor = &spellDeconstructor;
 		            node->size = sizeof(spell);
@@ -2173,7 +2166,7 @@ int loadGame(int player, int saveIndex)
 
                 int numspells = 0;
                 fp->read(&numspells, sizeof(Uint32), 1);
-                for ( c = 0; c < numspells; c++ )
+                for ( int i = 0; i < numspells; i++ )
                 {
 	                fp->seek(sizeof(Uint32), File::SeekMode::ADD);
                 }
@@ -2183,7 +2176,7 @@ int loadGame(int player, int saveIndex)
     else
     {
 	    // read hotbar item offsets
-	    for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	    for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 	    {
 		    fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
 	    }
@@ -2192,13 +2185,13 @@ int loadGame(int player, int saveIndex)
 	    list_FreeAll(&players[player]->magic.spellList);
 	    Uint32 numspells = 0;
 	    fp->read(&numspells, sizeof(Uint32), 1);
-	    for ( c = 0; c < numspells; c++ )
+	    for ( int c = 0; c < numspells; c++ )
 	    {
 		    int spellnum = 0;
 		    fp->read(&spellnum, sizeof(Uint32), 1);
 		    spell_t* spell = copySpell(getSpellFromID(spellnum));
 
-		    node = list_AddNodeLast(&players[player]->magic.spellList);
+		    node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
 		    node->element = spell;
 		    node->deconstructor = &spellDeconstructor;
 		    node->size = sizeof(spell);
@@ -2212,7 +2205,7 @@ int loadGame(int player, int saveIndex)
 	}
 
 	// skip through other player data until you get to the correct player
-	for ( c = 0; c < player; c++ )
+	for ( int c = 0; c < player; c++ )
 	{
 		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
 		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
@@ -2264,8 +2257,7 @@ int loadGame(int player, int saveIndex)
         {
 			int numitems = 0;
 			fp->read(&numitems, sizeof(Uint32), 1);
-			int i;
-			for ( i = 0; i < numitems; i++ )
+			for ( int i = 0; i < numitems; i++ )
 			{
 				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 				fp->seek(sizeof(Status), File::SeekMode::ADD);
@@ -2285,8 +2277,7 @@ int loadGame(int player, int saveIndex)
 				int numitems = 0;
 				fp->read(&numitems, sizeof(Uint32), 1);
 
-				int i;
-				for ( i = 0; i < numitems; i++ )
+				for ( int i = 0; i < numitems; i++ )
 				{
 					fp->seek(sizeof(ItemType), File::SeekMode::ADD);
 					fp->seek(sizeof(Status), File::SeekMode::ADD);
@@ -2301,8 +2292,7 @@ int loadGame(int player, int saveIndex)
 		    } else {
 			    // server needs to skip past other players' equipment
 			    // (this is stored differently)
-			    int i;
-			    for ( i = 0; i < 10; i++ )
+			    for ( int i = 0; i < 10; i++ )
 			    {
 				    int itemtype = NUMITEMS;
 				    fp->read(&itemtype, sizeof(ItemType), 1);
@@ -2327,7 +2317,7 @@ int loadGame(int player, int saveIndex)
 	// read in player data
 	stats[player]->clearStats();
 	fp->read(&client_classes[player], sizeof(Uint32), 1);
-	for ( c = 0; c < monsters; c++ )
+	for ( int c = 0; c < monsters; c++ )
 	{
 		fp->read(&kills[c], sizeof(Sint32), 1);
 	}
@@ -2354,7 +2344,7 @@ int loadGame(int player, int saveIndex)
 	fp->read(&stats[player]->LVL, sizeof(Sint32), 1);
 	fp->read(&stats[player]->GOLD, sizeof(Sint32), 1);
 	fp->read(&stats[player]->HUNGER, sizeof(Sint32), 1);
-	for ( c = 0; c < NUMPROFICIENCIES; c++ )
+	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
 		if ( versionNumber < 323 && c >= PRO_UNARMED )
 		{
@@ -2365,7 +2355,7 @@ int loadGame(int player, int saveIndex)
 			fp->read(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1);
 		}
 	}
-	for ( c = 0; c < NUMEFFECTS; c++ )
+	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
 		if ( versionNumber <= 323 ) // legacy
 		{
@@ -2388,7 +2378,7 @@ int loadGame(int player, int saveIndex)
 	}
 	if ( versionNumber >= 323 )
 	{
-		for ( c = 0; c < 32; c++ )
+		for ( int c = 0; c < 32; c++ )
 		{
 			fp->read(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1);
 			if ( c < STAT_FLAG_PLAYER_RACE )
@@ -2405,7 +2395,7 @@ int loadGame(int player, int saveIndex)
 		fp->read(&numitems, sizeof(Uint32), 1);
 		stats[player]->inventory.first = NULL;
 		stats[player]->inventory.last = NULL;
-		for ( c = 0; c < numitems; c++ )
+		for ( int c = 0; c < numitems; c++ )
 		{
 			ItemType type;
 			Status status;
@@ -2423,6 +2413,9 @@ int loadGame(int player, int saveIndex)
 			fp->read(&item->x, sizeof(Sint32), 1);
 			fp->read(&item->y, sizeof(Sint32), 1);
 		}
+
+		int c;
+		node_t* node;
 
 		// equipment
 		fp->read(&c, sizeof(Uint32), 1);
@@ -2543,7 +2536,7 @@ int loadGame(int player, int saveIndex)
 
 		if ( multiplayer == SERVER )
 		{
-			for ( c = 0; c < 10; c++ )
+			for ( int c = 0; c < 10; c++ )
 			{
 				ItemType type;
 				Status status;
@@ -2604,9 +2597,9 @@ int loadGame(int player, int saveIndex)
 	// assign hotbar items
 	auto& hotbar = players[player]->hotbar.slots();
 	auto& hotbar_alternate = players[player]->hotbar.slotsAlternate();
-	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+	for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
 	{
-		node = list_Node(&stats[player]->inventory, temp_hotbar[c]);
+		node_t* node = list_Node(&stats[player]->inventory, temp_hotbar[c]);
 		if ( node )
 		{
 			Item* item = (Item*)node->element;

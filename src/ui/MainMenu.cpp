@@ -8353,11 +8353,10 @@ bind_failed:
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
 		static auto name_field_fn = [](const char* text, int index) {
-			size_t len = strlen(text);
-			len = std::min(sizeof(Stat::name) - 1, len);
+			size_t len = strlen(text) + 1;
+			len = std::min(sizeof(Stat::name), len);
 			if (memcmp(stats[index]->name, text, len)) {
 			    memcpy(stats[index]->name, text, len);
-			    stats[index]->name[len] = '\0';
 			    sendPlayerOverNet();
 			}
 		};
@@ -8858,7 +8857,7 @@ bind_failed:
 	}
 
 	static void createReadyStone(int index, bool local, bool ready) {
-	    if (!main_menu_frame) {
+	    if (!main_menu_frame || main_menu_frame->isToBeDeleted()) {
 	        // maybe this could happen if we got a REDY packet
 	        // super late or something.
 	        if (!ready) {
@@ -8869,7 +8868,7 @@ bind_failed:
 	    }
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		if (!lobby) {
+		if (!lobby || lobby->isToBeDeleted()) {
 	        // maybe this could happen if we got a REDY packet
 	        // super late or something.
 	        if (!ready) {
@@ -9009,18 +9008,6 @@ bind_failed:
             destroyMainMenu();
             createDummyMainMenu();
             beginFade(MainMenu::FadeDestination::GameStart);
-
-	        // initialize all player stats
-	        for (int c = 1; c < MAXPLAYERS; c++) {
-		        if (!client_disconnected[c]) {
-			        if (!loadingsavegame || !intro) {
-				        stats[c]->clearStats();
-				        initClass(c);
-			        } else {
-				        loadGame(c);
-			        }
-		        }
-	        }
 
 	        // set unique game key
 	        uniqueGameKey = prng_get_uint();
