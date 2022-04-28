@@ -167,24 +167,55 @@ Frame::~Frame() {
 	clear();
 }
 
+#ifndef EDITOR
+static ConsoleVariable<bool> upscale_ui("/upscale_ui", true);
+static ConsoleVariable<bool> scale_ui("/scale_ui", true);
+#else
+static const bool scale_ui_ = true;
+static const bool upscale_ui_ = true;
+static const bool* upscale_ui = &upscale_ui_;
+static const bool* scale_ui = &scale_ui_;
+#endif
+
 void Frame::predraw() {
+    if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+        return;
+    }
+    if (!*scale_ui) {
+        return;
+    }
     gui_fb.bindForWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 }
 
 void Frame::postdraw() {
-    framebuffer::unbind();
-    gui4x_fb.bindForWriting();
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	gui_fb.bindForReading();
-	gui_fb.blit();
-    framebuffer::unbind();
-    gui4x_fb.bindForReading();
-    gui4x_fb.blit();
-    framebuffer::unbind();
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+        return;
+    }
+    if (!*scale_ui) {
+        return;
+    }
+    if (*upscale_ui) {
+        framebuffer::unbind();
+        gui4x_fb.bindForWriting();
+	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    gui_fb.bindForReading();
+	    gui_fb.blit();
+        framebuffer::unbind();
+        gui4x_fb.bindForReading();
+        gui4x_fb.blit();
+        framebuffer::unbind();
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else {
+        framebuffer::unbind();
+	    gui_fb.bindForReading();
+	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	    gui_fb.blit();
+        framebuffer::unbind();
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
 }
 
 void Frame::draw() const {
