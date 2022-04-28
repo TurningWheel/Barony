@@ -168,11 +168,11 @@ Frame::~Frame() {
 }
 
 #ifndef EDITOR
-static ConsoleVariable<bool> upscale_ui("/upscale_ui", true);
+static ConsoleVariable<bool> upscale_ui("/upscale_ui", false);
 static ConsoleVariable<bool> scale_ui("/scale_ui", true);
 #else
 static const bool scale_ui_ = true;
-static const bool upscale_ui_ = true;
+static const bool upscale_ui_ = false;
 static const bool* upscale_ui = &upscale_ui_;
 static const bool* scale_ui = &scale_ui_;
 #endif
