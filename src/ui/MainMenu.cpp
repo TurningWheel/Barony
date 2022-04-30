@@ -12146,8 +12146,16 @@ bind_failed:
 	}
 
 	static void mainQuitToMainMenu(Button& button) {
-	    const char* prompt;
+	    savethisgame = false;
 	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (!client_disconnected[c] && players[c]->entity) {
+		            savethisgame = true;
+		        }
+		    }
+		}
+	    const char* prompt;
+	    if (savethisgame) {
 	        prompt = "All progress before the current\ndungeon level will be saved.";
 	    } else {
 	        prompt = "Are you sure you want to return\nto the main menu?";
@@ -12160,7 +12168,6 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				savethisgame = true;
 				beginFade(MainMenu::FadeDestination::RootMainMenu);
 			},
 			[](Button&){ // cancel
@@ -12853,6 +12860,256 @@ bind_failed:
         disconnectPrompt(text);
 	    pauseGame(2, 0);
 	}
+
+    void openGameoverWindow(int player, bool tutorial) {
+        // determine if any other players are alive
+		bool survivingPlayer = false;
+		for (int c = 0; c < MAXPLAYERS; c++) {
+			if (!client_disconnected[c] && players[c]->entity) {
+				survivingPlayer = true;
+				break;
+			}
+		}
+
+        // determine if we made highscore list
+	    int placement;
+	    score_t* score = scoreConstructor();
+	    Uint32 total = totalScore(score);
+	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores : &topscoresMultiplayer;
+	    if (list_Size(scoresPtr) < MAXTOPSCORES) {
+		    placement = list_Size(scoresPtr) + 1;
+	    } else {
+	        placement = 1;
+	        for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
+	            if (total > totalScore((score_t*)node->element)) {
+	                break;
+	            }
+	            ++placement;
+	        }
+	    }
+	    bool madetop = placement <= MAXTOPSCORES;
+	    scoreDeconstructor((void*)score);
+
+		// identify all inventory items
+		if (!survivingPlayer) {
+		    for (int i = 0; i < MAXPLAYERS; ++i) {
+			    if (!players[i]->isLocalPlayer()) {
+				    continue;
+			    }
+	            players[i]->shootmode = false; // open inventory
+			    for (auto node = stats[i]->inventory.first; node != NULL; node = node->next) {
+				    Item* item = (Item*)node->element;
+				    item->identified = true;
+			    }
+		    }
+		}
+
+		const SDL_Rect size{
+		    players[player]->camera_virtualx1(),
+		    players[player]->camera_virtualy1(),
+		    players[player]->camera_virtualWidth(),
+		    players[player]->camera_virtualHeight(),
+		};
+
+		Frame* dimmer = gameUIFrame[player]->addFrame("gameover");
+		dimmer->setActualSize(SDL_Rect{0, 0, size.w, size.h});
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setSize(size);
+		dimmer->setOwner(player);
+		dimmer->setBorder(0);
+		dimmer->setTickCallback([](Widget& widget){
+		    auto dimmer = static_cast<Frame*>(&widget);
+		    if (stats[widget.getOwner()]->HP > 0) {
+		        dimmer->removeSelf();
+		    }
+		    });
+
+		Frame* window = dimmer->addFrame("window");
+		window->setSize(SDL_Rect{(size.w - 500) / 2, -336, 500, 336});
+		window->setActualSize(SDL_Rect{0, 0, 500, 336});
+        window->setBorder(0);
+        window->setColor(0);
+
+        window->setTickCallback([](Widget& widget){
+            auto window = static_cast<Frame*>(&widget);
+            auto parent = static_cast<Frame*>(window->getParent());
+            auto size = window->getSize();
+            auto height = (parent->getSize().h - size.h) / 2;
+            if (size.y < height) {
+                int fallspeed = 32;
+                size.y += fallspeed;
+                if (size.y >= height) {
+                    size.y = height;
+                    playSound(511, 48); // death knell
+                }
+                window->setSize(size);
+            }
+            });
+
+        auto background = window->addImage(
+			SDL_Rect{0, 0, 500, 336},
+			0xffffffff,
+			"*images/ui/GameOver/UI_GameOver_BG_02D.png",
+			"background"
+            );
+
+        auto banner = window->addField("banner", 1024);
+        banner->setColor(makeColor(201, 162, 100, 255));
+        banner->setSize(SDL_Rect{110, 90, 280, 20});
+        banner->setFont(smallfont_no_outline);
+        banner->setJustify(Field::justify_t::CENTER);
+        if (survivingPlayer || multiplayer == SINGLE) {
+            banner->setText("You have died.");
+        } else {
+            banner->setText("Your party has been wiped out.");
+        }
+
+        const char* cause_of_death = "Unknown"; // TODO
+
+        const char* eulogy;
+        switch (rand() % 10) {
+        default:
+        case 0: eulogy = "We hardly knew ye."; break;
+        case 1: eulogy = "Rest In Peace."; break;
+        case 2: eulogy = "You will be missed."; break;
+        case 3: eulogy = "Until we meet again."; break;
+        case 4: eulogy = "Now at rest."; break;
+        case 5: eulogy = "Mourn not my death."; break;
+        case 6: eulogy = "Passed into memory."; break;
+        case 7: eulogy = "In Loving Memory."; break;
+        case 8: eulogy = "They sleep in memory."; break;
+        case 9: eulogy = "Gone but not forgotten."; break;
+        }
+
+        char epitaph_buf[1024];
+        if (tutorial) {
+            snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\nKilled by: %s\n\n%s",
+                stats[player]->name, cause_of_death, eulogy);
+        } else {
+            snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\nKilled by: %s\n\n%s",
+                stats[player]->name, cause_of_death, eulogy);
+        }
+
+        auto epitaph = window->addField("epitaph", 1024);
+        epitaph->setSize(SDL_Rect{106, 122, 288, 90});
+        epitaph->setFont(smallfont_outline);
+        epitaph->setTextColor(makeColor(168, 184, 156, 255));
+        epitaph->setOutlineColor(makeColor(46, 55, 57, 255));
+        epitaph->setJustify(Field::justify_t::CENTER);
+        epitaph->setText(epitaph_buf);
+
+        auto footer = window->addField("footer", 1024);
+        footer->setSize(SDL_Rect{94, 224, 312, 48});
+        footer->setFont(smallfont_outline);
+        footer->setTextColor(makeColor(170, 134, 102, 255));
+        footer->setOutlineColor(makeColor(29, 16, 11, 255));
+        footer->setJustify(Field::justify_t::CENTER);
+
+        if (tutorial) {
+            footer->setText("Learn from your failure\nto complete the test!");
+        } else {
+            char highscore_buf[256];
+            if (madetop) {
+                snprintf(highscore_buf, sizeof(highscore_buf),
+                    "You placed #%d\nin local highscores!", placement);
+            } else {
+                snprintf(highscore_buf, sizeof(highscore_buf),
+                    "You failed to place\nin local highscores.");
+            }
+            footer->setText(highscore_buf);
+        }
+
+        // TODO different buttons depending on game mode (ie tutorial)
+
+        if (survivingPlayer) {
+            auto dismiss = window->addButton("dismiss");
+            dismiss->setSize(SDL_Rect{(500 - 90) / 2, 294, 90, 34});
+            dismiss->setColor(makeColor(255, 255, 255, 255));
+            dismiss->setHighlightColor(makeColor(255, 255, 255, 255));
+            dismiss->setBackground("images/ui/GameOver/UI_GameOver_Button_Dismiss_02.png");
+            dismiss->setText("Dismiss");
+            dismiss->setFont(smallfont_outline);
+            dismiss->setTextColor(makeColor(170, 134, 102, 255));
+            dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
+            dismiss->setCallback([](Button& button){
+                soundCancel();
+                auto window = static_cast<Frame*>(button.getParent());
+                auto frame = static_cast<Frame*>(window->getParent());
+                frame->removeSelf();
+                });
+            dismiss->select();
+        } else {
+            auto quit = window->addButton("quit");
+            quit->setSize(SDL_Rect{76, 294, 124, 34});
+            quit->setColor(makeColor(255, 255, 255, 255));
+            quit->setHighlightColor(makeColor(255, 255, 255, 255));
+            quit->setBackground("images/ui/GameOver/UI_GameOver_Button_Quit_02.png");
+            quit->setText("Quit to Main");
+            quit->setFont(smallfont_outline);
+            quit->setTextColor(makeColor(170, 134, 102, 255));
+            quit->setTextHighlightColor(makeColor(170, 134, 102, 255));
+            quit->setCallback([](Button& button){
+                soundCancel();
+                auto window = static_cast<Frame*>(button.getParent());
+                auto frame = static_cast<Frame*>(window->getParent());
+                frame->removeSelf();
+
+	            savethisgame = false;
+				pauseGame(2, 0);
+				destroyMainMenu();
+				createDummyMainMenu();
+				beginFade(MainMenu::FadeDestination::RootMainMenu);
+                });
+            quit->setWidgetRight("restart");
+
+            auto restart = window->addButton("restart");
+            restart->setSize(SDL_Rect{202, 294, 124, 34});
+            restart->setColor(makeColor(255, 255, 255, 255));
+            restart->setHighlightColor(makeColor(255, 255, 255, 255));
+            restart->setBackground("images/ui/GameOver/UI_GameOver_Button_Lobby_02.png");
+            restart->setText("Restart");
+            restart->setFont(smallfont_outline);
+            restart->setTextColor(makeColor(170, 134, 102, 255));
+            restart->setTextHighlightColor(makeColor(170, 134, 102, 255));
+            restart->setCallback([](Button& button){
+                soundActivate();
+                auto window = static_cast<Frame*>(button.getParent());
+                auto frame = static_cast<Frame*>(window->getParent());
+                frame->removeSelf();
+
+				pauseGame(2, 0);
+				destroyMainMenu();
+				createDummyMainMenu();
+				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+					beginFade(MainMenu::FadeDestination::GameStart);
+				} else {
+				    tutorial_map_destination = map.filename;
+					beginFade(MainMenu::FadeDestination::HallOfTrials);
+				}
+                });
+            restart->select();
+
+            restart->setWidgetLeft("quit");
+            restart->setWidgetRight("dismiss");
+
+            auto dismiss = window->addButton("dismiss");
+            dismiss->setSize(SDL_Rect{328, 294, 96, 34});
+            dismiss->setColor(makeColor(255, 255, 255, 255));
+            dismiss->setHighlightColor(makeColor(255, 255, 255, 255));
+            dismiss->setBackground("images/ui/GameOver/UI_GameOver_Button_Restart_02.png");
+            dismiss->setText("Dismiss");
+            dismiss->setFont(smallfont_outline);
+            dismiss->setTextColor(makeColor(170, 134, 102, 255));
+            dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
+            dismiss->setCallback([](Button& button){
+                soundCancel();
+                auto window = static_cast<Frame*>(button.getParent());
+                auto frame = static_cast<Frame*>(window->getParent());
+                frame->removeSelf();
+                });
+            dismiss->setWidgetLeft("restart");
+        }
+    }
 
 	void receiveInvite() {
 	    assert(0 && "Received an invite. Behavior goes here!");

@@ -10925,6 +10925,9 @@ void doEndgameExpansion() {
 // opens the gameover window
 void openGameoverWindow()
 {
+	// deprecated
+    return;
+
 	node_t* node;
 	buttonCloseSubwindow(nullptr);
 	list_FreeAll(&button_l);

@@ -84,6 +84,7 @@ namespace MainMenu {
 
 	// special events:
 
+    void openGameoverWindow(int player, bool tutorial = false);
     void connectionErrorPrompt(const char* str);
 	void disconnectedFromServer(const char* text);
 	void receivedInvite();

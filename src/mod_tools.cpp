@@ -17,7 +17,9 @@ See LICENSE for details.
 #include "scores.hpp"
 #include "ui/Field.hpp"
 #include "ui/Image.hpp"
+#ifndef EDITOR
 #include "ui/MainMenu.hpp"
+#endif
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -115,9 +117,7 @@ void GameModeManager_t::Tutorial_t::openGameoverWindow()
 #else
 void GameModeManager_t::Tutorial_t::openGameoverWindow()
 {
-	// deprecated
-	assert(0 && "Make a new gameover window.");
-	return;
+	MainMenu::openGameoverWindow(0, true);
 }
 #endif
 
