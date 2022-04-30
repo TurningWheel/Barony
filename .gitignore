@@ -1,0 +1,15 @@
+books/*
+build/*
+data/*
+fonts/*
+images/*
+items/*
+maps/*
+models/*
+music/*
+sound/*
+src/Config.hpp
+.buildconfig
+steam_appid.txt
+*.o
+*.exe
