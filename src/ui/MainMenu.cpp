@@ -116,7 +116,7 @@ namespace MainMenu {
 	static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 	static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
 	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
-	static const char* menu_option_font = "fonts/pixelmix.ttf#16#2";
+	static const char* menu_option_font = "fonts/kongtext.ttf#16#2";
 	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
 
     // Inventory sorting options
@@ -299,6 +299,54 @@ namespace MainMenu {
 	static inline void soundDeleteSave() {
 		playSound(153, 48);
 	}
+
+/******************************************************************************/
+
+	static ConsoleCommand ccmd_testFontDel("/testfont_del", "delete test font window",
+	    [](int argc, const char** argv){
+        assert(gui);
+        auto frame = gui->findFrame("test_font_frame");
+        if (frame) {
+            frame->removeSelf();
+        }
+	    });
+
+	static ConsoleCommand ccmd_testFont("/testfont", "display test font window (args: fontFilename minSize maxSize outlineSize)",
+	    [](int argc, const char** argv){
+        const char* font = argc >= 2 ? argv[1] : "fonts/alphbeta.ttf";
+        const int minSize = argc >= 3 ? (int)strtol(argv[2], nullptr, 10) : 4;
+        const int maxSize = argc >= 4 ? (int)strtol(argv[3], nullptr, 10) : 16;
+        const int outline = argc >= 5 ? (int)strtol(argv[4], nullptr, 10) : 2;
+
+        auto frame = gui->addFrame("test_font_frame");
+        frame->setSize(SDL_Rect{16, 16, Frame::virtualScreenX - 32, Frame::virtualScreenY - 32});
+        frame->setColor(makeColor(127, 127, 127, 255));
+        frame->setBorder(0);
+
+        auto button = frame->addButton("close");
+        button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
+        button->setFont(smallfont_outline);
+        button->setText("x");
+        button->setCallback([](Button& button){
+            auto parent = static_cast<Frame*>(button.getParent());
+            parent->removeSelf();
+            });
+
+        const char str[] = "The quick brown fox jumps over the lazy dog.";
+
+        assert(gui);
+        char buf[256];
+        int y = 0;
+        for (int size = maxSize; size >= minSize; --size) {
+            snprintf(buf, sizeof(buf), "%s#%d#%d", font, size, outline);
+            auto field = frame->addField("field", sizeof(str));
+            field->setText(str);
+            field->setFont(buf);
+            auto text = field->getTextObject();
+            field->setSize(SDL_Rect{0, y, frame->getSize().w, (int)text->getHeight()});
+            y += text->getHeight();
+        }
+	    });
 
 /******************************************************************************/
 
@@ -11607,14 +11655,15 @@ bind_failed:
 
 		struct Option {
 			const char* name;
+			const char* text;
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			{"Leaderboards", archivesLeaderboards},
-			{"Dungeon Compendium", archivesDungeonCompendium},
-			{"Story Introduction", archivesStoryIntroduction},
-			{"Credits", archivesCredits},
-			{"Back to Main Menu", archivesBackToMainMenu}
+			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
+			{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium},
+			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
+			{"Credits", "CREDITS", archivesCredits},
+			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 
@@ -11632,7 +11681,7 @@ bind_failed:
 			button->setBorder(8);
 			button->setHJustify(Button::justify_t::LEFT);
 			button->setVJustify(Button::justify_t::CENTER);
-			button->setText(options[c].name);
+			button->setText(options[c].text);
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setHideSelectors(false);
@@ -12631,56 +12680,55 @@ bind_failed:
 
 		struct Option {
 			const char* name;
+			const char* text;
 			void (*callback)(Button&);
 		};
 		std::vector<Option> options;
 		if (ingame) {
 	        options.insert(options.begin(), {
-		        {"Back to Game", mainClose},
-		        {"Assign Controllers", mainAssignControllers},
-		        {"Dungeon Compendium", archivesDungeonCompendium},
-		        {"Settings", mainSettings},
+		        {"Back to Game", "BACK TO GAME", mainClose},
+		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
+		        {"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium},
+		        {"Settings", "SETTINGS", mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 			    options.insert(options.end(), {
-				    {"End Life", mainEndLife},
-				    {"Restart Game", mainRestartGame},
+				    {"End Life", "END LIFE", mainEndLife},
+				    {"Restart Game", "RESTART GAME", mainRestartGame},
 				    });
 			} else {
 			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
 			        options.insert(options.end(), {
-				        {"Restart Trial", mainRestartGame},
-				        {"Return to Hall of Trials", mainReturnToHallofTrials},
+				        {"Restart Trial", "RESTART TRIAL", mainRestartGame},
+				        {"Return to Hall of Trials", "RETURN TO HALL OF TRIALS", mainReturnToHallofTrials},
 				        });
 				} else {
 			        options.insert(options.end(), {
-				        {"Reset Hall of Trials", mainReturnToHallofTrials},
+				        {"Reset Hall of Trials", "RESET HALL OF TRIALS", mainReturnToHallofTrials},
 				        });
 				}
 			}
 	        options.insert(options.end(), {
-		        {"Quit to Main Menu", mainQuitToMainMenu},
-		        //{"Quit to Desktop", mainQuitToDesktop},
+		        {"Quit to Main Menu", "QUIT TO MAIN MENU", mainQuitToMainMenu},
+		        //{"Quit to Desktop", "QUIT TO DESKTOP", mainQuitToDesktop},
 		        });
 		} else {
-#ifdef NINTENDO
 			options.insert(options.begin(), {
-				{"Play", mainPlayGame},
-				{"Adventure Archives", mainArchives},
-				{"Settings", mainSettings},
-				});
+#if defined(NINTENDO)
+				{"Play Game", "PLAY", mainPlayGame},
 #else
-			options.insert(options.begin(), {
-				{"Play Game", mainPlayGame},
-				{"Play Modded Game", mainPlayModdedGame},
-				{"Adventure Archives", mainArchives},
-				{"Settings", mainSettings},
-#ifndef NDEBUG
-			    {"Editor", mainEditor},
+				{"Play Game", "PLAY GAME", mainPlayGame},
+				{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame},
 #endif
-				{"Quit", mainQuitToDesktop},
+				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
+				{"Settings", "SETTINGS", mainSettings},
+#if !defined(NINTENDO)
+#if !defined(NDEBUG)
+			    {"Editor", "EDITOR", mainEditor},
+#endif
+				{"Quit", "QUIT", mainQuitToDesktop},
+#endif
 				});
-#endif
 		}
 
 		const int num_options = options.size();
@@ -12703,7 +12751,7 @@ bind_failed:
 			button->setBorder(8);
 			button->setHJustify(Button::justify_t::LEFT);
 			button->setVJustify(Button::justify_t::CENTER);
-			button->setText(options[c].name);
+			button->setText(options[c].text);
 			button->setFont(menu_option_font);
 			button->setBackground("*#images/ui/Main Menus/Main/UI_MainMenu_SelectorBar00.png");
 			button->setHideSelectors(false);
