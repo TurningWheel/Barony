@@ -113,7 +113,7 @@ void actDeathCam(Entity* my)
 			}
 			else
 			{
-				openGameoverWindow();
+				MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 			}
 		}
 	}

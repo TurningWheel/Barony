@@ -5963,10 +5963,10 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 	case 5:
 		fullMapName = physfsFormatMapName("mainmenu5");
 		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
-		menucam.x = 30.8;
-		menucam.y = 24.3;
+		menucam.x = 12.1;
+		menucam.y = 5.8;
 		menucam.z = 0;
-		menucam.ang = 2.76;
+		menucam.ang = 2.72;
 		return 0;
 	case 6:
 		fullMapName = physfsFormatMapName("mainmenu6");

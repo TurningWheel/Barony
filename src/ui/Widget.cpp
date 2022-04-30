@@ -53,7 +53,7 @@ void Widget::activate() {
 }
 
 void Widget::process() {
-	if (!disabled) {
+	if (!disabled && !toBeDeleted) {
 		if (tickCallback) {
 			(*tickCallback)(*this);
 		}

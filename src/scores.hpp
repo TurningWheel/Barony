@@ -16,7 +16,7 @@
 #define SCORESFILE_MULTIPLAYER "scores_multiplayer.dat"
 
 // game score structure
-#define MAXTOPSCORES 30
+#define MAXTOPSCORES 100
 #define NUM_CONDUCT_CHALLENGES 32
 #define NUM_GAMEPLAY_STATISTICS 64
 
@@ -307,6 +307,7 @@ struct SaveGameInfo {
     int dungeon_lvl;
     int player_lvl;
     int player_num;
+    bool players_connected[MAXPLAYERS];
     std::string timestamp;
     int multiplayer_type;
 };

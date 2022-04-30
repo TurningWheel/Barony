@@ -185,7 +185,7 @@ struct framebuffer {
 	    glBindTexture(GL_TEXTURE_2D, fbo_color);
     }
 
-    void blit() {
+    static void blit() {
 	    glDisable(GL_DEPTH_TEST);
 	    glDisable(GL_LIGHTING);
 	    glColor4f(1.f, 1.f, 1.f, 1.f);

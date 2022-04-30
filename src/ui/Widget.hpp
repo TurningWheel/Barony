@@ -45,6 +45,7 @@ public:
     bool			    isSelected() const { return selected; }
     bool			    isDisabled() const { return disabled; }
     bool                isInvisible() const { return invisible; }
+    bool                isToBeDeleted() const { return toBeDeleted; }
     bool                isHideGlyphs() const { return hideGlyphs; }
     bool                isHideKeyboardGlyphs() const { return hideKeyboardGlyphs; }
     bool                isHideSelectors() const { return hideSelectors; }

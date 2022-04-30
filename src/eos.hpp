@@ -686,7 +686,7 @@ public:
 				}
 				else
 				{
-					static char buffer[EOS_EPICACCOUNTID_MAX_LENGTH];
+					static char buffer[EOS_EPICACCOUNTID_MAX_LENGTH + 1];
 					int bufferSize = sizeof(buffer);
 					EOS_EResult result = EOS_EpicAccountId_ToString(id, buffer, &bufferSize);
 					if ( result == EOS_EResult::EOS_Success )

@@ -4714,7 +4714,7 @@ void doSharedMinimap() {
                 minimap->setInvisible(false);
             }
             if (playercount == 3) {
-                constexpr int size = std::min(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2);
+                const int size = std::min(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2);
                 minimap->setSize(SDL_Rect{
                     (Frame::virtualScreenX + ((Frame::virtualScreenX / 2) - size)) / 2,
                     (Frame::virtualScreenY + ((Frame::virtualScreenY / 2) - size)) / 2,

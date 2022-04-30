@@ -57,6 +57,39 @@ void packetDeconstructor(void* data)
 	free(data);
 }
 
+void pollNetworkForShutdown() {
+	// handle network messages
+	if ( !(SDL_GetTicks() % 25) && multiplayer )
+	{
+		int j = 0;
+		node_t* node, *nextnode;
+		for ( node = safePacketsSent.first; node != NULL; node = nextnode )
+		{
+			nextnode = node->next;
+
+			packetsend_t* packet = (packetsend_t*)node->element;
+			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
+			packet->tries++;
+			if ( packet->tries >= MAXTRIES )
+			{
+				list_RemoveNode(node);
+			}
+			j++;
+			if ( j >= MAXDELETES )
+			{
+				break;
+			}
+		}
+	}
+#ifdef STEAMWORKS
+	SteamAPI_RunCallbacks();
+#endif // STEAMWORKS
+#ifdef USE_EOS
+	EOS_Platform_Tick(EOS.PlatformHandle);
+	EOS_Platform_Tick(EOS.ServerPlatformHandle);
+#endif // USE_EOS
+}
+
 /*-------------------------------------------------------------------------------
 
 	sendPacket
@@ -77,10 +110,13 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 	}
 	else
 	{
+	    if (hostnum < 0 || hostnum >= MAXPLAYERS) {
+	        return 0;
+	    }
 		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
-			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			if ( steamIDRemote[hostnum] )
 			{
 				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
 			}
@@ -116,9 +152,9 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 Uint32 packetnum = 0;
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 {
-	if ( hostnum < 0 )
+	if ( hostnum < 0 || hostnum >= MAXPLAYERS )
 	{
-		printlog("[NET]: Error - attempt to send to negative hostnum: %d", hostnum);
+		printlog("[NET]: Error - attempt to send to non-valid hostnum: %d", hostnum);
 		return 0;
 	}
 
@@ -187,7 +223,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
-			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			if ( steamIDRemote[hostnum] )
 			{
 				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
 			}
@@ -1373,7 +1409,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		if ( net_packet->data[48] == 0 )
 		{
 			// client will enter any player spot
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
 				if ( client_disconnected[c] == true )
 				{
@@ -2440,7 +2476,7 @@ void clientHandlePacket()
 			if (!victory)
 			{
 				printlog("The remote server has shut down.\n");
-				MainMenu::disconnectedFromServer();
+				MainMenu::disconnectedFromServer("The remote host has shutdown.");
 			}
 		}
 		return;
@@ -6043,6 +6079,14 @@ void closeNetworkInterfaces()
 		SDLNet_FreeSocketSet(tcpset);
 		tcpset = nullptr;
 	}
+#ifdef STEAMWORKS
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (steamIDRemote[c]) {
+            cpp_Free_CSteamID(steamIDRemote[c]);
+            steamIDRemote[c] = NULL;
+        }
+    }
+#endif
 }
 
 

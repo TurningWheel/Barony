@@ -9677,16 +9677,29 @@ void doNewGame(bool makeHighscore) {
 			}
 		}
 
-		// reset class loadout
-		if ( !loadingsavegame )
-		{
-			stats[clientnum]->clearStats();
-			initClass(clientnum);
+        if ( !loadingsavegame )
+        {
 			mapseed = 0;
 		}
-		else
-		{
-			loadGame(clientnum);
+
+		// reset class loadout
+	    for ( int c = 0; c < MAXPLAYERS; ++c )
+	    {
+		    if ( players[c]->isLocalPlayer() )
+		    {
+		        if ( !client_disconnected[c] )
+		        {
+		            if ( !loadingsavegame )
+		            {
+			            stats[c]->clearStats();
+			            initClass(c);
+		            }
+		            else
+		            {
+			            loadGame(c);
+		            }
+		        }
+		    }
 		}
 
 		// hack to fix these things from breaking everything...
@@ -10912,6 +10925,9 @@ void doEndgameExpansion() {
 // opens the gameover window
 void openGameoverWindow()
 {
+	// deprecated
+    return;
+
 	node_t* node;
 	buttonCloseSubwindow(nullptr);
 	list_FreeAll(&button_l);

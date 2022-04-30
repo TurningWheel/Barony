@@ -70,6 +70,7 @@ void clientHandleMessages(Uint32 framerateBreakInterval);
 void serverHandleMessages(Uint32 framerateBreakInterval);
 bool handleSafePacket();
 
+void pollNetworkForShutdown();
 void closeNetworkInterfaces();
 
 // server/game flags

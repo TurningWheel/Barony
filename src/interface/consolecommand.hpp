@@ -97,3 +97,9 @@ private:
     using cvar_map_t = std::map<std::string, ConsoleVariable<T>&>;
     static cvar_map_t& getConsoleVariables();
 };
+
+// Valid ConsoleVariable types:
+extern template class ConsoleVariable<std::string>;
+extern template class ConsoleVariable<int>;
+extern template class ConsoleVariable<float>;
+extern template class ConsoleVariable<bool>;
