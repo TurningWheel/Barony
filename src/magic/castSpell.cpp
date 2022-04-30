@@ -2036,19 +2036,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					entity->sprite = 173;
 				}
-				if (newbie)
-				{
-					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-					chance = rand() % 10;
-					if (chance >= spellcasting / 10)
-					{
-						element->damage -= rand() % (100 / (spellcasting + 1));
-					}
-					if (element->damage < 10)
-					{
-						element->damage = 10;    //Range checking.
-					}
-				}
+
+				// !-- DONT MODIFY element->damage since this affects every subsequent spellcast, removing this aspect as unnecessary 05/04/22
+				//if (newbie)
+				//{
+				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				//	chance = rand() % 10;
+				//	if (chance >= spellcasting / 10)
+				//	{
+				//		element->damage -= rand() % (100 / (spellcasting + 1));
+				//	}
+				//	if (element->damage < 10)
+				//	{
+				//		element->damage = 10;    //Range checking.
+				//	}
+				//}
 			}
 			else if (!strcmp(element->name, spellElement_fire.name))
 			{
@@ -2061,19 +2063,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					//playSoundEntity( entity, 59, 128 );
 				}
-				if (newbie)
-				{
-					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-					chance = rand() % 10;
-					if (chance >= spellcasting / 10)
-					{
-						element->damage -= rand() % (100 / (spellcasting + 1));
-					}
-					if (element->damage < 10)
-					{
-						element->damage = 10;    //Range checking.
-					}
-				}
+				// !-- DONT MODIFY element->damage since this affects every subsequent spellcast, removing this aspect as unnecessary 05/04/22
+				//if (newbie)
+				//{
+				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				//	chance = rand() % 10;
+				//	if (chance >= spellcasting / 10)
+				//	{
+				//		element->damage -= rand() % (100 / (spellcasting + 1));
+				//	}
+				//	if (element->damage < 10)
+				//	{
+				//		element->damage = 10;    //Range checking.
+				//	}
+				//}
 			}
 			else if ( !strcmp(element->name, spellElement_lightning.name) )
 			{
@@ -2081,19 +2084,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					entity->sprite = 170;
 				}
-				if ( newbie )
-				{
-					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-					chance = rand() % 10;
-					if ( chance >= spellcasting / 10 )
-					{
-						element->damage -= rand() % (100 / (spellcasting + 1));
-					}
-					if ( element->damage < 10 )
-					{
-						element->damage = 10;    //Range checking.
-					}
-				}
+				// !-- DONT MODIFY element->damage since this affects every subsequent spellcast, removing this aspect as unnecessary 05/04/22
+				//if ( newbie )
+				//{
+				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				//	chance = rand() % 10;
+				//	if ( chance >= spellcasting / 10 )
+				//	{
+				//		element->damage -= rand() % (100 / (spellcasting + 1));
+				//	}
+				//	if ( element->damage < 10 )
+				//	{
+				//		element->damage = 10;    //Range checking.
+				//	}
+				//}
 			}
 			else if ( !strcmp(element->name, spellElement_stoneblood.name) )
 			{

@@ -79,20 +79,23 @@ void actSummonTrap(Entity* my)
 				else
 				{
 					// pick a completely random monster (barring some exceptions)
-	                constexpr Monster types_to_skip[] = {
+					const std::set<Monster> typesToSkip
+					{
 	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, OCTOPUS,
 	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
 	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
 	                };
-	                constexpr int num_to_skip = sizeof(types_to_skip) / sizeof(types_to_skip[0]);
-	                constexpr int num_monsters_to_pick = NUMMONSTERS - num_to_skip;
-	                int monsterIndex = rand() % num_monsters_to_pick;
-	                for (int c = 0; c < num_to_skip; ++c) {
-                        if (monsterIndex >= (int)types_to_skip[c]) {
-                            ++monsterIndex;
-                        }
-	                }
-	                SUMMONTRAP_MONSTER = monsterIndex;
+	                
+					std::vector<Monster> possibleTypes;
+					for ( int i = 0; i < NUMMONSTERS; ++i )
+					{
+						const Monster mon = static_cast<Monster>(i);
+						if ( typesToSkip.find(mon) == typesToSkip.end() )
+						{
+							possibleTypes.push_back(mon);
+						}
+					}
+	                SUMMONTRAP_MONSTER = possibleTypes.at(rand() % possibleTypes.size());
 				}
 
 				int count = 0;

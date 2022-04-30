@@ -1170,7 +1170,33 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
-			if ( player.inventoryUI.chestGUI.bOpen )
+			if ( player.shopGUI.bOpen && player.gui_mode == GUI_MODE_SHOP )
+			{
+				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+				{
+					if ( !checkDestinationOnly ) // no action
+					{
+						activateModule(MODULE_INVENTORY);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_INVENTORY;
+				}
+				else
+				{
+					if ( !checkDestinationOnly )
+					{
+						player.inventory_mode = INVENTORY_MODE_ITEM;
+						activateModule(MODULE_SHOP);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_SHOP;
+				}
+			}
+			else if ( player.inventoryUI.chestGUI.bOpen )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1214,6 +1240,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
@@ -1226,6 +1256,19 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_CHEST
 			&& (player.inventoryUI.chestGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( !checkDestinationOnly )
+			{
+				player.inventory_mode = INVENTORY_MODE_ITEM;
+				activateModule(MODULE_INVENTORY);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavLeftBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_SHOP
+			&& (player.shopGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
@@ -1322,7 +1365,33 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		if ( activeModule == MODULE_INVENTORY 
 			&& (player.inventoryUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
-			if ( player.inventoryUI.chestGUI.bOpen )
+			if ( player.shopGUI.bOpen && player.gui_mode == GUI_MODE_SHOP )
+			{
+				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+				{
+					if ( !checkDestinationOnly ) // no action
+					{
+						activateModule(MODULE_INVENTORY);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavRightBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_INVENTORY;
+				}
+				else
+				{
+					if ( !checkDestinationOnly )
+					{
+						player.inventory_mode = INVENTORY_MODE_ITEM;
+						activateModule(MODULE_SHOP);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavRightBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_SHOP;
+				}
+			}
+			else if ( player.inventoryUI.chestGUI.bOpen )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1350,6 +1419,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_SPELLS 
 			&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
 		{
+			if ( player.shopGUI.bOpen || player.inventoryUI.chestGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			if ( !checkDestinationOnly )
 			{
 				activateModule(MODULE_HOTBAR);
@@ -1362,6 +1435,19 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_CHEST
 			&& (player.inventoryUI.chestGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( !checkDestinationOnly )
+			{
+				player.inventory_mode = INVENTORY_MODE_ITEM;
+				activateModule(MODULE_INVENTORY);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavRightBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_SHOP
+			&& (player.shopGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
 		{
 			if ( !checkDestinationOnly )
 			{
@@ -1541,6 +1627,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedChestY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+		{
+			select_shop_slot(player,
+				players[player]->shopGUI.getSelectedShopX(),
+				players[player]->shopGUI.getSelectedShopY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1581,6 +1674,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_chest_slot(player,
 				players[player]->inventoryUI.getSelectedChestX(),
 				players[player]->inventoryUI.getSelectedChestY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+		{
+			select_shop_slot(player,
+				players[player]->shopGUI.getSelectedShopX(),
+				players[player]->shopGUI.getSelectedShopY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -1678,6 +1778,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedChestY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+		{
+			select_shop_slot(player,
+				players[player]->shopGUI.getSelectedShopX(),
+				players[player]->shopGUI.getSelectedShopY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1773,6 +1880,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedChestY(),
 				0, 1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+		{
+			select_shop_slot(player,
+				players[player]->shopGUI.getSelectedShopX(),
+				players[player]->shopGUI.getSelectedShopY(),
+				0, 1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1795,61 +1909,6 @@ bool Player::GUI_t::handleInventoryMovement()
 	{
 		dpad_moved = false;
 		inputs.getVirtualMouse(player)->draw_cursor = false;
-
-		return true;
-	}
-
-	return false;
-}
-
-
-bool GameController::handleShopMovement(const int player)
-{
-	bool dpad_moved = false;
-
-	if ( inputs.getUIInteraction(player)->itemMenuOpen )
-	{
-		return false;
-	}
-
-	/*
-	//I would love to just do these, but it just wouldn't work with the way the code is set up.
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_LEFT) )
-	{
-		cycleShopCategories(-1);
-		inputs.controllerClearInput(player, INJOY_DPAD_LEFT);
-
-		dpad_moved = true;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_RIGHT) )
-	{
-		cycleShopCategories(1);
-		inputs.controllerClearInput(player, INJOY_DPAD_RIGHT);
-
-		dpad_moved = true;
-	}*/
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
-	{
-		selectShopSlot(player, selectedShopSlot[player] - 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_UP);
-
-		dpad_moved = true;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
-	{
-		selectShopSlot(player, selectedShopSlot[player] + 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
-
-		dpad_moved = true;
-	}
-
-	if (dpad_moved)
-	{
-		dpad_moved = false;
-		//inputs.getVirtualMouse(player)->draw_cursor = false;
 
 		return true;
 	}
@@ -2288,7 +2347,8 @@ Player::Player(int in_playernum, bool in_local_host) :
 	hotbar(*this),
 	bookGUI(*this),
 	paperDoll(*this),
-	minimap(*this)
+	minimap(*this),
+	shopGUI(*this)
 {
 	local_host = false;
 	playernum = in_playernum;
@@ -2309,8 +2369,6 @@ void Player::init() // for use on new/restart game, UI related
 	hud.resetBars();
 	hud.compactLayoutMode = HUD_t::COMPACT_LAYOUT_INVENTORY;
 	inventoryUI.resetInventory();
-	selectedShopSlot[playernum] = -1;
-	shopinventorycategory[playernum] = -1;
 	characterSheet.setDefaultSkillsSheetBox();
 	characterSheet.setDefaultPartySheetBox();
 	characterSheet.setDefaultCharacterSheetBox();
@@ -2321,8 +2379,6 @@ void Player::cleanUpOnEntityRemoval()
 {
 	if ( isLocalPlayer() )
 	{
-		//selectedShopSlot[playernum] = -1;
-		//shopinventorycategory[playernum] = -1;
 		hud.reset();
 		movement.reset();
 		worldUI.reset();
@@ -3811,6 +3867,40 @@ bool Player::Inventory_t::warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 
 	return false;
 }
 
+bool Player::ShopGUI_t::warpMouseToSelectedShopItem(Item* snapToItem, Uint32 flags)
+{
+	if ( shopFrame )
+	{
+		int x = getSelectedShopX();
+		int y = getSelectedShopY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( auto slot = getShopSlotFrame(x, y) )
+		{
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select item queued");
+				player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_SHOP;
+				player.inventoryUI.cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select item warped");
+				player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				player.inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+				slot->warpMouseToFrame(player.playernum, flags);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 {
 	if ( frame )
@@ -3853,9 +3943,28 @@ Frame* Player::Inventory_t::getChestSlotFrame(int x, int y) const
 	return nullptr;
 }
 
+Frame* Player::ShopGUI_t::getShopSlotFrame(int x, int y) const
+{
+	if ( shopFrame )
+	{
+		int key = x + y * 100;
+		if ( shopSlotFrames.find(key) != shopSlotFrames.end() )
+		{
+			return shopSlotFrames.at(key);
+		}
+		//assert(shopSlotFrames.find(key) == shopSlotFrames.end());
+	}
+	return nullptr;
+}
+
+
 Frame* Player::Inventory_t::getItemSlotFrame(Item* item, int x, int y) const
 {
-	if ( item && isItemFromChest(item) )
+	if ( item && player.shopGUI.isItemFromShop(item) )
+	{
+		return player.shopGUI.getShopSlotFrame(x, y);
+	}
+	else if ( item && isItemFromChest(item) )
 	{
 		return getChestSlotFrame(x, y);
 	}

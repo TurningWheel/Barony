@@ -25,6 +25,8 @@
 #include "net.hpp"
 #include "player.hpp"
 
+#include <assert.h>
+
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
@@ -78,6 +80,8 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->uid = itemuids;
 	item->ownerUid = 0;
 	item->isDroppable = true;
+	item->playerSoldItemToShop = false;
+	item->itemHiddenFromShop = false;
 	if ( inventory )
 	{
 		Player::Inventory_t* playerInventoryUI = nullptr;
@@ -1766,76 +1770,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		usedBy = players[player]->entity;
 	}
 
-	if ( player >= 0 && players[player]->isLocalPlayer() && players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
-	{
-		bool deal = true;
-		switch ( shopkeepertype[player] )
-		{
-			case 0: // arms & armor
-				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
-				{
-					deal = false;
-				}
-				break;
-			case 1: // hats
-				if ( itemCategory(item) != ARMOR )
-				{
-					deal = false;
-				}
-				break;
-			case 2: // jewelry
-				if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
-				{
-					deal = false;
-				}
-				break;
-			case 3: // bookstore
-				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
-				{
-					deal = false;
-				}
-				break;
-			case 4: // potion shop
-				if ( itemCategory(item) != POTION )
-				{
-					deal = false;
-				}
-				break;
-			case 5: // magicstaffs
-				if ( itemCategory(item) != MAGICSTAFF )
-				{
-					deal = false;
-				}
-				break;
-			case 6: // food
-				if ( itemCategory(item) != FOOD )
-				{
-					deal = false;
-				}
-				break;
-			case 7: // tools
-			case 8: // lights
-				if ( itemCategory(item) != TOOL )
-				{
-					deal = false;
-				}
-				break;
-			default:
-				break;
-		}
-		if ( deal )
-		{
-			sellitem[player] = item;
-			shopspeech[player] = language[215];
-			shoptimer[player] = ticks - 1;
-		}
-		else
-		{
-			shopspeech[player] = language[212 + rand() % 3];
-			shoptimer[player] = ticks - 1;
-		}
-		return;
-	}
 
 	if ( item->status == BROKEN && player >= 0 && players[player]->isLocalPlayer() )
 	{
@@ -2864,6 +2798,9 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		}
 		if ( !appearancesOfSimilarItems.empty() )
 		{
+			Uint32 originalAppearance = item->appearance;
+			int originalVariation = originalAppearance % items[item->type].variations;
+
 			int tries = 100;
 			bool robot = false;
 			// we need to find a unique appearance within the list.
@@ -2876,6 +2813,18 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 			else
 			{
 				item->appearance = rand();
+				if ( item->appearance % items[item->type].variations != originalVariation )
+				{
+					// we need to match the variation for the new appearance, take the difference so new varation matches
+					int change = (item->appearance % items[item->type].variations - originalVariation);
+					if ( item->appearance < change ) // underflow protection
+					{
+						item->appearance += items[item->type].variations;
+					}
+					item->appearance -= change;
+					int newVariation = item->appearance % items[item->type].variations;
+					assert(newVariation == originalVariation);
+				}
 			}
 			auto it = appearancesOfSimilarItems.find(item->appearance);
 			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
@@ -2887,6 +2836,18 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				else
 				{
 					item->appearance = rand();
+					if ( item->appearance % items[item->type].variations != originalVariation )
+					{
+						// we need to match the variation for the new appearance, take the difference so new varation matches
+						int change = (item->appearance % items[item->type].variations - originalVariation);
+						if ( item->appearance < change ) // underflow protection
+						{
+							item->appearance += items[item->type].variations;
+						}
+						item->appearance -= change;
+						int newVariation = item->appearance % items[item->type].variations;
+						assert(newVariation == originalVariation);
+					}
 				}
 				it = appearancesOfSimilarItems.find(item->appearance);
 				--tries;
@@ -3317,6 +3278,10 @@ Item** itemSlot(Stat* const myStats, Item* const item)
 
 bool itemIsEquipped(const Item* const item, const int player)
 {
+	if ( player < 0 || !stats[player] )
+	{
+		return false;
+	}
 	if ( !item->node || item->node->list != &stats[player]->inventory )
 	{
 		return false;
@@ -5202,6 +5167,15 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 		}
 	}
 	return false;
+}
+
+bool Item::shouldItemStackInShop(bool ignoreStackLimit)
+{
+	node_t* itemNode = node;
+	node = nullptr; // to make isEquipped return false in shouldItemStack
+	bool result = shouldItemStack(clientnum, ignoreStackLimit);
+	node = itemNode;
+	return result;
 }
 
 

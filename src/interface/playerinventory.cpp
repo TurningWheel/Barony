@@ -70,7 +70,8 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 		return false;
 	}
 
-	players[player]->gui_mode = GUI_MODE_INVENTORY;
+	int oldGUI = players[player]->gui_mode;
+	players[player]->gui_mode = GUI_MODE_INVENTORY; // this makes sure we don't try sell the item or something
 
 	if ( droppingAndUnequipping )
 	{
@@ -80,6 +81,8 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 	{
 		players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
 	}
+
+	players[player]->gui_mode = oldGUI;
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -118,10 +121,12 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	//	return false;
 	//}
 
-	Entity* oldChest = openedChest[player];
 	int oldGUI = players[player]->gui_mode;
+	players[player]->gui_mode = GUI_MODE_INVENTORY; // this makes sure we don't try sell the item or something
 
 	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
+
+	players[player]->gui_mode = oldGUI;
 
 	players[player]->paperDoll.updateSlots();
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
@@ -1478,6 +1483,37 @@ void select_chest_slot(int player, int currentx, int currenty, int diffx, int di
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	int lowestItemY = players[player]->shopGUI.MAX_SHOP_Y - 1;
+	if ( y < 0 )
+	{
+		y = lowestItemY;
+	}
+	if ( y > lowestItemY )
+	{
+		y = 0;
+	}
+
+	if ( x < 0 )
+	{
+		players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, y);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		return;
+	}
+	if ( x >= players[player]->shopGUI.MAX_SHOP_X )
+	{
+		players[player]->inventoryUI.selectSlot(0, y);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		return;
+	}
+	players[player]->shopGUI.selectShopSlot(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	int x = currentx + diffx;
@@ -1772,6 +1808,20 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 			return;
 		}
+		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
+		{
+			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
+			{
+				y = players[player]->shopGUI.MAX_SHOP_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			select_shop_slot(player, players[player]->shopGUI.MAX_SHOP_X - 1, y, 0, 0);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+			return;
+		}
 		else
 		{
 			x = inventoryUI.getSizeX() - 1;
@@ -1792,6 +1842,20 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			}
 			select_chest_slot(player, 0, y, 0, 0);
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+			return;
+		}
+		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
+		{
+			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
+			{
+				y = players[player]->shopGUI.MAX_SHOP_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			select_shop_slot(player, 0, y, 0, 0);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
 			return;
 		}
 		else
@@ -1862,19 +1926,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
-		if ( players[player]->gui_mode == GUI_MODE_SHOP )
-		{
-			warpInv = false;
-			y = inventoryUI.getSizeY() - 1; //Keeps the selected slot within the inventory, to warp back to later.
-
-			//Warp into shop inventory if shopkeep has any items.
-			if ( shopinvitems[player][0] )
-			{
-				selectedShopSlot[player] = 0;
-				warpMouseToSelectedShopSlot(player);
-			}
-		}
-		else if ( GenericGUI[player].isGUIOpen() )
+		if ( GenericGUI[player].isGUIOpen() )
 		{
 			warpInv = false;
 			y = inventoryUI.getSizeY() - 1;
@@ -3737,7 +3789,9 @@ void Player::Inventory_t::cycleInventoryTab()
 	{
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_SPELL;
-		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP )
 		{
 			player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 			if ( auto selectedItem = inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -3759,6 +3813,13 @@ void Player::Inventory_t::cycleInventoryTab()
 			{
 				player.GUI.warpControllerToModule(false);
 			}
+		}
+
+		if ( player.shopGUI.bOpen )
+		{
+			// once off - since we usually set the gui_mode to inventory on opening spell panel
+			// this makes sure we go back into the shop gui mode after browsing our spells and returning to inventory.
+			player.gui_mode = GUI_MODE_SHOP; 
 		}
 	}
 }
@@ -5577,7 +5638,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !itemMenuOpen && !selectedItem && !inputs.getVirtualMouse(player)->draw_cursor && !players[player]->shootmode )
+	if ( !itemMenuOpen 
+		&& !selectedItem 
+		&& !inputs.getVirtualMouse(player)->draw_cursor 
+		&& !players[player]->shootmode
+		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{
 		auto options = getContextTooltipOptionsForItem(player, item);
 
@@ -6045,6 +6110,8 @@ void Player::Inventory_t::updateInventory()
 	assert(frame);
 	assert(tooltipFrame);
 
+	auto& shopGUI = this->player.shopGUI;
+
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
 	{
@@ -6156,30 +6223,14 @@ void Player::Inventory_t::updateInventory()
 	if ( inputs.hasController(player) )
 	{
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
-		if ( players[player]->gui_mode == GUI_MODE_SHOP )
-		{
-			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_LEFT) )
-			{
-				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_LEFT);
-				cycleShopCategories(player, -1);
-			}
-			if ( inputs.bControllerInputPressed(player, INJOY_MENU_CYCLE_SHOP_RIGHT) )
-			{
-				inputs.controllerClearInput(player, INJOY_MENU_CYCLE_SHOP_RIGHT);
-				cycleShopCategories(player, 1);
-			}
-		}
-
 		if ( radialMenuOpen )
 		{
 			// do nothing?
 		}
-		else if ( selectedShopSlot[player] < 0
-			&& !itemMenuOpen && GenericGUI[player].selectedSlot < 0
+		else if ( !itemMenuOpen && GenericGUI[player].selectedSlot < 0
 			&& players[player]->GUI.handleInventoryMovement() ) // handleInventoryMovement should be at the end of this check
 		{
-			if ( selectedShopSlot[player] < 0
-				&& GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
+			if ( GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
@@ -6193,17 +6244,14 @@ void Player::Inventory_t::updateInventory()
 				{
 					warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+				{
+					players[player]->shopGUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
 				}
-			}
-		}
-		else if ( selectedShopSlot[player] >= 0 && !itemMenuOpen && inputs.getController(player)->handleShopMovement(player) )
-		{
-			if ( selectedShopSlot[player] < 0 )
-			{
-				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
 		else if ( GenericGUI[player].selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
@@ -6235,15 +6283,52 @@ void Player::Inventory_t::updateInventory()
 	auto selectedSlotFrame = frame->findFrame("inventory selected item");
 	auto selectedSlotCursor = selectedItemCursorFrame;
 
-	if ( selectedShopSlot[player] < 0
-		&& GenericGUI[player].selectedSlot < 0 )
+	if ( GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
-		//Only if item menu is not open, no chest slot is selected, no shop slot is selected.
+		//Only if item menu is not open
 
 		Frame* slotFrameToHighlight = nullptr;
 		int startx = 0;
 		int starty = 0;
+
+		if ( shopGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP) )
+		{
+			for ( int x = 0; x < shopGUI.MAX_SHOP_X; ++x )
+			{
+				for ( int y = 0; y < shopGUI.MAX_SHOP_Y; ++y )
+				{
+					if ( auto slotFrame = shopGUI.getShopSlotFrame(x, y) )
+					{
+						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						{
+							if ( shopGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								shopGUI.selectShopSlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+								}
+							}
+						}
+
+						if ( x == shopGUI.getSelectedShopX()
+							&& y == shopGUI.getSelectedShopY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
+							&& shopGUI.isInteractable )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
 
 		if ( chestGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST) )
@@ -6570,6 +6655,53 @@ void Player::Inventory_t::updateInventory()
 	// draw contents of each slot
 	auto oldSelectedSlotFrame = frame->findFrame("inventory old selected item");
 	oldSelectedSlotFrame->setDisabled(true);
+	bool shopOpen = false;
+	if ( shopGUI.bOpen && shopGUI.shopFrame && shopInv[player] && uidToEntity(shopkeeper[player]) )
+	{
+		shopOpen = true;
+		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( !item ) { continue; }
+
+			if ( shopGUI.buybackView && !item->playerSoldItemToShop )
+			{
+				continue;
+			}
+			else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
+			{
+				continue;
+			}
+
+			int itemx = item->x;
+			int itemy = item->y;
+
+			if ( itemx >= 0 && itemx < shopGUI.MAX_SHOP_X
+				&& itemy >= 0 && itemy < shopGUI.MAX_SHOP_Y
+				&& !hideItemFromShopView(*item) )
+			{
+				if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
+				{
+					static ConsoleVariable<bool> cvar_shop_backgrounds("/shopbackgrounds", false);
+					if ( *cvar_shop_backgrounds )
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else
+					{
+						bool oldIdentified = item->identified;
+						Sint32 oldBeatitude = item->beatitude;
+						item->identified = true;
+						item->beatitude = 0;
+						updateSlotFrameFromItem(slotFrame, item);
+						item->identified = oldIdentified;
+						item->beatitude = oldBeatitude;
+					}
+				}
+			}
+		}
+	}
 
 	if ( chestGUI.bOpen && openedChest[player] )
 	{
@@ -6724,7 +6856,14 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 			{
-				updateSlotFrameFromItem(slotFrame, item);
+				if ( shopOpen && !isItemSellableToShop(player, item) )
+				{
+					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+				}
+				else
+				{
+					updateSlotFrameFromItem(slotFrame, item);
+				}
 			}
 		}
 	}
@@ -6772,6 +6911,74 @@ void Player::Inventory_t::updateInventory()
 
 	// mouse interactions
 	bool noPreviousSelectedItem = (selectedItem == nullptr);
+
+	shopGUI.clearItemDisplayed();
+	if ( !selectedItem && shopOpen )
+	{
+		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( !item ) { continue; }
+
+			bool mouseOverSlot = false;
+
+			int itemx = item->x;
+			int itemy = item->y;
+
+			auto slotFrame = getItemSlotFrame(item, itemx, itemy);
+			if ( !slotFrame ) { continue; }
+
+			if ( itemCategory(item) == SPELL_CAT
+				|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL) )
+			{
+				continue;    //Skip over this item if not in inventory mode
+			}
+
+			mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP)
+				&& slotFrame->capturesMouse();
+
+			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
+			{
+				// mouse movement captures the inventory
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+			}
+
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
+				&& (!shopGUI.isInteractable) )
+			{
+				// don't do anything while in motion
+				break;
+			}
+
+			if ( stats[player]->HP <= 0 )
+			{
+				break;
+			}
+
+			if ( hideItemFromShopView(*item) )
+			{
+				continue;
+			}
+			if ( shopGUI.buybackView && !item->playerSoldItemToShop )
+			{
+				continue;
+			}
+			else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
+			{
+				continue;
+			}
+
+			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
+			{
+				if ( shopGUI.isItemSelectedFromShop(item) )
+				{
+					shopGUI.setItemDisplayNameAndPrice(item);
+				}
+				break;
+			}
+		}
+	}
 	if ( !selectedItem && chestGUI.bOpen && openedChest[player] && chestFrame )
 	{
 		list_t* chest_inventory = nullptr;
@@ -6888,7 +7095,6 @@ void Player::Inventory_t::updateInventory()
 
 					if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
 						&& !itemMenuOpen && !selectedItem
-						&& selectedShopSlot[player] < 0
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
@@ -7161,10 +7367,19 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				bool tooltipOpen = false;
-				if ( !itemMenuOpen && !bIsTooltipDelayed() )
+				bool sellingItemToShop = false;
+				if ( shopGUI.isItemSelectedToSellToShop(item) )
 				{
-					tooltipOpen = true;
-					players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
+					sellingItemToShop = true;
+					shopGUI.setItemDisplayNameAndPrice(item);
+				}
+				else
+				{
+					if ( !itemMenuOpen && !bIsTooltipDelayed() )
+					{
+						tooltipOpen = true;
+						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
+					}
 				}
 
 				if ( stats[player]->HP <= 0 )
@@ -7172,9 +7387,10 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
+				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) 
+					|| bIsTooltipDelayed()
+					|| sellingItemToShop)
 					&& !itemMenuOpen && !selectedItem
-					&& selectedShopSlot[player] < 0
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
 					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
@@ -7586,7 +7802,14 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 					{
-						updateSlotFrameFromItem(slotFrame, item);
+						if ( shopOpen && !isItemSellableToShop(player, item) )
+						{
+							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else
+						{
+							updateSlotFrameFromItem(slotFrame, item);
+						}
 					}
 				}
 			}
@@ -7904,18 +8127,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		return options;
 	}
-	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
-	{
-		if ( playerOwnedItem )
-		{
-			options.push_back(PROMPT_SELL);
-		}
-		else
-		{
-			options.push_back(PROMPT_BUY);
-		}
-		return options;
-	}
 
 	if ( itemCategory(item) == SPELL_CAT )
 	{
@@ -8037,8 +8248,26 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		options.push_back(PROMPT_DROP);
 	}
 
+	bool sellingToShop = false;
+	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
+	{
+		if ( playerOwnedItem )
+		{
+			sellingToShop = true;
+		}
+	}
+
 	for ( auto it = options.begin(); it != options.end(); )
 	{
+		if ( sellingToShop )
+		{
+			if ( getContextMenuOptionBindingName(*it) == "MenuConfirm"
+				|| getContextMenuOptionBindingName(*it) == "MenuCancel" )
+			{
+				it = options.erase(it);
+				continue;
+			}
+		}
 		if ( *it == PROMPT_EQUIP )
 		{
 			if ( itemIsEquipped(item, player) )
@@ -8055,6 +8284,11 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 			}
 		}
 		++it;
+	}
+
+	if ( sellingToShop )
+	{
+		options.insert(options.begin(), PROMPT_SELL);
 	}
 	return options;
 }

@@ -194,6 +194,7 @@ extern real_t camera_charsheet_offsetyaw;
 void select_inventory_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_chest_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -225,6 +226,7 @@ void updateChestInventory(const int player);
 Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack, bool bDoPickupMessage = true);
 void updateAppraisalItemBox(const int player);
 void updateShopWindow(const int player);
+bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, int& xout, int& yout, Item*& itemToStackInto);
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(const int player, double x, double y);
 

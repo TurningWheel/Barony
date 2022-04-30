@@ -276,7 +276,7 @@ Difficulty: Extreme#
 189 Fine Staves#
 190 Delicatessen#
 191 Hardware Store#
-192 Hunting Supplies#
+192 Hunting Goods#
 193 General Store#
 
 
@@ -289,8 +289,8 @@ Difficulty: Extreme#
 
 # shopkeeper sells item at an unfair price
 
-197 Thou hast received a 
-good price for that!#
+197 Thou hast received a good
+price for that!#
 198 Excellent choice!#
 199 That was a real bargain!#
 
@@ -298,19 +298,19 @@ good price for that!#
 # shopkeeper sells item at a fair price
 
 200 That is a fair trade.#
-201 I suppose that I can part 
+201 I suppose that I can part
 with it.#
-202 Alright, but not for
-a penny less!#
+202 Alright, but not for a penny
+less!#
 
 
 # shopkeeper refuses a purchase
 
 203 No money, no item!#
-204 I shall not sell it 
-for anything less.#
-205 Thou dost not have 
-enough money!#
+204 I shall not sell it for anything
+less.#
+205 Thou dost not have enough
+money!#
 
 
 # shopkeeper buys item at an unfair price
@@ -362,31 +362,33 @@ colors. It is said that the
 blue ones are stronger.#
 
 220 They say cursed items often
-do the opposite of what
-they were meant to do.#
+do the opposite of what they
+were meant to do.#
 
 221 Trolls ignore thee if thou
 keepest thy distance!#
 
 222 Weapons come at different
 levels of effectiveness. Wood
-and bronze are weak, but steel
-is very strong.#
+and bronze are weak, but
+steel is very strong.#
 
 223 The effects of potions wear
 off over time.#
 
 224 Beware of picture books. I
-knew someone who touched one:
-thenext thing they knew, they
-were all alone on a tiny island.#
+knew someone who touched
+one: the next thing they knew,
+they were all alone on a tiny
+island.#
 
 225 Thy skills shall improve as
 thou makest use of them.#
 
-226 Goblins make good scavengers.
-Do not leave powerful items
-where they might find them!#
+226 Goblins make good
+scavengers. Do not leave
+powerful items where they
+might find them!#
 
 227 I may look weak, but I'm
 actually a master of the
@@ -396,24 +398,25 @@ mystic arts.#
 hands greasy. Use a towel to
 keep thyself clean.#
 
-229 Thou canst bind wounds
-with towels.#
+229 Thou canst bind wounds with
+towels.#
 
-230 Art thou hungry? Rat meat 
+230 Art thou hungry? Rat meat
 is a staple down here.#
 
 231 Scorpion stings can paralyze
 thee. Watch out for them.#
 
-232 They say Succubi enjoy trying
-to steal mens' clothes.#
+232 They say Succubi enjoy
+trying to steal peoples'
+clothes.#
 
 233 The older food is, the more
-likely it is to make one
-sick when eaten.#
+likely it is to make one sick
+when eaten.#
 
-234 Mirrors can do odd
-things at times.#
+234 Mirrors can do odd things at
+times.#
 
 235 Try to identify items before
 thou makest use of them.#
@@ -559,17 +562,17 @@ thou makest use of them.#
 348 Uncursed "%s".#
 
 
-# shop gui
+# shop gui - removed category names
 
-349 Weapons#
-350  Armor#
-351 Jewelry#
-352  Magic#
-353   Gem#
-354 Edibles#
-355  Misc#
-356 *#
-357 Gold:%7dG#
+349 #
+350 #
+351 #
+352 #
+353 #
+354 #
+355 #
+356 #
+357 #
 358 Welcome to %s's
 %s!#
 
@@ -4975,7 +4978,7 @@ for this option. (Required: %s, Current: %s)#
 3678 Your %s needs to be higher quality detect more object types.#
 3679 Your Tinkering skill is not high enough to decipher 
 any more gyrobot findings.#
-3680 Your Tinkering skill is are not high enough to decipher 
+3680 Your Tinkering skill is not high enough to decipher 
 any gyrobot findings.#
 3681 You can't repair equipped items!#
 3682 You repair the %s.#
@@ -5753,9 +5756,9 @@ Non-humans are always polymorphed into a human#
 choice dealing with me.#
 3894 Locally sourced for my
 newest customer.#
-3895 I trust you'll appreciate
-my fine wares.#
-3896 I'm not interested in that.#
+3895 I trust you'll appreciate my
+fine wares.#
+3896 #
 3897 You spot a hidden compartment inside the chest!#
 3898 fails to dodge the incoming flaming boulder.#
 3899 fails to dodge the incoming arcane boulder.#
@@ -5772,20 +5775,20 @@ my fine wares.#
 3908 #
 3909 #
 
-3910 Remove thy garment
-before we deal!#
-3911 Sheathe thy weapon
-before we deal!#
-3912 Stow away thy tool
-before we deal!#
-3913 Unhand thy potion
-before we deal!#
-3914 Unwield thy jewels
-before we deal!#
+3910 Remove thy garment before
+we deal!#
+3911 Sheathe thy weapon before
+we deal!#
+3912 Stow away thy tool before we
+deal!#
+3913 Unhand thy potion before we
+deal!#
+3914 Unwield thy jewels before we
+deal!#
 3915 Set down thy parchment
 before we deal!#
-3916 Unhand thy lunch
-before we deal!#
+3916 Unhand thy lunch before we
+deal!#
 3917 Locked - Legends & Pariahs DLC Required!
 Left click to view on the store page.#
 3918 disable mouse rotation speed limit#
@@ -5994,7 +5997,7 @@ Changing this gameflag is disabled in current game mode.#
 4046 item#
 4047 No interactions available#
 4048 You don't feel like yourself.#
-4049 Quick-cast#
+4049 Quickcast#
 4050 Grab#
 4051 Level %d#
 4052 Floor %d#
@@ -6067,5 +6070,28 @@ Cast#
 4110 Unpin Timer From HUD#
 4111 Show Tooltip (Hold)#
 4112 Show Level Info (Hold)#
+4113 Buy#
+4114 Sell#
+4115 Spells#
+4116 Items#
+4117 Skills#
+4118 Status#
+
+# new shop GUI
+
+4119 Your gold:#
+4120 Buyback Items#
+4121 Stop Trading#
+4122 Store Markup:#
+4123 Resale Penalty:#
+4124 Shop Items#
+4125 My stores are too full to
+part with any more gold!#
+4126 Hand the orb to me directly.
+There is no need to involve
+formalities of gold, now!#
+4127 %s's#
+4128 Rare Goods#
+4129 ???'s#
 
 4199 end#

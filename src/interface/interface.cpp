@@ -1192,6 +1192,24 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		}
 		return true;
 	}
+	else if ( activeModule == MODULE_SHOP )
+	{
+		auto& shopUI = player.shopGUI;
+		auto& inventoryUI = player.inventoryUI;
+		if ( shopUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = shopUI.getShopSlotFrame(shopUI.getSelectedShopX(), shopUI.getSelectedShopY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
+		return true;
+	}
 	else if ( activeModule == MODULE_HOTBAR )
 	{
 		warpMouseToSelectedHotbarSlot(player.playernum);
@@ -1361,31 +1379,8 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		}
 	}
 
-	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP && shopkeeper[playernum] != 0 )
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_SHOP )
 	{
-		if ( multiplayer != CLIENT )
-		{
-			Entity* entity = uidToEntity(shopkeeper[playernum]);
-			if ( entity )
-			{
-				entity->skill[0] = 0;
-				if ( uidToEntity(entity->skill[1]) )
-				{
-					monsterMoveAside(entity, uidToEntity(entity->skill[1]));
-				}
-				entity->skill[1] = 0;
-			}
-		}
-		else
-		{
-			// inform server that we're done talking to shopkeeper
-			strcpy((char*)net_packet->data, "SHPC");
-			SDLNet_Write32((Uint32)shopkeeper[playernum], &net_packet->data[4]);
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 8;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-		}
 		closeShop(playernum);
 	}
 	gui_mode = GUI_MODE_NONE;
@@ -7908,7 +7903,25 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 			if ( repairedItem )
 			{
-				itemPickup(gui_player, repairedItem);
+				Item* pickedUp = itemPickup(gui_player, repairedItem);
+				if ( pickedUp && item->count == 1 )
+				{
+					// item* will be consumed, so pickedUp can take the inventory slot of it.
+					pickedUp->x = item->x;
+					pickedUp->y = item->y;
+					for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
+					{
+						if ( hotbarSlot.item == item->uid )
+						{
+							hotbarSlot.item = pickedUp->uid;
+						}
+						else if ( hotbarSlot.item == pickedUp->uid )
+						{
+							// this was auto placed by itemPickup just above, undo it.
+							hotbarSlot.item = 0;
+						}
+					}
+				}
 				free(repairedItem);
 			}
 			consumeItem(item, gui_player);

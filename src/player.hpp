@@ -281,12 +281,6 @@ public:
 	float y_forceMaxStrafeThreshold = 0.7;
 
 	/*
-	 * Uses dpad to move the cursor around a shop's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleShopMovement(const int player);
-
-	/*
 	* Uses dpad to move the cursor through the item context menu and select entries.
 	* Returns true if moved.
 	*/
@@ -1015,6 +1009,57 @@ public:
 		} appraisal;
 		bool bNewInventoryLayout = true;
 	} inventoryUI;
+
+	struct ShopGUI_t
+	{
+		Player& player;
+		Frame* shopFrame = nullptr;
+		PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
+		bool buybackView = false;
+		real_t animx = 0.0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openShop();
+		void closeShop();
+		void updateShop();
+		Uint32 chatTicks = 0;
+		size_t chatStringLength = 0;
+		std::string chatStrFull = "";
+		Sint32 itemPrice = -1;
+		std::string itemDesc = "";
+		bool itemRequiresTitleReflow = true;
+		Sint32 playerCurrentGold = 0;
+		Sint32 playerChangeGold = 0;
+		real_t animGold = 0.0;
+		Uint32 animGoldStartTicks = 0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animNoDeal = 0.0;
+		Uint32 animNoDealTicks = 0;
+
+		int selectedShopSlotX = -1;
+		int selectedShopSlotY = -1;
+		static const int MAX_SHOP_X;
+		static const int MAX_SHOP_Y;
+		std::unordered_map<int, Frame*> shopSlotFrames;
+		bool isShopSelected();
+		void selectShopSlot(const int x, const int y);
+		const int getSelectedShopX() const { return selectedShopSlotX; }
+		const int getSelectedShopY() const { return selectedShopSlotY; }
+		Frame* getShopSlotFrame(int x, int y) const;
+		const bool isItemFromShop(Item* item) const;
+		void setItemDisplayNameAndPrice(Item* item);
+		const bool isItemSelectedFromShop(Item* item) const;
+		const bool isItemSelectedToSellToShop(Item* item) const;
+		bool warpMouseToSelectedShopItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+
+		static int heightOffsetWhenNotCompact;
+		ShopGUI_t(Player& p) :
+			player(p) {}
+	};
+	ShopGUI_t shopGUI;
 
 	class StatusBar_t
 	{

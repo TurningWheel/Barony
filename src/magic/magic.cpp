@@ -1626,34 +1626,25 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		}
 		else
 		{
-	        constexpr Monster types_to_skip[] = {
+	        std::set<Monster> typesToSkip
+			{
 	            LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, OCTOPUS,
 	            MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
 	            HUMAN, SENTRYBOT, SPELLBOT, GYROBOT,
 	            DUMMYBOT
 	        };
-	        constexpr int num_to_skip = sizeof(types_to_skip) / sizeof(types_to_skip[0]);
+			typesToSkip.insert(targetStats->type);
 
-	        bool already_skipped_my_type = false;
-	        for (int c = 0; c < num_to_skip; ++c) {
-                if (types_to_skip[c] == targetStats->type) {
-                    already_skipped_my_type = true;
-                }
-	        }
-
-	        const int num_monsters_to_pick = already_skipped_my_type ?
-	            NUMMONSTERS - num_to_skip : NUMMONSTERS - (num_to_skip + 1);
-	        int monsterIndex = rand() % num_monsters_to_pick;
-	        for (int c = 0; c < num_to_skip; ++c) {
-                if (monsterIndex >= (int)types_to_skip[c]) {
-                    ++monsterIndex;
-                }
-	        }
-
-            if (!already_skipped_my_type && monsterIndex >= (int)targetStats->type) {
-                ++monsterIndex; // special case: also skip the type we currently are
-            }
-	        monsterSummonType = static_cast<Monster>(monsterIndex);
+			std::vector<Monster> possibleTypes;
+			for ( int i = 0; i < NUMMONSTERS; ++i )
+			{
+				const Monster mon = static_cast<Monster>(i);
+				if ( typesToSkip.find(mon) == typesToSkip.end() )
+				{
+					possibleTypes.push_back(mon);
+				}
+			}
+			monsterSummonType = possibleTypes.at(rand() % possibleTypes.size());
 		}
 
 		bool summonCanEquipItems = false;

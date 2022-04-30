@@ -9,12 +9,13 @@ void doFrames();
 
 void doSharedMinimap();
 extern Frame* gameUIFrame[MAXPLAYERS];
-void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr);
+void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable = false);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw);
+void toggleShopBuybackView(const int player);
 void loadHUDSettingsJSON();
 SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite);
 struct EnemyBarSettings_t

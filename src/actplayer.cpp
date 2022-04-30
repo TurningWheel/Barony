@@ -3423,13 +3423,40 @@ void actPlayer(Entity* my)
 				}
 				if ( tempItem && !appearancesOfSimilarItems.empty() )
 				{
+					Uint32 originalAppearance = tempItem->appearance;
+					int originalVariation = originalAppearance % items[tempItem->type].variations;
+
 					int tries = 100;
 					// we need to find a unique appearance within the list.
 					tempItem->appearance = rand();
+					if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+					{
+						// we need to match the variation for the new appearance, take the difference so new varation matches
+						int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+						if ( tempItem->appearance < change ) // underflow protection
+						{
+							tempItem->appearance += items[tempItem->type].variations;
+						}
+						tempItem->appearance -= change;
+						int newVariation = tempItem->appearance % items[tempItem->type].variations;
+						assert(newVariation == originalVariation);
+					}
 					auto it = appearancesOfSimilarItems.find(tempItem->appearance);
 					while ( it != appearancesOfSimilarItems.end() && tries > 0 )
 					{
 						tempItem->appearance = rand();
+						if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+						{
+							// we need to match the variation for the new appearance, take the difference so new varation matches
+							int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+							if ( tempItem->appearance < change ) // underflow protection
+							{
+								tempItem->appearance += items[tempItem->type].variations;
+							}
+							tempItem->appearance -= change;
+							int newVariation = tempItem->appearance % items[tempItem->type].variations;
+							assert(newVariation == originalVariation);
+						}
 						it = appearancesOfSimilarItems.find(tempItem->appearance);
 						--tries;
 					}
@@ -3653,6 +3680,9 @@ void actPlayer(Entity* my)
 						{
 							if ( !appearancesOfSimilarItems.empty() )
 							{
+								Uint32 originalAppearance = tempItem->appearance;
+								int originalVariation = originalAppearance % items[tempItem->type].variations;
+
 								int tries = 100;
 								bool robot = false;
 								// we need to find a unique appearance within the list.
@@ -3665,6 +3695,18 @@ void actPlayer(Entity* my)
 								else
 								{
 									tempItem->appearance = rand();
+									if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+									{
+										// we need to match the variation for the new appearance, take the difference so new varation matches
+										int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+										if ( tempItem->appearance < change ) // underflow protection
+										{
+											tempItem->appearance += items[tempItem->type].variations;
+										}
+										tempItem->appearance -= change;
+										int newVariation = tempItem->appearance % items[tempItem->type].variations;
+										assert(newVariation == originalVariation);
+									}
 								}
 								auto it = appearancesOfSimilarItems.find(tempItem->appearance);
 								while ( it != appearancesOfSimilarItems.end() && tries > 0 )
@@ -3676,6 +3718,18 @@ void actPlayer(Entity* my)
 									else
 									{
 										tempItem->appearance = rand();
+										if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+										{
+											// we need to match the variation for the new appearance, take the difference so new varation matches
+											int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+											if ( tempItem->appearance < change ) // underflow protection
+											{
+												tempItem->appearance += items[tempItem->type].variations;
+											}
+											tempItem->appearance -= change;
+											int newVariation = tempItem->appearance % items[tempItem->type].variations;
+											assert(newVariation == originalVariation);
+										}
 									}
 									it = appearancesOfSimilarItems.find(tempItem->appearance);
 									--tries;
