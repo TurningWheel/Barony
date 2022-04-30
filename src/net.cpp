@@ -116,7 +116,7 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
-			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			if ( steamIDRemote[hostnum] )
 			{
 				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
 			}
@@ -152,9 +152,9 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool
 Uint32 packetnum = 0;
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 {
-	if ( hostnum < 0 )
+	if ( hostnum < 0 || hostnum >= MAXPLAYERS )
 	{
-		printlog("[NET]: Error - attempt to send to negative hostnum: %d", hostnum);
+		printlog("[NET]: Error - attempt to send to non-valid hostnum: %d", hostnum);
 		return 0;
 	}
 
@@ -223,7 +223,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 		{
 #ifdef STEAMWORKS
-			if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
+			if ( steamIDRemote[hostnum] )
 			{
 				return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
 			}

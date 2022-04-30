@@ -4785,8 +4785,7 @@ bind_failed:
         };
         static BoardType boardType;
         boardType = BoardType::LOCAL;
-#ifdef STEAMWORKS
-        static const char* categories[CSteamLeaderboards::k_numLeaderboards] = {
+        static const char* categories[] = {
 	        "None",
 	        "Fastest Time\nNormal", "Highest Score\nNormal",
 	        "Fastest Time\nMultiplayer", "Highest Score\nMultiplayer",
@@ -4805,9 +4804,6 @@ bind_failed:
             "Fastest Time\nMultiplayer Classic - Monsters Only", "Highest Score\nMultiplayer Classic - Monsters Only",
 	        "Fastest Time\nMultiplayer Hell Route - Monsters Only", "Highest Score\nMultiplayer Hell Route - Monsters Only",
         };
-#else
-		static const char* categories[1] = { "None" };
-#endif
         static constexpr int num_categories = sizeof(categories) / sizeof(categories[0]);
         static int category;
         category = 1;
@@ -5502,17 +5498,21 @@ bind_failed:
 			}
 		} else if (multiplayer == CLIENT) {
 			bool hostHasLostP2P = false;
-			if (!directConnect && !connectingToLobby && !connectingToLobbyWindow) {
+			if (!directConnect) {
 			    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-				    if (!steamIDRemote[0]) {
-					    hostHasLostP2P = true;
+                    if (!connectingToLobby && !connectingToLobbyWindow) {
+				        if (!steamIDRemote[0]) {
+					        hostHasLostP2P = true;
+				        }
 				    }
 #endif
 			    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-				    if (!EOS.P2PConnectionInfo.isPeerStillValid(0)) {
-					    hostHasLostP2P = true;
+                    if (!EOS.bConnectingToLobby && !EOS.bConnectingToLobbyWindow) {
+				        if (!EOS.P2PConnectionInfo.isPeerStillValid(0)) {
+					        hostHasLostP2P = true;
+				        }
 				    }
 #endif
 			    }
@@ -6674,49 +6674,53 @@ bind_failed:
             text->setText(buf);
 
             // here is the connection polling loop for online lobbies
-            if (!directConnect && joinLobbyWaitingForHostResponse) {
-		        if (connectingToLobbyStatus != EResult::k_EResultOK) {
-		            resetLobbyJoinFlowState();
-
-			        // close current window
-			        auto frame = static_cast<Frame*>(widget.getParent());
-			        auto dimmer = static_cast<Frame*>(frame->getParent());
-			        dimmer->removeSelf();
-
-			        auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
-			        connectionErrorPrompt(error_str.c_str());
-			        connectingToLobbyStatus = EResult::k_EResultOK;
-			        return;
-		        }
-		        if (!connectingToLobby) {
-		            if (connectingToLobbyWindow) {
+            if (!directConnect) {
+#ifdef STEAMWORKS
+                if (joinLobbyWaitingForHostResponse) {
+		            if (connectingToLobbyStatus != EResult::k_EResultOK) {
 		                resetLobbyJoinFlowState();
 
-			            // record CSteamID of lobby owner (and everybody else)
-			            int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
-			            for (int c = 0; c < MAXPLAYERS; ++c) {
-				            if (steamIDRemote[c]) {
-					            cpp_Free_CSteamID(steamIDRemote[c]);
-					            steamIDRemote[c] = NULL;
-				            }
-			            }
-			            for (int c = 0; c < lobbyMembers; ++c) {
-				            steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
-			            }
+			            // close current window
+			            auto frame = static_cast<Frame*>(widget.getParent());
+			            auto dimmer = static_cast<Frame*>(frame->getParent());
+			            dimmer->removeSelf();
 
-			            sendJoinRequest();
-			        } else {
-		                resetLobbyJoinFlowState();
+			            auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
+			            connectionErrorPrompt(error_str.c_str());
+			            connectingToLobbyStatus = EResult::k_EResultOK;
+			            return;
+		            }
+		            if (!connectingToLobby) {
+		                if (connectingToLobbyWindow) {
+		                    resetLobbyJoinFlowState();
 
-		                // close current window
-		                auto frame = static_cast<Frame*>(widget.getParent());
-		                auto dimmer = static_cast<Frame*>(frame->getParent());
-		                dimmer->removeSelf();
-		                connectionErrorPrompt("Failed to join lobby.");
-		                // TODO localize, get error message, etc.
-			        }
-			        return;
-		        }
+			                // record CSteamID of lobby owner (and everybody else)
+			                int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
+			                for (int c = 0; c < MAXPLAYERS; ++c) {
+				                if (steamIDRemote[c]) {
+					                cpp_Free_CSteamID(steamIDRemote[c]);
+					                steamIDRemote[c] = NULL;
+				                }
+			                }
+			                for (int c = 0; c < lobbyMembers; ++c) {
+				                steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+			                }
+
+			                sendJoinRequest();
+			            } else {
+		                    resetLobbyJoinFlowState();
+
+		                    // close current window
+		                    auto frame = static_cast<Frame*>(widget.getParent());
+		                    auto dimmer = static_cast<Frame*>(frame->getParent());
+		                    dimmer->removeSelf();
+		                    connectionErrorPrompt("Failed to join lobby.");
+		                    // TODO localize, get error message, etc.
+			            }
+			            return;
+		            }
+                }
+#endif
             }
             });
 
@@ -9547,8 +9551,8 @@ bind_failed:
 #ifdef USE_EOS
                 //for (Uint32 c =
 #endif
-#endif
             }
+#endif
 	        });
 
         // request new lobbies
