@@ -1211,6 +1211,14 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	if ( inventoryUI.bCompactView )
 	{
+		if ( GenericGUI[player].tinkerGUI.bOpen )
+		{
+			return false;
+		}
+		if ( players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
+		{
+			return false;
+		}
 		if ( openedChest[player] && players[player]->inventoryUI.chestGUI.bOpen )
 		{
 			return false;
@@ -1741,15 +1749,26 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 					}
 					else
 					{
+						bool skipPaperDollSelection = false;
+						if ( GenericGUI[player].tinkerGUI.bOpen )
+						{
+							skipPaperDollSelection = true;
+						}
 						if ( x >= inventoryUI.getSizeX() )
 						{
-							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-							return;
+							if ( !skipPaperDollSelection )
+							{
+								players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+								return;
+							}
 						}
 						else if ( x < 0 )
 						{
-							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-							return;
+							if ( !skipPaperDollSelection )
+							{
+								players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+								return;
+							}
 						}
 					}
 				}
@@ -1821,6 +1840,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		}
 		else
 		{
+			// moveInPaperDoll will reject movement for compact view tinkering, shops, chests etc by returning false
 			if ( moveInPaperDoll(player, paperDollSlot, currentx, currenty, diffx, diffy, x, y) )
 			{
 				return;
@@ -1953,7 +1973,6 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		}
 	}
 
-	bool warpInv = true;
 	auto& hotbar_t = players[player]->hotbar;
 
 	if ( y < 0 )   //Wrap around top to bottom.
@@ -1962,23 +1981,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
-		if ( GenericGUI[player].isGUIOpen() )
-		{
-			warpInv = false;
-			y = inventoryUI.getSizeY() - 1;
-
-			//Warp into GUI "inventory"...if there is anything there.
-			if ( GenericGUI[player].itemsDisplayed[0] )
-			{
-				GenericGUI[player].selectedSlot = 0;
-				GenericGUI[player].warpMouseToSelectedSlot();
-			}
-		}
-
-		if ( warpInv )   //Wrap around to top.
-		{
-			y = 0;
-		}
+		y = 0;
 	}
 
 	inventoryUI.selectSlot(x, y);
@@ -6945,21 +6948,30 @@ void Player::Inventory_t::updateInventory()
 				}
 				else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
 				{
-					if ( tinkerCraftableListOpen
-						&& (!GenericGUI[player].tinkeringPlayerCanAffordCraft(item)
-							|| !GenericGUI[player].tinkeringPlayerHasSkillLVLToCraft(item)) )
+					// grab action status of this item, don't modify using 'true' param
+					auto res = tinkerGUI.setItemDisplayNameAndPrice(item, true); 
+					bool invalidItem = !(res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK
+						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE);
+					if ( tinkerCraftableListOpen && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
 					{
-						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						if ( invalidItem )
+						{
+							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else
+						{
+							updateSlotFrameFromItem(slotFrame, item);
+						}
 					}
 					else if ( tinkeringSalvageOrRepairMenuActive
 						&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE
-						&& !GenericGUI[player].tinkeringIsItemRepairable(item, player) )
+						&& invalidItem )
 					{
 						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 					}
 					else if ( tinkeringSalvageOrRepairMenuActive
 						&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE
-						&& !GenericGUI[player].isItemSalvageable(item, player) )
+						&& invalidItem )
 					{
 						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 					}
@@ -7571,9 +7583,11 @@ void Player::Inventory_t::updateInventory()
 
 				bool tooltipOpen = false;
 				bool sellingItemToShop = false;
+				bool tinkerOpen = false;
 				if ( tinkeringSalvageOrRepairMenuActive )
 				{
 					tooltipOpen = false;
+					tinkerOpen = true;
 					tinkerGUI.setItemDisplayNameAndPrice(item);
 				}
 				else if ( shopGUI.isItemSelectedToSellToShop(item) )
@@ -7597,7 +7611,8 @@ void Player::Inventory_t::updateInventory()
 
 				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) 
 					|| bIsTooltipDelayed()
-					|| sellingItemToShop)
+					|| sellingItemToShop
+					|| tinkerOpen)
 					&& !itemMenuOpen && !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
@@ -8016,21 +8031,29 @@ void Player::Inventory_t::updateInventory()
 						}
 						else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
 						{
-							if ( tinkerCraftableListOpen
-								&& (!GenericGUI[player].tinkeringPlayerCanAffordCraft(item)
-									|| !GenericGUI[player].tinkeringPlayerHasSkillLVLToCraft(item)) )
+							auto res = tinkerGUI.setItemDisplayNameAndPrice(item, true);
+							bool invalidItem = !(res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK
+								|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE);
+							if ( tinkerCraftableListOpen && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
 							{
-								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+								if ( invalidItem )
+								{
+									updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+								}
+								else
+								{
+									updateSlotFrameFromItem(slotFrame, item);
+								}
 							}
 							else if ( tinkeringSalvageOrRepairMenuActive
 								&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE
-								&& !GenericGUI[player].tinkeringIsItemRepairable(item, player) )
+								&& invalidItem )
 							{
 								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 							}
 							else if ( tinkeringSalvageOrRepairMenuActive
 								&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE
-								&& !GenericGUI[player].isItemSalvageable(item, player) )
+								&& invalidItem )
 							{
 								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 							}
@@ -8482,6 +8505,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	}
 
 	bool sellingToShop = false;
+	bool tinkerOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -8489,10 +8513,14 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 			sellingToShop = true;
 		}
 	}
+	else if ( GenericGUI[player].tinkerGUI.bOpen )
+	{
+		tinkerOpen = true;
+	}
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop )
+		if ( sellingToShop || tinkerOpen )
 		{
 			if ( getContextMenuOptionBindingName(*it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(*it) == "MenuCancel" )

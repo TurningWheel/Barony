@@ -1196,6 +1196,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					return MODULE_SHOP;
 				}
 			}
+			else if ( GenericGUI[player.playernum].tinkerGUI.bOpen )
+			{
+				/*if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_INVENTORY;*/
+				return MODULE_NONE;
+			}
 			else if ( player.inventoryUI.chestGUI.bOpen )
 			{
 				if ( !checkDestinationOnly )
@@ -1279,6 +1291,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_TINKERING )
+		{
+			/*if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_TINKERING);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavLeftBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_TINKERING;*/
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
@@ -1391,6 +1415,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					return MODULE_SHOP;
 				}
 			}
+			else if ( GenericGUI[player.playernum].tinkerGUI.bOpen )
+			{
+				/*if ( !checkDestinationOnly )
+				{
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_INVENTORY;*/
+				return MODULE_NONE;
+			}
 			else if ( player.inventoryUI.chestGUI.bOpen )
 			{
 				if ( !checkDestinationOnly )
@@ -1458,6 +1494,18 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_TINKERING )
+		{
+			/*if ( !checkDestinationOnly )
+			{
+				activateModule(MODULE_TINKERING);
+				warpControllerToModule(false);
+				input.consumeBinaryToggle("UINavRightBumper");
+				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			}
+			return MODULE_TINKERING;*/
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{

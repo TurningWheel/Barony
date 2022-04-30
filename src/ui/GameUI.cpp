@@ -1056,6 +1056,7 @@ void Player::HUD_t::updateUINavigation()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
+			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -1107,7 +1108,8 @@ void Player::HUD_t::updateUINavigation()
 				}
 			}
 
-			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen )
+			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
+				&& !GenericGUI[player.playernum].tinkerGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
@@ -11528,6 +11530,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	{
 		qtyFrame->setDisabled(true);
 		bool drawQty = (item->count > 1) ? true : false;
+		if ( !drawQty && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
+		{
+			drawQty = true;
+		}
 		Uint32 qtyColor = 0xFFFFFFFF;
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
