@@ -385,7 +385,7 @@ public:
 		experimentingAlchemy(false),
 		tinkeringKitItem(nullptr),
 		tinkeringTotalLastCraftableNode(nullptr),
-		tinkeringFilter(TINKER_FILTER_ALL),
+		tinkeringFilter(TINKER_FILTER_CRAFTABLE),
 		tinkeringAutoSalvageKitItem(nullptr),
 		tinkeringAutoSalvageThisItem(nullptr),
 		scribingFilter(SCRIBING_FILTER_CRAFTABLE),
@@ -574,6 +574,9 @@ public:
 		real_t animTooltip = 0.0;
 		Uint32 animTooltipTicks = 0;
 		real_t animFilter = 0.0;
+		real_t animPrompt = 0.0;
+		Uint32 animPromptTicks = 0;
+		bool animPromptMoveLeft = false;
 
 		int selectedTinkerSlotX = -1;
 		int selectedTinkerSlotY = -1;
@@ -581,11 +584,12 @@ public:
 		static const int MAX_TINKER_Y;
 		std::unordered_map<int, Frame*> tinkerSlotFrames;
 		bool isTinkerConstructItemSelected(Item* item);
+		bool isSalvageOrRepairItemSelected(Item* item);
 		void selectTinkerSlot(const int x, const int y);
 		const int getSelectedTinkerSlotX() const { return selectedTinkerSlotX; }
 		const int getSelectedTinkerSlotY() const { return selectedTinkerSlotY; }
 		Frame* getTinkerSlotFrame(int x, int y) const;
-		void setItemDisplayNameAndPrice(Item* item);
+		TinkerActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
 		bool warpMouseToSelectedTinkerItem(Item* snapToItem, Uint32 flags);
 		void clearItemDisplayed();
 
