@@ -12642,23 +12642,23 @@ bind_failed:
 		        {"Settings", mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
-			    options.insert(options.begin(), {
+			    options.insert(options.end(), {
 				    {"End Life", mainEndLife},
 				    {"Restart Game", mainRestartGame},
 				    });
 			} else {
 			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
-			        options.insert(options.begin(), {
+			        options.insert(options.end(), {
 				        {"Restart Trial", mainRestartGame},
 				        {"Return to Hall of Trials", mainReturnToHallofTrials},
 				        });
 				} else {
-			        options.insert(options.begin(), {
+			        options.insert(options.end(), {
 				        {"Reset Hall of Trials", mainReturnToHallofTrials},
 				        });
 				}
 			}
-	        options.insert(options.begin(), {
+	        options.insert(options.end(), {
 		        {"Quit to Main Menu", mainQuitToMainMenu},
 		        //{"Quit to Desktop", mainQuitToDesktop},
 		        });
