@@ -565,19 +565,24 @@ namespace MainMenu {
 					players[c]->camera().winw = xres;
 					players[c]->camera().winh = yres;
 				} else if (playercount == 2) {
-				    static ConsoleVariable<bool> staggered("/staggeredsplitscreen", true);
-				    static ConsoleVariable<bool> clipped("/clippedsplitscreen", true);
+				    static ConsoleVariable<bool> staggered("/split_staggered", true);
+				    static ConsoleVariable<bool> clipped("/split_clipped", true);
+				    static ConsoleVariable<int> clipped_size("/split_clipped_percent", 20);
 					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
+					    const int clip = (yres * *clipped_size) / 100;
+
 						// divide screen vertically
 						players[c]->camera().winx = playerindex * xres / 2;
-						players[c]->camera().winy = *clipped ? (*staggered ? playerindex * yres / 4 : yres / 8) : 0;
+						players[c]->camera().winy = *clipped ? (*staggered ? playerindex * clip : clip / 2) : 0;
 						players[c]->camera().winw = xres / 2;
-						players[c]->camera().winh = *clipped ? (yres * 3) / 4 : yres;
+						players[c]->camera().winh = *clipped ? clip + (clip / 2) : yres;
 					} else {
+					    const int clip = (xres * *clipped_size) / 100;
+
 						// divide screen horizontally
-						players[c]->camera().winx = *clipped ? (*staggered ? playerindex * xres / 4 : xres / 8) : 0;
+						players[c]->camera().winx = *clipped ? (*staggered ? playerindex * clip : clip / 2) : 0;
 						players[c]->camera().winy = playerindex * yres / 2;
-						players[c]->camera().winw = *clipped ? (xres * 3) / 4 : xres;
+						players[c]->camera().winw = *clipped ? clip + (clip / 2) : xres;
 						players[c]->camera().winh = yres / 2;
 					}
 				} else if (playercount >= 3) {
@@ -594,7 +599,7 @@ namespace MainMenu {
 		}
 	}
 
-	static ConsoleCommand ccmd_setupSplitscreen("/setupsplitscreen", "Refresh splitscreen layout",
+	static ConsoleCommand ccmd_setupSplitscreen("/split_refresh", "Refresh splitscreen layout",
         [](int argc, const char** argv){
             setupSplitscreen();
         });
