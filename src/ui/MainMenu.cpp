@@ -1517,7 +1517,7 @@ namespace MainMenu {
 		settings.vsync_enabled = true;
 		settings.vertical_split_enabled = false;
 		settings.gamma = 100.f;
-		settings.fov = 65;
+		settings.fov = 60;
 		settings.fps = 60;
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
