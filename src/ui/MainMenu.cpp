@@ -13011,7 +13011,7 @@ bind_failed:
         banner->setSize(SDL_Rect{110, 90, 280, 20});
         banner->setFont(smallfont_no_outline);
         banner->setJustify(Field::justify_t::CENTER);
-        if (survivingPlayer || multiplayer == SINGLE) {
+        if (survivingPlayer || (multiplayer == SINGLE && !splitscreen)) {
             banner->setText("You have died.");
         } else {
             banner->setText("Your party has been wiped out.");
@@ -13061,15 +13061,19 @@ bind_failed:
         if (tutorial) {
             footer->setText("Learn from your failure\nto complete the test!");
         } else {
-            char highscore_buf[256];
-            if (madetop) {
-                snprintf(highscore_buf, sizeof(highscore_buf),
-                    "You placed #%d\nin local highscores!", placement);
+            if (survivingPlayer) {
+                footer->setText("You will be revived if your\nparty makes it to the next level.");
             } else {
-                snprintf(highscore_buf, sizeof(highscore_buf),
-                    "You failed to place\nin local highscores.");
+                char highscore_buf[256];
+                if (madetop) {
+                    snprintf(highscore_buf, sizeof(highscore_buf),
+                        "You placed #%d\nin local highscores!", placement);
+                } else {
+                    snprintf(highscore_buf, sizeof(highscore_buf),
+                        "You failed to place\nin local highscores.");
+                }
+                footer->setText(highscore_buf);
             }
-            footer->setText(highscore_buf);
         }
 
         // TODO different buttons depending on game mode (ie tutorial)
