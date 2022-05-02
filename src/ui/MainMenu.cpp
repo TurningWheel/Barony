@@ -575,14 +575,14 @@ namespace MainMenu {
 						players[c]->camera().winx = playerindex * xres / 2;
 						players[c]->camera().winy = *clipped ? (*staggered ? playerindex * clip : clip / 2) : 0;
 						players[c]->camera().winw = xres / 2;
-						players[c]->camera().winh = *clipped ? clip + (clip / 2) : yres;
+						players[c]->camera().winh = *clipped ? (yres - clip) : yres;
 					} else {
 					    const int clip = (xres * *clipped_size) / 100;
 
 						// divide screen horizontally
 						players[c]->camera().winx = *clipped ? (*staggered ? playerindex * clip : clip / 2) : 0;
 						players[c]->camera().winy = playerindex * yres / 2;
-						players[c]->camera().winw = *clipped ? clip + (clip / 2) : xres;
+						players[c]->camera().winw = *clipped ? (xres - clip) : xres;
 						players[c]->camera().winh = yres / 2;
 					}
 				} else if (playercount >= 3) {
