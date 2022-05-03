@@ -5069,6 +5069,31 @@ void actPlayer(Entity* my)
 						Uint32 color = makeColorRGB(255, 0, 0);
 						messagePlayerColor(PLAYER_NUM, MESSAGE_STATUS, color, language[577]);
 
+                        // send "you have died" signal to client
+			            if (multiplayer == SERVER) {
+				            if (PLAYER_NUM != clientnum && !client_disconnected[PLAYER_NUM]) {
+			                    memcpy(net_packet->data, "UDIE", 4);
+			                    SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer, &net_packet->data[4]);
+			                    if (stats[PLAYER_NUM]->killer == KilledBy::MONSTER) {
+			                        net_packet->data[8] = (Uint8)stats[PLAYER_NUM]->killer_name.size();
+			                        if (net_packet->data[8]) {
+			                            memcpy(&net_packet->data[9], stats[PLAYER_NUM]->killer_name.c_str(), net_packet->data[8]);
+			                            net_packet->len = 9 + net_packet->data[8];
+			                        } else {
+			                            SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_monster, &net_packet->data[9]);
+			                            net_packet->len = 13;
+			                        }
+			                    }
+			                    else if (stats[PLAYER_NUM]->killer == KilledBy::ITEM) {
+			                        SDLNet_Write32((Uint32)stats[PLAYER_NUM]->killer_item, &net_packet->data[8]);
+			                        net_packet->len = 12;
+			                    }
+				                net_packet->address.host = net_clients[PLAYER_NUM - 1].host;
+				                net_packet->address.port = net_clients[PLAYER_NUM - 1].port;
+				                sendPacketSafe(net_sock, -1, net_packet, PLAYER_NUM - 1);
+				            }
+			            }
+
 						for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = nextnode )
 						{
 							nextnode = node->next;
