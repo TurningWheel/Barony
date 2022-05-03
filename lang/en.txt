@@ -2306,8 +2306,8 @@ Connecting to matchmaking lobby...
 
 1499 %s's %s ally %s#
 1500 dies randomly.#
-1501 gets roasted by a fireball.#
-1502 gets chilled by a freeze ball.#
+1501 gets blasted by a magic tower.#
+1502 gets blasted by a ceiling magic trap.#
 1503 stumbles into an arrow trap.#
 1504 stumbles into a beartrap and dies.#
 1505 fails to dodge the incoming boulder.#
@@ -5715,7 +5715,7 @@ Unable to attack#
 
 3862 labelled #
 3863 You can't read the spellbook while blind!#
-3864 diets for a little too long.#
+3864 terminates themselves.#
 3865 The gyrobot loosens the firing spring.#
 3866 The gyrobot tightens the firing spring as far as it will go.#
 3867 The gyrobot begins tightening the firing spring...#

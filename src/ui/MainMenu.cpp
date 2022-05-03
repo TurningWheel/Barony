@@ -9537,6 +9537,11 @@ bind_failed:
 	}
 
 	static void refreshOnlineLobbies() {
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
+        // Do nothing in DRM-free builds.
+        return;
+#endif
+
 	    // close current window
 #ifdef STEAMWORKS
 	    if ( connectingToLobbyWindow )
@@ -13021,7 +13026,55 @@ bind_failed:
             banner->setText("Your party has been wiped out.");
         }
 
-        const char* cause_of_death = "Unknown"; // TODO
+        const char* deathStrings[] = {
+            "Unknown",
+            "Monster", // unused
+            "Item", // unused
+            "Betrayal",
+            "Attempted Robbery",
+            "Trespassing",
+            "Arrow Trap",
+            "Bear Trap",
+            "Spike Trap",
+            "Magic Trap",
+            "Bomb Trap",
+            "Boulder",
+            "Lava",
+            "Hot Water",
+            "Invocation",
+            "Starvation",
+            "Poison",
+            "Bleeding",
+            "Burning",
+            "Strangulation",
+            "Funny Potion",
+            "Bottomless Pit",
+            "Lack of Fuel",
+            "Fountain",
+            "Sink",
+            "Alchemy",
+        };
+
+        std::string cause_of_death;
+        switch (stats[player]->killer) {
+        case KilledBy::MONSTER: {
+            if (stats[player]->killer_name.empty()) {
+                cause_of_death = getMonsterLocalizedName(stats[player]->killer_monster);
+                cause_of_death[0] = (char)toupper((int)cause_of_death[0]);
+            } else {
+                cause_of_death = stats[player]->killer_name;
+            }
+            break;
+        }
+        case KilledBy::ITEM: {
+            cause_of_death = items[stats[player]->killer_item].name_identified;
+            break;
+        }
+        default: {
+            cause_of_death = deathStrings[(int)stats[player]->killer];
+            break;
+        }
+        }
 
         const char* eulogy;
         switch (rand() % 10) {
@@ -13041,10 +13094,10 @@ bind_failed:
         char epitaph_buf[1024];
         if (tutorial) {
             snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\nKilled by: %s\n\n%s",
-                stats[player]->name, cause_of_death, eulogy);
+                stats[player]->name, cause_of_death.c_str(), eulogy);
         } else {
             snprintf(epitaph_buf, sizeof(epitaph_buf), "%s\nKilled by: %s\n\n%s",
-                stats[player]->name, cause_of_death, eulogy);
+                stats[player]->name, cause_of_death.c_str(), eulogy);
         }
 
         auto epitaph = window->addField("epitaph", 1024);

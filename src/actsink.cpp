@@ -214,6 +214,7 @@ void actSink(Entity* my)
 								playSoundEntity(players[i]->entity, 28, 64);
 								playSoundEntity(players[i]->entity, 249, 128);
 								players[i]->entity->setObituary(language[1533]);
+						        stats[i]->killer = KilledBy::SINK;
 
 								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[3183]);
@@ -264,6 +265,7 @@ void actSink(Entity* my)
 								}
 								playSoundEntity(players[i]->entity, 28, 64);
 								players[i]->entity->setObituary(language[1533]);
+						        stats[i]->killer = KilledBy::SINK;
 
 								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[584]);

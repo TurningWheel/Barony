@@ -164,6 +164,7 @@ void Stat::clearStats()
 	int x;
 
 	strcpy(this->obituary, language[1500]);
+	this->killer = KilledBy::UNKNOWN;
 	this->poisonKiller = 0;
 	this->HP = DEFAULT_HP;
 	this->MAXHP = DEFAULT_HP;

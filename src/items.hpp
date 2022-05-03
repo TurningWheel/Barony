@@ -12,7 +12,11 @@
 #pragma once
 
 #include "main.hpp"
-#include "entity.hpp"
+
+#include <random>
+
+class Entity; // forward declare
+class Stat; // forward declare
 
 // items
 typedef enum ItemType

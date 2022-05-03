@@ -152,6 +152,7 @@ void actBeartrap(Entity* my)
 					//}
 					// set obituary
 					entity->setObituary(language[1504]);
+					stat->killer = KilledBy::TRAP_BEAR;
 
 					if ( stat->HP <= 0 && oldHP > 0 )
 					{
@@ -512,6 +513,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 	triggered->modHP(-damage);
 	triggered->setObituary(language[3496]);
+	stat->killer = KilledBy::TRAP_BOMB;
 
 	if ( stat->HP <= 0 && oldHP > 0 )
 	{

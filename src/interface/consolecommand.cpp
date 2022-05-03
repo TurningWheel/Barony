@@ -3770,4 +3770,48 @@ namespace ConsoleCommands {
 		StatusEffectQueue_t::loadStatusEffectsJSON();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded status_effects.json");
 	});
+
+	static void rocksFall(int player) {
+		if (!(svFlags & SV_FLAG_CHEATS)) {
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if (multiplayer == CLIENT) {
+			messagePlayer(clientnum, MESSAGE_MISC, "Only the server can do that.");
+		    return;
+		}
+	    if (player < 0 || player >= MAXPLAYERS) {
+	        return;
+	    }
+		if (!players[player]->entity) {
+		    return;
+		}
+		Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+		entity->parent = players[player]->entity->getUID();
+		entity->x = players[player]->entity->x;
+		entity->y = players[player]->entity->y;
+		entity->z = -64;
+		entity->yaw = (PI / 2) * (rand() % 4);
+		entity->sizex = 7;
+		entity->sizey = 7;
+		entity->behavior = &actBoulder;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[PASSABLE] = true;
+	}
+
+	static ConsoleCommand ccmd_rocksfall("/rocksfall", "spawns a boulder over your head", []CCMD{
+		if (argc >= 2) {
+		    rocksFall((int)strtol(argv[1], nullptr, 10));
+		} else {
+		    rocksFall(clientnum);
+		}
+	});
+
+	static ConsoleCommand ccmd_smite("/smite", "spawns a boulder over somebody's head", []CCMD{
+		if (argc >= 2) {
+		    rocksFall((int)strtol(argv[1], nullptr, 10));
+		} else {
+		    rocksFall(clientnum);
+		}
+	});
 }

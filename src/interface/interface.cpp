@@ -5558,6 +5558,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		{
 			spawnMagicTower(nullptr, players[gui_player]->entity->x, players[gui_player]->entity->y, SPELL_FIREBALL, nullptr);
 			players[gui_player]->entity->setObituary(language[3350]);
+		    stats[gui_player]->killer = KilledBy::FAILED_ALCHEMY;
 		}
 		closeGUI();
 		return;
