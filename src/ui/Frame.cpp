@@ -749,7 +749,7 @@ Frame::result_t Frame::process() {
 
 Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets, bool usable) {
 	result_t result;
-	result.removed = false;
+	result.removed = toBeDeleted;
 	result.usable = usable;
 	result.highlightTime = SDL_GetTicks();
 	result.tooltip = nullptr;

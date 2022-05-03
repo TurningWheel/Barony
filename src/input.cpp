@@ -1464,6 +1464,100 @@ Input::playerControlType_t Input::getPlayerControlType()
 	return Input::PLAYER_CONTROLLED_BY_INVALID;
 }
 
+void Input::consumeBindingsSharedWithBinding(const char* input)
+{
+#ifndef EDITOR
+	if ( disabled )
+	{
+		return;
+	}
+	const std::pair<std::string, binding_t> checkBinding =
+		std::make_pair("input", this->input("input"));
+	for ( auto& b : bindings )
+	{
+		if ( !b.second.binary )
+		{
+			continue; // don't pre-consume non-pressed buttons
+		}
+		if ( b.second.consumed )
+		{
+			continue; // no need to consume again
+		}
+		if ( b.second.type == checkBinding.second.type )
+		{
+			if ( b.first == checkBinding.first )
+			{
+				continue; // skip the hotbar bindings
+			}
+			if ( b.second.type == binding_t::CONTROLLER_AXIS ||
+				b.second.type == binding_t::CONTROLLER_BUTTON )
+			{
+				if ( b.second.type == binding_t::CONTROLLER_BUTTON )
+				{
+					if ( b.second.padButton == checkBinding.second.padButton )
+					{
+						b.second.consumed = true;
+					}
+				}
+				else
+				{
+					if ( b.second.padAxis == checkBinding.second.padAxis )
+					{
+						b.second.consumed = true;
+					}
+				}
+			}
+			else if (
+				b.second.type == binding_t::JOYSTICK_AXIS ||
+				b.second.type == binding_t::JOYSTICK_BUTTON ||
+				b.second.type == binding_t::JOYSTICK_HAT )
+			{
+				if ( b.second.type == binding_t::JOYSTICK_BUTTON )
+				{
+					if ( b.second.joystickButton == checkBinding.second.joystickButton )
+					{
+						b.second.consumed = true;
+					}
+				}
+				else if ( b.second.type == binding_t::JOYSTICK_AXIS )
+				{
+					if ( b.second.joystickAxis == checkBinding.second.joystickAxis )
+					{
+						b.second.consumed = true;
+					}
+				}
+				else
+				{
+					if ( b.second.joystickHat == checkBinding.second.joystickHat )
+					{
+						b.second.consumed = true;
+					}
+				}
+			}
+			else if ( b.second.type == binding_t::MOUSE_BUTTON )
+			{
+				if ( b.second.mouseButton == checkBinding.second.mouseButton )
+				{
+					b.second.consumed = true;
+					if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
+						|| b.second.mouseButton == MOUSE_WHEEL_UP )
+					{
+						mouseButtons[b.second.mouseButton] = false; // manually need to clear this
+					}
+				}
+			}
+			else if ( b.second.type == binding_t::KEYBOARD )
+			{
+				if ( b.second.scancode == checkBinding.second.scancode )
+				{
+					b.second.consumed = true;
+				}
+			}
+		}
+	}
+#endif
+}
+
 void Input::consumeBindingsSharedWithFaceHotbar()
 {
 #ifndef EDITOR

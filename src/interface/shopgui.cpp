@@ -237,15 +237,6 @@ void updateShopWindow(const int player)
 		shoptimer[player]--;
 	}
 
-
-	if ( keystatus[SDL_SCANCODE_G] )
-	{
-		keystatus[SDL_SCANCODE_G] = 0;
-
-		static ConsoleVariable<int> cvar_shop_name("/shopchatter", 0);
-		shopspeech[player] = language[216 + *cvar_shop_name];
-	}
-
 	// draw speech
 	char buf[1024] = "";
 	//if ( sellitem[clientnum] && shopspeech[player] == language[215] )
@@ -671,7 +662,7 @@ void updateShopGUIChatter(const int player)
 		{
 			players[player]->shopGUI.chatTicks = ticks;
 
-			SDL_Rect textPos{ 22, 18 + pointerHeightAddition, 0, 0 };
+			SDL_Rect textPos{ 22, 18 + pointerHeightAddition + 1, 0, 0 };
 			textPos.w = chatPos.w - textPos.x - 14 - 4;
 			textPos.h = chatPos.h - 14 - textPos.y;
 			chatText->setSize(textPos);
@@ -953,7 +944,7 @@ void Player::ShopGUI_t::updateShop()
 	shopFrame->setSize(shopFramePos);
 
 	bool purchaseItemAction = false;
-	bool usingGamepad = (inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor);
+	bool usingGamepad = inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor;
 
 	if ( !player.isLocalPlayerAlive()
 		|| (player.gui_mode != GUI_MODE_SHOP && player.inventory_mode != INVENTORY_MODE_SPELL) 
@@ -1088,7 +1079,7 @@ void Player::ShopGUI_t::updateShop()
 	auto buyPromptGlyphFrame = buyTooltipFrame->findFrame("buy prompt frame");
 	auto buyPromptGlyph = buyPromptGlyphFrame->findImage("buy prompt glyph");
 	auto itemBgImg = buyTooltipFrame->findImage("item bg img");
-	itemBgImg->pos.y = itemTooltipImg->pos.y + itemTooltipImg->pos.h / 2 - itemBgImg->pos.h / 2 - 1;
+	itemBgImg->pos.y = itemTooltipImg->pos.y + itemTooltipImg->pos.h / 2 - itemBgImg->pos.h / 2;
 	if ( animTooltip <= 0.0001 )
 	{
 		displayItemName->setDisabled(true);
@@ -1259,7 +1250,7 @@ void Player::ShopGUI_t::updateShop()
 		}
 		displayItemName->setSize(namePos);
 
-		itemBgImg->pos.y = itemTooltipImg->pos.y + itemTooltipImg->pos.h / 2 - itemBgImg->pos.h / 2 - 1;
+		itemBgImg->pos.y = itemTooltipImg->pos.y + itemTooltipImg->pos.h / 2 - itemBgImg->pos.h / 2;
 		SDL_Rect slotFramePos = itemSlotFrame->getSize();
 		slotFramePos.x = itemBgImg->pos.x + itemBgImg->pos.w / 2 - slotFramePos.w / 2 - 1;
 		slotFramePos.y = itemBgImg->pos.y + itemBgImg->pos.h / 2 - slotFramePos.h / 2 - 1;
@@ -1275,13 +1266,12 @@ void Player::ShopGUI_t::updateShop()
 		displayItemValue->setSize(valuePos);
 		displayItemValue->setText(priceFormat);
 
-		Uint32 negativeColor = makeColor(215, 38, 61, 255);
-		displayItemValue->setColor(makeColor(201, 162, 100, 255));
+		displayItemValue->setColor(hudColors.characterSheetLightNeutral);
 		if ( itemPrice > 0 && itemPrice > stats[player.playernum]->GOLD )
 		{
 			if ( !strcmp(buyPromptText->getText(), language[4113]) ) // buy prompt
 			{
-				displayItemValue->setColor(negativeColor);
+				displayItemValue->setColor(hudColors.characterSheetRed);
 			}
 		}
 
@@ -1331,6 +1321,7 @@ void Player::ShopGUI_t::updateShop()
 	else
 	{
 		if ( ticks - animTooltipTicks > TICKS_PER_SECOND / 3
+			|| usingGamepad
 			|| animTooltip < 0.9999 )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz

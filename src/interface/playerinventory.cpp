@@ -1211,6 +1211,14 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	if ( inventoryUI.bCompactView )
 	{
+		if ( GenericGUI[player].tinkerGUI.bOpen )
+		{
+			return false;
+		}
+		if ( players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
+		{
+			return false;
+		}
 		if ( openedChest[player] && players[player]->inventoryUI.chestGUI.bOpen )
 		{
 			return false;
@@ -1514,6 +1522,33 @@ void select_shop_slot(int player, int currentx, int currenty, int diffx, int dif
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
+	int lowestItemY = tinkerGUI.MAX_TINKER_Y - 1;
+	if ( y < 0 )
+	{
+		y = lowestItemY;
+	}
+	if ( y > lowestItemY )
+	{
+		y = 0;
+	}
+	if ( x < 0 )
+	{
+		x = tinkerGUI.MAX_TINKER_X - 1;
+	}
+	if ( x >= tinkerGUI.MAX_TINKER_X )
+	{
+		x = 0;
+	}
+	tinkerGUI.selectTinkerSlot(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	int x = currentx + diffx;
@@ -1558,6 +1593,15 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 
 	int x = currentx + diffx;
 	int y = currenty + diffy;
+
+	if ( !selectedItem && GenericGUI[player].tinkerGUI.isConstructMenuActive()
+		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_TINKERING )
+	{
+		// prevent inventory moving if tinkering not selected when it should be
+		select_tinkering_slot(player, x, y, 0, 0);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+		return;
+	}
 
 	if ( selectedItem )
 	{
@@ -1705,15 +1749,26 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 					}
 					else
 					{
+						bool skipPaperDollSelection = false;
+						if ( GenericGUI[player].tinkerGUI.bOpen )
+						{
+							skipPaperDollSelection = true;
+						}
 						if ( x >= inventoryUI.getSizeX() )
 						{
-							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-							return;
+							if ( !skipPaperDollSelection )
+							{
+								players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+								return;
+							}
 						}
 						else if ( x < 0 )
 						{
-							players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
-							return;
+							if ( !skipPaperDollSelection )
+							{
+								players[player]->paperDoll.selectPaperDollCoordinatesFromSlotType(selectedItemDollSlot);
+								return;
+							}
 						}
 					}
 				}
@@ -1785,6 +1840,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		}
 		else
 		{
+			// moveInPaperDoll will reject movement for compact view tinkering, shops, chests etc by returning false
 			if ( moveInPaperDoll(player, paperDollSlot, currentx, currenty, diffx, diffy, x, y) )
 			{
 				return;
@@ -1917,7 +1973,6 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		}
 	}
 
-	bool warpInv = true;
 	auto& hotbar_t = players[player]->hotbar;
 
 	if ( y < 0 )   //Wrap around top to bottom.
@@ -1926,23 +1981,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	}
 	if ( y >= inventoryUI.getSizeY() )   //Hit bottom. Wrap around or go to shop/chest?
 	{
-		if ( GenericGUI[player].isGUIOpen() )
-		{
-			warpInv = false;
-			y = inventoryUI.getSizeY() - 1;
-
-			//Warp into GUI "inventory"...if there is anything there.
-			if ( GenericGUI[player].itemsDisplayed[0] )
-			{
-				GenericGUI[player].selectedSlot = 0;
-				GenericGUI[player].warpMouseToSelectedSlot();
-			}
-		}
-
-		if ( warpInv )   //Wrap around to top.
-		{
-			y = 0;
-		}
+		y = 0;
 	}
 
 	inventoryUI.selectSlot(x, y);
@@ -3634,7 +3673,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				//Catches cases like 1px between slots in backpack.
 				int slotNum = 0;
 				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
-				if ( slot )
+				if ( slot && players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 				{
 					//Add spell to hotbar.
 					Item* tempItem = uidToItem(slot->item);
@@ -3674,52 +3713,60 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				// outside inventory
 				int slotNum = 0;
 				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
-				if (slot)
+				if ( slot )
 				{
-					//Add item to hotbar.
-					Item* tempItem = uidToItem(slot->item);
-					Item* swappedItem = nullptr;
-					if (tempItem && tempItem != selectedItem)
+					if ( !players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 					{
-						slot->item = selectedItem->uid;
-						swappedItem = selectedItem;
-						selectedItem = tempItem;
-						toggleclick = true;
+						selectedItem = nullptr;
+						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 					}
 					else
 					{
-						slot->item = selectedItem->uid;
-						selectedItem = nullptr;
-						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-						toggleclick = false;
-					}
-
-					if ( swappedItem && selectedItem )
-					{
-						players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
-						players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
-
-						// unused for now
-						if ( bUseSelectedSlotCycleAnimation )
+						//Add item to hotbar.
+						Item* tempItem = uidToItem(slot->item);
+						Item* swappedItem = nullptr;
+						if ( tempItem && tempItem != selectedItem )
 						{
-							if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+							slot->item = selectedItem->uid;
+							swappedItem = selectedItem;
+							selectedItem = tempItem;
+							toggleclick = true;
+						}
+						else
+						{
+							slot->item = selectedItem->uid;
+							selectedItem = nullptr;
+							inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+							toggleclick = false;
+						}
+
+						if ( swappedItem && selectedItem )
+						{
+							players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+							players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+							// unused for now
+							if ( bUseSelectedSlotCycleAnimation )
 							{
-								oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+								if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+								{
+									oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+								}
 							}
 						}
-					}
 
-					// empty out duplicate slots that match this item uid.
-					int i = 0;
-					for ( auto& s : players[player]->hotbar.slots() )
-					{
-						if ( i != slotNum && s.item == slot->item )
+						// empty out duplicate slots that match this item uid.
+						int i = 0;
+						for ( auto& s : players[player]->hotbar.slots() )
 						{
-							s.item = 0;
+							if ( i != slotNum && s.item == slot->item )
+							{
+								s.item = 0;
+							}
+							++i;
 						}
-						++i;
+						playSound(139, 64); // click sound
 					}
-					playSound(139, 64); // click sound
 				}
 				else
 				{
@@ -5969,9 +6016,9 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		int paperDollHideFrameAmount = hideFrameAmount;
 		dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? paperDollHideFrameAmount : -paperDollHideFrameAmount);
 		compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? paperDollHideFrameAmount : -paperDollHideFrameAmount);
-		if ( chestGUI.animx2 > 0.01 )
+		if ( animPaperDollHide > 0.01 )
 		{
-			int chestHideAmount = chestGUI.animx2 * compactCharImg->pos.w;
+			int chestHideAmount = animPaperDollHide * compactCharImg->pos.w;
 			dollSlotsPos.x += ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? -chestHideAmount : chestHideAmount);
 			compactCharImg->pos.x += ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? -chestHideAmount : chestHideAmount);
 		}
@@ -6111,6 +6158,7 @@ void Player::Inventory_t::updateInventory()
 	assert(tooltipFrame);
 
 	auto& shopGUI = this->player.shopGUI;
+	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
@@ -6128,6 +6176,23 @@ void Player::Inventory_t::updateInventory()
 	else if ( bCompactView && players[player]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_INVENTORY )
 	{
 		hideAndExit = true;
+	}
+
+	if ( (!chestFrame->isDisabled() && chestGUI.bOpen)
+		|| GenericGUI[player].isGUIOpen()
+		|| shopGUI.bOpen )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animPaperDollHide)) / 2.0;
+		animPaperDollHide += setpointDiffX;
+		animPaperDollHide = std::min(1.0, animPaperDollHide);
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (animPaperDollHide)) / 2.0;
+		animPaperDollHide -= setpointDiffX;
+		animPaperDollHide = std::max(0.0, animPaperDollHide);
 	}
 
 	if ( hideAndExit )
@@ -6248,6 +6313,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					players[player]->shopGUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+				{
+					tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
@@ -6283,6 +6352,9 @@ void Player::Inventory_t::updateInventory()
 	auto selectedSlotFrame = frame->findFrame("inventory selected item");
 	auto selectedSlotCursor = selectedItemCursorFrame;
 
+	bool tinkerCraftableListOpen = tinkerGUI.isConstructMenuActive();
+	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
+
 	if ( GenericGUI[player].selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
@@ -6291,6 +6363,43 @@ void Player::Inventory_t::updateInventory()
 		Frame* slotFrameToHighlight = nullptr;
 		int startx = 0;
 		int starty = 0;
+
+		if ( tinkerCraftableListOpen && players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING) )
+		{
+			for ( int x = 0; x < tinkerGUI.MAX_TINKER_X; ++x )
+			{
+				for ( int y = 0; y < tinkerGUI.MAX_TINKER_Y; ++y )
+				{
+					if ( auto slotFrame = tinkerGUI.getTinkerSlotFrame(x, y) )
+					{
+						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						{
+							if ( tinkerGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								tinkerGUI.selectTinkerSlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+								}
+							}
+						}
+
+						if ( x == tinkerGUI.getSelectedTinkerSlotX()
+							&& y == tinkerGUI.getSelectedTinkerSlotY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+							&& tinkerGUI.isInteractable )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
 
 		if ( shopGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP) )
@@ -6369,6 +6478,7 @@ void Player::Inventory_t::updateInventory()
 		}
 
 		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& !tinkerCraftableListOpen
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
@@ -6406,6 +6516,7 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL
+			&& !tinkerCraftableListOpen
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
 		{
 			for ( int x = 0; x < MAX_SPELLS_X; ++x )
@@ -6860,6 +6971,40 @@ void Player::Inventory_t::updateInventory()
 				{
 					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 				}
+				else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
+				{
+					// grab action status of this item, don't modify using 'true' param
+					auto res = tinkerGUI.setItemDisplayNameAndPrice(item, true); 
+					bool invalidItem = !(res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK
+						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE);
+					if ( tinkerCraftableListOpen && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
+					{
+						if ( invalidItem )
+						{
+							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else
+						{
+							updateSlotFrameFromItem(slotFrame, item);
+						}
+					}
+					else if ( tinkeringSalvageOrRepairMenuActive
+						&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE
+						&& invalidItem )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+					else if ( tinkeringSalvageOrRepairMenuActive
+						&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE
+						&& invalidItem )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
 				else
 				{
 					updateSlotFrameFromItem(slotFrame, item);
@@ -6913,6 +7058,81 @@ void Player::Inventory_t::updateInventory()
 	bool noPreviousSelectedItem = (selectedItem == nullptr);
 
 	shopGUI.clearItemDisplayed();
+	tinkerGUI.clearItemDisplayed();
+
+	if ( !selectedItem && tinkerCraftableListOpen )
+	{
+		list_t* player_inventory = nullptr;
+		player_inventory = &GenericGUI[player].tinkeringTotalItems;
+		if ( player_inventory )
+		{
+			for ( node = player_inventory->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( !item ) { continue; }
+
+				if ( !GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
+				{
+					continue;
+				}
+
+				bool mouseOverSlot = false;
+
+				int itemx = item->x;
+				int itemy = item->y;
+
+				auto slotFrame = getItemSlotFrame(item, itemx, itemy);
+				if ( !slotFrame ) { continue; }
+
+				if ( itemCategory(item) == SPELL_CAT
+					|| (players[player]->inventory_mode == INVENTORY_MODE_SPELL) )
+				{
+					continue;    //Skip over this item if not in inventory mode
+				}
+
+				mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING)
+					&& slotFrame->capturesMouse();
+
+				if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
+				{
+					// mouse movement captures the inventory
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+				}
+
+				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+					&& (!tinkerGUI.isInteractable) )
+				{
+					// don't do anything while in motion
+					break;
+				}
+
+				if ( stats[player]->HP <= 0 )
+				{
+					break;
+				}
+
+				//if ( hideItemFromShopView(*item) )
+				//{
+				//	continue;
+				//}
+				//if ( shopGUI.buybackView && !item->playerSoldItemToShop )
+				//{
+				//	continue;
+				//}
+				//else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
+				//{
+				//	continue;
+				//}
+
+				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() && tinkerGUI.isInteractable )
+				{
+					tinkerGUI.setItemDisplayNameAndPrice(item);
+					break;
+				}
+			}
+		}
+	}
 	if ( !selectedItem && shopOpen )
 	{
 		for ( node = shopInv[player]->first; node != NULL; node = nextnode )
@@ -7178,6 +7398,14 @@ void Player::Inventory_t::updateInventory()
 							// mouse will be situated halfway in first menu option
 							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
 						}
+						if ( itemMenuX % 2 == 1 )
+						{
+							++itemMenuX; // even pixel adjustment
+						}
+						if ( itemMenuY % 2 == 1 )
+						{
+							++itemMenuY; // even pixel adjustment
+						}
 						itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
 
 						bool alignRight = true;
@@ -7218,7 +7446,7 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
-	if ( !selectedItem )
+	if ( !selectedItem && !tinkerCraftableListOpen )
 	{
 		for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 		{
@@ -7227,6 +7455,14 @@ void Player::Inventory_t::updateInventory()
 			if ( !item )
 			{
 				continue;
+			}
+
+			if ( GenericGUI[player].isGUIOpen() )
+			{
+				if ( !GenericGUI[player].isNodeFromPlayerInventory(item->node) )
+				{
+					continue;
+				}
 			}
 
 			bool mouseOverSlot = false;
@@ -7287,6 +7523,18 @@ void Player::Inventory_t::updateInventory()
 			}
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST
 				&& !chestGUI.isInteractable )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
+				&& !tinkerGUI.isInteractable )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
+				&& (!shopGUI.isInteractable) )
 			{
 				// don't do anything while in motion
 				break;
@@ -7368,7 +7616,14 @@ void Player::Inventory_t::updateInventory()
 
 				bool tooltipOpen = false;
 				bool sellingItemToShop = false;
-				if ( shopGUI.isItemSelectedToSellToShop(item) )
+				bool tinkerOpen = false;
+				if ( tinkeringSalvageOrRepairMenuActive )
+				{
+					tooltipOpen = false;
+					tinkerOpen = true;
+					tinkerGUI.setItemDisplayNameAndPrice(item);
+				}
+				else if ( shopGUI.isItemSelectedToSellToShop(item) )
 				{
 					sellingItemToShop = true;
 					shopGUI.setItemDisplayNameAndPrice(item);
@@ -7389,7 +7644,8 @@ void Player::Inventory_t::updateInventory()
 
 				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) 
 					|| bIsTooltipDelayed()
-					|| sellingItemToShop)
+					|| sellingItemToShop
+					|| tinkerOpen)
 					&& !itemMenuOpen && !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
@@ -7507,7 +7763,7 @@ void Player::Inventory_t::updateInventory()
 						// force equip potion/spellbook
 						playerTryEquipItemAndUpdateServer(player, item, false);
 					}
-					else
+					else if ( !tinkeringSalvageOrRepairMenuActive )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -7519,6 +7775,14 @@ void Player::Inventory_t::updateInventory()
 							// 10px is slot half height, minus the top interact text height
 							// mouse will be situated halfway in first menu option
 							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
+						}
+						if ( itemMenuX % 2 == 1 )
+						{
+							++itemMenuX; // even pixel adjustment
+						}
+						if ( itemMenuY % 2 == 1 )
+						{
+							++itemMenuY; // even pixel adjustment
 						}
 						itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
 
@@ -7741,22 +8005,25 @@ void Player::Inventory_t::updateInventory()
 
 				if ( cursor.queuedModule == Player::GUI_t::MODULE_NONE && !oldQueuedCursor )
 				{
-					for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+					if ( players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 					{
-						auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
-						if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+						for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
 						{
-							players[player]->hotbar.selectHotbarSlot(c);
+							auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
+							if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+							{
+								players[player]->hotbar.selectHotbarSlot(c);
 
-							selectedSlotCursor->setDisabled(false);
+								selectedSlotCursor->setDisabled(false);
 
-							int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
-							int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
+								int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
+								int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
 
-							updateSelectedSlotAnimation(startx - 1, starty - 1,
-								hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-							//messagePlayer(player, "7: hotbar: %d", c);
-							break;
+								updateSelectedSlotAnimation(startx - 1, starty - 1,
+									hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+								//messagePlayer(player, "7: hotbar: %d", c);
+								break;
+							}
 						}
 					}
 				}
@@ -7805,6 +8072,39 @@ void Player::Inventory_t::updateInventory()
 						if ( shopOpen && !isItemSellableToShop(player, item) )
 						{
 							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
+						{
+							auto res = tinkerGUI.setItemDisplayNameAndPrice(item, true);
+							bool invalidItem = !(res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK
+								|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE);
+							if ( tinkerCraftableListOpen && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
+							{
+								if ( invalidItem )
+								{
+									updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+								}
+								else
+								{
+									updateSlotFrameFromItem(slotFrame, item);
+								}
+							}
+							else if ( tinkeringSalvageOrRepairMenuActive
+								&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE
+								&& invalidItem )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else if ( tinkeringSalvageOrRepairMenuActive
+								&& GenericGUI[player].tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE
+								&& invalidItem )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item);
+							}
 						}
 						else
 						{
@@ -8249,6 +8549,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	}
 
 	bool sellingToShop = false;
+	bool tinkerOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -8256,10 +8557,14 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 			sellingToShop = true;
 		}
 	}
+	else if ( GenericGUI[player].tinkerGUI.bOpen )
+	{
+		tinkerOpen = true;
+	}
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop )
+		if ( sellingToShop || tinkerOpen )
 		{
 			if ( getContextMenuOptionBindingName(*it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(*it) == "MenuCancel" )

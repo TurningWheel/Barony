@@ -571,6 +571,16 @@ bool sellItemToShop(const int player, Item* item)
 	shopChangeGoldEvent(player, item->sellValue(player));
 	stats[player]->GOLD += item->sellValue(player);
 
+	if ( multiplayer != CLIENT )
+	{
+		Entity* entity = uidToEntity(shopkeeper[player]);
+		if ( entity )
+		{
+			Stat* shopstats = entity->getStats();
+			shopstats->GOLD -= item->sellValue(player);
+		}
+	}
+
 	if ( stats[player]->playerRace > 0 && players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
 	{
 		steamStatisticUpdate(STEAM_STAT_ALTER_EGO, STEAM_STAT_INT, item->sellValue(player));

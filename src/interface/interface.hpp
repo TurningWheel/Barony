@@ -14,6 +14,7 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../draw.hpp"
+#include "../ui/Frame.hpp"
 
 class Item;
 
@@ -195,6 +196,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_chest_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -383,7 +385,7 @@ public:
 		experimentingAlchemy(false),
 		tinkeringKitItem(nullptr),
 		tinkeringTotalLastCraftableNode(nullptr),
-		tinkeringFilter(TINKER_FILTER_ALL),
+		tinkeringFilter(TINKER_FILTER_CRAFTABLE),
 		tinkeringAutoSalvageKitItem(nullptr),
 		tinkeringAutoSalvageThisItem(nullptr),
 		scribingFilter(SCRIBING_FILTER_CRAFTABLE),
@@ -392,7 +394,8 @@ public:
 		scribingBlankScrollTarget(nullptr),
 		scribingLastUsageAmount(0),
 		scribingLastUsageDisplayTimer(0),
-		repairItemType(0)
+		repairItemType(0),
+		tinkerGUI(*this)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -521,6 +524,97 @@ public:
 		}
 	}
 	bool isNodeFromPlayerInventory(node_t* node);
+
+	struct TinkerGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		TinkerGUI_t(GenericGUIMenu& g) :
+			parentGUI(g) 
+		{}
+
+		Frame* tinkerFrame = nullptr;
+		real_t animx = 0.0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openTinkerMenu();
+		void closeTinkerMenu();
+		void updateTinkerMenu();
+		void createTinkerMenu();
+		bool tinkerGUIHasBeenCreated() const;
+		bool isConstructMenuActive() const;
+		bool isSalvageOrRepairMenuActive() const;
+		Sint32 metalScrapPrice = 0;
+		Sint32 magicScrapPrice = 0;
+		std::string itemDesc = "";
+		int itemType = -1;
+		int itemRequirement = -1;
+		enum TinkerActions_t : int 
+		{
+			TINKER_ACTION_NONE,
+			TINKER_ACTION_OK,
+			TINKER_ACTION_OK_UPGRADE,
+			TINKER_ACTION_INVALID_ITEM,
+			TINKER_ACTION_INVALID_ROBOT_TO_SALVAGE,
+			TINKER_ACTION_NO_MATERIALS,
+			TINKER_ACTION_NO_MATERIALS_UPGRADE,
+			TINKER_ACTION_NO_SKILL_LVL,
+			TINKER_ACTION_NO_SKILL_LVL_UPGRADE,
+			TINKER_ACTION_ITEM_FULLY_REPAIRED,
+			TINKER_ACTION_ITEM_FULLY_UPGRADED,
+			TINKER_ACTION_ROBOT_BROKEN,
+			TINKER_ACTION_MUST_BE_UNEQUIPPED,
+			TINKER_ACTION_ALREADY_USING_THIS_TINKERING_KIT,
+			TINKER_ACTION_OK_UNIDENTIFIED_SALVAGE,
+			TINKER_ACTION_NOT_IDENTIFIED_YET,
+			TINKER_ACTION_KIT_NEEDS_REPAIRS
+		};
+		TinkerActions_t itemActionType = TINKER_ACTION_NONE;
+		bool itemRequiresTitleReflow = true;
+		real_t animDrawer = 0.0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animFilter = 0.0;
+		real_t animPrompt = 0.0;
+		Uint32 animPromptTicks = 0;
+		bool animPromptMoveLeft = false;
+		real_t animInvalidAction = 0.0;
+		Uint32 animInvalidActionTicks = 0;
+		enum InvalidActionFeedback_t : int
+		{
+			INVALID_ACTION_NONE,
+			INVALID_ACTION_SHAKE_PROMPT,
+			INVALID_ACTION_SHAKE_METAL_SCRAP,
+			INVALID_ACTION_SHAKE_MAGIC_SCRAP,
+			INVALID_ACTION_SHAKE_ALL_SCRAP
+		};
+		InvalidActionFeedback_t invalidActionType = INVALID_ACTION_NONE;
+		Sint32 playerCurrentMetalScrap = 0;
+		Sint32 playerCurrentMagicScrap = 0;
+		Sint32 playerChangeMetalScrap = 0;
+		Sint32 playerChangeMagicScrap = 0;
+		real_t animScrap = 0.0;
+		Uint32 animScrapStartTicks = 0;
+
+		int selectedTinkerSlotX = -1;
+		int selectedTinkerSlotY = -1;
+		static const int MAX_TINKER_X;
+		static const int MAX_TINKER_Y;
+		std::unordered_map<int, Frame*> tinkerSlotFrames;
+		bool isTinkerConstructItemSelected(Item* item);
+		bool isSalvageOrRepairItemSelected(Item* item);
+		void selectTinkerSlot(const int x, const int y);
+		const int getSelectedTinkerSlotX() const { return selectedTinkerSlotX; }
+		const int getSelectedTinkerSlotY() const { return selectedTinkerSlotY; }
+		Frame* getTinkerSlotFrame(int x, int y) const;
+		TinkerActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
+		bool warpMouseToSelectedTinkerItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+		void updateTinkerScrapHeld(void* metalHeldText, void* magicHeldText, int realMetalScrap, int realMagicScrap);
+
+		static int heightOffsetWhenNotCompact;
+	};
+	TinkerGUI_t tinkerGUI;
 };
 extern GenericGUIMenu GenericGUI[MAXPLAYERS];
 

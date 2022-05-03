@@ -971,7 +971,7 @@ thou makest use of them.#
 572 You fall to your death...#
 573 You've fallen in boiling lava!#
 574 The water extinguishes the flames!#
-575 You bump %s. %d/%d HP | %d/%d MP#
+575 You bump %s.#
 576 %s bumps you.#
 577 You die...#
 578
@@ -4940,9 +4940,9 @@ items:#
 3641 Return to#
 3642 Box#
 3643 returns to its box.#
-3644 Craft #
-3645 Salvage #
-3646 Repair #
+3644 Craft#
+3645 Salvage#
+3646 Repair#
 3647 Scrap available: %3d   %3d#
 3648 You do not have enough materials to craft a %s!#
 3649 Deactivate#
@@ -4983,7 +4983,7 @@ any gyrobot findings.#
 3681 You can't repair equipped items!#
 3682 You repair the %s.#
 3683 You upgrade the %s.#
-3684 Upgrade #
+3684 Upgrade#
 3685 Your Tinkering skill is not high enough to upgrade the %s!#
 3686 You do not have enough materials to repair the %s!#
 3687 You do not have enough materials to upgrade the %s!#
@@ -6093,5 +6093,31 @@ formalities of gold, now!#
 4127 %s's#
 4128 Rare Goods#
 4129 ???'s#
+
+# new tinkering
+4130 Crafting Cost:#
+4131 Held Scrap:#
+4132 This should be unequipped first#
+4133 Salvage Gain:#
+4134 Repair Cost:#
+4135 Upgrade Cost:#
+4136 This is already fully repaired#
+4137 Nothing useful can be salvaged#
+4138 Unable to be repaired#
+4139 This is already fully upgraded#
+4140 Not enough materials to craft#
+4141 Not enough materials to repair#
+4142 Not enough materials to upgrade#
+4143 Irrepairable, best salvaged#
+4144 Skill too low to repair (%d/%d)#
+4145 Skill too low to upgrade (%d/%d)#
+4146 Cannot salvage this while using it!#
+4147 Skill too low to craft (%d/%d)#
+4148 Too impeccable to salvage#
+4149 Select an item to craft:#
+4150 Select an item to salvage:#
+4151 Select an item to repair: #
+4152 Your Tinkering Kit needs repairs#
+4153 This needs to be identified first#
 
 4199 end#

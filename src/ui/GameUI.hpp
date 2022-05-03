@@ -35,6 +35,22 @@ struct EnemyBarSettings_t
 	}
 };
 extern EnemyBarSettings_t enemyBarSettings;
+struct CustomColors_t
+{
+	Uint32 itemContextMenuHeadingText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionSelectedText = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionImg = 0xFFFFFFFF;
+	Uint32 itemContextMenuOptionSelectedImg = 0xFFFFFFFF;
+	Uint32 characterSheetNeutral = 0xFFFFFFFF;
+	Uint32 characterSheetLightNeutral = 0xFFFFFFFF;
+	Uint32 characterSheetGreen = 0xFFFFFFFF;
+	Uint32 characterSheetRed = 0xFFFFFFFF;
+	Uint32 characterSheetFaintText = 0xFFFFFFFF;
+	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
+	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
+};
+extern CustomColors_t hudColors;
 
 // if true, use the new user interface
 extern bool newui;

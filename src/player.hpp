@@ -766,6 +766,7 @@ public:
 		bool bFirstTimeSnapCursor = false;
 		bool isInteractable = false;
 		Uint32 tooltipDelayTick = 0;
+		real_t animPaperDollHide = 0.0;
 		bool bIsTooltipDelayed();
 		void openInventory();
 		void closeInventory();
@@ -829,7 +830,6 @@ public:
 			Player& player;
 			PanelJustify_t panelJustify = PANEL_JUSTIFY_LEFT;
 			real_t animx = 0.0;
-			real_t animx2 = 0.0; // to duck out the paper doll in compact view
 			real_t scrollPercent = 0.0;
 			real_t scrollInertia = 0.0;
 			int scrollSetpoint = 0;

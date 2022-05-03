@@ -5123,6 +5123,7 @@ void serverHandlePacket()
 		Sint32 buyValue = item->buyValue(client);
 		entitystats->GOLD += buyValue;
 		stats[client]->GOLD -= buyValue;
+		stats[client]->GOLD = std::max(0, stats[client]->GOLD);
 		if ( players[client] && players[client]->entity )
 		{
 			if ( buyValue <= 1 )
@@ -5237,6 +5238,7 @@ void serverHandlePacket()
 		}
 
 		stats[client]->GOLD += goldValue;
+		entitystats->GOLD -= goldValue;
 		//if ( players[client] && players[client]->entity )
 		//{
 		//	if ( rand() % 2 )

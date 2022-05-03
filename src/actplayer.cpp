@@ -4721,7 +4721,7 @@ void actPlayer(Entity* my)
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
+					messagePlayer(i, MESSAGE_INTERACTION, language[575], stats[PLAYER_NUM]->name);
 					messagePlayer(PLAYER_NUM, MESSAGE_INTERACTION, language[576], stats[i]->name);
 					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{

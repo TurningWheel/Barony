@@ -4099,6 +4099,7 @@ void ingameHud()
 			}
 			// no dropdowns/no selected item, if controller, has to be in inventory/hotbar + !shootmode
 			else if ( !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive()
+				&& !GenericGUI[player].isGUIOpen()
 				&& !inputs.hasController(player) )
 			{
 				players[player]->gui_mode = GUI_MODE_INVENTORY;
@@ -4512,6 +4513,7 @@ void ingameHud()
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
+		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
