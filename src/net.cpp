@@ -4495,6 +4495,7 @@ void clientHandlePacket()
 		    loadingsavegame = 0;
 	    }
 		MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
+		pauseGame(2, 0);
 		return;
 	}
 
