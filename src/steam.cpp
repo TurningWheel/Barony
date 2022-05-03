@@ -14,6 +14,7 @@
 #include "stat.hpp"
 #include "net.hpp"
 #include "menu.hpp"
+#include "ui/MainMenu.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
 #include "entity.hpp"
@@ -678,6 +679,7 @@ SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket()
 
 SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList()
 {
+    SteamMatchmaking()->AddRequestLobbyListDistanceFilter(ELobbyDistanceFilter::k_ELobbyDistanceFilterWorldwide);
 	SteamMatchmaking()->AddRequestLobbyListNearValueFilter("lobbyCreationTime", SteamUtils()->GetServerRealTime());
 	SteamMatchmaking()->AddRequestLobbyListNumericalFilter("lobbyModifiedTime", 
 		SteamUtils()->GetServerRealTime() - 8, k_ELobbyComparisonEqualToOrGreaterThan);
@@ -1331,7 +1333,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 }
 
 #ifdef STEAMWORKS
-//#define STEAMDEBUG
+#define STEAMDEBUG
 
 /*-------------------------------------------------------------------------------
 
@@ -1546,39 +1548,40 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 #endif
 	if ( static_cast<EResult>(static_cast<LobbyCreated_t*>(pCallback)->m_eResult) == k_EResultOK )   //TODO: Make sure port from c_EResult to EResult works flawlessly.
 	{
-		if ( currentLobby )
+	    auto lobby = static_cast<CSteamID*>(currentLobby);
+		if ( lobby )
 		{
-			SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
-			cpp_Free_CSteamID(currentLobby); //TODO: BUGGER THIS.
-			currentLobby = nullptr;
+			SteamMatchmaking()->LeaveLobby(*lobby);
+			cpp_Free_CSteamID((void*)lobby); //TODO: BUGGER THIS.
 		}
 		currentLobby = cpp_LobbyCreated_Lobby(pCallback);
+		lobby = static_cast<CSteamID*>(currentLobby);
 
 		// set the name of the lobby
 		snprintf( currentLobbyName, 31, "%s's lobby", SteamFriends()->GetPersonaName() );
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "name", currentLobbyName);
 
 		// set the game version of the lobby
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "ver", VERSION); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "ver", VERSION);
 
 		// set lobby server flags
 		char svFlagsChar[16];
 		snprintf(svFlagsChar, 15, "%d", svFlags);
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "svFlags", svFlagsChar);
 
 		// set load game status on lobby
 		char loadingsavegameChar[16];
 		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "loadingsavegame", loadingsavegameChar); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "loadingsavegame", loadingsavegameChar);
 
 		char svNumMods[16];
 		snprintf(svNumMods, 15, "%d", gamemods_numCurrentModsLoaded);
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods", svNumMods); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "svNumMods", svNumMods);
 
 		char modifiedTime[32];
 		snprintf(modifiedTime, 31, "%d", SteamUtils()->GetServerRealTime());
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyModifiedTime", modifiedTime); //TODO: Bugger void pointer!
-		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "lobbyCreationTime", modifiedTime); //TODO: Bugger void pointer!
+		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyModifiedTime", modifiedTime);
+		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyCreationTime", modifiedTime);
 
 		if ( gamemods_numCurrentModsLoaded > 0 )
 		{
@@ -1594,7 +1597,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 						snprintf(svModFileID, 64, "%d", static_cast<int>(itMap->second));
 						char tagName[32] = "";
 						snprintf(tagName, 32, "svMod%d", count);
-						SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName, svModFileID); //TODO: Bugger void pointer!
+						SteamMatchmaking()->SetLobbyData(*lobby, tagName, svModFileID);
 						++count;
 						break;
 					}
@@ -1892,7 +1895,22 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 		// lobby join failed
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
-		openFailedConnectionWindow(CLIENT);
+		switch (static_cast<LobbyEnter_t*>(pCallback)->m_EChatRoomEnterResponse) {
+	    case k_EChatRoomEnterResponseSuccess: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NO_ERROR; break; // Success
+	    case k_EChatRoomEnterResponseDoesntExist: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_FOUND; break; // Chat doesn't exist (probably closed)
+	    case k_EChatRoomEnterResponseNotAllowed: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_ALLOWED; break; // General Denied - You don't have the permissions needed to join the chat
+	    case k_EChatRoomEnterResponseFull: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS; break; // Chat room has reached its maximum size
+	    case k_EChatRoomEnterResponseError: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break; // Unexpected Error
+	    case k_EChatRoomEnterResponseBanned: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // You are banned from this chat room and may not join
+	    case k_EChatRoomEnterResponseLimited: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break; // Joining this chat is not allowed because you are a limited user (no value on account)
+	    case k_EChatRoomEnterResponseClanDisabled: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break; // Attempt to join a clan chat when the clan is locked or disabled
+	    case k_EChatRoomEnterResponseCommunityBan: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // Attempt to join a chat when the user has a community lock on their account
+	    case k_EChatRoomEnterResponseMemberBlockedYou: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // Join failed - some member in the chat has blocked you from joining
+	    case k_EChatRoomEnterResponseYouBlockedMember: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_YOU_ARE_BANNED; break; // Join failed - you have blocked some member already in the chat
+	    case k_EChatRoomEnterResponseRatelimitExceeded: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_TOO_MANY_JOINS; break; // Join failed - to many join attempts in a very short period of time
+	    default: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break;
+		}
+		//openFailedConnectionWindow(CLIENT);
 		return;
 	}
 

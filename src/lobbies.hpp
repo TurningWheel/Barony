@@ -84,6 +84,10 @@ public:
 		}
 		return joiningType;
 	}
+	void setLobbyJoinType(LobbyServiceType type)
+	{
+	    joiningType = type;
+	}
 	void setP2PType(LobbyServiceType type)
 	{
 		P2PType = type;
@@ -107,16 +111,20 @@ public:
 #endif
 	enum EResult_LobbyFailures : int
 	{
-		LOBBY_USING_SAVEGAME = 50000,
-		LOBBY_WRONG_SAVEGAME,
-		LOBBY_NOT_USING_SAVEGAME,
-		LOBBY_NO_OWNER,
-		LOBBY_GAME_IN_PROGRESS,
-		LOBBY_UNHANDLED_ERROR,
-		LOBBY_JOIN_CANCELLED,
-		LOBBY_JOIN_TIMEOUT,
-		LOBBY_NOT_FOUND,
-		LOBBY_TOO_MANY_PLAYERS
+	    LOBBY_NO_ERROR = 1,             // no error (success)
+		LOBBY_USING_SAVEGAME = 50000,   // trying to join a savegame lobby with a new character
+		LOBBY_WRONG_SAVEGAME,           // trying to join a savegame lobby with the wrong save file
+		LOBBY_NOT_USING_SAVEGAME,       // trying to join a newgame lobby with a savegame
+		LOBBY_NO_OWNER,                 // no one in lobby (ghost lobby)
+		LOBBY_GAME_IN_PROGRESS,         // game is already in progress
+		LOBBY_UNHANDLED_ERROR,          // unknown/unhandled error type
+		LOBBY_JOIN_CANCELLED,           // cancelled join request
+		LOBBY_JOIN_TIMEOUT,             // timeout connecting to server
+		LOBBY_NOT_FOUND,                // server no longer exists
+		LOBBY_TOO_MANY_PLAYERS,         // server is full
+		LOBBY_NOT_ALLOWED,              // server won't allow you in for one reason or another
+		LOBBY_YOU_ARE_BANNED,           // can't join lobby because you are banned
+        LOBBY_TOO_MANY_JOINS,           // overloaded lobby with join requests
 	};
 };
 extern LobbyHandler_t LobbyHandler;

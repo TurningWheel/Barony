@@ -115,11 +115,18 @@ public:
 	//! width/height of the slider(s) that appear when actualSize > size (in pixels)
 	static const Sint32 sliderSize;
 
+private:
+
+    static int _virtualScreenX;
+    static int _virtualScreenY;
+
+public:
+
 	//! virtual screen size (width)
-	static const int virtualScreenX = 1280;
+	static constexpr const int& virtualScreenX = _virtualScreenX;
 
 	//! virtual screen size (height)
-	static const int virtualScreenY = 720;
+	static constexpr const int& virtualScreenY = _virtualScreenY;
 
 	//! init ui engine
 	static void guiInit();
@@ -128,6 +135,9 @@ public:
 	//! destroy ui engine
 	static void guiDestroy();
 	static void fboDestroy();
+
+    //! resize gui
+    static void guiResize(int x, int y);
 
 	//! stuff to do before drawing anything
 	static void predraw();
@@ -421,4 +431,3 @@ private:
 // root frame object
 extern Frame* gui;
 void createTestUI();
-extern framebuffer gui_fb, gui4x_fb;

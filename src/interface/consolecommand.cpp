@@ -101,6 +101,7 @@ typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables
     std::string cvars
 *******************************************************************************/
 
+template class ConsoleVariable<std::string>;
 template<> void ConsoleVariable<std::string>::operator=(const char* arg)
 {
     data = arg;
@@ -112,6 +113,7 @@ template<> void ConsoleVariable<std::string>::operator=(const char* arg)
     int cvars
 *******************************************************************************/
 
+template class ConsoleVariable<int>;
 template<> void ConsoleVariable<int>::operator=(const char* arg)
 {
     if (arg && arg[0] != '\0') {
@@ -125,6 +127,7 @@ template<> void ConsoleVariable<int>::operator=(const char* arg)
     float cvars
 *******************************************************************************/
 
+template class ConsoleVariable<float>;
 template<> void ConsoleVariable<float>::operator=(const char* arg)
 {
     if (arg && arg[0] != '\0') {
@@ -138,6 +141,7 @@ template<> void ConsoleVariable<float>::operator=(const char* arg)
     bool cvars
 *******************************************************************************/
 
+template class ConsoleVariable<bool>;
 template<> void ConsoleVariable<bool>::operator=(const char* arg)
 {
     if (arg && arg[0] != '\0') {
@@ -1414,24 +1418,44 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_die("/die", "suicide the player", []CCMD{
-		if ( multiplayer == CLIENT )
-		{
+	static void suicide(int player) {
+	    if (player < 0 || player >= MAXPLAYERS) {
+	        return;
+	    }
+	    if (multiplayer != SINGLE && player != clientnum) {
+	        // don't let internet jokers kill other players with 1 command
+	        return;
+	    }
+		if (multiplayer == CLIENT) {
 			// request sweet release.
 			strcpy((char*)net_packet->data, "IDIE");
-			net_packet->data[4] = clientnum;
+			net_packet->data[4] = player;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-		}
-		else
-		{
-			if ( players[clientnum] && players[clientnum]->entity )
-			{
-				players[clientnum]->entity->setHP(0);
+		} else {
+			if (players[player] && players[player]->entity ) {
+				players[player]->entity->setHP(0);
 			}
 		}
+	}
+
+	static ConsoleCommand ccmd_die("/die", "suicide the player", []CCMD{
+	    suicide(clientnum);
+		});
+
+	static ConsoleCommand ccmd_killme("/killme", "suicide the player", []CCMD{
+	    suicide(clientnum);
+		});
+
+	static ConsoleCommand ccmd_suicide("/suicide", "kill the given player", []CCMD{
+	    if (argc < 2) {
+	        suicide(clientnum);
+	    } else {
+	        int player = (int)strtol(argv[1], nullptr, 10);
+	        suicide(player);
+	    }
 		});
 
 	static ConsoleCommand ccmd_segfault("/segfault", "don't try this at home", []CCMD{

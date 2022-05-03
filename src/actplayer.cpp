@@ -94,27 +94,13 @@ void actDeathCam(Entity* my)
 	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
-		bool playerAlive = false;
-		if ( splitscreen )
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 		{
-			for ( int c = 0; c < MAXPLAYERS; ++c )
-			{
-				if ( players[c] && players[c]->entity )
-				{
-					playerAlive = true;
-				}
-			}
+			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		if ( !playerAlive )
+		else
 		{
-			if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
-			{
-				gameModeManager.Tutorial.openGameoverWindow();
-			}
-			else
-			{
-				openGameoverWindow();
-			}
+			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
 	}
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;

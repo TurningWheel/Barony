@@ -9677,16 +9677,29 @@ void doNewGame(bool makeHighscore) {
 			}
 		}
 
-		// reset class loadout
-		if ( !loadingsavegame )
-		{
-			stats[clientnum]->clearStats();
-			initClass(clientnum);
+        if ( !loadingsavegame )
+        {
 			mapseed = 0;
 		}
-		else
-		{
-			loadGame(clientnum);
+
+		// reset class loadout
+	    for ( int c = 0; c < MAXPLAYERS; ++c )
+	    {
+		    if ( players[c]->isLocalPlayer() )
+		    {
+		        if ( !client_disconnected[c] )
+		        {
+		            if ( !loadingsavegame )
+		            {
+			            stats[c]->clearStats();
+			            initClass(c);
+		            }
+		            else
+		            {
+			            loadGame(c);
+		            }
+		        }
+		    }
 		}
 
 		// hack to fix these things from breaking everything...
@@ -10912,6 +10925,9 @@ void doEndgameExpansion() {
 // opens the gameover window
 void openGameoverWindow()
 {
+	// deprecated
+    return;
+
 	node_t* node;
 	buttonCloseSubwindow(nullptr);
 	list_FreeAll(&button_l);
@@ -11076,27 +11092,28 @@ void openGameoverWindow()
 // get
 void getResolutionList(std::list<resolution>& resolutions)
 {
-	// for now just use the resolution modes on the first
-	// display.
+	// for now just use the resolution modes on the first display.
 	int numdisplays = SDL_GetNumVideoDisplays();
 	int nummodes = SDL_GetNumDisplayModes(0);
-	int im;
 	printlog("display count: %d.\n", numdisplays);
 	printlog("display mode count: %d.\n", nummodes);
 
-	for (im = 0; im < nummodes; im++)
+	SDL_DisplayMode mode;
+	for (int i = 0; i < nummodes; i++)
 	{
-		SDL_DisplayMode mode;
-		SDL_GetDisplayMode(0, im, &mode);
-		// resolutions below 960x600 are not supported
-		if ( mode.w >= 960 && mode.h >= 600 )
+		SDL_GetDisplayMode(0, i, &mode);
+
+		// resolutions below 1280x720 are not supported
+		if ( mode.w < 1280 || mode.h < 720 )
 		{
-			resolution res(mode.w, mode.h);
-			resolutions.push_back(res);
+		    continue;
 		}
+
+		resolution res(mode.w, mode.h);
+		resolutions.push_back(res);
 	}
 
-	// Sort first by xres and then by yres
+	// sort first by xres and then by yres
 	resolutions.sort([](resolution a, resolution b) {
 		if (std::get<0>(a) == std::get<0>(b)) {
 			return std::get<1>(a) > std::get<1>(b);
@@ -11104,26 +11121,9 @@ void getResolutionList(std::list<resolution>& resolutions)
 			return std::get<0>(a) > std::get<0>(b);
 		}
 	});
+
+	// remove identical modes
 	resolutions.unique();
-
-	const Uint32 kMaxResolutionsToDisplay = 22;
-	for ( auto it = resolutions.end(); it != resolutions.begin() && resolutions.size() >= kMaxResolutionsToDisplay; )
-	{
-		// cull some resolutions in smallest -> largest order.
-		--it;
-
-		int w = std::get<0>(*it);
-		int h = std::get<1>(*it);
-		int ratio = (w * 100) / h;
-		if ( ratio == 125 || ratio > 200 ) // 5x4, 32x15
-		{
-			it = resolutions.erase(it);
-		}
-		else if ( (w == 1152 && h == 864) || (w == 2048 && h == 1536) ) // explicit exclude for these odd 4x3 resolutions
-		{
-			it = resolutions.erase(it);
-		}
-	}
 }
 
 bool achievements_window = false;

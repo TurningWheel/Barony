@@ -2947,7 +2947,7 @@ bool behindCamera(const view_t& camera, real_t x, real_t y)
     const real_t dot = v0x * v1x + v0y * v1y;
 
     const real_t aspect = (real_t)camera.winw / (real_t)camera.winh;
-    const real_t wfov = ((real_t)(fov + 15.0) * aspect) * PI / 180.0;
+    const real_t wfov = std::max((real_t)90.0, ((real_t)(fov + 30.0) * aspect)) * PI / 180.0;
     const real_t c = cos(wfov * 0.5);
 
     return dot < c;

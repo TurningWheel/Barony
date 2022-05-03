@@ -525,71 +525,48 @@ void deinitGame()
 	int c, x;
 
 	// send disconnect messages
-	if ( multiplayer == CLIENT )
-	{
-		strcpy((char*)net_packet->data, "DISC");
-		net_packet->data[4] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		net_packet->len = 5;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
-		printlog("disconnected from server.\n");
-	}
-	else if ( multiplayer == SERVER )
-	{
-		for ( x = 1; x < MAXPLAYERS; x++ )
-		{
-			if ( client_disconnected[x] == true )
-			{
-				continue;
-			}
-			strcpy((char*)net_packet->data, "DISC");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_clients[x - 1].host;
-			net_packet->address.port = net_clients[x - 1].port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, x - 1);
+	if (multiplayer != SINGLE) {
+	    if ( multiplayer == CLIENT )
+	    {
+		    strcpy((char*)net_packet->data, "DISC");
+		    net_packet->data[4] = clientnum;
+		    net_packet->address.host = net_server.host;
+		    net_packet->address.port = net_server.port;
+		    net_packet->len = 5;
+		    sendPacketSafe(net_sock, -1, net_packet, 0);
+		    printlog("disconnected from server.\n");
+	    }
+	    else if ( multiplayer == SERVER )
+	    {
+		    for ( x = 1; x < MAXPLAYERS; x++ )
+		    {
+			    if ( client_disconnected[x] == true )
+			    {
+				    continue;
+			    }
+			    strcpy((char*)net_packet->data, "DISC");
+			    net_packet->data[4] = clientnum;
+			    net_packet->address.host = net_clients[x - 1].host;
+			    net_packet->address.port = net_clients[x - 1].port;
+			    net_packet->len = 5;
+			    sendPacketSafe(net_sock, -1, net_packet, x - 1);
 
-			stats[x]->freePlayerEquipment();
-			client_disconnected[x] = true;
-		}
-	}
+			    stats[x]->freePlayerEquipment();
+			    client_disconnected[x] = true;
+		    }
+	    }
 
-	// this short delay makes sure that the disconnect message gets out
-	Uint32 timetoshutdown = SDL_GetTicks();
-	while ( SDL_GetTicks() - timetoshutdown < 500 )
-	{
-		// handle network messages
-		if ( multiplayer == CLIENT )
-		{
-			clientHandleMessages(fpsLimit);
-		}
-		else if ( multiplayer == SERVER )
-		{
-			serverHandleMessages(fpsLimit);
-		}
-		if ( !(SDL_GetTicks() % 25) && multiplayer )
-		{
-			int j = 0;
-			node_t* node, *nextnode;
-			for ( node = safePacketsSent.first; node != NULL; node = nextnode )
-			{
-				nextnode = node->next;
-
-				packetsend_t* packet = (packetsend_t*)node->element;
-				sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
-				packet->tries++;
-				if ( packet->tries >= MAXTRIES )
-				{
-					list_RemoveNode(node);
-				}
-				j++;
-				if ( j >= MAXDELETES )
-				{
-					break;
-				}
-			}
-		}
+	    // this short delay makes sure that the disconnect message gets out
+	    Uint32 timetoshutdown = SDL_GetTicks();
+	    while ( SDL_GetTicks() - timetoshutdown < 200 )
+	    {
+	        /*if ( multiplayer == CLIENT ) {
+		        clientHandleMessages(fpsLimit);
+	        } else if ( multiplayer == SERVER ) {
+		        serverHandleMessages(fpsLimit);
+	        }*/
+	        pollNetworkForShutdown();
+	    }
 	}
 
 	saveAllScores(SCORESFILE);
