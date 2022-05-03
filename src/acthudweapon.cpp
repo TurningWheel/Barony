@@ -701,6 +701,7 @@ void actHudWeapon(Entity* my)
 			if ( !GenericGUI[HUDWEAPON_PLAYERNUM].isGUIOpen() )
 			{
 			    input.consumeBinaryToggle("Attack");
+				input.consumeBindingsSharedWithBinding("Attack");
 				GenericGUI[HUDWEAPON_PLAYERNUM].openGUI(GUI_TYPE_TINKERING, stats[HUDWEAPON_PLAYERNUM]->shield);
 				swapWeaponGimpTimer = 20;
 				return;

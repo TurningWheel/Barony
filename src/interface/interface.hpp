@@ -564,12 +564,13 @@ public:
 			TINKER_ACTION_ITEM_FULLY_UPGRADED,
 			TINKER_ACTION_ROBOT_BROKEN,
 			TINKER_ACTION_MUST_BE_UNEQUIPPED,
-			TINKER_ACTION_ALREADY_USING_THIS_TINKERING_KIT
+			TINKER_ACTION_ALREADY_USING_THIS_TINKERING_KIT,
+			TINKER_ACTION_OK_UNIDENTIFIED_SALVAGE,
+			TINKER_ACTION_NOT_IDENTIFIED_YET,
+			TINKER_ACTION_KIT_NEEDS_REPAIRS
 		};
 		TinkerActions_t itemActionType = TINKER_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;
-		Sint32 playerCurrentMetalScrap = 0;
-		Sint32 playerCurrentMagicScrap = 0;
 		real_t animDrawer = 0.0;
 		real_t animTooltip = 0.0;
 		Uint32 animTooltipTicks = 0;
@@ -577,6 +578,23 @@ public:
 		real_t animPrompt = 0.0;
 		Uint32 animPromptTicks = 0;
 		bool animPromptMoveLeft = false;
+		real_t animInvalidAction = 0.0;
+		Uint32 animInvalidActionTicks = 0;
+		enum InvalidActionFeedback_t : int
+		{
+			INVALID_ACTION_NONE,
+			INVALID_ACTION_SHAKE_PROMPT,
+			INVALID_ACTION_SHAKE_METAL_SCRAP,
+			INVALID_ACTION_SHAKE_MAGIC_SCRAP,
+			INVALID_ACTION_SHAKE_ALL_SCRAP
+		};
+		InvalidActionFeedback_t invalidActionType = INVALID_ACTION_NONE;
+		Sint32 playerCurrentMetalScrap = 0;
+		Sint32 playerCurrentMagicScrap = 0;
+		Sint32 playerChangeMetalScrap = 0;
+		Sint32 playerChangeMagicScrap = 0;
+		real_t animScrap = 0.0;
+		Uint32 animScrapStartTicks = 0;
 
 		int selectedTinkerSlotX = -1;
 		int selectedTinkerSlotY = -1;
@@ -592,6 +610,7 @@ public:
 		TinkerActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
 		bool warpMouseToSelectedTinkerItem(Item* snapToItem, Uint32 flags);
 		void clearItemDisplayed();
+		void updateTinkerScrapHeld(void* metalHeldText, void* magicHeldText, int realMetalScrap, int realMagicScrap);
 
 		static int heightOffsetWhenNotCompact;
 	};

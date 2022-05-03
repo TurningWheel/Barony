@@ -1094,6 +1094,12 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING )
 	{
+		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
+			&& ( player.shopGUI.bOpen 
+				|| GenericGUI[player.playernum].isGUIOpen()) )
+		{
+			return false;
+		}
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
 		{

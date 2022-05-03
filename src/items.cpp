@@ -5122,7 +5122,8 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_ALEMBIC
 				&& this->type != TOOL_TINKERING_KIT
 				&& this->type != ENCHANTED_FEATHER
-				&& this->type != TOOL_LANTERN)
+				&& this->type != TOOL_LANTERN
+				&& this->type != TOOL_GLASSES)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
@@ -5131,7 +5132,8 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_ALEMBIC 
 				&& this->type != TOOL_TINKERING_KIT
 				&& this->type != ENCHANTED_FEATHER
-				&& this->type != TOOL_LANTERN)
+				&& this->type != TOOL_LANTERN
+				&& this->type != TOOL_GLASSES)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.

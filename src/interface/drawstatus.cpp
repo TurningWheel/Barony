@@ -2561,6 +2561,14 @@ void drawStatusNew(const int player)
 									itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
 								}
 							}
+							if ( itemMenuX % 2 == 1 )
+							{
+								++itemMenuX; // even pixel adjustment
+							}
+							if ( itemMenuY % 2 == 1 )
+							{
+								++itemMenuY; // even pixel adjustment
+							}
 							itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
 
 							bool alignRight = true;

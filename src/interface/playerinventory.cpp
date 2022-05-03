@@ -3673,7 +3673,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				//Catches cases like 1px between slots in backpack.
 				int slotNum = 0;
 				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
-				if ( slot )
+				if ( slot && players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 				{
 					//Add spell to hotbar.
 					Item* tempItem = uidToItem(slot->item);
@@ -3713,52 +3713,60 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				// outside inventory
 				int slotNum = 0;
 				hotbar_slot_t* slot = getCurrentHotbarUnderMouse(player, &slotNum);
-				if (slot)
+				if ( slot )
 				{
-					//Add item to hotbar.
-					Item* tempItem = uidToItem(slot->item);
-					Item* swappedItem = nullptr;
-					if (tempItem && tempItem != selectedItem)
+					if ( !players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 					{
-						slot->item = selectedItem->uid;
-						swappedItem = selectedItem;
-						selectedItem = tempItem;
-						toggleclick = true;
+						selectedItem = nullptr;
+						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 					}
 					else
 					{
-						slot->item = selectedItem->uid;
-						selectedItem = nullptr;
-						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-						toggleclick = false;
-					}
-
-					if ( swappedItem && selectedItem )
-					{
-						players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
-						players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
-
-						// unused for now
-						if ( bUseSelectedSlotCycleAnimation )
+						//Add item to hotbar.
+						Item* tempItem = uidToItem(slot->item);
+						Item* swappedItem = nullptr;
+						if ( tempItem && tempItem != selectedItem )
 						{
-							if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+							slot->item = selectedItem->uid;
+							swappedItem = selectedItem;
+							selectedItem = tempItem;
+							toggleclick = true;
+						}
+						else
+						{
+							slot->item = selectedItem->uid;
+							selectedItem = nullptr;
+							inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+							toggleclick = false;
+						}
+
+						if ( swappedItem && selectedItem )
+						{
+							players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
+							players[player]->inventoryUI.selectedItemAnimate.animateY = 0.0;
+
+							// unused for now
+							if ( bUseSelectedSlotCycleAnimation )
 							{
-								oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+								if ( auto oldDraggingItemImg = frame->findFrame("dragging inventory item old")->findImage("item sprite img") )
+								{
+									oldDraggingItemImg->path = getItemSpritePath(player, *swappedItem);
+								}
 							}
 						}
-					}
 
-					// empty out duplicate slots that match this item uid.
-					int i = 0;
-					for ( auto& s : players[player]->hotbar.slots() )
-					{
-						if ( i != slotNum && s.item == slot->item )
+						// empty out duplicate slots that match this item uid.
+						int i = 0;
+						for ( auto& s : players[player]->hotbar.slots() )
 						{
-							s.item = 0;
+							if ( i != slotNum && s.item == slot->item )
+							{
+								s.item = 0;
+							}
+							++i;
 						}
-						++i;
+						playSound(139, 64); // click sound
 					}
-					playSound(139, 64); // click sound
 				}
 				else
 				{
@@ -6008,9 +6016,9 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		int paperDollHideFrameAmount = hideFrameAmount;
 		dollSlotsPos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? paperDollHideFrameAmount : -paperDollHideFrameAmount);
 		compactCharImg->pos.x -= ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? paperDollHideFrameAmount : -paperDollHideFrameAmount);
-		if ( chestGUI.animx2 > 0.01 )
+		if ( animPaperDollHide > 0.01 )
 		{
-			int chestHideAmount = chestGUI.animx2 * compactCharImg->pos.w;
+			int chestHideAmount = animPaperDollHide * compactCharImg->pos.w;
 			dollSlotsPos.x += ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? -chestHideAmount : chestHideAmount);
 			compactCharImg->pos.x += ((paperDollPanelJustify == PANEL_JUSTIFY_LEFT) ? -chestHideAmount : chestHideAmount);
 		}
@@ -6168,6 +6176,23 @@ void Player::Inventory_t::updateInventory()
 	else if ( bCompactView && players[player]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_INVENTORY )
 	{
 		hideAndExit = true;
+	}
+
+	if ( (!chestFrame->isDisabled() && chestGUI.bOpen)
+		|| GenericGUI[player].isGUIOpen()
+		|| shopGUI.bOpen )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animPaperDollHide)) / 2.0;
+		animPaperDollHide += setpointDiffX;
+		animPaperDollHide = std::min(1.0, animPaperDollHide);
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (animPaperDollHide)) / 2.0;
+		animPaperDollHide -= setpointDiffX;
+		animPaperDollHide = std::max(0.0, animPaperDollHide);
 	}
 
 	if ( hideAndExit )
@@ -7373,6 +7398,14 @@ void Player::Inventory_t::updateInventory()
 							// mouse will be situated halfway in first menu option
 							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
 						}
+						if ( itemMenuX % 2 == 1 )
+						{
+							++itemMenuX; // even pixel adjustment
+						}
+						if ( itemMenuY % 2 == 1 )
+						{
+							++itemMenuY; // even pixel adjustment
+						}
 						itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
 
 						bool alignRight = true;
@@ -7743,6 +7776,14 @@ void Player::Inventory_t::updateInventory()
 							// mouse will be situated halfway in first menu option
 							itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
 						}
+						if ( itemMenuX % 2 == 1 )
+						{
+							++itemMenuX; // even pixel adjustment
+						}
+						if ( itemMenuY % 2 == 1 )
+						{
+							++itemMenuY; // even pixel adjustment
+						}
 						itemMenuY = std::max(itemMenuY, players[player]->camera_virtualy1());
 
 						bool alignRight = true;
@@ -7964,22 +8005,25 @@ void Player::Inventory_t::updateInventory()
 
 				if ( cursor.queuedModule == Player::GUI_t::MODULE_NONE && !oldQueuedCursor )
 				{
-					for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+					if ( players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 					{
-						auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
-						if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+						for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
 						{
-							players[player]->hotbar.selectHotbarSlot(c);
+							auto hotbarSlotFrame = hotbar_t.getHotbarSlotFrame(c);
+							if ( hotbarSlotFrame && !hotbarSlotFrame->isDisabled() && hotbarSlotFrame->capturesMouseInRealtimeCoords() )
+							{
+								players[player]->hotbar.selectHotbarSlot(c);
 
-							selectedSlotCursor->setDisabled(false);
+								selectedSlotCursor->setDisabled(false);
 
-							int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
-							int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
+								int startx = hotbarSlotFrame->getAbsoluteSize().x - players[player]->camera_virtualx1();
+								int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
 
-							updateSelectedSlotAnimation(startx - 1, starty - 1,
-								hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
-							//messagePlayer(player, "7: hotbar: %d", c);
-							break;
+								updateSelectedSlotAnimation(startx - 1, starty - 1,
+									hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+								//messagePlayer(player, "7: hotbar: %d", c);
+								break;
+							}
 						}
 					}
 				}

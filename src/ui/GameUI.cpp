@@ -66,20 +66,7 @@ real_t hpmpbarCompactWidthIncreasePercentOnInterval = 2.5; // % to grow bar per 
 
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
-struct CustomColors_t
-{
-	Uint32 itemContextMenuHeadingText = 0xFFFFFFFF;
-	Uint32 itemContextMenuOptionText = 0xFFFFFFFF;
-	Uint32 itemContextMenuOptionSelectedText = 0xFFFFFFFF;
-	Uint32 itemContextMenuOptionImg = 0xFFFFFFFF;
-	Uint32 itemContextMenuOptionSelectedImg = 0xFFFFFFFF;
-	Uint32 characterSheetNeutral = 0xFFFFFFFF;
-	Uint32 characterSheetGreen = 0xFFFFFFFF;
-	Uint32 characterSheetRed = 0xFFFFFFFF;
-	Uint32 characterSheetFaintText = 0xFFFFFFFF;
-	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
-	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
-} hudColors;
+CustomColors_t hudColors;
 EnemyBarSettings_t enemyBarSettings;
 StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3} };
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
@@ -1368,7 +1355,8 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIWidth() )
+				&& !player.bUseCompactGUIWidth()
+				&& !GenericGUI[player.playernum].isGUIOpen() )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
 				{
@@ -6742,6 +6730,14 @@ void Player::GUIDropdown_t::open(const std::string name)
 			// mouse will be situated halfway in first menu option
 			dropDownY -= (interactMenuTop->pos.h + 10 + 2);
 		}
+		if ( dropDownX % 2 == 1 )
+		{
+			++dropDownX; // even pixel adjustment
+		}
+		if ( dropDownY % 2 == 1 )
+		{
+			++dropDownY; // even pixel adjustment
+		}
 	}
 	dropDownOptionSelected = 0;
 	if ( allDropDowns[name].defaultOption > 0 && allDropDowns[name].options.size() > allDropDowns[name].defaultOption )
@@ -11550,7 +11546,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 					|| result.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
 				{
 					drawQty = true;
-					qtyColor = makeColor(0, 192, 255, 255);
+					qtyColor = hudColors.characterSheetGreen;
 					stackable = true;
 				}
 			}
@@ -13199,6 +13195,14 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_neutral_text"]["b"].GetInt(),
 							d["colors"]["charsheet_neutral_text"]["a"].GetInt());
 					}
+					if ( d["colors"].HasMember("charsheet_neutral_light_text") )
+					{
+						hudColors.characterSheetLightNeutral = makeColor(
+							d["colors"]["charsheet_neutral_light_text"]["r"].GetInt(),
+							d["colors"]["charsheet_neutral_light_text"]["g"].GetInt(),
+							d["colors"]["charsheet_neutral_light_text"]["b"].GetInt(),
+							d["colors"]["charsheet_neutral_light_text"]["a"].GetInt());
+					}
 					if ( d["colors"].HasMember("charsheet_positive_text") )
 					{
 						hudColors.characterSheetGreen = makeColor(
@@ -13928,7 +13932,7 @@ void createShopGUI(const int player)
 		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
 			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
 
-		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 52 }, 0xFFFFFFFF,
+		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
 			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
 
 		auto orbImg = buyTooltipFrame->addImage(SDL_Rect{ 210 - 8, 38, 16, 16 }, 0xFFFFFFFF,
@@ -15322,7 +15326,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( !disableItemUsage )
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_TINKERING, item);
+				if ( true /*item->status > BROKEN*/ ) // allow broken tinker kit
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_TINKERING, item);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+				}
 			}
 			else
 			{
@@ -21940,7 +21951,6 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 		player.inventoryUI.chestFrame->setDisabled(true);
 	}
 	animx = 0.0;
-	animx2 = 1.0;
 	isInteractable = false;
 	currentScrollRow = 0;
 	scrollPercent = 0.0;
@@ -22037,26 +22047,12 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			}
 			isInteractable = true;
 		}
-
-		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx2)) / 2.0;
-			animx2 += setpointDiffX;
-			animx2 = std::min(1.0, animx2);
-		}
 	}
 	else
 	{
 		animx = 0.0;
 		isInteractable = false;
 		scrollInertia = 0.0;
-
-		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-			real_t setpointDiffX = fpsScale * std::max(.01, (animx2)) / 2.0;
-			animx2 -= setpointDiffX;
-			animx2 = std::max(0.0, animx2);
-		}
 	}
 
 	auto chestFramePos = chestFrame->getSize();
