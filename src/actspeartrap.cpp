@@ -162,6 +162,7 @@ void actSpearTrap(Entity* my)
 								}
 								// set obituary
 								entity->setObituary(language[1507]);
+						        stats->killer = KilledBy::TRAP_SPIKE;
 							}
 						}
 					}

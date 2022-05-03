@@ -798,6 +798,10 @@ void actThrown(Entity* my)
 				// set the obituary
 				snprintf(whatever, 255, language[1508], itemname);
 				hit.entity->setObituary(whatever);
+				if (hitstats) {
+				    hitstats->killer = KilledBy::ITEM;
+				    hitstats->killer_item = item->type;
+				}
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
 				bool disableAlertBlindStatus = false;
@@ -1078,8 +1082,12 @@ void actThrown(Entity* my)
 								{
 									polymorphedTarget = hit.entity;
 									hit.entity = newTarget;
-									hitstats = newTarget->getStats();
 									hit.entity->setObituary(whatever);
+									hitstats = newTarget->getStats();
+				                    if (hitstats) {
+				                        hitstats->killer = KilledBy::ITEM;
+				                        hitstats->killer_item = item->type;
+				                    }
 								}
 								skipMessage = true;
 								usedpotion = true;

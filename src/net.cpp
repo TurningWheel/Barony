@@ -5383,6 +5383,7 @@ void serverHandlePacket()
 		{
 			spawnMagicTower(nullptr, players[the_client]->entity->x, players[the_client]->entity->y, SPELL_FIREBALL, nullptr);
 			players[the_client]->entity->setObituary(language[3350]);
+			stats[the_client]->killer = KilledBy::FAILED_ALCHEMY;
 		}
 		return;
 	}

@@ -512,6 +512,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				Item* item = newItem(type, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
+				myStats->killer = KilledBy::NO_FUEL;
 				my->setObituary(language[3631]);
 				return;
 			}
@@ -1231,6 +1232,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 				Item* item = newItem(TOOL_GYROBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
+				myStats->killer = KilledBy::NO_FUEL;
 				my->setObituary(language[3631]);
 				return;
 			}
@@ -1861,6 +1863,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 						int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 						Item* item = newItem(TOOL_DUMMYBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 						myStats->HP = 0;
+						myStats->killer = KilledBy::NO_FUEL;
 						my->setObituary(language[3643]);
 						return;
 					}

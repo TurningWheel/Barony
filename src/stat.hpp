@@ -15,11 +15,9 @@
 #include <fmod.hpp>
 #endif
 
-class Item;
+#include "items.hpp"
+
 enum Monster : int;
-//enum Item;
-//enum Status;
-//enum Category;
 
 
 // effects
@@ -178,6 +176,35 @@ typedef enum
 	FEMALE = 1
 } sex_t;
 
+enum KilledBy {
+    UNKNOWN,
+    MONSTER,
+    ITEM,
+    ALLY_BETRAYAL,
+    ATTEMPTED_ROBBERY,
+    TRESPASSING,
+    TRAP_ARROW,
+    TRAP_BEAR,
+    TRAP_SPIKE,
+    TRAP_MAGIC,
+    TRAP_BOMB,
+    BOULDER,
+    LAVA,
+    WATER,
+    FAILED_INVOCATION,
+    STARVATION,
+    POISON,
+    BLEEDING,
+    BURNING_TO_CRISP,
+    STRANGULATION,
+    FUNNY_POTION,
+    BOTTOMLESS_PIT,
+    NO_FUEL,
+    FOUNTAIN,
+    SINK,
+    FAILED_ALCHEMY,
+};
+
 class Stat
 {
 public:
@@ -185,8 +212,16 @@ public:
 	sex_t sex;
 	Uint32 appearance;
 	char name[128];
+
+	// uid of the entity which killed me via burning/poison (for rewarding XP to them)
+	Uint32 poisonKiller;
+
+	// Obituary stuff
 	char obituary[128];
-	Uint32 poisonKiller; // uid of the entity which killed me via burning/poison
+	KilledBy killer;
+	Monster killer_monster;
+	ItemType killer_item;
+	std::string killer_name;
 
 	// attributes
 	Sint32 HP, MAXHP, OLDHP;

@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "rapidjson/prettywriter.h"
 #include "net.hpp"
 #include "scores.hpp"
+#include "entity.hpp"
 
 class CustomHelpers
 {

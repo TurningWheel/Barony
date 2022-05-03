@@ -95,6 +95,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(language[1533]);
+		        stats->killer = KilledBy::WATER;
 			}
 			else
 			{
@@ -115,6 +116,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(language[1533]);
+		        stats->killer = KilledBy::WATER;
 			}
 			else if ( stats->type != AUTOMATON )
 			{
@@ -794,6 +796,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// set obituary
 	entity->setObituary(language[1535]);
+    stats->killer = KilledBy::FUNNY_POTION;
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -1492,6 +1495,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 
 	// set obituary
 	entity->setObituary(language[1535]);
+    stats->killer = KilledBy::FUNNY_POTION;
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -1599,6 +1603,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 
 	// set obituary
 	entity->setObituary(language[1535]);
+    stats->killer = KilledBy::FUNNY_POTION;
 
 	real_t x = entity->x;
 	real_t y = entity->y;

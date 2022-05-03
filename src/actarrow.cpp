@@ -531,6 +531,7 @@ void actArrow(Entity* my)
 						if ( parent->behavior == &actArrowTrap )
 						{
 							hit.entity->setObituary(language[1503]);
+							hitstats->killer = KilledBy::TRAP_ARROW;
 						}
 						else
 						{

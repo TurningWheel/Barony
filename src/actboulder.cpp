@@ -212,16 +212,19 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				{
 					entity->modHP(-50);
 					entity->setObituary(language[3898]);
+					stats->killer = KilledBy::BOULDER;
 				}
 				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
 				{
 					entity->modHP(-50);
 					entity->setObituary(language[3899]);
+					stats->killer = KilledBy::BOULDER;
 				}
 				else
 				{
 					entity->modHP(-80);
 					entity->setObituary(language[1505]);
+					stats->killer = KilledBy::BOULDER;
 				}
 				if ( entity->behavior == &actPlayer )
 				{
@@ -1802,13 +1805,19 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 	else
 	{
 		boulderHitEntity->SetEntityOnFire();
-		boulderHitEntity->setObituary(language[3898]);
+		Stat* stats = boulderHitEntity->getStats();
+		if ( stats )
+		{
+		    stats->killer = KilledBy::BOULDER;
+		}
 		if ( sprite == BOULDER_LAVA_SPRITE )
 		{
+		    boulderHitEntity->setObituary(language[3898]);
 			spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_FIREBALL, boulderHitEntity);
 		}
 		else if ( sprite == BOULDER_ARCANE_SPRITE )
 		{
+		    boulderHitEntity->setObituary(language[3899]);
 			switch ( rand() % 4 )
 			{
 				case 0:
