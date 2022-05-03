@@ -3531,147 +3531,147 @@ void GenericGUIMenu::updateGUI()
 		windowY2 = gui_startx + identifyGUI_img->h;
 		if ( guiType == GUI_TYPE_TINKERING )
 		{
-			windowX1 -= 20;
-			windowX2 += 20;
-			windowY1 -= 40;
-			windowY2 += 40;
-			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
-			int numMetalScrap = 0;
-			int numMagicScrap = 0;
-			if ( !tinkeringMetalScrap.empty() )
-			{
-				for ( auto uid : tinkeringMetalScrap )
-				{
-					if ( uidToItem(uid) )
-					{
-						numMetalScrap += (uidToItem(uid))->count;
-					}
-				}
-			}
-			if ( !tinkeringMagicScrap.empty() )
-			{
-				for ( auto uid : tinkeringMagicScrap )
-				{
-					if ( uidToItem(uid) )
-					{
-						numMagicScrap += (uidToItem(uid))->count;
-					}
-				}
-			}
+			//windowX1 -= 20;
+			//windowX2 += 20;
+			//windowY1 -= 40;
+			//windowY2 += 40;
+			//drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+			//int numMetalScrap = 0;
+			//int numMagicScrap = 0;
+			//if ( !tinkeringMetalScrap.empty() )
+			//{
+			//	for ( auto uid : tinkeringMetalScrap )
+			//	{
+			//		if ( uidToItem(uid) )
+			//		{
+			//			numMetalScrap += (uidToItem(uid))->count;
+			//		}
+			//	}
+			//}
+			//if ( !tinkeringMagicScrap.empty() )
+			//{
+			//	for ( auto uid : tinkeringMagicScrap )
+			//	{
+			//		if ( uidToItem(uid) )
+			//		{
+			//			numMagicScrap += (uidToItem(uid))->count;
+			//		}
+			//	}
+			//}
 
-			// title
-			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
-				language[3690]);
-			char kitStatusText[64] = "";
-			if ( tinkeringKitItem )
-			{
-				snprintf(kitStatusText, 63, language[3691], language[3691 + std::max(1, static_cast<int>(tinkeringKitItem->status))]);
-			}
-			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(kitStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
-				kitStatusText);
+			//// title
+			//ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
+			//	language[3690]);
+			//char kitStatusText[64] = "";
+			//if ( tinkeringKitItem )
+			//{
+			//	snprintf(kitStatusText, 63, language[3691], language[3691 + std::max(1, static_cast<int>(tinkeringKitItem->status))]);
+			//}
+			//ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(kitStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
+			//	kitStatusText);
 
-			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - TTF12_HEIGHT - 8,
-				language[3647], numMetalScrap, numMagicScrap);
-			SDL_Rect smallIcon;
-			smallIcon.x = windowX1 + 16 + (strlen(language[3647]) - 5) * TTF12_WIDTH;
-			smallIcon.y = windowY2 - TTF12_HEIGHT - 12;
-			smallIcon.h = 16;
-			smallIcon.w = 16;
-			node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
-			if ( imageNode )
-			{
-				drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
-			}
-			smallIcon.x += TTF12_WIDTH * 6;
-			imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
-			if ( imageNode )
-			{
-				drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
-			}
+			//ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - TTF12_HEIGHT - 8,
+			//	language[3647], numMetalScrap, numMagicScrap);
+			//SDL_Rect smallIcon;
+			//smallIcon.x = windowX1 + 16 + (strlen(language[3647]) - 5) * TTF12_WIDTH;
+			//smallIcon.y = windowY2 - TTF12_HEIGHT - 12;
+			//smallIcon.h = 16;
+			//smallIcon.w = 16;
+			//node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
+			//if ( imageNode )
+			//{
+			//	drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			//}
+			//smallIcon.x += TTF12_WIDTH * 6;
+			//imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
+			//if ( imageNode )
+			//{
+			//	drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			//}
 
-			// draw filter labels.
-			int txtWidth = 0;
-			int txtHeight = 0;
-			int charWidth = 0;
-			TTF_Font* font = ttf8;
-			getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
-			int textstartx = pos.x + 2 * charWidth + 4;
+			//// draw filter labels.
+			//int txtWidth = 0;
+			//int txtHeight = 0;
+			//int charWidth = 0;
+			//TTF_Font* font = ttf8;
+			//getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
+			//int textstartx = pos.x + 2 * charWidth + 4;
 
-			SDL_Rect highlightBtn;
-			// Craft
-			getSizeOfText(ttf8, language[3644], &txtWidth, &txtHeight);
-			highlightBtn.x = textstartx;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3644]);
+			//SDL_Rect highlightBtn;
+			//// Craft
+			//getSizeOfText(ttf8, language[3644], &txtWidth, &txtHeight);
+			//highlightBtn.x = textstartx;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	tinkeringFilter = TINKER_FILTER_CRAFTABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3644]);
 
-			// Salvage
-			getSizeOfText(font, language[3645], &txtWidth, &txtHeight);
-			highlightBtn.x += highlightBtn.w;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3645]);
+			//// Salvage
+			//getSizeOfText(font, language[3645], &txtWidth, &txtHeight);
+			//highlightBtn.x += highlightBtn.w;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3645]);
 
-			// Repair
-			getSizeOfText(font, language[3646], &txtWidth, &txtHeight);
-			highlightBtn.x += highlightBtn.w;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( tinkeringFilter == TINKER_FILTER_REPAIRABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3646]);
+			//// Repair
+			//getSizeOfText(font, language[3646], &txtWidth, &txtHeight);
+			//highlightBtn.x += highlightBtn.w;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	tinkeringFilter = TINKER_FILTER_REPAIRABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3646]);
 
-			// Filter include all (*)
-			getSizeOfText(font, language[356], &txtWidth, &txtHeight);
-			highlightBtn.x += highlightBtn.w;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				tinkeringFilter = TINKER_FILTER_ALL;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( tinkeringFilter == TINKER_FILTER_ALL )
-			{
-				drawImageScaled(smallbutton_bmp, NULL, &highlightBtn);
-			}
+			//// Filter include all (*)
+			//getSizeOfText(font, language[356], &txtWidth, &txtHeight);
+			//highlightBtn.x += highlightBtn.w;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	tinkeringFilter = TINKER_FILTER_ALL;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( tinkeringFilter == TINKER_FILTER_ALL )
+			//{
+			//	drawImageScaled(smallbutton_bmp, NULL, &highlightBtn);
+			//}
 			//ttfPrintText(font, highlightBtn.x + (highlightBtn.w - txtWidth) / 2, pos.y - (8 - txtHeight), language[356]);
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
@@ -3794,99 +3794,103 @@ void GenericGUIMenu::updateGUI()
 			}
 			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
 		}
-		drawImage(identifyGUI_img, NULL, &pos);
 
-		//Buttons
-		if ( inputs.bMouseLeft(gui_player) )
+		if ( guiType != GUI_TYPE_TINKERING ) // gradually remove all this for all windows once upgraded
 		{
-			//GUI scroll up button.
-			if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
-			{
-				if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
-				{
-					buttonclick = 7;
-					scroll--;
-					inputs.mouseClearLeft(gui_player);
-				}
-			}
-			//GUI scroll down button.
-			else if ( omousey >= gui_startx + 52 && omousey < gui_startx + 88 )
-			{
-				if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
-				{
-					buttonclick = 8;
-					scroll++;
-					inputs.mouseClearLeft(gui_player);
-				}
-			}
-			else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
-			{
-				//GUI close button.
-				if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
-				{
-					buttonclick = 9;
-					inputs.mouseClearLeft(gui_player);
-				}
+			drawImage(identifyGUI_img, NULL, &pos);
 
-				// 20/12/20 - disabling this for now. unnecessary
-				if ( false )
+			//Buttons
+			if ( inputs.bMouseLeft(gui_player) )
+			{
+				//GUI scroll up button.
+				if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
 				{
-					if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+					if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
 					{
-						gui_clickdrag[gui_player] = true;
-						draggingGUI = true;
-						dragoffset_x[gui_player] = omousex - gui_starty;
-						dragoffset_y[gui_player] = omousey - gui_startx;
+						buttonclick = 7;
+						scroll--;
 						inputs.mouseClearLeft(gui_player);
 					}
 				}
-			}
-		}
+				//GUI scroll down button.
+				else if ( omousey >= gui_startx + 52 && omousey < gui_startx + 88 )
+				{
+					if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+					{
+						buttonclick = 8;
+						scroll++;
+						inputs.mouseClearLeft(gui_player);
+					}
+				}
+				else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
+				{
+					//GUI close button.
+					if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
+					{
+						buttonclick = 9;
+						inputs.mouseClearLeft(gui_player);
+					}
 
-		// mousewheel
-		if ( omousex >= gui_starty + 12 && omousex < gui_starty + (identifyGUI_img->w - 28) )
-		{
-			if ( omousey >= gui_startx + 16 && omousey < gui_startx + (identifyGUI_img->h - 8) )
-			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					scroll++;
-				}
-				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
-					scroll--;
+					// 20/12/20 - disabling this for now. unnecessary
+					if ( false )
+					{
+						if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+						{
+							gui_clickdrag[gui_player] = true;
+							draggingGUI = true;
+							dragoffset_x[gui_player] = omousex - gui_starty;
+							dragoffset_y[gui_player] = omousey - gui_startx;
+							inputs.mouseClearLeft(gui_player);
+						}
+					}
 				}
 			}
-		}
 
-		if ( draggingGUI )
-		{
-			if ( gui_clickdrag[gui_player] )
+			// mousewheel
+			if ( omousex >= gui_starty + 12 && omousex < gui_starty + (identifyGUI_img->w - 28) )
 			{
-				offsetx = (omousex - dragoffset_x[gui_player]) - (gui_starty - offsetx);
-				offsety = (omousey - dragoffset_y[gui_player]) - (gui_startx - offsety);
-				if ( gui_starty <= 0 )
+				if ( omousey >= gui_startx + 16 && omousey < gui_startx + (identifyGUI_img->h - 8) )
 				{
-					offsetx = 0 - (gui_starty - offsetx);
-				}
-				if ( gui_starty > 0 + xres - identifyGUI_img->w )
-				{
-					offsetx = (0 + xres - identifyGUI_img->w) - (gui_starty - offsetx);
-				}
-				if ( gui_startx <= 0 )
-				{
-					offsety = 0 - (gui_startx - offsety);
-				}
-				if ( gui_startx > 0 + players[gui_player]->camera_y2() - identifyGUI_img->h )
-				{
-					offsety = (0 + players[gui_player]->camera_y2() - identifyGUI_img->h) - (gui_startx - offsety);
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					{
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						scroll++;
+					}
+					else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						scroll--;
+					}
 				}
 			}
-			else
+
+			if ( draggingGUI )
 			{
-				draggingGUI = false;
+				if ( gui_clickdrag[gui_player] )
+				{
+					offsetx = (omousex - dragoffset_x[gui_player]) - (gui_starty - offsetx);
+					offsety = (omousey - dragoffset_y[gui_player]) - (gui_startx - offsety);
+					if ( gui_starty <= 0 )
+					{
+						offsetx = 0 - (gui_starty - offsetx);
+					}
+					if ( gui_starty > 0 + xres - identifyGUI_img->w )
+					{
+						offsetx = (0 + xres - identifyGUI_img->w) - (gui_starty - offsetx);
+					}
+					if ( gui_startx <= 0 )
+					{
+						offsety = 0 - (gui_startx - offsety);
+					}
+					if ( gui_startx > 0 + players[gui_player]->camera_y2() - identifyGUI_img->h )
+					{
+						offsety = (0 + players[gui_player]->camera_y2() - identifyGUI_img->h) - (gui_startx - offsety);
+					}
+				}
+				else
+				{
+					draggingGUI = false;
+				}
 			}
 		}
 
@@ -3975,93 +3979,96 @@ void GenericGUIMenu::updateGUI()
 				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 			}
 
-			//GUI up button.
-			if ( buttonclick == 7 )
+			if ( guiType != GUI_TYPE_TINKERING )
 			{
-				pos.x = gui_starty + (identifyGUI_img->w - 28);
-				pos.y = gui_startx + 16;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invup_bmp, NULL, &pos);
-			}
-			//GUI down button.
-			if ( buttonclick == 8 )
-			{
-				pos.x = gui_starty + (identifyGUI_img->w - 28);
-				pos.y = gui_startx + 52;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invdown_bmp, NULL, &pos);
-			}
-			//GUI close button.
-			if ( buttonclick == 9 )
-			{
-				pos.x = gui_starty + 393;
-				pos.y = gui_startx;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invclose_bmp, NULL, &pos);
-				closeGUI();
-			}
-
-			Item *item = nullptr;
-
-			bool selectingSlot = false;
-			SDL_Rect slotPos;
-			slotPos.x = gui_starty + 12;
-			slotPos.w = inventoryoptionChest_bmp->w;
-			slotPos.y = gui_startx + 16;
-			slotPos.h = inventoryoptionChest_bmp->h;
-			bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
-
-			for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
-			{
-				pos.x = slotPos.x;
-				pos.w = 0;
-				pos.h = 0;
-
-
-				if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+				//GUI up button.
+				if ( buttonclick == 7 )
 				{
-					pos.y = slotPos.y;
-					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
-					selectedSlot = i;
-					selectingSlot = true;
-					if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
-					{
-						inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-						inputs.mouseClearLeft(gui_player);
+					pos.x = gui_starty + (identifyGUI_img->w - 28);
+					pos.y = gui_startx + 16;
+					pos.w = 0;
+					pos.h = 0;
+					drawImage(invup_bmp, NULL, &pos);
+				}
+				//GUI down button.
+				if ( buttonclick == 8 )
+				{
+					pos.x = gui_starty + (identifyGUI_img->w - 28);
+					pos.y = gui_startx + 52;
+					pos.w = 0;
+					pos.h = 0;
+					drawImage(invdown_bmp, NULL, &pos);
+				}
+				//GUI close button.
+				if ( buttonclick == 9 )
+				{
+					pos.x = gui_starty + 393;
+					pos.y = gui_startx;
+					pos.w = 0;
+					pos.h = 0;
+					drawImage(invclose_bmp, NULL, &pos);
+					closeGUI();
+				}
 
-						bool result = executeOnItemClick(itemsDisplayed[i]);
-						GUICurrentType oldType = guiType;
-						rebuildGUIInventory();
-						
-						if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
+				Item *item = nullptr;
+
+				bool selectingSlot = false;
+				SDL_Rect slotPos;
+				slotPos.x = gui_starty + 12;
+				slotPos.w = inventoryoptionChest_bmp->w;
+				slotPos.y = gui_startx + 16;
+				slotPos.h = inventoryoptionChest_bmp->h;
+				bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
+
+				for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
+				{
+					pos.x = slotPos.x;
+					pos.w = 0;
+					pos.h = 0;
+
+
+					if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+					{
+						pos.y = slotPos.y;
+						drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+						selectedSlot = i;
+						selectingSlot = true;
+						if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
 						{
-							// do nothing
-						}
-						else if ( itemsDisplayed[i] == nullptr )
-						{
-							if ( itemsDisplayed[0] == nullptr )
+							inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+							inputs.mouseClearLeft(gui_player);
+
+							bool result = executeOnItemClick(itemsDisplayed[i]);
+							GUICurrentType oldType = guiType;
+							rebuildGUIInventory();
+
+							if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
 							{
-								//Go back to inventory.
-								selectedSlot = -1;
-								players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+								// do nothing
 							}
-							else
+							else if ( itemsDisplayed[i] == nullptr )
 							{
-								//Move up one slot.
-								--selectedSlot;
-								warpMouseToSelectedSlot();
+								if ( itemsDisplayed[0] == nullptr )
+								{
+									//Go back to inventory.
+									selectedSlot = -1;
+									players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+								}
+								else
+								{
+									//Move up one slot.
+									--selectedSlot;
+									warpMouseToSelectedSlot();
+								}
 							}
 						}
 					}
 				}
-			}
 
-			if ( !selectingSlot )
-			{
-				selectedSlot = -1;
+				if ( !selectingSlot )
+				{
+					selectedSlot = -1;
+				}
 			}
 
 			//Okay, now prepare to render all the items.
@@ -4078,7 +4085,7 @@ void GenericGUIMenu::updateGUI()
 					{
 						if ( node->element )
 						{
-							item = (Item*)node->element;
+							Item* item = (Item*)node->element;
 							itemCounts[item->type] += item->count;
 						}
 					}
@@ -4086,7 +4093,7 @@ void GenericGUIMenu::updateGUI()
 					{
 						if ( node->element )
 						{
-							item = (Item*)node->element;
+							Item* item = (Item*)node->element;
 							if ( isNodeTinkeringCraftableItem(item->node) )
 							{
 								// make the displayed items reflect how many you are carrying.
@@ -4110,7 +4117,7 @@ void GenericGUIMenu::updateGUI()
 				{
 					if ( node->element )
 					{
-						item = (Item*)node->element;
+						Item* item = (Item*)node->element;
 						bool displayItem = shouldDisplayItemInGUI(item);
 						if ( displayItem )   //Skip over all non-used items
 						{
@@ -4124,6 +4131,7 @@ void GenericGUIMenu::updateGUI()
 							Uint32 color = uint32ColorWhite;
 							if ( guiType == GUI_TYPE_TINKERING )
 							{
+								break;
 								if ( isNodeTinkeringCraftableItem(item->node) )
 								{
 									// if anything, these should be doing
@@ -10006,25 +10014,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		}
 		if ( foundItem )
 		{
-			//Update quantities of current held scrap
-			for ( node_t* node = stats[playernum]->inventory.first; node != nullptr; node = node->next )
-			{
-				Item* item = (Item*)node->element;
-				if ( item )
-				{
-					if ( item->node && item->node->list == &stats[playernum]->inventory )
-					{
-						if ( item->type == TOOL_METAL_SCRAP )
-						{
-							parentGUI.tinkeringMetalScrap.insert(item->uid);
-						}
-						else if ( item->type == TOOL_MAGIC_SCRAP )
-						{
-							parentGUI.tinkeringMagicScrap.insert(item->uid);
-						}
-					}
-				}
-			}
+			parentGUI.rebuildGUIInventory();
 
 			animInvalidAction = 0.0;
 			animInvalidActionTicks = 0;
@@ -10596,7 +10586,24 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 		}
 		else
 		{
-			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			if ( (item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT
+				|| item->type == TOOL_GYROBOT) )
+			{
+				int health = 100;
+				if ( !item->tinkeringBotIsMaxHealth() )
+				{
+					health = 25 * (item->appearance % 10);
+					if ( health == 0 && item->status != BROKEN )
+					{
+						health = 5;
+					}
+				}
+				snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			}
 		}
 		if ( itemDesc != buf )
 		{

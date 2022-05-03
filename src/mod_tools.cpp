@@ -1186,6 +1186,34 @@ std::string& ItemTooltips_t::getItemStatusAdjective(Uint32 itemType, Status stat
 				return defaultString;
 		}
 	}
+	else if ( itemType == TOOL_SENTRYBOT || itemType == TOOL_SPELLBOT
+		|| itemType == TOOL_GYROBOT || itemType == TOOL_DUMMYBOT )
+	{
+		if ( adjectives.find("tinkering_status") == adjectives.end() )
+		{
+			return defaultString;
+		}
+		switch ( status )
+		{
+			case BROKEN:
+				return adjectives["tinkering_status"]["broken"];
+				break;
+			case DECREPIT:
+				return adjectives["tinkering_status"]["decrepit"];
+				break;
+			case WORN:
+				return adjectives["tinkering_status"]["worn"];
+				break;
+			case SERVICABLE:
+				return adjectives["tinkering_status"]["serviceable"];
+				break;
+			case EXCELLENT:
+				return adjectives["tinkering_status"]["excellent"];
+				break;
+			default:
+				return defaultString;
+		}
+	}
 	else if ( items[itemType].category == ARMOR 
 		|| items[itemType].category == WEAPON
 		|| items[itemType].category == MAGICSTAFF

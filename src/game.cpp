@@ -4725,6 +4725,8 @@ void ingameHud()
 
 						pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
 						pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+						pos.x += 4;
+						pos.y += 4;
 						pos.w = cursor->getWidth();
 						pos.h = cursor->getHeight();
 						cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
@@ -4773,9 +4775,12 @@ void ingameHud()
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
+				// note this currently does not get hit, moveto_select etc is shootmode
 				auto cursor = Image::get("images/system/cursor_hand.png");
 				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
 				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
+				pos.x += 4;
+				pos.y += 4;
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
@@ -4839,12 +4844,14 @@ void ingameHud()
 				{
 					mouseAnim -= .05;
 				}
-				if ( keystatus[SDL_SCANCODE_J] )
+				if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
 				{
 					cursor = Image::get("images/system/cursor.png");
 				}
 				pos.x = inputs.getMouse(player, Inputs::X) - (mouseAnim * cursor->getWidth() / 7) - cursor->getWidth() / 2;
 				pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * cursor->getHeight() / 7) - cursor->getHeight() / 2;
+				pos.x += 4;
+				pos.y += 4;
 				pos.w = cursor->getWidth();
 				pos.h = cursor->getHeight();
 				if ( inputs.getUIInteraction(player)->itemMenuOpen && inputs.getUIInteraction(player)->itemMenuFromHotbar )
@@ -4867,6 +4874,8 @@ void ingameHud()
 					}
 					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
 					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+					pos.x += 4;
+					pos.y += 4;
 					pos.w = cursor->getWidth();
 					pos.h = cursor->getHeight();
 					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
@@ -5540,6 +5549,8 @@ int main(int argc, char** argv)
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
 							pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+							pos.x += 4;
+							pos.y += 4;
 							pos.w = cursor->getWidth();
 							pos.h = cursor->getHeight();
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
@@ -5958,6 +5969,8 @@ int main(int argc, char** argv)
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
 							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.x += 4;
+							pos.y += 4;
 							pos.w = cursor->getWidth();
 							pos.h = cursor->getHeight();
 							cursor->draw(nullptr, pos, SDL_Rect{ 0, 0, xres, yres });
@@ -5972,6 +5985,8 @@ int main(int argc, char** argv)
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
 							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
+							pos.x += 4;
+							pos.y += 4;
 							pos.w = cursor->getWidth();
 							pos.h = cursor->getHeight();
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});

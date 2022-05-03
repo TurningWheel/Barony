@@ -4258,7 +4258,24 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+				if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT
+					|| item->type == TOOL_GYROBOT )
+				{
+					int health = 100;
+					if ( !item->tinkeringBotIsMaxHealth() )
+					{
+						health = 25 * (item->appearance % 10);
+						if ( health == 0 && item->status != BROKEN )
+						{
+							health = 5;
+						}
+					}
+					snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+				}
 			}
 		}
 		txtHeader->setText(buf);
