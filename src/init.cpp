@@ -252,6 +252,10 @@ int initApp(char const * const title, int fullscreen)
 	{
 		return 3;
 	}
+
+	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
+		glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION));
+
 	//SDL_EnableUNICODE(1);
 	//SDL_WM_SetCaption(title, 0);
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
