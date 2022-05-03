@@ -20,7 +20,6 @@
 #include <map>
 #include <atomic>
 #include "net.hpp"
-#include "stat.hpp"
 #include "physfs.h"
 
 class EOSFuncs
