@@ -232,7 +232,6 @@ bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, 
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
 damageIndicator_t* newDamageIndicator(const int player, double x, double y);
 
-void selectItemMenuSlot(const int player, const Item& item, int entry);
 bool autoAddHotbarFilter(const Item& item);
 void quickStackItems(const int player);
 void sortInventoryItemsOfType(const int player, int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
@@ -418,7 +417,6 @@ public:
 	inline Item* getItemInfo(int slot);
 	void updateGUI();
 	void rebuildGUIInventory();
-	void initGUIControllerCode();
 	bool shouldDisplayItemInGUI(Item* item);
 	bool executeOnItemClick(Item* item);
 	void getDimensions(SDL_Rect& r) const 
