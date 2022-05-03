@@ -3979,93 +3979,96 @@ void GenericGUIMenu::updateGUI()
 				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 			}
 
-			//GUI up button.
-			if ( buttonclick == 7 )
+			if ( guiType != GUI_TYPE_TINKERING )
 			{
-				pos.x = gui_starty + (identifyGUI_img->w - 28);
-				pos.y = gui_startx + 16;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invup_bmp, NULL, &pos);
-			}
-			//GUI down button.
-			if ( buttonclick == 8 )
-			{
-				pos.x = gui_starty + (identifyGUI_img->w - 28);
-				pos.y = gui_startx + 52;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invdown_bmp, NULL, &pos);
-			}
-			//GUI close button.
-			if ( buttonclick == 9 )
-			{
-				pos.x = gui_starty + 393;
-				pos.y = gui_startx;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invclose_bmp, NULL, &pos);
-				closeGUI();
-			}
-
-			Item *item = nullptr;
-
-			bool selectingSlot = false;
-			SDL_Rect slotPos;
-			slotPos.x = gui_starty + 12;
-			slotPos.w = inventoryoptionChest_bmp->w;
-			slotPos.y = gui_startx + 16;
-			slotPos.h = inventoryoptionChest_bmp->h;
-			bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
-
-			for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
-			{
-				pos.x = slotPos.x;
-				pos.w = 0;
-				pos.h = 0;
-
-
-				if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+				//GUI up button.
+				if ( buttonclick == 7 )
 				{
-					pos.y = slotPos.y;
-					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
-					selectedSlot = i;
-					selectingSlot = true;
-					if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
-					{
-						inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-						inputs.mouseClearLeft(gui_player);
+					pos.x = gui_starty + (identifyGUI_img->w - 28);
+					pos.y = gui_startx + 16;
+					pos.w = 0;
+					pos.h = 0;
+					drawImage(invup_bmp, NULL, &pos);
+				}
+				//GUI down button.
+				if ( buttonclick == 8 )
+				{
+					pos.x = gui_starty + (identifyGUI_img->w - 28);
+					pos.y = gui_startx + 52;
+					pos.w = 0;
+					pos.h = 0;
+					drawImage(invdown_bmp, NULL, &pos);
+				}
+				//GUI close button.
+				if ( buttonclick == 9 )
+				{
+					pos.x = gui_starty + 393;
+					pos.y = gui_startx;
+					pos.w = 0;
+					pos.h = 0;
+					drawImage(invclose_bmp, NULL, &pos);
+					closeGUI();
+				}
 
-						bool result = executeOnItemClick(itemsDisplayed[i]);
-						GUICurrentType oldType = guiType;
-						rebuildGUIInventory();
-						
-						if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
+				Item *item = nullptr;
+
+				bool selectingSlot = false;
+				SDL_Rect slotPos;
+				slotPos.x = gui_starty + 12;
+				slotPos.w = inventoryoptionChest_bmp->w;
+				slotPos.y = gui_startx + 16;
+				slotPos.h = inventoryoptionChest_bmp->h;
+				bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
+
+				for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
+				{
+					pos.x = slotPos.x;
+					pos.w = 0;
+					pos.h = 0;
+
+
+					if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+					{
+						pos.y = slotPos.y;
+						drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+						selectedSlot = i;
+						selectingSlot = true;
+						if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
 						{
-							// do nothing
-						}
-						else if ( itemsDisplayed[i] == nullptr )
-						{
-							if ( itemsDisplayed[0] == nullptr )
+							inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+							inputs.mouseClearLeft(gui_player);
+
+							bool result = executeOnItemClick(itemsDisplayed[i]);
+							GUICurrentType oldType = guiType;
+							rebuildGUIInventory();
+
+							if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
 							{
-								//Go back to inventory.
-								selectedSlot = -1;
-								players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+								// do nothing
 							}
-							else
+							else if ( itemsDisplayed[i] == nullptr )
 							{
-								//Move up one slot.
-								--selectedSlot;
-								warpMouseToSelectedSlot();
+								if ( itemsDisplayed[0] == nullptr )
+								{
+									//Go back to inventory.
+									selectedSlot = -1;
+									players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+								}
+								else
+								{
+									//Move up one slot.
+									--selectedSlot;
+									warpMouseToSelectedSlot();
+								}
 							}
 						}
 					}
 				}
-			}
 
-			if ( !selectingSlot )
-			{
-				selectedSlot = -1;
+				if ( !selectingSlot )
+				{
+					selectedSlot = -1;
+				}
 			}
 
 			//Okay, now prepare to render all the items.
@@ -4082,7 +4085,7 @@ void GenericGUIMenu::updateGUI()
 					{
 						if ( node->element )
 						{
-							item = (Item*)node->element;
+							Item* item = (Item*)node->element;
 							itemCounts[item->type] += item->count;
 						}
 					}
@@ -4090,7 +4093,7 @@ void GenericGUIMenu::updateGUI()
 					{
 						if ( node->element )
 						{
-							item = (Item*)node->element;
+							Item* item = (Item*)node->element;
 							if ( isNodeTinkeringCraftableItem(item->node) )
 							{
 								// make the displayed items reflect how many you are carrying.
@@ -4114,7 +4117,7 @@ void GenericGUIMenu::updateGUI()
 				{
 					if ( node->element )
 					{
-						item = (Item*)node->element;
+						Item* item = (Item*)node->element;
 						bool displayItem = shouldDisplayItemInGUI(item);
 						if ( displayItem )   //Skip over all non-used items
 						{
