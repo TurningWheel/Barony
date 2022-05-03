@@ -14,6 +14,14 @@
 #include "entity.hpp"
 #include "prng.hpp"
 
+#ifdef WINDOWS
+extern "C"
+{
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 // main definitions
 Sint32 xres = 1280;
 Sint32 yres = 720;
