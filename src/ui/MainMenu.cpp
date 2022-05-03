@@ -12915,6 +12915,8 @@ bind_failed:
 	}
 
     void openGameoverWindow(int player, bool tutorial) {
+        static ConsoleVariable<bool> purple_window("/gameover_purple", true);
+
         // determine if any other players are alive
 		bool survivingPlayer = false;
 		for (int c = 0; c < MAXPLAYERS; c++) {
@@ -13002,7 +13004,9 @@ bind_failed:
         auto background = window->addImage(
 			SDL_Rect{0, 0, 500, 336},
 			0xffffffff,
-			"*images/ui/GameOver/UI_GameOver_BG_02D.png",
+			*purple_window?
+			    "*images/ui/GameOver/UI_GameOver_BG_02E.png":
+			    "*images/ui/GameOver/UI_GameOver_BG_02D.png",
 			"background"
             );
 
@@ -13046,8 +13050,13 @@ bind_failed:
         auto epitaph = window->addField("epitaph", 1024);
         epitaph->setSize(SDL_Rect{106, 122, 288, 90});
         epitaph->setFont(smallfont_outline);
-        epitaph->setTextColor(makeColor(168, 184, 156, 255));
-        epitaph->setOutlineColor(makeColor(46, 55, 57, 255));
+        if (*purple_window) {
+            epitaph->setTextColor(makeColor(156, 172, 184, 255));
+            epitaph->setOutlineColor(makeColor(43, 32, 46, 255));
+        } else {
+            epitaph->setTextColor(makeColor(168, 184, 156, 255));
+            epitaph->setOutlineColor(makeColor(46, 55, 57, 255));
+        }
         epitaph->setJustify(Field::justify_t::CENTER);
         epitaph->setText(epitaph_buf);
 
