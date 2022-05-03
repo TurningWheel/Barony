@@ -96,6 +96,7 @@ public:
 	const char*					getBackgroundHighlighted() const { return backgroundHighlighted.c_str(); }
 	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
 	SDL_Rect                    getTextOffset() const { return textOffset; }
+	Uint32						getColor() const { return color; }
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }
