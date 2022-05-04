@@ -3198,7 +3198,9 @@ void actHudShield(Entity* my)
 	bool wouldBeDefending = false; // to handle different block/sneaking hotkeys. not allowed to sneak if we would be defending on the same hotkey
 	bool sneaking = false;
     const bool shootmode = players[HUDSHIELD_PLAYERNUM]->shootmode;
-	if (!command && !swimming && shootmode)
+	if ( !players[HUDSHIELD_PLAYERNUM]->bUsingCommand()
+		&& players[HUDSHIELD_PLAYERNUM]->bControlEnabled
+		&& !swimming && shootmode)
 	{
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
 			&& shootmode

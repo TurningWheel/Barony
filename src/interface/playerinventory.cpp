@@ -4164,7 +4164,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	}
 
 	bool expandBindingPressed = false;
-	if ( !command && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
+	if ( !players[player]->bUsingCommand() 
+		&& players[player]->bControlEnabled
+		&& Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
 		expandBindingPressed = true;
 		if ( !players[player]->shootmode && item->identified )
@@ -6351,7 +6353,9 @@ void Player::Inventory_t::updateInventory()
 
 	Input& input = Input::inputs[player];
 
-	if (!command && input.consumeBinaryToggle("Autosort Inventory"))
+	if ( !players[player]->bUsingCommand()
+		&& players[player]->bControlEnabled
+		&& input.consumeBinaryToggle("Autosort Inventory"))
 	{
 		autosortInventory(player);
 		//quickStackItems();
@@ -7872,7 +7876,8 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				if ( numkey_quick_add && !command && item )
+				if ( numkey_quick_add && !players[player]->bUsingCommand()
+					&& players[player]->bControlEnabled && item )
 				{
 					int slotNum = -1;
 					if ( Input::inputs[player].binaryToggle("HotbarSlot1") )

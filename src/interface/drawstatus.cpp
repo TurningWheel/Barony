@@ -2974,7 +2974,7 @@ void drawStatusNew(const int player)
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
-	if ( !command && stats[player] && stats[player]->HP > 0
+	if ( !players[player]->bUsingCommand() && stats[player] && stats[player]->HP > 0
 		&& players[player]->bControlEnabled && !gamePaused
 		&& !players[player]->bUsingCommand() )
 	{

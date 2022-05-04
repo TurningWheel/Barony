@@ -523,7 +523,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	{
 		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
-	if ( players[playernum]->shootmode && !command )
+	if ( player.shootmode && !player.bUsingCommand()
+		&& player.bControlEnabled )
 	{
 		if ( Input::inputs[playernum].consumeBinaryToggle("Quick Turn") )
 		{
@@ -532,7 +533,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// rotate
-	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+	if ( !player.bUsingCommand()
+		&& player.bControlEnabled && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -646,7 +648,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// look up and down
-	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+	if ( !player.bUsingCommand()
+		&& player.bControlEnabled && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -823,7 +826,8 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
 					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())) )
 		{
-			if ( !command && !swimming )
+			if ( !player.bUsingCommand()
+				&& player.bControlEnabled && !swimming )
 			{
 				if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
 				{
@@ -856,7 +860,9 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 			PLAYER_BOBMODE = 0;
 		}
 
-		if ( !command && !swimming && !inputs.hasController(PLAYER_NUM) && (input.binary("Move Left") - input.binary("Move Right")) )
+		if ( !player.bUsingCommand()
+			&& player.bControlEnabled
+			&& !swimming && !inputs.hasController(PLAYER_NUM) && (input.binary("Move Left") - input.binary("Move Right")) )
 		{
 			if ( (input.binary("Move Right") && !input.binary("Move Backward")) ||
 				(input.binary("Move Left") && input.binary("Move Backward")) )
@@ -887,7 +893,9 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				}
 			}
 		}
-		else if ( !command && !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
+		else if ( !player.bUsingCommand()
+			&& player.bControlEnabled
+			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
 		{
 			auto controller = inputs.getController(PLAYER_NUM);
 			if ( (controller->getLeftXPercentForPlayerMovement() > 0.001 && controller->getLeftYPercentForPlayerMovement() >= 0.0)
@@ -1133,7 +1141,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 	}
 
-	if ( (!command || pacified) && allowMovement )
+	if ( ((!player.bUsingCommand() && player.bControlEnabled) || pacified) 
+		&& allowMovement )
 	{
 		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 		float x_force = 0;
@@ -1523,7 +1532,7 @@ void doStatueEditor(int player)
 		}
 	}
 
-	if ( !command )
+	if ( !players[player]->bUsingCommand() )
 	{
 		if ( Entity* limb = uidToEntity(StatueManager.lastEntityUnderMouse) )
 		{
@@ -4427,7 +4436,7 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity[PLAYER_NUM] = NULL;
 
-				if ( !command && input.binaryToggle("Use") )
+				if ( !players[PLAYER_NUM]->bUsingCommand() && players[PLAYER_NUM]->bControlEnabled && input.binaryToggle("Use") )
 				{
 					if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
 					{
@@ -4558,7 +4567,8 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
+			if ( !players[PLAYER_NUM]->bUsingCommand() && players[PLAYER_NUM]->bControlEnabled
+				&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				auto& b = input.getBindings();
 				bool showNPCCommandsOnGamepad = false;
@@ -5227,7 +5237,7 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
+							if ( (multiplayer == SINGLE && !splitscreen) || !(svFlags & SV_FLAG_KEEPINVENTORY) )
 							{
 								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
 								{

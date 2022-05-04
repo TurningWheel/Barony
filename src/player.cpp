@@ -3182,7 +3182,8 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( !command && Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
+		if ( !players[player]->bUsingCommand() && players[player]->bControlEnabled
+			&& Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{
