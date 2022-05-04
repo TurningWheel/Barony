@@ -1088,8 +1088,27 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	return false;
 }
 
+bool Player::GUI_t::bGameoverActive()
+{
+	if ( gameUIFrame[player.playernum] )
+	{
+		for ( auto f : gameUIFrame[player.playernum]->getFrames() )
+		{
+			if ( !strcmp(f->getName(), "gameover") )
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 {
+	if ( bGameoverActive() )
+	{
+		return false;
+	}
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING )
@@ -4148,6 +4167,15 @@ const bool Player::bUseCompactGUIHeight() const
 		{
 			return true;
 		}
+	}
+	return false;
+}
+
+const bool Player::bUsingCommand() const
+{
+	if ( command )
+	{
+		return inputs.bPlayerUsingKeyboardControl(playernum);
 	}
 	return false;
 }

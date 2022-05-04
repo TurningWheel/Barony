@@ -12976,7 +12976,7 @@ bind_failed:
 			    if (!players[i]->isLocalPlayer()) {
 				    continue;
 			    }
-	            players[i]->shootmode = false; // open inventory
+	            //players[i]->shootmode = false; // open inventory
 			    for (auto node = stats[i]->inventory.first; node != NULL; node = node->next) {
 				    Item* item = (Item*)node->element;
 				    item->identified = true;

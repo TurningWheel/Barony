@@ -603,7 +603,7 @@ public:
 
 	bool bSplitscreen = false;
 	SplitScreenTypes splitScreenType = SPLITSCREEN_DEFAULT;
-
+	bool bControlEnabled = true; // disabled if dead waiting for gameover prompt etc
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
@@ -629,6 +629,7 @@ public:
 	const bool isLocalPlayerAlive() const;
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
+	const bool bUsingCommand() const;
 
 	enum PanelJustify_t
 	{
@@ -723,6 +724,7 @@ public:
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
 		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
+		bool bGameoverActive();
 		bool returnToPreviousActiveModule();
 		GUIDropdown_t dropdownMenu;
 		void closeDropdowns();

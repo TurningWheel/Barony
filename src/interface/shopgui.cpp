@@ -963,7 +963,9 @@ void Player::ShopGUI_t::updateShop()
 			&& !player.GUI.isDropdownActive()
 			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP)
 			&& !player.inventoryUI.chestGUI.bOpen
-			&& !player.inventoryUI.spellPanel.bOpen )
+			&& !player.inventoryUI.spellPanel.bOpen
+			&& player.bControlEnabled && !gamePaused
+			&& !player.bUsingCommand() )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{

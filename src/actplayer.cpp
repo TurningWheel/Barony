@@ -102,51 +102,64 @@ void actDeathCam(Entity* my)
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
+		DEATHCAM_IDLETIME = TICKS_PER_SECOND * 2;
 	}
+
+	if ( DEATHCAM_TIME >= deathcamGameoverPromptTicks )
+	{
+		if ( !players[DEATHCAM_PLAYERNUM]->GUI.bGameoverActive() )
+		{
+			players[DEATHCAM_PLAYERNUM]->bControlEnabled = true;
+		}
+	}
+
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
 	if ( shootmode && !gamePaused )
 	{
-		if ( smoothmouse )
+		if ( !players[DEATHCAM_PLAYERNUM]->GUI.bGameoverActive() )
 		{
-			DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
-			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
-		}
-		else
-		{
-			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
-		}
-		my->yaw += DEATHCAM_ROTX;
-		if ( my->yaw >= PI * 2 )
-		{
-			my->yaw -= PI * 2;
-		}
-		else if ( my->yaw < 0 )
-		{
-			my->yaw += PI * 2;
-		}
+			if ( smoothmouse )
+			{
+				DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+				DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
+			}
+			else
+			{
+				DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+			}
+			my->yaw += DEATHCAM_ROTX;
+			if ( my->yaw >= PI * 2 )
+			{
+				my->yaw -= PI * 2;
+			}
+			else if ( my->yaw < 0 )
+			{
+				my->yaw += PI * 2;
+			}
 
-		if ( smoothmouse )
-		{
-			DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
-			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
-		}
-		else
-		{
-			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
-		}
-		my->pitch -= DEATHCAM_ROTY;
-		if ( my->pitch > PI / 2 )
-		{
-			my->pitch = PI / 2;
-		}
-		else if ( my->pitch < -PI / 2 )
-		{
-			my->pitch = -PI / 2;
+			if ( smoothmouse )
+			{
+				DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+				DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
+			}
+			else
+			{
+				DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+			}
+			my->pitch -= DEATHCAM_ROTY;
+			if ( my->pitch > PI / 2 )
+			{
+				my->pitch = PI / 2;
+			}
+			else if ( my->pitch < -PI / 2 )
+			{
+				my->pitch = -PI / 2;
+			}
 		}
 
 		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY) < 0.0001
 			&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM
-			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks + TICKS_PER_SECOND * 3) )
+			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks) )
 		{
 			++DEATHCAM_IDLETIME;
 			if ( DEATHCAM_IDLETIME >= TICKS_PER_SECOND * 3 )
@@ -225,7 +238,8 @@ void actDeathCam(Entity* my)
 	{
 		// do nothing if still alive
 	}
-	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode)
+	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.bGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled )
 	{
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
@@ -5185,8 +5199,8 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							players[PLAYER_NUM]->bookGUI.closeBookGUI();
-
+							players[clientnum]->closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+							players[clientnum]->bControlEnabled = false;
 #ifdef SOUND
 							levelmusicplaying = true;
 							combatmusicplaying = false;
