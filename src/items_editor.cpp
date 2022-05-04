@@ -13,6 +13,7 @@ See LICENSE for details.
 #include "game.hpp"
 #include "items.hpp"
 #include "files.hpp"
+#include "entity.hpp"
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];

@@ -2127,11 +2127,13 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		{
 			summonedEntity->setObituary(language[3010]); // fell to their death.
 			summonedStats->HP = 0; // kill me instantly
+			summonedStats->killer = KilledBy::BOTTOMLESS_PIT;
 		}
 		else if ( fellInLava )
 		{
 			summonedEntity->setObituary(language[1506]); // goes for a swim in some lava.
 			summonedStats->HP = 0; // kill me instantly
+			summonedStats->killer = KilledBy::LAVA;
 		}
 		else
 		{
@@ -2698,10 +2700,12 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 						if ( parentStats->sex == MALE )
 						{
 							parent->setObituary(language[1528]);
+							parentStats->killer = KilledBy::FAILED_INVOCATION;
 						}
 						else
 						{
 							parent->setObituary(language[1529]);
+							parentStats->killer = KilledBy::FAILED_INVOCATION;
 						}
 					}
 

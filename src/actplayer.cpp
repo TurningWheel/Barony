@@ -4077,6 +4077,7 @@ void actPlayer(Entity* my)
 					else
 					{
 						my->setObituary(language[3010]); // fell to their death.
+						stats[PLAYER_NUM]->killer = KilledBy::BOTTOMLESS_PIT;
 						stats[PLAYER_NUM]->HP = 0; // kill me instantly
 						if (stats[PLAYER_NUM]->type == AUTOMATON)
 						{
@@ -4087,6 +4088,7 @@ void actPlayer(Entity* my)
 				else if ( safeTiles.empty() )
 				{
 					my->setObituary(language[3010]); // fell to their death.
+					stats[PLAYER_NUM]->killer = KilledBy::BOTTOMLESS_PIT;
 					stats[PLAYER_NUM]->HP = 0; // kill me instantly
 					if (stats[PLAYER_NUM]->type == AUTOMATON)
 					{
@@ -4206,6 +4208,7 @@ void actPlayer(Entity* my)
 								playSoundPlayer(PLAYER_NUM, 28, 92);
 							}
 							my->setObituary(language[3254]); // "goes for a swim in some water."
+						    stats[PLAYER_NUM]->killer = KilledBy::WATER;
 							steamAchievementClient(PLAYER_NUM, "BARONY_ACH_BLOOD_BOIL");
 						}
 					}
@@ -4237,6 +4240,7 @@ void actPlayer(Entity* my)
 						}
 					}
 					my->setObituary(language[1506]); // "goes for a swim in some lava."
+					stats[PLAYER_NUM]->killer = KilledBy::LAVA;
 					if ( !my->flags[BURNING] )
 					{
 						// Attempt to set the Entity on fire

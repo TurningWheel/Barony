@@ -602,8 +602,28 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	{
 		return;
 	}
-	if ( behavior == &actBoulder)
+
+	Stat* hitstats = victim->getStats();
+	if ( !hitstats )
 	{
+	    return;
+	}
+
+	if ( behavior == &actMagicTrap )
+	{
+	    hitstats->killer = KilledBy::TRAP_MAGIC;
+	    victim->setObituary(language[1501]);
+	    return;
+	}
+	if ( behavior == &::actMagicTrapCeiling )
+	{
+	    hitstats->killer = KilledBy::TRAP_MAGIC;
+	    victim->setObituary(language[1502]);
+	    return;
+	}
+	if ( behavior == &actBoulder )
+	{
+	    hitstats->killer = KilledBy::BOULDER;
 		if ( sprite == 989 )
 		{
 			victim->setObituary(language[3898]);
@@ -614,15 +634,16 @@ void Entity::killedByMonsterObituary(Entity* victim)
 		}
 		return;
 	}
-	Stat* hitstats = victim->getStats();
+
 	Stat* myStats = this->getStats();
-	if ( !hitstats || !myStats )
+	if ( !myStats )
 	{
 		return;
 	}
 
 	if ( myStats->type == hitstats->type )
 	{
+		hitstats->killer = KilledBy::ALLY_BETRAYAL;
 		if ( hitstats->sex == MALE )
 		{
 			snprintf(tempstr, 256, language[1509], getMonsterLocalizedName(hitstats->type).c_str());
@@ -635,6 +656,7 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	}
 	else
 	{
+		hitstats->killer = KilledBy::MONSTER;
 		switch ( myStats->type )
 		{
 			case HUMAN:
@@ -695,15 +717,18 @@ void Entity::killedByMonsterObituary(Entity* victim)
 					if ( hitstats->type != HUMAN )
 					{
 						snprintf(hitstats->obituary, 127, language[3244], getMonsterLocalizedPlural(hitstats->type).c_str(), myStats->name);
+						hitstats->killer = KilledBy::TRESPASSING;
 					}
 					else
 					{
 						victim->setObituary(language[1527]); // attempts a robbery.
+						hitstats->killer = KilledBy::ATTEMPTED_ROBBERY;
 					}
 				}
 				else
 				{
 					victim->setObituary(language[1527]); // attempts a robbery.
+					hitstats->killer = KilledBy::ATTEMPTED_ROBBERY;
 				}
 				break;
 			case KOBOLD:
@@ -747,6 +772,8 @@ void Entity::killedByMonsterObituary(Entity* victim)
 				break;
 		}
 	}
+	hitstats->killer_monster = myStats->type;
+	hitstats->killer_name = myStats->name;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2454,6 +2481,7 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 			{
 				this->setObituary(language[1529]);
 			}
+			tempStats->killer = KilledBy::FAILED_INVOCATION;
 		}
 	}
 }
@@ -3170,6 +3198,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->HP <= 0 )
 				{
 					this->setObituary(language[1530]);
+					myStats->killer = KilledBy::STARVATION;
 				}
 
 				// Give the Player feedback on being hurt
@@ -3307,11 +3336,16 @@ void Entity::handleEffects(Stat* myStats)
 
 						if ( myStats->HP <= 0 )
 						{
-							this->setObituary(language[1530]);
 							if ( playerAutomaton )
 							{
+							    myStats->killer = KilledBy::NO_FUEL;
 								this->setObituary(language[3864]);
 								steamAchievementEntity(this, "BARONY_ACH_RUST_IN_PEACE");
+							}
+							else
+							{
+							    myStats->killer = KilledBy::STARVATION;
+							    this->setObituary(language[1530]);
 							}
 						}
 					}
@@ -3829,6 +3863,7 @@ void Entity::handleEffects(Stat* myStats)
 					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP, lowPriority);
 				}
 			}
+			myStats->killer = KilledBy::POISON;
 			this->setObituary(language[1531]);
 			playSoundEntity(this, 28, 64);
 			if ( player >= 0 && players[player]->isLocalPlayer() )
@@ -3899,6 +3934,7 @@ void Entity::handleEffects(Stat* myStats)
 				bleedhurt = std::max(1, bleedhurt);
 				this->modHP(-bleedhurt);
 				this->setObituary(language[1532]);
+				myStats->killer = KilledBy::BLEEDING;
 				Entity* gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
 				if ( player >= 0 && players[player]->isLocalPlayer() )
@@ -4113,6 +4149,7 @@ void Entity::handleEffects(Stat* myStats)
 					if ( myStats->HP <= 0 )
 					{
 						this->setObituary(language[1533]); // "burns to a crisp."
+				        myStats->killer = KilledBy::BURNING_TO_CRISP;
 
 						if ( killer != nullptr )
 						{
@@ -4374,7 +4411,8 @@ void Entity::handleEffects(Stat* myStats)
 							}
 						}
 					}
-					this->setObituary(language[1534]);
+					this->setObituary(language[1534]); // choked to death
+			        myStats->killer = KilledBy::STRANGULATION;
 					if ( myStats->HP <= 0 )
 					{
 						if ( player <= 0 )

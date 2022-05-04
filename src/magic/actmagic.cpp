@@ -1466,11 +1466,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										// was caused by a flaming boulder.
 										hit.entity->setObituary(language[3898]);
+										hitstats->killer = KilledBy::BOULDER;
 									}
 									else
 									{
 										// blew the brew (alchemy)
 										hit.entity->setObituary(language[3350]);
+										hitstats->killer = KilledBy::FAILED_ALCHEMY;
 									}
 								}
 								else
