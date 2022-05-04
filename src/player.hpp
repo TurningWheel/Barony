@@ -629,7 +629,7 @@ public:
 	const bool isLocalPlayerAlive() const;
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
-	const bool bUsingCommand() const;
+	const bool usingCommand() const;
 
 	enum PanelJustify_t
 	{

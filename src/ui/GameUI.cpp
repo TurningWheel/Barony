@@ -852,9 +852,9 @@ void Player::HUD_t::updateUINavigation()
 	}
 
 	bool leftTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavLeftTrigger")
-		&& player.bControlEnabled && !gamePaused && !player.bUsingCommand();
+		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
 	bool rightTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavRightTrigger")
-		&& player.bControlEnabled && !gamePaused && !player.bUsingCommand();
+		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
 
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE && player.isLocalPlayer() && !player.shootmode )
@@ -4755,7 +4755,7 @@ static Frame* createMinimap(int player) {
         auto& minimap = players[player]->minimap;
         auto& input = Input::inputs[player];
         if ( !gamePaused && players[player]->bControlEnabled 
-			&& !players[player]->bUsingCommand() && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
+			&& !players[player]->usingCommand() && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
             if (minimap.real_scale > 75.0) {
                 minimap.real_scale = 75.0;
             }
@@ -6408,7 +6408,7 @@ void Player::GUIDropdown_t::process()
 	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
 		if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown")
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			++dropDownOptionSelected;
 			if ( dropDownOptionSelected >= dropDown.options.size() )
@@ -6417,7 +6417,7 @@ void Player::GUIDropdown_t::process()
 			}
 		}
 		else if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp")
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			--dropDownOptionSelected;
 			if ( dropDownOptionSelected < 0 )
@@ -6652,7 +6652,7 @@ void Player::GUIDropdown_t::process()
 		}
 	}
 
-	if ( !(player.bControlEnabled && !gamePaused && !player.bUsingCommand()) )
+	if ( !(player.bControlEnabled && !gamePaused && !player.usingCommand()) )
 	{
 		close();
 	}
@@ -10793,7 +10793,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			if ( Input::inputs[player.playernum].binary("MenuRightClick")
 				&& player.bControlEnabled && !gamePaused
-				&& !player.bUsingCommand()
+				&& !player.usingCommand()
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive() )
 			{
@@ -10805,7 +10805,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				)
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive()
-				&& !player.bUsingCommand()
+				&& !player.usingCommand()
 				&& player.bControlEnabled && !gamePaused )
 			{
 				player.GUI.dropdownMenu.open("drop_gold");
@@ -20402,7 +20402,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		createSkillSheet();
 	}
 
-	if ( !player.bUsingCommand() && Input::inputs[player.playernum].consumeBinaryToggle("Skill Sheet")
+	if ( !player.usingCommand() && Input::inputs[player.playernum].consumeBinaryToggle("Skill Sheet")
 		&& !gamePaused && players[player.playernum]->bControlEnabled )
 	{
 		if ( !bSkillSheetOpen )
@@ -20621,7 +20621,7 @@ void Player::SkillSheet_t::processSkillSheet()
 	if ( player.GUI.activeModule == player.GUI.MODULE_SKILLS_LIST )
 	{
 		if ( Input::inputs[player.playernum].binaryToggle("MenuUp")
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuUp");
@@ -20651,7 +20651,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuDown")
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuDown");
@@ -20681,7 +20681,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuLeft") 
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeft");
@@ -20703,7 +20703,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuRight")
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuRight");
@@ -20741,7 +20741,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel")
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 			closeSheetAction = true;
@@ -21406,7 +21406,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			//lowestY += 4; // small buffer after legend box
 		}
 
-		if ( !slider->isDisabled() && player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+		if ( !slider->isDisabled() && player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 			{
@@ -21817,7 +21817,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
 			&& !player.GUI.isDropdownActive()
 			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS)
-			&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{
@@ -22347,7 +22347,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
 		&& !player.GUI.isDropdownActive()
 		&& !player.inventoryUI.spellPanel.bOpen
-		&& player.bControlEnabled && !gamePaused && !player.bUsingCommand() )
+		&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 	{
 		if ( openedChest[player.playernum] || bOpen )
 		{

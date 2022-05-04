@@ -1549,7 +1549,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity
 			&& players[gui_player]->bControlEnabled && !gamePaused
-			&& !players[gui_player]->bUsingCommand() )
+			&& !players[gui_player]->usingCommand() )
 		{
 			if ( input.binaryToggle("Command NPC") && optionPrevious != -1 )
 			{
@@ -1604,7 +1604,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 		// process commands if option selected on the wheel.
-		if ( !(players[gui_player]->bControlEnabled && !gamePaused && !players[gui_player]->bUsingCommand()) )
+		if ( !(players[gui_player]->bControlEnabled && !gamePaused && !players[gui_player]->usingCommand()) )
 		{
 			// no action
 		}
@@ -9891,7 +9891,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			&& !player->GUI.isDropdownActive()
 			&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING)
 			&& player->bControlEnabled && !gamePaused
-			&& !player->bUsingCommand() )
+			&& !player->usingCommand() )
 		{
 			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
 			{

@@ -965,7 +965,7 @@ void Player::ShopGUI_t::updateShop()
 			&& !player.inventoryUI.chestGUI.bOpen
 			&& !player.inventoryUI.spellPanel.bOpen
 			&& player.bControlEnabled && !gamePaused
-			&& !player.bUsingCommand() )
+			&& !player.usingCommand() )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{

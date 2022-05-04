@@ -4077,7 +4077,7 @@ void ingameHud()
 
 	    // toggle minimap
 		// player not needed to be alive
-        if ( players[player]->shootmode && !players[player]->bUsingCommand() && input.consumeBinaryToggle("Toggle Minimap")
+        if ( players[player]->shootmode && !players[player]->usingCommand() && input.consumeBinaryToggle("Toggle Minimap")
 			&& !gamePaused
 			&& bControlEnabled ) {
             openMinimap(player);
@@ -4085,7 +4085,7 @@ void ingameHud()
 
 		// inventory interface
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !players[player]->bUsingCommand() && input.consumeBinaryToggle("Character Status")
+		if ( players[player]->isLocalPlayer() && !players[player]->usingCommand() && input.consumeBinaryToggle("Character Status")
 			&& !gamePaused
 			&& bControlEnabled )
 		{
@@ -4101,7 +4101,7 @@ void ingameHud()
 
 		// spell list
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !players[player]->bUsingCommand() && input.consumeBinaryToggle("Spell List")
+		if ( players[player]->isLocalPlayer() && !players[player]->usingCommand() && input.consumeBinaryToggle("Spell List")
 			&& !gamePaused
 			&& bControlEnabled )   //TODO: Move to function in interface or something?
 		{
@@ -4143,7 +4143,7 @@ void ingameHud()
 			{
 				allowCasting = true;
 			}
-			else if ( !players[player]->bUsingCommand() && shootmode && bControlEnabled )
+			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
 			{
 			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
 			    {
@@ -4246,7 +4246,7 @@ void ingameHud()
 		}
 		players[player]->magic.resetQuickCastSpell();
 
-		if ( !players[player]->bUsingCommand() && input.consumeBinaryToggle("Open Log")
+		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Open Log")
 			&& !gamePaused
 			&& bControlEnabled )
 		{
@@ -4258,7 +4258,7 @@ void ingameHud()
 				&& players[player]->worldUI.bTooltipInView
 				&& players[player]->worldUI.tooltipsInRange.size() > 1);
 
-		if ( !players[player]->bUsingCommand() && input.consumeBinaryToggle("Cycle NPCs")
+		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Cycle NPCs")
 			&& !gamePaused
 			&& bControlEnabled )
 		{

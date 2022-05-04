@@ -3182,7 +3182,7 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( !players[player]->bUsingCommand() && players[player]->bControlEnabled
+		if ( !players[player]->usingCommand() && players[player]->bControlEnabled
 			&& Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
 		{
 			if ( players[player]->worldUI.bEnabled )
@@ -4172,7 +4172,7 @@ const bool Player::bUseCompactGUIHeight() const
 	return false;
 }
 
-const bool Player::bUsingCommand() const
+const bool Player::usingCommand() const
 {
 	if ( command )
 	{

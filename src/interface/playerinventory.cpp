@@ -4164,7 +4164,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	}
 
 	bool expandBindingPressed = false;
-	if ( !players[player]->bUsingCommand() 
+	if ( !players[player]->usingCommand() 
 		&& players[player]->bControlEnabled
 		&& Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
@@ -6353,7 +6353,7 @@ void Player::Inventory_t::updateInventory()
 
 	Input& input = Input::inputs[player];
 
-	if ( !players[player]->bUsingCommand()
+	if ( !players[player]->usingCommand()
 		&& players[player]->bControlEnabled
 		&& input.consumeBinaryToggle("Autosort Inventory"))
 	{
@@ -7876,7 +7876,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				if ( numkey_quick_add && !players[player]->bUsingCommand()
+				if ( numkey_quick_add && !players[player]->usingCommand()
 					&& players[player]->bControlEnabled && item )
 				{
 					int slotNum = -1;
