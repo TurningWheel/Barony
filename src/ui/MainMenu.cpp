@@ -12149,11 +12149,27 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
+				loadingsavegame = false;
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
+				}
+				if (multiplayer == SERVER) {
+                    for (int c = 1; c < MAXPLAYERS; c++) {
+	                    if (client_disconnected[c]) {
+		                    continue;
+	                    }
+	                    memcpy((char*)net_packet->data, "RSTR", 4);
+	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
+	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
+	                    net_packet->data[12] = 0;
+	                    net_packet->address.host = net_clients[c - 1].host;
+	                    net_packet->address.port = net_clients[c - 1].port;
+	                    net_packet->len = 13;
+	                    sendPacketSafe(net_sock, -1, net_packet, c - 1);
+                    }
 				}
 			},
 			[](Button&){ // cancel
@@ -12704,8 +12720,12 @@ bind_failed:
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 			    options.insert(options.end(), {
 				    {"End Life", "END LIFE", mainEndLife},
-				    {"Restart Game", "RESTART GAME", mainRestartGame},
 				    });
+				if (multiplayer != CLIENT) {
+			        options.insert(options.end(), {
+				        {"Restart Game", "RESTART GAME", mainRestartGame},
+				        });
+				}
 			} else {
 			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
 			        options.insert(options.end(), {
@@ -13140,7 +13160,7 @@ bind_failed:
 
         // TODO different buttons depending on game mode (ie tutorial)
 
-        if (survivingPlayer) {
+        if (survivingPlayer || multiplayer == CLIENT) {
             auto dismiss = window->addButton("dismiss");
             dismiss->setSize(SDL_Rect{(500 - 90) / 2, 294, 90, 34});
             dismiss->setColor(makeColor(255, 255, 255, 255));

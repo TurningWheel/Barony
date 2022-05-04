@@ -3051,6 +3051,149 @@ void clientHandlePacket()
 		return;
 	}
 
+	// you died
+	else if (packetId == 'UDIE')
+	{
+		KilledBy killer = (KilledBy)SDLNet_Read32(&net_packet->data[4]);
+		stats[clientnum]->killer = killer;
+
+		if (killer == KilledBy::MONSTER) {
+		    if (net_packet->data[8]) { // named monster
+		        char name[128];
+		        Uint32 len = net_packet->data[8];
+		        len = std::min((Uint32)(sizeof(name) - 1), len);
+		        memcpy(name, &net_packet->data[9], len);
+		        name[len] = '\0';
+		        stats[clientnum]->killer_name = name;
+		    } else { // anonymous monster
+		        Monster monster = (Monster)SDLNet_Read32(&net_packet->data[9]);
+		        stats[clientnum]->killer_monster = monster;
+		    }
+		} else if (killer == KilledBy::ITEM) {
+		    ItemType item = (ItemType)SDLNet_Read32(&net_packet->data[8]);
+		    stats[clientnum]->killer_item = item;
+		}
+
+		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0 )
+		{
+			// don't spawn deathcam
+		}
+		else
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+			entity->x = cameras[clientnum].x * 16;
+			entity->y = cameras[clientnum].y * 16;
+			entity->z = -2;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[PASSABLE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->behavior = &actDeathCam;
+			entity->skill[2] = clientnum;
+			entity->yaw = cameras[clientnum].ang;
+			entity->pitch = PI / 8;
+		}
+
+		//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
+
+		players[clientnum]->bookGUI.closeBookGUI();
+
+#ifdef SOUND
+		levelmusicplaying = true;
+		combatmusicplaying = false;
+		fadein_increment = default_fadein_increment * 4;
+		fadeout_increment = default_fadeout_increment * 4;
+		playMusic(sounds[209], false, true, false);
+#endif
+		combat = false;
+		assailant[clientnum] = false;
+		assailantTimer[clientnum] = 0;
+
+		if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
+		{
+			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( itemCategory(item) == SPELL_CAT )
+				{
+					continue;    // don't drop spells on death, stupid!
+				}
+				if ( itemIsEquipped(item, clientnum) )
+				{
+					Item** slot = itemSlot(stats[clientnum], item);
+					if ( slot != NULL )
+					{
+						*slot = NULL;
+					}
+					list_RemoveNode(node);
+					continue;
+				}
+				strcpy((char*)net_packet->data, "DIEI");
+				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->data[26] = (Uint8)cameras[clientnum].x;
+				net_packet->data[27] = (Uint8)cameras[clientnum].y;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 28;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				list_RemoveNode(node);
+			}
+			stats[clientnum]->helmet = NULL;
+			stats[clientnum]->breastplate = NULL;
+			stats[clientnum]->gloves = NULL;
+			stats[clientnum]->shoes = NULL;
+			stats[clientnum]->shield = NULL;
+			stats[clientnum]->weapon = NULL;
+			stats[clientnum]->cloak = NULL;
+			stats[clientnum]->amulet = NULL;
+			stats[clientnum]->ring = NULL;
+			stats[clientnum]->mask = NULL;
+		}
+		else
+		{
+			// to not soft lock at Herx
+			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( item->type == ARTIFACT_ORB_PURPLE )
+				{
+					strcpy((char*)net_packet->data, "DIEI");
+					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+					SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+					SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+					net_packet->data[24] = item->identified;
+					net_packet->data[25] = clientnum;
+					net_packet->data[26] = (Uint8)cameras[clientnum].x;
+					net_packet->data[27] = (Uint8)cameras[clientnum].y;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 28;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+					list_RemoveNode(node);
+					break;
+				}
+			}
+		}
+
+		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+		{
+			Entity* mapCreature = (Entity*)mapNode->element;
+			if ( mapCreature )
+			{
+				mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+			}
+		}
+	}
+
 	// textbox message
 	else if (packetId == 'MSGS')
 	{
@@ -3073,128 +3216,6 @@ void clientHandlePacket()
 				    }
 			    }
 		    }
-		}
-		if ( !strcmp(msg, language[577]) ) //TODO: Replace with a UDIE packet.
-		{
-			// this is how the client knows it died...
-			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0 )
-			{
-				// don't spawn deathcam
-			}
-			else
-			{
-				Entity* entity = newEntity(-1, 1, map.entities, nullptr);
-				entity->x = cameras[clientnum].x * 16;
-				entity->y = cameras[clientnum].y * 16;
-				entity->z = -2;
-				entity->flags[NOUPDATE] = true;
-				entity->flags[PASSABLE] = true;
-				entity->flags[INVISIBLE] = true;
-				entity->behavior = &actDeathCam;
-				entity->skill[2] = clientnum;
-				entity->yaw = cameras[clientnum].ang;
-				entity->pitch = PI / 8;
-			}
-
-			//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
-
-			players[clientnum]->bookGUI.closeBookGUI();
-
-#ifdef SOUND
-			levelmusicplaying = true;
-			combatmusicplaying = false;
-			fadein_increment = default_fadein_increment * 4;
-			fadeout_increment = default_fadeout_increment * 4;
-			playMusic(sounds[209], false, true, false);
-#endif
-			combat = false;
-			assailant[clientnum] = false;
-			assailantTimer[clientnum] = 0;
-
-			if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
-			{
-				for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
-				{
-					nextnode = node->next;
-					Item* item = (Item*)node->element;
-					if ( itemCategory(item) == SPELL_CAT )
-					{
-						continue;    // don't drop spells on death, stupid!
-					}
-					if ( itemIsEquipped(item, clientnum) )
-					{
-						Item** slot = itemSlot(stats[clientnum], item);
-						if ( slot != NULL )
-						{
-							*slot = NULL;
-						}
-						list_RemoveNode(node);
-						continue;
-					}
-					strcpy((char*)net_packet->data, "DIEI");
-					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-					SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-					SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-					net_packet->data[24] = item->identified;
-					net_packet->data[25] = clientnum;
-					net_packet->data[26] = (Uint8)cameras[clientnum].x;
-					net_packet->data[27] = (Uint8)cameras[clientnum].y;
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 28;
-					sendPacketSafe(net_sock, -1, net_packet, 0);
-					list_RemoveNode(node);
-				}
-				stats[clientnum]->helmet = NULL;
-				stats[clientnum]->breastplate = NULL;
-				stats[clientnum]->gloves = NULL;
-				stats[clientnum]->shoes = NULL;
-				stats[clientnum]->shield = NULL;
-				stats[clientnum]->weapon = NULL;
-				stats[clientnum]->cloak = NULL;
-				stats[clientnum]->amulet = NULL;
-				stats[clientnum]->ring = NULL;
-				stats[clientnum]->mask = NULL;
-			}
-			else
-			{
-				// to not soft lock at Herx
-				for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
-				{
-					nextnode = node->next;
-					Item* item = (Item*)node->element;
-					if ( item->type == ARTIFACT_ORB_PURPLE )
-					{
-						strcpy((char*)net_packet->data, "DIEI");
-						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-						net_packet->data[24] = item->identified;
-						net_packet->data[25] = clientnum;
-						net_packet->data[26] = (Uint8)cameras[clientnum].x;
-						net_packet->data[27] = (Uint8)cameras[clientnum].y;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 28;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
-						list_RemoveNode(node);
-						break;
-					}
-				}
-			}
-
-			for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
-			{
-				Entity* mapCreature = (Entity*)mapNode->element;
-				if ( mapCreature )
-				{
-					mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
-				}
-			}
 		}
 		else if ( !strcmp(msg, language[1109]) )
 		{
@@ -4474,6 +4495,7 @@ void clientHandlePacket()
 		    loadingsavegame = 0;
 	    }
 		MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
+		pauseGame(2, 0);
 		return;
 	}
 
