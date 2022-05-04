@@ -102,7 +102,7 @@ void actDeathCam(Entity* my)
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
-		DEATHCAM_IDLETIME = TICKS_PER_SECOND * 2;
+		DEATHCAM_IDLETIME = TICKS_PER_SECOND * 3;
 	}
 
 	if ( DEATHCAM_TIME >= deathcamGameoverPromptTicks )
