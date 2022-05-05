@@ -3200,12 +3200,12 @@ void actHudShield(Entity* my)
     const bool shootmode = players[HUDSHIELD_PLAYERNUM]->shootmode;
 	if ( !players[HUDSHIELD_PLAYERNUM]->usingCommand()
 		&& players[HUDSHIELD_PLAYERNUM]->bControlEnabled
+		&& !gamePaused
 		&& !swimming && shootmode)
 	{
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
 			&& shootmode
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
-			&& !gamePaused 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )

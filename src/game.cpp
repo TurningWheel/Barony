@@ -4067,7 +4067,7 @@ void ingameHud()
 {
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
-		if ( players[player]->entity )
+		if ( players[player]->isLocalPlayerAlive() )
 		{
 			players[player]->bControlEnabled = true;
 		}

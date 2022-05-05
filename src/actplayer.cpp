@@ -239,7 +239,8 @@ void actDeathCam(Entity* my)
 		// do nothing if still alive
 	}
 	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode
-		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled )
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled
+		&& !gamePaused )
 	{
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
@@ -524,6 +525,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
 	if ( player.shootmode && !player.usingCommand()
+		&& !gamePaused
 		&& player.bControlEnabled )
 	{
 		if ( Input::inputs[playernum].consumeBinaryToggle("Quick Turn") )
@@ -534,7 +536,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 
 	// rotate
 	if ( !player.usingCommand()
-		&& player.bControlEnabled && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -649,7 +651,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 
 	// look up and down
 	if ( !player.usingCommand()
-		&& player.bControlEnabled && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -819,12 +821,13 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( (!inputs.hasController(PLAYER_NUM) 
+		else if ( !gamePaused 
+			&& ((!inputs.hasController(PLAYER_NUM) 
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
 			|| (inputs.hasController(PLAYER_NUM) 
 				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())) )
+					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement()))) )
 		{
 			if ( !player.usingCommand()
 				&& player.bControlEnabled && !swimming )
@@ -862,6 +865,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 
 		if ( !player.usingCommand()
 			&& player.bControlEnabled
+			&& !gamePaused
 			&& !swimming && !inputs.hasController(PLAYER_NUM) && (input.binary("Move Left") - input.binary("Move Right")) )
 		{
 			if ( (input.binary("Move Right") && !input.binary("Move Backward")) ||
@@ -895,6 +899,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 		}
 		else if ( !player.usingCommand()
 			&& player.bControlEnabled
+			&& !gamePaused
 			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
 		{
 			auto controller = inputs.getController(PLAYER_NUM);
@@ -1141,7 +1146,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 	}
 
-	if ( ((!player.usingCommand() && player.bControlEnabled) || pacified) 
+	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused) || pacified) 
 		&& allowMovement )
 	{
 		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
@@ -4436,7 +4441,7 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity[PLAYER_NUM] = NULL;
 
-				if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled && input.binaryToggle("Use") )
+				if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled && !gamePaused && input.binaryToggle("Use") )
 				{
 					if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
 					{
@@ -4568,6 +4573,7 @@ void actPlayer(Entity* my)
 			}
 
 			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
+				&& !gamePaused
 				&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				auto& b = input.getBindings();
@@ -5209,8 +5215,8 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							players[clientnum]->closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
-							players[clientnum]->bControlEnabled = false;
+							players[PLAYER_NUM]->closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+							players[PLAYER_NUM]->bControlEnabled = false;
 #ifdef SOUND
 							levelmusicplaying = true;
 							combatmusicplaying = false;

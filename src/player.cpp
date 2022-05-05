@@ -767,11 +767,17 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	bool dpad_moved = false;
 	int player = this->player.playernum;
 
+	if ( !players[player]->bControlEnabled
+		|| gamePaused
+		|| players[player]->usingCommand()
+		|| players[player]->GUI.isDropdownActive() )
+	{
+		return false;
+	}
 	if ( !Input::inputs[player].binaryToggle("InventoryMoveUp")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveLeft")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveRight")
-		&& !Input::inputs[player].binaryToggle("InventoryMoveDown")
-		|| isDropdownActive() )
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
 		return false;
 	}
@@ -3183,6 +3189,7 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		if ( !players[player]->usingCommand() && players[player]->bControlEnabled
+			&& !gamePaused
 			&& Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
 		{
 			if ( players[player]->worldUI.bEnabled )
