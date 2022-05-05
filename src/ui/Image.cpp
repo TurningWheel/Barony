@@ -218,7 +218,7 @@ static std::unordered_map<std::string, Image*> hashed_images;
 static const int IMAGE_BUDGET = 1000;
 
 Image* Image::get(const char* name) {
-	if (!name || name[0] == '\0') {
+	if ( !name || name[0] == '\0' ) {
 		return nullptr;
 	}
 	Image* image = nullptr;
