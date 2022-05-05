@@ -107,7 +107,7 @@ void actDeathCam(Entity* my)
 
 	if ( DEATHCAM_TIME >= deathcamGameoverPromptTicks )
 	{
-		if ( !players[DEATHCAM_PLAYERNUM]->GUI.bGameoverActive() )
+		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
 			players[DEATHCAM_PLAYERNUM]->bControlEnabled = true;
 		}
@@ -116,7 +116,7 @@ void actDeathCam(Entity* my)
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
 	if ( shootmode && !gamePaused )
 	{
-		if ( !players[DEATHCAM_PLAYERNUM]->GUI.bGameoverActive() )
+		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
 			if ( smoothmouse )
 			{
@@ -239,7 +239,7 @@ void actDeathCam(Entity* my)
 		// do nothing if still alive
 	}
 	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode
-		&& !players[DEATHCAM_PLAYERNUM]->GUI.bGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled )
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled )
 	{
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)

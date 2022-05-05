@@ -5981,12 +5981,12 @@ int main(int argc, char** argv)
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !players[i]->isLocalPlayer() && !(gamePaused || players[i]->GUI.bGameoverActive()) )
+					if ( !players[i]->isLocalPlayer() && !(gamePaused || players[i]->GUI.isGameoverActive()) )
 					{
 						continue;
 					}
 
-					if ( gamePaused || players[i]->GUI.bGameoverActive() )
+					if ( gamePaused || players[i]->GUI.isGameoverActive() )
 					{
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{

@@ -724,7 +724,7 @@ public:
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
 		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
-		bool bGameoverActive();
+		bool isGameoverActive();
 		bool returnToPreviousActiveModule();
 		GUIDropdown_t dropdownMenu;
 		void closeDropdowns();

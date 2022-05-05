@@ -1088,7 +1088,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	return false;
 }
 
-bool Player::GUI_t::bGameoverActive()
+bool Player::GUI_t::isGameoverActive()
 {
 	if ( gameUIFrame[player.playernum] )
 	{
@@ -1105,7 +1105,7 @@ bool Player::GUI_t::bGameoverActive()
 
 bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 {
-	if ( bGameoverActive() )
+	if ( isGameoverActive() )
 	{
 		return false;
 	}
