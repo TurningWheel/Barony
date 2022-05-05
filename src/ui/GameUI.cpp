@@ -4704,16 +4704,17 @@ void Player::MessageZone_t::processChatbox()
 
 ConsoleVariable<bool> shareMinimap("/shareminimap", true);
 
+Frame* minimapFrame = nullptr;
+
 void doSharedMinimap() {
-    static Frame* minimap = nullptr;
-    if (!minimap) {
-        minimap = gui->addFrame("shared_minimap");
-        minimap->setColor(0);
-        minimap->setHollow(true);
-        minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+    if (!minimapFrame ) {
+		minimapFrame = gui->addFrame("shared_minimap");
+		minimapFrame->setColor(0);
+		minimapFrame->setHollow(true);
+		minimapFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect){
             drawMinimap(widget.getOwner(), rect);
             });
-        minimap->setTickCallback([](Widget& widget){
+		minimapFrame->setTickCallback([](Widget& widget){
 	        int playercount = 0;
 	        for (int c = 0; c < MAXPLAYERS; ++c) {
 		        if (!client_disconnected[c] && players[c]->isLocalPlayer()) {
@@ -4721,26 +4722,26 @@ void doSharedMinimap() {
 		        }
 	        }
             if (intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
-                minimap->setInvisible(true);
+				minimapFrame->setInvisible(true);
             } else {
-                minimap->setInvisible(false);
+				minimapFrame->setInvisible(false);
             }
             if (playercount == 3) {
                 const int size = std::min(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2);
-                minimap->setSize(SDL_Rect{
+				minimapFrame->setSize(SDL_Rect{
                     (Frame::virtualScreenX + ((Frame::virtualScreenX / 2) - size)) / 2,
                     (Frame::virtualScreenY + ((Frame::virtualScreenY / 2) - size)) / 2,
                     size, size});
             } else if (playercount == 4) {
                 constexpr int size = 128;
-                minimap->setSize(SDL_Rect{
+				minimapFrame->setSize(SDL_Rect{
                     (Frame::virtualScreenX - size) / 2,
                     Frame::virtualScreenY / 2,
                     size, size});
             }
             });
     }
-    minimap->setOwner(clientnum);
+	minimapFrame->setOwner(clientnum);
 }
 
 static Frame* createMinimap(int player) {
@@ -18802,21 +18803,6 @@ real_t Player::SkillSheet_t::windowCompactHeightScaleY = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleX = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleY = 0.0;
 bool Player::SkillSheet_t::generateFollowerTableForSkillsheet = false;
-
-struct SkillSheetFrames_t
-{
-	Frame* skillsFrame = nullptr;
-	Frame* entryFrameLeft = nullptr;
-	Frame* entryFrameRight = nullptr;
-	Frame* skillDescFrame = nullptr;
-	Frame* skillBgImgsFrame = nullptr;
-	Frame* scrollAreaOuterFrame = nullptr;
-	Frame* scrollArea = nullptr;
-	Frame* entryFrames[NUMPROFICIENCIES] = { nullptr };
-	Frame* effectFrames[10] = { nullptr };
-	Frame* legendFrame = nullptr;
-	bool legendTextRequiresReflow = true;
-};
 SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
 void Player::SkillSheet_t::createSkillSheet()

@@ -2465,6 +2465,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 
 Player::~Player()
 {
+	clearGUIPointers();
 	if (entity)
 	{
 		delete entity;
@@ -5189,4 +5190,80 @@ GameController::DpadDirection GameController::dpadDir() const
 void GameController::consumeDpadDirToggle()
 {
 	virtualDpad.consumed = true;
+}
+
+void Player::clearGUIPointers()
+{
+	closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+
+	GUI.dropdownMenu.dropdownBlockClickFrame = nullptr;
+	GUI.dropdownMenu.dropdownFrame = nullptr;
+
+	inventoryUI.frame = nullptr;
+	inventoryUI.tooltipFrame = nullptr;
+	inventoryUI.interactFrame = nullptr;
+	inventoryUI.interactBlockClickFrame = nullptr;
+	inventoryUI.tooltipPromptFrame = nullptr;
+	inventoryUI.selectedItemCursorFrame = nullptr;
+	inventoryUI.spellFrame = nullptr;
+	inventoryUI.chestFrame = nullptr;
+	inventoryUI.itemTooltipDisplay.uid = 0;
+
+	inventoryUI.slotFrames.clear();
+	inventoryUI.spellSlotFrames.clear();
+	inventoryUI.chestSlotFrames.clear();
+
+	inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+
+	shopGUI.shopFrame = nullptr;
+	shopGUI.shopSlotFrames.clear();
+	shopGUI.itemRequiresTitleReflow = true;
+
+	bookGUI.bookFrame = nullptr;
+
+	characterSheet.sheetFrame = nullptr;
+
+	skillSheet.skillFrame = nullptr;
+
+	hud.hudFrame = nullptr;
+	hud.xpFrame = nullptr;
+	hud.hpFrame = nullptr;
+	hud.mpFrame = nullptr;
+	hud.minimapFrame = nullptr;
+	hud.enemyBarFrame = nullptr;
+	hud.enemyBarFrameHUD = nullptr;
+	hud.actionPromptsFrame = nullptr;
+	hud.worldTooltipFrame = nullptr;
+	hud.uiNavFrame = nullptr;
+	hud.cursorFrame = nullptr;
+
+	messageZone.chatFrame = nullptr;
+
+	std::fill(hotbar.hotbarSlotFrames.begin(), hotbar.hotbarSlotFrames.end(), nullptr);
+	hotbar.hotbarFrame = nullptr;
+
+	auto& genericGUI = GenericGUI[playernum];
+	genericGUI.tinkerGUI.tinkerFrame = nullptr;
+	genericGUI.tinkerGUI.tinkerSlotFrames.clear();
+	genericGUI.tinkerGUI.itemRequiresTitleReflow = true;
+
+	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
+	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;
+
+	skillSheetEntryFrames[playernum].skillsFrame = nullptr;
+	skillSheetEntryFrames[playernum].entryFrameLeft = nullptr;
+	skillSheetEntryFrames[playernum].entryFrameRight = nullptr;
+	skillSheetEntryFrames[playernum].skillDescFrame = nullptr;
+	skillSheetEntryFrames[playernum].skillBgImgsFrame = nullptr;
+	skillSheetEntryFrames[playernum].scrollAreaOuterFrame = nullptr;
+	skillSheetEntryFrames[playernum].scrollArea = nullptr;
+	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+	{
+		skillSheetEntryFrames[playernum].entryFrames[i] = nullptr;
+	}
+	for ( int i = 0; i < 10; ++i )
+	{
+		skillSheetEntryFrames[playernum].effectFrames[i] = nullptr;
+	}
+	skillSheetEntryFrames[playernum].legendFrame = nullptr;
 }

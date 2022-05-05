@@ -630,6 +630,7 @@ public:
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
 	const bool usingCommand() const;
+	void clearGUIPointers();
 
 	enum PanelJustify_t
 	{
@@ -1301,9 +1302,9 @@ public:
 		Frame* actionPromptsFrame = nullptr;
 		Frame* worldTooltipFrame = nullptr;
 		Frame* uiNavFrame = nullptr;
+		Frame* cursorFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
-		Frame* cursorFrame = nullptr;
 
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;

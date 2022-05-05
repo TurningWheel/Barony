@@ -211,3 +211,21 @@ struct StatusEffectQueue_t
 	};
 };
 extern StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS];
+
+struct SkillSheetFrames_t
+{
+	Frame* skillsFrame = nullptr;
+	Frame* entryFrameLeft = nullptr;
+	Frame* entryFrameRight = nullptr;
+	Frame* skillDescFrame = nullptr;
+	Frame* skillBgImgsFrame = nullptr;
+	Frame* scrollAreaOuterFrame = nullptr;
+	Frame* scrollArea = nullptr;
+	Frame* entryFrames[NUMPROFICIENCIES] = { nullptr };
+	Frame* effectFrames[10] = { nullptr };
+	Frame* legendFrame = nullptr;
+	bool legendTextRequiresReflow = true;
+};
+extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
+
+extern Frame* minimapFrame;
