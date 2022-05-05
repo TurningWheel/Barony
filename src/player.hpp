@@ -603,7 +603,7 @@ public:
 
 	bool bSplitscreen = false;
 	SplitScreenTypes splitScreenType = SPLITSCREEN_DEFAULT;
-
+	bool bControlEnabled = true; // disabled if dead waiting for gameover prompt etc
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
@@ -629,6 +629,8 @@ public:
 	const bool isLocalPlayerAlive() const;
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
+	const bool usingCommand() const;
+	void clearGUIPointers();
 
 	enum PanelJustify_t
 	{
@@ -723,6 +725,7 @@ public:
 		bool handleInventoryMovement(); // controller movement for hotbar/inventory
 		GUIModules handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation = true);
 		bool bModuleAccessibleWithMouse(GUIModules moduleToAccess); // if no other full-screen modules taking precedence
+		bool isGameoverActive();
 		bool returnToPreviousActiveModule();
 		GUIDropdown_t dropdownMenu;
 		void closeDropdowns();
@@ -1179,6 +1182,7 @@ public:
 		SheetDisplay sheetDisplayType = CHARSHEET_DISPLAY_NORMAL;
 		Frame* sheetFrame = nullptr;
 		SheetElements selectedElement = SHEET_UNSELECTED;
+		SheetElements queuedElement = SHEET_UNSELECTED;
 		void selectElement(SheetElements element, bool usingMouse, bool moveCursor = false);
 		void createCharacterSheet();
 		void processCharacterSheet();
@@ -1298,9 +1302,9 @@ public:
 		Frame* actionPromptsFrame = nullptr;
 		Frame* worldTooltipFrame = nullptr;
 		Frame* uiNavFrame = nullptr;
+		Frame* cursorFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
-		Frame* cursorFrame = nullptr;
 
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;

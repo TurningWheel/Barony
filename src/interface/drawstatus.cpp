@@ -2011,7 +2011,8 @@ void drawStatus(int player)
 
 		Input& input = Input::inputs[player];
 
-		if ( input.consumeBinaryToggle("Hotbar Scroll Right") )
+		if ( input.consumeBinaryToggle("Hotbar Scroll Right")
+			&& players[player]->bControlEnabled && !gamePaused && !players[player]->usingCommand() )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
@@ -2026,7 +2027,8 @@ void drawStatus(int player)
 				hotbar_t.hotbarTooltipLastGameTick = 0;
 			}
 		}
-		if ( input.consumeBinaryToggle("Hotbar Scroll Left") )
+		if ( input.consumeBinaryToggle("Hotbar Scroll Left")
+			&& players[player]->bControlEnabled && !gamePaused && !players[player]->usingCommand() )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
@@ -2053,6 +2055,8 @@ void drawStatus(int player)
 		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
 			if ( shootmode && input.consumeBinaryToggle("Hotbar Select")
+				&& players[player]->bControlEnabled && !gamePaused
+				&& !players[player]->usingCommand()
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
@@ -2463,7 +2467,9 @@ void drawStatusNew(const int player)
 					&& players[player]->hotbar.current_hotbar == num
 					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 					&& !players[player]->GUI.isDropdownActive()
-					&& hotbarSlotFrame->capturesMouse() )
+					&& hotbarSlotFrame->capturesMouse()
+					&& players[player]->bControlEnabled && !gamePaused
+					&& !players[player]->usingCommand() )
 				{
 					if ( (inputs.bMouseLeft(player) && inputs.bPlayerUsingKeyboardControl(player))
 						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str())
@@ -2846,7 +2852,10 @@ void drawStatusNew(const int player)
 						}
 					}
 
-					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add )
+					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add
+						&& players[player]->bControlEnabled && !gamePaused
+						&& !players[player]->usingCommand()
+						&& inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
 						if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
@@ -2966,11 +2975,13 @@ void drawStatusNew(const int player)
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
-	if ( !command && stats[player] && stats[player]->HP > 0 )
+	if ( !players[player]->usingCommand() && stats[player] && stats[player]->HP > 0
+		&& players[player]->bControlEnabled && !gamePaused )
 	{
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( shootmode || (!shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player)))) )
+		if ( inputs.bPlayerUsingKeyboardControl(player)
+			&& (shootmode || (!shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.

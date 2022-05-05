@@ -4164,7 +4164,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	}
 
 	bool expandBindingPressed = false;
-	if ( !command && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
+	if ( !players[player]->usingCommand() 
+		&& players[player]->bControlEnabled
+		&& !gamePaused
+		&& Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
 		expandBindingPressed = true;
 		if ( !players[player]->shootmode && item->identified )
@@ -6003,7 +6006,8 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 
 	if ( bCompactView 
 		&& player.bUseCompactGUIWidth() 
-		&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		&& (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP) )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.01, (1.0 - slideOutPercent)) / 2.0;
@@ -6097,7 +6101,7 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 
 
 	// mouse hovering over inventory frames in compact view - if we're on hotbar, refocus the inventory/spells panel
-	if ( player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+	if ( (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR || player.GUI.activeModule == Player::GUI_t::MODULE_SHOP)
 		&& inputs.bPlayerUsingKeyboardControl(player.playernum) && bCompactView )
 	{
 		if (player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
@@ -6302,6 +6306,11 @@ void Player::Inventory_t::updateInventory()
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
 	bool& itemMenuFromHotbar = inputs.getUIInteraction(player)->itemMenuFromHotbar;
 
+	bool inventoryControlActive = players[player]->bControlEnabled
+		&& !gamePaused
+		&& !players[player]->usingCommand()
+		&& !players[player]->GUI.isDropdownActive();
+
 	if ( inputs.hasController(player) )
 	{
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
@@ -6309,7 +6318,8 @@ void Player::Inventory_t::updateInventory()
 		{
 			// do nothing?
 		}
-		else if ( !itemMenuOpen && GenericGUI[player].selectedSlot < 0
+		else if ( inventoryControlActive
+			&& GenericGUI[player].selectedSlot < 0
 			&& players[player]->GUI.handleInventoryMovement() ) // handleInventoryMovement should be at the end of this check
 		{
 			if ( GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
@@ -6340,7 +6350,7 @@ void Player::Inventory_t::updateInventory()
 				}
 			}
 		}
-		else if ( GenericGUI[player].selectedSlot >= 0 && !itemMenuOpen && inputs.getController(player)->handleRepairGUIMovement(player) )
+		else if ( GenericGUI[player].selectedSlot >= 0 && inventoryControlActive && inputs.getController(player)->handleRepairGUIMovement(player) )
 		{
 			if ( GenericGUI[player].selectedSlot < 0 )
 			{
@@ -6351,7 +6361,7 @@ void Player::Inventory_t::updateInventory()
 
 	Input& input = Input::inputs[player];
 
-	if (!command && input.consumeBinaryToggle("Autosort Inventory"))
+	if ( inventoryControlActive && input.consumeBinaryToggle("Autosort Inventory"))
 	{
 		autosortInventory(player);
 		//quickStackItems();
@@ -7178,7 +7188,7 @@ void Player::Inventory_t::updateInventory()
 			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
 			{
 				// mouse movement captures the inventory
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+				//players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
 			}
 
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
@@ -7206,7 +7216,7 @@ void Player::Inventory_t::updateInventory()
 				continue;
 			}
 
-			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
+			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() && players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
 			{
 				if ( shopGUI.isItemSelectedFromShop(item) )
 				{
@@ -7319,7 +7329,7 @@ void Player::Inventory_t::updateInventory()
 					tooltipCoordX += players[player]->camera_virtualx1();
 
 					bool tooltipOpen = false;
-					if ( !itemMenuOpen && !bIsTooltipDelayed() )
+					if ( inventoryControlActive && !bIsTooltipDelayed() )
 					{
 						tooltipOpen = true;
 						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
@@ -7331,7 +7341,7 @@ void Player::Inventory_t::updateInventory()
 					}
 
 					if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
-						&& !itemMenuOpen && !selectedItem
+						&& inventoryControlActive && !selectedItem
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
 						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
@@ -7387,7 +7397,7 @@ void Player::Inventory_t::updateInventory()
 					}
 
 					// handle clicking
-					if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen && inputs.bPlayerUsingKeyboardControl(player) )
+					if ( inputs.bMouseLeft(player) && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
 						inputs.getUIInteraction(player)->selectedItemFromChest = item->uid;
@@ -7402,7 +7412,7 @@ void Player::Inventory_t::updateInventory()
 						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 					}
 					else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
-						&& !itemMenuOpen && !selectedItem )
+						&& inventoryControlActive && !selectedItem )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -7643,11 +7653,14 @@ void Player::Inventory_t::updateInventory()
 				else if ( shopGUI.isItemSelectedToSellToShop(item) )
 				{
 					sellingItemToShop = true;
-					shopGUI.setItemDisplayNameAndPrice(item);
+					if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+					{
+						shopGUI.setItemDisplayNameAndPrice(item);
+					}
 				}
 				else
 				{
-					if ( !itemMenuOpen && !bIsTooltipDelayed() )
+					if ( inventoryControlActive && !bIsTooltipDelayed() )
 					{
 						tooltipOpen = true;
 						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
@@ -7663,7 +7676,8 @@ void Player::Inventory_t::updateInventory()
 					|| bIsTooltipDelayed()
 					|| sellingItemToShop
 					|| tinkerOpen)
-					&& !itemMenuOpen && !selectedItem
+					&& inventoryControlActive
+					&& !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
 					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
@@ -7740,7 +7754,7 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				// handle clicking
-				if ( inputs.bMouseLeft(player) && !selectedItem && !itemMenuOpen && inputs.bPlayerUsingKeyboardControl(player) )
+				if ( inputs.bMouseLeft(player) && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 					{
@@ -7765,7 +7779,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 				else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
-					&& !itemMenuOpen && !selectedItem )
+					&& inventoryControlActive && !selectedItem )
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 					{
@@ -7872,7 +7886,8 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				if ( numkey_quick_add && !command && item )
+				if ( numkey_quick_add && inventoryControlActive && item
+					&& inputs.bPlayerUsingKeyboardControl(player) )
 				{
 					int slotNum = -1;
 					if ( Input::inputs[player].binaryToggle("HotbarSlot1") )

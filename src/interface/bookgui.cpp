@@ -352,7 +352,9 @@ void Player::BookGUI_t::updateBookGUI()
 		}
 	}
 
-	if ( player.GUI.activeModule == player.GUI.MODULE_BOOK_VIEW )
+	if ( player.GUI.activeModule == player.GUI.MODULE_BOOK_VIEW 
+		&& player.bControlEnabled && !gamePaused
+		&& !player.usingCommand() )
 	{
 		if ( Input::inputs[player.playernum].binaryToggle("MenuPageRight") )
 		{

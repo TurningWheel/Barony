@@ -4067,17 +4067,27 @@ void ingameHud()
 {
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		if ( players[player]->isLocalPlayerAlive() )
+		{
+			players[player]->bControlEnabled = true;
+		}
+		bool& bControlEnabled = players[player]->bControlEnabled;
+
 	    Input& input = Input::inputs[player];
 
 	    // toggle minimap
 		// player not needed to be alive
-        if ( players[player]->shootmode && !command && input.consumeBinaryToggle("Toggle Minimap") && !gamePaused ) {
+        if ( players[player]->shootmode && !players[player]->usingCommand() && input.consumeBinaryToggle("Toggle Minimap")
+			&& !gamePaused
+			&& bControlEnabled ) {
             openMinimap(player);
         }
 
 		// inventory interface
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Character Status") && !gamePaused )
+		if ( players[player]->isLocalPlayer() && !players[player]->usingCommand() && input.consumeBinaryToggle("Character Status")
+			&& !gamePaused
+			&& bControlEnabled )
 		{
 			if ( players[player]->shootmode )
 			{
@@ -4091,7 +4101,9 @@ void ingameHud()
 
 		// spell list
 		// player not needed to be alive
-		if ( players[player]->isLocalPlayer() && !command && input.consumeBinaryToggle("Spell List") && !gamePaused )   //TODO: Move to function in interface or something?
+		if ( players[player]->isLocalPlayer() && !players[player]->usingCommand() && input.consumeBinaryToggle("Spell List")
+			&& !gamePaused
+			&& bControlEnabled )   //TODO: Move to function in interface or something?
 		{
 			if ( input.input("Spell List").isBindingUsingGamepad() )
 			{
@@ -4113,7 +4125,8 @@ void ingameHud()
 
 		// spellcasting
 		// player needs to be alive
-		if ( players[player]->isLocalPlayerAlive() && !gamePaused )
+		if ( players[player]->isLocalPlayerAlive() 
+			&& !gamePaused )
 		{
             const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
@@ -4130,7 +4143,7 @@ void ingameHud()
 			{
 				allowCasting = true;
 			}
-			else if (!command && shootmode)
+			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
 			{
 			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
 			    {
@@ -4233,7 +4246,9 @@ void ingameHud()
 		}
 		players[player]->magic.resetQuickCastSpell();
 
-		if ( !command && input.consumeBinaryToggle("Open Log") && !gamePaused )
+		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Open Log")
+			&& !gamePaused
+			&& bControlEnabled )
 		{
 			// TODO perhaps this should open the new chat log window.
 		}
@@ -4243,7 +4258,9 @@ void ingameHud()
 				&& players[player]->worldUI.bTooltipInView
 				&& players[player]->worldUI.tooltipsInRange.size() > 1);
 
-		if ( !command && input.consumeBinaryToggle("Cycle NPCs") && !gamePaused )
+		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Cycle NPCs")
+			&& !gamePaused
+			&& bControlEnabled )
 		{
 			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
@@ -4263,8 +4280,10 @@ void ingameHud()
 
 	// commands - uses local clientnum only
 	Input& input = Input::inputs[clientnum];
-
-	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command && !gamePaused )
+	bool& bControlEnabled = players[clientnum]->bControlEnabled;
+	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command 
+		&& !gamePaused
+		&& bControlEnabled )
 	{
 		cursorflash = ticks;
 		command = true;
@@ -4319,7 +4338,12 @@ void ingameHud()
 			chosen_command = NULL;
 			command = false;
 		}
-		if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
+		if ( !players[commandPlayer]->bControlEnabled )
+		{
+			chosen_command = NULL;
+			command = false;
+		}
+		else if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
 		{
 		    input.consumeBinaryToggle("Chat");
 		    input.consumeBinaryToggle("Console Command");
@@ -5957,12 +5981,12 @@ int main(int argc, char** argv)
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !players[i]->isLocalPlayer() && !gamePaused )
+					if ( !players[i]->isLocalPlayer() && !(gamePaused || players[i]->GUI.isGameoverActive()) )
 					{
 						continue;
 					}
 
-					if ( gamePaused )
+					if ( gamePaused || players[i]->GUI.isGameoverActive() )
 					{
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{

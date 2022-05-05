@@ -767,11 +767,17 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	bool dpad_moved = false;
 	int player = this->player.playernum;
 
+	if ( !players[player]->bControlEnabled
+		|| gamePaused
+		|| players[player]->usingCommand()
+		|| players[player]->GUI.isDropdownActive() )
+	{
+		return false;
+	}
 	if ( !Input::inputs[player].binaryToggle("InventoryMoveUp")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveLeft")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveRight")
-		&& !Input::inputs[player].binaryToggle("InventoryMoveDown")
-		|| isDropdownActive() )
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
 		return false;
 	}
@@ -1088,8 +1094,27 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	return false;
 }
 
+bool Player::GUI_t::isGameoverActive()
+{
+	if ( gameUIFrame[player.playernum] )
+	{
+		for ( auto f : gameUIFrame[player.playernum]->getFrames() )
+		{
+			if ( !strcmp(f->getName(), "gameover") )
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 {
+	if ( isGameoverActive() )
+	{
+		return false;
+	}
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING )
@@ -2440,6 +2465,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 
 Player::~Player()
 {
+	clearGUIPointers();
 	if (entity)
 	{
 		delete entity;
@@ -3163,7 +3189,9 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( !command && Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
+		if ( !players[player]->usingCommand() && players[player]->bControlEnabled
+			&& !gamePaused
+			&& Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
 		{
 			if ( players[player]->worldUI.bEnabled )
 			{
@@ -4148,6 +4176,15 @@ const bool Player::bUseCompactGUIHeight() const
 		{
 			return true;
 		}
+	}
+	return false;
+}
+
+const bool Player::usingCommand() const
+{
+	if ( command )
+	{
+		return inputs.bPlayerUsingKeyboardControl(playernum);
 	}
 	return false;
 }
@@ -5153,4 +5190,80 @@ GameController::DpadDirection GameController::dpadDir() const
 void GameController::consumeDpadDirToggle()
 {
 	virtualDpad.consumed = true;
+}
+
+void Player::clearGUIPointers()
+{
+	closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+
+	GUI.dropdownMenu.dropdownBlockClickFrame = nullptr;
+	GUI.dropdownMenu.dropdownFrame = nullptr;
+
+	inventoryUI.frame = nullptr;
+	inventoryUI.tooltipFrame = nullptr;
+	inventoryUI.interactFrame = nullptr;
+	inventoryUI.interactBlockClickFrame = nullptr;
+	inventoryUI.tooltipPromptFrame = nullptr;
+	inventoryUI.selectedItemCursorFrame = nullptr;
+	inventoryUI.spellFrame = nullptr;
+	inventoryUI.chestFrame = nullptr;
+	inventoryUI.itemTooltipDisplay.uid = 0;
+
+	inventoryUI.slotFrames.clear();
+	inventoryUI.spellSlotFrames.clear();
+	inventoryUI.chestSlotFrames.clear();
+
+	inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+
+	shopGUI.shopFrame = nullptr;
+	shopGUI.shopSlotFrames.clear();
+	shopGUI.itemRequiresTitleReflow = true;
+
+	bookGUI.bookFrame = nullptr;
+
+	characterSheet.sheetFrame = nullptr;
+
+	skillSheet.skillFrame = nullptr;
+
+	hud.hudFrame = nullptr;
+	hud.xpFrame = nullptr;
+	hud.hpFrame = nullptr;
+	hud.mpFrame = nullptr;
+	hud.minimapFrame = nullptr;
+	hud.enemyBarFrame = nullptr;
+	hud.enemyBarFrameHUD = nullptr;
+	hud.actionPromptsFrame = nullptr;
+	hud.worldTooltipFrame = nullptr;
+	hud.uiNavFrame = nullptr;
+	hud.cursorFrame = nullptr;
+
+	messageZone.chatFrame = nullptr;
+
+	std::fill(hotbar.hotbarSlotFrames.begin(), hotbar.hotbarSlotFrames.end(), nullptr);
+	hotbar.hotbarFrame = nullptr;
+
+	auto& genericGUI = GenericGUI[playernum];
+	genericGUI.tinkerGUI.tinkerFrame = nullptr;
+	genericGUI.tinkerGUI.tinkerSlotFrames.clear();
+	genericGUI.tinkerGUI.itemRequiresTitleReflow = true;
+
+	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
+	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;
+
+	skillSheetEntryFrames[playernum].skillsFrame = nullptr;
+	skillSheetEntryFrames[playernum].entryFrameLeft = nullptr;
+	skillSheetEntryFrames[playernum].entryFrameRight = nullptr;
+	skillSheetEntryFrames[playernum].skillDescFrame = nullptr;
+	skillSheetEntryFrames[playernum].skillBgImgsFrame = nullptr;
+	skillSheetEntryFrames[playernum].scrollAreaOuterFrame = nullptr;
+	skillSheetEntryFrames[playernum].scrollArea = nullptr;
+	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+	{
+		skillSheetEntryFrames[playernum].entryFrames[i] = nullptr;
+	}
+	for ( int i = 0; i < 10; ++i )
+	{
+		skillSheetEntryFrames[playernum].effectFrames[i] = nullptr;
+	}
+	skillSheetEntryFrames[playernum].legendFrame = nullptr;
 }

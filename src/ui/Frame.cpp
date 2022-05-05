@@ -14,11 +14,15 @@
 #include "../interface/consolecommand.hpp"
 #include <queue>
 #include "GameUI.hpp"
+#ifndef EDITOR
+#include "MainMenu.hpp"
+#endif
 
 const Sint32 Frame::sliderSize = 15;
 
-int Frame::_virtualScreenX = 1280;
-int Frame::_virtualScreenY = 720;
+static const int _virtualScreenDefaultWidth = 1280;
+int Frame::_virtualScreenX = 0;
+int Frame::_virtualScreenY = 0;
 
 #ifndef EDITOR
 #include "../net.hpp"
@@ -107,6 +111,12 @@ void Frame::fboDestroy() {
 }
 
 void Frame::guiInit() {
+	if ( _virtualScreenX == 0 && _virtualScreenY == 0 ) {
+		const int defaultWidth = _virtualScreenDefaultWidth;
+		const int vsize = (yres * defaultWidth) / xres;
+		_virtualScreenX = defaultWidth;
+		_virtualScreenY = vsize;
+	}
 	fboInit();
 
 	gui = new Frame("root");
@@ -142,7 +152,14 @@ void Frame::guiDestroy() {
 		{
 			gameUIFrame[i] = nullptr;
 		}
+		if ( players[i] )
+		{
+			players[i]->clearGUIPointers();
+		}
+		MainMenu::main_menu_frame = nullptr;
+		MainMenu::destroyMainMenu();
 	}
+	minimapFrame = nullptr;
 #endif
 
 	if (gui) {

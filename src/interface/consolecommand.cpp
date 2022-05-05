@@ -329,7 +329,7 @@ namespace ConsoleCommands {
             return;
         }
 		fpsLimit = atoi(argv[1]);
-		fpsLimit = std::min(std::max<Uint32>(30, fpsLimit), 300u);
+		fpsLimit = std::min(std::max<Uint32>(30, fpsLimit), 1200u);
         });
 
     static ConsoleCommand ccmd_svflags("/svflags", "set server flags", []CCMD{

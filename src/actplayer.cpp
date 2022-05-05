@@ -102,51 +102,64 @@ void actDeathCam(Entity* my)
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
+		DEATHCAM_IDLETIME = TICKS_PER_SECOND * 3;
 	}
+
+	if ( DEATHCAM_TIME >= deathcamGameoverPromptTicks )
+	{
+		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
+		{
+			players[DEATHCAM_PLAYERNUM]->bControlEnabled = true;
+		}
+	}
+
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
 	if ( shootmode && !gamePaused )
 	{
-		if ( smoothmouse )
+		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
-			DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
-			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
-		}
-		else
-		{
-			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
-		}
-		my->yaw += DEATHCAM_ROTX;
-		if ( my->yaw >= PI * 2 )
-		{
-			my->yaw -= PI * 2;
-		}
-		else if ( my->yaw < 0 )
-		{
-			my->yaw += PI * 2;
-		}
+			if ( smoothmouse )
+			{
+				DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+				DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
+			}
+			else
+			{
+				DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+			}
+			my->yaw += DEATHCAM_ROTX;
+			if ( my->yaw >= PI * 2 )
+			{
+				my->yaw -= PI * 2;
+			}
+			else if ( my->yaw < 0 )
+			{
+				my->yaw += PI * 2;
+			}
 
-		if ( smoothmouse )
-		{
-			DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
-			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
-		}
-		else
-		{
-			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
-		}
-		my->pitch -= DEATHCAM_ROTY;
-		if ( my->pitch > PI / 2 )
-		{
-			my->pitch = PI / 2;
-		}
-		else if ( my->pitch < -PI / 2 )
-		{
-			my->pitch = -PI / 2;
+			if ( smoothmouse )
+			{
+				DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+				DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
+			}
+			else
+			{
+				DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+			}
+			my->pitch -= DEATHCAM_ROTY;
+			if ( my->pitch > PI / 2 )
+			{
+				my->pitch = PI / 2;
+			}
+			else if ( my->pitch < -PI / 2 )
+			{
+				my->pitch = -PI / 2;
+			}
 		}
 
 		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY) < 0.0001
 			&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM
-			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks + TICKS_PER_SECOND * 3) )
+			&& (DEATHCAM_TIME >= deathcamGameoverPromptTicks) )
 		{
 			++DEATHCAM_IDLETIME;
 			if ( DEATHCAM_IDLETIME >= TICKS_PER_SECOND * 3 )
@@ -225,7 +238,9 @@ void actDeathCam(Entity* my)
 	{
 		// do nothing if still alive
 	}
-	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode)
+	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled
+		&& !gamePaused )
 	{
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
@@ -509,7 +524,9 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	{
 		refreshRateDelta *= TICKS_PER_SECOND / (real_t)fpsLimit;
 	}
-	if ( players[playernum]->shootmode && !command )
+	if ( player.shootmode && !player.usingCommand()
+		&& !gamePaused
+		&& player.bControlEnabled )
 	{
 		if ( Input::inputs[playernum].consumeBinaryToggle("Quick Turn") )
 		{
@@ -518,7 +535,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// rotate
-	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+	if ( !player.usingCommand()
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -632,7 +650,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 
 	// look up and down
-	if ( !command && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
+	if ( !player.usingCommand()
+		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
 		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 		{
@@ -802,14 +821,16 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( (!inputs.hasController(PLAYER_NUM) 
+		else if ( !gamePaused 
+			&& ((!inputs.hasController(PLAYER_NUM) 
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
 			|| (inputs.hasController(PLAYER_NUM) 
 				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement())) )
+					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement()))) )
 		{
-			if ( !command && !swimming )
+			if ( !player.usingCommand()
+				&& player.bControlEnabled && !swimming )
 			{
 				if ( !(stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 0) )
 				{
@@ -842,7 +863,10 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 			PLAYER_BOBMODE = 0;
 		}
 
-		if ( !command && !swimming && !inputs.hasController(PLAYER_NUM) && (input.binary("Move Left") - input.binary("Move Right")) )
+		if ( !player.usingCommand()
+			&& player.bControlEnabled
+			&& !gamePaused
+			&& !swimming && !inputs.hasController(PLAYER_NUM) && (input.binary("Move Left") - input.binary("Move Right")) )
 		{
 			if ( (input.binary("Move Right") && !input.binary("Move Backward")) ||
 				(input.binary("Move Left") && input.binary("Move Backward")) )
@@ -873,7 +897,10 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				}
 			}
 		}
-		else if ( !command && !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
+		else if ( !player.usingCommand()
+			&& player.bControlEnabled
+			&& !gamePaused
+			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
 		{
 			auto controller = inputs.getController(PLAYER_NUM);
 			if ( (controller->getLeftXPercentForPlayerMovement() > 0.001 && controller->getLeftYPercentForPlayerMovement() >= 0.0)
@@ -1119,7 +1146,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 	}
 
-	if ( (!command || pacified) && allowMovement )
+	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused) || pacified) 
+		&& allowMovement )
 	{
 		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 		float x_force = 0;
@@ -1509,7 +1537,7 @@ void doStatueEditor(int player)
 		}
 	}
 
-	if ( !command )
+	if ( !players[player]->usingCommand() )
 	{
 		if ( Entity* limb = uidToEntity(StatueManager.lastEntityUnderMouse) )
 		{
@@ -4413,7 +4441,7 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity[PLAYER_NUM] = NULL;
 
-				if ( !command && input.binaryToggle("Use") )
+				if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled && !gamePaused && input.binaryToggle("Use") )
 				{
 					if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
 					{
@@ -4544,7 +4572,9 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( !command && !followerMenu.followerToCommand && followerMenu.recentEntity )
+			if ( !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
+				&& !gamePaused
+				&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
 				auto& b = input.getBindings();
 				bool showNPCCommandsOnGamepad = false;
@@ -5185,8 +5215,8 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							players[PLAYER_NUM]->bookGUI.closeBookGUI();
-
+							players[PLAYER_NUM]->closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+							players[PLAYER_NUM]->bControlEnabled = false;
 #ifdef SOUND
 							levelmusicplaying = true;
 							combatmusicplaying = false;
@@ -5213,7 +5243,7 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
+							if ( (multiplayer == SINGLE && !splitscreen) || !(svFlags & SV_FLAG_KEEPINVENTORY) )
 							{
 								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
 								{

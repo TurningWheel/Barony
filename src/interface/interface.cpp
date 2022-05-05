@@ -1287,7 +1287,14 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
-				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
+				if ( !player.inventoryUI.selectedItemCursorFrame->isDisabled() )
+				{
+					size.x += player.hud.cursor.cursorToSlotOffset;
+					size.y += player.hud.cursor.cursorToSlotOffset;
+					size.w -= (2 * (player.hud.cursor.cursorToSlotOffset) - 1);
+					size.h -= (2 * (player.hud.cursor.cursorToSlotOffset) - 1);
+					player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
+				}
 			}
 			else if ( ((activeModule == MODULE_INVENTORY 
 				|| activeModule == MODULE_HOTBAR 
@@ -1425,6 +1432,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 
 	inventoryUI.closeInventory();
 	skillSheet.closeSkillSheet();
+	bookGUI.closeBookGUI();
 
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{
@@ -1546,7 +1554,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 		}
 		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		int skillLVL = 0;
-		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity )
+		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity
+			&& players[gui_player]->bControlEnabled && !gamePaused
+			&& !players[gui_player]->usingCommand() )
 		{
 			if ( input.binaryToggle("Command NPC") && optionPrevious != -1 )
 			{
@@ -1601,7 +1611,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 		// process commands if option selected on the wheel.
-		if ( (!input.binaryToggle("Use") && !input.binaryToggle("Show NPC Commands") && !menuToggleClick && !holdWheel)
+		if ( !(players[gui_player]->bControlEnabled && !gamePaused && !players[gui_player]->usingCommand()) )
+		{
+			// no action
+		}
+		else if ( (!input.binaryToggle("Use") && !input.binaryToggle("Show NPC Commands") && !menuToggleClick && !holdWheel)
 			|| ((input.binaryToggle("Use") || input.binaryToggle("Show NPC Commands")) && menuToggleClick)
 			|| (!input.binaryToggle("Show NPC Commands") && holdWheel && !menuToggleClick)
 			|| (input.binaryToggle("Command NPC") && optionPrevious != -1)
@@ -9882,7 +9896,9 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( !inputs.getUIInteraction(playernum)->selectedItem
 			&& !player->GUI.isDropdownActive()
-			&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING) )
+			&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING)
+			&& player->bControlEnabled && !gamePaused
+			&& !player->usingCommand() )
 		{
 			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
 			{

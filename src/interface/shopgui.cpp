@@ -846,8 +846,8 @@ void Player::ShopGUI_t::updateShop()
 	}
 	shopFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
 		players[player.playernum]->camera_virtualy1(),
-		players[player.playernum]->camera_virtualWidth(),
-		players[player.playernum]->camera_virtualHeight() });
+		shopFrame->getSize().w,
+		shopFrame->getSize().h });
 
 	if ( !shopFrame->isDisabled() && bOpen )
 	{
@@ -882,26 +882,26 @@ void Player::ShopGUI_t::updateShop()
 		{
 			const int fullWidth = shopFramePos.w + 210; // inventory width 210
 			shopFramePos.x = -shopFramePos.w + animx * fullWidth;
-			if ( player.bUseCompactGUIWidth() )
+			/*if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
 				{
 					isInteractable = false;
 				}
 				shopFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
-			}
+			}*/
 		}
 		else
 		{
 			shopFramePos.x = player.camera_virtualWidth() - animx * shopFramePos.w;
-			if ( player.bUseCompactGUIWidth() )
+			/*if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
 				{
 					isInteractable = false;
 				}
 				shopFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
-			}
+			}*/
 		}
 	}
 	else if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
@@ -909,26 +909,26 @@ void Player::ShopGUI_t::updateShop()
 		if ( !player.inventoryUI.bCompactView )
 		{
 			shopFramePos.x = player.camera_virtualWidth() - animx * shopFramePos.w * 2;
-			if ( player.bUseCompactGUIWidth() )
+			/*if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
 				{
 					isInteractable = false;
 				}
 				shopFramePos.x -= -player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
-			}
+			}*/
 		}
 		else
 		{
 			shopFramePos.x = -shopFramePos.w + animx * shopFramePos.w;
-			if ( player.bUseCompactGUIWidth() )
+			/*if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
 				{
 					isInteractable = false;
 				}
 				shopFramePos.x -= player.inventoryUI.slideOutWidth * player.inventoryUI.slideOutPercent;
-			}
+			}*/
 		}
 	}
 
@@ -963,7 +963,9 @@ void Player::ShopGUI_t::updateShop()
 			&& !player.GUI.isDropdownActive()
 			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SHOP)
 			&& !player.inventoryUI.chestGUI.bOpen
-			&& !player.inventoryUI.spellPanel.bOpen )
+			&& !player.inventoryUI.spellPanel.bOpen
+			&& player.bControlEnabled && !gamePaused
+			&& !player.usingCommand() )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{

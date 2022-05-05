@@ -851,8 +851,10 @@ void Player::HUD_t::updateUINavigation()
 		}
 	}
 
-	bool leftTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavLeftTrigger");
-	bool rightTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavRightTrigger");
+	bool leftTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavLeftTrigger")
+		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
+	bool rightTriggerPressed = Input::inputs[player.playernum].consumeBinaryToggle("UINavRightTrigger")
+		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
 
 	bShowUINavigation = false;
 	if ( player.gui_mode != GUI_MODE_NONE && player.isLocalPlayer() && !player.shootmode )
@@ -1345,10 +1347,30 @@ void Player::HUD_t::updateUINavigation()
 			button->setColor(makeColor(255, 255, 255, 191));
 		}
 
-		if ( player.bUseCompactGUIWidth() && player.inventoryUI.chestGUI.bOpen )
+		if ( player.bUseCompactGUIWidth() )
 		{
-			button->setInvisible(true);
-			continue;
+			if ( player.inventoryUI.chestGUI.bOpen )
+			{
+				if ( buttonAndGlyph.inputName == "UINavRightTrigger" )
+				{
+					button->setInvisible(true);
+					continue;
+				}
+			}
+			if ( player.shopGUI.bOpen )
+			{
+				if ( buttonAndGlyph.inputName == "UINavRightTrigger" 
+					|| inputs.getVirtualMouse(player.playernum)->draw_cursor )
+				{
+					button->setInvisible(true);
+					continue;
+				}
+			}
+			if ( GenericGUI[player.playernum].isGUIOpen() )
+			{
+				button->setInvisible(true);
+				continue;
+			}
 		}
 
 		if ( buttonAndGlyph.name == "magic button" || buttonAndGlyph.name == "items button" )
@@ -4682,16 +4704,17 @@ void Player::MessageZone_t::processChatbox()
 
 ConsoleVariable<bool> shareMinimap("/shareminimap", true);
 
+Frame* minimapFrame = nullptr;
+
 void doSharedMinimap() {
-    static Frame* minimap = nullptr;
-    if (!minimap) {
-        minimap = gui->addFrame("shared_minimap");
-        minimap->setColor(0);
-        minimap->setHollow(true);
-        minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+    if (!minimapFrame ) {
+		minimapFrame = gui->addFrame("shared_minimap");
+		minimapFrame->setColor(0);
+		minimapFrame->setHollow(true);
+		minimapFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect){
             drawMinimap(widget.getOwner(), rect);
             });
-        minimap->setTickCallback([](Widget& widget){
+		minimapFrame->setTickCallback([](Widget& widget){
 	        int playercount = 0;
 	        for (int c = 0; c < MAXPLAYERS; ++c) {
 		        if (!client_disconnected[c] && players[c]->isLocalPlayer()) {
@@ -4699,26 +4722,26 @@ void doSharedMinimap() {
 		        }
 	        }
             if (intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
-                minimap->setInvisible(true);
+				minimapFrame->setInvisible(true);
             } else {
-                minimap->setInvisible(false);
+				minimapFrame->setInvisible(false);
             }
             if (playercount == 3) {
                 const int size = std::min(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2);
-                minimap->setSize(SDL_Rect{
+				minimapFrame->setSize(SDL_Rect{
                     (Frame::virtualScreenX + ((Frame::virtualScreenX / 2) - size)) / 2,
                     (Frame::virtualScreenY + ((Frame::virtualScreenY / 2) - size)) / 2,
                     size, size});
             } else if (playercount == 4) {
                 constexpr int size = 128;
-                minimap->setSize(SDL_Rect{
+				minimapFrame->setSize(SDL_Rect{
                     (Frame::virtualScreenX - size) / 2,
                     Frame::virtualScreenY / 2,
                     size, size});
             }
             });
     }
-    minimap->setOwner(clientnum);
+	minimapFrame->setOwner(clientnum);
 }
 
 static Frame* createMinimap(int player) {
@@ -4752,7 +4775,8 @@ static Frame* createMinimap(int player) {
         auto player = widget.getOwner();
         auto& minimap = players[player]->minimap;
         auto& input = Input::inputs[player];
-        if (!gamePaused && !command && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
+        if ( !gamePaused && players[player]->bControlEnabled 
+			&& !players[player]->usingCommand() && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
             if (minimap.real_scale > 75.0) {
                 minimap.real_scale = 75.0;
             }
@@ -5974,6 +5998,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	if ( !stats[player.playernum] || !players[player.playernum]->isLocalPlayer() )
 	{
 		sheetFrame->setDisabled(true);
+		queuedElement = SHEET_UNSELECTED;
 		return;
 	}
 
@@ -6008,7 +6033,14 @@ void Player::CharacterSheet_t::processCharacterSheet()
 
 	if ( player.inventoryUI.slideOutPercent <= .0001 )
 	{
-		isInteractable = true;
+		isInteractable = !hideAndExit;
+		if ( isInteractable && queuedElement != SHEET_UNSELECTED )
+		{
+			const bool updateCursor = true;
+			const bool usingMouse = false;
+			selectElement(queuedElement, usingMouse, updateCursor);
+			queuedElement = SHEET_UNSELECTED;
+		}
 	}
 	else
 	{
@@ -6161,6 +6193,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	if ( hideAndExit )
 	{
+		queuedElement = SHEET_UNSELECTED;
 		sheetFrame->setDisabled(true);
 		return;
 	}
@@ -6404,7 +6437,8 @@ void Player::GUIDropdown_t::process()
 
 	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown") )
+		if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown")
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			++dropDownOptionSelected;
 			if ( dropDownOptionSelected >= dropDown.options.size() )
@@ -6412,7 +6446,8 @@ void Player::GUIDropdown_t::process()
 				dropDownOptionSelected = 0;
 			}
 		}
-		else if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp") )
+		else if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp")
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			--dropDownOptionSelected;
 			if ( dropDownOptionSelected < 0 )
@@ -6646,7 +6681,12 @@ void Player::GUIDropdown_t::process()
 			close();
 		}
 	}
-	if ( activate )
+
+	if ( !(player.bControlEnabled && !gamePaused && !player.usingCommand()) )
+	{
+		close();
+	}
+	else if ( activate )
 	{
 		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 		{
@@ -7130,7 +7170,15 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		pos.x -= player.camera_virtualx1();
 		pos.y -= player.camera_virtualy1();
 		player.hud.setCursorDisabled(false);
-		player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
+		if ( !isInteractable )
+		{
+			player.characterSheet.queuedElement = player.characterSheet.selectedElement;
+		}
+		else
+		{
+			player.characterSheet.queuedElement = SHEET_UNSELECTED;
+			player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
+		}
 	}
 	if ( !selectedAButton && elementFrame && !inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
@@ -10782,6 +10830,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		if ( selectedElement == SHEET_GOLD )
 		{
 			if ( Input::inputs[player.playernum].binary("MenuRightClick")
+				&& player.bControlEnabled && !gamePaused
+				&& !player.usingCommand()
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive() )
 			{
@@ -10789,9 +10839,12 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 			else if ( (!inputs.getVirtualMouse(player.playernum)->draw_cursor
 					&& inputs.hasController(player.playernum)
-					&& Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm"))
+					&& Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm")
+				)
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
-				&& !player.GUI.isDropdownActive() )
+				&& !player.GUI.isDropdownActive()
+				&& !player.usingCommand()
+				&& player.bControlEnabled && !gamePaused )
 			{
 				player.GUI.dropdownMenu.open("drop_gold");
 				player.GUI.dropdownMenu.dropDownToggleClick = true;
@@ -15709,6 +15762,19 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
+		{
+			if ( frame->isDisabled() || player.inventory_mode != INVENTORY_MODE_ITEM )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
 		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			if ( spellFrame->isDisabled() || player.inventory_mode != INVENTORY_MODE_SPELL )
@@ -16155,7 +16221,7 @@ void Player::Hotbar_t::updateCursor()
 		const int smallOffset = 2;
 		const int largeOffset = 4;
 
-		int offset = ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		int offset = ((ticks - shootmodeCursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -18737,21 +18803,6 @@ real_t Player::SkillSheet_t::windowCompactHeightScaleY = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleX = 0.0;
 real_t Player::SkillSheet_t::windowHeightScaleY = 0.0;
 bool Player::SkillSheet_t::generateFollowerTableForSkillsheet = false;
-
-struct SkillSheetFrames_t
-{
-	Frame* skillsFrame = nullptr;
-	Frame* entryFrameLeft = nullptr;
-	Frame* entryFrameRight = nullptr;
-	Frame* skillDescFrame = nullptr;
-	Frame* skillBgImgsFrame = nullptr;
-	Frame* scrollAreaOuterFrame = nullptr;
-	Frame* scrollArea = nullptr;
-	Frame* entryFrames[NUMPROFICIENCIES] = { nullptr };
-	Frame* effectFrames[10] = { nullptr };
-	Frame* legendFrame = nullptr;
-	bool legendTextRequiresReflow = true;
-};
 SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
 void Player::SkillSheet_t::createSkillSheet()
@@ -20387,7 +20438,8 @@ void Player::SkillSheet_t::processSkillSheet()
 		createSkillSheet();
 	}
 
-	if ( !command && Input::inputs[player.playernum].consumeBinaryToggle("Skill Sheet") )
+	if ( !player.usingCommand() && Input::inputs[player.playernum].consumeBinaryToggle("Skill Sheet")
+		&& !gamePaused && players[player.playernum]->bControlEnabled )
 	{
 		if ( !bSkillSheetOpen )
 		{
@@ -20604,7 +20656,8 @@ void Player::SkillSheet_t::processSkillSheet()
 	bool closeSheetAction = false;
 	if ( player.GUI.activeModule == player.GUI.MODULE_SKILLS_LIST )
 	{
-		if ( Input::inputs[player.playernum].binaryToggle("MenuUp") )
+		if ( Input::inputs[player.playernum].binaryToggle("MenuUp")
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuUp");
@@ -20633,7 +20686,8 @@ void Player::SkillSheet_t::processSkillSheet()
 				selectSkill(highlightedSkill);
 			}
 		}
-		if ( Input::inputs[player.playernum].binaryToggle("MenuDown") )
+		if ( Input::inputs[player.playernum].binaryToggle("MenuDown")
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuDown");
@@ -20662,7 +20716,8 @@ void Player::SkillSheet_t::processSkillSheet()
 				selectSkill(highlightedSkill);
 			}
 		}
-		if ( Input::inputs[player.playernum].binaryToggle("MenuLeft") )
+		if ( Input::inputs[player.playernum].binaryToggle("MenuLeft") 
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeft");
@@ -20683,7 +20738,8 @@ void Player::SkillSheet_t::processSkillSheet()
 				selectSkill(highlightedSkill);
 			}
 		}
-		if ( Input::inputs[player.playernum].binaryToggle("MenuRight") )
+		if ( Input::inputs[player.playernum].binaryToggle("MenuRight")
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			dpad_moved = true;
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuRight");
@@ -20720,7 +20776,8 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 		}
-		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel")
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 			closeSheetAction = true;
@@ -21385,7 +21442,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			//lowestY += 4; // small buffer after legend box
 		}
 
-		if ( !slider->isDisabled() )
+		if ( !slider->isDisabled() && player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 			{
@@ -21795,7 +21852,8 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 		if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
 			&& !player.GUI.isDropdownActive()
-			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
+			&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS)
+			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 			{
@@ -21908,10 +21966,10 @@ void Player::Inventory_t::ChestGUI_t::openChest()
 			scrollInertia = 0.0;
 			bFirstTimeSnapCursor = false;
 		}
-		if ( player.inventoryUI.getSelectedChestX() < 0 || player.inventoryUI.getSelectedChestX() >= MAX_CHEST_X
-			|| player.inventoryUI.getSelectedChestY() < 0 || player.inventoryUI.getSelectedChestY() >= MAX_CHEST_Y )
+		/*if ( player.inventoryUI.getSelectedChestX() < 0 || player.inventoryUI.getSelectedChestX() >= MAX_CHEST_X
+			|| player.inventoryUI.getSelectedChestY() < 0 || player.inventoryUI.getSelectedChestY() >= MAX_CHEST_Y )*/
 		{
-			player.inventoryUI.selectChestSlot(0, 0);
+			player.inventoryUI.selectChestSlot(0, 0); // always select first slot
 		}
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_ITEM;
@@ -22324,7 +22382,8 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	if ( !inputs.getUIInteraction(player.playernum)->selectedItem 
 		&& player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST)
 		&& !player.GUI.isDropdownActive()
-		&& !player.inventoryUI.spellPanel.bOpen )
+		&& !player.inventoryUI.spellPanel.bOpen
+		&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 	{
 		if ( openedChest[player.playernum] || bOpen )
 		{
