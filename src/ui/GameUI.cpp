@@ -21930,10 +21930,10 @@ void Player::Inventory_t::ChestGUI_t::openChest()
 			scrollInertia = 0.0;
 			bFirstTimeSnapCursor = false;
 		}
-		if ( player.inventoryUI.getSelectedChestX() < 0 || player.inventoryUI.getSelectedChestX() >= MAX_CHEST_X
-			|| player.inventoryUI.getSelectedChestY() < 0 || player.inventoryUI.getSelectedChestY() >= MAX_CHEST_Y )
+		/*if ( player.inventoryUI.getSelectedChestX() < 0 || player.inventoryUI.getSelectedChestX() >= MAX_CHEST_X
+			|| player.inventoryUI.getSelectedChestY() < 0 || player.inventoryUI.getSelectedChestY() >= MAX_CHEST_Y )*/
 		{
-			player.inventoryUI.selectChestSlot(0, 0);
+			player.inventoryUI.selectChestSlot(0, 0); // always select first slot
 		}
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_ITEM;
