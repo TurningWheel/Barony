@@ -2673,19 +2673,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				}
 			}
 		}
-		if ( stats[player]->EFFECTS[i] )
-		{
-			if ( effectSet.find(i) == effectSet.end() )
-			{
-				insertEffect(i, -1);
-			}
-		}
-		else
-		{
-			if ( effectSet.find(i) != effectSet.end() )
-			{
-				deleteEffect(i);
-			}
+	    else
+	    {
+		    if ( stats[player]->EFFECTS[i] )
+		    {
+			    if ( effectSet.find(i) == effectSet.end() )
+			    {
+				    insertEffect(i, -1);
+			    }
+		    }
+		    else
+		    {
+			    if ( effectSet.find(i) != effectSet.end() )
+			    {
+				    deleteEffect(i);
+			    }
+		    }
 		}
 	}
 

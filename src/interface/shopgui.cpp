@@ -454,15 +454,18 @@ void Player::ShopGUI_t::closeShop()
 		}
 	}
 
-	if ( auto bgFrame = shopFrame->findFrame("shop base") )
-	{
-		if ( auto discountFrame = bgFrame->findFrame("discount frame") )
-		{
-			if ( auto discountValue = discountFrame->findField("discount") )
-			{
-				discountValue->setText("");
-			}
-		}
+    if ( shopFrame )
+    {
+	    if ( auto bgFrame = shopFrame->findFrame("shop base") )
+	    {
+		    if ( auto discountFrame = bgFrame->findFrame("discount frame") )
+		    {
+			    if ( auto discountValue = discountFrame->findField("discount") )
+			    {
+				    discountValue->setText("");
+			    }
+		    }
+	    }
 	}
 	clearItemDisplayed();
 	itemRequiresTitleReflow = true;
