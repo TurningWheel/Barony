@@ -2854,7 +2854,8 @@ void drawStatusNew(const int player)
 
 					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add
 						&& players[player]->bControlEnabled && !gamePaused
-						&& !players[player]->usingCommand() )
+						&& !players[player]->usingCommand()
+						&& inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
 						if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
@@ -2975,12 +2976,12 @@ void drawStatusNew(const int player)
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
 	if ( !players[player]->usingCommand() && stats[player] && stats[player]->HP > 0
-		&& players[player]->bControlEnabled && !gamePaused
-		&& !players[player]->usingCommand() )
+		&& players[player]->bControlEnabled && !gamePaused )
 	{
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
-		if ( shootmode || (!shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player)))) )
+		if ( inputs.bPlayerUsingKeyboardControl(player)
+			&& (shootmode || (!shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.

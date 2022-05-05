@@ -1347,10 +1347,30 @@ void Player::HUD_t::updateUINavigation()
 			button->setColor(makeColor(255, 255, 255, 191));
 		}
 
-		if ( player.bUseCompactGUIWidth() && player.inventoryUI.chestGUI.bOpen )
+		if ( player.bUseCompactGUIWidth() )
 		{
-			button->setInvisible(true);
-			continue;
+			if ( player.inventoryUI.chestGUI.bOpen )
+			{
+				if ( buttonAndGlyph.inputName == "UINavRightTrigger" )
+				{
+					button->setInvisible(true);
+					continue;
+				}
+			}
+			if ( player.shopGUI.bOpen )
+			{
+				if ( buttonAndGlyph.inputName == "UINavRightTrigger" 
+					|| inputs.getVirtualMouse(player.playernum)->draw_cursor )
+				{
+					button->setInvisible(true);
+					continue;
+				}
+			}
+			if ( GenericGUI[player.playernum].isGUIOpen() )
+			{
+				button->setInvisible(true);
+				continue;
+			}
 		}
 
 		if ( buttonAndGlyph.name == "magic button" || buttonAndGlyph.name == "items button" )
@@ -5977,6 +5997,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	if ( !stats[player.playernum] || !players[player.playernum]->isLocalPlayer() )
 	{
 		sheetFrame->setDisabled(true);
+		queuedElement = SHEET_UNSELECTED;
 		return;
 	}
 
@@ -6011,7 +6032,14 @@ void Player::CharacterSheet_t::processCharacterSheet()
 
 	if ( player.inventoryUI.slideOutPercent <= .0001 )
 	{
-		isInteractable = true;
+		isInteractable = !hideAndExit;
+		if ( isInteractable && queuedElement != SHEET_UNSELECTED )
+		{
+			const bool updateCursor = true;
+			const bool usingMouse = false;
+			selectElement(queuedElement, usingMouse, updateCursor);
+			queuedElement = SHEET_UNSELECTED;
+		}
 	}
 	else
 	{
@@ -6164,6 +6192,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	updateCharacterSheetTooltip(SHEET_UNSELECTED, SDL_Rect{ 0, 0, 0, 0 }); // to reset the tooltip from displaying.
 	if ( hideAndExit )
 	{
+		queuedElement = SHEET_UNSELECTED;
 		sheetFrame->setDisabled(true);
 		return;
 	}
@@ -7140,7 +7169,15 @@ void Player::CharacterSheet_t::selectElement(SheetElements element, bool usingMo
 		pos.x -= player.camera_virtualx1();
 		pos.y -= player.camera_virtualy1();
 		player.hud.setCursorDisabled(false);
-		player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
+		if ( !isInteractable )
+		{
+			player.characterSheet.queuedElement = player.characterSheet.selectedElement;
+		}
+		else
+		{
+			player.characterSheet.queuedElement = SHEET_UNSELECTED;
+			player.hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, usingMouse);
+		}
 	}
 	if ( !selectedAButton && elementFrame && !inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
@@ -15724,6 +15761,19 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
+		{
+			if ( frame->isDisabled() || player.inventory_mode != INVENTORY_MODE_ITEM )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
 		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			if ( spellFrame->isDisabled() || player.inventory_mode != INVENTORY_MODE_SPELL )
@@ -16170,7 +16220,7 @@ void Player::Hotbar_t::updateCursor()
 		const int smallOffset = 2;
 		const int largeOffset = 4;
 
-		int offset = ((ticks - shootmodeCursor.lastUpdateTick) % 50 < 25) ? largeOffset : smallOffset;
+		int offset = ((ticks - shootmodeCursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
 			if ( inputs.getUIInteraction(player.playernum)->selectedItem )

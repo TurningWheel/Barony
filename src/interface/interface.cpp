@@ -1287,7 +1287,14 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
 				SDL_Rect size = player.inventoryUI.selectedItemCursorFrame->getSize();
-				player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
+				if ( !player.inventoryUI.selectedItemCursorFrame->isDisabled() )
+				{
+					size.x += player.hud.cursor.cursorToSlotOffset;
+					size.y += player.hud.cursor.cursorToSlotOffset;
+					size.w -= (2 * (player.hud.cursor.cursorToSlotOffset) - 1);
+					size.h -= (2 * (player.hud.cursor.cursorToSlotOffset) - 1);
+					player.hud.updateCursorAnimation(size.x, size.y, size.w, size.h, true);
+				}
 			}
 			else if ( ((activeModule == MODULE_INVENTORY 
 				|| activeModule == MODULE_HOTBAR 

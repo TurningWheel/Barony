@@ -6006,7 +6006,8 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 
 	if ( bCompactView 
 		&& player.bUseCompactGUIWidth() 
-		&& player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		&& (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP) )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.01, (1.0 - slideOutPercent)) / 2.0;
@@ -6100,7 +6101,7 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 
 
 	// mouse hovering over inventory frames in compact view - if we're on hotbar, refocus the inventory/spells panel
-	if ( player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+	if ( (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR || player.GUI.activeModule == Player::GUI_t::MODULE_SHOP)
 		&& inputs.bPlayerUsingKeyboardControl(player.playernum) && bCompactView )
 	{
 		if (player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
@@ -7187,7 +7188,7 @@ void Player::Inventory_t::updateInventory()
 			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
 			{
 				// mouse movement captures the inventory
-				players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+				//players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
 			}
 
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
@@ -7215,7 +7216,7 @@ void Player::Inventory_t::updateInventory()
 				continue;
 			}
 
-			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
+			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() && players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
 			{
 				if ( shopGUI.isItemSelectedFromShop(item) )
 				{
@@ -7652,7 +7653,10 @@ void Player::Inventory_t::updateInventory()
 				else if ( shopGUI.isItemSelectedToSellToShop(item) )
 				{
 					sellingItemToShop = true;
-					shopGUI.setItemDisplayNameAndPrice(item);
+					if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+					{
+						shopGUI.setItemDisplayNameAndPrice(item);
+					}
 				}
 				else
 				{
@@ -7882,7 +7886,8 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				if ( numkey_quick_add && inventoryControlActive && item )
+				if ( numkey_quick_add && inventoryControlActive && item
+					&& inputs.bPlayerUsingKeyboardControl(player) )
 				{
 					int slotNum = -1;
 					if ( Input::inputs[player].binaryToggle("HotbarSlot1") )

@@ -1181,6 +1181,7 @@ public:
 		SheetDisplay sheetDisplayType = CHARSHEET_DISPLAY_NORMAL;
 		Frame* sheetFrame = nullptr;
 		SheetElements selectedElement = SHEET_UNSELECTED;
+		SheetElements queuedElement = SHEET_UNSELECTED;
 		void selectElement(SheetElements element, bool usingMouse, bool moveCursor = false);
 		void createCharacterSheet();
 		void processCharacterSheet();

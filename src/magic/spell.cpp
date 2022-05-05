@@ -381,7 +381,10 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 
 	if ( !ignoreSkill )
 	{
-		players[player]->entity->increaseSkill(PRO_MAGIC);
+		if ( players[player]->entity )
+		{
+			players[player]->entity->increaseSkill(PRO_MAGIC);
+		}
 	}
 
 	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
