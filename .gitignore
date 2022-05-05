@@ -57,3 +57,4 @@ steam_appid.txt
 /VS.2015/Release/
 *.lib
 *.exp
+/VS.2015/x64/Steam Crossplay
