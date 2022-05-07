@@ -358,6 +358,9 @@ public:
 	Item* tinkeringAutoSalvageKitItem;
 	Item* tinkeringAutoSalvageThisItem;
 	Uint32 tinkeringSfxLastTicks = 0;
+	bool tinkeringBulkSalvage = false;
+	Sint32 tinkeringBulkSalvageMetalScrap = 0;
+	Sint32 tinkeringBulkSalvageMagicScrap = 0;
 
 	// Scribing
 	Item* scribingToolItem;

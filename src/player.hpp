@@ -936,6 +936,8 @@ public:
 		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags);
 		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
 		bool warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags);
+		bool guiAllowDropItems() const;
+		bool guiAllowDefaultRightClick() const;
 		void processInventory();
 		void updateInventory();
 		void updateCursor();

@@ -3666,7 +3666,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					playSound(139, 64); // click sound
 				}
 			}
-			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory )
+			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory || !players[player]->inventoryUI.guiAllowDropItems() )
 			{
 				//Outside inventory. Spells can't be dropped.
 				//If mouseInInventory, we dropped onto a slot frame area and the item should return to where it was
@@ -3677,7 +3677,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				{
 					//Add spell to hotbar.
 					Item* tempItem = uidToItem(slot->item);
-					if ( tempItem )
+					if ( tempItem && tempItem != selectedItem )
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
@@ -3690,6 +3690,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 						toggleclick = false;
 					}
+
 					// empty out duplicate slots that match this item uid.
 					int i = 0;
 					for ( auto& s : players[player]->hotbar.slots() )
@@ -6172,6 +6173,35 @@ void Player::Inventory_t::closeInventory()
 	itemTooltipDisplay.expandAnimate = 0;
 }
 
+bool Player::Inventory_t::guiAllowDefaultRightClick() const
+{
+	if ( player.GUI.bModuleAccessibleWithMouse(player.GUI.activeModule) )
+	{
+		if ( GenericGUI[player.playernum].isGUIOpen() )
+		{
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+bool Player::Inventory_t::guiAllowDropItems() const
+{
+	if ( player.GUI.bModuleAccessibleWithMouse(player.GUI.activeModule) )
+	{
+		if ( player.shopGUI.bOpen || GenericGUI[player.playernum].isGUIOpen()
+			|| player.GUI.isDropdownActive() || player.GUI.isGameoverActive()
+			|| player.inventoryUI.chestGUI.bOpen
+			|| !players[player.playernum]->bControlEnabled )
+		{
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
@@ -7003,7 +7033,8 @@ void Player::Inventory_t::updateInventory()
 					// grab action status of this item, don't modify using 'true' param
 					auto res = tinkerGUI.setItemDisplayNameAndPrice(item, true); 
 					bool invalidItem = !(res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK
-						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE);
+						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE
+						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UNIDENTIFIED_SALVAGE);
 					if ( tinkerCraftableListOpen && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
 					{
 						if ( invalidItem )
@@ -7758,9 +7789,12 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 					{
-						if ( dropItem(item, player) ) // Quick item drop
+						if ( guiAllowDropItems() )
 						{
-							item = nullptr;
+							if ( dropItem(item, player) ) // Quick item drop
+							{
+								item = nullptr;
+							}
 						}
 					}
 					else
@@ -7783,16 +7817,22 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 					{
-						// auto-appraise the item
-						appraisal.appraiseItem(item);
-						inputs.mouseClearRight(player);
+						if ( guiAllowDefaultRightClick() )
+						{
+							// auto-appraise the item
+							appraisal.appraiseItem(item);
+							inputs.mouseClearRight(player);
+						}
 					}
 					else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 						(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 					{
 						inputs.mouseClearRight(player);
-						// force equip potion/spellbook
-						playerTryEquipItemAndUpdateServer(player, item, false);
+						if ( guiAllowDefaultRightClick() )
+						{
+							// force equip potion/spellbook
+							playerTryEquipItemAndUpdateServer(player, item, false);
+						}
 					}
 					else if ( !tinkeringSalvageOrRepairMenuActive )
 					{

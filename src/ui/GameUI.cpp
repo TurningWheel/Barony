@@ -11352,13 +11352,19 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	auto img = itemSpriteFrame->addImage(imgPos, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
 	img->outline = false;
 	img->outlineColor = 0;
+	auto iconLabelBgImg = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"images/ui/Inventory/Icon_Label_Backing_00.png", "icon label bg img");
+	iconLabelBgImg->disabled = true;
+
+	auto iconLabelImg = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"", "icon label img");
+	iconLabelImg->disabled = true;
 
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, makeColor( 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
-
 
 	static const char* qtyfont = "fonts/pixel_maz.ttf#32#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
@@ -11576,6 +11582,32 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			spriteImage->color = 0xFFFFFFFF;
 		}
+		if ( auto iconLabelImg = spriteImageFrame->findImage("icon label img") )
+		{
+			iconLabelImg->path = ItemTooltips.getIconLabel(*item);
+			iconLabelImg->disabled = true;
+			const int size = 20;
+			const int padx = spriteImageFrame->getSize().w / 2 - size / 2;
+			iconLabelImg->pos = SDL_Rect{ spriteImageFrame->getSize().w - 16,
+				0 /*spriteImageFrame->getSize().h - size*/, size, size };
+			if ( iconLabelImg->path != "" )
+			{
+				iconLabelImg->disabled = false;
+			}
+			iconLabelImg->color = spriteImage->color;
+			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
+			{
+				iconLabelBgImg->pos.w = 24;
+				iconLabelBgImg->pos.h = iconLabelBgImg->pos.w;
+				iconLabelBgImg->pos.x = iconLabelImg->pos.x + iconLabelImg->pos.w / 2 - iconLabelBgImg->pos.w / 2;
+				iconLabelBgImg->pos.y = iconLabelImg->pos.y + iconLabelImg->pos.h / 2 - iconLabelBgImg->pos.h / 2;
+				iconLabelBgImg->disabled = iconLabelImg->disabled;
+			}
+			if ( iconLabelImg->path[0] == '*' )
+			{
+				iconLabelImg->path.erase(0, 1);
+			}
+		}
 	}
 
 	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
@@ -11681,7 +11713,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				}
 				else
 				{
-					spriteImage->outlineColor = makeColor(0, 0, 0, 192);
+					spriteImage->outlineColor = makeColor(0, 0, 0, 255);
 				}
 				if ( !beatitudeFrame->isDisabled() )
 				{
@@ -14240,7 +14272,6 @@ void createPlayerInventory(const int player)
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
 
-	createInventoryTooltipFrame(player);
 	createChestGUI(player);
 	createShopGUI(player);
 
@@ -16288,9 +16319,17 @@ void Player::Hotbar_t::updateCursor()
 
 void Player::Inventory_t::processInventory()
 {
+	if ( !player.characterSheet.sheetFrame )
+	{
+		player.characterSheet.createCharacterSheet();
+	}
 	if ( !frame )
 	{
 		createPlayerInventory(player.playernum);
+	}
+	if ( !tooltipFrame )
+	{
+		createInventoryTooltipFrame(player.playernum);
 	}
 
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),

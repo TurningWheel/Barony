@@ -640,6 +640,11 @@ void ItemTooltips_t::readItemsFromFile()
 			}
 		}
 
+		if ( item_itr->value.HasMember("icon_label_path") )
+		{
+			t.iconLabelPath = item_itr->value["icon_label_path"].GetString();
+		}
+
 		tmpItems.push_back(t);
 		++itemsRead;
 	}
@@ -757,6 +762,8 @@ void ItemTooltips_t::readItemsFromFile()
 			items[i].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM;
 		}
 	}
+
+	spellItems.clear();
 
 	int spellsRead = 0;
 	for ( rapidjson::Value::ConstMemberIterator spell_itr = d["spells"].MemberBegin();
@@ -1520,6 +1527,13 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 		}
 	}
 	return str;
+#endif
+}
+
+std::string& ItemTooltips_t::getIconLabel(Item& item)
+{
+#ifndef EDITOR
+	return tmpItems[item.type].iconLabelPath;
 #endif
 }
 

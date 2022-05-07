@@ -6012,6 +6012,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 	if ( !outsideInventory && itemIsEquipped(item, player) )
 	{
+		tinkeringBulkSalvage = false;
 		messagePlayer(player, MESSAGE_MISC, language[3669]);
 		return false; // don't want to deal with client/server desync problems here.
 	}
@@ -6092,14 +6093,21 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		if ( crafted )
 		{
 			Item* pickedUp = itemPickup(player, crafted);
-			if ( bonusMetalScrap > 0 )
+			if ( !tinkeringBulkSalvage )
 			{
-				Uint32 color = makeColorRGB(0, 255, 0);
-				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], metal, items[pickedUp->type].name_identified);
+				if ( bonusMetalScrap > 0 )
+				{
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].name_identified);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_MISC, language[3665], metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].name_identified);
+				}
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_MISC, language[3665], metal, items[pickedUp->type].name_identified);
+				tinkeringBulkSalvageMetalScrap += metal;
 			}
 			free(crafted); // if player != clientnum, then crafted == pickedUp
 			didCraft = true;
@@ -6111,14 +6119,21 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		if ( crafted )
 		{
 			Item* pickedUp = itemPickup(player, crafted);
-			if ( bonusMagicScrap > 0 )
+			if ( !tinkeringBulkSalvage )
 			{
-				Uint32 color = makeColorRGB(0, 255, 0);
-				messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], magic, items[pickedUp->type].name_identified);
+				if ( bonusMagicScrap > 0 )
+				{
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(player, MESSAGE_INVENTORY, color, language[3665], magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].name_identified);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_MISC, language[3665], magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].name_identified);
+				}
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_MISC, language[3665], magic, items[pickedUp->type].name_identified);
+				tinkeringBulkSalvageMagicScrap += magic;
 			}
 			free(crafted); // if player != clientnum, then crafted == pickedUp
 			didCraft = true;
@@ -6136,7 +6151,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				{
 					increaseSkill = true;
 				}
-				else if ( rand() % 20 == 0 )
+				else if ( rand() % 20 == 0 && !tinkeringBulkSalvage )
 				{
 					messagePlayer(player, MESSAGE_MISC, language[3666]); // nothing left to learn from salvaging.
 				}
@@ -6150,7 +6165,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				{
 					increaseSkill = true;
 				}
-				else if ( rand() % 20 == 0 )
+				else if ( rand() % 20 == 0 && !tinkeringBulkSalvage )
 				{
 					messagePlayer(player, MESSAGE_MISC, language[3666]); // nothing left to learn from salvaging.
 				}
@@ -6173,7 +6188,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 		achievementObserver.playerAchievements[player].superShredder += (magic + metal);
 
-		if ( players[player] && players[player]->entity )
+		if ( players[player] && players[player]->entity && !tinkeringBulkSalvage )
 		{
 			if ( (ticks - tinkeringSfxLastTicks) > 200 && ((metal >= 4 || magic >= 4) || rand() % 5 == 0) )
 			{
@@ -6229,6 +6244,10 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 	if ( !outsideInventory && didCraft )
 	{
 		consumeItem(item, player);
+	}
+	if ( !didCraft )
+	{
+		tinkeringBulkSalvage = false;
 	}
 	return true;
 }
@@ -9385,6 +9404,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto actionPromptTxt = baseFrame->findField("action prompt txt");
 	actionPromptTxt->setDisabled(false);
 	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
+	auto actionModifierImg = baseFrame->findImage("action modifier glyph");
 
 	int skillLVL = (stats[playernum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[playernum], players[playernum]->entity));
 	Uint32 negativeColor = hudColors.characterSheetRed;
@@ -9460,6 +9480,17 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 
 	auto itemSlotFrame = itemDisplayTooltip->findFrame("item slot frame");
+	bool modifierPressed = false;
+	if ( usingGamepad && Input::inputs[playernum].binary("MenuPageLeftAlt") )
+	{
+		modifierPressed = true;
+	}
+	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
+		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+	{
+		modifierPressed = true;
+	}
+
 	if ( itemActionType != TINKER_ACTION_NONE && itemDesc.size() > 1 )
 	{
 		if ( isInteractable )
@@ -9488,16 +9519,37 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 				if ( usingGamepad )
 				{
 					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+					if ( modifierPressed )
+					{
+						actionModifierImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+					}
 				}
 				else if ( !usingGamepad )
 				{
 					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
+					if ( modifierPressed )
+					{
+						actionModifierImg->path = GlyphHelper.getGlyphPath(SDL_SCANCODE_LSHIFT, false);
+					}
 				}
 				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
 				{
 					actionPromptImg->pos.w = imgGet->getWidth();
 					actionPromptImg->pos.h = imgGet->getHeight();
 					actionPromptImg->disabled = false;
+					if ( modifierPressed && parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+					{
+						if ( auto imgGet2 = Image::get(actionModifierImg->path.c_str()) )
+						{
+							actionModifierImg->pos.w = imgGet2->getWidth();
+							actionModifierImg->pos.h = imgGet2->getHeight();
+							actionModifierImg->disabled = false;
+						}
+					}
+					else
+					{
+						actionModifierImg->disabled = true;
+					}
 				}
 				if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
 				{
@@ -9516,7 +9568,14 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 				}
 				else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
 				{
-					actionPromptTxt->setText(language[3645]);
+					if ( modifierPressed )
+					{
+						actionPromptTxt->setText(language[4154]);
+					}
+					else
+					{
+						actionPromptTxt->setText(language[3645]);
+					}
 				}
 				else
 				{
@@ -9528,6 +9587,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			{
 				actionPromptTxt->setText("");
 				actionPromptImg->disabled = true;
+				actionModifierImg->disabled = true;
 				switch ( itemActionType )
 				{
 					case TINKER_ACTION_INVALID_ITEM:
@@ -9617,6 +9677,12 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 				if ( actionPromptImg->pos.y % 2 == 1 )
 				{
 					actionPromptImg->pos.y -= 1;
+				}
+				actionModifierImg->pos.x = actionPromptImg->pos.x - 4 - actionModifierImg->pos.w;
+				actionModifierImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionModifierImg->pos.h / 2;
+				if ( actionModifierImg->pos.y % 2 == 1 )
+				{
+					actionModifierImg->pos.y -= 1;
 				}
 			}
 		}
@@ -9835,6 +9901,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		getColor(actionPromptTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
 		color.a = (Uint8)(255 * animTooltip);
 		actionPromptImg->color = makeColor(255, 255, 255, color.a);
+		actionModifierImg->color = actionPromptImg->color;
 		actionPromptTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
 		if ( invalidActionType == INVALID_ACTION_SHAKE_PROMPT )
 		{
@@ -9970,13 +10037,16 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		}
 	}
 
-	if ( activateSelection )
+	if ( activateSelection && players[playernum] && players[playernum]->entity )
 	{
 		node_t* nextnode = nullptr;
 		list_t* player_inventory = &parentGUI.tinkeringTotalItems;
 		bool foundItem = false;
 		bool checkConsumedItem = false;
-
+		parentGUI.tinkeringBulkSalvage = false;
+		parentGUI.tinkeringBulkSalvageMetalScrap = 0;
+		parentGUI.tinkeringBulkSalvageMagicScrap = 0;
+		int amountSalvaged = 1;
 		bool actionOK = itemActionType == TINKER_ACTION_OK
 			|| itemActionType == TINKER_ACTION_OK_UPGRADE
 			|| itemActionType == TINKER_ACTION_OK_UNIDENTIFIED_SALVAGE;
@@ -10009,17 +10079,47 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 							foundItem = true;
 							if ( actionOK )
 							{
-								if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+								if ( modifierPressed && parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE
+									&& item->count > 1 )
 								{
-									if ( item->count == 1 )
+									int numActions = item->count;
+									amountSalvaged = 0;
+									parentGUI.tinkeringBulkSalvage = true;
+									bool finalAction = false;
+									for ( int i = 0; i < numActions
+										&& parentGUI.tinkeringBulkSalvage
+										&& parentGUI.tinkeringKitItem
+										&& parentGUI.tinkeringKitItem->status > BROKEN; ++i )
 									{
-										checkConsumedItem = true;
+										if ( i == numActions - 1 )
+										{
+											finalAction = true;
+											parentGUI.tinkeringBulkSalvage = false;
+											checkConsumedItem = true;
+										}
+										assert(item->count >= 1);
+										parentGUI.executeOnItemClick(item);
+										if ( parentGUI.tinkeringBulkSalvage || finalAction )
+										{
+											++amountSalvaged;
+										}
 									}
+									parentGUI.tinkeringBulkSalvage = false;
 								}
-								if ( (parentGUI.tinkeringKitItem && parentGUI.tinkeringKitItem->status > BROKEN)
-									|| (parentGUI.tinkeringKitItem == item && parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE))
+								else
 								{
-									parentGUI.executeOnItemClick(item);
+									if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+									{
+										if ( item->count == 1 )
+										{
+											checkConsumedItem = true;
+										}
+									}
+									if ( (parentGUI.tinkeringKitItem && parentGUI.tinkeringKitItem->status > BROKEN)
+										|| (parentGUI.tinkeringKitItem == item && parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE))
+									{
+										parentGUI.executeOnItemClick(item);
+									}
 								}
 							}
 							break;
@@ -10096,7 +10196,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 					{
 						if ( parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 						{
-							itemIncrementText->setText("-1");
+							itemIncrementText->setText(std::to_string(-amountSalvaged).c_str());
 						}
 						else if ( parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 						{
@@ -10334,6 +10434,11 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "action prompt glyph");
 			actionPromptGlyph->ontop = true;
+
+			auto actionModifierGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action modifier glyph");
+			actionModifierGlyph->ontop = true;
+			actionModifierGlyph->disabled = true;
 		}
 
 		{
