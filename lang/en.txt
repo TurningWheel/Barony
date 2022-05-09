@@ -6119,5 +6119,6 @@ formalities of gold, now!#
 4151 Select an item to repair: #
 4152 Your Tinkering Kit needs repairs#
 4153 This needs to be identified first#
+4154 Salvage All#
 
 4199 end#
