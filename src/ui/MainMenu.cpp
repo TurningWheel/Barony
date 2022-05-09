@@ -12730,11 +12730,11 @@ bind_failed:
 			    if (strcmp(map.filename, "tutorial_hub.lmp")) {
 			        options.insert(options.end(), {
 				        {"Restart Trial", "RESTART TRIAL", mainRestartGame},
-				        {"Return to Hall of Trials", "RETURN TO HALL OF TRIALS", mainReturnToHallofTrials},
+				        {"Return to Hall of Trials", "RETURN TO TRIAL HUB", mainReturnToHallofTrials},
 				        });
 				} else {
 			        options.insert(options.end(), {
-				        {"Reset Hall of Trials", "RESET HALL OF TRIALS", mainReturnToHallofTrials},
+				        {"Reset Hall of Trials", "RESET TRIAL HUB", mainReturnToHallofTrials},
 				        });
 				}
 			}
