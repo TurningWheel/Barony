@@ -11540,6 +11540,11 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	spriteImage->path = getItemSpritePath(player, *item);
 	bool disableBackgrounds = false;
+	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
+	{
+		disableBackgrounds = true;
+	}
+
 	bool isHotbarIcon = false;
 	if ( spriteImage->path != "" )
 	{
@@ -11586,10 +11591,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			iconLabelImg->path = ItemTooltips.getIconLabel(*item);
 			iconLabelImg->disabled = true;
-			const int size = 20;
+			const int size = 16;
 			const int padx = spriteImageFrame->getSize().w / 2 - size / 2;
-			iconLabelImg->pos = SDL_Rect{ spriteImageFrame->getSize().w - 16,
-				0 /*spriteImageFrame->getSize().h - size*/, size, size };
+			iconLabelImg->pos = SDL_Rect{ spriteImageFrame->getSize().w - size - 1,
+				1 /*spriteImageFrame->getSize().h - size*/, size, size };
 			if ( iconLabelImg->path != "" )
 			{
 				iconLabelImg->disabled = false;
@@ -11599,13 +11604,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			{
 				iconLabelBgImg->pos.w = 24;
 				iconLabelBgImg->pos.h = iconLabelBgImg->pos.w;
-				iconLabelBgImg->pos.x = iconLabelImg->pos.x + iconLabelImg->pos.w / 2 - iconLabelBgImg->pos.w / 2;
-				iconLabelBgImg->pos.y = iconLabelImg->pos.y + iconLabelImg->pos.h / 2 - iconLabelBgImg->pos.h / 2;
-				iconLabelBgImg->disabled = iconLabelImg->disabled;
-			}
-			if ( iconLabelImg->path[0] == '*' )
-			{
-				iconLabelImg->path.erase(0, 1);
+				iconLabelBgImg->pos.x = spriteImageFrame->getSize().w - iconLabelBgImg->pos.w - 1;
+				iconLabelBgImg->pos.y = 1;
+				iconLabelBgImg->disabled = iconLabelImg->disabled || disableBackgrounds;
+				iconLabelBgImg->color = makeColor(255, 255, 255, 255);
 			}
 		}
 	}
@@ -11664,11 +11666,6 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				qtyText->setColor(qtyColor);
 			}
 		}
-	}
-
-	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
-	{
-		disableBackgrounds = true;
 	}
 	
 	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
