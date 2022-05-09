@@ -212,6 +212,7 @@ public:
 	Sint32& creatureShadowTaggedThisUid; //skill[54]
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& monsterLastDistractedByNoisemaker;//skill[55] shared with above as above only is for inner demons.
+	Sint32& monsterExtraReflexTick; //skill[56]
 	Sint32& entityShowOnMap; //skill[59]
 	real_t& monsterSentrybotLookDir; //fskill[10]
 	real_t& monsterKnockbackTangentDir; //fskill[11]

@@ -137,6 +137,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
 	monsterLastDistractedByNoisemaker(skill[55]), // shares with above as above only applies to inner demons.
+	monsterExtraReflexTick(skill[56]),
 	monsterSentrybotLookDir(fskill[10]),
 	monsterKnockbackTangentDir(fskill[11]),
 	playerStrafeVelocity(fskill[12]),
