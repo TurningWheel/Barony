@@ -4941,8 +4941,9 @@ static void openLogWindow(int player) {
         }
         });
 
-    int y = 40;
+    int y = 0;
     auto subframe = frame->addFrame("subframe");
+    subframe->setScrollWithLeftControls(false);
     subframe->setSize(SDL_Rect{0, 32, w, h - 40});
     subframe->setBorderColor(makeColor(63, 63, 63, 255));
     subframe->setColor(makeColor(127, 127, 127, 255));
@@ -4953,11 +4954,12 @@ static void openLogWindow(int player) {
         auto field = subframe->addField("field", strlen(string->data) + 1);
         auto text = Text::get(string->data, smallfont_outline,
             uint32ColorWhite, uint32ColorBlack);
-        field->setSize(SDL_Rect{8, y, (int)text->getWidth(), (int)text->getHeight()});
+        const int h = (int)text->getHeight() * (int)string->lines + 2;
+        field->setSize(SDL_Rect{8, y, (int)text->getWidth(), h});
         field->setFont(smallfont_outline);
         field->setColor(string->color);
         field->setText(string->data);
-        y += text->getHeight() * string->lines;
+        y += h;
     }
     subframe->setActualSize(SDL_Rect{0, y - (h - 40), w, y});
 
