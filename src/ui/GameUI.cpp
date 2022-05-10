@@ -5065,7 +5065,7 @@ const int NUM_CHARSHEET_TOOLTIP_TEXT_FIELDS = 16;
 std::map<int, Field*> characterSheetTooltipTextFields[MAXPLAYERS];
 std::map<int, Frame*> characterSheetTooltipTextBackingFrames[MAXPLAYERS];
 
-static auto charsheet_deselect_fn = [](Widget& widget) {
+static void charsheet_deselect_fn(Widget& widget) {
 	if ( widget.isSelected()
 		&& players[widget.getOwner()]->GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET
 		&& !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
@@ -5157,9 +5157,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setCallback([](Button& button){
 			    openMapWindow(button.getOwner());
 			});
-			mapButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			mapButton->setTickCallback(charsheet_deselect_fn);
 			
 			auto mapSelector = buttonFrame->addFrame("map button selector");
 			mapSelector->setSize(buttonPos);
@@ -5181,9 +5179,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setCallback([](Button& button) {
 			    openLogWindow(button.getOwner());
 			});
-			logButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			logButton->setTickCallback(charsheet_deselect_fn);
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
 			logSelector->setSize(buttonPos);
@@ -5241,9 +5237,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
 				bShowTimer = !bShowTimer;
 			});
-			timerButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			timerButton->setTickCallback(charsheet_deselect_fn);
 
 			SDL_Rect textPos = timerImg->pos;
 			textPos.x += 12;
@@ -5273,9 +5267,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 				players[button.getOwner()]->skillSheet.openSkillSheet();
 			});
-			skillsButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			skillsButton->setTickCallback(charsheet_deselect_fn);
 		}
 
 		// dungeon floor and level descriptor
@@ -5293,9 +5285,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			dungeonButton->setHideKeyboardGlyphs(true);
 			dungeonButton->setHideSelectors(true);
 			dungeonButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-			dungeonButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			dungeonButton->setTickCallback(charsheet_deselect_fn);
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
@@ -5371,9 +5361,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classButton->setHideKeyboardGlyphs(true);
 			classButton->setHideSelectors(true);
 			classButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-			classButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			classButton->setTickCallback(charsheet_deselect_fn);
 
 			characterTextPos.x = 8;
 			characterTextPos.w = 190;
@@ -5419,9 +5407,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			raceButton->setHideKeyboardGlyphs(true);
 			raceButton->setHideSelectors(true);
 			raceButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-			raceButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			raceButton->setTickCallback(charsheet_deselect_fn);
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -5455,9 +5441,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldButton->setHideKeyboardGlyphs(true);
 			goldButton->setHideSelectors(true);
 			goldButton->setMenuConfirmControlType(0);
-			goldButton->setTickCallback([](Widget& widget) {
-				charsheet_deselect_fn(widget);
-			});
+			goldButton->setTickCallback(charsheet_deselect_fn);
 		}
 
 		{
@@ -5513,9 +5497,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				statButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				statButton->setTickCallback(charsheet_deselect_fn);
 			}
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5554,9 +5536,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				statButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				statButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5595,9 +5575,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				statButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				statButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5636,9 +5614,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				statButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				statButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5677,9 +5653,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				statButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				statButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5718,9 +5692,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				statButton->setHideKeyboardGlyphs(true);
 				statButton->setHideSelectors(true);
 				statButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				statButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				statButton->setTickCallback(charsheet_deselect_fn);
 			}
 		}
 
@@ -5768,9 +5740,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			const int rowSpacing = 4;
@@ -5802,9 +5772,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5835,9 +5803,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5868,9 +5834,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5923,9 +5887,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton->setTickCallback(charsheet_deselect_fn);
 
 				auto attributeButton2 = attributesInnerFrame->addButton("rgn mp button");
 				attributeButton2->setSize(SDL_Rect{ attributeButton->getSize().x + attributeButton->getSize().w,
@@ -5936,9 +5898,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton2->setHideKeyboardGlyphs(true);
 				attributeButton2->setHideSelectors(true);
 				attributeButton2->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton2->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton2->setTickCallback(charsheet_deselect_fn);
 			}
 
 			iconPos.y += iconPos.h + rowSpacing;
@@ -5969,9 +5929,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				attributeButton->setHideKeyboardGlyphs(true);
 				attributeButton->setHideSelectors(true);
 				attributeButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-				attributeButton->setTickCallback([](Widget& widget) {
-					charsheet_deselect_fn(widget);
-				});
+				attributeButton->setTickCallback(charsheet_deselect_fn);
 			}
 		}
 
@@ -18927,20 +18885,26 @@ static void drawConsoleCommandBuffer() {
 }
 
 static Uint32 gui_ticks = 0u;
-void doFrames() {
+Frame::result_t doFrames() {
+    Frame::result_t result;
+    result.usable = false;
+    result.highlightTime = 0;
+    result.tooltip = nullptr;
+    result.removed = false;
 	if ( gui )
 	{
 		while ( gui_ticks < ticks )
 		{
 			++gui_ticks;
 		}
-	    (void)gui->process();
+	    result = gui->process();
 
 		gui->predraw();
 		gui->draw();
         drawConsoleCommandBuffer();
 		gui->postdraw();
 	}
+	return result;
 }
 
 real_t Player::SkillSheet_t::windowCompactHeightScaleX = 0.0;

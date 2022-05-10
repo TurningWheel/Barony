@@ -237,6 +237,13 @@ Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
 bool arachnophobia_filter = false;
 
+static Frame::result_t framesProcResult{
+    false,
+    0,
+    nullptr,
+    false
+};
+
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 
 TimerExperiments::time_point TimerExperiments::timepoint{};
@@ -1344,6 +1351,17 @@ void gameLogic(void)
 			}
 			real_t accum = 0.0;
 			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
+
+            // consume mouse buttons that were eaten by GUI
+			if (!framesProcResult.usable) {
+			    for (int c = 0; c < MAXPLAYERS; ++c) {
+			        if (!players[c]->shootmode) {
+			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuLeftClick");
+			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuMiddleClick");
+			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuRightClick");
+			        }
+			    }
+			}
 
 			// run world UI entities
 			for ( node = map.worldUI->first; node != nullptr; node = nextnode )
@@ -2539,6 +2557,17 @@ void gameLogic(void)
 						}
 					}
 				}
+			}
+
+            // consume mouse buttons that were eaten by GUI
+			if (!framesProcResult.usable) {
+			    for (int c = 0; c < MAXPLAYERS; ++c) {
+			        if (!players[c]->shootmode) {
+			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuLeftClick");
+			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuMiddleClick");
+			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuRightClick");
+			        }
+			    }
 			}
 
 			// run world UI entities
@@ -5563,7 +5592,7 @@ int main(int argc, char** argv)
 							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 
-						doFrames();
+						framesProcResult = doFrames();
 
 #ifndef NINTENDO
 						// draw mouse
@@ -5934,8 +5963,19 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-				doFrames();
+				framesProcResult = doFrames();
 				ingameHud();
+
+                static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
+                if (!framesProcResult.usable) {
+				    if (*showConsumeMouseInputs) {
+				        printText(font8x8_bmp, 16, 16, "eating mouse input");
+				    }
+				} else {
+				    if (*showConsumeMouseInputs) {
+				        printText(font8x8_bmp, 16, 16, "NOT eating mouse input");
+				    }
+				}
 
 				if ( gamePaused )
 				{

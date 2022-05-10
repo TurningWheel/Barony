@@ -37,7 +37,7 @@ void clickDescription(int player, Entity* entity)
 
 	if ( entity == NULL )
 	{
-		if ( !input.binaryToggle("Attack") || players[player]->shootmode )
+		if ( !input.binaryToggle("InspectWithMouse") || players[player]->shootmode )
 		{
 			return;
 		}
@@ -204,7 +204,7 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 
-		input.consumeBinaryToggle("Attack");
+		input.consumeBinaryToggle("InspectWithMouse");
 
 		if ( softwaremode )
 		{

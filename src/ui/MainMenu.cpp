@@ -13158,7 +13158,21 @@ bind_failed:
             }
         }
 
-        // TODO different buttons depending on game mode (ie tutorial)
+        auto dismiss_tick = [](Widget& widget){
+            if (!gamePaused) {
+                if (!widget.isSelected() && !widget.isToBeDeleted()) {
+                    auto parent = static_cast<Frame*>(widget.getParent());
+                    if (parent) {
+                        for (auto button : parent->getButtons()) {
+                            if (button->isSelected()) {
+                                return;
+                            }
+                        }
+                    }
+                    widget.select();
+                }
+            }
+            };
 
         if (survivingPlayer || multiplayer == CLIENT) {
             auto dismiss = window->addButton("dismiss");
@@ -13170,6 +13184,7 @@ bind_failed:
             dismiss->setFont(smallfont_outline);
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
+            dismiss->setTickCallback(dismiss_tick);
             dismiss->setCallback([](Button& button){
                 soundCancel();
                 auto window = static_cast<Frame*>(button.getParent());
@@ -13183,22 +13198,38 @@ bind_failed:
             quit->setColor(makeColor(255, 255, 255, 255));
             quit->setHighlightColor(makeColor(255, 255, 255, 255));
             quit->setBackground("images/ui/GameOver/UI_GameOver_Button_Quit_02.png");
-            quit->setText("Quit to Main");
+            quit->setText(tutorial ? "Back to Hub" : "Quit to Main");
             quit->setFont(smallfont_outline);
             quit->setTextColor(makeColor(170, 134, 102, 255));
             quit->setTextHighlightColor(makeColor(170, 134, 102, 255));
-            quit->setCallback([](Button& button){
-                soundCancel();
-                auto window = static_cast<Frame*>(button.getParent());
-                auto frame = static_cast<Frame*>(window->getParent());
-                frame->removeSelf();
+            if (tutorial) {
+                quit->setCallback([](Button& button){
+                    soundCancel();
+                    auto window = static_cast<Frame*>(button.getParent());
+                    auto frame = static_cast<Frame*>(window->getParent());
+                    frame->removeSelf();
 
-	            savethisgame = false;
-				pauseGame(2, 0);
-				destroyMainMenu();
-				createDummyMainMenu();
-				beginFade(MainMenu::FadeDestination::RootMainMenu);
-                });
+				    pauseGame(2, 0);
+				    soundActivate();
+				    destroyMainMenu();
+				    createDummyMainMenu();
+				    tutorial_map_destination = "tutorial_hub";
+				    beginFade(MainMenu::FadeDestination::HallOfTrials);
+                    });
+            } else {
+                quit->setCallback([](Button& button){
+                    soundCancel();
+                    auto window = static_cast<Frame*>(button.getParent());
+                    auto frame = static_cast<Frame*>(window->getParent());
+                    frame->removeSelf();
+
+	                savethisgame = false;
+				    pauseGame(2, 0);
+				    destroyMainMenu();
+				    createDummyMainMenu();
+				    beginFade(MainMenu::FadeDestination::RootMainMenu);
+                    });
+            }
             quit->setWidgetRight("restart");
 
             auto restart = window->addButton("restart");
@@ -13240,6 +13271,7 @@ bind_failed:
             dismiss->setFont(smallfont_outline);
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
             dismiss->setTextHighlightColor(makeColor(170, 134, 102, 255));
+            dismiss->setTickCallback(dismiss_tick);
             dismiss->setCallback([](Button& button){
                 soundCancel();
                 auto window = static_cast<Frame*>(button.getParent());

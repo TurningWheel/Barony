@@ -383,15 +383,8 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 
     // if this is for a local player, but we've disabled this message type, don't print it!
     const bool localPlayer = players[player]->isLocalPlayer();
-	if ( localPlayer )
-	{
-	    if (disable_messages || !(messagesEnabled & type))
-	    {
-	        printlog("%s\n", str);
-	        return false;
-	    }
-	}
 
+	bool result = false;
 	if ( localPlayer )
 	{
 	    printlog("%s\n", str);
@@ -400,9 +393,13 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	    {
 		    list_RemoveNode(messages.first);
 	    }
-	    players[player]->messageZone.addMessage(color, str);
+	    if (!disable_messages && (messagesEnabled & type))
+	    {
+	        players[player]->messageZone.addMessage(color, str);
+	        result = true;
+	    }
 	}
-	else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	else if ( multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
@@ -430,7 +427,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 		}
 	}
 
-	return true;
+	return result;
 }
 
 /*-------------------------------------------------------------------------------

@@ -1442,6 +1442,9 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		GUI.closeDropdowns();
 		shootmode = true;
 	}
+	if (gameUIFrame[playernum]) {
+	    gameUIFrame[playernum]->deselect();
+	}
 }
 
 void FollowerRadialMenu::initfollowerMenuGUICursor(bool openInventory)

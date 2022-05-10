@@ -2,11 +2,11 @@
 
 #pragma once
 
-void doFrames();
 #include "Frame.hpp"
 #include "../interface/consolecommand.hpp"
 #include <deque>
 
+Frame::result_t doFrames();
 void doSharedMinimap();
 extern Frame* gameUIFrame[MAXPLAYERS];
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable = false);

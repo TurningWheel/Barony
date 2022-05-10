@@ -129,7 +129,10 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDown", "MouseWheelDown")); // consumed automatically by frame.cpp
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelUpAlt", "MouseWheelUp"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDownAlt", "MouseWheelDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeftClick", "Mouse1"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMiddleClick", "Mouse2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("InspectWithMouse", "Mouse1"));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuUp", "Up"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeft", "Left"));
@@ -1464,7 +1467,7 @@ Input::playerControlType_t Input::getPlayerControlType()
 	return Input::PLAYER_CONTROLLED_BY_INVALID;
 }
 
-void Input::consumeBindingsSharedWithBinding(const char* input)
+void Input::consumeBindingsSharedWithBinding(const char* binding)
 {
 #ifndef EDITOR
 	if ( disabled )
@@ -1472,7 +1475,7 @@ void Input::consumeBindingsSharedWithBinding(const char* input)
 		return;
 	}
 	const std::pair<std::string, binding_t> checkBinding =
-		std::make_pair("input", this->input("input"));
+		std::make_pair(binding, input(binding));
 	for ( auto& b : bindings )
 	{
 		if ( !b.second.binary )
