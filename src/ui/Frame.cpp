@@ -18,7 +18,7 @@
 #include "MainMenu.hpp"
 #endif
 
-const Sint32 Frame::sliderSize = 15;
+const Sint32 Frame::sliderSize = 32;
 
 static const int _virtualScreenDefaultWidth = 1280;
 int Frame::_virtualScreenX = 0;
@@ -159,7 +159,7 @@ void Frame::guiDestroy() {
 		MainMenu::main_menu_frame = nullptr;
 		MainMenu::destroyMainMenu();
 	}
-	minimapFrame = nullptr;
+	minimapFrame = nullptr; // shared minimap
 #endif
 
 	if (gui) {

@@ -25,6 +25,7 @@
 #include "../monster.hpp"
 #include "../classdescriptions.hpp"
 #include "../shops.hpp"
+#include "../colors.hpp"
 
 #include <assert.h>
 
@@ -4706,11 +4707,10 @@ void Player::MessageZone_t::processChatbox()
 }
 
 ConsoleVariable<bool> shareMinimap("/shareminimap", true);
-
-Frame* minimapFrame = nullptr;
+Frame* minimapFrame = nullptr; // shared minimap
 
 void doSharedMinimap() {
-    if (!minimapFrame ) {
+    if (!minimapFrame) {
 		minimapFrame = gui->addFrame("shared_minimap");
 		minimapFrame->setColor(0);
 		minimapFrame->setHollow(true);
@@ -4838,6 +4838,146 @@ void openMinimap(int player) {
     if (minimap) {
         players[player]->minimap.big = (players[player]->minimap.big==false);
     }
+}
+
+static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
+static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
+static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
+static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
+
+static void openMapWindow(int player) {
+    auto& frame = players[player]->hud.mapWindow;
+    if (frame) {
+        frame->removeSelf();
+        frame = nullptr;
+        return;
+    }
+    auto& otherWindow = players[player]->hud.logWindow;
+    if (otherWindow) {
+        otherWindow->removeSelf();
+        otherWindow = nullptr;
+    }
+    Frame* parent = players[player]->hud.hudFrame;
+    const SDL_Rect size = parent->getSize();
+    const int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    const int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+    frame = parent->addFrame("minimap_window");
+    frame->setOwner(player);
+    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2, w, h});
+    frame->setColor(makeColor(127, 127, 127, 255));
+    frame->setBorder(0);
+    frame->setTickCallback([](Widget& widget){
+        const int player = widget.getOwner();
+        auto frame = static_cast<Frame*>(&widget);
+        if (players[player]->shootmode) {
+            players[player]->hud.mapWindow = nullptr;
+            frame->removeSelf();
+        }
+        });
+
+    const int map_size = std::min(w - 32, h - 48);
+
+	auto minimap = frame->addFrame("minimap");
+	minimap->setSize(SDL_Rect{16, 32, map_size, map_size});
+	minimap->setHollow(true);
+	minimap->setColor(uint32ColorBlack);
+	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
+        drawMinimap(widget.getOwner(), rect);
+        });
+	minimap->setTickCallback([](Widget& widget){
+	    auto minimap = static_cast<Frame*>(&widget);
+	    //if (player->
+        if (minimap->capturesMouse()) {
+        }
+        });
+
+    auto label = frame->addField("label", 64);
+    label->setSize(SDL_Rect{8, 0, w - 40, 32});
+    label->setHJustify(Field::justify_t::LEFT);
+    label->setVJustify(Field::justify_t::CENTER);
+    label->setFont(bigfont_outline);
+    label->setText("Map");
+
+    auto close_button = frame->addButton("close");
+    close_button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
+    close_button->setFont(smallfont_outline);
+    close_button->setText("x");
+    close_button->setCallback([](Button& button){
+        const int player = button.getOwner();
+        players[player]->hud.mapWindow = nullptr;
+        auto parent = static_cast<Frame*>(button.getParent());
+        parent->removeSelf();
+        });
+}
+
+static void openLogWindow(int player) {
+    auto& frame = players[player]->hud.logWindow;
+    if (frame) {
+        frame->removeSelf();
+        frame = nullptr;
+        return;
+    }
+    auto& otherWindow = players[player]->hud.mapWindow;
+    if (otherWindow) {
+        otherWindow->removeSelf();
+        otherWindow = nullptr;
+    }
+    Frame* parent = players[player]->hud.hudFrame;
+    const SDL_Rect size = parent->getSize();
+    const int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    const int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+    frame = parent->addFrame("log_window");
+    frame->setOwner(player);
+    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2, w, h});
+    frame->setBorderColor(makeColor(63, 63, 63, 255));
+    frame->setColor(makeColor(127, 127, 127, 255));
+    frame->setBorder(0);
+    frame->setTickCallback([](Widget& widget){
+        const int player = widget.getOwner();
+        auto frame = static_cast<Frame*>(&widget);
+        if (players[player]->shootmode) {
+            players[player]->hud.logWindow = nullptr;
+            frame->removeSelf();
+        }
+        });
+
+    int y = 40;
+    auto subframe = frame->addFrame("subframe");
+    subframe->setSize(SDL_Rect{0, 32, w, h - 40});
+    subframe->setBorderColor(makeColor(63, 63, 63, 255));
+    subframe->setColor(makeColor(127, 127, 127, 255));
+    subframe->setScrollBarsEnabled(true);
+    subframe->setBorder(0);
+    for (auto node = messages.first; node != nullptr; node = node->next) {
+        auto string = (string_t*)node->element;
+        auto field = subframe->addField("field", strlen(string->data) + 1);
+        auto text = Text::get(string->data, smallfont_outline,
+            uint32ColorWhite, uint32ColorBlack);
+        field->setSize(SDL_Rect{8, y, (int)text->getWidth(), (int)text->getHeight()});
+        field->setFont(smallfont_outline);
+        field->setColor(string->color);
+        field->setText(string->data);
+        y += text->getHeight() * string->lines;
+    }
+    subframe->setActualSize(SDL_Rect{0, y - (h - 40), w, y});
+
+    auto label = frame->addField("label", 64);
+    label->setSize(SDL_Rect{8, 0, w - 40, 32});
+    label->setHJustify(Field::justify_t::LEFT);
+    label->setVJustify(Field::justify_t::CENTER);
+    label->setFont(bigfont_outline);
+    label->setText("Log");
+
+    auto close_button = frame->addButton("close");
+    close_button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
+    close_button->setFont(smallfont_outline);
+    close_button->setText("x");
+    close_button->setCallback([](Button& button){
+        const int player = button.getOwner();
+        players[player]->hud.logWindow = nullptr;
+        auto parent = static_cast<Frame*>(button.getParent());
+        parent->removeSelf();
+        });
 }
 
 std::map<std::string, std::pair<std::string, std::string>> Player::CharacterSheet_t::mapDisplayNamesDescriptions;
@@ -5013,7 +5153,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
-			    openMinimap(button.getOwner());
+			    openMapWindow(button.getOwner());
 			});
 			mapButton->setTickCallback([](Widget& widget) {
 				charsheet_deselect_fn(widget);
@@ -5037,7 +5177,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			logButton->setCallback([](Button& button) {
-				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Log button clicked", button.getOwner());
+			    openLogWindow(button.getOwner());
 			});
 			logButton->setTickCallback([](Widget& widget) {
 				charsheet_deselect_fn(widget);

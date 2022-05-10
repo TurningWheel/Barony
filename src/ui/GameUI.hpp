@@ -228,4 +228,4 @@ struct SkillSheetFrames_t
 };
 extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
-extern Frame* minimapFrame;
+extern Frame* minimapFrame; // shared minimap

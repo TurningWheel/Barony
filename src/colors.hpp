@@ -21,6 +21,7 @@ constexpr SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
 /*
  * 32-bit color defines
  */
+constexpr Uint32 uint32ColorBlack = makeColorRGB(0, 0, 0);
 constexpr Uint32 uint32ColorWhite = makeColorRGB(255, 255, 255);
 constexpr Uint32 uint32ColorGray = makeColorRGB(127, 127, 127);
 constexpr Uint32 uint32ColorBlue = makeColor(0, 92, 255, 255);

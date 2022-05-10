@@ -377,7 +377,7 @@ private:
 	entry_t* activation = nullptr;                      //!< activated entry
 	bool allowScrollBinds = true;						//!< if true, scroll wheel + right stick can scroll frame
 	bool allowScrolling = false;						//!< must be enabled for any kind of scrolling/actualSize to work
-	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
+	bool scrollbars = false;							//!< must be true for sliders to be drawn/usable
 	bool activated = false;								//!< true if this frame is consuming input (to navigate list entries)
 	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
 	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
