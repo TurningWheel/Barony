@@ -861,16 +861,6 @@ void handleEvents(void)
 					}
 					xres = std::max(event.window.data1, 100);
 					yres = std::max(event.window.data2, 75);
-					if ( zbuffer != NULL )
-					{
-						free(zbuffer);
-					}
-					zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-					if ( clickmap != NULL )
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 					if (palette != NULL)
 					{
 						free(palette);

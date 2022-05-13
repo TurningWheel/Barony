@@ -3813,6 +3813,10 @@ void handleEvents(void)
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
+					if (fullscreen || ticks == 0)
+					{
+						break;
+					}
 					xres = event.window.data1;
 					yres = event.window.data2;
 					if (!changeVideoMode())

@@ -156,7 +156,6 @@ void Frame::guiDestroy() {
 		{
 			players[i]->clearGUIPointers();
 		}
-		MainMenu::main_menu_frame = nullptr;
 		MainMenu::destroyMainMenu();
 	}
 	minimapFrame = nullptr; // shared minimap
@@ -223,23 +222,21 @@ void Frame::predraw() {
     }
     gui_fb.bindForWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 }
 
 void Frame::postdraw() {
     if (!*ui_scale_native) {
         if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
-	        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             return;
         }
     }
     if (!*ui_scale) {
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         return;
     }
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (*ui_downscale) {
-	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
 	    gui_fb.bindForReading();
         gui_fb_downscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -249,12 +246,8 @@ void Frame::postdraw() {
         gui_fb_downscaled.bindForReading();
         framebuffer::blit();
         framebuffer::unbind();
-
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     else if (*ui_upscale) {
-	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
 	    gui_fb.bindForReading();
         gui_fb_upscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -264,16 +257,12 @@ void Frame::postdraw() {
         gui_fb_upscaled.bindForReading();
         framebuffer::blit();
         framebuffer::unbind();
-
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     else {
-	    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         framebuffer::unbind();
 	    gui_fb.bindForReading();
 	    framebuffer::blit();
         framebuffer::unbind();
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 }
 #else
@@ -291,12 +280,11 @@ void Frame::postdraw() {
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     framebuffer::unbind();
     gui_fb.bindForReading();
     framebuffer::blit();
     framebuffer::unbind();
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 #endif
 

@@ -23,6 +23,7 @@ extern "C"
 #endif
 
 // main definitions
+Sint32 display_id = 0;
 Sint32 xres = 1280;
 Sint32 yres = 720;
 int mainloop = 1;
@@ -48,7 +49,6 @@ Sint8 keystatus[512];
 char* inputstr = nullptr;
 int inputlen = 0;
 Sint8 mousestatus[6];
-Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;
 int lastCreatedCharacterClass = -1;
@@ -209,13 +209,8 @@ list_t safePacketsSent;
 std::unordered_map<int, Uint32> safePacketsReceivedMap[MAXPLAYERS];
 bool receivedclientnum = false;
 char const * window_title = nullptr;
-bool softwaremode = false;
 SDL_Window* screen = nullptr;
-#ifdef APPLE
-SDL_Renderer* renderer = nullptr;
-#else
-SDL_GLContext renderer;
-#endif
+SDL_GLContext renderer = nullptr;
 SDL_Event event;
 bool firstmouseevent = true;
 int fullscreen = 0;
@@ -369,7 +364,6 @@ bool *lavatiles = nullptr;
 bool *swimmingtiles = nullptr;
 int rscale = 1;
 real_t vidgamma = 1.0f;
-real_t* zbuffer = nullptr;
 Sint32* lightmap = nullptr;
 Sint32* lightmapSmoothed = nullptr;
 bool mode3d = false;

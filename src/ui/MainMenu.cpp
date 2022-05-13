@@ -87,6 +87,9 @@ namespace MainMenu {
 	static float main_menu_cursor_bob = 0.f;
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
+
+    static bool resolution_changed = false;
+
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 	static std::string tutorial_map_destination;
 
@@ -166,7 +169,7 @@ namespace MainMenu {
 	struct Minimap {
 		int map_scale = 100;
 		int icon_scale = 100;
-		int foreground_opacity = 20;
+		int foreground_opacity = 50;
 		int background_opacity = 0;
 		inline void save();
 		static inline Minimap load();
@@ -193,6 +196,21 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
+    // Video options
+	struct Video {
+		int window_mode = 0; // 0 = windowed, 1 = fullscreen, 2 = borderless
+		int display_id = 0;
+		int resolution_x = 1280;
+		int resolution_y = 720;
+		bool vsync_enabled = true;
+		float gamma = 100.f;
+		inline bool save();
+		static inline Video load();
+		static inline Video reset();
+		bool serialize(FileInterface*);
+	};
+	static Video old_video;
+
     // All menu options combined
 	struct AllSettings {
 	    std::vector<std::pair<std::string, std::string>> mods;
@@ -212,12 +230,8 @@ namespace MainMenu {
 		bool shaking_enabled;
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
-		int window_mode; // 0 = windowed, 1 = fullscreen, 2 = borderless
-		int resolution_x;
-		int resolution_y;
-		bool vsync_enabled;
+		Video video;
 		bool vertical_split_enabled;
-		float gamma;
 		float fov;
 		float fps;
 		float master_volume;
@@ -826,7 +840,7 @@ namespace MainMenu {
         }
 	}
 
-	static void textFieldPrompt(
+	static Frame* textFieldPrompt(
 		const char* field_text,
 		const char* guide_text,
 		const char* okay_text,
@@ -895,6 +909,8 @@ namespace MainMenu {
 		cancel->setWidgetLeft("okay");
 		cancel->setWidgetBack("cancel");
 		cancel->setCallback(cancel_callback);
+
+		return frame;
 	}
 
 	static const char* closeTextField() {
@@ -906,7 +922,7 @@ namespace MainMenu {
 	    return field->getText(); // note: this will only be valid for one frame!
 	}
 
-	static void binaryPrompt(
+	static Frame* binaryPrompt(
 		const char* window_text,
 		const char* okay_text,
 		const char* cancel_text,
@@ -958,13 +974,15 @@ namespace MainMenu {
 		cancel->setWidgetLeft("okay");
 		cancel->setWidgetBack("cancel");
 		cancel->setCallback(cancel_callback);
+
+		return frame;
 	}
 
 	static void closeBinary() {
 	    closePrompt("binary_prompt");
 	}
 
-	static void monoPrompt(
+	static Frame* monoPrompt(
 		const char* window_text,
 		const char* okay_text,
 		void (*okay_callback)(Button&)
@@ -991,13 +1009,15 @@ namespace MainMenu {
 		okay->setText(okay_text);
 		okay->setCallback(okay_callback);
 		okay->select();
+
+		return frame;
 	}
 
 	static void closeMono() {
 	    closePrompt("mono_prompt");
 	}
 
-	static void textPrompt(
+	static Frame* textPrompt(
 	    const char* name,
 	    const char* window_text,
 	    void (*tick_callback)(Widget&)
@@ -1016,6 +1036,8 @@ namespace MainMenu {
 		text->setHideGlyphs(true);
 		text->setTickCallback(tick_callback);
 		text->select();
+
+		return frame;
 	}
 
 	static void closeText(const char* name = "text_prompt") {
@@ -1321,30 +1343,11 @@ namespace MainMenu {
 
 	/******************************************************************************/
 
-	static AllSettings allSettings;
-
-	inline bool AllSettings::save() {
+	inline bool Video::save() {
 	    bool result = false;
 
-        gamemods_mountedFilepaths = mods;
-        LobbyHandler.crossplayEnabled = crossplay_enabled;
-		auto_hotbar_new_items = add_items_to_hotbar_enabled;
-		inventory_sorting.save();
-		right_click_protect = !use_on_release_enabled;
-		minimap.save();
-		disable_messages = !show_messages_enabled;
-		show_messages.save();
-		hide_playertags = !show_player_nametags_enabled;
-		nohud = !show_hud_enabled;
-		broadcast = !show_ip_address_enabled;
-		spawn_blood = !content_control_enabled;
-		colorblind = colorblind_mode_enabled;
-		arachnophobia_filter = arachnophobia_filter_enabled;
-		shaking = shaking_enabled;
-		bobbing = bobbing_enabled;
-		flickerLights = light_flicker_enabled;
 		bool new_fullscreen, new_borderless;
-		switch (allSettings.window_mode) {
+		switch (window_mode) {
 		case 0:
 			new_fullscreen = false;
 			new_borderless = false;
@@ -1363,8 +1366,8 @@ namespace MainMenu {
 		}
 		if (xres != resolution_x ||
 		    yres != resolution_y ||
+		    ::display_id != display_id ||
 		    verticalSync != vsync_enabled ||
-		    vertical_splitscreen != vertical_split_enabled ||
 		    vidgamma != gamma / 100.f ||
 		    new_fullscreen != fullscreen ||
 		    new_borderless != borderless) {
@@ -1372,11 +1375,66 @@ namespace MainMenu {
 		}
 		fullscreen = new_fullscreen;
 		borderless = new_borderless;
-		xres = std::max(resolution_x, 1280);
+		::display_id = display_id;
+		xres = std::max(resolution_x, 1024);
 		yres = std::max(resolution_y, 720);
 		verticalSync = vsync_enabled;
-		vertical_splitscreen = vertical_split_enabled;
 		vidgamma = std::min(std::max(.5f, gamma / 100.f), 2.f);
+
+		return result;
+	}
+
+	inline Video Video::load() {
+	    Video settings;
+		settings.window_mode = fullscreen ? (borderless ? 2 : 1) : 0;
+		settings.display_id = ::display_id;
+		settings.resolution_x = xres;
+		settings.resolution_y = yres;
+		settings.vsync_enabled = verticalSync;
+		settings.gamma = vidgamma * 100.f;
+		return settings;
+	}
+
+	inline Video Video::reset() {
+	    return Video();
+	}
+
+	bool Video::serialize(FileInterface* file) {
+	    int version = 0;
+	    file->property("version", version);
+	    file->property("window_mode", window_mode);
+	    file->property("display_id", display_id);
+	    file->property("resolution_x", resolution_x);
+	    file->property("resolution_y", resolution_y);
+	    file->property("vsync_enabled", vsync_enabled);
+	    file->property("gamma", gamma);
+		return true;
+	}
+
+	/******************************************************************************/
+
+	static AllSettings allSettings;
+
+	inline bool AllSettings::save() {
+        gamemods_mountedFilepaths = mods;
+        LobbyHandler.crossplayEnabled = crossplay_enabled;
+		auto_hotbar_new_items = add_items_to_hotbar_enabled;
+		inventory_sorting.save();
+		right_click_protect = !use_on_release_enabled;
+		minimap.save();
+		disable_messages = !show_messages_enabled;
+		show_messages.save();
+		hide_playertags = !show_player_nametags_enabled;
+		nohud = !show_hud_enabled;
+		broadcast = !show_ip_address_enabled;
+		spawn_blood = !content_control_enabled;
+		colorblind = colorblind_mode_enabled;
+		arachnophobia_filter = arachnophobia_filter_enabled;
+		shaking = shaking_enabled;
+		bobbing = bobbing_enabled;
+		flickerLights = light_flicker_enabled;
+		bool result = video.save();
+		vertical_splitscreen = vertical_split_enabled;
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
@@ -1454,12 +1512,8 @@ namespace MainMenu {
 		settings.shaking_enabled = shaking;
 		settings.bobbing_enabled = bobbing;
 		settings.light_flicker_enabled = flickerLights;
-		settings.window_mode = fullscreen ? (borderless ? 2 : 1) : 0;
-		settings.resolution_x = xres;
-		settings.resolution_y = yres;
-		settings.vsync_enabled = verticalSync;
+		settings.video = Video::load();
 		settings.vertical_split_enabled = vertical_splitscreen;
-		settings.gamma = vidgamma * 100.f;
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
 		settings.master_volume = MainMenu::master_volume * 200.f;
@@ -1511,12 +1565,8 @@ namespace MainMenu {
 		settings.shaking_enabled = true;
 		settings.bobbing_enabled = true;
 		settings.light_flicker_enabled = true;
-		settings.window_mode = 0;
-		settings.resolution_x = 1280;
-		settings.resolution_y = 720;
-		settings.vsync_enabled = true;
+		settings.video = Video::reset();
 		settings.vertical_split_enabled = false;
-		settings.gamma = 100.f;
 		settings.fov = 60;
 		settings.fps = 60;
 		settings.master_volume = 100.f;
@@ -1550,7 +1600,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 0;
+	    int version = 1;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -1568,12 +1618,25 @@ namespace MainMenu {
 		file->property("shaking_enabled", shaking_enabled);
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
-		file->property("window_mode", window_mode);
-		file->property("resolution_x", resolution_x);
-		file->property("resolution_y", resolution_y);
-		file->property("vsync_enabled", vsync_enabled);
-		file->property("vertical_split_enabled", vertical_split_enabled);
-		file->property("gamma", gamma);
+		if (file->isReading()) {
+		    if (version == 1) {
+		        file->property("video", video);
+		        file->property("vertical_split_enabled", vertical_split_enabled);
+		    } else {
+		        int i = 0;
+		        float f = 0.f;
+		        bool b = false;
+		        file->property("window_mode", i);
+		        file->property("resolution_x", i);
+		        file->property("resolution_y", i);
+		        file->property("vsync_enabled", b);
+		        file->property("vertical_split_enabled", vertical_split_enabled);
+		        file->property("gamma", f);
+		    }
+		} else {
+		    file->property("video", video);
+	        file->property("vertical_split_enabled", vertical_split_enabled);
+		}
 		file->property("fov", fov);
 		file->property("fps", fps);
 		file->property("master_volume", master_volume);
@@ -2214,21 +2277,24 @@ namespace MainMenu {
 		const char* name;
 	};
 
-	void settingsApply() {
+	bool settingsApply() {
 		bool reset_video = allSettings.save();
 
 		// change video mode
 		if (initialized && reset_video) {
-		    int x = std::max(allSettings.resolution_x, 1280);
-		    int y = std::max(allSettings.resolution_y, 720);
+			resolution_changed = true;
+		    int x = std::max(allSettings.video.resolution_x, 1024);
+		    int y = std::max(allSettings.video.resolution_y, 720);
 			if (!changeVideoMode(x, y)) {
 				printlog("critical error! Attempting to abort safely...\n");
 				mainloop = 0;
 			}
-		    if (!intro) {
-		        setupSplitscreen();
-		    }
 		}
+
+		// apply splitscreen setting
+	    if (!intro && splitscreen) {
+	        setupSplitscreen();
+	    }
 
 		// transmit server flags
 		if ( initialized && !intro && multiplayer == SERVER ) {
@@ -2253,10 +2319,15 @@ namespace MainMenu {
 		if (initialized) {
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
+
+		return reset_video;
 	}
 
 	void settingsMount() {
 		allSettings = AllSettings::load();
+		if (!resolution_changed) {
+	        old_video = allSettings.video;
+	    }
 	}
 
 	bool settingsSave() {
@@ -2733,20 +2804,67 @@ namespace MainMenu {
 			});
 	}
 
-	static void settingsResolution(Button& button) {
-		settingsOpenDropdown(button, "resolution", false, [](Frame::entry_t& entry){
+	static void settingsResolutionEntry(Frame::entry_t& entry) {
+		soundActivate();
+		int new_xres, new_yres;
+		sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
+		allSettings.video.resolution_x = new_xres;
+		allSettings.video.resolution_y = new_yres;
+		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		auto button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(button);
+		auto dropdown = settings_subwindow->findFrame("setting_resolution_dropdown"); assert(dropdown);
+		button->setText(entry.name.c_str());
+		dropdown->removeSelf();
+		button->select();
+	}
+
+	static void settingsResolutionSmall(Button& button) {
+		settingsOpenDropdown(button, "resolution", true, settingsResolutionEntry);
+	}
+
+	static void settingsResolutionBig(Button& button) {
+		settingsOpenDropdown(button, "resolution", false, settingsResolutionEntry);
+	}
+
+	static void settingsDisplayDevice(Button& button) {
+		settingsOpenDropdown(button, "device", true, [](Frame::entry_t& entry){
 			soundActivate();
-			int new_xres, new_yres;
-			sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
-			allSettings.resolution_x = new_xres;
-			allSettings.resolution_y = new_yres;
+			int new_device = 0;
+		    if (sscanf(entry.name.c_str(), "Display %d", &new_device) == 1) {
+		        --new_device;
+		    }
+			allSettings.video.display_id = new_device;
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			auto button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(button);
-			auto dropdown = settings_subwindow->findFrame("setting_resolution_dropdown"); assert(dropdown);
+			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_device_dropdown"); assert(dropdown);
 			button->setText(entry.name.c_str());
 			dropdown->removeSelf();
 			button->select();
+
+		    std::list<resolution> resolutions;
+		    getResolutionList(allSettings.video.display_id, resolutions);
+		    std::vector<std::string> resolutions_formatted;
+		    resolutions_formatted.reserve(resolutions.size());
+
+		    int index;
+		    std::list<resolution>::iterator it;
+		    for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
+			    auto& res = *it;
+			    const int x = std::get<0>(res);
+			    const int y = std::get<1>(res);
+			    char buf[32];
+			    snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			    resolutions_formatted.push_back(std::string(buf));
+		    }
+
+			auto resolution_button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(resolution_button);
+			auto& list = const_cast<std::unordered_map<std::string, std::string>&>(resolution_button->getWidgetActions());
+			list.clear();
+		    for (int i = 0; i < resolutions_formatted.size(); ++i) {
+				resolution_button->addWidgetAction((std::string("__") + std::to_string(i)).c_str(), resolutions_formatted[i].c_str());
+		    }
 			});
 	}
 
@@ -2755,15 +2873,15 @@ namespace MainMenu {
 			soundActivate();
 			do {
 				if (entry.name == "Windowed") {
-					allSettings.window_mode = 0;
+					allSettings.video.window_mode = 0;
 					break;
 				}
 				if (entry.name == "Fullscreen") {
-					allSettings.window_mode = 1;
+					allSettings.video.window_mode = 1;
 					break;
 				}
 				if (entry.name == "Borderless") {
-					allSettings.window_mode = 2;
+					allSettings.video.window_mode = 2;
 					break;
 				}
 			} while (0);
@@ -3165,7 +3283,9 @@ namespace MainMenu {
 		if (settings_tab_name == button.getName()) {
 			return nullptr;
 		}
-		soundActivate();
+		if (!resolution_changed) {
+		    soundActivate();
+		}
 		settings_tab_name = button.getName();
 
 		assert(main_menu_frame);
@@ -4034,7 +4154,7 @@ bind_failed:
 
 		int selected_res = 0;
 		std::list<resolution> resolutions;
-		getResolutionList(resolutions);
+		getResolutionList(allSettings.video.display_id, resolutions);
 		std::vector<std::string> resolutions_formatted;
 		std::vector<const char*> resolutions_formatted_ptrs;
 		resolutions_formatted.reserve(resolutions.size());
@@ -4050,31 +4170,44 @@ bind_failed:
 			snprintf(buf, sizeof(buf), "%d x %d", x, y);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (allSettings.resolution_x == x && allSettings.resolution_y == y) {
+			if (allSettings.video.resolution_x == x && allSettings.video.resolution_y == y) {
 				selected_res = index;
 			}
+		}
+
+		int num_displays = getNumDisplays();
+		std::vector<std::string> displays_formatted;
+		std::vector<const char*> displays_formatted_ptrs;
+		displays_formatted.reserve(num_displays);
+		displays_formatted_ptrs.reserve(num_displays);
+		for (int c = 0; c < num_displays; ++c) {
+			displays_formatted.push_back("Display " + std::to_string(c + 1));
+			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
 		const char* selected_mode = fullscreen ? (borderless ? "Borderless" : "Fullscreen") : "Windowed";
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO
+        y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
+            displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
+            settingsDisplayDevice);
 		y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
 			resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
-			settingsResolution);
+			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
 			{"Windowed", "Fullscreen", "Borderless"}, selected_mode,
 			settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
-			allSettings.vsync_enabled, [](Button& button){soundToggle(); allSettings.vsync_enabled = button.isPressed();});
+			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
 #endif
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
-			allSettings.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.gamma = slider.getValue();});
+			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
 			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
@@ -11710,7 +11843,7 @@ bind_failed:
 			int forward = c + 1 >= num_options ? 0 : c + 1;
 			button->setWidgetDown(options[forward].name);
 			button->setWidgetUp(options[back].name);
-			button->setWidgetBack("BACK TO MAIN MENU");
+			button->setWidgetBack("Back to Main Menu");
 			y += button->getSize().h;
 			//y += 4;
 			if (c == num_options - 2) {
@@ -11764,7 +11897,6 @@ bind_failed:
 		//soundActivate(); // not needed, activated tab will do this
 
 		settings_tab_name = "";
-
 		settingsMount();
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
@@ -12061,8 +12193,10 @@ bind_failed:
 		confirm_and_exit->setColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
-			soundActivate();
-			settingsApply();
+			if (!settingsApply()) {
+			    // resolution confirm prompt makes this sound
+			    soundActivate();
+			}
 			(void)settingsSave();
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -12094,7 +12228,7 @@ bind_failed:
 	    system(path);
 #elif defined(LINUX)
 	    char path[PATH_MAX];
-	    completePath(path, "editor");
+	    completePath(path, "editor &");
 	    stopMusic();
 	    system(path);
 #else
@@ -12458,6 +12592,73 @@ bind_failed:
 	}
 
 	void doMainMenu(bool ingame) {
+        if (resolution_changed) {
+			Frame::guiResize(0, 0); // resize gui for new aspect ratio
+            createMainMenu(!intro);
+
+            // return to video settings window
+            assert(main_menu_frame);
+            auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+            auto settings_button = buttons->findButton("Settings"); assert(settings_button);
+            settings_button->activate();
+            auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+            auto video = settings->findButton("Video"); assert(video);
+            video->activate();
+
+            // setup timeout to revert resolution
+            char buf[256];
+            static Uint32 resolution_timeout;
+            static constexpr Uint32 timeout_seconds = 10;
+            resolution_timeout = ticks + timeout_seconds * TICKS_PER_SECOND;
+            static const char* fmt = "Does the screen look okay?\n%llu...";
+            snprintf(buf, sizeof(buf), fmt, timeout_seconds);
+
+            // reset resolution function
+		    static auto resetResolution = [](){
+		        allSettings.video = old_video;
+		        if (allSettings.video.save()) {
+		            int x = std::max(allSettings.video.resolution_x, 1024);
+		            int y = std::max(allSettings.video.resolution_y, 720);
+			        if (!changeVideoMode(x, y)) {
+			            printlog("critical error! Attempting to abort safely...\n");
+			            mainloop = 0;
+		            }
+		        }
+		        };
+
+            // open prompt
+            auto prompt = binaryPrompt(
+                buf, "Yes", "No",
+                [](Button&){ // yes
+                    soundActivate();
+                    closeBinary();
+                },
+                [](Button&){ // no
+                    soundCancel();
+                    closeBinary();
+                    resetResolution();
+                }, false, false); // yellow buttons
+
+            // prompt timeout
+            prompt->setTickCallback([](Widget& widget){
+                const int seconds = (resolution_timeout - ticks) / TICKS_PER_SECOND;
+                if ((int)resolution_timeout - (int)ticks > 0) {
+                    auto prompt = static_cast<Frame*>(&widget);
+                    auto text = prompt->findField("text");
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), fmt, seconds + 1);
+                    text->setText(buf);
+                } else {
+                    soundCancel();
+                    closeBinary();
+                    resetResolution();
+                }
+                });
+
+            // at the end so that old_video is not overwritten
+            resolution_changed = false;
+        }
+
 		if (!main_menu_frame) {
 		    if (ingame) {
 		        if (movie) {

@@ -715,27 +715,13 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	my->pitch -= PLAYER_ROTY * refreshRateDelta;
 
-	if ( softwaremode )
+	if ( my->pitch > PI / 3 )
 	{
-		if ( my->pitch > PI / 6 )
-		{
-			my->pitch = PI / 6;
-		}
-		if ( my->pitch < -PI / 6 )
-		{
-			my->pitch = -PI / 6;
-		}
+		my->pitch = PI / 3;
 	}
-	else
+	if ( my->pitch < -PI / 3 )
 	{
-		if ( my->pitch > PI / 3 )
-		{
-			my->pitch = PI / 3;
-		}
-		if ( my->pitch < -PI / 3 )
-		{
-			my->pitch = -PI / 3;
-		}
+		my->pitch = -PI / 3;
 	}
 	if ( !smoothmouse )
 	{
@@ -1419,14 +1405,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		if ( !TimerExperiments::bUseTimerInterpolation )
 		{
 			cameras[PLAYER_NUM].ang = my->yaw;
-			if ( softwaremode )
-			{
-				cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
-			}
-			else
-			{
-				cameras[PLAYER_NUM].vang = my->pitch;
-			}
+			cameras[PLAYER_NUM].vang = my->pitch;
 		}
 	}
 }

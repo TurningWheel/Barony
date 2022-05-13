@@ -550,17 +550,14 @@ extern cameravars_t cameravars[MAXPLAYERS];
 extern int game;
 extern bool loading;
 extern SDL_Window* screen;
-#ifdef APPLE
-extern SDL_Renderer* renderer;
-#else
 extern SDL_GLContext renderer;
-#endif
 extern SDL_Event event;
 extern bool firstmouseevent;
 extern char const * window_title;
 extern Sint32 fullscreen;
 extern bool borderless;
 extern bool smoothlighting;
+extern Sint32 display_id;
 extern Sint32 xres;
 extern Sint32 yres;
 extern int mainloop;
@@ -601,11 +598,8 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern bool softwaremode;
-extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern Sint32* lightmapSmoothed;
-extern Entity** clickmap;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;

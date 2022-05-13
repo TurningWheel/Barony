@@ -1184,17 +1184,6 @@ void drawForeground(long camx, long camy)
 
 void drawClearBuffers()
 {
-	// empty video and input buffers
-	if ( zbuffer != NULL )
-	{
-		memset( zbuffer, 0, xres * yres * sizeof(real_t) );
-	}
-	if ( clickmap != NULL )
-	{
-		memset( clickmap, 0, xres * yres * sizeof(Entity*) );
-	}
-
-	// clear the screen
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	drawRect(NULL, 0, 255);
 }
@@ -2369,13 +2358,6 @@ void drawDepressed(int x1, int y1, int x2, int y2)
 
 void drawWindowFancy(int x1, int y1, int x2, int y2)
 {
-	if (softwaremode)
-	{
-		// no fancy stuff in software mode
-		drawWindow(x1, y1, x2, y2);
-		return;
-	}
-
 	// update projection
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);

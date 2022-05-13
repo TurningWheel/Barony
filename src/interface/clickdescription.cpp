@@ -206,15 +206,8 @@ void clickDescription(int player, Entity* entity)
 
 		input.consumeBinaryToggle("InspectWithMouse");
 
-		if ( softwaremode )
-		{
-			entity = clickmap[my + mx * (camera.winy + camera.winh)];
-		}
-		else
-		{
-			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
-			entity = uidToEntity(uidnum);
-		}
+		uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
+		entity = uidToEntity(uidnum);
 	}
 
 	if ( entity != NULL )

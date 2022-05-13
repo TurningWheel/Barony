@@ -137,7 +137,9 @@ public:
 	static void fboDestroy();
 
     //! resize gui
-    static void guiResize(int x, int y);
+    //! @param x the width of the gui (0 = fit to aspect ratio)
+    //@ @param y the height of the gui (0 = fit to aspect ratio)
+    static void guiResize(int x = 0, int y = 0);
 
 	//! stuff to do before drawing anything
 	static void predraw();

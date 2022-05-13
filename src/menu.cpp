@@ -11089,22 +11089,25 @@ void openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
-// get
-void getResolutionList(std::list<resolution>& resolutions)
+int getNumDisplays()
 {
-	// for now just use the resolution modes on the first display.
 	int numdisplays = SDL_GetNumVideoDisplays();
-	int nummodes = SDL_GetNumDisplayModes(0);
 	printlog("display count: %d.\n", numdisplays);
+	return numdisplays;
+}
+
+void getResolutionList(int device_id, std::list<resolution>& resolutions)
+{
+	int nummodes = SDL_GetNumDisplayModes(device_id);
 	printlog("display mode count: %d.\n", nummodes);
 
 	SDL_DisplayMode mode;
 	for (int i = 0; i < nummodes; i++)
 	{
-		SDL_GetDisplayMode(0, i, &mode);
+		SDL_GetDisplayMode(device_id, i, &mode);
 
-		// resolutions below 1280x720 are not supported
-		if ( mode.w < 1280 || mode.h < 720 )
+		// resolutions below 1024x768 are not supported
+		if ( mode.w < 1024 || mode.h < 720 )
 		{
 		    continue;
 		}
@@ -11214,266 +11217,7 @@ void closeAchievementsWindow(button_t* my)
 // sets up the settings window
 void openSettingsWindow()
 {
-	button_t* button;
-	int c;
-
-	getResolutionList(resolutions);
-
-	// set the "settings" variables
-	settings_xres = xres;
-	settings_yres = yres;
-	settings_fov = fov;
-	settings_svFlags = svFlags;
-	settings_smoothlighting = smoothlighting;
-	settings_fullscreen = fullscreen;
-	settings_borderless = borderless;
-	settings_shaking = shaking;
-	settings_bobbing = bobbing;
-	settings_spawn_blood = spawn_blood;
-	settings_light_flicker = flickerLights;
-	settings_vsync = verticalSync;
-	settings_status_effect_icons = showStatusEffectIcons;
-	settings_colorblind = colorblind;
-	settings_gamma = vidgamma;
-	settings_fps = fpsLimit;
-	settings_sfxvolume = sfxvolume;
-	settings_sfxAmbientVolume = sfxAmbientVolume;
-	settings_sfxEnvironmentVolume = sfxEnvironmentVolume;
-	settings_musvolume = musvolume;
-	settings_minimap_ping_mute = minimapPingMute;
-	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
-	settings_mute_player_monster_sounds = mute_player_monster_sounds;
-	settings_minimap_transparency_foreground = minimapTransparencyForeground;
-	settings_minimap_transparency_background = minimapTransparencyBackground;
-	settings_minimap_scale = minimapScale;
-	settings_minimap_object_zoom = minimapObjectZoom;
-	settings_uiscale_charactersheet = uiscale_charactersheet;
-	settings_uiscale_skillspage = uiscale_skillspage;
-	settings_uiscale_inventory = uiscale_inventory;
-	settings_uiscale_hotbar = uiscale_hotbar;
-	settings_uiscale_chatlog = uiscale_chatlog;
-	settings_uiscale_playerbars = uiscale_playerbars;
-	settings_hide_statusbar = hide_statusbar;
-	settings_hide_playertags = hide_playertags;
-	settings_show_skill_values = show_skill_values;
-	settings_disableMultithreadedSteamNetworking = disableMultithreadedSteamNetworking;
-	settings_disableFPSLimitOnNetworkMessages = disableFPSLimitOnNetworkMessages;
-	LobbyHandler.settings_crossplayEnabled = LobbyHandler.crossplayEnabled;
-	for (c = 0; c < NUMIMPULSES; c++)
-	{
-		settings_impulses[c] = impulses[c];
-	}
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
-	{
-		settings_joyimpulses[c] = joyimpulses[c];
-	}
-	settings_reversemouse = reversemouse;
-	settings_smoothmouse = smoothmouse;
-	settings_disablemouserotationlimit = disablemouserotationlimit;
-	settings_mousespeed = mousespeed;
-	settings_broadcast = broadcast;
-	settings_nohud = nohud;
-	settings_auto_hotbar_new_items = auto_hotbar_new_items;
-	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
-	{
-		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
-	}
-	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
-	{
-		settings_autosort_inventory_categories[c] = autosort_inventory_categories[c];
-	}
-	settings_hotbar_numkey_quick_add = hotbar_numkey_quick_add;
-	settings_disable_messages = disable_messages;
-	settings_right_click_protect = right_click_protect;
-	settings_auto_appraise_new_items = auto_appraise_new_items;
-	settings_lock_right_sidebar = players[clientnum]->characterSheet.lock_right_sidebar;
-	settings_show_game_timer_always = show_game_timer_always;
-
-	settings_gamepad_leftx_invert = gamepad_leftx_invert;
-	settings_gamepad_lefty_invert = gamepad_lefty_invert;
-	settings_gamepad_rightx_invert = gamepad_rightx_invert;
-	settings_gamepad_righty_invert = gamepad_righty_invert;
-	settings_gamepad_menux_invert = gamepad_menux_invert;
-	settings_gamepad_menuy_invert = gamepad_menuy_invert;
-
-	settings_gamepad_deadzone = gamepad_deadzone;
-	settings_gamepad_rightx_sensitivity = gamepad_rightx_sensitivity;
-	settings_gamepad_righty_sensitivity = gamepad_righty_sensitivity;
-	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;
-	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;
-
-	// create settings window
-	settings_window = true;
-	subwindow = 1;
-	//subx1 = xres/2-256;
-	subx1 = xres / 2 - 448;
-	//subx2 = xres/2+256;
-	subx2 = xres / 2 + 448;
-	//suby1 = yres/2-192;
-	//suby2 = yres/2+192;
-#ifdef PANDORA
-	suby1 = yres / 2 - ((yres==480)?210:278);
-	suby2 = yres / 2 + ((yres==480)?210:278);
-#else
-	suby1 = yres / 2 - 320;
-	suby2 = yres / 2 + 320;
-#endif
-	strcpy(subtext, language[1306]);
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSettingsSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// cancel button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->x = subx1 + 8;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-
-	// ok button
-	button = newButton();
-	strcpy(button->label, language[1433]);
-	button->x = subx2 - strlen(language[1433]) * 12 - 16;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1433]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonSettingsOK;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
-	// accept button
-	button = newButton();
-	strcpy(button->label, language[1317]);
-	button->x = subx2 - strlen(language[1317]) * 12 - 16 - strlen(language[1317]) * 12 - 16;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1317]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonSettingsAccept;
-	button->visible = 1;
-	button->focused = 1;
-
-	int tabx_so_far = subx1 + 16;
-
-	//TODO: Select tab based off of dpad left & right.
-	//TODO: Maybe golden highlighting & stuff.
-
-	// video tab
-	button = newButton();
-	strcpy(button->label, language[1434]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1434]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonVideoTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_video_tab = button;
-
-	tabx_so_far += strlen(language[1434]) * 12 + 8;
-
-	// audio tab
-	button = newButton();
-	strcpy(button->label, language[1435]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1435]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonAudioTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_audio_tab = button;
-
-	tabx_so_far += strlen(language[1435]) * 12 + 8;
-
-	// keyboard tab
-	button = newButton();
-	strcpy(button->label, language[1436]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1436]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonKeyboardTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_keyboard_tab = button;
-
-	tabx_so_far += strlen(language[1436]) * 12 + 8;
-
-	// mouse tab
-	button = newButton();
-	strcpy(button->label, language[1437]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1437]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonMouseTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_mouse_tab = button;
-
-	tabx_so_far += strlen(language[1437]) * 12 + 8;
-
-	//Gamepad bindings tab.
-	button = newButton();
-	strcpy(button->label, language[1947]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1947]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonGamepadBindingsTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_gamepad_bindings_tab = button;
-
-	tabx_so_far += strlen(language[1947]) * 12 + 8;
-
-	//Gamepad settings tab.
-	button = newButton();
-	strcpy(button->label, language[2400]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[2400]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonGamepadSettingsTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_gamepad_settings_tab = button;
-
-	tabx_so_far += strlen(language[2400]) * 12 + 8;
-
-	// misc tab
-	button = newButton();
-	strcpy(button->label, language[1438]);
-	button->x =  tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1438]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonMiscTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_misc_tab = button;
-
-	//Initialize resolution confirmation window related variables.
-	resolutionChanged = false;
-	resolutionConfirmationTimer = 0;
-
-	changeSettingsTab(settings_tab);
+    // deprecated
 }
 
 

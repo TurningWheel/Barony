@@ -1860,11 +1860,6 @@ void glDrawWorld(view_t* camera, int mode)
 	    getLightAtModifier = 1.0;
 	}
 
-	if ( softwaremode == true )
-	{
-		return;
-	}
-
 	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
 	{
 		clouds = true;
@@ -2463,7 +2458,10 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 void GO_SwapBuffers(SDL_Window* screen)
 {
 	dirty = 1;
-#ifdef PANDORA
+
+#ifndef PANDORA
+	SDL_GL_SwapWindow(screen);
+#else
 	bool bBlit = !(xres==800 && yres==480);
 
 	int vp_old[4];
@@ -2495,13 +2493,6 @@ void GO_SwapBuffers(SDL_Window* screen)
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-#endif
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
-#ifdef PANDORA
 	if(bBlit) {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
 		glViewport(vp_old[0], vp_old[1], vp_old[2], vp_old[3]);

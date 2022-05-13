@@ -11,6 +11,7 @@
 
 #include "../../main.hpp"
 #include "../../files.hpp"
+#include "../../ui/LoadingScreen.hpp"
 #include "sound.hpp"
 
 bool initSoundEngine()
@@ -105,7 +106,6 @@ int loadSoundResources()
 	// load sound effects
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-#ifdef USE_FMOD
 	printlog("loading sounds...\n");
 	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !fp->eof(); ++numsounds )
@@ -124,6 +124,7 @@ int loadSoundResources()
 		printlog("failed to identify any sounds in sounds.txt\n");
 		return 10;
 	}
+#ifdef USE_FMOD
 	sounds = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*numsounds);
 	fp = openDataFile(soundsDirectory.c_str(), "r");
 	char full_path[PATH_MAX];
@@ -136,31 +137,18 @@ int loadSoundResources()
 		{
 			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", full_path, c + 1);
 		}
+		updateLoadingScreen(60 + (30 * c) / numsounds);
 	}
 	FileIO::close(fp);
 	fmod_system->set3DSettings(1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
-	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
-	for ( numsounds = 0; !fp->eof(); numsounds++ )
-	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
-			{
-				break;
-			}
-	}
-	FileIO::close(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
 	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "r"); fp->gets2(name, 128); ++c)
 	{
 		//TODO: Might need to malloc the sounds[c]->sound
 		OPENAL_CreateSound(name, true, &sounds[c]);
 		//TODO: set sound volume? Or otherwise handle sound volume.
+		updateLoadingScreen(60 + (30 * c) / numsounds);
 	}
 	FileIO::close(fp);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'

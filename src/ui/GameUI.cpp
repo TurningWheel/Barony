@@ -12507,10 +12507,8 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	if ( players[player] != nullptr && players[player]->entity != nullptr )
 	{
-		if ( !softwaremode )
-		{
-			glClear(GL_DEPTH_BUFFER_BIT);
-		}
+		glClear(GL_DEPTH_BUFFER_BIT);
+
 		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
 		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
@@ -18897,12 +18895,19 @@ Frame::result_t doFrames() {
 		{
 			++gui_ticks;
 		}
-	    result = gui->process();
 
-		gui->predraw();
-		gui->draw();
-        drawConsoleCommandBuffer();
-		gui->postdraw();
+        static ConsoleVariable<bool> gui_process("/gui_process", true);
+        if (*gui_process) {
+	        result = gui->process();
+	    }
+
+        static ConsoleVariable<bool> gui_draw("/gui_draw", true);
+        if (*gui_draw) {
+		    gui->predraw();
+		    gui->draw();
+            drawConsoleCommandBuffer();
+		    gui->postdraw();
+		}
 	}
 	return result;
 }

@@ -65,10 +65,10 @@ namespace MainMenu {
     bool isCutsceneActive();
 	void beginFade(FadeDestination);
 
-	void settingsApply();	// write settings to global variables
+	bool settingsApply();	// write settings to global variables (true if video mode changed)
 	void settingsMount();	// read settings from global variables
-	bool settingsSave();	// write settings to disk
-	bool settingsLoad();	// read settings from disk
+	bool settingsSave();	// write settings to disk (true if succeeded)
+	bool settingsLoad();	// read settings from disk (true if succeeded)
 	void settingsReset();	// default settings
 
 	void doMainMenu(bool ingame);           // call in a loop to update the menu
