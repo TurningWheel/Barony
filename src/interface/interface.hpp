@@ -397,7 +397,8 @@ public:
 		scribingLastUsageAmount(0),
 		scribingLastUsageDisplayTimer(0),
 		repairItemType(0),
-		tinkerGUI(*this)
+		tinkerGUI(*this),
+		alchemyGUI(*this)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -503,7 +504,8 @@ public:
 	};
 	inline bool isItemUsedForCurrentGUI(const Item& item)
 	{
-		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem )
+		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem
+			|| &item == basePotion || &item == secondaryPotion )
 		{
 			return true;
 		}
@@ -522,6 +524,14 @@ public:
 		if ( &item == alembicItem )
 		{
 			alembicItem = nullptr;
+		}
+		if ( &item == basePotion )
+		{
+			basePotion = nullptr;
+		}
+		if ( &item == secondaryPotion )
+		{
+			secondaryPotion = nullptr;
 		}
 	}
 	bool isNodeFromPlayerInventory(node_t* node);
@@ -616,6 +626,78 @@ public:
 		static int heightOffsetWhenNotCompact;
 	};
 	TinkerGUI_t tinkerGUI;
+
+	struct AlchemyGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		Item alchemyResultPotion;
+		AlchemyGUI_t(GenericGUIMenu& g) :
+			parentGUI(g)
+		{
+			alchemyResultPotion.appearance = 0;
+			alchemyResultPotion.type = POTION_EMPTY;
+			alchemyResultPotion.node = nullptr;
+			alchemyResultPotion.status = SERVICABLE;
+			alchemyResultPotion.beatitude = 0;
+			alchemyResultPotion.count = 1;
+			alchemyResultPotion.appearance = 0;
+			alchemyResultPotion.identified = false;
+		}
+		Frame* alchFrame = nullptr;
+		real_t animx = 0.0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animPotion1 = 0.0;
+		int animPotion1StartX = 0;
+		int animPotion1StartY = 0;
+		int animPotion1DestX = 0;
+		int animPotion1DestY = 0;
+		Uint32 potion1Uid = 0;
+		real_t animPotion2 = 0.0;
+		int animPotion2StartX = 0;
+		int animPotion2StartY = 0;
+		int animPotion2DestX = 0;
+		int animPotion2DestY = 0;
+		Uint32 potion2Uid = 0;
+		real_t animPotionResult = 0.0;
+		int animPotionResultStartX = 0;
+		int animPotionResultStartY = 0;
+		int animPotionResultDestX = 0;
+		int animPotionResultDestY = 0;
+		Uint32 potionResultUid = 0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openAlchemyMenu();
+		void closeAlchemyMenu();
+		void updateAlchemyMenu();
+		void createAlchemyMenu();
+		bool alchemyGUIHasBeenCreated() const;
+		//bool isConstructMenuActive() const;
+		//bool isSalvageOrRepairMenuActive() const;
+		std::string itemDesc = "";
+		int itemType = -1;
+		bool itemRequiresTitleReflow = true;
+		static const int ALCH_SLOT_BASE_POTION_X = -2;
+		static const int ALCH_SLOT_RESULT_POTION_X = -3;
+		static const int ALCH_SLOT_SECONDARY_POTION_X = -1;
+		int selectedAlchemySlotX = -1;
+		int selectedAlchemySlotY = -1;
+		static const int MAX_ALCH_X;
+		static const int MAX_ALCH_Y;
+		std::unordered_map<int, Frame*> alchemySlotFrames;
+		//bool isTinkerConstructItemSelected(Item* item);
+		//bool isSalvageOrRepairItemSelected(Item* item);
+		void selectAlchemySlot(const int x, const int y);
+		const int getSelectedAlchemySlotX() const { return selectedAlchemySlotX; }
+		const int getSelectedAlchemySlotY() const { return selectedAlchemySlotY; }
+		Frame* getAlchemySlotFrame(int x, int y) const;
+		void setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion = false);
+		bool warpMouseToSelectedAlchemyItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+		static int heightOffsetWhenNotCompact;
+	};
+	AlchemyGUI_t alchemyGUI;
 };
 extern GenericGUIMenu GenericGUI[MAXPLAYERS];
 

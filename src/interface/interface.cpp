@@ -1115,6 +1115,7 @@ bool Player::GUI_t::bActiveModuleUsesInventory()
 		case MODULE_IDENTIFY:
 		case MODULE_TINKERING:
 		case MODULE_SPELLS:
+		case MODULE_ALCHEMY:
 			return true;
 		default:
 			break;
@@ -3372,16 +3373,16 @@ void GenericGUIMenu::rebuildGUIInventory()
 		if ( c == 0 && guiType == GUI_TYPE_ALCHEMY )
 		{
 			// did not find mixable item... close GUI
-			if ( !experimentingAlchemy )
-			{
-				messagePlayer(gui_player, MESSAGE_MISC, language[3338]);
-			}
-			else
-			{
-				messagePlayer(gui_player, MESSAGE_MISC | MESSAGE_INVENTORY, language[3343]);
-			}
-			closeGUI();
-			return;
+			//if ( !experimentingAlchemy )
+			//{
+			//	messagePlayer(gui_player, MESSAGE_MISC, language[3338]);
+			//}
+			//else
+			//{
+			//	messagePlayer(gui_player, MESSAGE_MISC | MESSAGE_INVENTORY, language[3343]);
+			//}
+			//closeGUI();
+			//return;
 		}
 		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
 		for ( c = 0; c < kNumShownItems; ++c )
@@ -4611,6 +4612,10 @@ void GenericGUIMenu::closeGUI()
 	{
 		tinkerGUI.closeTinkerMenu();
 	}
+	if ( alchemyGUI.bOpen )
+	{
+		alchemyGUI.closeAlchemyMenu();
+	}
 	if ( wasOpen )
 	{
 		players[gui_player]->inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
@@ -4750,11 +4755,30 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 {
 	this->closeGUI();
+	if ( players[gui_player] && players[gui_player]->entity )
+	{
+		if ( players[gui_player]->entity->isBlind() )
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, language[892]);
+			return; // I can't see!
+		}
+	}
+
+	if ( players[gui_player]->inventoryUI.bCompactView )
+	{
+		// if compact view, then we don't want the inventory slot being selected
+		if ( players[gui_player]->inventoryUI.getSelectedSlotY() < 0 )
+		{
+			players[gui_player]->inventoryUI.selectSlot(0, 0);
+		}
+	}
 	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
 	guiType = static_cast<GUICurrentType>(type);
+	players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+	alchemyGUI.openAlchemyMenu();
 
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
@@ -4771,6 +4795,15 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 {
 	this->closeGUI();
+	if ( players[gui_player] && players[gui_player]->entity )
+	{
+		if ( players[gui_player]->entity->isBlind() )
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, language[892]);
+			return; // I can't see!
+		}
+	}
+
 	if ( players[gui_player]->inventoryUI.bCompactView )
 	{
 		// if compact view, then we don't want the inventory slot being selected
@@ -4958,15 +4991,15 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		return false;
 	}
 
-	if ( players[gui_player] && players[gui_player]->entity )
-	{
-		if ( players[gui_player]->entity->isBlind() )
-		{
-			messagePlayer(gui_player, MESSAGE_MISC, language[892]);
-			closeGUI();
-			return false; // I can't see!
-		}
-	}
+	//if ( players[gui_player] && players[gui_player]->entity )
+	//{
+	//	if ( players[gui_player]->entity->isBlind() )
+	//	{
+	//		messagePlayer(gui_player, MESSAGE_MISC, language[892]);
+	//		closeGUI();
+	//		return false; // I can't see!
+	//	}
+	//}
 
 
 	if ( !experimentingAlchemy && !item->identified )
@@ -5072,32 +5105,28 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 	return false;
 }
 
-void GenericGUIMenu::alchemyCombinePotions()
+ItemType alchemyMixResult(ItemType potion1, ItemType potion2, 
+	bool& outRandomResult, bool& outTryDuplicatePotion, bool& outSamePotion, bool& outExplodeSelf)
 {
-	if ( !basePotion || !secondaryPotion )
-	{
-		return;
-	}
-
-	bool tryDuplicatePotion = false;
+	outTryDuplicatePotion = false;
 	ItemType result = POTION_SICKNESS;
-	bool randomResult = false;
-	bool explodeSelf = false;
+	outRandomResult = false;
+	outExplodeSelf = false;
 
-	switch ( basePotion->type )
+	switch ( potion1 )
 	{
 		case POTION_WATER:
-			if ( secondaryPotion->type == POTION_ACID )
+			if ( potion2 == POTION_ACID )
 			{
-				explodeSelf = true;
+				outExplodeSelf = true;
 			}
 			else
 			{
-				tryDuplicatePotion = true;
+				outTryDuplicatePotion = true;
 			}
 			break;
 		case POTION_BOOZE:
-			switch ( secondaryPotion->type )
+			switch ( potion2 )
 			{
 				case POTION_SICKNESS:
 					result = POTION_CONFUSION;
@@ -5118,14 +5147,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_PARALYSIS;
 					break;
 				case POTION_POLYMORPH:
-					randomResult = true;
+					outRandomResult = true;
 					break;
 				default:
 					break;
 			}
 			break;
 		case POTION_JUICE:
-			switch ( secondaryPotion->type )
+			switch ( potion2 )
 			{
 				case POTION_SICKNESS:
 					result = POTION_BOOZE;
@@ -5146,17 +5175,17 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_INVISIBILITY;
 					break;
 				case POTION_POLYMORPH:
-					randomResult = true;
+					outRandomResult = true;
 					break;
 				default:
 					break;
 			}
 			break;
 		case POTION_ACID:
-			switch ( secondaryPotion->type )
+			switch ( potion2 )
 			{
 				case POTION_WATER:
-					explodeSelf = true; // oh no. don't do that.
+					outExplodeSelf = true; // oh no. don't do that.
 					break;
 				case POTION_SICKNESS:
 					result = POTION_FIRESTORM;
@@ -5177,15 +5206,15 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_THUNDERSTORM;
 					break;
 				case POTION_POLYMORPH:
-					randomResult = true;
+					outRandomResult = true;
 					break;
 				default:
-					explodeSelf = true;
+					outExplodeSelf = true;
 					break;
 			}
 			break;
 		case POTION_INVISIBILITY:
-			switch ( secondaryPotion->type )
+			switch ( potion2 )
 			{
 				case POTION_SICKNESS:
 					result = POTION_BLINDNESS;
@@ -5206,7 +5235,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_RESTOREMAGIC;
 					break;
 				case POTION_POLYMORPH:
-					randomResult = true;
+					outRandomResult = true;
 					break;
 				default:
 					break;
@@ -5218,20 +5247,20 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( result == POTION_SICKNESS ) // didn't get a result, try flip the potion order
 	{
-		switch ( secondaryPotion->type )
+		switch ( potion2 )
 		{
 			case POTION_WATER:
-				if ( basePotion->type == POTION_ACID )
+				if ( potion1 == POTION_ACID )
 				{
-					explodeSelf = true;
+					outExplodeSelf = true;
 				}
 				else
 				{
-					tryDuplicatePotion = true;
+					outTryDuplicatePotion = true;
 				}
 				break;
 			case POTION_BOOZE:
-				switch ( basePotion->type )
+				switch ( potion1 )
 				{
 					case POTION_SICKNESS:
 						result = POTION_CONFUSION;
@@ -5252,14 +5281,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 						result = POTION_PARALYSIS;
 						break;
 					case POTION_POLYMORPH:
-						randomResult = true;
+						outRandomResult = true;
 						break;
 					default:
 						break;
 				}
 				break;
 			case POTION_JUICE:
-				switch ( basePotion->type )
+				switch ( potion1 )
 				{
 					case POTION_SICKNESS:
 						result = POTION_BOOZE;
@@ -5280,17 +5309,17 @@ void GenericGUIMenu::alchemyCombinePotions()
 						result = POTION_INVISIBILITY;
 						break;
 					case POTION_POLYMORPH:
-						randomResult = true;
+						outRandomResult = true;
 						break;
 					default:
 						break;
 				}
 				break;
 			case POTION_ACID:
-				switch ( basePotion->type )
+				switch ( potion1 )
 				{
 					case POTION_WATER:
-						explodeSelf = true; // oh no. don't do that.
+						outExplodeSelf = true; // oh no. don't do that.
 						break;
 					case POTION_SICKNESS:
 						result = POTION_FIRESTORM;
@@ -5311,15 +5340,15 @@ void GenericGUIMenu::alchemyCombinePotions()
 						result = POTION_THUNDERSTORM;
 						break;
 					case POTION_POLYMORPH:
-						randomResult = true;
+						outRandomResult = true;
 						break;
 					default:
-						explodeSelf = true;
+						outExplodeSelf = true;
 						break;
 				}
 				break;
 			case POTION_INVISIBILITY:
-				switch ( basePotion->type )
+				switch ( potion1 )
 				{
 					case POTION_SICKNESS:
 						result = POTION_BLINDNESS;
@@ -5340,7 +5369,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 						result = POTION_RESTOREMAGIC;
 						break;
 					case POTION_POLYMORPH:
-						randomResult = true;
+						outRandomResult = true;
 						break;
 					default:
 						break;
@@ -5351,10 +5380,333 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 	}
 
-	if ( basePotion->type == POTION_POLYMORPH || secondaryPotion->type == POTION_POLYMORPH )
+	if ( potion1 == POTION_POLYMORPH || potion2 == POTION_POLYMORPH )
 	{
-		randomResult = true;
+		outRandomResult = true;
 	}
+	else if ( potion1 == potion2 )
+	{
+		outExplodeSelf = false;
+		outRandomResult = false;
+		outSamePotion = true;
+		outTryDuplicatePotion = false;
+		return potion1;
+	}
+	return result;
+}
+
+bool alchemyAddRecipe(int player, int basePotion, int secondaryPotion, int result)
+{
+	if ( basePotion == POTION_WATER || secondaryPotion == POTION_WATER
+		|| basePotion == secondaryPotion || basePotion == POTION_POLYMORPH
+		|| secondaryPotion == POTION_POLYMORPH )
+	{
+		return false;
+	}
+	bool found = false;
+	for ( auto& entry : clientLearnedAlchemyRecipes[player] )
+	{
+		if ( entry.first == result
+			&& ((entry.second.first == basePotion && entry.second.second == secondaryPotion)
+				|| (entry.second.first == secondaryPotion && entry.second.second == basePotion)) )
+		{
+			return false; // already exists
+		}
+	}
+	if ( !found )
+	{
+		clientLearnedAlchemyRecipes[player].push_back(std::make_pair(result, std::make_pair(basePotion, secondaryPotion)));
+		return true;
+	}
+	return false;
+}
+
+void GenericGUIMenu::alchemyCombinePotions()
+{
+	if ( !basePotion || !secondaryPotion )
+	{
+		return;
+	}
+
+	bool tryDuplicatePotion = false;
+	bool randomResult = false;
+	bool explodeSelf = false;
+	bool samePotion = false;
+	const ItemType basePotionType = basePotion->type;
+	const ItemType secondaryPotionType = secondaryPotion->type;
+	ItemType result = alchemyMixResult(basePotion->type, secondaryPotion->type, randomResult, tryDuplicatePotion, samePotion, explodeSelf);
+
+	//switch ( basePotion->type )
+	//{
+	//	case POTION_WATER:
+	//		if ( secondaryPotion->type == POTION_ACID )
+	//		{
+	//			explodeSelf = true;
+	//		}
+	//		else
+	//		{
+	//			tryDuplicatePotion = true;
+	//		}
+	//		break;
+	//	case POTION_BOOZE:
+	//		switch ( secondaryPotion->type )
+	//		{
+	//			case POTION_SICKNESS:
+	//				result = POTION_CONFUSION;
+	//				break;
+	//			case POTION_CONFUSION:
+	//				result = POTION_ACID;
+	//				break;
+	//			case POTION_CUREAILMENT:
+	//				result = POTION_SPEED;
+	//				break;
+	//			case POTION_BLINDNESS:
+	//				result = POTION_STRENGTH;
+	//				break;
+	//			case POTION_RESTOREMAGIC:
+	//				result = POTION_BLINDNESS;
+	//				break;
+	//			case POTION_SPEED:
+	//				result = POTION_PARALYSIS;
+	//				break;
+	//			case POTION_POLYMORPH:
+	//				randomResult = true;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		break;
+	//	case POTION_JUICE:
+	//		switch ( secondaryPotion->type )
+	//		{
+	//			case POTION_SICKNESS:
+	//				result = POTION_BOOZE;
+	//				break;
+	//			case POTION_CONFUSION:
+	//				result = POTION_BOOZE;
+	//				break;
+	//			case POTION_CUREAILMENT:
+	//				result = POTION_RESTOREMAGIC;
+	//				break;
+	//			case POTION_BLINDNESS:
+	//				result = POTION_CUREAILMENT;
+	//				break;
+	//			case POTION_RESTOREMAGIC:
+	//				result = POTION_HEALING;
+	//				break;
+	//			case POTION_SPEED:
+	//				result = POTION_INVISIBILITY;
+	//				break;
+	//			case POTION_POLYMORPH:
+	//				randomResult = true;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		break;
+	//	case POTION_ACID:
+	//		switch ( secondaryPotion->type )
+	//		{
+	//			case POTION_WATER:
+	//				explodeSelf = true; // oh no. don't do that.
+	//				break;
+	//			case POTION_SICKNESS:
+	//				result = POTION_FIRESTORM;
+	//				break;
+	//			case POTION_CONFUSION:
+	//				result = POTION_JUICE;
+	//				break;
+	//			case POTION_CUREAILMENT:
+	//				result = POTION_FIRESTORM;
+	//				break;
+	//			case POTION_BLINDNESS:
+	//				result = POTION_ICESTORM;
+	//				break;
+	//			case POTION_RESTOREMAGIC:
+	//				result = POTION_ICESTORM;
+	//				break;
+	//			case POTION_SPEED:
+	//				result = POTION_THUNDERSTORM;
+	//				break;
+	//			case POTION_POLYMORPH:
+	//				randomResult = true;
+	//				break;
+	//			default:
+	//				explodeSelf = true;
+	//				break;
+	//		}
+	//		break;
+	//	case POTION_INVISIBILITY:
+	//		switch ( secondaryPotion->type )
+	//		{
+	//			case POTION_SICKNESS:
+	//				result = POTION_BLINDNESS;
+	//				break;
+	//			case POTION_CONFUSION:
+	//				result = POTION_PARALYSIS;
+	//				break;
+	//			case POTION_CUREAILMENT:
+	//				result = POTION_LEVITATION;
+	//				break;
+	//			case POTION_BLINDNESS:
+	//				result = POTION_POLYMORPH;
+	//				break;
+	//			case POTION_RESTOREMAGIC:
+	//				result = POTION_EXTRAHEALING;
+	//				break;
+	//			case POTION_SPEED:
+	//				result = POTION_RESTOREMAGIC;
+	//				break;
+	//			case POTION_POLYMORPH:
+	//				randomResult = true;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		break;
+	//	default:
+	//		break;
+	//}
+
+	//if ( result == POTION_SICKNESS ) // didn't get a result, try flip the potion order
+	//{
+	//	switch ( secondaryPotion->type )
+	//	{
+	//		case POTION_WATER:
+	//			if ( basePotion->type == POTION_ACID )
+	//			{
+	//				explodeSelf = true;
+	//			}
+	//			else
+	//			{
+	//				tryDuplicatePotion = true;
+	//			}
+	//			break;
+	//		case POTION_BOOZE:
+	//			switch ( basePotion->type )
+	//			{
+	//				case POTION_SICKNESS:
+	//					result = POTION_CONFUSION;
+	//					break;
+	//				case POTION_CONFUSION:
+	//					result = POTION_ACID;
+	//					break;
+	//				case POTION_CUREAILMENT:
+	//					result = POTION_SPEED;
+	//					break;
+	//				case POTION_BLINDNESS:
+	//					result = POTION_STRENGTH;
+	//					break;
+	//				case POTION_RESTOREMAGIC:
+	//					result = POTION_BLINDNESS;
+	//					break;
+	//				case POTION_SPEED:
+	//					result = POTION_PARALYSIS;
+	//					break;
+	//				case POTION_POLYMORPH:
+	//					randomResult = true;
+	//					break;
+	//				default:
+	//					break;
+	//			}
+	//			break;
+	//		case POTION_JUICE:
+	//			switch ( basePotion->type )
+	//			{
+	//				case POTION_SICKNESS:
+	//					result = POTION_BOOZE;
+	//					break;
+	//				case POTION_CONFUSION:
+	//					result = POTION_BOOZE;
+	//					break;
+	//				case POTION_CUREAILMENT:
+	//					result = POTION_RESTOREMAGIC;
+	//					break;
+	//				case POTION_BLINDNESS:
+	//					result = POTION_CUREAILMENT;
+	//					break;
+	//				case POTION_RESTOREMAGIC:
+	//					result = POTION_HEALING;
+	//					break;
+	//				case POTION_SPEED:
+	//					result = POTION_INVISIBILITY;
+	//					break;
+	//				case POTION_POLYMORPH:
+	//					randomResult = true;
+	//					break;
+	//				default:
+	//					break;
+	//			}
+	//			break;
+	//		case POTION_ACID:
+	//			switch ( basePotion->type )
+	//			{
+	//				case POTION_WATER:
+	//					explodeSelf = true; // oh no. don't do that.
+	//					break;
+	//				case POTION_SICKNESS:
+	//					result = POTION_FIRESTORM;
+	//					break;
+	//				case POTION_CONFUSION:
+	//					result = POTION_JUICE;
+	//					break;
+	//				case POTION_CUREAILMENT:
+	//					result = POTION_FIRESTORM;
+	//					break;
+	//				case POTION_BLINDNESS:
+	//					result = POTION_ICESTORM;
+	//					break;
+	//				case POTION_RESTOREMAGIC:
+	//					result = POTION_ICESTORM;
+	//					break;
+	//				case POTION_SPEED:
+	//					result = POTION_THUNDERSTORM;
+	//					break;
+	//				case POTION_POLYMORPH:
+	//					randomResult = true;
+	//					break;
+	//				default:
+	//					explodeSelf = true;
+	//					break;
+	//			}
+	//			break;
+	//		case POTION_INVISIBILITY:
+	//			switch ( basePotion->type )
+	//			{
+	//				case POTION_SICKNESS:
+	//					result = POTION_BLINDNESS;
+	//					break;
+	//				case POTION_CONFUSION:
+	//					result = POTION_PARALYSIS;
+	//					break;
+	//				case POTION_CUREAILMENT:
+	//					result = POTION_LEVITATION;
+	//					break;
+	//				case POTION_BLINDNESS:
+	//					result = POTION_POLYMORPH;
+	//					break;
+	//				case POTION_RESTOREMAGIC:
+	//					result = POTION_EXTRAHEALING;
+	//					break;
+	//				case POTION_SPEED:
+	//					result = POTION_RESTOREMAGIC;
+	//					break;
+	//				case POTION_POLYMORPH:
+	//					randomResult = true;
+	//					break;
+	//				default:
+	//					break;
+	//			}
+	//			break;
+	//		default:
+	//			break;
+	//	}
+	//}
+
+	//if ( basePotion->type == POTION_POLYMORPH || secondaryPotion->type == POTION_POLYMORPH )
+	//{
+	//	randomResult = true;
+	//}
 
 	int skillLVL = 0;
 	if ( stats[gui_player] )
@@ -5640,7 +5992,15 @@ void GenericGUIMenu::alchemyCombinePotions()
 				messagePlayer(gui_player, MESSAGE_MISC, language[3352], newPotion->description());
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 			}
-			itemPickup(gui_player, newPotion);
+			Item* pickedUp = itemPickup(gui_player, newPotion);
+			if ( pickedUp )
+			{
+				alchemyGUI.potionResultUid = pickedUp->uid;
+				if ( !tryDuplicatePotion )
+				{
+					alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, pickedUp->type);
+				}
+			}
 			free(newPotion);
 			if ( players[gui_player] && players[gui_player]->entity )
 			{
@@ -5670,7 +6030,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 			break;
 		}
 	}
-	closeGUI();
+
+	//basePotion = nullptr;
+	//secondaryPotion = nullptr;
+	//closeGUI();
 }
 
 bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notify)
@@ -8884,7 +9247,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 	}
 }
 
-void buttonUpdateSelectorOnHighlight(const int player, Button* button)
+void buttonTinkerUpdateSelectorOnHighlight(const int player, Button* button)
 {
 	if ( button->isHighlighted() )
 	{
@@ -9143,6 +9506,13 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		return;
 	}
 
+	if ( player->entity && player->entity->isBlind() )
+	{
+		messagePlayer(playernum, MESSAGE_MISC, language[4159]);
+		parentGUI.closeGUI();
+		return; // I can't see!
+	}
+
 	// tinker kit status
 	{
 		auto tinkerKitTitle = baseFrame->findField("tinker kit title");
@@ -9289,7 +9659,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterBtn->setDisabled(!isInteractable);
 			if ( isInteractable )
 			{
-				buttonUpdateSelectorOnHighlight(playernum, filterBtn);
+				buttonTinkerUpdateSelectorOnHighlight(playernum, filterBtn);
 			}
 		}
 		else if ( filterBtn->isSelected() )
@@ -9315,7 +9685,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterBtn->setDisabled(!isInteractable);
 			if ( isInteractable )
 			{
-				buttonUpdateSelectorOnHighlight(playernum, filterBtn);
+				buttonTinkerUpdateSelectorOnHighlight(playernum, filterBtn);
 			}
 		}
 		else if ( filterBtn->isSelected() )
@@ -9343,7 +9713,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterBtn->setDisabled(!isInteractable);
 			if ( isInteractable )
 			{
-				buttonUpdateSelectorOnHighlight(playernum, filterBtn);
+				buttonTinkerUpdateSelectorOnHighlight(playernum, filterBtn);
 			}
 		}
 		else if ( filterBtn->isSelected() )
@@ -9373,7 +9743,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			closeBtn->setDisabled(!isInteractable);
 			if ( isInteractable )
 			{
-				buttonUpdateSelectorOnHighlight(playernum, closeBtn);
+				buttonTinkerUpdateSelectorOnHighlight(playernum, closeBtn);
 			}
 		}
 		else if ( closeBtn->isSelected() )
@@ -11039,4 +11409,1494 @@ void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
 	itemActionType = TINKER_ACTION_NONE;
 	itemType = -1;
 	itemRequirement = -1;
+}
+
+const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_X = 4;
+const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_Y = 5;
+
+void GenericGUIMenu::AlchemyGUI_t::openAlchemyMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( alchFrame )
+	{
+		bool wasDisabled = alchFrame->isDisabled();
+		alchFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			animTooltip = 0.0;
+			isInteractable = false;
+			bFirstTimeSnapCursor = false;
+		}
+		if ( getSelectedAlchemySlotX() < 0 || getSelectedAlchemySlotX() >= MAX_ALCH_X
+			|| getSelectedAlchemySlotY() < 0 || getSelectedAlchemySlotY() >= MAX_ALCH_Y )
+		{
+			selectAlchemySlot(0, 0);
+		}
+		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		player->inventory_mode = INVENTORY_MODE_ITEM;
+		bOpen = true;
+	}
+	if ( inputs.getUIInteraction(playernum)->selectedItem )
+	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
+	}
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	clearItemDisplayed();
+}
+
+void GenericGUIMenu::AlchemyGUI_t::closeAlchemyMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( alchFrame )
+	{
+		alchFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	animTooltip = 0.0;
+
+	animPotion1 = 0.0;
+	potion1Uid = 0;
+	animPotion2 = 0.0;
+	potion2Uid = 0;
+	alchemyResultPotion.type = POTION_EMPTY;
+	potionResultUid = 0;
+	animPotionResult = 0.0;
+
+	isInteractable = false;
+	bool wasOpen = bOpen;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	if ( wasOpen )
+	{
+		if ( inputs.getUIInteraction(playernum)->selectedItem )
+		{
+			inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+			inputs.getUIInteraction(playernum)->toggleclick = false;
+		}
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	}
+	if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
+		&& !players[playernum]->shootmode )
+	{
+		// reset to inventory mode if still hanging in alchemy GUI
+		players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			players[playernum]->GUI.warpControllerToModule(false);
+		}
+	}
+	clearItemDisplayed();
+	itemRequiresTitleReflow = true;
+	if ( alchFrame )
+	{
+		for ( auto f : alchFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+		alchemySlotFrames.clear();
+	}
+}
+
+int GenericGUIMenu::AlchemyGUI_t::heightOffsetWhenNotCompact = 200;
+const int alchemyBaseWidth = 206;
+
+bool GenericGUIMenu::AlchemyGUI_t::alchemyGUIHasBeenCreated() const
+{
+	if ( alchFrame )
+	{
+		if ( !alchFrame->getFrames().empty() )
+		{
+			for ( auto f : alchFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void buttonAlchemyUpdateSelectorOnHighlight(const int player, Button* button)
+{
+	if ( button->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_ALCHEMY);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_ALCHEMY )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+		}
+		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( !player->isLocalPlayer() )
+	{
+		closeAlchemyMenu();
+		return;
+	}
+
+	if ( !alchFrame )
+	{
+		return;
+	}
+
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		keystatus[SDL_SCANCODE_G] = 0;
+		if ( !bOpen )
+		{
+			openAlchemyMenu();
+		}
+		else
+		{
+			closeAlchemyMenu();
+		}
+	}
+
+	alchFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
+		players[playernum]->camera_virtualy1(),
+		alchemyBaseWidth,
+		players[playernum]->camera_virtualHeight() });
+
+	if ( !alchFrame->isDisabled() && bOpen )
+	{
+		if ( !alchemyGUIHasBeenCreated() )
+		{
+			createAlchemyMenu();
+		}
+
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			if ( !bFirstTimeSnapCursor )
+			{
+				bFirstTimeSnapCursor = true;
+				if ( !inputs.getUIInteraction(playernum)->selectedItem
+					&& player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+				{
+					warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
+			}
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		animTooltip = 0.0;
+		isInteractable = false;
+	}
+
+	auto alchFramePos = alchFrame->getSize();
+	if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = alchFramePos.w + 210; // inventory width 210
+			alchFramePos.x = -alchFramePos.w + animx * fullWidth;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				alchFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			alchFramePos.x = player->camera_virtualWidth() - animx * alchFramePos.w;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				alchFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = alchFramePos.w + 210; // inventory width 210
+			alchFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				alchFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			alchFramePos.x = -alchFramePos.w + animx * alchFramePos.w;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				alchFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+
+	if ( !player->bUseCompactGUIHeight() )
+	{
+		alchFramePos.y = heightOffsetWhenNotCompact;
+	}
+	else
+	{
+		alchFramePos.y = 0;
+	}
+
+	if ( !alchemyGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	auto baseFrame = alchFrame->findFrame("alchemy base");
+	baseFrame->setDisabled(false);
+
+	alchFrame->setSize(alchFramePos);
+
+	SDL_Rect baseFramePos = baseFrame->getSize();
+	baseFramePos.x = 0;
+	baseFramePos.w = alchemyBaseWidth;
+	baseFrame->setSize(baseFramePos);
+
+	alchFramePos.h = baseFramePos.y + baseFramePos.h;
+	if ( animx >= .9999 )
+	{
+		baseFramePos.x += alchFramePos.x;
+		alchFramePos.w += alchFramePos.x;
+		alchFramePos.x = 0;
+		baseFrame->setSize(baseFramePos);
+	}
+	alchFrame->setSize(alchFramePos);
+	/*if ( !alchFrame->findImage("tmp") )
+	{
+		alchFrame->addImage(SDL_Rect{ 0, 0, alchFramePos.w, alchFramePos.h }, 0xFFFFFFFF,
+			"images/system/white.png", "tmp");
+	}
+	else
+	{
+		alchFrame->findImage("tmp")->pos = SDL_Rect{ 0, 0, alchFramePos.w, alchFramePos.h };
+	}*/
+
+	if ( keystatus[SDL_SCANCODE_H] )
+	{
+		keystatus[SDL_SCANCODE_H] = 0;
+		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		{
+			for ( int i = 0; i < NUMITEMS; ++i )
+			{
+				if ( items[i].category == POTION && i != POTION_EMPTY )
+				{
+					clientLearnedAlchemyIngredients[playernum].insert(i);
+				}
+			}
+		}
+		else
+		{
+			consoleCommand("/gimmepotions");
+		}
+	}
+
+	animPotion1DestX = baseFrame->getSize().x + 36;
+	animPotion1DestY = baseFrame->getSize().y + 130;
+	animPotion2DestX = baseFrame->getSize().x + 128;
+	animPotion2DestY = baseFrame->getSize().y + 130;
+	animPotionResultStartX = baseFrame->getSize().x + 74;
+	animPotionResultStartY = baseFrame->getSize().y + 264;
+	auto animPotion1Frame = getAlchemySlotFrame(ALCH_SLOT_BASE_POTION_X, 0);
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.05, (animPotion1)) / 3.0;
+		animPotion1 -= setpointDiffX;
+		animPotion1 = std::max(0.0, animPotion1);
+	}
+	animPotion1Frame->setDisabled(true);
+	Item* potion1Item = nullptr;
+	if ( potion1Uid != 0 )
+	{
+		if ( potion1Item = uidToItem(potion1Uid) )
+		{
+			animPotion1Frame->setDisabled(false);
+			if ( animPotion1 < 0.001 )
+			{
+				animPotion1Frame->setUserData(nullptr);
+			}
+			else
+			{
+				animPotion1Frame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+			}
+			updateSlotFrameFromItem(animPotion1Frame, potion1Item);
+		}
+	}
+	auto animPotion1Pos = animPotion1Frame->getSize();
+	animPotion1Pos.x = animPotion1StartX + (1.0 - animPotion1) * (animPotion1DestX - animPotion1StartX);
+	animPotion1Pos.y = animPotion1StartY + (1.0 - animPotion1) * (animPotion1DestY - animPotion1StartY);
+	animPotion1Frame->setSize(animPotion1Pos);
+
+	auto animPotion2Frame = getAlchemySlotFrame(ALCH_SLOT_SECONDARY_POTION_X, 0);
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.05, (animPotion2)) / 3.0;
+		animPotion2 -= setpointDiffX;
+		animPotion2 = std::max(0.0, animPotion2);
+	}
+	animPotion2Frame->setDisabled(true);
+	Item* potion2Item = nullptr;
+	if ( potion2Uid != 0 )
+	{
+		if ( potion2Item = uidToItem(potion2Uid) )
+		{
+			animPotion2Frame->setDisabled(false);
+			if ( animPotion2 < 0.001 )
+			{
+				animPotion2Frame->setUserData(nullptr);
+			}
+			else
+			{
+				animPotion2Frame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+			}
+			updateSlotFrameFromItem(animPotion2Frame, potion2Item);
+		}
+	}
+	auto animPotion2Pos = animPotion2Frame->getSize();
+	animPotion2Pos.x = animPotion2StartX + (1.0 - animPotion2) * (animPotion2DestX - animPotion2StartX);
+	animPotion2Pos.y = animPotion2StartY + (1.0 - animPotion2) * (animPotion2DestY - animPotion2StartY);
+	animPotion2Frame->setSize(animPotion2Pos);
+
+	auto potionResultFrame = getAlchemySlotFrame(ALCH_SLOT_RESULT_POTION_X, 0);
+	potionResultFrame->setDisabled(true);
+
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.05, (animPotionResult)) / 3.0;
+		animPotionResult -= setpointDiffX;
+		animPotionResult = std::max(0.0, animPotionResult);
+		if ( animPotionResult < 0.001 )
+		{
+			if ( auto item = uidToItem(potionResultUid) )
+			{
+				if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
+				{
+					// one-off update to prevent a blank frame
+					updateSlotFrameFromItem(slotFrame, item);
+				}
+			}
+			potionResultUid = 0;
+		}
+	}
+	auto animPotionResultPos = potionResultFrame->getSize();
+	if ( potionResultUid == 0 )
+	{
+		animPotionResultPos.x = animPotionResultStartX;
+		animPotionResultPos.y = animPotionResultStartY;
+	}
+	else
+	{
+		animPotionResultPos.x = animPotionResultStartX + (1.0 - animPotionResult) * (animPotionResultDestX - animPotionResultStartX);
+		animPotionResultPos.y = animPotionResultStartY + (1.0 - animPotionResult) * (animPotionResultDestY - animPotionResultStartY);
+	}
+	potionResultFrame->setSize(animPotionResultPos);
+	if ( potionResultUid != 0 )
+	{
+		if ( auto item = uidToItem(potionResultUid) )
+		{
+			potionResultFrame->setDisabled(false);
+			int oldCount = item->count;
+			item->count = 1;
+			potionResultFrame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+			updateSlotFrameFromItem(potionResultFrame, item);
+			item->count = oldCount;
+		}
+	}
+	else if ( alchemyResultPotion.type != POTION_EMPTY && potion1Uid != 0 && potion2Uid != 0 )
+	{
+		potionResultFrame->setDisabled(false);
+		potionResultFrame->setUserData(nullptr);
+		updateSlotFrameFromItem(potionResultFrame, &alchemyResultPotion);
+	}
+
+	if ( !bOpen )
+	{
+		return;
+	}
+
+	for ( int x = 0; x < MAX_ALCH_X; ++x )
+	{
+		for ( int y = 0; y < MAX_ALCH_Y; ++y )
+		{
+			if ( auto slotFrame = getAlchemySlotFrame(x, y) )
+			{
+				slotFrame->setDisabled(true);
+			}
+		}
+	}
+
+	/*if ( !parentGUI.isGUIOpen()
+		|| parentGUI.guiType != GUICurrentType::GUI_TYPE_ALCHEMY
+		|| !stats[playernum]
+		|| stats[playernum]->HP <= 0
+		|| !player->entity
+		|| player->shootmode )
+	{
+		closeAlchemyMenu();
+		return;
+	}*/
+
+	if ( player->entity && player->entity->isBlind() )
+	{
+		messagePlayer(playernum, MESSAGE_MISC, language[4159]);
+		parentGUI.closeGUI();
+		return; // I can't see!
+	}
+
+	// alembic status
+	{
+		auto alembicTitle = baseFrame->findField("alchemy alembic title");
+		auto alembicStatus = baseFrame->findField("alchemy alembic status");
+		if ( auto item = parentGUI.alembicItem )
+		{
+			char buf[128];
+			if ( !item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s (?)", item->getName());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s (%+d)", item->getName(), item->beatitude);
+			}
+			std::string titleStr = buf;
+			if ( !titleStr.empty() )
+			{
+				if ( titleStr[0] >= 'a' && titleStr[0] <= 'z' )
+				{
+					titleStr[0] = (char)toupper((int)titleStr[0]);
+				}
+				size_t found = titleStr.find(' ');
+				while ( found != std::string::npos )
+				{
+					auto& c = titleStr[std::min(found + 1, titleStr.size() - 1)];
+					if ( c >= 'a' && c <= 'z' )
+					{
+						c = (char)toupper((int)c);
+					}
+					found = titleStr.find(' ', found + 1);
+				}
+				alembicTitle->setText(titleStr.c_str());
+			}
+			else
+			{
+				alembicTitle->setText(buf);
+			}
+			alembicStatus->setText(ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str());
+			if ( item->status <= DECREPIT )
+			{
+				alembicStatus->setTextColor(hudColors.characterSheetRed);
+			}
+			else
+			{
+				alembicStatus->setTextColor(hudColors.characterSheetLightNeutral);
+			}
+		}
+		else
+		{
+			alembicTitle->setText("");
+			alembicStatus->setText("");
+		}
+
+		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
+		alembicTitle->setSize(textPos);
+		textPos.y += 20;
+		alembicStatus->setSize(textPos);
+	}
+
+	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
+
+	{
+		// close btn
+		auto closeBtn = baseFrame->findButton("close alchemy button");
+		auto closeGlyph = baseFrame->findImage("close alchemy glyph");
+		closeBtn->setDisabled(true);
+		closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			closeBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonAlchemyUpdateSelectorOnHighlight(playernum, closeBtn);
+			}
+		}
+		else if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( closeBtn->isDisabled() && usingGamepad )
+		{
+			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			{
+				closeGlyph->pos.w = imgGet->getWidth();
+				closeGlyph->pos.h = imgGet->getHeight();
+				closeGlyph->disabled = false;
+			}
+			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+			if ( closeGlyph->pos.x % 2 == 1 )
+			{
+				++closeGlyph->pos.x;
+			}
+			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+		}
+	}
+
+	int skillLVL = (stats[playernum]->PROFICIENCIES[PRO_ALCHEMY] + statGetINT(stats[playernum], players[playernum]->entity));
+	Uint32 negativeColor = hudColors.characterSheetRed;
+	Uint32 neutralColor = hudColors.characterSheetLightNeutral;
+	Uint32 positiveColor = hudColors.characterSheetGreen;
+	Uint32 secondaryPositiveColor = hudColors.characterSheetHighlightText;
+	Uint32 defaultPromptColor = makeColor(255, 255, 255, 255);
+
+	auto itemDisplayTooltip = baseFrame->findFrame("alchemy display tooltip");
+	itemDisplayTooltip->setDisabled(false);
+	auto displayItemName = itemDisplayTooltip->findField("item display name");
+	auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
+	const int displayItemTextImgBaseX = 0;
+	displayItemTextImg->pos.x = displayItemTextImgBaseX;
+	displayItemTextImg->pos.y = 0;
+	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 4, displayItemTextImg->pos.y - 4, 178, displayItemName->getSize().h };
+	displayItemName->setSize(displayItemNamePos);
+
+	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
+	tooltipPos.w = 186;
+	tooltipPos.h = baseFrame->getSize().h - 100;
+	tooltipPos.y = 186;
+	tooltipPos.x = 10;// 18 - (tooltipPos.w + 18) * (1.0 - animTooltip);
+	itemDisplayTooltip->setSize(tooltipPos);
+	//auto itemIncrementText = baseFrame->findField("item increment txt");
+	{
+		/*if ( animScrap > 0.01 )
+		{
+			itemIncrementText->setDisabled(false);
+			auto pos = itemIncrementText->getSize();
+			pos.y = tooltipPos.y + itemSlotBg->pos.y + 16 - ((1.0 - animScrap) * 32);
+			itemIncrementText->setSize(pos);
+			SDL_Color color;
+			getColor(itemIncrementText->getColor(), &color.r, &color.g, &color.b, &color.a);
+			if ( animScrap < .2 )
+			{
+				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255 * (animScrap / .2)));
+			}
+			else
+			{
+				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255));
+			}
+		}
+		else
+		{
+			itemIncrementText->setSize(SDL_Rect{ tooltipPos.x + itemSlotBg->pos.x + 24, tooltipPos.y + itemSlotBg->pos.y + 16, 72, 24 });
+			itemIncrementText->setDisabled(true);
+			itemIncrementText->setText("");
+		}*/
+	}
+
+	// calculate resultant potion
+	{
+		if ( potion1Item && potion2Item )
+		{
+			bool tryDuplicatePotion = false;
+			bool randomResult = false;
+			bool explodeSelf = false;
+			bool samePotion = false;
+			ItemType res = alchemyMixResult(potion1Item->type, potion2Item->type, randomResult, tryDuplicatePotion, samePotion, explodeSelf);
+			Status status = SERVICABLE;
+			alchemyResultPotion.identified = false;
+			alchemyResultPotion.type = POTION_EMPTY;
+			if ( clientLearnedAlchemyIngredients[playernum].find(potion1Item->type)
+				!= clientLearnedAlchemyIngredients[playernum].end() )
+			{
+				if ( clientLearnedAlchemyIngredients[playernum].find(potion2Item->type)
+					!= clientLearnedAlchemyIngredients[playernum].end() )
+				{
+					alchemyResultPotion.identified = true;
+				}
+			}
+			int appearance = 0;
+			int blessing = std::min(static_cast<int>(std::min(potion1Item->beatitude, potion2Item->beatitude)), 0);
+			if ( samePotion )
+			{
+				// same potion, keep the second potion only.
+				res = potion2Item->type;
+				blessing = potion2Item->beatitude;
+				appearance = potion2Item->appearance;
+			}
+
+			if ( tryDuplicatePotion && !explodeSelf && !randomResult )
+			{
+				// duplicate chance
+				if ( potion1Item->type == POTION_WATER )
+				{
+					res = potion2Item->type;
+					status = potion2Item->status;
+					blessing = potion2Item->beatitude;
+					appearance = potion2Item->appearance;
+				}
+				else if ( potion2Item->type == POTION_WATER )
+				{
+					res = potion1Item->type;
+					status = potion1Item->status;
+					blessing = potion1Item->beatitude;
+					appearance = potion1Item->appearance;
+				}
+			}
+			else
+			{
+				tryDuplicatePotion = false;
+			}
+			alchemyResultPotion.status = status;
+			if ( !(potion1Item->identified && potion2Item->identified) )
+			{
+				alchemyResultPotion.identified = false;
+			}
+			if ( alchemyResultPotion.identified )
+			{
+				alchemyResultPotion.type = res;
+			}
+			else
+			{
+				alchemyResultPotion.type = POTION_WATER;
+			}
+
+			// blessings
+			if ( !tryDuplicatePotion && !samePotion )
+			{
+				if ( parentGUI.alembicItem )
+				{
+					if ( parentGUI.alembicItem->beatitude >= 1 )
+					{
+						blessing = 1;
+					}
+					else if ( parentGUI.alembicItem->beatitude <= -1 )
+					{
+						blessing = parentGUI.alembicItem->beatitude;
+					}
+				}
+				if ( skillCapstoneUnlocked(playernum, PRO_ALCHEMY) )
+				{
+					blessing = 2;
+				}
+			}
+			alchemyResultPotion.beatitude = blessing;
+
+			// appearances
+			for ( auto it = potionStandardAppearanceMap.begin(); it != potionStandardAppearanceMap.end(); ++it )
+			{
+				if ( (*it).first == alchemyResultPotion.type )
+				{
+					if ( appearance == 0 )
+					{
+						appearance = (*it).second;
+					}
+				}
+			}
+			alchemyResultPotion.appearance = appearance;
+		}
+	}
+
+	bool modifierPressed = false;
+	if ( usingGamepad && Input::inputs[playernum].binary("MenuPageLeftAlt") )
+	{
+		modifierPressed = true;
+	}
+	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
+		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+	{
+		modifierPressed = true;
+	}
+
+	bool inventoryControlActive = player->bControlEnabled
+		&& !gamePaused
+		&& !player->usingCommand()
+		&& !player->GUI.isDropdownActive();
+
+	if ( isInteractable && !inputs.getUIInteraction(playernum)->selectedItem
+		&& inventoryControlActive
+		&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY)
+		&& player->GUI.bActiveModuleUsesInventory() )
+	{
+		if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
+			&& getSelectedAlchemySlotX() >= ALCH_SLOT_RESULT_POTION_X && getSelectedAlchemySlotX() < 0
+			&& getSelectedAlchemySlotY() == 0 )
+		{
+			if ( auto slotFrame = getAlchemySlotFrame(getSelectedAlchemySlotX(), getSelectedAlchemySlotY()) )
+			{
+				if ( !slotFrame->isDisabled() && slotFrame->capturesMouse() )
+				{
+					switch ( getSelectedAlchemySlotX() )
+					{
+						case ALCH_SLOT_BASE_POTION_X:
+							setItemDisplayNameAndPrice(potion1Item);
+							break;
+						case ALCH_SLOT_SECONDARY_POTION_X:
+							setItemDisplayNameAndPrice(potion2Item);
+							break;
+						case ALCH_SLOT_RESULT_POTION_X:
+							setItemDisplayNameAndPrice(&alchemyResultPotion, true);
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
+
+	if ( itemType != -1 && itemDesc.size() > 1 )
+	{
+		if ( isInteractable )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			animTooltip += setpointDiffX;
+			animTooltip = std::min(1.0, animTooltip);
+			animTooltipTicks = ticks;
+		}
+
+		itemDisplayTooltip->setDisabled(false);
+
+		{
+			// item name + text bg
+			displayItemName->setVJustify(Field::justify_t::CENTER);
+			displayItemName->setHJustify(Field::justify_t::CENTER);
+			if ( itemRequiresTitleReflow )
+			{
+				displayItemName->setText(itemDesc.c_str());
+				displayItemName->reflowTextToFit(0);
+
+				if ( displayItemName->getNumTextLines() > 2 )
+				{
+					auto pos = displayItemName->getSize();
+					pos.h = 74;
+					displayItemName->setSize(pos);
+					displayItemTextImg->path = "images/ui/Alchemy/Alchemy_LabelName_3Row_00.png";
+					displayItemTextImg->pos.h = 64;
+				}
+				else
+				{
+					auto pos = displayItemName->getSize();
+					pos.h = 50;
+					displayItemName->setSize(pos);
+					displayItemTextImg->path = "images/ui/Alchemy/Alchemy_LabelName_2Row_00.png";
+					displayItemTextImg->pos.h = 42;
+				}
+				if ( displayItemName->getNumTextLines() > 3 )
+				{
+					// more than 2 lines, append ...
+					std::string copiedName = displayItemName->getText();
+					auto lastNewline = copiedName.find_last_of('\n');
+					copiedName = copiedName.substr(0U, lastNewline);
+					copiedName += "...";
+					displayItemName->setText(copiedName.c_str());
+					displayItemName->reflowTextToFit(0);
+					if ( displayItemName->getNumTextLines() > 3 )
+					{
+						// ... doesn't fit, replace last 3 characters with ...
+						copiedName = copiedName.substr(0U, copiedName.size() - 6);
+						copiedName += "...";
+						displayItemName->setText(copiedName.c_str());
+						displayItemName->reflowTextToFit(0);
+					}
+				}
+
+				// do highlights
+				displayItemName->clearWordsToHighlight();
+				std::string str = displayItemName->getText();
+				int wordIndex = 0;
+				bool prevCharWasWordSeparator = false;
+				int numLines = 0;
+				for ( size_t c = 0; c < str.size(); ++c )
+				{
+					if ( str[c] == '\n' )
+					{
+						wordIndex = -1;
+						++numLines;
+						prevCharWasWordSeparator = true;
+						continue;
+					}
+
+					if ( prevCharWasWordSeparator && !charIsWordSeparator(str[c]) )
+					{
+						++wordIndex;
+						if ( str[c] == '[' )
+						{
+							std::string toCompare = str.substr(str.find('[', c));
+							Uint32 color = 0;
+							if ( toCompare == language[4155] || toCompare == language[4162] )
+							{
+								// unknown
+								color = hudColors.characterSheetLightNeutral;
+							}
+							else if ( toCompare == language[4156] )
+							{
+								// base pot
+								color = hudColors.characterSheetGreen;
+							}
+							else if ( toCompare == language[4163] )
+							{
+								// duplication chance
+								color = hudColors.characterSheetGreen;
+							}
+							else if ( toCompare == language[4157] )
+							{
+								// secondary pot
+								color = hudColors.characterSheetHighlightText;
+							}
+							else if ( toCompare == language[4158] )
+							{
+								color = hudColors.characterSheetFaintText;
+							}
+							else if ( toCompare == language[4160] )
+							{
+								color = hudColors.characterSheetRed;
+							}
+							displayItemName->addWordToHighlight(wordIndex + numLines * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE,
+								color);
+							displayItemName->addWordToHighlight((wordIndex + 1) + numLines * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE,
+								color);
+							displayItemName->addWordToHighlight((wordIndex + 2) + numLines * Field::TEXT_HIGHLIGHT_WORDS_PER_LINE,
+								color);
+						}
+						prevCharWasWordSeparator = false;
+						if ( !(c + 1 < str.size() && charIsWordSeparator(str[c + 1])) )
+						{
+							continue;
+						}
+					}
+
+					if ( charIsWordSeparator(str[c]) )
+					{
+						prevCharWasWordSeparator = true;
+					}
+					else
+					{
+						prevCharWasWordSeparator = false;
+					}
+				}
+				itemRequiresTitleReflow = false;
+			}
+		}
+	}
+	else
+	{
+		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
+			|| (usingGamepad)
+			|| true
+			|| animTooltip < 0.9999 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
+			animTooltip -= setpointDiffX;
+			animTooltip = std::max(0.0, animTooltip);
+		}
+	}
+
+	{
+		SDL_Color color;
+		getColor(displayItemTextImg->color, &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(192 * animTooltip);
+		displayItemTextImg->color = (makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	{
+		SDL_Color color;
+		getColor(displayItemName->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		displayItemName->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	bool activateSelection = false;
+	if ( isInteractable )
+	{
+		if ( !inputs.getUIInteraction(playernum)->selectedItem
+			&& !player->GUI.isDropdownActive()
+			&& (player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY)
+				|| player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY))
+			&& player->bControlEnabled && !gamePaused
+			&& !player->usingCommand() )
+		{
+			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
+				parentGUI.closeGUI();
+				return;
+			}
+			else
+			{
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuRightClick") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuRightClick");
+				}
+			}
+		}
+	}
+
+	if ( activateSelection && players[playernum] && players[playernum]->entity )
+	{
+		parentGUI.basePotion = nullptr;
+		parentGUI.secondaryPotion = nullptr;
+		if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+		{
+			if ( getSelectedAlchemySlotX() >= ALCH_SLOT_RESULT_POTION_X && getSelectedAlchemySlotX() < 0
+				&& getSelectedAlchemySlotY() == 0 )
+			{
+				switch ( getSelectedAlchemySlotX() )
+				{
+					case ALCH_SLOT_BASE_POTION_X:
+						potion1Uid = 0;
+						animPotion1 = 0.0;
+						animPotion1Frame->setDisabled(true);
+						break;
+					case ALCH_SLOT_SECONDARY_POTION_X:
+						potion2Uid = 0;
+						animPotion2 = 0.0;
+						animPotion2Frame->setDisabled(true);
+						break;
+					case ALCH_SLOT_RESULT_POTION_X:
+						// brew it
+						if ( potion1Item && potion2Item && !potionResultFrame->isDisabled()
+							&& alchemyResultPotion.type != POTION_EMPTY
+							&& potionResultUid == 0 )
+						{
+							parentGUI.basePotion = potion1Item;
+							parentGUI.secondaryPotion = potion2Item;
+							int oldCount1 = potion1Item->count;
+							int oldCount2 = potion2Item->count;
+							ItemType oldType1 = potion1Item->type;
+							ItemType oldType2 = potion2Item->type;
+							potionResultUid = 0;
+							parentGUI.alchemyCombinePotions();
+							if ( parentGUI.basePotion == nullptr )
+							{
+								potion1Uid = 0;
+								animPotion1 = 0.0;
+								animPotion1Frame->setDisabled(true);
+								alchemyResultPotion.type = POTION_EMPTY;
+							}
+							if ( parentGUI.secondaryPotion == nullptr )
+							{
+								potion2Uid = 0;
+								animPotion2 = 0.0;
+								animPotion2Frame->setDisabled(true);
+								alchemyResultPotion.type = POTION_EMPTY;
+							}
+							if ( potionResultUid != 0 )
+							{
+								if ( auto item = uidToItem(potionResultUid) )
+								{
+									if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
+									{
+										animPotionResultDestX = slotFrame->getSize().x;
+										animPotionResultDestY = slotFrame->getSize().y + 2;
+										animPotionResult = 1.0;
+									}
+								}
+							}
+							if ( animPotionResult < .999 )
+							{
+								potionResultUid = 0;
+							}
+						}
+						parentGUI.basePotion = nullptr;
+						parentGUI.secondaryPotion = nullptr;
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		else if ( player->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+		{
+			if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(player->inventoryUI.getSelectedSlotX(),
+				player->inventoryUI.getSelectedSlotY()) )
+			{
+				for ( node_t* node = stats[playernum]->inventory.first; node != NULL; node = node->next )
+				{
+					Item* item = (Item*)node->element;
+					if ( !item )
+					{
+						continue;
+					}
+
+					if ( item->x == player->inventoryUI.getSelectedSlotX()
+						&& item->y == player->inventoryUI.getSelectedSlotY()
+						&& item->x >= 0 && item->x < player->inventoryUI.getPlayerItemInventoryX()
+						&& item->y >= 0 && item->y < player->inventoryUI.getPlayerItemInventoryY() )
+					{
+						if ( potion1Uid == item->uid )
+						{
+							potion1Uid = 0;
+							animPotion1 = 0.0;
+							animPotion1Frame->setDisabled(true);
+						}
+						else if ( potion2Uid == item->uid )
+						{
+							potion2Uid = 0;
+							animPotion2 = 0.0;
+							animPotion2Frame->setDisabled(true);
+						}
+						else if ( potion1Uid == 0 )
+						{
+							if ( !parentGUI.isItemMixable(item) )
+							{
+								continue;
+							}
+							animPotion1 = 1.0;
+							animPotion1StartX = slotFrame->getSize().x;
+							animPotion1StartY = slotFrame->getSize().y;
+							potion1Uid = item->uid;
+						}
+						else
+						{
+							if ( !parentGUI.isItemMixable(item) )
+							{
+								continue;
+							}
+							animPotion2 = 1.0;
+							animPotion2StartX = slotFrame->getSize().x;
+							animPotion2StartY = slotFrame->getSize().y;
+							potion2Uid = item->uid;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
+{
+	const int player = parentGUI.getPlayer();
+	if ( !gui || !alchFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+	if ( alchemyGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	SDL_Rect basePos{ 0, 0, alchemyBaseWidth, 328 };
+	//{
+	//	auto recipeFrame = alchFrame->addFrame("alchemy recipes");
+	//	SDL_Rect drawerPos{ 0, 0, 200, 200 };
+	//	recipeFrame->setSize(drawerPos);
+	//	recipeFrame->setHollow(true);
+	//	auto bg = recipeFrame->addImage(drawerPos,
+	//		makeColor(255, 255, 255, 255),
+	//		"images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "alchemy recipe img");
+	//	recipeFrame->setDisabled(true);
+
+	//	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	alchemySlotFrames.clear();
+
+	//	const int baseSlotOffsetX = 0;
+	//	const int baseSlotOffsetY = 0;
+
+	//	SDL_Rect alchemySlotsPos{ 0, 38, 258, 150 };
+	//	{
+	//		const auto drawerSlotsFrame = recipeFrame->addFrame("recipe slots");
+	//		drawerSlotsFrame->setSize(alchemySlotsPos);
+	//		drawerSlotsFrame->setHollow(true);
+
+	//		auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
+	//			makeColor(255, 255, 255, 255), "images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
+
+	//		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+	//		const int maxTinkerX = MAX_TINKER_X;
+	//		const int maxTinkerY = MAX_TINKER_Y;
+
+	//		const int slotInnerWidth = inventorySlotSize - 2;
+	//		std::vector<std::pair<int, int>> slotCoords =
+	//		{
+	//			std::make_pair(28 + (slotInnerWidth + 2) * 0, 0),
+	//			std::make_pair(28 + (slotInnerWidth + 2) * 1, 0),
+	//			std::make_pair(28 + (slotInnerWidth + 2) * 2, 0),
+	//			std::make_pair(28 + (slotInnerWidth + 2) * 3, 0),
+	//			std::make_pair(28 + (slotInnerWidth + 2) * 4, 0),
+
+	//			std::make_pair(22, 48),
+	//			std::make_pair(22 + (slotInnerWidth + 6), 48),
+	//			std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 1, 48),
+	//			std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 2, 48),
+	//			std::make_pair(22 + (slotInnerWidth + 6) * 2 + (slotInnerWidth + 4) * 2, 48),
+
+	//			std::make_pair(14, 110),
+	//			std::make_pair(14 + (slotInnerWidth + 10), 110),
+	//			std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 1, 110),
+	//			std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 2, 110),
+	//			std::make_pair(14 + (slotInnerWidth + 10) * 2 + (slotInnerWidth + 8) * 2, 110)
+	//		};
+	//		auto slotCoordsIt = slotCoords.begin();
+	//		for ( int y = 0; y < maxTinkerY; ++y )
+	//		{
+	//			for ( int x = 0; x < maxTinkerX; ++x )
+	//			{
+	//				currentSlotPos.x = slotCoordsIt->first;
+	//				currentSlotPos.y = slotCoordsIt->second;
+	//				char slotname[32] = "";
+	//				snprintf(slotname, sizeof(slotname), "tinker %d %d", x, y);
+
+	//				auto slotFrame = drawerSlotsFrame->addFrame(slotname);
+	//				tinkerSlotFrames[x + y * 100] = slotFrame;
+	//				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+	//				slotFrame->setSize(slotPos);
+
+	//				createPlayerInventorySlotFrameElements(slotFrame);
+	//				if ( slotCoordsIt != slotCoords.end() )
+	//				{
+	//					++slotCoordsIt;
+	//				}
+	//				//slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
+	//				//	"images/system/white.png", "tmp");
+	//				slotFrame->setDisabled(true);
+	//			}
+	//		}
+	//	}
+	//}
+
+	{
+		auto bgFrame = alchFrame->addFrame("alchemy base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(true);
+		bgFrame->setDisabled(true);
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Alchemy/Alchemy_Base_00.png", "alchemy base img");
+
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto alembicTitle = bgFrame->addField("alchemy alembic title", 128);
+		alembicTitle->setFont(headerFont);
+		alembicTitle->setText("");
+		alembicTitle->setHJustify(Field::justify_t::CENTER);
+		alembicTitle->setVJustify(Field::justify_t::TOP);
+		alembicTitle->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		alembicTitle->setTextColor(hudColors.characterSheetLightNeutral);
+		alembicTitle->setOutlineColor(makeColor(29, 16, 11, 255));
+		auto alembicStatus = bgFrame->addField("alchemy alembic status", 128);
+		alembicStatus->setFont(headerFont);
+		alembicStatus->setText("");
+		alembicStatus->setHJustify(Field::justify_t::CENTER);
+		alembicStatus->setVJustify(Field::justify_t::TOP);
+		alembicStatus->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		alembicStatus->setTextColor(hudColors.characterSheetLightNeutral);
+		alembicStatus->setOutlineColor(makeColor(29, 16, 11, 255));
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		{
+			auto itemDisplayTooltip = bgFrame->addFrame("alchemy display tooltip");
+			itemDisplayTooltip->setSize(SDL_Rect{ 0, 0, 186, 108 });
+			itemDisplayTooltip->setHollow(true);
+			itemDisplayTooltip->setInheritParentFrameOpacity(false);
+			{
+				auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
+				itemNameText->setFont(itemFont);
+				itemNameText->setText("");
+				itemNameText->setHJustify(Field::justify_t::LEFT);
+				itemNameText->setVJustify(Field::justify_t::TOP);
+				itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+				itemNameText->setTextColor(hudColors.characterSheetLightNeutral);
+
+				auto itemDisplayTextBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 186, 42 },
+					0xFFFFFFFF, "images/ui/Alchemy/Alchemy_LabelName_2Row_00.png", "item text img");
+			}
+		}
+		{
+			auto closeBtn = bgFrame->addButton("close alchemy button");
+			SDL_Rect closeBtnPos{ basePos.w - 8 - 26, 8, 26, 26 };
+			closeBtn->setSize(closeBtnPos);
+			closeBtn->setColor(makeColor(255, 255, 255, 255));
+			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			closeBtn->setText("X");
+			closeBtn->setFont(itemFont);
+			closeBtn->setHideGlyphs(true);
+			closeBtn->setHideKeyboardGlyphs(true);
+			closeBtn->setHideSelectors(true);
+			closeBtn->setMenuConfirmControlType(0);
+			closeBtn->setBackground("images/ui/Alchemy/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("images/ui/Alchemy/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("images/ui/Alchemy/Button_XPress_00.png");
+			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			closeBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].closeGUI();
+			});
+			closeBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "close alchemy glyph");
+			closeGlyph->disabled = true;
+			closeGlyph->ontop = true;
+		}
+
+		Frame* slotFrame = alchFrame->addFrame("potion 1 frame");
+		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+		slotFrame->setSize(slotPos);
+		slotFrame->setDisabled(true);
+		slotFrame->setInheritParentFrameOpacity(false);
+		createPlayerInventorySlotFrameElements(slotFrame);
+		alchemySlotFrames[ALCH_SLOT_BASE_POTION_X + 0 * 100] = slotFrame;
+		slotFrame = alchFrame->addFrame("potion 2 frame");
+		slotFrame->setSize(slotPos);
+		slotFrame->setDisabled(true);
+		slotFrame->setInheritParentFrameOpacity(false);
+		createPlayerInventorySlotFrameElements(slotFrame);
+		alchemySlotFrames[ALCH_SLOT_SECONDARY_POTION_X + 0 * 100] = slotFrame;
+		slotFrame = alchFrame->addFrame("potion result frame");
+		slotFrame->setSize(slotPos);
+		slotFrame->setDisabled(true);
+		slotFrame->setInheritParentFrameOpacity(false);
+		createPlayerInventorySlotFrameElements(slotFrame);
+		alchemySlotFrames[ALCH_SLOT_RESULT_POTION_X + 0 * 100] = slotFrame;
+
+
+		/*{
+			auto actionPromptTxt = bgFrame->addField("action prompt txt", 64);
+			actionPromptTxt->setFont(itemFont);
+			actionPromptTxt->setText("");
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			actionPromptTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptTxt->setColor(makeColor(255, 255, 255, 255));
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph");
+			actionPromptGlyph->ontop = true;
+
+			auto actionModifierGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action modifier glyph");
+			actionModifierGlyph->ontop = true;
+			actionModifierGlyph->disabled = true;
+		}*/
+
+		/*{
+			auto itemIncrementText = bgFrame->addField("item increment txt", 64);
+			itemIncrementText->setFont(itemFont);
+			itemIncrementText->setText("");
+			itemIncrementText->setHJustify(Field::justify_t::TOP);
+			itemIncrementText->setVJustify(Field::justify_t::LEFT);
+			itemIncrementText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			itemIncrementText->setColor(hudColors.characterSheetLightNeutral);
+			itemIncrementText->setDisabled(true);
+			itemIncrementText->setOntop(true);
+		}*/
+	}
+}
+
+void GenericGUIMenu::AlchemyGUI_t::selectAlchemySlot(const int x, const int y)
+{
+	selectedAlchemySlotX = x;
+	selectedAlchemySlotY = y;
+}
+
+Frame* GenericGUIMenu::AlchemyGUI_t::getAlchemySlotFrame(int x, int y) const
+{
+	if ( alchFrame )
+	{
+		int key = x + y * 100;
+		if ( alchemySlotFrames.find(key) != alchemySlotFrames.end() )
+		{
+			return alchemySlotFrames.at(key);
+		}
+		//assert(alchemySlotFrames.find(key) == alchemySlotFrames.end());
+	}
+	return nullptr;
+}
+
+void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion)
+{
+	if ( !item || item->type == SPELL_ITEM )
+	{
+		clearItemDisplayed();
+	}
+	if ( !item )
+	{
+		return;
+	}
+
+	char buf[1024];
+	if ( !item->identified )
+	{
+		if ( isTooltipForResultPotion )
+		{
+			snprintf(buf, sizeof(buf), "%s (?)", language[4161]);
+		}
+		else
+		{
+			snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+		}
+	}
+	else
+	{
+		snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+	}
+	int player = parentGUI.getPlayer();
+	if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+	{
+		auto find = clientLearnedAlchemyIngredients[player].find(item->type);
+		Item* basePotion = nullptr;
+		Item* secondaryPotion = nullptr;
+		bool isDuplicationResult = false;
+		if ( isTooltipForResultPotion )
+		{
+			basePotion = uidToItem(potion1Uid);
+			secondaryPotion = uidToItem(potion2Uid);
+			if ( (basePotion->identified && basePotion->type == POTION_WATER
+				&& secondaryPotion->identified && secondaryPotion->type != POTION_WATER)
+				|| (basePotion->identified && basePotion->type != POTION_WATER
+					&& secondaryPotion->identified && secondaryPotion->type == POTION_WATER) )
+			{
+				isDuplicationResult = true;
+			}
+		}
+		if ( isDuplicationResult )
+		{
+			int skillLVL = 0;
+			if ( stats[parentGUI.getPlayer()] )
+			{
+				skillLVL = stats[parentGUI.getPlayer()]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+			}
+			snprintf(buf, sizeof(buf), "%s\n%d%%", language[4163], 50 + skillLVL * 10);
+		}
+		else if ( item->identified && find != clientLearnedAlchemyIngredients[player].end() )
+		{
+			if ( parentGUI.isItemBaseIngredient(item->type) )
+			{
+				strcat(buf, "\n");
+				strcat(buf, language[4156]);
+			}
+			else if ( parentGUI.isItemSecondaryIngredient(item->type) )
+			{
+				strcat(buf, "\n");
+				strcat(buf, language[4157]);
+			}
+			else
+			{
+				strcat(buf, "\n");
+				strcat(buf, language[4158]);
+			}
+		}
+		else
+		{
+			if ( !item->identified )
+			{
+				if ( isTooltipForResultPotion )
+				{
+					strcat(buf, "\n");
+					strcat(buf, language[4162]);
+				}
+				else
+				{
+					strcat(buf, "\n");
+					strcat(buf, language[4160]);
+				}
+			}
+			else
+			{
+				strcat(buf, "\n");
+				strcat(buf, language[4155]);
+			}
+		}
+	}
+	if ( itemDesc != buf )
+	{
+		itemRequiresTitleReflow = true;
+	}
+	itemDesc = buf;
+	itemType = item->type;
+	return;
+}
+
+bool GenericGUIMenu::AlchemyGUI_t::warpMouseToSelectedAlchemyItem(Item* snapToItem, Uint32 flags)
+{
+	if ( alchemyGUIHasBeenCreated() )
+	{
+		int x = getSelectedAlchemySlotX();
+		int y = getSelectedAlchemySlotY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( auto slot = getAlchemySlotFrame(x, y) )
+		{
+			int playernum = parentGUI.getPlayer();
+			auto player = players[playernum];
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select item queued");
+				player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_ALCHEMY;
+				player->inventoryUI.cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select item warped");
+				player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				player->inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+				slot->warpMouseToFrame(playernum, flags);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::AlchemyGUI_t::clearItemDisplayed()
+{
+	itemType = -1;
 }

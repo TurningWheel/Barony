@@ -4538,6 +4538,7 @@ void ingameHud()
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
+		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();

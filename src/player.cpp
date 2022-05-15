@@ -1117,7 +1117,8 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 	}
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
-		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING )
+		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
+		|| moduleToAccess == MODULE_ALCHEMY )
 	{
 		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
 			&& ( player.shopGUI.bOpen 
@@ -5246,6 +5247,9 @@ void Player::clearGUIPointers()
 	genericGUI.tinkerGUI.tinkerFrame = nullptr;
 	genericGUI.tinkerGUI.tinkerSlotFrames.clear();
 	genericGUI.tinkerGUI.itemRequiresTitleReflow = true;
+	genericGUI.alchemyGUI.alchFrame = nullptr;
+	genericGUI.alchemyGUI.alchemySlotFrames.clear();
+	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
 
 	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
 	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;

@@ -49,8 +49,12 @@ struct CustomColors_t
 	Uint32 characterSheetFaintText = 0xFFFFFFFF;
 	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
+	Uint32 characterSheetHighlightText = 0xFFFFFFFF;
 };
 extern CustomColors_t hudColors;
+
+extern int GAMEUI_FRAMEDATA_ANIMATING_ITEM;
+extern int GAMEUI_FRAMEDATA_ALCHEMY_ITEM;
 
 // if true, use the new user interface
 extern bool newui;

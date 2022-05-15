@@ -2871,3 +2871,5 @@ public:
 	}
 };
 extern GlyphRenderer_t GlyphHelper;
+
+bool charIsWordSeparator(char c);

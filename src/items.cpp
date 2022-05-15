@@ -2342,7 +2342,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
 			}
 			break;
 		case ENCHANTED_FEATHER:

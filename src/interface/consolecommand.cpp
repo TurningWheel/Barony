@@ -3814,4 +3814,32 @@ namespace ConsoleCommands {
 		    rocksFall(clientnum);
 		}
 	});
+
+	static ConsoleCommand ccmd_listalchemyrecipes("/listalchemyrecipes", "lists known alchemy recipes", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( argc >= 2 ) {
+			int player = (int)strtol(argv[1], nullptr, 10);
+			if ( player < 0 || player >= MAXPLAYERS )
+			{
+				player = clientnum;
+			}
+			for ( auto& entry : clientLearnedAlchemyRecipes[player] )
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, "[%s]: %s | %s",
+					items[entry.first].name_identified, items[entry.second.first].name_identified,
+					items[entry.second.second].name_identified);
+			}
+		}
+		else {
+			for ( auto& entry : clientLearnedAlchemyRecipes[clientnum] )
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, "[%s]: %s | %s",
+					items[entry.first].name_identified, items[entry.second.first].name_identified,
+					items[entry.second.second].name_identified);
+			}
+		}
+	});
 }

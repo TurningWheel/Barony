@@ -78,6 +78,9 @@ std::string StatusEffectQueue_t::StatusEffectDefinitions_t::notificationFont = "
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue);
 
+int GAMEUI_FRAMEDATA_ANIMATING_ITEM = 1;
+int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
+
 void capitalizeString(std::string& str)
 {
 	if ( str.size() < 1 ) { return; }
@@ -11545,6 +11548,15 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		disableBackgrounds = true;
 	}
 
+	if ( slotFrame->getUserData() )
+	{
+		int* slotType = (int*)slotFrame->getUserData();
+		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM )
+		{
+			disableBackgrounds = true;
+		}
+	}
+
 	bool isHotbarIcon = false;
 	if ( spriteImage->path != "" )
 	{
@@ -11597,7 +11609,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				1 /*spriteImageFrame->getSize().h - size*/, size, size };
 			if ( iconLabelImg->path != "" )
 			{
-				iconLabelImg->disabled = false;
+				iconLabelImg->disabled = !item->identified;
 			}
 			iconLabelImg->color = spriteImage->color;
 			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
@@ -11608,6 +11620,17 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				iconLabelBgImg->pos.y = 1;
 				iconLabelBgImg->disabled = iconLabelImg->disabled || disableBackgrounds;
 				iconLabelBgImg->color = makeColor(255, 255, 255, 255);
+			}
+		}
+		if ( slotFrame->getUserData() )
+		{
+			int* slotType = (int*)slotFrame->getUserData();
+			if ( *slotType == GAMEUI_FRAMEDATA_ALCHEMY_ITEM )
+			{
+				SDL_Color color;
+				getColor(spriteImage->color, &color.r, &color.g, &color.b, &color.a);
+				color.a /= 2;
+				spriteImage->color = makeColor(color.r, color.g, color.b, color.a);
 			}
 		}
 	}
@@ -12355,7 +12378,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 4");
 
-		const int textWidth = 80;
+		const int textWidth = 200;
 		const int textHeight = glyphSizeH + 8;
 
 		Uint32 promptTextColor = makeColor( 188, 154, 114, 255);
@@ -13327,6 +13350,14 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_heading_text"]["g"].GetInt(),
 							d["colors"]["charsheet_heading_text"]["b"].GetInt(),
 							d["colors"]["charsheet_heading_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_highlight_text") )
+					{
+						hudColors.characterSheetHighlightText = makeColor(
+							d["colors"]["charsheet_highlight_text"]["r"].GetInt(),
+							d["colors"]["charsheet_highlight_text"]["g"].GetInt(),
+							d["colors"]["charsheet_highlight_text"]["b"].GetInt(),
+							d["colors"]["charsheet_highlight_text"]["a"].GetInt());
 					}
 				}
 				if ( d.HasMember("dropdowns") )
@@ -14489,6 +14520,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].tinkerGUI.tinkerFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].tinkerGUI.tinkerFrame->setDisabled(true);
 
+		GenericGUI[player].alchemyGUI.alchFrame = frame->addFrame("alchemy");
+		GenericGUI[player].alchemyGUI.alchFrame->setHollow(true);
+		GenericGUI[player].alchemyGUI.alchFrame->setBorder(0);
+		GenericGUI[player].alchemyGUI.alchFrame->setOwner(player);
+		GenericGUI[player].alchemyGUI.alchFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].alchemyGUI.alchFrame->setDisabled(true);
+
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -15399,7 +15437,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			// not experimenting
 			if ( !disableItemUsage )
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
 			}
 			else
 			{

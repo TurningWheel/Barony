@@ -1211,7 +1211,7 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	if ( inventoryUI.bCompactView )
 	{
-		if ( GenericGUI[player].tinkerGUI.bOpen )
+		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen )
 		{
 			return false;
 		}
@@ -1750,7 +1750,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 					else
 					{
 						bool skipPaperDollSelection = false;
-						if ( GenericGUI[player].tinkerGUI.bOpen )
+						if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen )
 						{
 							skipPaperDollSelection = true;
 						}
@@ -5787,7 +5787,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						if ( txt->getHJustify() == Field::justify_t::RIGHT )
 						{
 							// find the furthest left text
-							alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textGet->getWidth(), alignx1);
+							const unsigned int textWidth = textGet->getWidth();
+							alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textWidth, alignx1);
 						}
 					}
 				}
@@ -5820,7 +5821,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					{
 						if ( txt->getHJustify() == Field::justify_t::LEFT )
 						{
-							alignx2 = std::max(txt->getSize().x + (int)textGet->getWidth(), alignx2);
+							const unsigned int textWidth = textGet->getWidth();
+							alignx2 = std::max(txt->getSize().x + (int)textWidth, alignx2);
+							SDL_Rect txtSize = txt->getSize();
+							txtSize.w = textWidth;
+							txt->setSize(txtSize);
 						}
 					}
 				}
@@ -6210,6 +6215,7 @@ void Player::Inventory_t::updateInventory()
 
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
+	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
 
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
@@ -6484,6 +6490,49 @@ void Player::Inventory_t::updateInventory()
 							&& y == shopGUI.getSelectedShopY()
 							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP
 							&& shopGUI.isInteractable )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
+
+		if ( alchemyGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY)
+			&& alchemyGUI.animPotion1 < 0.001 && alchemyGUI.animPotion2 < 0.001 )
+		{
+			for ( int x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X; x < alchemyGUI.MAX_ALCH_X; ++x )
+			{
+				for ( int y = 0; y < alchemyGUI.MAX_ALCH_Y; ++y )
+				{
+					if ( y > 0 && x < 0 )
+					{
+						continue;
+					}
+					if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(x, y) )
+					{
+						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						{
+							if ( alchemyGUI.isInteractable && !slotFrame->isDisabled() && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								alchemyGUI.selectAlchemySlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+								}
+							}
+						}
+
+						if ( x == alchemyGUI.getSelectedAlchemySlotX()
+							&& y == alchemyGUI.getSelectedAlchemySlotY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
+							&& alchemyGUI.isInteractable )
 						{
 							slotFrameToHighlight = slotFrame;
 							startx = slotFrame->getAbsoluteSize().x;
@@ -7024,6 +7073,7 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 			{
+				slotFrame->setUserData(nullptr);
 				if ( shopOpen && !isItemSellableToShop(player, item) )
 				{
 					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
@@ -7057,6 +7107,22 @@ void Player::Inventory_t::updateInventory()
 						&& invalidItem )
 					{
 						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
+				else if ( alchemyGUI.bOpen )
+				{
+					if ( alchemyGUI.potionResultUid == item->uid )
+					{
+						// do nothing
+					}
+					else if ( (alchemyGUI.potion1Uid == item->uid || alchemyGUI.potion2Uid == item->uid) )
+					{
+						slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+						updateSlotFrameFromItem(slotFrame, item);
 					}
 					else
 					{
@@ -7117,6 +7183,7 @@ void Player::Inventory_t::updateInventory()
 
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
+	alchemyGUI.clearItemDisplayed();
 
 	if ( !selectedItem && tinkerCraftableListOpen )
 	{
@@ -7635,6 +7702,18 @@ void Player::Inventory_t::updateInventory()
 						tooltipCoordX = inventoryBgFrame->getSize().x - 8;
 						tooltipCoordX += invBaseImg->pos.x;
 					}
+
+					if ( alchemyGUI.alchFrame && alchemyGUI.bOpen && alchemyGUI.isInteractable )
+					{
+						if ( justify == PANEL_JUSTIFY_LEFT )
+						{
+							tooltipCoordX += alchemyGUI.alchFrame->getSize().w;
+						}
+						else
+						{
+							tooltipCoordX -= alchemyGUI.alchFrame->getSize().w;
+						}
+					}
 				}
 				else
 				{
@@ -7675,6 +7754,7 @@ void Player::Inventory_t::updateInventory()
 				bool tooltipOpen = false;
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
+				bool alchemyOpen = false;
 				if ( tinkeringSalvageOrRepairMenuActive )
 				{
 					tooltipOpen = false;
@@ -7687,6 +7767,14 @@ void Player::Inventory_t::updateInventory()
 					if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 					{
 						shopGUI.setItemDisplayNameAndPrice(item);
+					}
+				}
+				else if ( alchemyGUI.bOpen )
+				{
+					alchemyOpen = true;
+					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					{
+						alchemyGUI.setItemDisplayNameAndPrice(item);
 					}
 				}
 				else
@@ -7834,7 +7922,7 @@ void Player::Inventory_t::updateInventory()
 							playerTryEquipItemAndUpdateServer(player, item, false);
 						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
