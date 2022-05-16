@@ -6120,5 +6120,15 @@ formalities of gold, now!#
 4152 Your Tinkering Kit needs repairs#
 4153 This needs to be identified first#
 4154 Salvage All#
+4155 [Unknown use]#
+4156 [Base Potion]#
+4157 [Secondary Potion]#
+4158 [No unique use]#
+4159 You can't see what you're doing!#
+4160 [Needs identifying]#
+4161 Unknown potion#
+4162 [New combination]#
+4163 Duplication Chance:#
+4164 [Random result]#
 
 4199 end#
