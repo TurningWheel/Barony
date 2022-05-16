@@ -7115,9 +7115,23 @@ void Player::Inventory_t::updateInventory()
 				}
 				else if ( alchemyGUI.bOpen )
 				{
-					if ( alchemyGUI.potionResultUid == item->uid )
+					if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY) )
 					{
-						// do nothing
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else if ( alchemyGUI.potionResultUid == item->uid 
+						&& alchemyGUI.potionResultUid != alchemyGUI.potion1Uid
+						&& alchemyGUI.potionResultUid != alchemyGUI.potion2Uid )
+					{
+						// set qty to 
+						int oldCount = item->count;
+						item->count = std::max(0, item->count - alchemyGUI.animPotionResultCount);
+						if ( item->count > 0 )
+						{
+							slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+							updateSlotFrameFromItem(slotFrame, item);
+						}
+						item->count = oldCount;
 					}
 					else if ( (alchemyGUI.potion1Uid == item->uid || alchemyGUI.potion2Uid == item->uid) )
 					{
@@ -7126,7 +7140,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					else
 					{
-						updateSlotFrameFromItem(slotFrame, item);
+						updateSlotFrameFromItem(slotFrame, item, !item->identified);
 					}
 				}
 				else

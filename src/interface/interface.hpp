@@ -643,6 +643,14 @@ public:
 			alchemyResultPotion.appearance = 0;
 			alchemyResultPotion.identified = false;
 		}
+		enum AlchemyActions_t : int
+		{
+			ALCHEMY_ACTION_NONE,
+			ALCHEMY_ACTION_OK,
+			ALCHEMY_ACTION_INVALID_ITEM,
+			ALCHEMY_ACTION_UNIDENTIFIED_POTION
+		};
+		AlchemyActions_t itemActionType = ALCHEMY_ACTION_NONE;
 		Frame* alchFrame = nullptr;
 		real_t animx = 0.0;
 		real_t animTooltip = 0.0;
@@ -665,6 +673,10 @@ public:
 		int animPotionResultDestX = 0;
 		int animPotionResultDestY = 0;
 		Uint32 potionResultUid = 0;
+		int animPotionResultCount = 1;
+		Uint32 animRandomPotionTicks = 0;
+		Uint32 animRandomPotionUpdatedThisTick = 0;
+		int animRandomPotionVariation = 0;
 		bool isInteractable = true;
 		bool bOpen = false;
 		bool bFirstTimeSnapCursor = false;

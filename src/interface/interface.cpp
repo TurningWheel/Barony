@@ -5714,7 +5714,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		skillLVL = stats[gui_player]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
 	}
 
-	Status status = SERVICABLE;
+	Status status = EXCELLENT;
 	bool duplicateSucceed = false;
 	if ( tryDuplicatePotion && !explodeSelf && !randomResult )
 	{
@@ -5740,6 +5740,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 		else
 		{
 			result = POTION_WATER;
+			if ( basePotion->type == POTION_WATER )
+			{
+				status = basePotion->status;
+			}
+			else if ( secondaryPotion->type == POTION_WATER )
+			{
+				status = secondaryPotion->status;
+			}
 		}
 	}
 
@@ -5830,29 +5838,44 @@ void GenericGUIMenu::alchemyCombinePotions()
 	int blessing = std::min(static_cast<int>(std::min(basePotion->beatitude, secondaryPotion->beatitude)), 0);
 	if ( basePotion->type == secondaryPotion->type )
 	{
-		// same potion, keep the second potion only.
-		result = secondaryPotion->type;
-		blessing = secondaryPotion->beatitude;
-		appearance = secondaryPotion->appearance;
-	}
-
-	bool knewBothBaseIngredients = false;
-	if ( clientLearnedAlchemyIngredients[gui_player].find(basePotion->type) 
-		!= clientLearnedAlchemyIngredients[gui_player].end() )
-	{
-		if ( clientLearnedAlchemyIngredients[gui_player].find(secondaryPotion->type)
-			!= clientLearnedAlchemyIngredients[gui_player].end() )
+		// same potion, keep the first potion only.
+		result = basePotion->type;
+		if ( basePotion->beatitude == secondaryPotion->beatitude )
 		{
-			// knew about both combinations.
-			if ( !tryDuplicatePotion && !explodeSelf && result != POTION_SICKNESS )
-			{
-				if ( skillLVL >= 3 )
-				{
-					knewBothBaseIngredients = true; // auto ID the new potion.
-				}
-			}
+			blessing = basePotion->beatitude;
+		}
+		appearance = basePotion->appearance;
+		status = basePotion->status;
+	}
+	else if ( tryDuplicatePotion && !duplicateSucceed )
+	{
+		if ( basePotion->type == POTION_WATER )
+		{
+			blessing = basePotion->beatitude;
+		}
+		else if ( secondaryPotion->type == POTION_WATER )
+		{
+			blessing = secondaryPotion->beatitude;
 		}
 	}
+
+	bool knewBothBaseIngredients = true; // always auto ID?
+	//if ( clientLearnedAlchemyIngredients[gui_player].find(basePotion->type) 
+	//	!= clientLearnedAlchemyIngredients[gui_player].end() )
+	//{
+	//	if ( clientLearnedAlchemyIngredients[gui_player].find(secondaryPotion->type)
+	//		!= clientLearnedAlchemyIngredients[gui_player].end() )
+	//	{
+	//		// knew about both combinations.
+	//		if ( !tryDuplicatePotion && !explodeSelf && result != POTION_SICKNESS )
+	//		{
+	//			if ( skillLVL >= 3 )
+	//			{
+	//				knewBothBaseIngredients = true; // auto ID the new potion.
+	//			}
+	//		}
+	//	}
+	//}
 
 	Item* duplicatedPotion = nullptr;
 
@@ -5871,8 +5894,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 	}
 	else
 	{
-		consumeItem(basePotion, gui_player);
-		consumeItem(secondaryPotion, gui_player);
+		if ( tryDuplicatePotion )
+		{
+			if ( basePotion->type != POTION_WATER )
+			{
+				consumeItem(basePotion, gui_player);
+			}
+			else if ( secondaryPotion->type != POTION_WATER )
+			{
+				consumeItem(secondaryPotion, gui_player);
+			}
+		}
+		else
+		{
+			consumeItem(basePotion, gui_player);
+			consumeItem(secondaryPotion, gui_player);
+		}
 		if ( rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
 		{
 			Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -5882,22 +5919,37 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 	}
 
-	if ( alembicItem )
+	// calc blessings
+	if ( !tryDuplicatePotion && !samePotion )
 	{
-		if ( alembicItem->beatitude >= 1 )
+		if ( alembicItem )
 		{
-			blessing = 1;
+			if ( alembicItem->beatitude >= 1 )
+			{
+				blessing = 1;
+			}
+			else if ( alembicItem->beatitude <= -1 )
+			{
+				blessing = alembicItem->beatitude;
+			}
 		}
-		else if ( alembicItem->beatitude <= -1 )
-		{
-			blessing = alembicItem->beatitude;
-		}
-	}
 
-	if ( skillCapstoneUnlocked(gui_player, PRO_ALCHEMY) )
-	{
-		blessing = 2;
-		degradeAlembic = false;
+		if ( skillCapstoneUnlocked(gui_player, PRO_ALCHEMY) )
+		{
+			blessing = 2;
+			if ( alembicItem )
+			{
+				if ( alembicItem->beatitude <= -1 )
+				{
+					blessing = std::min(-2, (int)alembicItem->beatitude);
+				}
+				else
+				{
+					blessing = std::max(2, (int)alembicItem->beatitude);
+				}
+			}
+			degradeAlembic = false;
+		}
 	}
 
 	if ( degradeAlembic && alembicItem )
@@ -5973,9 +6025,8 @@ void GenericGUIMenu::alchemyCombinePotions()
 				if ( result == POTION_WATER && !duplicateSucceed )
 				{
 					messagePlayer(gui_player, MESSAGE_MISC, language[3356]);
-					newPotion->identified = true;
 				}
-				else
+				else if ( newPotion )
 				{
 					if ( duplicatedPotion )
 					{
@@ -5992,16 +6043,40 @@ void GenericGUIMenu::alchemyCombinePotions()
 				messagePlayer(gui_player, MESSAGE_MISC, language[3352], newPotion->description());
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 			}
-			Item* pickedUp = itemPickup(gui_player, newPotion);
-			if ( pickedUp )
+
+			if ( newPotion )
 			{
-				alchemyGUI.potionResultUid = pickedUp->uid;
-				if ( !tryDuplicatePotion )
+				Item* pickedUp = itemPickup(gui_player, newPotion);
+				if ( pickedUp )
 				{
-					alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, pickedUp->type);
+					alchemyGUI.potionResultUid = pickedUp->uid;
+					alchemyGUI.animPotionResultCount = alchemyGUI.alchemyResultPotion.count;
+					if ( alchemyGUI.animPotionResultCount == 2 && tryDuplicatePotion && !duplicateSucceed )
+					{
+						alchemyGUI.animPotionResultCount = 1;
+					}
+					if ( !tryDuplicatePotion && !randomResult )
+					{
+						alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, pickedUp->type);
+					}
+					if ( tryDuplicatePotion )
+					{
+						if ( result == POTION_WATER && !duplicateSucceed )
+						{
+							if ( basePotionType == POTION_WATER )
+							{
+								consumeItem(basePotion, gui_player);
+							}
+							else if ( secondaryPotionType == POTION_WATER )
+							{
+								consumeItem(secondaryPotion, gui_player);
+							}
+						}
+					}
 				}
+				free(newPotion);
+				newPotion = nullptr;
 			}
-			free(newPotion);
 			if ( players[gui_player] && players[gui_player]->entity )
 			{
 				playSoundEntityLocal(players[gui_player]->entity, 401, 64);
@@ -11548,6 +11623,20 @@ void buttonAlchemyUpdateSelectorOnHighlight(const int player, Button* button)
 	}
 }
 
+bool playerKnowsRecipe(const int player, ItemType basePotion, ItemType secondaryPotion, ItemType result)
+{
+	for ( auto& entry : clientLearnedAlchemyRecipes[player] )
+	{
+		if ( entry.first == result
+			&& ((entry.second.first == basePotion && entry.second.second == secondaryPotion)
+				|| (entry.second.first == secondaryPotion && entry.second.second == basePotion)) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 {
 	const int playernum = parentGUI.getPlayer();
@@ -11562,19 +11651,6 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	if ( !alchFrame )
 	{
 		return;
-	}
-
-	if ( keystatus[SDL_SCANCODE_G] )
-	{
-		keystatus[SDL_SCANCODE_G] = 0;
-		if ( !bOpen )
-		{
-			openAlchemyMenu();
-		}
-		else
-		{
-			closeAlchemyMenu();
-		}
 	}
 
 	alchFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
@@ -11730,7 +11806,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		else
 		{
-			consoleCommand("/gimmepotions");
+			consoleCommand("/gimmepotions 5");
 		}
 	}
 
@@ -11740,6 +11816,14 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	animPotion2DestY = baseFrame->getSize().y + 130;
 	animPotionResultStartX = baseFrame->getSize().x + 74;
 	animPotionResultStartY = baseFrame->getSize().y + 264;
+
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.05, (animPotionResult)) / 3.0;
+		animPotionResult -= setpointDiffX;
+		animPotionResult = std::max(0.0, animPotionResult);
+	}
+
 	auto animPotion1Frame = getAlchemySlotFrame(ALCH_SLOT_BASE_POTION_X, 0);
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -11753,16 +11837,39 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	{
 		if ( potion1Item = uidToItem(potion1Uid) )
 		{
-			animPotion1Frame->setDisabled(false);
-			if ( animPotion1 < 0.001 )
+			if ( !potion1Item->identified )
 			{
-				animPotion1Frame->setUserData(nullptr);
+				potion1Item = nullptr; // if this got unidentified somehow, remove it
+				potion1Uid = 0;
+				animPotion1 = 0.0;
+				alchemyResultPotion.type = POTION_EMPTY;
+				potionResultUid = 0;
+				animPotionResult = 0.0;
 			}
 			else
 			{
-				animPotion1Frame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+				animPotion1Frame->setDisabled(false);
+				if ( animPotion1 < 0.001 )
+				{
+					animPotion1Frame->setUserData(nullptr);
+				}
+				else
+				{
+					animPotion1Frame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+				}
+				if ( potionResultUid == potion1Uid && animPotionResult > 0.001 ) // we're animating to this potion
+				{
+					animPotion1Frame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+					int oldCount = potion1Item->count;
+					potion1Item->count = std::max(0, potion1Item->count - animPotionResultCount);
+					updateSlotFrameFromItem(animPotion1Frame, potion1Item);
+					potion1Item->count = oldCount;
+				}
+				else
+				{
+					updateSlotFrameFromItem(animPotion1Frame, potion1Item);
+				}
 			}
-			updateSlotFrameFromItem(animPotion1Frame, potion1Item);
 		}
 	}
 	auto animPotion1Pos = animPotion1Frame->getSize();
@@ -11783,16 +11890,39 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	{
 		if ( potion2Item = uidToItem(potion2Uid) )
 		{
-			animPotion2Frame->setDisabled(false);
-			if ( animPotion2 < 0.001 )
+			if ( !potion2Item->identified )
 			{
-				animPotion2Frame->setUserData(nullptr);
+				potion2Item = nullptr; // if this got unidentified somehow, remove it
+				potion2Uid = 0;
+				animPotion2 = 0.0;
+				alchemyResultPotion.type = POTION_EMPTY;
+				potionResultUid = 0;
+				animPotionResult = 0.0;
 			}
 			else
 			{
-				animPotion2Frame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+				animPotion2Frame->setDisabled(false);
+				if ( animPotion2 < 0.001 )
+				{
+					animPotion2Frame->setUserData(nullptr);
+				}
+				else
+				{
+					animPotion2Frame->setUserData(&GAMEUI_FRAMEDATA_ANIMATING_ITEM);
+				}
+				if ( potionResultUid == potion2Uid && animPotionResult > 0.001 ) // we're animating to this potion
+				{
+					animPotion2Frame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+					int oldCount = potion2Item->count;
+					potion2Item->count = std::max(0, potion2Item->count - animPotionResultCount);
+					updateSlotFrameFromItem(animPotion2Frame, potion2Item);
+					potion2Item->count = oldCount;
+				}
+				else
+				{
+					updateSlotFrameFromItem(animPotion2Frame, potion2Item);
+				}
 			}
-			updateSlotFrameFromItem(animPotion2Frame, potion2Item);
 		}
 	}
 	auto animPotion2Pos = animPotion2Frame->getSize();
@@ -11804,10 +11934,6 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	potionResultFrame->setDisabled(true);
 
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		real_t setpointDiffX = fpsScale * std::max(.05, (animPotionResult)) / 3.0;
-		animPotionResult -= setpointDiffX;
-		animPotionResult = std::max(0.0, animPotionResult);
 		if ( animPotionResult < 0.001 )
 		{
 			if ( auto item = uidToItem(potionResultUid) )
@@ -11815,6 +11941,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
 				{
 					// one-off update to prevent a blank frame
+					slotFrame->setUserData(nullptr);
 					updateSlotFrameFromItem(slotFrame, item);
 				}
 			}
@@ -12038,31 +12165,52 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	{
 		if ( potion1Item && potion2Item )
 		{
+			if ( animRandomPotionTicks == 0 )
+			{
+				animRandomPotionTicks = ticks;
+				animRandomPotionUpdatedThisTick = ticks;
+			}
+			else if ( (ticks != animRandomPotionTicks) && (ticks - animRandomPotionTicks) % TICKS_PER_SECOND == 0 )
+			{
+				if ( animRandomPotionUpdatedThisTick != ticks )
+				{
+					++animRandomPotionVariation;
+					animRandomPotionUpdatedThisTick = ticks;
+				}
+				if ( animRandomPotionVariation >= items[POTION_BOOZE].variations )
+				{
+					animRandomPotionVariation = 0;
+				}
+			}
+
 			bool tryDuplicatePotion = false;
 			bool randomResult = false;
 			bool explodeSelf = false;
 			bool samePotion = false;
 			ItemType res = alchemyMixResult(potion1Item->type, potion2Item->type, randomResult, tryDuplicatePotion, samePotion, explodeSelf);
-			Status status = SERVICABLE;
+			Status status = EXCELLENT;
 			alchemyResultPotion.identified = false;
 			alchemyResultPotion.type = POTION_EMPTY;
-			if ( clientLearnedAlchemyIngredients[playernum].find(potion1Item->type)
-				!= clientLearnedAlchemyIngredients[playernum].end() )
+			if ( samePotion || tryDuplicatePotion )
 			{
-				if ( clientLearnedAlchemyIngredients[playernum].find(potion2Item->type)
-					!= clientLearnedAlchemyIngredients[playernum].end() )
-				{
-					alchemyResultPotion.identified = true;
-				}
+				alchemyResultPotion.count = 2;
+			}
+			else
+			{
+				alchemyResultPotion.count = 1;
 			}
 			int appearance = 0;
 			int blessing = std::min(static_cast<int>(std::min(potion1Item->beatitude, potion2Item->beatitude)), 0);
 			if ( samePotion )
 			{
-				// same potion, keep the second potion only.
-				res = potion2Item->type;
-				blessing = potion2Item->beatitude;
-				appearance = potion2Item->appearance;
+				// same potion, keep the first potion only.
+				res = potion1Item->type;
+				if ( potion1Item->beatitude == potion2Item->beatitude )
+				{
+					blessing = potion1Item->beatitude;
+				}
+				appearance = potion1Item->appearance;
+				status = potion1Item->status;
 			}
 
 			if ( tryDuplicatePotion && !explodeSelf && !randomResult )
@@ -12088,9 +12236,14 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				tryDuplicatePotion = false;
 			}
 			alchemyResultPotion.status = status;
-			if ( !(potion1Item->identified && potion2Item->identified) )
+			if ( !(potion1Item->identified && potion2Item->identified) || randomResult )
 			{
 				alchemyResultPotion.identified = false;
+			}
+			else
+			{
+				alchemyResultPotion.identified = tryDuplicatePotion || samePotion ||
+					playerKnowsRecipe(playernum, potion1Item->type, potion2Item->type, res);
 			}
 			if ( alchemyResultPotion.identified )
 			{
@@ -12098,7 +12251,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			}
 			else
 			{
-				alchemyResultPotion.type = POTION_WATER;
+				alchemyResultPotion.type = POTION_BOOZE;
 			}
 
 			// blessings
@@ -12118,6 +12271,17 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				if ( skillCapstoneUnlocked(playernum, PRO_ALCHEMY) )
 				{
 					blessing = 2;
+					if ( parentGUI.alembicItem )
+					{
+						if ( parentGUI.alembicItem->beatitude <= -1 )
+						{
+							blessing = std::min(-2, (int)parentGUI.alembicItem->beatitude);
+						}
+						else
+						{
+							blessing = std::max(2, (int)parentGUI.alembicItem->beatitude);
+						}
+					}
 				}
 			}
 			alchemyResultPotion.beatitude = blessing;
@@ -12134,6 +12298,14 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				}
 			}
 			alchemyResultPotion.appearance = appearance;
+			if ( !alchemyResultPotion.identified && alchemyResultPotion.type == POTION_BOOZE )
+			{
+				alchemyResultPotion.appearance = animRandomPotionVariation;
+			}
+		}
+		else
+		{
+			animRandomPotionTicks = 0;
 		}
 	}
 
@@ -12380,11 +12552,13 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 	}
 
-	if ( activateSelection && players[playernum] && players[playernum]->entity )
+	if ( activateSelection && players[playernum] && players[playernum]->entity
+		&& animPotionResult < 0.001 )
 	{
 		parentGUI.basePotion = nullptr;
 		parentGUI.secondaryPotion = nullptr;
-		if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+		if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
+			&& itemActionType == ALCHEMY_ACTION_OK )
 		{
 			if ( getSelectedAlchemySlotX() >= ALCH_SLOT_RESULT_POTION_X && getSelectedAlchemySlotX() < 0
 				&& getSelectedAlchemySlotY() == 0 )
@@ -12433,10 +12607,31 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							{
 								if ( auto item = uidToItem(potionResultUid) )
 								{
-									if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
+									if ( potionResultUid == potion1Uid )
+									{
+										animPotionResultDestX = animPotion1DestX;
+										animPotionResultDestY = animPotion1DestY;
+										animPotionResult = 1.0;
+									}
+									else if ( potionResultUid == potion2Uid )
+									{
+										animPotionResultDestX = animPotion2DestX;
+										animPotionResultDestY = animPotion2DestY;
+										animPotionResult = 1.0;
+									}
+									else if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
 									{
 										animPotionResultDestX = slotFrame->getSize().x;
 										animPotionResultDestY = slotFrame->getSize().y + 2;
+										animPotionResultDestY += (player->inventoryUI.bCompactView ? 6 : 0);
+										if ( item->y >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+										{
+											// backpack slots, add another offset.
+											if ( auto invSlotsFrame = player->inventoryUI.frame->findFrame("inventory slots") )
+											{
+												animPotionResultDestY += invSlotsFrame->getSize().h;
+											}
+										}
 										animPotionResult = 1.0;
 									}
 								}
@@ -12454,7 +12649,8 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				}
 			}
 		}
-		else if ( player->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+		else if ( player->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
+			&& itemActionType == ALCHEMY_ACTION_OK )
 		{
 			if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(player->inventoryUI.getSelectedSlotX(),
 				player->inventoryUI.getSelectedSlotY()) )
@@ -12492,7 +12688,15 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							}
 							animPotion1 = 1.0;
 							animPotion1StartX = slotFrame->getSize().x;
-							animPotion1StartY = slotFrame->getSize().y;
+							animPotion1StartY = slotFrame->getSize().y + (player->inventoryUI.bCompactView ? 8 : 0);
+							if ( item->y >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+							{
+								// backpack slots, add another offset.
+								if ( auto invSlotsFrame = player->inventoryUI.frame->findFrame("inventory slots") )
+								{
+									animPotion1StartY += invSlotsFrame->getSize().h;
+								}
+							}
 							potion1Uid = item->uid;
 						}
 						else
@@ -12503,8 +12707,16 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							}
 							animPotion2 = 1.0;
 							animPotion2StartX = slotFrame->getSize().x;
-							animPotion2StartY = slotFrame->getSize().y;
+							animPotion2StartY = slotFrame->getSize().y + (player->inventoryUI.bCompactView ? 8 : 0);
 							potion2Uid = item->uid;
+							if ( item->y >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+							{
+								// backpack slots, add another offset.
+								if ( auto invSlotsFrame = player->inventoryUI.frame->findFrame("inventory slots") )
+								{
+									animPotion2StartY += invSlotsFrame->getSize().h;
+								}
+							}
 						}
 						break;
 					}
@@ -12758,6 +12970,7 @@ Frame* GenericGUIMenu::AlchemyGUI_t::getAlchemySlotFrame(int x, int y) const
 
 void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion)
 {
+	itemActionType = ALCHEMY_ACTION_NONE;
 	if ( !item || item->type == SPELL_ITEM )
 	{
 		clearItemDisplayed();
@@ -12786,6 +12999,14 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 	int player = parentGUI.getPlayer();
 	if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
 	{
+		if ( !item->identified && !isTooltipForResultPotion )
+		{
+			itemActionType = ALCHEMY_ACTION_UNIDENTIFIED_POTION;
+		}
+		else
+		{
+			itemActionType = ALCHEMY_ACTION_OK;
+		}
 		auto find = clientLearnedAlchemyIngredients[player].find(item->type);
 		Item* basePotion = nullptr;
 		Item* secondaryPotion = nullptr;
@@ -12851,6 +13072,10 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 			}
 		}
 	}
+	else
+	{
+		itemActionType = ALCHEMY_ACTION_INVALID_ITEM;
+	}
 	if ( itemDesc != buf )
 	{
 		itemRequiresTitleReflow = true;
@@ -12899,4 +13124,5 @@ bool GenericGUIMenu::AlchemyGUI_t::warpMouseToSelectedAlchemyItem(Item* snapToIt
 void GenericGUIMenu::AlchemyGUI_t::clearItemDisplayed()
 {
 	itemType = -1;
+	itemActionType = ALCHEMY_ACTION_NONE;
 }
