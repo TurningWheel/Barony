@@ -2765,6 +2765,19 @@ namespace ConsoleCommands {
 			return;
 		}
 
+		if ( argc >= 2 )
+		{
+			int count = std::max(1, atoi(argv[1]));
+			for ( int i = 0; i < 10; ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					0, count, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+			}
+			return;
+		}
+
 		std::vector<int> potionChances =
 		{
 			1,	//POTION_WATER,
@@ -3841,5 +3854,9 @@ namespace ConsoleCommands {
 					items[entry.second.second].name_identified);
 			}
 		}
+	});
+
+	static ConsoleCommand ccmd_itemuids("/itemuids", "prints current global itemuids", []CCMD{
+		messagePlayer(clientnum, MESSAGE_DEBUG, "itemuids: %d", itemuids);
 	});
 }
