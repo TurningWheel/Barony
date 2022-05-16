@@ -593,7 +593,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
-Item* newItemFromEntity(const Entity* entity); //Make sure to call free(item).
+Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
 

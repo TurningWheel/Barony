@@ -55,12 +55,13 @@ void actThrown(Entity* my)
 	ItemType type = WOODEN_SHIELD;
 	char* itemname = nullptr;
 
-	item = newItemFromEntity(my);
+	item = newItemFromEntity(my, true);
 	if ( item )
 	{
 		cat = itemCategory(item);
 		type = item->type;
 		free(item);
+		item = nullptr;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -129,7 +130,7 @@ void actThrown(Entity* my)
 		// select appropriate model
 		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
-		item = newItemFromEntity(my);
+		item = newItemFromEntity(my, true);
 		if ( item )
 		{
 			my->sprite = itemModel(item);
@@ -142,6 +143,7 @@ void actThrown(Entity* my)
 				}
 			}
 			free(item);
+			item = nullptr;
 		}
 	}
 

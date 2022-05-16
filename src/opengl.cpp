@@ -1257,7 +1257,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			&& (multiplayer != CLIENT 
 				|| (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))) )
 		{
-			Item* item = newItemFromEntity(uidToEntity(entity->parent));
+			Item* item = newItemFromEntity(uidToEntity(entity->parent), true);
 			if ( !item )
 			{
 				return;
