@@ -44,6 +44,9 @@
 #include "ui/Frame.hpp"
 #include "ui/Button.hpp"
 #include "ui/LoadingScreen.hpp"
+#ifndef EDITOR
+#include "ui/MainMenu.hpp"
+#endif
 
 #include <thread>
 #include <future>
@@ -2483,8 +2486,13 @@ bool initVideo()
         }*/
         screen_width = std::min(bound.w, screen_width);
         screen_height = std::min(bound.h, screen_height);
-        screen_x = bound.x + (bound.w - screen_width) / 2;
-        screen_y = bound.y + (bound.h - screen_height) / 2;
+        if (fullscreen) {
+            screen_x = bound.x;
+            screen_y = bound.y;
+        } else {
+            screen_x = bound.x + (bound.w - screen_width) / 2;
+            screen_y = bound.y + (bound.h - screen_height) / 2;
+        }
     }
 #endif
     xres = screen_width;
@@ -2494,7 +2502,8 @@ bool initVideo()
 
 	if ( !screen )
 	{
-	    Uint32 flags = game ? 0 : SDL_WINDOW_RESIZABLE;
+	    //Uint32 flags = game ? 0 : SDL_WINDOW_RESIZABLE;
+	    Uint32 flags = SDL_WINDOW_RESIZABLE;
 	    flags |= SDL_WINDOW_OPENGL;
 #ifdef PANDORA
 	    flags |= SDL_WINDOW_FULLSCREEN;
@@ -2504,24 +2513,13 @@ bool initVideo()
 #else
 	    if ( fullscreen )
 	    {
-	        if ( borderless )
-	        {
-		        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-		    }
-		    else
-		    {
-		        flags |= SDL_WINDOW_FULLSCREEN;
-		    }
+		    flags |= SDL_WINDOW_FULLSCREEN;
 	    }
 	    else if ( borderless )
 	    {
 		    flags |= SDL_WINDOW_BORDERLESS;
 	    }
 #endif
-	    if ( fullscreen )
-	    {
-		    flags |= SDL_WINDOW_BORDERLESS;
-	    }
 		if ((screen = SDL_CreateWindow( window_title, screen_x, screen_y, screen_width, screen_height, flags )) == NULL)
 		{
 			printlog("failed to set video mode.\n");
@@ -2530,64 +2528,49 @@ bool initVideo()
 	}
 	else
 	{
-	    SDL_SetWindowFullscreen(screen, 0);
+        SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
+        SDL_SetWindowPosition(screen, screen_x, screen_y);
 	    if (fullscreen) {
-		    SDL_SetWindowBordered(screen, SDL_bool::SDL_FALSE);
-		} else {
-		    SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
-		}
-	    SDL_SetWindowPosition(screen, screen_x, screen_y);
-		SDL_SetWindowSize(screen, screen_width, screen_height);
-		SDL_DisplayMode mode;
-	    if (fullscreen) {
+	        SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
+		    SDL_DisplayMode mode;
             SDL_GetDesktopDisplayMode(display_id, &mode);
             mode.w = screen_width;
             mode.h = screen_height;
 		    SDL_SetWindowDisplayMode(screen, &mode);
+		} else {
+	        SDL_SetWindowSize(screen, screen_width, screen_height);
+	        SDL_SetWindowFullscreen(screen, 0);
 		}
-#ifndef NINTENDO
-		if ( fullscreen )
-		{
-		    if ( borderless )
-		    {
-			    SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN_DESKTOP);
-			}
-			else
-			{
-			    SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
-			}
-		}
-#endif // !NINTENDO
 	}
 
 	if ( !renderer )
 	{
+#ifdef NINTENDO
+	    initNxGL();
+#endif
 		if ((renderer = SDL_GL_CreateContext(screen)) == NULL)
 		{
 			printlog("failed to create GL context. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
 			return false;
 		}
-	}
 
 #ifdef PANDORA
-	GO_InitFBO();
-#endif
-#ifdef NINTENDO
-	initNxGL();
+	    GO_InitFBO();
 #endif
 
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glClearColor( 0.f, 0.f, 0.f, 0.f );
+	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	    glEnable(GL_TEXTURE_2D);
+	    glEnable(GL_CULL_FACE);
+	    glCullFace(GL_BACK);
+	    glEnable(GL_BLEND);
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	    glMatrixMode( GL_MODELVIEW );
+	    glLoadIdentity();
+	    glMatrixMode( GL_PROJECTION );
+	    glLoadIdentity();
+	    glClearColor( 0.f, 0.f, 0.f, 0.f );
+	}
 
 	if ( verticalSync )
 	{
@@ -2597,12 +2580,14 @@ bool initVideo()
 	{
 		SDL_GL_SetSwapInterval(0);
 	}
+
 #ifndef NINTENDO
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
 	}
 #endif
+
 	printlog("display changed successfully.\n");
 	return true;
 }
@@ -2620,20 +2605,15 @@ bool initVideo()
 bool changeVideoMode(int new_xres, int new_yres)
 {
 	if (new_xres) {
-		xres = new_xres;
+		xres = std::max(1024, new_xres);
 	}
 	if (new_yres) {
-		yres = new_yres;
+		yres = std::max(720, new_yres);
 	}
 	printlog("changing video mode (%d x %d).\n", xres, yres);
-#ifdef PANDORA
-	GO_InitFBO();
-#else
 
 	// destroy gui fbo
-#ifndef EDITOR
 	Frame::fboDestroy();
-#endif
 
 	// set video mode
 	int result = initVideo();
@@ -2651,11 +2631,37 @@ bool changeVideoMode(int new_xres, int new_yres)
 	}
 
 	// create new frame fbo
-#ifndef EDITOR
 	Frame::fboInit();
+
+	// success
+	return true;
+}
+
+bool resizeWindow(int new_xres, int new_yres)
+{
+    if (!screen || !renderer) {
+        return false;
+    }
+	if (new_xres) {
+		xres = std::max(100, new_xres);
+	}
+	if (new_yres) {
+		yres = std::max(100, new_yres);
+	}
+
+	// destroy gui fbo
+	Frame::fboDestroy();
+
+#ifndef EDITOR
+    if (!intro) {
+        MainMenu::setupSplitscreen();
+    }
 #endif
 
-#endif
+	//SDL_SetWindowSize(screen, xres, yres);
+
+	// create new frame fbo
+	Frame::fboInit();
 
 	// success
 	return true;

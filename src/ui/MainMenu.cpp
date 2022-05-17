@@ -509,7 +509,7 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static void setupSplitscreen() {
+	void setupSplitscreen() {
 		if (multiplayer != SINGLE) {
 			splitscreen = false;
 		    for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -1345,16 +1345,16 @@ namespace MainMenu {
 
 		bool new_fullscreen, new_borderless;
 		switch (window_mode) {
-		case 0:
+		case 0: // windowed
 			new_fullscreen = false;
 			new_borderless = false;
 			break;
-		case 1:
+		case 1: // fullscreen
 			new_fullscreen = true;
 			new_borderless = false;
 			break;
-		case 2:
-			new_fullscreen = true;
+		case 2: // borderless
+			new_fullscreen = false;
 			new_borderless = true;
 			break;
 		default:
@@ -1383,7 +1383,7 @@ namespace MainMenu {
 
 	inline Video Video::load() {
 	    Video settings;
-		settings.window_mode = fullscreen ? (borderless ? 2 : 1) : 0;
+		settings.window_mode = borderless ? 2 : (fullscreen ? 1 : 0);
 		settings.display_id = ::display_id;
 		settings.resolution_x = xres;
 		settings.resolution_y = yres;
@@ -4182,7 +4182,7 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
-		const char* selected_mode = fullscreen ? (borderless ? "Borderless" : "Fullscreen") : "Windowed";
+		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 #ifndef NINTENDO

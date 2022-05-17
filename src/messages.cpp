@@ -68,6 +68,10 @@ void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
 		            ++lines;
 		        }
 		    }
+		    if (msg->text->lines > lines) {
+		        // how did this message record more lines than it has?
+		        msg->text->lines = lines;
+		    }
 		} else {
 		    total_lines -= msg->text->lines;
 		    messageDeconstructor(msg);

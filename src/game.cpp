@@ -3837,9 +3837,7 @@ void handleEvents(void)
 					{
 						break;
 					}
-					xres = event.window.data1;
-					yres = event.window.data2;
-					if (!changeVideoMode())
+					if (!resizeWindow(event.window.data1, event.window.data2))
 					{
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;

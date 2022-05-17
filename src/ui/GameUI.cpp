@@ -4880,11 +4880,16 @@ static void openMapWindow(int player) {
 
     const int map_size = std::min(w, h - 32);
 
-	auto minimap = frame->addFrame("minimap");
-	minimap->setSize(SDL_Rect{0, 32, map_size, map_size});
-	minimap->setColor(uint32ColorBlack);
-    minimap->setBorderColor(makeColor(51, 33, 26, 255));
-    minimap->setBorder(2);
+    auto container = frame->addFrame("container");
+	container->setSize(SDL_Rect{0, 32, map_size + 32, map_size});
+    container->setBorderColor(makeColor(51, 33, 26, 255));
+	container->setBorder(2);
+	container->setColor(0);
+
+	auto minimap = container->addFrame("minimap");
+	minimap->setSize(SDL_Rect{16, 32, map_size, map_size});
+	minimap->setColor(0);
+    minimap->setBorder(0);
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
         drawMinimap(widget.getOwner(), rect);
         });

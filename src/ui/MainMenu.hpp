@@ -89,4 +89,5 @@ namespace MainMenu {
 	void disconnectedFromServer(const char* text);
 	void receivedInvite();
 	void handleScanPacket();
+	void setupSplitscreen(); // resizes player game views
 }

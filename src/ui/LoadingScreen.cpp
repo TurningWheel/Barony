@@ -74,7 +74,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 		    Frame::virtualScreenY - 64,
 		    Frame::virtualScreenX,
 		    64},
-		loading_bar_color_empty,
+		background_image ? loading_bar_color_empty : 0,
 		"images/system/white.png",
 		"progress_background"
 	);
@@ -85,7 +85,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 		    Frame::virtualScreenY - 64,
 		    (int)((Frame::virtualScreenX * progress) / (real_t)100),
 		    64},
-		loading_bar_color_filled,
+		background_image ? loading_bar_color_filled : 0,
 		"images/system/white.png",
 		"progress_filled"
 	);
@@ -98,6 +98,9 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	char buf[8];
 	snprintf(buf, sizeof(buf), "%d%%", (int)progress);
 	text->setText(buf);
+	if (!background_image) {
+	    text->setInvisible(true);
+	}
 
 	// spinning widget
 	loading_frame->addImage(

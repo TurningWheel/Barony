@@ -859,18 +859,16 @@ void handleEvents(void)
 					{
 						break;
 					}
-					xres = std::max(event.window.data1, 100);
-					yres = std::max(event.window.data2, 75);
+					if ( !resizeWindow(event.window.data1, event.window.data2) )
+					{
+						printlog("critical error! Attempting to abort safely...\n");
+						mainloop = 0;
+					}
 					if (palette != NULL)
 					{
 						free(palette);
 					}
 					palette = (int*) malloc(sizeof(unsigned int) * xres * yres);
-					if ( !changeVideoMode() )
-					{
-						printlog("critical error! Attempting to abort safely...\n");
-						mainloop = 0;
-					}
 				}
 				break;
 		}
