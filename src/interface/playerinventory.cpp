@@ -8485,6 +8485,8 @@ std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
 		case PROMPT_UNEQUIP_FOR_DROP:
 		case PROMPT_RETRIEVE_CHEST_ALL:
 		case PROMPT_STORE_CHEST_ALL:
+		case PROMPT_CONSUME_ALTERNATE:
+		case PROMPT_INSPECT_ALTERNATE:
 			return "MenuAlt2";
 		case PROMPT_GRAB:
 			return "MenuAlt1";
@@ -8527,8 +8529,10 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 		case PROMPT_APPRAISE:
 			return language[1161];
 		case PROMPT_CONSUME:
+		case PROMPT_CONSUME_ALTERNATE:
 			return language[3487];
 		case PROMPT_INSPECT:
+		case PROMPT_INSPECT_ALTERNATE:
 			return language[1881];
 		case PROMPT_SELL:
 			return language[345];
@@ -8644,7 +8648,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
 		{
-			options.push_back(PROMPT_CONSUME);
+			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_INSPECT);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
@@ -8664,8 +8668,8 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else
 		{
+			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_INTERACT);
-			options.push_back(PROMPT_CONSUME);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
@@ -8746,6 +8750,11 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				it = options.erase(it);
 				continue;
 			}
+			if ( *it == PROMPT_CONSUME_ALTERNATE || *it == PROMPT_INSPECT_ALTERNATE )
+			{
+				it = options.erase(it);
+				continue;
+			}
 		}
 		if ( *it == PROMPT_EQUIP )
 		{
@@ -8769,6 +8778,19 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		options.insert(options.begin(), PROMPT_SELL);
 	}
+
+#ifndef NDEBUG
+	std::unordered_map<std::string, int> optionsMap;
+	for ( auto it = options.begin(); it != options.end(); ++it )
+	{
+		optionsMap[getContextMenuOptionBindingName(*it)] += 1;
+	}
+	for ( auto& pair : optionsMap )
+	{
+		assert(pair.second <= 1);
+	}
+#endif // NDEBUG
+
 	return options;
 }
 

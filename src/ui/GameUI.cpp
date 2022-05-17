@@ -15409,7 +15409,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		}
 		return;
 	}
-	else if ( prompt == PROMPT_CONSUME )
+	else if ( prompt == PROMPT_CONSUME || prompt == PROMPT_CONSUME_ALTERNATE )
 	{
 		// consume item
 		if ( multiplayer == CLIENT )
@@ -15430,7 +15430,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		item_FoodAutomaton(item, player);
 		return;
 	}
-	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_TINKER )
+	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_INSPECT_ALTERNATE || prompt == PROMPT_TINKER )
 	{
 		if ( item->type == TOOL_ALEMBIC )
 		{
