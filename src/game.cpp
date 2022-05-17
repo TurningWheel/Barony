@@ -52,16 +52,16 @@
 
 #include "UnicodeDecoder.h"
 
+#include <atomic>
+#include <future>
+#include <thread>
+
 #ifdef LINUX
 //Sigsegv catching stuff.
 #include <signal.h>
 #include <string.h>
 #include <execinfo.h>
 #include <sys/stat.h>
-
-#include <atomic>
-#include <future>
-#include <thread>
 
 static SDL_bool SDL_MouseModeBeforeSignal = SDL_FALSE;
 static int SDL_MouseShowBeforeSignal = SDL_ENABLE;
