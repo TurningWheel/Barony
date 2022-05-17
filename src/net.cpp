@@ -37,6 +37,11 @@
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
 #include "ui/MainMenu.hpp"
+#include "ui/LoadingScreen.hpp"
+
+#include <atomic>
+#include <future>
+#include <thread>
 
 NetHandler* net_handler = nullptr;
 
@@ -3577,16 +3582,6 @@ void clientHandlePacket()
 			closeChestClientside(clientnum);
 		}
 
-		// show loading message
-#define LOADSTR language[709]
-		loading = true;
-		drawClearBuffers();
-		int w, h;
-		getSizeOfText(ttf16, LOADSTR, &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR);
-
-		GO_SwapBuffers(screen);
-
 		// unlock some steam achievements
 		if ( !secretlevel )
 		{
@@ -3654,16 +3649,6 @@ void clientHandlePacket()
 		entity_uids = (Uint32)SDLNet_Read32(&net_packet->data[9]);
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
 
-		gameplayCustomManager.readFromFile();
-
-		int checkMapHash = -1;
-		int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-		if ( checkMapHash == 0 )
-		{
-			conductGameChallenges[CONDUCT_MODDED] = 1;
-			gamemods_disableSteamAchievements = true;
-		}
-
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			minimapPings[i].clear(); // clear minimap pings
@@ -3674,20 +3659,53 @@ void clientHandlePacket()
 		// clear follower menu entities.
 		FollowerMenu[clientnum].closeFollowerMenuGUI(true);
 
-		numplayers = 0;
-		assignActions(&map);
-		generatePathMaps();
-		for ( node = map.entities->first; node != nullptr; node = nextnode )
-		{
-			nextnode = node->next;
-			Entity* entity = (Entity*)node->element;
-			if ( entity->flags[NOUPDATE] )
-			{
-				list_RemoveNode(entity->mynode);    // we're anticipating this entity data from server
-			}
-		}
+        // load map file
+		loading = true;
+	    createLevelLoadScreen(5);
+	    std::atomic_bool loading_done {false};
+	    auto loading_task = std::async(std::launch::async, [&loading_done](){
+		    gameplayCustomManager.readFromFile();
+	        updateLoadingScreen(10);
 
-		saveGame();
+		    int checkMapHash = -1;
+		    int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+		    if ( checkMapHash == 0 )
+		    {
+			    conductGameChallenges[CONDUCT_MODDED] = 1;
+			    gamemods_disableSteamAchievements = true;
+		    }
+	        updateLoadingScreen(50);
+
+		    numplayers = 0;
+		    assignActions(&map);
+	        updateLoadingScreen(55);
+
+		    generatePathMaps();
+	        updateLoadingScreen(80);
+
+            node_t *node, *nextnode;
+		    for ( node = map.entities->first; node != nullptr; node = nextnode )
+		    {
+			    nextnode = node->next;
+			    Entity* entity = (Entity*)node->element;
+			    if ( entity->flags[NOUPDATE] )
+			    {
+				    list_RemoveNode(entity->mynode);    // we're anticipating this entity data from server
+			    }
+		    }
+	        updateLoadingScreen(99);
+
+		    loading_done = true;
+		    return result;
+		});
+	    while (!loading_done)
+	    {
+		    doLoadingScreen();
+		    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	    }
+	    destroyLoadingScreen();
+		loading = false;
+	    int result = loading_task.get();
 
 		// (special) unlock temple achievement
 		if ( secretlevel && currentlevel == 8 )
@@ -3695,6 +3713,7 @@ void clientHandlePacket()
 			steamAchievement("BARONY_ACH_TRICKS_AND_TRAPS");
 		}
 
+		saveGame();
 		printlog("Done.\n");
 
 		Player::Minimap_t::mapDetails.clear();
@@ -3777,7 +3796,6 @@ void clientHandlePacket()
 		{
 			messagePlayer(clientnum, MESSAGE_HINT, language[2599]);
 		}
-		loading = false;
 		fadeout = false;
 		fadealpha = 255;
 		return;

@@ -311,6 +311,8 @@ extern Uint32 networkTickrate;
 extern bool gameloopFreezeEntities;
 extern Uint32 serverSchedulePlayerHealthUpdate;
 
+void drawAllPlayerCameras();
+
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
 #define XPSHARERANGE 256

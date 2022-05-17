@@ -582,6 +582,7 @@ int initApp(char const * const title, int fullscreen)
 		int soundStatus = loadSoundResources();
 		if ( 0 != soundStatus )
 		{
+		    loading_done = true;
 			return soundStatus;
 		}
 
@@ -931,7 +932,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
 		if ( useModelCache )
 		{
-            std::string cache_path = std::string(outputdir) + "models.cache";
+            std::string cache_path = std::string(outputdir) + "/models.cache";
 			model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
@@ -1892,7 +1893,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-    std::string cache_path = std::string(outputdir) + "models.cache";
+    std::string cache_path = std::string(outputdir) + "/models.cache";
 	if (useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")))
 	{
 		char modelCacheHeader[32] = "BARONY";
