@@ -613,7 +613,7 @@ void updateAppraisalItemBox(const int player)
         return;
     }
 
-    static ConsoleVariable<bool> disable("/disableappraisalbox", false);
+    static ConsoleVariable<bool> disable("/disableappraisalbox", true);
     if (*disable) {
         return;
     }

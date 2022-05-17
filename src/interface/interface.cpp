@@ -776,7 +776,7 @@ static auto genericgui_deselect_fn = [](Widget& widget) {
 
 void saveCommand(char* content)
 {
-	newString(&command_history, 0xFFFFFFFF, content);
+	newString(&command_history, 0xFFFFFFFF, ticks, content);
 }
 
 /*-------------------------------------------------------------------------------

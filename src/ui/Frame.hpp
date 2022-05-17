@@ -341,6 +341,7 @@ public:
 	void    setSelectedEntryColor(const Uint32& _color) { selectedEntryColor = _color; }
 	void    setActivatedEntryColor(const Uint32& _color) { activatedEntryColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }
+	void    setSliderColor(const Uint32& _color) { sliderColor = _color; }
 	void	setDisabled(const bool _disabled) { disabled = _disabled; }
 	void	setHollow(const bool _hollow) { hollow = _hollow; }
 	void	setDropDown(const bool _dropDown) { dropDown = _dropDown; }
@@ -367,6 +368,7 @@ private:
 	Uint32 selectedEntryColor = 0;                      //!< selected entry color
 	Uint32 activatedEntryColor = 0;                     //!< activated entry color
 	Uint32 borderColor = 0;								//!< the frame's border color (only used for flat border)
+	Uint32 sliderColor = 0;                             //!< color used for scroll sliders
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame doesn't have a solid background
 	bool draggingHSlider = false;						//!< if true, we are dragging the horizontal slider

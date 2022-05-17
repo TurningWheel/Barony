@@ -6086,7 +6086,7 @@ void handleMainMenu(bool mode)
 			}
 			if ( multiplayer != CLIENT )
 			{
-				newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
+				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
 			}
 
 			int playerToKick = -1;
@@ -6109,20 +6109,20 @@ void handleMainMenu(bool mode)
 							char clientShortName[32] = { 0 };
 							strncpy(clientShortName, stats[playerToKick]->name, 22);
 							snprintf(kickMsg, LOBBY_CHATBOX_LENGTH, language[279], playerToKick + 1, clientShortName);
-							newString(&lobbyChatboxMessages, 0xFFFFFFFF, kickMsg);  // servers print their messages right away
+							//newString(&lobbyChatboxMessages, 0xFFFFFFFF, kickMsg);  // servers print their messages right away
 
 							strcpy(msg, kickMsg);
 						}
 						else
 						{
-							newString(&lobbyChatboxMessages, 0xFFFFFFFF, "***   Invalid player to kick   ***");
+							//newString(&lobbyChatboxMessages, 0xFFFFFFFF, "***   Invalid player to kick   ***");
 							skipMessageRelayToClients = true;
 							playerToKick = -1;
 						}
 					}
 					else
 					{
-						newString(&lobbyChatboxMessages, 0xFFFFFFFF, "***   Invalid player to kick   ***");
+						//newString(&lobbyChatboxMessages, 0xFFFFFFFF, "***   Invalid player to kick   ***");
 						skipMessageRelayToClients = true;
 						playerToKick = -1;
 					}
@@ -12258,10 +12258,10 @@ void buttonHostLobby(button_t* my)
 		return;
 	}
 
-	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
+	//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
 	if ( loadingsavegame )
 	{
-		newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1453]);
+		//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1453]);
 	}
 
 	// close any existing net interfaces
@@ -12477,7 +12477,7 @@ void buttonJoinLobby(button_t* my)
 
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
-	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
+	//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;

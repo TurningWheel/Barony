@@ -242,46 +242,46 @@ void createHPMPBars(const int player)
 
 
 		auto base = hud_t.hpFrame->addImage(SDL_Rect{ 54, 4, barWidth - 54, 26 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "hp img base");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "hp img base");
 
 		const int progressBarHeight = 22;
 		auto fadeProgressBase = fadeFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade bot");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade bot");
 		auto fadeProgress = fadeFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPMidFade_00.png", "hp img fade");
 		auto fadeProgressEndCap = fadeFrame->addImage(SDL_Rect{
 			fadeProgress->pos.x + fadeProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPEndFade_00.png", "hp img fade endcap");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPEndFade_00.png", "hp img fade endcap");
 
 		auto numbase = foregroundFrame->addImage(SDL_Rect{ 0, 4, 48, 26 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPNumBase_00.png", "hp img value");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPNumBase_00.png", "hp img value");
 		auto div = foregroundFrame->addImage(SDL_Rect{ 46, 0, 8, 34 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "hp img div");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "hp img div");
 
 		auto currentProgressBase = foregroundFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png", "hp img progress bot");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png", "hp img progress bot");
 		auto currentProgress = foregroundFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png", "hp img progress");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png", "hp img progress");
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png", "hp img progress endcap");
 		auto currentProgressEndCapFlash = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w - 14, 6, 22, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png", "hp img progress endcap flash");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png", "hp img progress endcap flash");
 		currentProgressEndCapFlash->disabled = true;
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "hp img endcap");
 
 		auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 25pc");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 25pc");
 		div25Percent->disabled = true;
 		auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 50pc");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 50pc");
 		div50Percent->disabled = true;
 		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 75pc");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "hp img div 75pc");
 		div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
@@ -311,46 +311,46 @@ void createHPMPBars(const int player)
 
 
 		auto base = hud_t.mpFrame->addImage(SDL_Rect{ 54, 4, barWidth - 54, 26 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "mp img base");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Base_00.png", "mp img base");
 
 		const int progressBarHeight = 22;
 		auto fadeProgressBase = fadeFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade bot");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade bot");
 		auto fadeProgress = fadeFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png", "mp img fade");
 		auto fadeProgressEndCap = fadeFrame->addImage(SDL_Rect{
 			fadeProgress->pos.x + fadeProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPEndFade_00.png", "mp img fade endcap");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPEndFade_00.png", "mp img fade endcap");
 
 		auto numbase = foregroundFrame->addImage(SDL_Rect{ 0, 4, 48, 26 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPNumBase_00.png", "mp img value");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPNumBase_00.png", "mp img value");
 		auto div = foregroundFrame->addImage(SDL_Rect{ 46, 0, 8, 34 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "mp img div");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Separator_00.png", "mp img div");
 
 		auto currentProgressBase = foregroundFrame->addImage(SDL_Rect{ 54, 6, 6, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png", "mp img progress bot");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png", "mp img progress bot");
 		auto currentProgress = foregroundFrame->addImage(SDL_Rect{ 60, 6, barWidth - 60 - 8,  progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png", "mp img progress");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png", "mp img progress");
 		auto currentProgressEndCap = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png", "mp img progress endcap");
 		auto currentProgressEndCapFlash = foregroundFrame->addImage(SDL_Rect{
 			currentProgress->pos.x + currentProgress->pos.w - 14, 6, 22, progressBarHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png", "mp img progress endcap flash");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png", "mp img progress endcap flash");
 		currentProgressEndCapFlash->disabled = true;
 
 		const int endCapWidth = 16;
 		auto endCap = foregroundFrame->addImage(SDL_Rect{ pos.w - endCapWidth, 0, endCapWidth, barTotalHeight }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_EndCap_00.png", "mp img endcap");
 
 		auto div25Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 25pc");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 25pc");
 		div25Percent->disabled = true;
 		auto div50Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 50pc");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 50pc");
 		div50Percent->disabled = true;
 		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
-			"images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
 		div75Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
@@ -378,14 +378,14 @@ void createEnemyBar(const int player, Frame*& frame)
 	SDL_Rect pos{ (hud_t.hudFrame->getSize().w / 2) - barWidth / 2 - 6, barStartY, barWidth, barTotalHeight };
 	frame->setSize(pos);
 
-	auto bg = frame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Back_Body_01.png", "base img");
+	auto bg = frame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Back_Body_01.png", "base img");
 	bg->pos.x = 6;
 	bg->pos.h = 34;
 	bg->pos.y = 4;
 	bg->pos.w = 548;
 	bg->color = makeColor(255, 255, 255, 255);
 
-	auto bgEndCap = frame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Back_Cap_01.png", "base img endcap");
+	auto bgEndCap = frame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Back_Cap_01.png", "base img endcap");
 	bgEndCap->pos.x = bg->pos.x + bg->pos.w;
 	bgEndCap->pos.h = bg->pos.h;
 	bgEndCap->pos.y = bg->pos.y;
@@ -395,21 +395,21 @@ void createEnemyBar(const int player, Frame*& frame)
 	auto dmgFrame = frame->addFrame("bar dmg frame");
 	dmgFrame->setSize(SDL_Rect{ bg->pos.x, bg->pos.y, bg->pos.w + bgEndCap->pos.w, 34 });
 	dmgFrame->setInheritParentFrameOpacity(false);
-	auto dmg = dmgFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Body_01.png", "dmg img");
+	auto dmg = dmgFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Body_01.png", "dmg img");
 	dmg->pos.x = 0;
 	dmg->pos.h = bg->pos.h;
 	dmg->pos.y = 0;
 	dmg->pos.w = 548 / 2 + 100;
 	dmg->color = makeColor(255, 255, 255, 224);
 
-	auto dmgEndCap = dmgFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Cap_01.png", "dmg img endcap");
+	auto dmgEndCap = dmgFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Cap_01.png", "dmg img endcap");
 	dmgEndCap->pos.x = dmg->pos.w;
 	dmgEndCap->pos.h = dmg->pos.h;
 	dmgEndCap->pos.y = 0;
 	dmgEndCap->pos.w = 10;
 	dmgEndCap->color = dmg->color;
 
-	/*auto bubbles = dmgFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Bubbles_00.png", "img bubbles");
+	/*auto bubbles = dmgFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Bubbles_00.png", "img bubbles");
 	bubbles->pos.x = 0;
 	bubbles->pos.h = 20;
 	bubbles->pos.y = dmgFrame->getSize().h / 2 - bubbles->pos.h / 2;
@@ -421,13 +421,13 @@ void createEnemyBar(const int player, Frame*& frame)
 	auto progressFrame = frame->addFrame("bar progress frame");
 	progressFrame->setSize(SDL_Rect{ bg->pos.x, bg->pos.y + 2, bg->pos.w + bgEndCap->pos.w, 30 });
 	progressFrame->setOpacity(100.0);
-	auto fg = progressFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Fill_Body_00.png", "progress img");
+	auto fg = progressFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Fill_Body_00.png", "progress img");
 	fg->pos.x = 0;
 	fg->pos.h = bg->pos.h - 4;
 	fg->pos.y = 0;
 	fg->pos.w = 548;
 
-	auto fgEndCap = progressFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Fill_Cap_00.png", "progress img endcap");
+	auto fgEndCap = progressFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Fill_Cap_00.png", "progress img endcap");
 	fgEndCap->pos.x = fg->pos.x + fg->pos.w;
 	fgEndCap->pos.h = fg->pos.h;
 	fgEndCap->pos.y = 0;
@@ -438,10 +438,10 @@ void createEnemyBar(const int player, Frame*& frame)
 
 	auto skullFrame = frame->addFrame("skull frame");
 	skullFrame->setSize(SDL_Rect{ 0, 0, 24, 44 });
-	auto skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face4_00.png", "skull 0 img");
-	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face3_00.png", "skull 25 img");
-	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face2_00.png", "skull 50 img");
-	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "images/ui/HUD/enemybar/HUD_EnemyHP_Face1_00.png", "skull 100 img");
+	auto skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Face4_00.png", "skull 0 img");
+	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Face3_00.png", "skull 25 img");
+	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Face2_00.png", "skull 50 img");
+	skull = skullFrame->addImage(skullFrame->getSize(), 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_Face1_00.png", "skull 100 img");
 
 	std::string font = "fonts/pixel_maz.ttf#32#2";
 	Uint32 color = makeColor(235, 191, 140, 255);
@@ -476,38 +476,38 @@ void createXPBar(const int player)
 	SDL_Rect pos { (hud_t.hudFrame->getSize().w / 2) - xpBarWidth / 2, xpBarStartY, xpBarWidth, xpBarTotalHeight };
 	hud_t.xpFrame->setSize(pos);
 
-	//auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
-	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Exp_Surround_01.png", "xp img base");
+	//auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Bars_Base_00.png", "xp img base");
+	auto bg = hud_t.xpFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Exp_Surround_01.png", "xp img base");
 	bg->pos.x = 0;
 	bg->pos.h = 26;
 	bg->pos.y = 4;
-	auto bgFlair = hud_t.xpFrame->addImage(SDL_Rect{4, 10, 0, 14}, makeColor(255, 255, 255, 192), "images/ui/HUD/xpbar/HUD_Exp_GlassShine_03.png", "xp img base flair");
+	auto bgFlair = hud_t.xpFrame->addImage(SDL_Rect{4, 10, 0, 14}, makeColor(255, 255, 255, 192), "*#images/ui/HUD/xpbar/HUD_Exp_GlassShine_03.png", "xp img base flair");
 
 	// xpProgress only adjusts width
 	const int progressBarHeight = 22;
 	/*auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");*/
+		"*#images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");*/
 	auto progressClipFrame = hud_t.xpFrame->addFrame("xp progress clipping frame");
 	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
 	auto progressClipImg = progressClipFrame->addImage(SDL_Rect{ 0, 0, 634, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress clipped");
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress clipped");
 
 	auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress");
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress");
 
 	// xpProgressEndCap only adjusts x position based on xpProgress->pos.x + xpProgress->pos.w
 	/*auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");*/
+		"*#images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");*/
 	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 38, progressBarHeight }, 0xFFFFFFFF,
-		"images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png", "xp img progress endcap");
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png", "xp img progress endcap");
 
 
 	const int endCapWidth = 26;
 	SDL_Rect endCapPos {0, 0, endCapWidth, xpBarTotalHeight};
-	auto endCapLeft = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap1_00.png", "xp img endcap left");
+	auto endCapLeft = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Bars_ExpCap1_00.png", "xp img endcap left");
 	endCapLeft->ontop = true;
 	endCapPos.x = pos.w - endCapPos.w;
-	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
+	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 	endCapRight->ontop = true;
 
 	const int textWidth = 48;
@@ -549,7 +549,7 @@ void createHotbar(const int player)
 		snprintf(slotname, sizeof(slotname), "hotbar slot %d", i);
 		auto slot = hotbar_t.hotbarFrame->addFrame(slotname);
 		slot->setSize(slotPos);
-		slot->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_02.png", "slot img");
+		slot->addImage(slotPos, color, "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_02.png", "slot img");
 		hotbar_t.hotbarSlotFrames[i] = slot;
 
 		char glyphname[32];
@@ -587,7 +587,7 @@ void createHotbar(const int player)
 
 	auto highlightFrame = hotbar_t.hotbarFrame->addFrame("hotbar highlight");
 	highlightFrame->setSize(slotPos);
-	highlightFrame->addImage(slotPos, color, "images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_02.png", "highlight img");
+	highlightFrame->addImage(slotPos, color, "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_HighlightBox_02.png", "highlight img");
 
 	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
 	SDL_Rect itemSlotTempSize = slotPos;
@@ -617,13 +617,13 @@ void createHotbar(const int player)
 		oldCursorFrame->setDisabled(true);
 		color = makeColor( 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_TL.png", "hotbar old cursor topleft");
+			color, "*#images/ui/Inventory/SelectorGrey_TL.png", "hotbar old cursor topleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_TR.png", "hotbar old cursor topright");
+			color, "*#images/ui/Inventory/SelectorGrey_TR.png", "hotbar old cursor topright");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_BL.png", "hotbar old cursor bottomleft");
+			color, "*#images/ui/Inventory/SelectorGrey_BL.png", "hotbar old cursor bottomleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_BR.png", "hotbar old cursor bottomright");
+			color, "*#images/ui/Inventory/SelectorGrey_BR.png", "hotbar old cursor bottomright");
 	}
 
 	{
@@ -632,13 +632,13 @@ void createHotbar(const int player)
 		cursorFrame->setDisabled(true);
 		color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
+			color, "*#images/ui/Inventory/Selector_TL.png", "shootmode selected cursor topleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_TR.png", "shootmode selected cursor topright");
+			color, "*#images/ui/Inventory/Selector_TR.png", "shootmode selected cursor topright");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_BL.png", "shootmode selected cursor bottomleft");
+			color, "*#images/ui/Inventory/Selector_BL.png", "shootmode selected cursor bottomleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
+			color, "*#images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
 	}
 
 	auto text = highlightFrame->addField("slot num text", 4);
@@ -666,7 +666,7 @@ void createUINavigation(const int player)
 		auto magicButton = uiNavFrame->addButton("magic button");
 		magicButton->setText(language[4115]);
 		magicButton->setFont(buttonFont);
-		magicButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		magicButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		magicButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		magicButton->setHideGlyphs(true);
 		magicButton->setHideKeyboardGlyphs(true);
@@ -702,7 +702,7 @@ void createUINavigation(const int player)
 		auto statusButton = uiNavFrame->addButton("status button");
 		statusButton->setText(language[4118]);
 		statusButton->setFont(buttonFont);
-		statusButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		statusButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		statusButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		statusButton->setHideGlyphs(true);
 		statusButton->setHideKeyboardGlyphs(true);
@@ -735,7 +735,7 @@ void createUINavigation(const int player)
 		auto itemsButton = uiNavFrame->addButton("items button");
 		itemsButton->setText(language[4116]);
 		itemsButton->setFont(buttonFont);
-		itemsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		itemsButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		itemsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		itemsButton->setHideGlyphs(true);
 		itemsButton->setHideKeyboardGlyphs(true);
@@ -768,7 +768,7 @@ void createUINavigation(const int player)
 		auto skillsButton = uiNavFrame->addButton("skills button");
 		skillsButton->setText(language[4117]);
 		skillsButton->setFont(buttonFont);
-		skillsButton->setBackground("images/ui/HUD/HUD_Button_Base_Small_00.png");
+		skillsButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
 		skillsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		skillsButton->setHideGlyphs(true);
 		skillsButton->setHideKeyboardGlyphs(true);
@@ -2249,23 +2249,23 @@ void StatusEffectQueue_t::createStatusEffectTooltip()
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 
 		auto heading_txt = tooltipFrame->addField("heading txt", 128);
@@ -4859,13 +4859,16 @@ static void openMapWindow(int player) {
     }
     Frame* parent = players[player]->hud.hudFrame;
     const SDL_Rect size = parent->getSize();
-    const int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
-    const int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+    const int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    const int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+    const int w = std::min(_w, _h);
+    const int h = std::min(_w, _h);
     frame = parent->addFrame("minimap_window");
     frame->setOwner(player);
-    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2, w, h});
-    frame->setColor(makeColor(127, 127, 127, 255));
-    frame->setBorder(0);
+    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
+    frame->setBorderColor(makeColor(51, 33, 26, 255));
+    frame->setColor(makeColor(0, 0, 0, 223));
+    frame->setBorder(2);
     frame->setTickCallback([](Widget& widget){
         const int player = widget.getOwner();
         auto frame = static_cast<Frame*>(&widget);
@@ -4875,12 +4878,13 @@ static void openMapWindow(int player) {
         }
         });
 
-    const int map_size = std::min(w - 32, h - 48);
+    const int map_size = std::min(w, h - 32);
 
 	auto minimap = frame->addFrame("minimap");
-	minimap->setSize(SDL_Rect{16, 32, map_size, map_size});
-	minimap->setHollow(true);
+	minimap->setSize(SDL_Rect{0, 32, map_size, map_size});
 	minimap->setColor(uint32ColorBlack);
+    minimap->setBorderColor(makeColor(51, 33, 26, 255));
+    minimap->setBorder(2);
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
         drawMinimap(widget.getOwner(), rect);
         });
@@ -4902,6 +4906,8 @@ static void openMapWindow(int player) {
     close_button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
     close_button->setFont(smallfont_outline);
     close_button->setText("x");
+    close_button->setColor(makeColor(51, 33, 26, 255));
+    close_button->setHighlightColor(makeColor(121, 71, 52, 255));
     close_button->setCallback([](Button& button){
         const int player = button.getOwner();
         players[player]->hud.mapWindow = nullptr;
@@ -4926,12 +4932,13 @@ static void openLogWindow(int player) {
     const SDL_Rect size = parent->getSize();
     const int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
     const int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+
     frame = parent->addFrame("log_window");
     frame->setOwner(player);
-    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2, w, h});
-    frame->setBorderColor(makeColor(63, 63, 63, 255));
-    frame->setColor(makeColor(127, 127, 127, 255));
-    frame->setBorder(0);
+    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
+    frame->setBorderColor(makeColor(51, 33, 26, 255));
+    frame->setColor(makeColor(0, 0, 0, 223));
+    frame->setBorder(2);
     frame->setTickCallback([](Widget& widget){
         const int player = widget.getOwner();
         auto frame = static_cast<Frame*>(&widget);
@@ -4941,27 +4948,39 @@ static void openLogWindow(int player) {
         }
         });
 
+
     int y = 0;
     auto subframe = frame->addFrame("subframe");
     subframe->setScrollWithLeftControls(false);
-    subframe->setSize(SDL_Rect{0, 32, w, h - 40});
-    subframe->setBorderColor(makeColor(63, 63, 63, 255));
-    subframe->setColor(makeColor(127, 127, 127, 255));
+    subframe->setSize(SDL_Rect{0, 32, w, h - 32});
+    subframe->setBorderColor(makeColor(51, 33, 26, 255));
+    subframe->setSliderColor(makeColor(121, 71, 52, 255));
+    subframe->setColor(makeColor(0, 0, 0, 0));
     subframe->setScrollBarsEnabled(true);
-    subframe->setBorder(0);
+    subframe->setBorder(2);
     for (auto node = messages.first; node != nullptr; node = node->next) {
         auto string = (string_t*)node->element;
-        auto field = subframe->addField("field", strlen(string->data) + 1);
-        auto text = Text::get(string->data, smallfont_outline,
+
+        char buf[1024];
+        const Uint32 time = string->time / TICKS_PER_SECOND;
+        const Uint32 hour = time / 3600;
+        const Uint32 min = (time / 60) % 60;
+        const Uint32 sec = time % 60;
+        const int result = snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u] %s", hour, min, sec, string->data);
+        const int size = std::min(std::max(0, (int)sizeof(buf)), result);
+
+        auto field = subframe->addField("field", size + 1);
+        auto text = Text::get(buf, smallfont_outline,
             uint32ColorWhite, uint32ColorBlack);
         const int h = (int)text->getHeight() * (int)string->lines + 2;
         field->setSize(SDL_Rect{8, y, (int)text->getWidth(), h});
         field->setFont(smallfont_outline);
         field->setColor(string->color);
-        field->setText(string->data);
+        field->setText(buf);
+
         y += h;
     }
-    subframe->setActualSize(SDL_Rect{0, y - (h - 40), w, y});
+    subframe->setActualSize(SDL_Rect{0, y - (h - 32), w, y});
 
     auto label = frame->addField("label", 64);
     label->setSize(SDL_Rect{8, 0, w - 40, 32});
@@ -4974,6 +4993,8 @@ static void openLogWindow(int player) {
     close_button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
     close_button->setFont(smallfont_outline);
     close_button->setText("x");
+    close_button->setColor(makeColor(51, 33, 26, 255));
+    close_button->setHighlightColor(makeColor(121, 71, 52, 255));
     close_button->setCallback([](Button& button){
         const int player = button.getOwner();
         players[player]->hud.logWindow = nullptr;
@@ -5101,7 +5122,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				0, 208, Frame::virtualScreenY });
 			// if splitscreen 3/4 - disable the fullscreen background + title text.
 			fullscreenBg->addImage(SDL_Rect{ 0, 0, fullscreenBg->getSize().w, 360 },
-				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01A_Top.png", "bg image");
+				0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_Window_01A_Top.png", "bg image");
 
 			const char* titleFont = "fonts/pixel_maz.ttf#32#2";
 			auto characterSheetTitleText = fullscreenBg->addField("character sheet title text", 32);
@@ -5130,13 +5151,13 @@ void Player::CharacterSheet_t::createCharacterSheet()
 					{
 						if ( players[frame->getOwner()]->characterSheet.sheetDisplayType == CHARSHEET_DISPLAY_NORMAL )
 						{
-							b->setBackgroundHighlighted("images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
-							b->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+							b->setBackgroundHighlighted("*#images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
+							b->setBackground("*#images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 						}
 						else
 						{
-							b->setBackgroundHighlighted("images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png");
-							b->setBackground("images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png");
+							b->setBackgroundHighlighted("*#images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png");
+							b->setBackground("*#images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png");
 						}
 					}
 				}
@@ -5146,7 +5167,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			auto mapButton = buttonFrame->addButton("map button");
 			mapButton->setText(language[4069]);
 			mapButton->setFont(buttonFont);
-			mapButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+			mapButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			mapButton->setSize(buttonPos);
 			mapButton->setHideGlyphs(true);
 			mapButton->setHideKeyboardGlyphs(true);
@@ -5168,7 +5189,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			auto logButton = buttonFrame->addButton("log button");
 			logButton->setText(language[4070]);
 			logButton->setFont(buttonFont);
-			logButton->setBackground("images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+			logButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_Button_00.png");
 			logButton->setSize(buttonPos);
 			logButton->setHideGlyphs(true);
 			logButton->setHideKeyboardGlyphs(true);
@@ -5220,8 +5241,8 @@ void Player::CharacterSheet_t::createCharacterSheet()
 					}
 				}
 			});
-			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
-			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
+			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
+			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
 			auto timerText = timerFrame->addField("timer text", 32);
 			timerText->setFont(timerFont);
 
@@ -5255,7 +5276,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			auto skillsButton = skillsButtonFrame->addButton("skills button");
 			skillsButton->setText(language[4074]);
 			skillsButton->setFont(skillsFont);
-			skillsButton->setBackground("images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
+			skillsButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
 			skillsButton->setSize(SDL_Rect{ 0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h });
 			skillsButton->setHideGlyphs(true);
 			skillsButton->setHideKeyboardGlyphs(true);
@@ -5312,13 +5333,13 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 		sheetFrame->addImage(SDL_Rect{ characterFrame->getSize().x, characterFrame->getSize().y - 60, 
 			214, 170 }, 0xFFFFFFFF,
-			"images/ui/CharSheet/HUD_CharSheet_Window_01A_TopCompact.png", "character info compact img");
+			"*#images/ui/CharSheet/HUD_CharSheet_Window_01A_TopCompact.png", "character info compact img");
 
 		Frame* characterInnerFrame = characterFrame->addFrame("character info inner frame");
 		characterInnerFrame->setSize(SDL_Rect{ 6, 0, 202, 104 });
 		{
 			//characterInnerFrame->addImage(SDL_Rect{ 0, 0, characterInnerFrame->getSize().w, characterInnerFrame->getSize().h }, 0xFFFFFFFF,
-			//	"images/ui/CharSheet/HUD_CharSheet_Window_01A_TopTmp.png", "character info tmp img");
+			//	"*#images/ui/CharSheet/HUD_CharSheet_Window_01A_TopTmp.png", "character info tmp img");
 
 
 			SDL_Rect characterTextPos{ 2, 0, 198, 24 };
@@ -5395,7 +5416,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			auto sexImg = characterInnerFrame->addImage(
 				SDL_Rect{ characterTextPos.x + characterTextPos.w - 40, characterTextPos.y - 4, 16, 28}, 0xFFFFFFFF,
-				"images/ui/CharSheet/HUD_CharSheet_Sex_M_01.png", "character sex img");
+				"*#images/ui/CharSheet/HUD_CharSheet_Sex_M_01.png", "character sex img");
 
 			/*characterInnerFrame->addImage(SDL_Rect{ 4, 28, 194, 22 }, makeColor(255, 255, 255, 64),
 				"images/system/white.png", "character race frame");*/
@@ -5429,7 +5450,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			goldText->setColor(infoTextColor);
 
 			auto goldImg = characterInnerFrame->addImage(SDL_Rect{ 24, characterTextPos.y - 4, 20, 28 },
-				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ButtonMoney_00.png", "gold img");
+				0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_ButtonMoney_00.png", "gold img");
 
 			/*characterInnerFrame->addImage(SDL_Rect{ 24, 80, 156, 22 }, makeColor(255, 255, 255, 64),
 				"images/system/white.png", "character gold frame");*/
@@ -5449,7 +5470,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			const int statsFrameHeight = 182;
 			statsFrame->setSize(SDL_Rect{ leftAlignX, 344, bgWidth, statsFrameHeight });
 			statsFrame->addImage(SDL_Rect{ 0, 0, statsFrame->getSize().w, statsFrame->getSize().h },
-				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01B_BotA.png", "stats bg img");
+				0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_Window_01B_BotA.png", "stats bg img");
 
 			Frame* statsInnerFrame = statsFrame->addFrame("stats inner frame");
 			statsInnerFrame->setSize(SDL_Rect{ 0, 0, statsFrame->getSize().w, statsFrame->getSize().h });
@@ -5463,7 +5484,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			const char* statFont = "fonts/pixel_maz.ttf#32#2";
 			textPos.y = iconPos.y + 1;
-			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_STR_00.png", "str icon");
 			{
 				auto textBase = statsInnerFrame->addField("str text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5502,7 +5523,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png", "dex icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_DEX_00.png", "dex icon");
 			{
 				auto textBase = statsInnerFrame->addField("dex text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5541,7 +5562,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CON_00.png", "con icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_CON_00.png", "con icon");
 			{
 				auto textBase = statsInnerFrame->addField("con text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5580,7 +5601,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_INT_00.png", "int icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_INT_00.png", "int icon");
 			{
 				auto textBase = statsInnerFrame->addField("int text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5619,7 +5640,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_PER_00.png", "per icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_PER_00.png", "per icon");
 			{
 				auto textBase = statsInnerFrame->addField("per text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5658,7 +5679,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_CHA_00.png", "chr icon");
+			statsInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_CHA_00.png", "chr icon");
 			{
 				auto textBase = statsInnerFrame->addField("chr text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5701,7 +5722,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			attributesFrame->setSize(SDL_Rect{ leftAlignX, 550, bgWidth, 182 });
 
 			attributesFrame->addImage(SDL_Rect{ 0, 0, attributesFrame->getSize().w, attributesFrame->getSize().h },
-				0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_Window_01B_BotB.png", "attributes bg img");
+				0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_Window_01B_BotB.png", "attributes bg img");
 
 			Frame* attributesInnerFrame = attributesFrame->addFrame("attributes inner frame");
 			attributesInnerFrame->setSize(SDL_Rect{ 0, 0, attributesFrame->getSize().w, attributesFrame->getSize().h });
@@ -5714,7 +5735,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			const char* attributeFont = "fonts/pixel_maz.ttf#32#2";
 			textPos.y = iconPos.y + 1;
-			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_ATT_00.png", "atk icon");
 			{
 				auto textBase = attributesInnerFrame->addField("atk text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5746,7 +5767,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			const int rowSpacing = 4;
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_AC_00.png", "ac icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_AC_00.png", "ac icon");
 			{
 				auto textBase = attributesInnerFrame->addField("ac text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5777,7 +5798,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_SPWR_00.png", "pwr icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_SPWR_00.png", "pwr icon");
 			{
 				auto textBase = attributesInnerFrame->addField("pwr text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5808,7 +5829,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_RES_00.png", "res icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_RES_00.png", "res icon");
 			{
 				auto textBase = attributesInnerFrame->addField("res text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5839,7 +5860,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_REGEN_00.png", "regen icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_REGEN_00.png", "regen icon");
 			{
 				auto textBase = attributesInnerFrame->addField("regen text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5903,7 +5924,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			iconPos.y += iconPos.h + rowSpacing;
 			textPos.y = iconPos.y + 1;
-			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_WGT_00.png", "weight icon");
+			attributesInnerFrame->addImage(iconPos, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_WGT_00.png", "weight icon");
 			{
 				auto textBase = attributesInnerFrame->addField("weight text title", 8);
 				textBase->setVJustify(Field::justify_t::CENTER);
@@ -5941,23 +5962,23 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		tooltipFrame->setDisabled(true);
 		Uint32 color = makeColor(255, 255, 255, 255);
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 			makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
 		tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+			color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, skillsheetEffectBackgroundImages);
 		auto txt = tooltipFrame->addField("tooltip text", 1024);
@@ -6009,23 +6030,23 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			txtValueBackingFrame->setDisabled(true);
 			Uint32 color = makeColor(51, 33, 26, 255);
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
 			txtValueBackingFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 			imageSetWidthHeight9x9(txtValueBackingFrame, skillsheetEffectBackgroundImages);
 
 			characterSheetTooltipTextBackingFrames[player.playernum][i] = txtValueBackingFrame;
@@ -6950,35 +6971,35 @@ void Player::GUIDropdown_t::create(const std::string name)
 	const int optionHeight = 20;
 
 	dropdownFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
 	dropdownFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
 	dropdownFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
 
 	dropdownFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
 	auto ml = dropdownFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
 	ml->tiled = true;
 	auto mr = dropdownFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
 	mr->tiled = true;
 
 	dropdownFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
 	dropdownFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
 	dropdownFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
-		color, "images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
+		color, "*#images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
 
 	auto selectmid = dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 22 },
-		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
+		hudColors.itemContextMenuOptionSelectedImg, "*#images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
 	selectmid->tiled = true;
 	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
-		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
+		hudColors.itemContextMenuOptionSelectedImg, "*#images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
 	dropdownFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
-		hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
+		hudColors.itemContextMenuOptionSelectedImg, "*#images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
 
 	const char* interactFont = "fonts/pixel_maz.ttf#32#2";
 
@@ -7947,22 +7968,22 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	if ( !(element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR) )
 	{
 		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
-		tooltipTopLeft->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png";
+		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png";
 		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
-		tooltipTop->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png";
+		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png";
 		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
-		tooltipTopRight->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png";
+		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png";
 		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 	}
 
 	if ( element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR )
 	{
 		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
-		tooltipTopLeft->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
 		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
-		tooltipTop->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
 		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
-		tooltipTopRight->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
 		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 
 		int maxWidth = 260;
@@ -8708,11 +8729,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		bool isInsectoidENRegen = (stats[player.playernum]->playerRace == RACE_INSECTOID && stats[player.playernum]->appearance == 0);
 
 		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
-		tooltipTopLeft->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
 		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
-		tooltipTop->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
 		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
-		tooltipTopRight->path = "images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
 		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
 
 		int maxWidth = 260;
@@ -10854,22 +10875,22 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			{
 				if ( type == AUTOMATON )
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png";
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png";
 				}
 				else
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
 				}
 			}
 			else if ( stats[player.playernum]->sex == sex_t::FEMALE )
 			{
 				if ( type == AUTOMATON )
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png";
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png";
 				}
 				else
 				{
-					sexImg->path = "images/ui/CharSheet/HUD_CharSheet_Sex_F_02.png";
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_F_02.png";
 				}
 			}
 			if ( auto imgGet = Image::get(sexImg->path.c_str()) )
@@ -11787,22 +11808,22 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					if ( isHotbarIcon )
 					{
-						beatitudeImg->path = "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+						beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
 					}
 					else
 					{
 						beatitudeImg->color = makeColor(255, 255, 255, 255);
 						if ( !item->identified )
 						{
-							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_App00B.png";
 						}
 						else if ( item->beatitude > 0 )
 						{
-							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
 						}
 						else if ( item->beatitude < 0 )
 						{
-							beatitudeImg->path = "images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
 						}
 						//beatitudeImg->path = "images/system/white.png";
 					}
@@ -11822,7 +11843,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
 				if ( isHotbarIcon )
 				{
-					brokenStatusImg->path = "images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+					brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
 				}
 				else
 				{
@@ -11929,25 +11950,25 @@ void createInventoryTooltipFrame(const int player)
 
 	Uint32 color = makeColor( 255, 255, 255, 255);
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
-		color, "images/ui/Inventory/tooltips/Hover_T00.png", "tooltip top background");
+		color, "*#images/ui/Inventory/tooltips/Hover_T00.png", "tooltip top background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
-		color, "images/ui/Inventory/tooltips/Hover_TL00.png", "tooltip top left");
+		color, "*#images/ui/Inventory/tooltips/Hover_TL00.png", "tooltip top left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
-		color, "images/ui/Inventory/tooltips/Hover_TR00.png", "tooltip top right");
+		color, "*#images/ui/Inventory/tooltips/Hover_TR00.png", "tooltip top right");
 
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 52 },
-		color, "images/ui/Inventory/tooltips/Hover_C00.png", "tooltip middle background");
+		color, "*#images/ui/Inventory/tooltips/Hover_C00.png", "tooltip middle background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
-		color, "images/ui/Inventory/tooltips/Hover_L00.png", "tooltip middle left");
+		color, "*#images/ui/Inventory/tooltips/Hover_L00.png", "tooltip middle left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 52 },
-		color, "images/ui/Inventory/tooltips/Hover_R00.png", "tooltip middle right");
+		color, "*#images/ui/Inventory/tooltips/Hover_R00.png", "tooltip middle right");
 
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 26 },
-		color, "images/ui/Inventory/tooltips/Hover_B00.png", "tooltip bottom background");
+		color, "*#images/ui/Inventory/tooltips/Hover_B00.png", "tooltip bottom background");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
-		color, "images/ui/Inventory/tooltips/Hover_BL01.png", "tooltip bottom left");
+		color, "*#images/ui/Inventory/tooltips/Hover_BL01.png", "tooltip bottom left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
-		color, "images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
+		color, "*#images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
 
 	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
 	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
@@ -11992,7 +12013,7 @@ void createInventoryTooltipFrame(const int player)
 		attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
 		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
-			0xFFFFFFFF, "images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
+			0xFFFFFFFF, "*#images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
 		spellImageBg->disabled = true;
 		//spellImageBg->color = makeColor( 125, 125, 125, 228);
 		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
@@ -12000,7 +12021,7 @@ void createInventoryTooltipFrame(const int player)
 		spellImage->disabled = true;
 
 		attrFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
-			0xFFFFFFFF, "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
+			0xFFFFFFFF, "*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Damage_00.png", "inventory mouse tooltip primary image");
 		tooltipTextField = attrFrame->addField("inventory mouse tooltip primary value", 256);
 		tooltipTextField->setText("Nothing");
 		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
@@ -12178,7 +12199,7 @@ void createInventoryTooltipFrame(const int player)
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
 			0xFFFFFFFF, 
-			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png",
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png",
 			"inventory mouse tooltip gold image");
 
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip gold value", 64);
@@ -12191,7 +12212,7 @@ void createInventoryTooltipFrame(const int player)
 
 		valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
 			0xFFFFFFFF, 
-			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png", 
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png",
 			"inventory mouse tooltip weight image");
 
 		tooltipTextField = valueFrame->addField("inventory mouse tooltip weight value", 64);
@@ -12233,35 +12254,35 @@ void createInventoryTooltipFrame(const int player)
 		const int optionHeight = 20;
 
 		interactFrame->addImage(SDL_Rect{ 24, 0, 0, 30 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_T03.png", "interact top background");
 		interactFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_TL03.png", "interact top left");
 		interactFrame->addImage(SDL_Rect{ 0, 0, 24, 30 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_TR03.png", "interact top right");
 
 		interactFrame->addImage(SDL_Rect{ 24, 30, 0, 12 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_C03.png", "interact middle background");
 		auto ml = interactFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_L03.png", "interact middle left");
 		ml->tiled = true;
 		auto mr = interactFrame->addImage(SDL_Rect{ 0, 30, 24, 12 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_R03.png", "interact middle right");
 		mr->tiled = true;
 
 		interactFrame->addImage(SDL_Rect{ 24, 96, 0, 14 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_B03.png", "interact bottom background");
 		interactFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_BL03.png", "interact bottom left");
 		interactFrame->addImage(SDL_Rect{ 0, 96, 24, 14 },
-			color, "images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
+			color, "*#images/ui/Inventory/tooltips/HoverItemMenu_BR03.png", "interact bottom right");
 
 		auto selectmid = interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, interactWidth, 22 },
-			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
+			hudColors.itemContextMenuOptionSelectedImg, "*#images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_M03.png", "interact selected highlight mid");
 		selectmid->tiled = true;
 		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
-			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
+			hudColors.itemContextMenuOptionSelectedImg, "*#images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_L03.png", "interact selected highlight left");
 		interactFrame->addImage(SDL_Rect{ 6, optionHeight - 16, 20, 22 },
-			hudColors.itemContextMenuOptionSelectedImg, "images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
+			hudColors.itemContextMenuOptionSelectedImg, "*#images/ui/Inventory/tooltips/HoverItemMenu_SelectBack_R03.png", "interact selected highlight right");
 
 
 		const char* interactFont = "fonts/pixel_maz.ttf#32#2";
@@ -12385,22 +12406,22 @@ void createInventoryTooltipFrame(const int player)
 		Uint32 color = makeColor( 255, 255, 255, 192);
 
 		auto middleCenter = promptFrame->addImage(SDL_Rect{ 6, 2, interactWidth, 76 },
-			color, "images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
+			color, "*#images/ui/Inventory/tooltips/Hover_C00.png", "interact middle background");
 		auto middleTop = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
-			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle top background");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle top background");
 		auto middleBottom = promptFrame->addImage(SDL_Rect{ 6, 0, interactWidth, 2 },
-			color, "images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle bottom background");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_C00.png", "interact middle bottom background");
 		auto middleLeft = promptFrame->addImage(SDL_Rect{ 0, 0, 6, 76 },
-			color, "images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_L00.png", "interact middle left");
 		auto middleRight = promptFrame->addImage(SDL_Rect{ interactWidth + 6, 0, 6, 76 },
-			color, "images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_R00.png", "interact middle right");
 
 		auto bottomCenter = promptFrame->addImage(SDL_Rect{ 4, 76, interactWidth + 4, 4 },
-			color, "images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_B00.png", "interact bottom background");
 		auto bottomLeft = promptFrame->addImage(SDL_Rect{ 0, 76, 4, 4 },
-			color, "images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_BL00.png", "interact bottom left");
 		auto bottomRight = promptFrame->addImage(SDL_Rect{ interactWidth + 4 * 2, 76, 4, 4 },
-			color, "images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
+			color, "*#images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
 
 		const int interactOptionStartX = 60;
 		const int interactOptionStartY = 8;
@@ -13516,7 +13537,7 @@ void createPlayerSpellList(const int player)
 		spellSlotsFrame->setAllowScrollBinds(false);
 
 		auto gridImg = spellSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, 242 * numGrids },
-			0xFFFFFFFF, "images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
+			0xFFFFFFFF, "*#images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -13550,11 +13571,11 @@ void createPlayerSpellList(const int player)
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, kSpellListHeight },
 			makeColor(255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
+			"*#images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
 
 		auto bgHeader = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 22 },
 			makeColor(255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Magic_TopHeader.png", "spell header img");
+			"*#images/ui/Inventory/HUD_Magic_TopHeader.png", "spell header img");
 		//bg->disabled = false;
 
 		auto slider = bgFrame->addSlider("spell slider");
@@ -13569,8 +13590,8 @@ void createPlayerSpellList(const int player)
 		//slider->setCallback(callback);
 		slider->setColor(makeColor(255, 255, 255, 255));
 		slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		slider->setHandleImage("images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
-		slider->setRailImage("images/ui/Sliders/HUD_Slider_Blank.png");
+		slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setRailImage("*#images/ui/Sliders/HUD_Slider_Blank.png");
 		slider->setHideGlyphs(true);
 		slider->setHideKeyboardGlyphs(true);
 		slider->setHideSelectors(true);
@@ -13600,9 +13621,9 @@ void createPlayerSpellList(const int player)
 		closeBtn->setHideKeyboardGlyphs(true);
 		closeBtn->setHideSelectors(true);
 		closeBtn->setMenuConfirmControlType(0);
-		closeBtn->setBackground("images/ui/Inventory/chests/Button_X_00.png");
-		closeBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_XHigh_00.png");
-		closeBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_XPress_00.png");
+		closeBtn->setBackground("*#images/ui/Inventory/chests/Button_X_00.png");
+		closeBtn->setBackgroundHighlighted("*#images/ui/Inventory/chests/Button_XHigh_00.png");
+		closeBtn->setBackgroundActivated("*#images/ui/Inventory/chests/Button_XPress_00.png");
 
 		closeBtn->setCallback([](Button& button) {
 			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
@@ -13802,10 +13823,10 @@ void createChestGUI(const int player)
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/chests/Chest_Main_00.png", "chest base img");
+			"*#images/ui/Inventory/chests/Chest_Main_00.png", "chest base img");
 		auto bg2 = bgFrame->addImage(SDL_Rect{ 0, 0, 194, 66 },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/chests/Chest_Top_00.png", "chest lid img");
+			"*#images/ui/Inventory/chests/Chest_Top_00.png", "chest lid img");
 		//bg->disabled = false;
 
 		//auto slider = bgFrame->addSlider("chest slider");
@@ -13820,8 +13841,8 @@ void createChestGUI(const int player)
 		////slider->setCallback(callback);
 		//slider->setColor(makeColor(255, 255, 255, 255));
 		//slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		//slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
-		//slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+		//slider->setHandleImage("*#images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+		//slider->setRailImage("*#images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 		//slider->setHideGlyphs(true);
 		//slider->setHideKeyboardGlyphs(true);
 		//slider->setHideSelectors(true);
@@ -13850,9 +13871,9 @@ void createChestGUI(const int player)
 		closeBtn->setHideKeyboardGlyphs(true);
 		closeBtn->setHideSelectors(true);
 		closeBtn->setMenuConfirmControlType(0);
-		closeBtn->setBackground("images/ui/Inventory/chests/Button_X_00.png");
-		closeBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_XHigh_00.png");
-		closeBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_XPress_00.png");
+		closeBtn->setBackground("*#images/ui/Inventory/chests/Button_X_00.png");
+		closeBtn->setBackgroundHighlighted("*#images/ui/Inventory/chests/Button_XHigh_00.png");
+		closeBtn->setBackgroundActivated("*#images/ui/Inventory/chests/Button_XPress_00.png");
 		closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		closeBtn->setCallback([](Button& button) {
 			closeChestGUIAction(button.getOwner());
@@ -13872,9 +13893,9 @@ void createChestGUI(const int player)
 		grabAllBtn->setHideKeyboardGlyphs(true);
 		grabAllBtn->setHideSelectors(true);
 		grabAllBtn->setMenuConfirmControlType(0);
-		grabAllBtn->setBackground("images/ui/Inventory/chests/Button_TakeAll_00.png");
-		grabAllBtn->setBackgroundHighlighted("images/ui/Inventory/chests/Button_TakeAllHigh_00.png");
-		grabAllBtn->setBackgroundActivated("images/ui/Inventory/chests/Button_TakeAllPress_00.png");
+		grabAllBtn->setBackground("*#images/ui/Inventory/chests/Button_TakeAll_00.png");
+		grabAllBtn->setBackgroundHighlighted("*#images/ui/Inventory/chests/Button_TakeAllHigh_00.png");
+		grabAllBtn->setBackgroundActivated("*#images/ui/Inventory/chests/Button_TakeAllPress_00.png");
 		grabAllBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		grabAllBtn->setCallback([](Button& button) {
 			takeAllChestGUIAction(button.getOwner());
@@ -13929,7 +13950,7 @@ void createChestGUI(const int player)
 		chestSlotsFrame->setAllowScrollBinds(false);
 
 		auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
-			makeColor(255, 255, 255, 32), "images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
+			makeColor(255, 255, 255, 32), "*#images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -14020,14 +14041,14 @@ void createShopGUI(const int player)
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
-			"images/ui/Shop/Shop_Window_03C.png", "shop base img");
+			"*#images/ui/Shop/Shop_Window_03C.png", "shop base img");
 		auto bgGrid = bgFrame->addImage(SDL_Rect{ 12, 18, 206, 214},
 			makeColor(255, 255, 255, 64),
-			"images/ui/Shop/Shop_ItemSlots_Areas03.png", "shop grid img");
+			"*#images/ui/Shop/Shop_ItemSlots_Areas03.png", "shop grid img");
 
 		auto bottomEdgeCover = bgFrame->addImage(SDL_Rect{ 0, basePos.h - 10, 316, 10 },
 			makeColor(255, 255, 255, 255),
-			"images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
+			"*#images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
 		bottomEdgeCover->ontop = true;
 
 		const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
@@ -14053,7 +14074,7 @@ void createShopGUI(const int player)
 		shopTypeText->setOutlineColor(titleOutline);
 
 		auto shopkeeperImg = bgFrame->addImage(SDL_Rect{ basePos.w - 14 - 80, 14, 80, 80 }, 0xFFFFFFFF,
-			"images/ui/Shop/shopkeeper.png", "shopkeeper img");
+			"*#images/ui/Shop/shopkeeper.png", "shopkeeper img");
 
 		auto closeBtn = bgFrame->addButton("close shop button");
 		SDL_Rect closeBtnPos{ basePos.w - 34, 8, 26, 26 };
@@ -14066,9 +14087,9 @@ void createShopGUI(const int player)
 		closeBtn->setHideKeyboardGlyphs(true);
 		closeBtn->setHideSelectors(true);
 		closeBtn->setMenuConfirmControlType(0);
-		closeBtn->setBackground("images/ui/Shop/Button_X_00.png");
-		closeBtn->setBackgroundHighlighted("images/ui/Shop/Button_XHigh_00.png");
-		closeBtn->setBackgroundActivated("images/ui/Shop/Button_XPress_00.png");
+		closeBtn->setBackground("*#images/ui/Shop/Button_X_00.png");
+		closeBtn->setBackgroundHighlighted("*#images/ui/Shop/Button_XHigh_00.png");
+		closeBtn->setBackgroundActivated("*#images/ui/Shop/Button_XPress_00.png");
 		closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		closeBtn->setCallback([](Button& button) {
 			closeShopGUIAction(button.getOwner());
@@ -14081,10 +14102,10 @@ void createShopGUI(const int player)
 		buyTooltipFrame->setDisabled(true);
 
 		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
-			"images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
+			"*#images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
 
 		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
-			"images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
 
 		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
 			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
@@ -14138,30 +14159,30 @@ void createShopGUI(const int player)
 
 		auto chatWindow = bgFrame->addFrame("chatter");
 		auto tl = chatWindow->addImage(SDL_Rect{ 0, 0, 34, 34 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_TLWings00.png", "top left img");
+			"*#images/ui/Shop/Textbox_TLWings00.png", "top left img");
 		auto tm = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 6 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_WingsT_00.png", "top img");
+			"*#images/ui/Shop/Textbox_WingsT_00.png", "top img");
 		auto tr = chatWindow->addImage(SDL_Rect{ 0, 0, 14, 28 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_TR00.png", "top right img");
+			"*#images/ui/Shop/Textbox_TR00.png", "top right img");
 
 		auto ml = chatWindow->addImage(SDL_Rect{ 0, 0, 6, 0 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_WingsL_00.png", "middle left img");
+			"*#images/ui/Shop/Textbox_WingsL_00.png", "middle left img");
 		auto mm1 = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 2 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_CenterColor_00.png", "middle 1 img");
+			"*#images/ui/Shop/Textbox_CenterColor_00.png", "middle 1 img");
 		auto mm2 = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 2 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_CenterColor_00.png", "middle 2 img");
+			"*#images/ui/Shop/Textbox_CenterColor_00.png", "middle 2 img");
 		auto mr = chatWindow->addImage(SDL_Rect{ 0, 0, 6, 0 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_WingsR_00.png", "middle right img");
+			"*#images/ui/Shop/Textbox_WingsR_00.png", "middle right img");
 
 		auto bl = chatWindow->addImage(SDL_Rect{ 0, 0, 28, 14 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_BL00.png", "bottom left img");
+			"*#images/ui/Shop/Textbox_BL00.png", "bottom left img");
 		auto bm = chatWindow->addImage(SDL_Rect{ 0, 0, 2, 6 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_WingsB_00.png", "bottom img");
+			"*#images/ui/Shop/Textbox_WingsB_00.png", "bottom img");
 		auto br = chatWindow->addImage(SDL_Rect{ 0, 0, 14, 14 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_BR00.png", "bottom right img");
+			"*#images/ui/Shop/Textbox_BR00.png", "bottom right img");
 
 		auto pointer = chatWindow->addImage(SDL_Rect{ 0, 0, 20, 22 }, 0xFFFFFFFF,
-			"images/ui/Shop/Textbox_SpeakerPointer_TR01.png", "pointer img");
+			"*#images/ui/Shop/Textbox_SpeakerPointer_TR01.png", "pointer img");
 
 		auto bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto chatText = chatWindow->addField("chat body", 1024);
@@ -14187,7 +14208,7 @@ void createShopGUI(const int player)
 			discountLabelText->setOutlineColor(makeColor(29, 16, 11, 255));
 
 			auto discountImg = discountFrame->addImage(SDL_Rect{ 0, 0, 98, 24 }, 0xFFFFFFFF,
-				"images/ui/Shop/Shop_DiscountLabel_00.png", "discount img");
+				"*#images/ui/Shop/Shop_DiscountLabel_00.png", "discount img");
 
 			auto discountValue = discountFrame->addField("discount", 32);
 			discountValue->setFont(valueFont);
@@ -14250,9 +14271,9 @@ void createShopGUI(const int player)
 			buybackBtn->setHideKeyboardGlyphs(true);
 			buybackBtn->setHideSelectors(true);
 			buybackBtn->setMenuConfirmControlType(0);
-			buybackBtn->setBackground("images/ui/Shop/Shop_Buyback_Button_00.png");
-			buybackBtn->setBackgroundHighlighted("images/ui/Shop/Shop_Buyback_ButtonHigh_00.png");
-			buybackBtn->setBackgroundActivated("images/ui/Shop/Shop_Buyback_ButtonPress_00.png");
+			buybackBtn->setBackground("*#images/ui/Shop/Shop_Buyback_Button_00.png");
+			buybackBtn->setBackgroundHighlighted("*#images/ui/Shop/Shop_Buyback_ButtonHigh_00.png");
+			buybackBtn->setBackgroundActivated("*#images/ui/Shop/Shop_Buyback_ButtonPress_00.png");
 			buybackBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			buybackBtn->setCallback([](Button& button) {
 				toggleShopBuybackView(button.getOwner());
@@ -14289,7 +14310,7 @@ void createShopGUI(const int player)
 		shopSlotsFrame->setHollow(true);
 
 		/*auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
-			makeColor(255, 255, 255, 32), "images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
+			makeColor(255, 255, 255, 32), "*#images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;*/
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -14350,16 +14371,16 @@ void createPlayerInventory(const int player)
 		const auto bgSize = bgFrame->getSize();
 		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
+			"*#images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
 
 		auto compactBase = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Inventory_BaseCompact_02.png", "inventory base compact img");
+			"*#images/ui/Inventory/HUD_Inventory_BaseCompact_02.png", "inventory base compact img");
 		compactBase->disabled = true;
 
 		auto compactCharacterView = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 214 },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Inventory_CharacterCompact_02.png", "inventory character compact img");
+			"*#images/ui/Inventory/HUD_Inventory_CharacterCompact_02.png", "inventory character compact img");
 		compactCharacterView->disabled = true;
 
 	}
@@ -14369,7 +14390,7 @@ void createPlayerInventory(const int player)
 		backpackFrame->setSize(SDL_Rect{ 0, 202 + 242 - 2, 226, 102 });
 		auto backpackImg = backpackFrame->addImage(SDL_Rect{ 0, 0, 226, 102 },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Inventory_Base_Bag_00a.png", "inventory backpack img");
+			"*#images/ui/Inventory/HUD_Inventory_Base_Bag_00a.png", "inventory backpack img");
 	}
 
 	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
@@ -14549,7 +14570,7 @@ void createPlayerInventory(const int player)
 		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
 		auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
 			makeColor( 255, 255, 255, 255),
-			"images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
+			"*#images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
 		//flourishImg->disabled = true;
 
 		GenericGUI[player].tinkerGUI.tinkerFrame = frame->addFrame("tinker");
@@ -14565,13 +14586,13 @@ void createPlayerInventory(const int player)
 		oldCursorFrame->setHollow(true);
 		color = makeColor( 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_TL.png", "inventory old cursor topleft");
+			color, "*#images/ui/Inventory/SelectorGrey_TL.png", "inventory old cursor topleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_TR.png", "inventory old cursor topright");
+			color, "*#images/ui/Inventory/SelectorGrey_TR.png", "inventory old cursor topright");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_BL.png", "inventory old cursor bottomleft");
+			color, "*#images/ui/Inventory/SelectorGrey_BL.png", "inventory old cursor bottomleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_BR.png", "inventory old cursor bottomright");
+			color, "*#images/ui/Inventory/SelectorGrey_BR.png", "inventory old cursor bottomright");
 
 		auto cursorFrame = frame->addFrame("inventory selected item cursor");
 		players[player]->inventoryUI.selectedItemCursorFrame = cursorFrame;
@@ -14580,13 +14601,13 @@ void createPlayerInventory(const int player)
 		cursorFrame->setHollow(true);
 		color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
+			color, "*#images/ui/Inventory/Selector_TL.png", "inventory selected cursor topleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_TR.png", "inventory selected cursor topright");
+			color, "*#images/ui/Inventory/Selector_TR.png", "inventory selected cursor topright");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_BL.png", "inventory selected cursor bottomleft");
+			color, "*#images/ui/Inventory/Selector_BL.png", "inventory selected cursor bottomleft");
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_BR.png", "inventory selected cursor bottomright");
+			color, "*#images/ui/Inventory/Selector_BR.png", "inventory selected cursor bottomright");
 	}
 
 	{
@@ -16158,13 +16179,13 @@ void Player::HUD_t::updateCursor()
 		cursor->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		Uint32 color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_TL.png", "hud cursor topleft");
+			color, "*#images/ui/Inventory/Selector_TL.png", "hud cursor topleft");
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_TR.png", "hud cursor topright");
+			color, "*#images/ui/Inventory/Selector_TR.png", "hud cursor topright");
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_BL.png", "hud cursor bottomleft");
+			color, "*#images/ui/Inventory/Selector_BL.png", "hud cursor bottomleft");
 		cursor->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/Selector_BR.png", "hud cursor bottomright");
+			color, "*#images/ui/Inventory/Selector_BR.png", "hud cursor bottomright");
 	}
 
 	cursorFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
@@ -16589,25 +16610,25 @@ void Player::HUD_t::updateXPBar()
 		if ( ticks % 5 == 0 )
 		{
 			bool moving = (xpBar.animateSetpoint * 10.0 - xpBar.animateValue != 0);
-			if ( moving && xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png" )
+			if ( moving && xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png" )
 			{
-				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png";
+				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png";
 			}
-			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png" )
+			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png" )
 			{
-				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png";
+				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png";
 			}
-			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png" )
+			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png" )
 			{
-				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png";
+				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png";
 			}
-			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png" )
+			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png" )
 			{
-				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png";
+				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png";
 			}
-			else if ( xpProgressEndCap->path == "images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png" )
+			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png" )
 			{
-				xpProgressEndCap->path = "images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png";
+				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png";
 			}
 		}
 	}
@@ -17912,9 +17933,9 @@ void Player::HUD_t::updateHPBar()
 		}
 	}
 
-	hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
-	hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
-	hpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png";
+	hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+	hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
+	hpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png";
 	auto hpProgressEndCapFlash = hpForegroundFrame->findImage("hp img progress endcap flash");
 	hpProgressEndCapFlash->disabled = true;
 	const int framesPerAnimation = HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
@@ -17954,38 +17975,38 @@ void Player::HUD_t::updateHPBar()
 
 				if ( HPBar.flashAnimState == 0 )
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
-					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
-					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_00.png";
 				}
 				else if ( HPBar.flashAnimState >= 1 && HPBar.flashAnimState <= 2 )
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
-					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
-					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
+					hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
 				}
 				else if ( HPBar.flashAnimState == 3 )
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_02.png";
-					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F02.png";
-					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_02.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_02.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F02.png";
+					hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_02.png";
 				}
 				else if ( HPBar.flashAnimState >= 4 && HPBar.flashAnimState <= 5 )
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
-					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
-					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_01.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F01.png";
+					hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_01.png";
 				}
 				else if ( HPBar.flashAnimState == 6 )
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
-					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F03.png";
-					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F03.png";
+					hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
 				}
 				else
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
-					hpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
 					Uint8 r, g, b, a;
 					getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
@@ -18001,9 +18022,9 @@ void Player::HUD_t::updateHPBar()
 				hpProgressEndCapFlash->disabled = true;
 				if ( HPBar.flashAnimState == 1 )
 				{
-					hpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
-					hpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
-					hpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_01.png";
+					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_03.png";
+					hpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPBot_03.png";
+					hpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_01.png";
 				}
 			}
 		}
@@ -18242,9 +18263,9 @@ void Player::HUD_t::updateMPBar()
 		}
 	}
 
-	mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-	mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
-	mpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
+	mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+	mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+	mpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
 	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
 	mpProgressEndCapFlash->disabled = true;
 	const int framesPerAnimation = MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
@@ -18284,7 +18305,7 @@ void Player::HUD_t::updateMPBar()
 				else if ( MPBar.flashAnimState == 0 )
 				{
 					mpProgressEndCapFlash->color = makeColor(255, 255, 255, 0);
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
 				}
 
 				if ( MPBar.flashAnimState <= 9 )
@@ -18304,64 +18325,64 @@ void Player::HUD_t::updateMPBar()
 					a = std::min(255, (int)a + increment);
 					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
 
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
 
 					if ( MPBar.flashAnimState % 2 == 0
 						&& !processedOnTick )
 					{
-						if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png" )
+						if ( mpProgressEndCapFlash->path == "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png" )
 						{
-							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png";
 						}
-						else if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png" )
+						else if ( mpProgressEndCapFlash->path == "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png" )
 						{
-							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png";
 						}
-						else if ( mpProgressEndCapFlash->path == "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png" )
+						else if ( mpProgressEndCapFlash->path == "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png" )
 						{
-							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00d.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00d.png";
 						}
 						else 
 						{
-							mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
 						}
 					}
 				}
 				else if ( MPBar.flashAnimState <= 10 )
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
 				}
 				else if ( MPBar.flashAnimState >= 11 && MPBar.flashAnimState <= 12 )
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
 				}
 				else if ( MPBar.flashAnimState == 13 )
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_02.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F02.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_02.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_02.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F02.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_02.png";
 				}
 				else if ( MPBar.flashAnimState >= 14 && MPBar.flashAnimState <= 15 )
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
 				}
 				else if ( MPBar.flashAnimState == 16 )
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F03.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F03.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
 				}
 				else
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
 					Uint8 r, g, b, a;
 					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
@@ -18377,9 +18398,9 @@ void Player::HUD_t::updateMPBar()
 				mpProgressEndCapFlash->disabled = true;
 				if ( MPBar.flashAnimState == 1 )
 				{
-					mpProgress->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
-					mpProgressBot->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
-					mpProgressEndCap->path = "images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_01.png";
+					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
+					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+					mpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_01.png";
 				}
 			}
 		}
@@ -18955,7 +18976,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	const int height = 404;
 	skillBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height });
 	/*auto bgImg = skillBackground->addImage(SDL_Rect{ 0, 0, width, height }, 0xFFFFFFFF,
-		"images/ui/SkillSheet/UI_Skills_Window_02.png", "skills img");*/
+		"*#images/ui/SkillSheet/UI_Skills_Window_02.png", "skills img");*/
 
 	Frame* allSkillEntriesLeft = skillBackground->addFrame("skill entries frame left");
 	allSkillEntriesLeft->setHollow(true);
@@ -18971,9 +18992,9 @@ void Player::SkillSheet_t::createSkillSheet()
 	allSkillEntriesRight->setSize(allSkillEntriesPosRight);
 
 	allSkillEntriesLeft->addImage(SDL_Rect{ 0, 12, 182, 376 },
-		0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Window_Left_03.png", "bg wing left");
+		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Window_Left_03.png", "bg wing left");
 	allSkillEntriesRight->addImage(SDL_Rect{ 0, 12, 182, 376 },
-		0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Window_Right_03.png", "bg wing right");
+		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Window_Right_03.png", "bg wing right");
 
 	auto skillBackgroundImagesFrame = skillBackground->addFrame("skills bg images");
 	skillBackgroundImagesFrame->setHollow(true);
@@ -18982,29 +19003,29 @@ void Player::SkillSheet_t::createSkillSheet()
 	{
 		Uint32 color = makeColor(255, 255, 255, 255);
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_TL_04.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_TL_04.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_TR_04.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_TR_04.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_T_04.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_T_04.png", skillsheetEffectBackgroundImages[TOP].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_L_03.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_L_03.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_R_03.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_R_03.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
 			makeColor(0, 0, 0, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_BL_03.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_BL_03.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_BR_03.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_BR_03.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_B_03.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_B_03.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 		imageSetWidthHeight9x9(skillBackgroundImagesFrame, skillsheetEffectBackgroundImages);
 
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 78, 18 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_Flourish_T.png", "flourish top");
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_Flourish_T.png", "flourish top");
 		skillBackgroundImagesFrame->addImage(SDL_Rect{ 0, 0, 34, 14 },
-			color, "images/ui/SkillSheet/UI_Skills_Window_Flourish_B.png", "flourish bottom");
+			color, "*#images/ui/SkillSheet/UI_Skills_Window_Flourish_B.png", "flourish bottom");
 	}
 
 	const int skillEntryStartY = 38;
@@ -19023,9 +19044,9 @@ void Player::SkillSheet_t::createSkillSheet()
 		entry->setHollow(true);
 		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
-		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
+		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
 		SDL_Rect imgBgPos{ skillEntryPos.w - 36, 0, 36, 36 };
-		entry->addImage(imgBgPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
+		entry->addImage(imgBgPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
 		SDL_Rect imgFgPos{ imgBgPos.x + 6, imgBgPos.y + 6, 24, 24 };
 		entry->addImage(imgFgPos, 0xFFFFFFFF, "", "skill icon fg");
 		SDL_Rect statPos{ 10, 6, 24, 24 };
@@ -19074,11 +19095,11 @@ void Player::SkillSheet_t::createSkillSheet()
 		entry->setHollow(true);
 		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
-		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
+		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
 		SDL_Rect imgBgPos{ 0, 0, 36, 36 };
-		entry->addImage(imgBgPos, 0xFFFFFFFF, "images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
+		entry->addImage(imgBgPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
 		SDL_Rect imgFgPos{ imgBgPos.x + 6, imgBgPos.y + 6, 24, 24 };
-		entry->addImage(imgFgPos, 0xFFFFFFFF, "images/ui/SkillSheet/icons/Alchemy01.png", "skill icon fg");
+		entry->addImage(imgFgPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/icons/Alchemy01.png", "skill icon fg");
 		SDL_Rect statPos{ skillEntryPos.w - 10 - 24, 6, 24, 24 };
 		auto statIcon = entry->addImage(statPos, 0xFFFFFFFF, "", "stat icon");
 		if ( i < skillSheetData.skillEntries.size() )
@@ -19145,8 +19166,8 @@ void Player::SkillSheet_t::createSkillSheet()
 	//slider->setCallback(callback);
 	slider->setColor(makeColor(255, 255, 255, 255));
 	slider->setHighlightColor(makeColor(255, 255, 255, 255));
-	slider->setHandleImage("images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
-	slider->setRailImage("images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+	slider->setHandleImage("*#images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
+	slider->setRailImage("*#images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
 	slider->setHideGlyphs(true);
 	slider->setHideKeyboardGlyphs(true);
 	slider->setHideSelectors(true);
@@ -19184,7 +19205,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		const int iconSize = 24;
 		auto statIcon = scrollAreaFrame->addImage(
 			SDL_Rect{ txtPos.x + txtPos.w - iconSize, txtPos.y, iconSize, iconSize },
-			0xFFFFFFFF, "images/ui/CharSheet/HUD_CharSheet_DEX_00.png",	"stat icon");
+			0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_DEX_00.png",	"stat icon");
 
 		txtPos.y += std::max(0, iconSize - fontHeight);
 		auto statHeaderTxt = scrollAreaFrame->addField("stat header txt", 128);
@@ -19217,23 +19238,23 @@ void Player::SkillSheet_t::createSkillSheet()
 			//Uint32 color = makeColor(22, 24, 29, 255);
 			Uint32 color = makeColor(255, 255, 255, 128);
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
 			skillDescriptionBgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-				color, "images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+				color, "*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 			imageSetWidthHeight9x9(skillDescriptionBgFrame, skillsheetEffectBackgroundImages);
 		}
 
@@ -19273,23 +19294,23 @@ void Player::SkillSheet_t::createSkillSheet()
 			{
 				Uint32 color = makeColor(51, 33, 26, 255);
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TL00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_TR00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_T00.png", skillsheetEffectBackgroundImages[TOP].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_L00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_R00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BL00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_BR00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
 				valBgImgFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
-					color, "images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+					color, "*#images/ui/SkillSheet/UI_Skills_EffectBG_B00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 
 				/*valBgImgFrame->addImage(
 					SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 },
@@ -19324,7 +19345,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	}
 	{
 		auto legendDivImg = scrollAreaFrame->addImage(SDL_Rect{ 0, txtPos.y, 212, 28 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_Separator_00.png", "legend div");
+			"*#images/ui/SkillSheet/UI_Skills_Separator_00.png", "legend div");
 		legendDivImg->pos.x = scrollAreaFrame->getSize().w / 2 - legendDivImg->pos.w / 2;
 		auto legendDivTxt = scrollAreaFrame->addField("legend div text", 128);
 		legendDivTxt->setText(language[4056]);
@@ -19339,28 +19360,28 @@ void Player::SkillSheet_t::createSkillSheet()
 		SDL_Rect legendPos{ 0, txtPos.y, txtPos.w, 100 };
 		legendFrame->setSize(legendPos);
 		auto tl = legendFrame->addImage(SDL_Rect{ 0, 0, 18, 18 }, 0xFFFFFFFF, 
-			"images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", "top left img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png", "top left img");
 		auto tm = legendFrame->addImage(SDL_Rect{ 18, 0, legendPos.w - 18 * 2, 18 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", "top img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png", "top img");
 		auto tr = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, 0, 18, 18 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", "top right img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png", "top right img");
 
 		auto ml = legendFrame->addImage(SDL_Rect{ 0, 18, 18, legendPos.h - 18 * 2 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", "middle left img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png", "middle left img");
 		auto mm = legendFrame->addImage(SDL_Rect{ 18, 18, legendPos.w - 18 * 2, ml->pos.h }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", "middle img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png", "middle img");
 		auto mr = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, 18, 18, ml->pos.h }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", "middle right img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png", "middle right img");
 
 		auto bl = legendFrame->addImage(SDL_Rect{ 0, ml->pos.y + ml->pos.h, 18, 18 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", "bottom left img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png", "bottom left img");
 		auto bm = legendFrame->addImage(SDL_Rect{ 18, bl->pos.y, legendPos.w - 18 * 2, 18 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", "bottom img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png", "bottom img");
 		auto br = legendFrame->addImage(SDL_Rect{ legendPos.w - 18, bl->pos.y, 18, 18 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", "bottom right img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png", "bottom right img");
 
 		auto backerImg = scrollAreaFrame->addImage(SDL_Rect{ 0, 0, 154, 12 }, 0xFFFFFFFF,
-			"images/ui/SkillSheet/UI_Skills_LegendTextBacker_00.png", "legend txt backer img");
+			"*#images/ui/SkillSheet/UI_Skills_LegendTextBacker_00.png", "legend txt backer img");
 		backerImg->disabled = true;
 
 		auto legendText = legendFrame->addField("legend text", 256);
@@ -20676,13 +20697,13 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		if ( bUseCompactSkillsView )
 		{
-			leftWingImg->path = "images/ui/SkillSheet/UI_Skills_Window_LeftCompact_03.png";
-			rightWingImg->path = "images/ui/SkillSheet/UI_Skills_Window_RightCompact_03.png";
+			leftWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_LeftCompact_03.png";
+			rightWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_RightCompact_03.png";
 		}
 		else
 		{
-			leftWingImg->path = "images/ui/SkillSheet/UI_Skills_Window_Left_03.png";
-			rightWingImg->path = "images/ui/SkillSheet/UI_Skills_Window_Right_03.png";
+			leftWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_Left_03.png";
+			rightWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_Right_03.png";
 		}
 		leftWingImg->pos.h = Image::get(leftWingImg->path.c_str())->getHeight();
 		rightWingImg->pos.h = Image::get(rightWingImg->path.c_str())->getHeight();
@@ -20986,7 +21007,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				selectorIcon->disabled = false;
 				if ( selectedSkill == i && highlightedSkill == i )
 				{
-					selectorIcon->path = (i < 8) ? "images/ui/SkillSheet/UI_Skills_SkillSelector100_01.png" : "images/ui/SkillSheet/UI_Skills_SkillSelector100R_01.png";
+					selectorIcon->path = (i < 8) ? "*#images/ui/SkillSheet/UI_Skills_SkillSelector100_01.png" : "*#images/ui/SkillSheet/UI_Skills_SkillSelector100R_01.png";
 				}
 				else if ( highlightedSkill == i )
 				{
@@ -21511,33 +21532,33 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				legendDivTxt->setColor(legendRegularColor);
 				legendText->setColor(legendRegularColor);
-				tl->path = "images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png";
-				tm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png";
-				tr->path = "images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png";
+				tl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png";
+				tm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png";
+				tr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png";
 
-				ml->path = "images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png";
-				mm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
-				mr->path = "images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png";
+				ml->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png";
+				mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
+				mr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png";
 
-				bl->path = "images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png";
-				bm->path = "images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png";
-				br->path = "images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png";
+				bl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png";
+				bm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png";
+				br->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png";
 			}
 			else
 			{
 				legendDivTxt->setColor(legendGoldColor);
 				legendText->setColor(legendGoldColor);
-				tl->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_TL_00.png";
-				tm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_T_00.png";
-				tr->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_TR_00.png";
+				tl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_TL_00.png";
+				tm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_T_00.png";
+				tr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_TR_00.png";
 
-				ml->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_ML_00.png";
-				mm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_M_00.png";
-				mr->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_MR_00.png";
+				ml->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_ML_00.png";
+				mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_M_00.png";
+				mr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_MR_00.png";
 
-				bl->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_BL_00.png";
-				bm->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_B_00.png";
-				br->path = "images/ui/SkillSheet/UI_Skills_LegendBox100_BR_00.png";
+				bl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_BL_00.png";
+				bm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_B_00.png";
+				br->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_BR_00.png";
 			}
 
 			legendPos.h = bl->pos.y + bl->pos.h;

@@ -393,7 +393,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	if ( localPlayer )
 	{
 	    printlog("%s\n", str);
-	    newString(&messages, color, str);
+	    newString(&messages, color, completionTime, str);
 	    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 	    {
 		    list_RemoveNode(messages.first);

@@ -393,19 +393,19 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	// draw frame background
 	if (!hollow) {
-		SDL_Rect inner;
-		inner.x = (_size.x + border);
-		inner.y = (_size.y + border);
-		inner.w = (_size.w - border*2);
-		inner.h = (_size.h - border*2);
-		if (borderStyle == BORDER_BEVEL_HIGH) {
-			white->drawColor(nullptr, scaledSize, viewport, borderColor);
-			white->drawColor(nullptr, inner, viewport, color);
-		} else if (borderStyle == BORDER_BEVEL_LOW) {
-			white->drawColor(nullptr, scaledSize, viewport, color);
-			white->drawColor(nullptr, inner, viewport, borderColor);
+	    if (border) {
+		    SDL_Rect inner;
+		    inner.x = (_size.x + border);
+		    inner.y = (_size.y + border);
+		    inner.w = (_size.w - border*2);
+		    inner.h = (_size.h - border*2);
+		    if (borderStyle == BORDER_BEVEL_LOW) {
+			    white->drawColor(nullptr, inner, viewport, borderColor);
+		    } else {
+			    white->drawColor(nullptr, inner, viewport, color);
+		    }
 		} else {
-			white->drawColor(nullptr, scaledSize, viewport, color);
+			white->drawColor(nullptr, _size, viewport, color);
 		}
 	}
 
@@ -465,9 +465,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
-			white->drawColor(nullptr, handleRect, viewport, color);
+			white->drawColor(nullptr, handleRect, viewport, sliderColor);
 		} else {
-			white->drawColor(nullptr, handleRect, viewport, color);
+			white->drawColor(nullptr, handleRect, viewport, sliderColor);
 		}
 	}
 
@@ -493,9 +493,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 		if (rectContainsPoint(barRect, omousex, omousey)) {
 			// TODO highlight
-			white->drawColor(nullptr, handleRect, viewport, color);
+			white->drawColor(nullptr, handleRect, viewport, sliderColor);
 		} else {
-			white->drawColor(nullptr, handleRect, viewport, color);
+			white->drawColor(nullptr, handleRect, viewport, sliderColor);
 		}
 	}
 
@@ -698,6 +698,25 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	// draw user stuff
 	if (drawCallback) {
 		drawCallback(*this, _size);
+	}
+
+	// draw frame border
+	if (!hollow) {
+	    if (border) {
+	        auto white = Image::get("images/system/white.png");
+	        const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+		    if (borderStyle == BORDER_BEVEL_LOW) {
+			    white->drawColor(nullptr, SDL_Rect{_size.x, _size.y, border, _size.h}, viewport, color);
+			    white->drawColor(nullptr, SDL_Rect{_size.x, _size.y, _size.w, border}, viewport, color);
+			    white->drawColor(nullptr, SDL_Rect{_size.x + _size.w - border, _size.y, border, _size.h}, viewport, color);
+			    white->drawColor(nullptr, SDL_Rect{_size.x, _size.y + _size.h - border, _size.w, border}, viewport, color);
+		    } else {
+			    white->drawColor(nullptr, SDL_Rect{_size.x, _size.y, border, _size.h}, viewport, borderColor);
+			    white->drawColor(nullptr, SDL_Rect{_size.x, _size.y, _size.w, border}, viewport, borderColor);
+			    white->drawColor(nullptr, SDL_Rect{_size.x + _size.w - border, _size.y, border, _size.h}, viewport, borderColor);
+			    white->drawColor(nullptr, SDL_Rect{_size.x, _size.y + _size.h - border, _size.w, border}, viewport, borderColor);
+		    }
+		}
 	}
 
 	// root frame draws tooltip

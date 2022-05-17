@@ -513,6 +513,7 @@ namespace MainMenu {
 		if (multiplayer != SINGLE) {
 			splitscreen = false;
 		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        players[c]->bSplitscreen = false;
 				players[c]->camera().winx = 0;
 				players[c]->camera().winy = 0;
 				players[c]->camera().winw = xres;
@@ -527,7 +528,6 @@ namespace MainMenu {
 		    for (int c = 0; c < 4; ++c) {
 			    if (playersInLobby[c]) {
 				    clientnum = clientnum == -1 ? c : clientnum;
-				    players[c]->bSplitscreen = true;
 				    client_disconnected[c] = false;
 				    ++playercount;
 			    } else {
@@ -538,19 +538,15 @@ namespace MainMenu {
 		    if (clientnum == -1) {
 		        // TODO loading a splitscreen game?
 		        clientnum = 0;
-		        players[0]->bSplitscreen = false;
 		        client_disconnected[0] = false;
 		        playercount = 1;
 		    }
 		} else {
 		    for (int c = 0; c < 4; ++c) {
-		        if (client_disconnected[c]) {
-				    players[c]->bSplitscreen = false;
-				    players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
-		        } else {
-				    players[c]->bSplitscreen = true;
-				    ++playercount;
-		        }
+			    if (client_disconnected[c]) {
+				    continue;
+			    }
+				++playercount;
 		    }
 		}
 		splitscreen = playercount > 1;
@@ -566,6 +562,7 @@ namespace MainMenu {
 			} else {
 				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
 			}
+			players[c]->bSplitscreen = splitscreen;
 
 			if (!splitscreen) {
 				players[c]->camera().winx = 0;
@@ -2292,7 +2289,7 @@ namespace MainMenu {
 		}
 
 		// apply splitscreen setting
-	    if (!intro && splitscreen) {
+	    if (!intro) {
 	        setupSplitscreen();
 	    }
 
