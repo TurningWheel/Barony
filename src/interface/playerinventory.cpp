@@ -7852,6 +7852,7 @@ void Player::Inventory_t::updateInventory()
 							{
 								activateItemContextMenuOption(item, option);
 							}
+							break;
 						}
 					}
 					if ( bindingPressed )
@@ -8619,13 +8620,19 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		if ( is_potion_bad )
 		{
 			options.push_back(PROMPT_EQUIP);
-			options.push_back(PROMPT_EAT);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_EAT);
+			}
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
 		else
 		{
-			options.push_back(PROMPT_EAT);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_EAT);
+			}
 			options.push_back(PROMPT_EQUIP);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
@@ -8644,6 +8651,23 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
 	}
+	else if ( item->type == FOOD_CREAMPIE )
+	{
+		if ( !itemIsEquipped(item, player) )
+		{
+			if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
+			{
+				options.push_back(PROMPT_CONSUME);
+			}
+			else
+			{
+				options.push_back(PROMPT_EAT);
+			}
+		}
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
 	else if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
 	{
 		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
@@ -8655,14 +8679,20 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else if ( itemCategory(item) == FOOD )
 		{
-			options.push_back(PROMPT_CONSUME);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_CONSUME);
+			}
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
 		else if ( itemCategory(item) == GEM )
 		{
 			options.push_back(PROMPT_EQUIP);
-			options.push_back(PROMPT_CONSUME);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_CONSUME);
+			}
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
@@ -8673,13 +8703,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
-	}
-	else if ( item->type == FOOD_CREAMPIE )
-	{
-		options.push_back(PROMPT_EAT);
-		options.push_back(PROMPT_EQUIP);
-		options.push_back(PROMPT_APPRAISE);
-		options.push_back(PROMPT_DROP);
 	}
 	else if ( itemCategory(item) == SPELLBOOK )
 	{
