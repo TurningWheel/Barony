@@ -2768,7 +2768,7 @@ namespace ConsoleCommands {
 		if ( argc >= 2 )
 		{
 			int count = std::max(1, atoi(argv[1]));
-			for ( int i = 0; i < 10; ++i )
+			for ( int i = 0; i < 17; ++i )
 			{
 				auto generatedPotion = potionStandardAppearanceMap.at(i);
 				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),

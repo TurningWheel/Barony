@@ -11548,9 +11548,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		disableBackgrounds = true;
 	}
 
+	int* slotType = nullptr;
 	if ( slotFrame->getUserData() )
 	{
-		int* slotType = (int*)slotFrame->getUserData();
+		slotType = (int*)slotFrame->getUserData();
 		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM )
 		{
 			disableBackgrounds = true;
@@ -11558,6 +11559,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	}
 
 	bool isHotbarIcon = false;
+	bool alchemyResultIcon = &GenericGUI[player].alchemyGUI.alchemyResultPotion == item;
 	if ( spriteImage->path != "" )
 	{
 		spriteImageFrame->setDisabled(false);
@@ -11624,7 +11626,6 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 		if ( slotFrame->getUserData() )
 		{
-			int* slotType = (int*)slotFrame->getUserData();
 			if ( *slotType == GAMEUI_FRAMEDATA_ALCHEMY_ITEM )
 			{
 				SDL_Color color;
@@ -11646,7 +11647,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		Uint32 qtyColor = 0xFFFFFFFF;
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-		if ( selectedItem && !isHotbarIcon )
+		if ( selectedItem && !isHotbarIcon && !alchemyResultIcon )
 		{
 			if ( item != selectedItem 
 				&& !itemIsEquipped(selectedItem, player)
@@ -11824,6 +11825,19 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			broken = true;
 		}
+		else if ( alchemyResultIcon && stats[player]->weapon 
+			&& itemCategory(stats[player]->weapon) == POTION
+			&& stats[player]->weapon->identified && item->identified )
+		{
+			int selectedItemQty;
+			int destItemQty;
+			auto result = getItemStackingBehavior(player, item, stats[player]->weapon, selectedItemQty, destItemQty);
+			if ( result.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK
+				|| result.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+			{
+				equipped = true;
+			}
+		}
 	}
 	else
 	{
@@ -11838,7 +11852,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
 	{
 		equippedIconFrame->setDisabled(true);
-		if ( equipped && !disableBackgrounds )
+		if ( equipped && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM))) )
 		{
 			equippedIconFrame->setDisabled(false);
 		}
