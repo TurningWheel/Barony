@@ -1083,7 +1083,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									Stat* buddystats = entity->getStats();
 									if ( buddystats != nullptr )
 									{
-										if ( hit.entity && hit.entity->checkFriend(entity) ) //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
+										if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+										{
+											continue; // shopkeepers don't care about hitting humans/robots etc.
+										}
+										if ( entity->checkFriend(ohitentity) )
 										{
 											if ( entity->monsterState == MONSTER_STATE_WAIT )
 											{

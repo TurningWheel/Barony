@@ -7098,7 +7098,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								Stat* buddystats = entity->getStats();
 								if ( buddystats != nullptr )
 								{
-									if ( entity->checkFriend(hit.entity) )
+									if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+									{
+										continue; // shopkeepers don't care about hitting humans/robots etc.
+									}
+									if ( entity->checkFriend(ohitentity) )
 									{
 										if ( entity->monsterState == MONSTER_STATE_WAIT )
 										{
@@ -7685,6 +7689,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							doSkillIncrease = false; // no skill for killing/hurting other turrets.
 						}
 					}
+					if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no skill for killing/hurting players
+					}
 					if ( doSkillIncrease
 						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED) )
 					{
@@ -8103,7 +8111,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( (rand() % 15 == 0 && damage > 0) || (damage == 0 && rand() % 8 == 0) )
 								{
-									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+									bool increaseSkill = true;
+									if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
+									{
+										increaseSkill = false;
+									}
+									if ( increaseSkill )
+									{
+										hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+									}
 								}
 							}
 
