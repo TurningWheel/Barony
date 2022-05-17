@@ -3741,7 +3741,7 @@ void actMonster(Entity* my)
 							real_t monsterVisionRange = sightranges[myStats->type];
 							if ( hitstats->type == DUMMYBOT )
 							{
-								monsterVisionRange = std::min(monsterVisionRange, 96.0);
+								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
@@ -4343,7 +4343,7 @@ void actMonster(Entity* my)
 				real_t monsterVisionRange = sightranges[myStats->type];
 				if ( hitstats && hitstats->type == DUMMYBOT )
 				{
-					monsterVisionRange = std::min(monsterVisionRange, 96.0);
+					monsterVisionRange = std::max(monsterVisionRange, 96.0);
 				}
 				if ( myStats->EFFECTS[EFF_FEAR] )
 				{
@@ -5174,7 +5174,7 @@ timeToGoAgain:
 							real_t monsterVisionRange = sightranges[myStats->type];
 							if ( hitstats->type == DUMMYBOT )
 							{
-								monsterVisionRange = std::min(monsterVisionRange, 96.0);
+								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
