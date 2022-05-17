@@ -556,6 +556,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	bool shootmode = players[PLAYER_NUM]->shootmode;
 
+	//real_t rotxdebug = 0.0;
+	//real_t rotydebug = 0.0;
 	if ( handleQuickTurn(useRefreshRateDelta) )
 	{
 		// do nothing, override rotations.
@@ -629,7 +631,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			}
 		}
 	}
-
+	//rotxdebug = PLAYER_ROTX;
 	my->yaw += PLAYER_ROTX * refreshRateDelta;
 	while ( my->yaw >= PI * 2 )
 	{
@@ -713,8 +715,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			}
 		}
 	}
+	//rotydebug = PLAYER_ROTY;
 	my->pitch -= PLAYER_ROTY * refreshRateDelta;
-
 	if ( softwaremode )
 	{
 		if ( my->pitch > PI / 6 )
@@ -737,14 +739,17 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 			my->pitch = -PI / 3;
 		}
 	}
-	if ( !smoothmouse )
+
+	if ( smoothmouse )
+	{
+		PLAYER_ROTY *= pow(0.5, refreshRateDelta);
+	}
+	else
 	{
 		PLAYER_ROTY = 0;
 	}
-	else if ( !shootmode )
-	{
-		PLAYER_ROTY *= .5;
-	}
+
+	//messagePlayer(playernum, MESSAGE_DEBUG, "%.5f | %.5f || %.5f | %.5f", rotxdebug, rotydebug, mousex_relative, mousey_relative);
 
 	if ( TimerExperiments::bUseTimerInterpolation )
 	{

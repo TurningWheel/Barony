@@ -4589,8 +4589,8 @@ void ingameHud()
 		}
 
 
-		bool debugMouse = false;
-		if ( debugMouse )
+		static ConsoleVariable<bool> cvar_debugmouse("/debugmouse", false);
+		if ( *cvar_debugmouse )
 		{
 			int x = players[player]->camera_x1() + 12;
 			int y = players[player]->camera_y1() + 12;
@@ -4621,6 +4621,10 @@ void ingameHud()
 				printTextFormatted(font8x8_bmp, x, y + 112, "leftx: %4f | lefty: %4f",
 					inputs.getController(player)->getLeftXPercent(),
 					inputs.getController(player)->getLeftYPercent());
+			}
+			if ( players[player]->entity )
+			{
+				printTextFormatted(font8x8_bmp, x, y + 124, "%.5f | %.5f", players[player]->entity->fskill[6], players[player]->entity->fskill[7]);
 			}
 		}
 	}
