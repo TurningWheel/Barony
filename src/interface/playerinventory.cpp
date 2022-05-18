@@ -5707,12 +5707,12 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
 	if ( !itemMenuOpen 
-		&& !selectedItem 
+		&& !selectedItem
 		&& !inputs.getVirtualMouse(player)->draw_cursor 
 		&& !players[player]->shootmode
 		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{
-		auto options = getContextTooltipOptionsForItem(player, item);
+		auto options = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad);
 
 		std::sort(options.begin(), options.end(), [](const ItemContextMenuPrompts& lhs, const ItemContextMenuPrompts& rhs) {
 			return getContextMenuOptionOrder(lhs) < getContextMenuOptionOrder(rhs);
@@ -6263,6 +6263,9 @@ void Player::Inventory_t::updateInventory()
 		slideOutPercent = std::max(0.0, slideOutPercent);
 		return;
 	}
+
+	static ConsoleVariable<bool> cvar_gamepadDropdown("/gamepad_dropdown", false);
+	useItemDropdownOnGamepad = *cvar_gamepadDropdown;
 
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
@@ -7453,11 +7456,18 @@ void Player::Inventory_t::updateInventory()
 						break;
 					}
 
-					if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
-						&& inventoryControlActive && !selectedItem
+					bool tooltipPromptWasDisabled = tooltipPromptFrame->isDisabled();
+					if ( useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+					{
+						tooltipPromptFrame->setDisabled(true);
+					}
+					if ( ((tooltipOpen && (!tooltipPromptWasDisabled))
+						|| bIsTooltipDelayed())
+						&& inventoryControlActive 
+						&& !selectedItem
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
-						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad);
 						bool bindingPressed = false;
 						for ( auto& option : contextTooltipOptions )
 						{
@@ -7495,6 +7505,37 @@ void Player::Inventory_t::updateInventory()
 								else
 								{
 									activateItemContextMenuOption(item, option);
+									if ( option == ItemContextMenuPrompts::PROMPT_DROPDOWN )
+									{
+										if ( !players[player]->GUI.isDropdownActive() )
+										{
+											players[player]->GUI.dropdownMenu.open("chest_interact");
+											players[player]->GUI.dropdownMenu.dropDownToggleClick = true;
+											players[player]->GUI.dropdownMenu.dropDownItem = item->uid;
+											SDL_Rect dropdownPos = slotFrame->getAbsoluteSize();
+											dropdownPos.y += dropdownPos.h / 2;
+											if ( auto interactMenuTop = players[player]->GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+											{
+												// 10px is slot half height, move by 0.5 slots, minus the top interact text height
+												dropdownPos.y -= (interactMenuTop->pos.h + (1 * 10) + 4);
+											}
+
+											if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("chest_interact") )
+											{
+												dropdownPos.x += dropdownPos.w - 10;
+											}
+											else
+											{
+												dropdownPos.x += 10;
+											}
+											dropdownPos.x = std::max(dropdownPos.x, players[player]->camera_virtualx1());
+											dropdownPos.x = std::min(dropdownPos.x, players[player]->camera_virtualx1() + players[player]->camera_virtualWidth());
+											players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x;
+											dropdownPos.y = std::max(dropdownPos.y, players[player]->camera_virtualy1());
+											dropdownPos.y = std::min(dropdownPos.y, players[player]->camera_virtualy1() + players[player]->camera_virtualHeight());
+											players[player]->GUI.dropdownMenu.dropDownY = dropdownPos.y;
+										}
+									}
 								}
 							}
 						}
@@ -7806,7 +7847,12 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) 
+				bool tooltipPromptWasDisabled = tooltipPromptFrame->isDisabled();
+				if ( useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+				{
+					tooltipPromptFrame->setDisabled(true);
+				}
+				if ( ((tooltipOpen && (!tooltipPromptWasDisabled))
 					|| bIsTooltipDelayed()
 					|| sellingItemToShop
 					|| tinkerOpen)
@@ -7814,7 +7860,7 @@ void Player::Inventory_t::updateInventory()
 					&& !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
-					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad);
 					bool bindingPressed = false;
 					for ( auto& option : contextTooltipOptions )
 					{
@@ -7852,6 +7898,37 @@ void Player::Inventory_t::updateInventory()
 							else
 							{
 								activateItemContextMenuOption(item, option);
+								if ( option == ItemContextMenuPrompts::PROMPT_DROPDOWN )
+								{
+									if ( !players[player]->GUI.isDropdownActive() )
+									{
+										players[player]->GUI.dropdownMenu.open("item_interact");
+										players[player]->GUI.dropdownMenu.dropDownToggleClick = true;
+										players[player]->GUI.dropdownMenu.dropDownItem = item->uid;
+										SDL_Rect dropdownPos = slotFrame->getAbsoluteSize();
+										dropdownPos.y += dropdownPos.h / 2;
+										if ( auto interactMenuTop = players[player]->GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+										{
+											// 10px is slot half height, move by 0.5 slots, minus the top interact text height
+											dropdownPos.y -= (interactMenuTop->pos.h + (1 * 10) + 4);
+										}
+
+										if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("item_interact") )
+										{
+											dropdownPos.x += dropdownPos.w - 10;
+										}
+										else
+										{
+											dropdownPos.x += 10;
+										}
+										dropdownPos.x = std::max(dropdownPos.x, players[player]->camera_virtualx1());
+										dropdownPos.x = std::min(dropdownPos.x, players[player]->camera_virtualx1() + players[player]->camera_virtualWidth());
+										players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x;
+										dropdownPos.y = std::max(dropdownPos.y, players[player]->camera_virtualy1());
+										dropdownPos.y = std::min(dropdownPos.y, players[player]->camera_virtualy1() + players[player]->camera_virtualHeight());
+										players[player]->GUI.dropdownMenu.dropDownY = dropdownPos.y;
+									}
+								}
 							}
 							break;
 						}
@@ -7866,7 +7943,6 @@ void Player::Inventory_t::updateInventory()
 						break;
 					}
 				}
-
 
 				bool disableItemUsage = false;
 				if ( item )
@@ -7919,7 +7995,7 @@ void Player::Inventory_t::updateInventory()
 				else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
 					&& inventoryControlActive && !selectedItem )
 				{
-					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) //TODO: selected shop slot, identify, remove curse?
 					{
 						if ( guiAllowDefaultRightClick() )
 						{
@@ -7928,7 +8004,8 @@ void Player::Inventory_t::updateInventory()
 							inputs.mouseClearRight(player);
 						}
 					}
-					else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
+					else if ( !disableItemUsage
+						&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 						(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 					{
 						inputs.mouseClearRight(player);
@@ -8533,6 +8610,7 @@ std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
 		case PROMPT_STORE_CHEST:
 		case PROMPT_RETRIEVE_CHEST:
 		case PROMPT_INSPECT:
+		case PROMPT_DROPDOWN:
 			return "MenuConfirm";
 		case PROMPT_DROP:
 			return "MenuCancel";
@@ -8584,25 +8662,36 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return language[1162];
 		case PROMPT_GRAB:
 			return language[4050];
+		case PROMPT_DROPDOWN:
+			return language[4040];
 		default:
 			return "Invalid";
 	}
 	return "Invalid";
 }
 
-std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item)
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, bool useDropdownMenu)
 {
 	if ( stats[player] && stats[player]->HP <= 0 )
 	{
 		// ded, cant do anything with items
 		return std::vector<ItemContextMenuPrompts>();
 	}
-	auto options = getContextMenuOptionsForItem(player, item);
-	options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
-	auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
-	if ( findAppraise != options.end() )
+	std::vector<ItemContextMenuPrompts> options;
+	if ( useDropdownMenu )
 	{
-		options.erase(findAppraise);
+		options.push_back(ItemContextMenuPrompts::PROMPT_DROPDOWN);
+		options.push_back(ItemContextMenuPrompts::PROMPT_GRAB);
+	}
+	else
+	{
+		options = getContextMenuOptionsForItem(player, item);
+		options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
+		auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
+		if ( findAppraise != options.end() )
+		{
+			options.erase(findAppraise);
+		}
 	}
 	return options;
 }

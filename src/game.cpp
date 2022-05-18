@@ -4099,6 +4099,39 @@ void ingameHud()
 			}
 		}
 
+		// if useItemDropdownOnGamepad, then 'b' will close inventory, with a 'couple' checks..
+		if ( players[player]->isLocalPlayer() 
+			&& !players[player]->shootmode
+			&& players[player]->inventoryUI.useItemDropdownOnGamepad
+			&& !inputs.getVirtualMouse(player)->draw_cursor
+			&& !players[player]->usingCommand() && input.binaryToggle("MenuCancel")
+			&& !players[player]->GUI.isDropdownActive()
+			&& players[player]->GUI.bModuleAccessibleWithMouse(players[player]->GUI.activeModule)
+			&& !inputs.getUIInteraction(player)->selectedItem
+			&& !gamePaused
+			&& bControlEnabled
+			&& players[player]->gui_mode == GUI_MODE_INVENTORY
+			&& players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& !players[player]->inventoryUI.chestGUI.bOpen
+			&& !players[player]->shopGUI.bOpen
+			&& !GenericGUI[player].isGUIOpen() )
+		{
+			if ( (players[player]->inventoryUI.isInteractable && players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY)
+				|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+				|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+			{
+				players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+				input.consumeBinaryToggle("MenuCancel");
+				input.consumeBindingsSharedWithBinding("MenuCancel");
+				input.consumeBinaryToggle("HotbarFacebarLeft");
+				input.consumeBinaryToggle("HotbarFacebarUp");
+				input.consumeBinaryToggle("HotbarFacebarRight");
+				input.consumeBinaryReleaseToggle("HotbarFacebarLeft");
+				input.consumeBinaryReleaseToggle("HotbarFacebarUp");
+				input.consumeBinaryReleaseToggle("HotbarFacebarRight");
+			}
+		}
+
 		// spell list
 		// player not needed to be alive
 		if ( players[player]->isLocalPlayer() && !players[player]->usingCommand() && input.consumeBinaryToggle("Spell List")

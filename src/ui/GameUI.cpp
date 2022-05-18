@@ -938,7 +938,11 @@ void Player::HUD_t::updateUINavigation()
 					break;
 			}
 		}
-		if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY || player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+
+		}
+		else if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
 		{
 			auto selectedElement = player.characterSheet.selectedElement;
 			if ( selectedElement >= Player::CharacterSheet_t::SHEET_STR && selectedElement <= Player::CharacterSheet_t::SHEET_WGT )
@@ -1369,9 +1373,9 @@ void Player::HUD_t::updateUINavigation()
 					continue;
 				}
 			}
-			if ( GenericGUI[player.playernum].isGUIOpen() )
+			if ( GenericGUI[player.playernum].isGUIOpen() || player.GUI.isDropdownActive() )
 			{
-				button->setInvisible(true);
+				button->setDisabled(true);
 				continue;
 			}
 		}
@@ -5986,6 +5990,45 @@ bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
 			invert = true;
 		}
 	}
+	else if ( name == "chest_interact" )
+	{
+		if ( player.inventoryUI.bCompactView )
+		{
+			if ( player.inventoryUI.inventoryPanelJustify != PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				invert = true;
+			}
+		}
+	}
+	else if ( name == "item_interact" )
+	{
+		if ( player.inventoryUI.bCompactView )
+		{
+			Item* item = uidToItem(dropDownItem);
+			if ( item && player.paperDoll.isItemOnDoll(*item) )
+			{
+				if ( player.inventoryUI.paperDollPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					invert = true;
+				}
+			}
+			else if ( item && itemCategory(item) == SPELL_CAT )
+			{
+				if ( player.inventoryUI.spellPanel.panelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					invert = true;
+				}
+			}
+			else
+			{
+				// normal inventory items
+				if ( player.inventoryUI.inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					invert = true;
+				}
+			}
+		}
+	}
 	return (invert ? !allDropDowns[name].alignRight : allDropDowns[name].alignRight);
 }
 
@@ -6397,6 +6440,7 @@ void Player::GUIDropdown_t::process()
 	{
 		dropdownFrame->setDisabled(true);
 		dropDownOptionSelected = -1;
+		dropDownItem = 0;
 		dropDownX = 0;
 		dropDownY = 0;
 		dropDownToggleClick = false;
@@ -6431,7 +6475,56 @@ void Player::GUIDropdown_t::process()
 	int maxHeight = 0;
 	const int textPaddingX = 8;
 
-	auto& dropDown = allDropDowns[currentName];
+	auto dropDown = allDropDowns[currentName];
+	std::vector<ItemContextMenuPrompts> contextOptions;
+	Item* item = uidToItem(dropDownItem);
+	if ( currentName == "chest_interact" )
+	{
+		list_t* chest_inventory = nullptr;
+		if ( multiplayer == CLIENT )
+		{
+			chest_inventory = &chestInv[player.playernum];
+		}
+		else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+		{
+			chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+		}
+
+		if ( chest_inventory )
+		{
+			for ( node_t* node = chest_inventory->first; node != NULL; node = node->next )
+			{
+				Item* chestItem = (Item*)node->element;
+				if ( !chestItem )
+				{
+					continue;
+				}
+				if ( chestItem->uid == dropDownItem )
+				{
+					item = chestItem;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( dropDownItem != 0 && !item )
+	{
+		close();
+		return;
+	}
+	if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+	{
+		if ( item )
+		{
+			dropDown.options.clear();
+			contextOptions = getContextMenuOptionsForItem(player.playernum, item);
+			for ( auto option : contextOptions )
+			{
+				dropDown.options.push_back(DropdownOption_t(getContextMenuLangEntry(player.playernum, option, *item), "", "", ""));
+			}
+		}
+	}
 	if ( dropDown.module != Player::GUI_t::MODULE_NONE )
 	{
 		if ( dropDown.module != player.GUI.activeModule )
@@ -6525,6 +6618,9 @@ void Player::GUIDropdown_t::process()
 			txt->setSize(size);
 		}
 
+		img->pos.x = txt->getSize().x - 8;
+		img->pos.y = txt->getSize().y + txt->getSize().h / 2 - img->pos.h / 2;
+
 		maxHeight = std::max(std::max(txt->getSize().y + txt->getSize().h, img->pos.y + img->pos.h), maxHeight);
 		++index;
 	}
@@ -6546,9 +6642,6 @@ void Player::GUIDropdown_t::process()
 			size.w = maxWidth;
 			txt->setSize(size);
 		}
-
-		img->pos.x = txt->getSize().x - 8;
-		img->pos.y = txt->getSize().y + txt->getSize().h / 2 - img->pos.h / 2;
 
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
@@ -6630,6 +6723,10 @@ void Player::GUIDropdown_t::process()
 	{
 		frameSize.x -= frameSize.w;
 	}
+	if ( frameSize.y + frameSize.h > player.camera_virtualHeight() )
+	{
+		frameSize.y -= (frameSize.y + frameSize.h) - player.camera_virtualy2();
+	}
 	dropdownFrame->setSize(frameSize);
 
 	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
@@ -6696,7 +6793,48 @@ void Player::GUIDropdown_t::process()
 	{
 		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 		{
-			activateSelection(currentName, dropDownOptionSelected);
+			if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+			{
+				if ( item && dropDownOptionSelected < contextOptions.size() )
+				{
+					if ( contextOptions[dropDownOptionSelected] == ItemContextMenuPrompts::PROMPT_DROP 
+						&& player.paperDoll.isItemOnDoll(*item) )
+					{
+						// need to unequip
+						player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+						player.paperDoll.updateSlots();
+						if ( player.paperDoll.isItemOnDoll(*item) )
+						{
+							// couldn't unequip, no more actions
+						}
+						else
+						{
+							// successfully unequipped, let's drop it.
+							bool droppedAll = false;
+							while ( item && item->count > 1 )
+							{
+								droppedAll = dropItem(item, player.playernum);
+								if ( droppedAll )
+								{
+									item = nullptr;
+								}
+							}
+							if ( !droppedAll )
+							{
+								dropItem(item, player.playernum);
+							}
+						}
+					}
+					else
+					{
+						player.inventoryUI.activateItemContextMenuOption(item, contextOptions[dropDownOptionSelected]);
+					}
+				}
+			}
+			else
+			{
+				activateSelection(currentName, dropDownOptionSelected);
+			}
 		}
 		//Close the menu.
 		close();
@@ -6718,6 +6856,7 @@ void Player::GUIDropdown_t::close()
 		dropdownBlockClickFrame = nullptr;
 	}
 	dropDownOptionSelected = 0;
+	dropDownItem = 0;
 	bOpen = false;
 	dropDownToggleClick = false;
 	currentName = "";
@@ -10845,13 +10984,14 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 			else if ( (!inputs.getVirtualMouse(player.playernum)->draw_cursor
 					&& inputs.hasController(player.playernum)
-					&& Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm")
+					&& Input::inputs[player.playernum].binaryToggle("MenuConfirm")
 				)
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive()
 				&& !player.usingCommand()
 				&& player.bControlEnabled && !gamePaused )
 			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm");
 				player.GUI.dropdownMenu.open("drop_gold");
 				player.GUI.dropdownMenu.dropDownToggleClick = true;
 				SDL_Rect dropdownPos = characterInfoFrame->getSize();
@@ -13401,6 +13541,18 @@ void loadHUDSettingsJSON()
 							{
 								dropdown.module = Player::GUI_t::MODULE_CHARACTERSHEET;
 							}
+							else if ( moduleName == "inventory" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_INVENTORY;
+							}
+							else if ( moduleName == "chest" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_CHEST;
+							}
+							else if ( moduleName == "hotbar" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_HOTBAR;
+							}
 							else
 							{
 								dropdown.module = Player::GUI_t::MODULE_NONE;
@@ -15081,6 +15233,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		sellingItemToShop = true;
 	}
 
+	if ( prompt == PROMPT_DROPDOWN )
+	{
+		return;
+	}
 	if ( prompt == PROMPT_APPRAISE )
 	{
 		players[player]->inventoryUI.appraisal.appraiseItem(item);

@@ -1003,6 +1003,7 @@ enum ItemContextMenuPrompts {
 	PROMPT_SPELL_EQUIP,
 	PROMPT_SPELL_QUICKCAST,
 	PROMPT_APPRAISE,
+	PROMPT_DROPDOWN,
 	PROMPT_INTERACT,
 	PROMPT_EAT,
 	PROMPT_CONSUME,
@@ -1022,6 +1023,6 @@ enum ItemContextMenuPrompts {
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
-std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item);
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, bool useDropdownMenu);
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
 std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt);

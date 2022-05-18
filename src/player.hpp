@@ -643,6 +643,7 @@ public:
 		int dropDownX = 0;
 		int dropDownY = 0;
 		int dropDownOptionSelected = -1;
+		Uint32 dropDownItem = 0;
 		bool bOpen = false;
 		std::string currentName = "";
 		Frame* dropdownBlockClickFrame = nullptr;
@@ -779,6 +780,7 @@ public:
 		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
 		void setCompactView(bool bCompact);
 		void resizeAndPositionInventoryElements();
+		bool useItemDropdownOnGamepad = false;
 
 		struct Cursor_t
 		{
