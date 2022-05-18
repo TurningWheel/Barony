@@ -630,9 +630,51 @@ public:
 	struct AlchemyGUI_t
 	{
 		GenericGUIMenu& parentGUI;
+		Frame* recipesFrame = nullptr;
+		struct AlchemyRecipes_t
+		{
+			AlchemyGUI_t& alchemy;
+
+			bool justifyLeft = true;
+			real_t animx = 0.0;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = true;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+
+			const int kNumRecipesToDisplayVertical = 3;
+			int getNumRecipesToDisplayVertical() const;
+			void openRecipePanel();
+			void closeRecipePanel();
+			void updateRecipePanel();
+			void scrollToSlot(int x, int y, bool instantly);
+			bool isSlotVisible(int x, int y) const;
+			bool isItemVisible(Item* item) const;
+
+			Item alchemyRecipeItem;
+			AlchemyRecipes_t(AlchemyGUI_t& a) :
+				alchemy(a) 
+			{
+				alchemyRecipeItem.appearance = 0;
+				alchemyRecipeItem.type = POTION_EMPTY;
+				alchemyRecipeItem.node = nullptr;
+				alchemyRecipeItem.status = SERVICABLE;
+				alchemyRecipeItem.beatitude = 0;
+				alchemyRecipeItem.count = 1;
+				alchemyRecipeItem.appearance = 0;
+				alchemyRecipeItem.identified = true;
+			}
+		} recipes;
+
+
 		Item alchemyResultPotion;
 		AlchemyGUI_t(GenericGUIMenu& g) :
-			parentGUI(g)
+			parentGUI(g),
+			recipes(*this)
 		{
 			alchemyResultPotion.appearance = 0;
 			alchemyResultPotion.type = POTION_EMPTY;
@@ -651,6 +693,12 @@ public:
 			ALCHEMY_ACTION_UNIDENTIFIED_POTION
 		};
 		AlchemyActions_t itemActionType = ALCHEMY_ACTION_NONE;
+		enum AlchemyView_t : int
+		{
+			ALCHEMY_VIEW_BREW,
+			ALCHEMY_VIEW_RECIPES
+		};
+		AlchemyView_t currentView = ALCHEMY_VIEW_BREW;
 		Frame* alchFrame = nullptr;
 		real_t animx = 0.0;
 		real_t animTooltip = 0.0;

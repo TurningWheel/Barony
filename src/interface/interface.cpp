@@ -37,6 +37,7 @@
 #include "../ui/Field.hpp"
 #include "../ui/Image.hpp"
 #include "../ui/Button.hpp"
+#include "../ui/Slider.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -11509,7 +11510,7 @@ void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
 }
 
 const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_X = 4;
-const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_Y = 5;
+const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_Y = 10;
 
 void GenericGUIMenu::AlchemyGUI_t::openAlchemyMenu()
 {
@@ -11535,6 +11536,7 @@ void GenericGUIMenu::AlchemyGUI_t::openAlchemyMenu()
 		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player->inventory_mode = INVENTORY_MODE_ITEM;
 		bOpen = true;
+		currentView = ALCHEMY_VIEW_BREW;
 	}
 	if ( inputs.getUIInteraction(playernum)->selectedItem )
 	{
@@ -11599,6 +11601,8 @@ void GenericGUIMenu::AlchemyGUI_t::closeAlchemyMenu()
 		}
 		alchemySlotFrames.clear();
 	}
+	recipes.closeRecipePanel();
+	recipesFrame = nullptr;
 }
 
 int GenericGUIMenu::AlchemyGUI_t::heightOffsetWhenNotCompact = 200;
@@ -11813,6 +11817,18 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		alchFrame->findImage("tmp")->pos = SDL_Rect{ 0, 0, alchFramePos.w, alchFramePos.h };
 	}*/
 
+	if ( keystatus[SDL_SCANCODE_J] )
+	{
+		if ( recipes.bOpen )
+		{
+			recipes.closeRecipePanel();
+		}
+		else
+		{
+			recipes.openRecipePanel();
+		}
+		keystatus[SDL_SCANCODE_J] = 0;
+	}
 	if ( keystatus[SDL_SCANCODE_H] )
 	{
 		keystatus[SDL_SCANCODE_H] = 0;
@@ -12030,6 +12046,8 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			}
 		}
 	}
+
+	recipes.updateRecipePanel();
 
 	if ( !parentGUI.isGUIOpen()
 		|| parentGUI.guiType != GUICurrentType::GUI_TYPE_ALCHEMY
@@ -12805,6 +12823,10 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 }
 
+const int kRecipeListHeight = 250;
+const int kRecipeListGridY = 0;
+const int kRecipeGridImgHeight = 160;
+
 void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 {
 	const int player = parentGUI.getPlayer();
@@ -12818,85 +12840,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 	}
 
 	SDL_Rect basePos{ 0, 0, alchemyBaseWidth, 328 };
-	//{
-	//	auto recipeFrame = alchFrame->addFrame("alchemy recipes");
-	//	SDL_Rect drawerPos{ 0, 0, 200, 200 };
-	//	recipeFrame->setSize(drawerPos);
-	//	recipeFrame->setHollow(true);
-	//	auto bg = recipeFrame->addImage(drawerPos,
-	//		makeColor(255, 255, 255, 255),
-	//		"images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "alchemy recipe img");
-	//	recipeFrame->setDisabled(true);
-
-	//	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
-
 	alchemySlotFrames.clear();
-
-	//	const int baseSlotOffsetX = 0;
-	//	const int baseSlotOffsetY = 0;
-
-	//	SDL_Rect alchemySlotsPos{ 0, 38, 258, 150 };
-	//	{
-	//		const auto drawerSlotsFrame = recipeFrame->addFrame("recipe slots");
-	//		drawerSlotsFrame->setSize(alchemySlotsPos);
-	//		drawerSlotsFrame->setHollow(true);
-
-	//		auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
-	//			makeColor(255, 255, 255, 255), "images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
-
-	//		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
-	//		const int maxTinkerX = MAX_TINKER_X;
-	//		const int maxTinkerY = MAX_TINKER_Y;
-
-	//		const int slotInnerWidth = inventorySlotSize - 2;
-	//		std::vector<std::pair<int, int>> slotCoords =
-	//		{
-	//			std::make_pair(28 + (slotInnerWidth + 2) * 0, 0),
-	//			std::make_pair(28 + (slotInnerWidth + 2) * 1, 0),
-	//			std::make_pair(28 + (slotInnerWidth + 2) * 2, 0),
-	//			std::make_pair(28 + (slotInnerWidth + 2) * 3, 0),
-	//			std::make_pair(28 + (slotInnerWidth + 2) * 4, 0),
-
-	//			std::make_pair(22, 48),
-	//			std::make_pair(22 + (slotInnerWidth + 6), 48),
-	//			std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 1, 48),
-	//			std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 2, 48),
-	//			std::make_pair(22 + (slotInnerWidth + 6) * 2 + (slotInnerWidth + 4) * 2, 48),
-
-	//			std::make_pair(14, 110),
-	//			std::make_pair(14 + (slotInnerWidth + 10), 110),
-	//			std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 1, 110),
-	//			std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 2, 110),
-	//			std::make_pair(14 + (slotInnerWidth + 10) * 2 + (slotInnerWidth + 8) * 2, 110)
-	//		};
-	//		auto slotCoordsIt = slotCoords.begin();
-	//		for ( int y = 0; y < maxTinkerY; ++y )
-	//		{
-	//			for ( int x = 0; x < maxTinkerX; ++x )
-	//			{
-	//				currentSlotPos.x = slotCoordsIt->first;
-	//				currentSlotPos.y = slotCoordsIt->second;
-	//				char slotname[32] = "";
-	//				snprintf(slotname, sizeof(slotname), "tinker %d %d", x, y);
-
-	//				auto slotFrame = drawerSlotsFrame->addFrame(slotname);
-	//				tinkerSlotFrames[x + y * 100] = slotFrame;
-	//				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
-	//				slotFrame->setSize(slotPos);
-
-	//				createPlayerInventorySlotFrameElements(slotFrame);
-	//				if ( slotCoordsIt != slotCoords.end() )
-	//				{
-	//					++slotCoordsIt;
-	//				}
-	//				//slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
-	//				//	"images/system/white.png", "tmp");
-	//				slotFrame->setDisabled(true);
-	//			}
-	//		}
-	//	}
-	//}
-
 	{
 		auto bgFrame = alchFrame->addFrame("alchemy base");
 		bgFrame->setSize(basePos);
@@ -13024,6 +12968,92 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			itemIncrementText->setDisabled(true);
 			itemIncrementText->setOntop(true);
 		}*/
+	}
+
+	Frame* frame = alchFrame->addFrame("player recipes");
+	recipesFrame = frame;
+	frame->setSize(SDL_Rect{ 0,
+		0,
+		alchemyBaseWidth,
+		kRecipeListHeight });
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player);
+	frame->setInheritParentFrameOpacity(false);
+	frame->setDisabled(true);
+
+	{
+		auto bgFrame = recipesFrame->addFrame("recipe base");
+		bgFrame->setSize(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeListHeight });
+		bgFrame->setHollow(true);
+		const auto bgSize = bgFrame->getSize();
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeListHeight },
+			makeColor(255, 255, 255, 128),
+			"images/system/white.png", "recipe base img");
+
+		auto bgHeader = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, 150 },
+			makeColor(255, 0, 255, 128),
+			"images/system/white.png", "recipe header img");
+
+		auto slider = bgFrame->addSlider("recipe slider");
+		slider->setBorder(16);
+		slider->setMinValue(0);
+		slider->setMaxValue(100);
+		slider->setValue(0);
+		SDL_Rect sliderPos{ alchemyBaseWidth - 26, 8, 20, kRecipeListHeight - 2 * 8 };
+		slider->setRailSize(sliderPos);
+		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		//slider->setCallback(callback);
+		slider->setColor(makeColor(255, 255, 255, 255));
+		slider->setHighlightColor(makeColor(255, 255, 255, 255));
+		slider->setHandleImage("images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setRailImage("images/ui/Sliders/HUD_Slider_Blank.png");
+		slider->setHideGlyphs(true);
+		slider->setHideKeyboardGlyphs(true);
+		slider->setHideSelectors(true);
+		slider->setMenuConfirmControlType(0);
+	}
+	{
+		int numGrids = (MAX_ALCH_Y / recipes.kNumRecipesToDisplayVertical) + 1;
+		const int baseSlotOffsetX = 0;
+		const int baseSlotOffsetY = 0;
+		const int baseGridOffsetY = kRecipeListGridY;
+		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+		SDL_Rect recipeSlotsPos{ 6, 0, alchemyBaseWidth, kRecipeListHeight };
+		auto recipeSlotsFrame = recipesFrame->addFrame("alchemy slots");
+		recipeSlotsFrame->setSize(recipeSlotsPos);
+		recipeSlotsFrame->setActualSize(SDL_Rect{ 0, 0, recipeSlotsPos.w, (kRecipeGridImgHeight + 2) * numGrids });
+		recipeSlotsFrame->setHollow(true);
+		recipeSlotsFrame->setAllowScrollBinds(false);
+
+		auto gridImg = recipeSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, (kRecipeGridImgHeight + 2) * numGrids },
+			0xFFFFFFFF, "images/ui/Alchemy/Alchemy_ScrollGrid.png", "grid img");
+		gridImg->tiled = true;
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+		const int maxRecipesX = MAX_ALCH_X;
+		const int maxRecipesY = MAX_ALCH_Y;
+
+		for ( int x = 0; x < maxRecipesX; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			for ( int y = 0; y < maxRecipesY; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "recipe %d %d", x, y);
+
+				auto slotFrame = recipeSlotsFrame->addFrame(slotname);
+				alchemySlotFrames[x + y * 100] = slotFrame;
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
 	}
 }
 
@@ -13246,4 +13276,354 @@ void GenericGUIMenu::AlchemyGUI_t::clearItemDisplayed()
 {
 	itemType = -1;
 	itemActionType = ALCHEMY_ACTION_NONE;
+}
+
+int GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::getNumRecipesToDisplayVertical() const
+{
+	return kNumRecipesToDisplayVertical;
+}
+void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::openRecipePanel()
+{
+	if ( !alchemy.recipesFrame )
+	{
+		return;
+	}
+	alchemy.currentView = ALCHEMY_VIEW_RECIPES;
+	bool wasDisabled = alchemy.recipesFrame->isDisabled();
+	alchemy.recipesFrame->setDisabled(false);
+	if ( wasDisabled )
+	{
+		animx = 0.0;
+		isInteractable = false;
+		currentScrollRow = 0;
+		scrollPercent = 0.0;
+		scrollInertia = 0.0;
+		bFirstTimeSnapCursor = false;
+	}
+	bOpen = true;
+}
+void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::closeRecipePanel()
+{
+	if ( alchemy.recipesFrame )
+	{
+		alchemy.recipesFrame->setDisabled(true);
+	}
+	alchemy.currentView = ALCHEMY_VIEW_BREW;
+	animx = 0.0;
+	isInteractable = false;
+	currentScrollRow = 0;
+	scrollPercent = 0.0;
+	scrollInertia = 0.0;
+	scrollAnimateX = scrollSetpoint;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+}
+
+void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
+{
+	Frame* recipeFrame = alchemy.recipesFrame;
+	if ( !recipeFrame ) { return; }
+
+	const int player = alchemy.parentGUI.getPlayer();
+	const int slotSize = players[player]->inventoryUI.getSlotSize();
+	if ( !recipeFrame->isDisabled() && bOpen )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			if ( !bFirstTimeSnapCursor )
+			{
+				bFirstTimeSnapCursor = true;
+				if ( !inputs.getUIInteraction(player)->selectedItem
+					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+				{
+					//player.inventoryUI.warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
+				}
+			}
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		isInteractable = false;
+		scrollInertia = 0.0;
+	}
+	auto recipeFramePos = recipeFrame->getSize();
+	/*if ( players[player]->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		recipeFramePos.x = -recipeFramePos.w + animx * recipeFramePos.w;
+		if ( players[player]->bUseCompactGUIWidth() )
+		{
+			if ( players[player]->inventoryUI.slideOutPercent >= .0001 )
+			{
+				isInteractable = false;
+			}
+			recipeFramePos.x -= players[player]->inventoryUI.slideOutWidth * players[player]->inventoryUI.slideOutPercent;
+		}
+	}
+	else
+	{
+		recipeFramePos.x = players[player]->camera_virtualWidth() - animx * recipeFramePos.w;
+		if ( players[player]->bUseCompactGUIWidth() )
+		{
+			if ( players[player]->inventoryUI.slideOutPercent >= .0001 )
+			{
+				isInteractable = false;
+			}
+			recipeFramePos.x -= -players[player]->inventoryUI.slideOutWidth * players[player]->inventoryUI.slideOutPercent;
+		}
+	}*/
+	recipeFramePos.x = alchemy.alchFrame->getSize().w - animx * recipeFramePos.w;
+	recipeFrame->setSize(recipeFramePos);
+
+	auto baseFrame = recipeFrame->findFrame("recipe base");
+	auto slider = baseFrame->findSlider("recipe slider");
+	auto recipeSlotsFrame = recipeFrame->findFrame("alchemy slots");
+	auto baseBackgroundImg = baseFrame->findImage("recipe base img");
+	auto baseHeaderImg = baseFrame->findImage("recipe header img");
+	// handle height changing..
+	{
+		int frameHeight = kRecipeListHeight;
+		int totalFrameHeightChange = 150;
+		if ( !players[player]->bUseCompactGUIHeight() )
+		{
+			totalFrameHeightChange = 150;
+		}
+		recipeFramePos.h = frameHeight + totalFrameHeightChange;
+		recipeFrame->setSize(recipeFramePos);
+		baseBackgroundImg->pos.y = totalFrameHeightChange;
+		baseHeaderImg->pos.y = baseBackgroundImg->pos.y - baseHeaderImg->pos.h;
+		SDL_Rect recipeBasePos = baseFrame->getSize();
+		recipeBasePos.h = recipeFramePos.h;
+		baseFrame->setSize(recipeBasePos);
+
+		int numGrids = (MAX_ALCH_Y / getNumRecipesToDisplayVertical()) + 1;
+		SDL_Rect recipeSlotsFramePos = recipeSlotsFrame->getSize();
+
+		int heightChange = 0;
+		if ( getNumRecipesToDisplayVertical() < kNumRecipesToDisplayVertical )
+		{
+			heightChange = slotSize * (kNumRecipesToDisplayVertical - getNumRecipesToDisplayVertical());
+		}
+		recipeSlotsFramePos.y = 4 + heightChange + totalFrameHeightChange;
+		recipeSlotsFramePos.h = (kRecipeGridImgHeight + 2) - heightChange;
+		recipeSlotsFrame->setActualSize(SDL_Rect{ recipeSlotsFrame->getActualSize().x,
+			recipeSlotsFrame->getActualSize().y,
+			recipeSlotsFrame->getActualSize().w,
+			(recipeSlotsFramePos.h) * numGrids });
+		recipeSlotsFrame->setSize(recipeSlotsFramePos);
+		auto gridImg = recipeSlotsFrame->findImage("grid img");
+		gridImg->pos.y = kRecipeListGridY;
+		gridImg->pos.h = (recipeSlotsFramePos.h) * numGrids;
+
+		SDL_Rect sliderPos = slider->getRailSize();
+		sliderPos.y = 8 + heightChange + totalFrameHeightChange;
+		sliderPos.h = (kRecipeListHeight - 2 * 8) - heightChange;
+		slider->setRailSize(sliderPos);
+	}
+
+
+	int lowestItemY = getNumRecipesToDisplayVertical() - 1;
+	int entryx = 0;
+	int entryy = 0;
+	for ( auto& entry : clientLearnedAlchemyRecipes[player] )
+	{
+		if ( auto slotFrame = alchemy.getAlchemySlotFrame(entryx, entryy) )
+		{
+			slotFrame->setDisabled(true);
+			alchemyRecipeItem.type = (ItemType)entry.first;
+			alchemyRecipeItem.status = EXCELLENT;
+			updateSlotFrameFromItem(slotFrame, &alchemyRecipeItem);
+		}
+
+		++entryx;
+		lowestItemY = std::max(lowestItemY, entryy);
+		if ( entryx >= MAX_ALCH_X )
+		{
+			entryx = 0;
+			++entryy;
+		}
+	}
+
+	int scrollAmount = std::max((lowestItemY + 1) - (getNumRecipesToDisplayVertical()), 0) * slotSize;
+	if ( scrollAmount == 0 )
+	{
+		slider->setDisabled(true);
+	}
+	else
+	{
+		slider->setDisabled(false);
+	}
+
+	currentScrollRow = scrollSetpoint / slotSize;
+
+	if ( bOpen && isInteractable )
+	{
+		// do sliders
+		if ( !slider->isDisabled() )
+		{
+			if ( !inputs.getUIInteraction(player)->selectedItem
+				&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(player) )
+				{
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
+					{
+						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
+						scrollSetpoint = std::max(scrollSetpoint + slotSize, 0);
+					}
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
+					{
+						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
+						scrollSetpoint = std::max(scrollSetpoint - slotSize, 0);
+					}
+				}
+				if ( Input::inputs[player].analogToggle("MenuScrollDown") )
+				{
+					Input::inputs[player].consumeAnalogToggle("MenuScrollDown");
+					scrollSetpoint = std::max(scrollSetpoint + slotSize, 0);
+				}
+				else if ( Input::inputs[player].analogToggle("MenuScrollUp") )
+				{
+					Input::inputs[player].consumeAnalogToggle("MenuScrollUp");
+					scrollSetpoint = std::max(scrollSetpoint - slotSize, 0);
+				}
+			}
+		}
+
+		scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
+		currentScrollRow = scrollSetpoint / slotSize;
+
+		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+		{
+			isInteractable = false;
+			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			real_t setpointDiff = 0.0;
+			if ( scrollSetpoint - scrollAnimateX > 0.0 )
+			{
+				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			else
+			{
+				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			scrollAnimateX += setpointDiff;
+			if ( setpointDiff > 0.0 )
+			{
+				scrollAnimateX = std::min((real_t)scrollSetpoint, scrollAnimateX);
+			}
+			else
+			{
+				scrollAnimateX = std::max((real_t)scrollSetpoint, scrollAnimateX);
+			}
+		}
+		else
+		{
+			scrollAnimateX = scrollSetpoint;
+		}
+
+		if ( !inputs.getUIInteraction(player)->selectedItem
+			&& !players[player]->GUI.isDropdownActive()
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY)
+			&& players[player]->bControlEnabled && !gamePaused && !players[player]->usingCommand() )
+		{
+			if ( Input::inputs[player].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[player].consumeBinaryToggle("MenuCancel");
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				players[player]->inventoryUI.cycleInventoryTab();
+				players[player]->inventoryUI.spellPanel.closeSpellPanel();
+			}
+		}
+	}
+
+	if ( scrollAmount > 0 )
+	{
+		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+	}
+	else
+	{
+		slider->setValue(0.0);
+	}
+
+	SDL_Rect actualSize = recipeSlotsFrame->getActualSize();
+	actualSize.y = scrollAnimateX;
+	recipeSlotsFrame->setActualSize(actualSize);
+}
+
+void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::scrollToSlot(int x, int y, bool instantly)
+{
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + getNumRecipesToDisplayVertical() - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		// no work to do.
+		return;
+	}
+	int player = alchemy.parentGUI.getPlayer();
+	int lowestItemY = getNumRecipesToDisplayVertical() - 1;
+	const int slotSize = players[player]->inventoryUI.getSlotSize();
+	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( !item ) { continue; }
+		if ( itemCategory(item) != SPELL_CAT ) { continue; }
+
+		lowestItemY = std::max(lowestItemY, item->y);
+	}
+	int maxScroll = std::max((lowestItemY + 1) - (getNumRecipesToDisplayVertical()), 0) * slotSize;
+
+	int scrollAmount = 0;
+	if ( y < lowerY )
+	{
+		scrollAmount = (y) * slotSize;
+		//scrollAmount += scrollSetpoint;
+	}
+	else if ( y > upperY )
+	{
+		scrollAmount = (y - upperY) * slotSize;
+		scrollAmount += scrollSetpoint;
+	}
+	scrollAmount = std::min(scrollAmount, maxScroll);
+
+	scrollSetpoint = scrollAmount;
+	if ( instantly )
+	{
+		scrollAnimateX = scrollSetpoint;
+	}
+	currentScrollRow = scrollSetpoint / slotSize;
+	if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+	{
+		isInteractable = false;
+	}
+}
+
+bool GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::isSlotVisible(int x, int y) const
+{
+	if ( alchemy.recipesFrame )
+	{
+		if ( alchemy.recipesFrame->isDisabled() )
+		{
+			return false;
+		}
+	}
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + getNumRecipesToDisplayVertical() - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::isItemVisible(Item* item) const
+{
+	if ( !item ) { return false; }
+	return isSlotVisible(item->x, item->y);
 }

@@ -5706,7 +5706,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !itemMenuOpen 
+	if ( !players[player]->GUI.isDropdownActive()
 		&& !selectedItem
 		&& !inputs.getVirtualMouse(player)->draw_cursor 
 		&& !players[player]->shootmode
@@ -6438,7 +6438,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = tinkerGUI.getTinkerSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( tinkerGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6476,7 +6476,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = shopGUI.getShopSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( shopGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6517,11 +6517,29 @@ void Player::Inventory_t::updateInventory()
 					{
 						continue;
 					}
+					bool slotVisible = true;
+					if ( alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_BREW )
+					{
+						if ( x >= 0 )
+						{
+							continue;
+						}
+						slotVisible = true;
+					}
+					else if ( alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_RECIPES )
+					{
+						if ( x < 0 )
+						{
+							continue;
+						}
+						slotVisible = alchemyGUI.recipes.isSlotVisible(x, y);
+					}
+
 					if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
-							if ( alchemyGUI.isInteractable && !slotFrame->isDisabled() && slotFrame->capturesMouseInRealtimeCoords() )
+							if ( slotVisible && alchemyGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
 								alchemyGUI.selectAlchemySlot(x, y);
 								if ( inputs.getVirtualMouse(player)->draw_cursor )
@@ -6535,7 +6553,8 @@ void Player::Inventory_t::updateInventory()
 						if ( x == alchemyGUI.getSelectedAlchemySlotX()
 							&& y == alchemyGUI.getSelectedAlchemySlotY()
 							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
-							&& alchemyGUI.isInteractable )
+							&& alchemyGUI.isInteractable
+							&& slotVisible )
 						{
 							slotFrameToHighlight = slotFrame;
 							startx = slotFrame->getAbsoluteSize().x;
@@ -6557,7 +6576,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getChestSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( chestGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6596,7 +6615,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getInventorySlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6634,7 +6653,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getSpellSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( spellPanel.isSlotVisible(x, y) && spellPanel.isInteractable )
 							{
@@ -6670,9 +6689,9 @@ void Player::Inventory_t::updateInventory()
 
 		if ( slotFrameToHighlight )
 		{
-			if ( (itemMenuOpen && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
+			if ( (players[player]->GUI.isDropdownActive() && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
 				(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
-					&& !(itemMenuOpen && itemMenuFromHotbar)
+					&& !(players[player]->GUI.isDropdownActive() && itemMenuFromHotbar)
 					&& (!inputs.getVirtualMouse(player)->draw_cursor
 						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
 			{
@@ -7677,7 +7696,7 @@ void Player::Inventory_t::updateInventory()
 			mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
 				&& slotFrame->capturesMouse();
 
-			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor && !(itemMenuOpen && itemMenuFromHotbar) )
+			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor && !(players[player]->GUI.isDropdownActive() && itemMenuFromHotbar) )
 			{
 				// mouse movement captures the inventory
 				if ( itemCategory(item) == SPELL_CAT )
