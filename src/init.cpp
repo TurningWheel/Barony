@@ -2658,8 +2658,6 @@ bool resizeWindow(int new_xres, int new_yres)
     }
 #endif
 
-	//SDL_SetWindowSize(screen, xres, yres);
-
 	// create new frame fbo
 	Frame::fboInit();
 
