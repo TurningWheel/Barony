@@ -5,10 +5,14 @@
 #include "../player.hpp"
 #include "Frame.hpp"
 #include "Field.hpp"
-#include "Text.hpp"
-#include "GameUI.hpp"
+#include "Button.hpp"
 #include "Image.hpp"
+#include "Text.hpp"
 #include <cassert>
+
+#ifndef EDITOR
+#include "GameUI.hpp"
+#endif
 
 Field::Field(const int _textLen) {
 	textlen = std::max(_textLen, 0);
@@ -339,13 +343,24 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	Widget::process();
 
 	result_t result;
+	result.tooltip = nullptr;
 	result.highlighted = false;
+	result.highlightTime = SDL_GetTicks();
 	result.entered = false;
 	if (!editable) {
 		if (activated) {
 			result.entered = true;
 			deactivate();
 		}
+	}
+	if (disabled) {
+		highlightTime = result.highlightTime;
+		highlighted = false;
+		return result;
+	}
+	if (!usable) {
+		highlightTime = result.highlightTime;
+		highlighted = false;
 		return result;
 	}
 
@@ -354,6 +369,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
 	_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	if (_size.w <= 0 || _size.h <= 0) {
+	    highlightTime = result.highlightTime;
 		return result;
 	}
 
@@ -381,7 +397,7 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
-	if (activated) {
+	if (activated && editable) {
 		if (inputstr != text) {
 			result.entered = true;
 			deactivate();
@@ -413,26 +429,35 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	}
 
 #if !defined(NINTENDO) && !defined(EDITOR)
-	if (inputs.getVirtualMouse(mouseowner)->draw_cursor) {
-		if (omousex >= _size.x && omousex < _size.x + _size.w &&
-			omousey >= _size.y && omousey < _size.y + _size.h) {
-			result.highlighted = true;
-		}
+	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(mouseowner)->draw_cursor) {
+		result.highlighted = highlighted = true;
+		result.highlightTime = highlightTime;
+	    result.tooltip = tooltip.c_str();
+	} else {
+	    result.highlighted = highlighted = false;
+		result.highlightTime = highlightTime = SDL_GetTicks();
+	    result.tooltip = nullptr;
 	}
 
-	if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
-	    //mousestatus[SDL_BUTTON_LEFT] = 0;
-		if (activated) {
-			result.entered = true;
-			deactivate();
-		}
-	} else if (result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
-	    mousestatus[SDL_BUTTON_LEFT] = 0;
-		activate();
-		/*if (doubleclick_mousestatus[SDL_BUTTON_LEFT]) {
-			selectAll = true;
-		}*/
+    if (editable) {
+	    if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
+	        //mousestatus[SDL_BUTTON_LEFT] = 0;
+		    if (activated) {
+			    result.entered = true;
+			    deactivate();
+		    }
+	    } else if (result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
+	        mousestatus[SDL_BUTTON_LEFT] = 0;
+		    activate();
+		    /*if (doubleclick_mousestatus[SDL_BUTTON_LEFT]) {
+			    selectAll = true;
+		    }*/
+	    }
 	}
+#else
+	result.highlighted = highlighted = false;
+	result.highlightTime = highlightTime = SDL_GetTicks();
+	result.tooltip = nullptr;
 #endif
 
 	return result;

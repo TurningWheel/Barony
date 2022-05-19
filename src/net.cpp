@@ -38,6 +38,7 @@
 #include "lobbies.hpp"
 #include "ui/MainMenu.hpp"
 #include "ui/LoadingScreen.hpp"
+#include "ui/GameUI.hpp"
 
 #include <atomic>
 #include <future>
@@ -393,7 +394,8 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	if ( localPlayer )
 	{
 	    printlog("%s\n", str);
-	    newString(&messages, color, completionTime, str);
+	    auto string = newString(&messages, color, completionTime, str);
+	    addMessageToLogWindow(player, string);
 	    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 	    {
 		    list_RemoveNode(messages.first);

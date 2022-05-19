@@ -115,6 +115,13 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Up", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Down", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogHome", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogEnd", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageDown", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageUp", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogScrollDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogScrollUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));
@@ -133,6 +140,13 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMiddleClick", "Mouse2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("InspectWithMouse", "Mouse1"));
+
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogHome", "Home"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogEnd", "End"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogPageDown", "PageDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogPageUp", "PageUp"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogScrollDown", "MouseWheelDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogScrollUp", "MouseWheelUp"));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuUp", "Up"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeft", "Left"));
@@ -406,7 +420,7 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 		{
 			return rootPath + "Stick_Switch_L_Right_00.png";
 		}
-}
+    }
 	if ( in == "StickLeftY-" )
 	{
 		if ( pressed )

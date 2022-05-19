@@ -1564,6 +1564,7 @@ void buttonHelp(button_t* my)
 	{
 		menuVisible = 0;
 	}
+	strcpy(subtext, "");
 }
 
 void buttonAbout(button_t* my)

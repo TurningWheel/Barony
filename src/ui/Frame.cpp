@@ -38,11 +38,11 @@ ConsoleCommand myCmd("/resizegui", "change gui size",
     });
 #endif
 
-static const Uint32 tooltip_background = 0xEE000000;
-static const Uint32 tooltip_border_color = 0xFFEE00AA;
+static const Uint32 tooltip_background = makeColor(0, 0, 0, 191);
+static const Uint32 tooltip_border_color = makeColor(51, 33, 26, 255);
 static const int tooltip_border_width = 2;
-static const Uint32 tooltip_text_color = 0xFFFFFFFF;
-static const char* tooltip_text_font = Font::defaultFont;
+static const Uint32 tooltip_text_color = makeColor(255, 255, 255, 255);
+static const char* tooltip_text_font = "fonts/pixel_maz_multiline.ttf#16#2";
 
 static framebuffer gui_fb, gui_fb_upscaled, gui_fb_downscaled;
 
@@ -725,22 +725,20 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		if (tooltip && tooltip[0] != '\0') {
 			Font* font = Font::get(tooltip_text_font);
 			if (font) {
-				int border = tooltip_border_width;
-
+				const int border = tooltip_border_width;
 				Text* text = Text::get(tooltip, font->getName(),
 					makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
+
 				SDL_Rect src;
-				src.x = mousex + 20;
-				src.y = mousey;
 				src.w = text->getWidth() + border * 2;
 				src.h = text->getHeight() + border * 2;
+				src.x = mousex + 24;
+				src.y = mousey + 24;
 
-				SDL_Rect _src = src;
-				_src.x = _src.x;
-				_src.y = _src.y;
-				_src.w = _src.w;
-				_src.h = _src.h;
-				white->drawColor(nullptr, _src, viewport, tooltip_border_color);
+				white->drawColor(nullptr, SDL_Rect{src.x, src.y, border, src.h}, viewport, tooltip_border_color);
+				white->drawColor(nullptr, SDL_Rect{src.x, src.y, src.w, border}, viewport, tooltip_border_color);
+				white->drawColor(nullptr, SDL_Rect{src.x + src.w - border, src.y, border, src.h}, viewport, tooltip_border_color);
+				white->drawColor(nullptr, SDL_Rect{src.x, src.y + src.h - border, src.w, border}, viewport, tooltip_border_color);
 
 				SDL_Rect src2{src.x + border, src.y + border, src.w - border * 2, src.h - border * 2};
 				src2.x = src2.x;
@@ -1323,14 +1321,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			}
 
 			Field::result_t fieldResult = field->process(_size, actualSize, usable);
-			if (usable) {
-				if (fieldResult.highlighted) {
-					if (mouseActive) {
-						field->select();
-					}
-					if (field->isSelected()) {
-						result.usable = usable = false;
-					}
+			if (usable && fieldResult.highlighted) {
+				result.highlightTime = fieldResult.highlightTime;
+			    result.tooltip = fieldResult.tooltip;
+				if (mouseActive && field->isEditable()) {
+					field->select();
+				}
+				if (field->isSelected()) {
+					result.usable = usable = false;
 				}
 			}
 

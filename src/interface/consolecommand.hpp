@@ -88,6 +88,9 @@ public:
     T& operator*() {
         return data;
     }
+    T* operator->() {
+        return &data;
+    }
 
     T data;
 

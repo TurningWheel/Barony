@@ -4921,6 +4921,61 @@ static void openMapWindow(int player) {
         });
 }
 
+static ConsoleCommand ccmd_log_clear("/log_clear", "Clears log history",
+    [](int argc, const char** argv){
+    list_FreeAll(&messages);
+    });
+
+void addMessageToLogWindow(int player, string_t* string) {
+    auto& frame = players[player]->hud.logWindow;
+    if (!frame || !string) {
+        return;
+    }
+    const int w = frame->getSize().w;
+    const int h = frame->getSize().h;
+
+    auto subframe = frame->findFrame("subframe"); assert(subframe);
+    auto subframe_size = subframe->getActualSize();
+    int y = subframe_size.h;
+
+    static ConsoleVariable<bool> timestamp_messages("/log_timestamp", false);
+
+    char buf[1024];
+    const Uint32 time = string->time / TICKS_PER_SECOND;
+    const Uint32 hour = time / 3600;
+    const Uint32 min = (time / 60) % 60;
+    const Uint32 sec = time % 60;
+    const int result = *timestamp_messages ?
+        snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u] %s",
+            hour, min, sec, string->data):
+        snprintf(buf, sizeof(buf), "%s", string->data);
+    const int size = std::min(std::max(0, (int)sizeof(buf)), result);
+
+    static ConsoleVariable<std::string> font("/log_font",
+        "fonts/kongtext.ttf#16#0");
+
+    auto field = subframe->addField("field", size + 1);
+    auto text = Text::get(buf, font->c_str(),
+        uint32ColorWhite, uint32ColorBlack);
+    const int text_h = (int)text->getHeight() * (int)string->lines + 2;
+    field->setSize(SDL_Rect{8, y, (int)text->getWidth(), text_h});
+    field->setFont(font->c_str());
+    field->setColor(string->color);
+    field->setText(buf);
+
+    (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
+    field->setTooltip(buf);
+
+    y += text_h;
+    if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
+        subframe->setActualSize(SDL_Rect{
+            0, std::max(0, y - subframe->getSize().h), w, y});
+    } else {
+        subframe->setActualSize(SDL_Rect{
+            0, subframe_size.y, w, y});
+    }
+}
+
 static void openLogWindow(int player) {
     auto& frame = players[player]->hud.logWindow;
     if (frame) {
@@ -4951,41 +5006,122 @@ static void openLogWindow(int player) {
             players[player]->hud.logWindow = nullptr;
             frame->removeSelf();
         }
+
+        const int w = frame->getSize().w;
+        const int h = frame->getSize().h;
+
+        static ConsoleVariable<int> glyph1_kb("/log_kb_glyph1", 32);
+        static ConsoleVariable<int> glyph2_kb("/log_kb_glyph2", 92);
+        static ConsoleVariable<int> glyph3_kb("/log_kb_glyph3", 330);
+        static ConsoleVariable<int> glyph4_kb("/log_kb_glyph4", 396);
+        static ConsoleVariable<int> glyph5_kb("/log_kb_glyph5", 660);
+        static ConsoleVariable<int> glyph6_kb("/log_kb_glyph6", 694);
+
+        static ConsoleVariable<int> glyph1_gamepad("/log_gamepad_glyph1", 32);
+        static ConsoleVariable<int> glyph2_gamepad("/log_gamepad_glyph2", 92);
+        static ConsoleVariable<int> glyph3_gamepad("/log_gamepad_glyph3", 330);
+        static ConsoleVariable<int> glyph4_gamepad("/log_gamepad_glyph4", 396);
+        static ConsoleVariable<int> glyph5_gamepad("/log_gamepad_glyph5", 660);
+        static ConsoleVariable<int> glyph6_gamepad("/log_gamepad_glyph6", 694);
+
+        const bool using_keyboard = Input::inputs[player].getPlayerControlType() ==
+            Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD;
+
+        struct Glyph {
+            const char* name;
+            int kb_x;
+            int gamepad_x;
+        };
+        const Glyph glyphs[] = {
+            {"LogHome", *glyph1_kb, *glyph1_gamepad},
+            {"LogEnd", *glyph2_kb, *glyph2_gamepad},
+            {"LogPageUp", *glyph3_kb, *glyph3_gamepad},
+            {"LogPageDown", *glyph4_kb, *glyph4_gamepad},
+            {"LogScrollUp", *glyph5_kb, *glyph5_gamepad},
+            {"LogScrollDown", *glyph6_kb, *glyph6_gamepad},
+        };
+        const int num_glyphs = sizeof(glyphs) / sizeof(glyphs[0]);
+
+        const bool pressed = (ticks % TICKS_PER_SECOND) >= TICKS_PER_SECOND / 2;
+
+        for (int c = 0; c < num_glyphs; ++c) {
+            auto path = Input::inputs[player].getGlyphPathForBinding(glyphs[c].name, pressed);
+            auto glyph = Image::get(path.c_str()); assert(glyph);
+            auto image = frame->findImage(glyphs[c].name); assert(image);
+            image->color = 0xffffffff;
+            image->path = path;
+            image->pos = SDL_Rect{
+                using_keyboard ?
+                    (int)(glyphs[c].kb_x - glyph->getWidth() / 2):
+                    (int)(glyphs[c].gamepad_x - glyph->getWidth() / 2),
+                (int)(h - 16 - glyph->getHeight() / 2),
+                (int)glyph->getWidth(),
+                (int)glyph->getHeight()};
+        }
+
+        auto help_left = frame->findField("help_left"); assert(help_left);
+        auto help_center = frame->findField("help_center"); assert(help_center);
+        auto help_right = frame->findField("help_right"); assert(help_right);
+
+        static ConsoleVariable<std::string> help_left_kb("/log_kb_help_left", "              /              Skip to start/end");
+        static ConsoleVariable<std::string> help_center_kb("/log_kb_help_center", "              /              Page Up/Down");
+        static ConsoleVariable<std::string> help_right_kb("/log_kb_help_right", "        /        Scroll Up/Down");
+        static ConsoleVariable<std::string> help_left_gamepad("/log_gamepad_help_left", "             /              Skip to start/end");
+        static ConsoleVariable<std::string> help_center_gamepad("/log_gamepad_help_center", "              /              Page Up/Down");
+        static ConsoleVariable<std::string> help_right_gamepad("/log_gamepad_help_right", "        /        Scroll Up/Down");
+
+        if (using_keyboard) {
+            help_left->setText(help_left_kb->c_str());
+            help_center->setText(help_center_kb->c_str());
+            help_right->setText(help_right_kb->c_str());
+        } else {
+            help_left->setText(help_left_gamepad->c_str());
+            help_center->setText(help_center_gamepad->c_str());
+            help_right->setText(help_right_gamepad->c_str());
+        }
+
+        auto subframe = frame->findFrame("subframe"); assert(subframe);
+        auto subframe_size = subframe->getActualSize();
+
+        if (Input::inputs[player].consumeBinaryToggle("LogHome")) {
+            Input::inputs[player].consumeBindingsSharedWithBinding("LogHome");
+            subframe_size.y = 0;
+            subframe->setActualSize(subframe_size);
+        }
+        if (Input::inputs[player].consumeBinaryToggle("LogEnd")) {
+            Input::inputs[player].consumeBindingsSharedWithBinding("LogEnd");
+            subframe_size.y = subframe_size.h - subframe->getSize().h;
+            subframe->setActualSize(subframe_size);
+        }
+        if (Input::inputs[player].consumeBinaryToggle("LogPageUp")) {
+            Input::inputs[player].consumeBindingsSharedWithBinding("LogPageUp");
+            subframe_size.y -= subframe->getSize().h;
+            subframe_size.y = std::max(0, subframe_size.y);
+            subframe->setActualSize(subframe_size);
+        }
+        if (Input::inputs[player].consumeBinaryToggle("LogPageDown")) {
+            Input::inputs[player].consumeBindingsSharedWithBinding("LogPageDown");
+            subframe_size.y += subframe->getSize().h;
+            subframe_size.y = std::min(subframe_size.h - subframe->getSize().h, subframe_size.y);
+            subframe->setActualSize(subframe_size);
+        }
+
         });
 
-
-    int y = 0;
     auto subframe = frame->addFrame("subframe");
     subframe->setScrollWithLeftControls(false);
-    subframe->setSize(SDL_Rect{0, 32, w, h - 32});
+    subframe->setSize(SDL_Rect{0, 32, w, h - 64});
+    subframe->setActualSize(SDL_Rect{0, 0, w, 4});
     subframe->setBorderColor(makeColor(51, 33, 26, 255));
     subframe->setSliderColor(makeColor(121, 71, 52, 255));
     subframe->setColor(makeColor(0, 0, 0, 0));
     subframe->setScrollBarsEnabled(true);
     subframe->setBorder(2);
+
     for (auto node = messages.first; node != nullptr; node = node->next) {
         auto string = (string_t*)node->element;
-
-        char buf[1024];
-        const Uint32 time = string->time / TICKS_PER_SECOND;
-        const Uint32 hour = time / 3600;
-        const Uint32 min = (time / 60) % 60;
-        const Uint32 sec = time % 60;
-        const int result = snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u] %s", hour, min, sec, string->data);
-        const int size = std::min(std::max(0, (int)sizeof(buf)), result);
-
-        auto field = subframe->addField("field", size + 1);
-        auto text = Text::get(buf, smallfont_outline,
-            uint32ColorWhite, uint32ColorBlack);
-        const int h = (int)text->getHeight() * (int)string->lines + 2;
-        field->setSize(SDL_Rect{8, y, (int)text->getWidth(), h});
-        field->setFont(smallfont_outline);
-        field->setColor(string->color);
-        field->setText(buf);
-
-        y += h;
+        addMessageToLogWindow(player, string);
     }
-    subframe->setActualSize(SDL_Rect{0, y - (h - 32), w, y});
 
     auto label = frame->addField("label", 64);
     label->setSize(SDL_Rect{8, 0, w - 40, 32});
@@ -5006,6 +5142,39 @@ static void openLogWindow(int player) {
         auto parent = static_cast<Frame*>(button.getParent());
         parent->removeSelf();
         });
+
+    auto help_left = frame->addField("help_left", 128);
+    help_left->setSize(SDL_Rect{4, h - 32, w - 4, 32});
+    help_left->setHJustify(Field::justify_t::LEFT);
+    help_left->setVJustify(Field::justify_t::CENTER);
+    help_left->setFont(smallfont_outline);
+
+    frame->addImage(SDL_Rect{0,0,0,0}, 0,
+		"images/system/white.png", "LogHome");
+    frame->addImage(SDL_Rect{0,0,0,0}, 0,
+		"images/system/white.png", "LogEnd");
+
+    auto help_center = frame->addField("help_center", 128);
+    help_center->setSize(SDL_Rect{0, h - 32, w, 32});
+    help_center->setHJustify(Field::justify_t::CENTER);
+    help_center->setVJustify(Field::justify_t::CENTER);
+    help_center->setFont(smallfont_outline);
+
+    frame->addImage(SDL_Rect{0,0,0,0}, 0,
+		"images/system/white.png", "LogPageUp");
+    frame->addImage(SDL_Rect{0,0,0,0}, 0,
+		"images/system/white.png", "LogPageDown");
+
+    auto help_right = frame->addField("help_right", 128);
+    help_right->setSize(SDL_Rect{0, h - 32, w - 4, 32});
+    help_right->setHJustify(Field::justify_t::RIGHT);
+    help_right->setVJustify(Field::justify_t::CENTER);
+    help_right->setFont(smallfont_outline);
+
+    frame->addImage(SDL_Rect{0,0,0,0}, 0,
+		"images/system/white.png", "LogScrollUp");
+    frame->addImage(SDL_Rect{0,0,0,0}, 0,
+		"images/system/white.png", "LogScrollDown");
 }
 
 std::map<std::string, std::pair<std::string, std::string>> Player::CharacterSheet_t::mapDisplayNamesDescriptions;
@@ -5206,6 +5375,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			    openLogWindow(button.getOwner());
 			});
 			logButton->setTickCallback(charsheet_deselect_fn);
+			logButton->setTooltip("Test tooltip!");
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
 			logSelector->setSize(buttonPos);
