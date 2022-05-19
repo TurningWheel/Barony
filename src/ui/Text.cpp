@@ -312,7 +312,8 @@ int Text::countNumTextLines() const {
 }
 
 static std::unordered_map<std::string, Text*> hashed_text;
-static const int TEXT_BUDGET = 1000;
+static const size_t TEXT_BUDGET = 1 * 1024 * 1024 * 128; // in bytes
+static size_t TEXT_VOLUME = 0; // in bytes
 
 Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor) {
 	if (!str) {
@@ -343,11 +344,15 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 	Text* text = nullptr;
 	auto search = hashed_text.find(textAndFont);
 	if (search == hashed_text.end()) {
-		if (hashed_text.size() > TEXT_BUDGET) {
+		if (TEXT_VOLUME > TEXT_BUDGET) {
 			dumpCache();
 		}
 		text = new Text(textAndFont);
 		hashed_text.insert(std::make_pair(textAndFont, text));
+		TEXT_VOLUME += sizeof(Text) + sizeof(SDL_Surface); // header data
+		TEXT_VOLUME += text->getWidth() * text->getHeight() * 4; // 32-bpp pixel data
+		TEXT_VOLUME += text->wordsToHighlight.size() * sizeof(int) * sizeof(Uint32); // word highlight map
+		TEXT_VOLUME += 1024; // 1-kB buffer
 	} else {
 		text = search->second;
 	}
@@ -359,4 +364,19 @@ void Text::dumpCache() {
 		delete text.second;
 	}
 	hashed_text.clear();
+	TEXT_VOLUME = 0;
 }
+
+#ifndef EDITOR
+#include "../net.hpp"
+#include "../interface/consolecommand.hpp"
+static ConsoleCommand size("/text_cache_size", "measure text cache",
+    [](int argc, const char** argv){
+    messagePlayer(clientnum, MESSAGE_MISC, "cache size is: %llu bytes (%llu kB)", TEXT_VOLUME, TEXT_VOLUME / 1024);
+    });
+static ConsoleCommand dump("/text_cache_dump", "dump text cache",
+    [](int argc, const char** argv){
+    Text::dumpCache();
+    messagePlayer(clientnum, MESSAGE_MISC, "dumped cache");
+    });
+#endif

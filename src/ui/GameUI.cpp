@@ -4931,6 +4931,7 @@ void addMessageToLogWindow(int player, string_t* string) {
     if (!frame || !string) {
         return;
     }
+
     const int w = frame->getSize().w;
     const int h = frame->getSize().h;
 
@@ -4952,13 +4953,14 @@ void addMessageToLogWindow(int player, string_t* string) {
     const int size = std::min(std::max(0, (int)sizeof(buf)), result);
 
     static ConsoleVariable<std::string> font("/log_font",
-        "fonts/kongtext.ttf#16#0");
+        "fonts/PixelMaz_monospace.ttf#32#2");
 
     auto field = subframe->addField("field", size + 1);
     auto text = Text::get(buf, font->c_str(),
         uint32ColorWhite, uint32ColorBlack);
     const int text_h = (int)text->getHeight() * (int)string->lines + 2;
-    field->setSize(SDL_Rect{8, y, (int)text->getWidth(), text_h});
+    const int text_w = (int)text->getWidth();
+    field->setSize(SDL_Rect{8, y, text_w, text_h});
     field->setFont(font->c_str());
     field->setColor(string->color);
     field->setText(buf);
@@ -4966,13 +4968,15 @@ void addMessageToLogWindow(int player, string_t* string) {
     (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
     field->setTooltip(buf);
 
+    const int new_w = std::max(subframe_size.w, text_w + 40);
+
     y += text_h;
     if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
-        subframe->setActualSize(SDL_Rect{
-            0, std::max(0, y - subframe->getSize().h), w, y});
+        subframe->setActualSize(SDL_Rect{subframe_size.x,
+            std::max(0, y - subframe->getSize().h), new_w, y});
     } else {
         subframe->setActualSize(SDL_Rect{
-            0, subframe_size.y, w, y});
+            subframe_size.x, subframe_size.y, new_w, y});
     }
 }
 

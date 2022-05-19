@@ -72,7 +72,7 @@ int Font::height(bool withOutline) const {
 }
 
 static std::unordered_map<std::string, Font*> hashed_fonts;
-static const int FONT_BUDGET = 100;
+static const int FONT_BUDGET = 50;
 
 Font* Font::get(const char* name) {
 	if (!name) {
@@ -81,6 +81,7 @@ Font* Font::get(const char* name) {
 	Font* font = nullptr;
 	auto search = hashed_fonts.find(name);
 	if (search == hashed_fonts.end()) {
+        // NOTE: We have no idea how to size this data because TTF_Font is opaque!!
 		if (hashed_fonts.size() > FONT_BUDGET) {
 			dumpCache();
 		}
@@ -98,3 +99,17 @@ void Font::dumpCache() {
 	}
 	hashed_fonts.clear();
 }
+
+#ifndef EDITOR
+#include "../net.hpp"
+#include "../interface/consolecommand.hpp"
+static ConsoleCommand size("/fonts_cache_size", "measure font cache",
+    [](int argc, const char** argv){
+    messagePlayer(clientnum, MESSAGE_MISC, "cache size is: %d fonts", (int)hashed_fonts.size());
+    });
+static ConsoleCommand dump("/fonts_cache_dump", "dump font cache",
+    [](int argc, const char** argv){
+    Font::dumpCache();
+    messagePlayer(clientnum, MESSAGE_MISC, "dumped cache");
+    });
+#endif

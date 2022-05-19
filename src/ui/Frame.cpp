@@ -18,7 +18,7 @@
 #include "MainMenu.hpp"
 #endif
 
-const Sint32 Frame::sliderSize = 32;
+const Sint32 Frame::sliderSize = 16;
 
 static const int _virtualScreenDefaultWidth = 1280;
 int Frame::_virtualScreenX = 0;
@@ -449,7 +449,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		barRect.x = scaledSize.x;
 		barRect.y = scaledSize.y + scaledSize.h;
 		barRect.w = scaledSize.w;
-		barRect.h = sliderSize * (float)yres / (float)Frame::virtualScreenY;
+		barRect.h = sliderSize;
 		white->drawColor(nullptr, barRect, viewport, borderColor);
 
 		// handle

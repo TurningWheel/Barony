@@ -16,7 +16,7 @@
 #include "player.hpp"
 #include <regex>
 
-const int MESSAGE_LIST_SIZE_CAP = 200;
+const int MESSAGE_LIST_SIZE_CAP = 400;
 
 void messageDeconstructor(void* data)
 {

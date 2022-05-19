@@ -215,7 +215,8 @@ void Image::drawSurface(SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect d
 }
 
 static std::unordered_map<std::string, Image*> hashed_images;
-static const int IMAGE_BUDGET = 1000;
+static const size_t IMAGE_BUDGET = 1 * 1024 * 1024 * 512; // in bytes
+static size_t IMAGE_VOLUME = 0; // in bytes
 
 Image* Image::get(const char* name) {
 	if ( !name || name[0] == '\0' ) {
@@ -224,11 +225,14 @@ Image* Image::get(const char* name) {
 	Image* image = nullptr;
 	auto search = hashed_images.find(name);
 	if (search == hashed_images.end()) {
-		if (hashed_images.size() > IMAGE_BUDGET) {
+		if (IMAGE_VOLUME > IMAGE_BUDGET) {
 			dumpCache();
 		}
 		image = new Image(name);
 		hashed_images.insert(std::make_pair(name, image));
+		IMAGE_VOLUME += sizeof(Image) + sizeof(SDL_Surface); // header data
+		IMAGE_VOLUME += image->getWidth() * image->getHeight() * 4; // 32-bpp pixel data
+		IMAGE_VOLUME += 1024; // 1-kB buffer
 	} else {
 		image = search->second;
 	}
@@ -240,4 +244,19 @@ void Image::dumpCache() {
 		delete image.second;
 	}
 	hashed_images.clear();
+	IMAGE_VOLUME = 0;
 }
+
+#ifndef EDITOR
+#include "../net.hpp"
+#include "../interface/consolecommand.hpp"
+static ConsoleCommand size("/images_cache_size", "measure image cache",
+    [](int argc, const char** argv){
+    messagePlayer(clientnum, MESSAGE_MISC, "cache size is: %llu bytes (%llu kB)", IMAGE_VOLUME, IMAGE_VOLUME / 1024);
+    });
+static ConsoleCommand dump("/images_cache_dump", "dump image cache",
+    [](int argc, const char** argv){
+    Image::dumpCache();
+    messagePlayer(clientnum, MESSAGE_MISC, "dumped cache");
+    });
+#endif
