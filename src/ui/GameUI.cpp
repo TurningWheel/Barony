@@ -4939,7 +4939,7 @@ void addMessageToLogWindow(int player, string_t* string) {
     auto subframe_size = subframe->getActualSize();
     int y = subframe_size.h;
 
-    static ConsoleVariable<bool> timestamp_messages("/log_timestamp", false);
+    static ConsoleVariable<bool> timestamp_messages("/log_timestamp", true);
 
     char buf[1024];
     const Uint32 time = string->time / TICKS_PER_SECOND;
@@ -4968,13 +4968,18 @@ void addMessageToLogWindow(int player, string_t* string) {
     (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
     field->setTooltip(buf);
 
-    const int new_w = std::max(subframe_size.w, text_w + 40);
+    const int new_w = std::max(subframe_size.w, text_w + 8);
 
     y += text_h;
     if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
+        // advance scroll because we're already at bottom
+        const int limit = new_w > w ?
+            y - subframe->getSize().h + 16:
+            y - subframe->getSize().h;
         subframe->setActualSize(SDL_Rect{subframe_size.x,
-            std::max(0, y - subframe->getSize().h), new_w, y});
+            std::max(0, limit), new_w, y});
     } else {
+        // retain scroll position because we're looking at past history
         subframe->setActualSize(SDL_Rect{
             subframe_size.x, subframe_size.y, new_w, y});
     }
@@ -5089,12 +5094,17 @@ static void openLogWindow(int player) {
 
         if (Input::inputs[player].consumeBinaryToggle("LogHome")) {
             Input::inputs[player].consumeBindingsSharedWithBinding("LogHome");
+            subframe_size.x = 0;
             subframe_size.y = 0;
             subframe->setActualSize(subframe_size);
         }
         if (Input::inputs[player].consumeBinaryToggle("LogEnd")) {
             Input::inputs[player].consumeBindingsSharedWithBinding("LogEnd");
-            subframe_size.y = subframe_size.h - subframe->getSize().h;
+            const int limit = subframe_size.w > w ?
+                subframe_size.h - subframe->getSize().h + 16:
+                subframe_size.h - subframe->getSize().h;
+            subframe_size.x = 0;
+            subframe_size.y = limit;
             subframe->setActualSize(subframe_size);
         }
         if (Input::inputs[player].consumeBinaryToggle("LogPageUp")) {
@@ -5106,7 +5116,10 @@ static void openLogWindow(int player) {
         if (Input::inputs[player].consumeBinaryToggle("LogPageDown")) {
             Input::inputs[player].consumeBindingsSharedWithBinding("LogPageDown");
             subframe_size.y += subframe->getSize().h;
-            subframe_size.y = std::min(subframe_size.h - subframe->getSize().h, subframe_size.y);
+            const int limit = subframe_size.w > w ?
+                subframe_size.h - subframe->getSize().h + 16:
+                subframe_size.h - subframe->getSize().h;
+            subframe_size.y = std::min(limit, subframe_size.y);
             subframe->setActualSize(subframe_size);
         }
 

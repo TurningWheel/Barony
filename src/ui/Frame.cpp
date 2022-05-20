@@ -454,7 +454,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 		// handle
 		float winFactor = ((float)_size.w / (float)actualSize.w);
-		int handleSize = std::max((int)(size.w * winFactor), sliderSize);
+		int handleSize = actualSize.h > size.h ?
+		    std::max((int)((size.w - sliderSize) * winFactor), sliderSize):
+		    std::max((int)(size.w * winFactor), sliderSize);
 		int sliderPos = winFactor * actualSize.x;
 
 		SDL_Rect handleRect;
@@ -482,7 +484,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 		// handle
 		float winFactor = ((float)_size.h / (float)actualSize.h);
-		int handleSize = std::max((int)(size.h * winFactor), sliderSize);
+		int handleSize = actualSize.w > size.w ?
+		    std::max((int)((size.h - sliderSize) * winFactor), sliderSize):
+		    std::max((int)(size.h * winFactor), sliderSize);
 		int sliderPos = winFactor * actualSize.y;
 
 		SDL_Rect handleRect;
@@ -506,7 +510,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		barRect.y = scaledSize.y + scaledSize.h;
 		barRect.w = sliderSize;
 		barRect.h = sliderSize;
-		white->drawColor(nullptr, barRect, viewport, color);
+		white->drawColor(nullptr, barRect, viewport, borderColor);
 	}
 
 	SDL_Rect scroll = actualSize;
@@ -1041,13 +1045,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
     if (scrollInertiaX) {
 	    this->actualSize.x += scrollInertiaX * entrySize * 2;
 		this->actualSize.x = std::min(std::max(0, this->actualSize.x),
-			std::max(0, this->actualSize.w - size.w));
+			std::max(0, this->actualSize.w - _size.w));
 	    syncScroll();
 	}
 	if (scrollInertiaY) {
 	    this->actualSize.y += scrollInertiaY * entrySize * 2;
 		this->actualSize.y = std::min(std::max(0, this->actualSize.y),
-			std::max(0, this->actualSize.h - size.h));
+			std::max(0, this->actualSize.h - _size.h));
 	    syncScroll();
 	}
 
@@ -1067,9 +1071,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 	if ((scrollbars || allowScrollBinds) && allowScrolling) {
 		this->actualSize.x = std::min(std::max(0, this->actualSize.x),
-			std::max(0, this->actualSize.w - size.w));
+			std::max(0, this->actualSize.w - _size.w));
 		this->actualSize.y = std::min(std::max(0, this->actualSize.y),
-			std::max(0, this->actualSize.h - size.h));
+			std::max(0, this->actualSize.h - _size.h));
 	}
 
 	// process (frame view) sliders
@@ -1095,7 +1099,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			// handle
 			float winFactor = ((float)_size.w / (float)actualSize.w);
-			int handleSize = std::max((int)(size.w * winFactor), sliderSize);
+		    int handleSize = actualSize.h > size.h ?
+		        std::max((int)((size.w - sliderSize) * winFactor), sliderSize):
+		        std::max((int)(size.w * winFactor), sliderSize);
 			int sliderPos = winFactor * actualSize.x;
 			SDL_Rect handleRect;
 			handleRect.x = _size.x + sliderPos;
@@ -1110,7 +1116,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				} else {
 					float winFactor = ((float)_size.w / (float)this->actualSize.w);
 					this->actualSize.x = (mousex - omousex) / winFactor + oldSliderX;
-					this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
+					this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - _size.w));
 					syncScroll();
 				}
 				usable = result.usable = false;
@@ -1126,7 +1132,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize, size.w) : std::min(entrySize, size.w);
-						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - size.w));
+						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - _size.w));
 					    syncScroll();
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
@@ -1147,7 +1153,9 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			// handle
 			float winFactor = ((float)_size.h / (float)actualSize.h);
-			int handleSize = std::max((int)(size.h * winFactor), sliderSize);
+		    int handleSize = actualSize.w > size.w ?
+		        std::max((int)((size.h - sliderSize) * winFactor), sliderSize):
+		        std::max((int)(size.h * winFactor), sliderSize);
 			int sliderPos = winFactor * actualSize.y;
 			SDL_Rect handleRect;
 			handleRect.x = _size.x + _size.w;
@@ -1162,7 +1170,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				} else {
 					float winFactor = ((float)_size.h / (float)this->actualSize.h);
 					this->actualSize.y = (mousey - omousey) / winFactor + oldSliderY;
-					this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
+					this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - _size.h));
 					syncScroll();
 				}
 				usable = result.usable = false;
@@ -1178,7 +1186,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize, size.h) : std::min(entrySize, size.h);
-						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - size.h));
+						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - _size.h));
 					    syncScroll();
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
