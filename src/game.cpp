@@ -4084,31 +4084,46 @@ void pauseGame(int mode, int ignoreplayer)
 -------------------------------------------------------------------------------*/
 
 // records the SDL_GetTicks() value at the moment the mainloop restarted
-Uint64 lastGameTickCount = 0;
-float framerateAccumulatedTime = 0.f;
-bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
+static Uint64 lastGameTickCount = 0;
+static Uint64 framerateAccumulatedTicks = 0;
+bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 {
 	if ( maxFrameRate == 0 )
 	{
 		return false;
 	}
-	float desiredFrameMilliseconds = 1.0f / maxFrameRate;
+	float desiredFrameSeconds = 1.0f / maxFrameRate;
 	Uint64 gameTickCount = SDL_GetPerformanceCounter();
 	Uint64 ticksPerSecond = SDL_GetPerformanceFrequency();
-	float millisecondsElapsed = (gameTickCount - lastGameTickCount) / static_cast<float>(ticksPerSecond);
+	Uint64 ticksElapsed = gameTickCount - lastGameTickCount;
 	lastGameTickCount = gameTickCount;
-	framerateAccumulatedTime += millisecondsElapsed;
+	framerateAccumulatedTicks += ticksElapsed;
 
-	if ( framerateAccumulatedTime < desiredFrameMilliseconds )
+	const float accumulatedSeconds = framerateAccumulatedTicks / (float)ticksPerSecond;
+	const float diff = desiredFrameSeconds - accumulatedSeconds;
+
+	if ( diff >= 0.f )
 	{
-		// if enough time is left wait, otherwise just keep spinning so we don't go over the limit...
+	    // we have not passed a full frame
+        static ConsoleVariable<bool> allowSleep("/timer_reduce_power", true,
+            "Saves power by allowing main thread to sleep between ticks.");
+        if ( *allowSleep && sleep )
+        {
+
+            // sleep a fraction of the remaining time.
+            // This saves power if you're running on battery.
+            if ( diff >= 0.001f )
+            {
+                std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 900000)));
+            }
+        }
 		return true;
 	}
 	else
 	{
 		if ( resetAccumulator )
 		{
-			framerateAccumulatedTime = 0.f;
+			framerateAccumulatedTicks = 0;
 		}
 		return false;
 	}
@@ -5086,7 +5101,10 @@ void drawAllPlayerCameras() {
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 					}
 				}
-				raycast(&camera, minimap); // update minimap
+				if ( !players[c]->entity->isBlind() )
+				{
+				    raycast(&camera, minimap); // update minimap
+				}
 				glDrawWorld(&camera, REALCOLORS);
 
 				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -5095,17 +5113,20 @@ void drawAllPlayerCameras() {
 					{
 						if ( i != clientnum && players[i] && players[i]->entity )
 						{
-							real_t x = camera.x;
-							real_t y = camera.y;
-							real_t ang = camera.ang;
+						    if ( !players[i]->entity->isBlind() )
+						    {
+							    real_t x = camera.x;
+							    real_t y = camera.y;
+							    real_t ang = camera.ang;
 
-							camera.x = players[i]->entity->x / 16.0;
-							camera.y = players[i]->entity->y / 16.0;
-							camera.ang = players[i]->entity->yaw;
-							raycast(&camera, minimap);
-							camera.x = x;
-							camera.y = y;
-							camera.ang = ang;
+							    camera.x = players[i]->entity->x / 16.0;
+							    camera.y = players[i]->entity->y / 16.0;
+							    camera.ang = players[i]->entity->yaw;
+							    raycast(&camera, minimap); // update minimap from other players' perspectives
+							    camera.x = x;
+							    camera.y = y;
+							    camera.ang = ang;
+							}
 						}
 					}
 				}
@@ -6147,7 +6168,7 @@ int main(int argc, char** argv)
 			}
 
 			// frame rate limiter
-			while ( frameRateLimit(fpsLimit, true) )
+			while ( frameRateLimit(fpsLimit, true, true) )
 			{
 				if ( !intro )
 				{

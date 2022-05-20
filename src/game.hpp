@@ -305,7 +305,7 @@ void actLightSource(Entity* my);
 void actSignalTimer(Entity* my);
 
 void startMessages();
-bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true);
+bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true, bool sleep = false);
 extern Uint32 networkTickrate;
 extern bool gameloopFreezeEntities;
 extern Uint32 serverSchedulePlayerHealthUpdate;
@@ -406,8 +406,6 @@ public:
 	};
 };
 extern TileEntityListHandler TileEntityList;
-
-extern float framerateAccumulatedTime;
 
 class DebugStatsClass
 {
