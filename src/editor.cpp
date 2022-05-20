@@ -1545,9 +1545,6 @@ int main(int argc, char** argv)
 	cursorSelect = cursorArrow;
 	cursorFill = newCursor(cursor_fill);
 
-	// seed rng
-	srand(time(nullptr));
-
 	// create an empty map
 	map.width = 32;
 	map.height = 24;

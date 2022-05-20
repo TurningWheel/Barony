@@ -4102,19 +4102,21 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 	const float accumulatedSeconds = framerateAccumulatedTicks / (float)ticksPerSecond;
 	const float diff = desiredFrameSeconds - accumulatedSeconds;
 
+    static ConsoleVariable<bool> allowSleep("/timer_sleep_enabled", true,
+        "allow main thread to sleep between ticks (saves power)");
+    static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
+    static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
+
 	if ( diff >= 0.f )
 	{
-	    // we have not passed a full frame
-        static ConsoleVariable<bool> allowSleep("/timer_reduce_power", true,
-            "Saves power by allowing main thread to sleep between ticks.");
+	    // we have not passed a full frame, so we must delay.
         if ( *allowSleep && sleep )
         {
-
             // sleep a fraction of the remaining time.
             // This saves power if you're running on battery.
-            if ( diff >= 0.001f )
+            if ( diff >= *sleepLimit )
             {
-                std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 900000)));
+                std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor))));
             }
         }
 		return true;
@@ -5468,7 +5470,6 @@ int main(int argc, char** argv)
 		setDefaultPlayerConducts();
 
 		// seed random generators
-		srand(time(NULL));
 		fountainSeed.seed(rand());
 
 		// play splash sound

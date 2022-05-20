@@ -78,6 +78,8 @@ int initApp(char const * const title, int fullscreen)
 	File* fp;
 	Uint32 x, c;
 
+	srand(time(nullptr));
+
 	// open log file
 	if ( !logfile )
 	{
@@ -598,7 +600,12 @@ int initApp(char const * const title, int fullscreen)
 		doLoadingScreen();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+
+#ifdef EDITOR
+	// Don't destroy the loading screen in the game.
+	// It will be used later.
 	destroyLoadingScreen();
+#endif
 
 	int result = loading_task.get();
 	if (result == 0)
