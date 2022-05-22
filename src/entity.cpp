@@ -14289,6 +14289,12 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	{
 		switch ( effect )
 		{
+			case EFF_GREASY:
+				if ( myStats->type == GOATMAN )
+				{
+					return false;
+				}
+				break;
 			case EFF_ASLEEP:
 			case EFF_PARALYZED:
 			case EFF_PACIFY:
