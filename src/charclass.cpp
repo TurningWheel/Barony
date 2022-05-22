@@ -162,7 +162,7 @@ void initClass(const int player)
 			free(item);
 
 			// booze
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, nullptr);
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 1, 2, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
@@ -1402,13 +1402,13 @@ void initClass(const int player)
 			free(item);
 			
 			// paralyze potion
-			item = newItem(POTION_PARALYSIS, SERVICABLE, 0, 1, 1, true, nullptr);
+			item = newItem(POTION_PARALYSIS, EXCELLENT, 0, 1, 1, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
 			// invis potion
-			item = newItem(POTION_INVISIBILITY, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(POTION_INVISIBILITY, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
@@ -1851,42 +1851,41 @@ void initClass(const int player)
 			//hotbar[1].item = item2->uid;
 			//free(item);
 
-			// blindness
-			item = newItem(POTION_ACID, SERVICABLE, 0, 2, 0, true, nullptr);
+			// firestorm
+			item = newItem(POTION_FIRESTORM, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[5].item = item2->uid;
 			free(item);
 
+			// acid
+			item = newItem(POTION_ACID, EXCELLENT, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
 			// booze
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 2, 2, true, nullptr);
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 3, 2, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[6].item = item2->uid;
 			free(item);
 
 			// juice
-			item = newItem(POTION_JUICE, SERVICABLE, 0, 2, 3, true, nullptr);
+			item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 3, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[7].item = item2->uid;
 			free(item);
 			
-			// alembic
-			item = newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
-			free(item);
-
 			// polymorph
-			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
 			// blindness
-			item = newItem(POTION_BLINDNESS, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(POTION_BLINDNESS, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
 			// speed
-			item = newItem(POTION_SPEED, SERVICABLE, 0, 1, 0, true, nullptr);
+			item = newItem(POTION_SPEED, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
@@ -1895,9 +1894,14 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
+			// alembic
+			item = newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
+			free(item);
+
 			item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("Bottle Book"), true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
 			free(item);
 		}
 	}
@@ -2334,7 +2338,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// extra booze for hangover :)
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, nullptr);
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 3, 2, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2357,7 +2361,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2370,7 +2374,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 3, 0, true, nullptr);
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2488,7 +2492,7 @@ void initClass(const int player)
 					continue;
 				}
 
-				item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
+				//item->x = players[player]->inventoryUI.getSizeX() - item->x - 1;
 				if ( item->type == SPELL_ITEM )
 				{
 					bool skipSpellRearrange = false;
@@ -2533,6 +2537,7 @@ void initClass(const int player)
 			}
 		}
 
+		autosortInventory(player);
 		players[player]->hud.resetBars();
 	}
 	//stats[player]->printStats();

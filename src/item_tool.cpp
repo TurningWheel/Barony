@@ -749,17 +749,17 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		{
 			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
 			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
-			item = newItem(static_cast<ItemType>(generatedPotion.first), SERVICABLE, 0, 1, generatedPotion.second, false, NULL);
+			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
 		}
 		else
 		{
 			if ( entity.skill[3] == 1 ) // slime
 			{
-				item = newItem(POTION_ACID, SERVICABLE, 0, 1, 0, false, NULL);
+				item = newItem(POTION_ACID, EXCELLENT, 0, 1, 0, false, NULL);
 			}
 			else
 			{
-				item = newItem(POTION_WATER, SERVICABLE, 0, 1, 0, false, NULL);
+				item = newItem(POTION_WATER, EXCELLENT, 0, 1, 0, false, NULL);
 			}
 		}
 		if ( item )
