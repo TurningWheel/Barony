@@ -631,6 +631,11 @@ public:
 	{
 		GenericGUIMenu& parentGUI;
 		Frame* recipesFrame = nullptr;
+		static const int ALCH_SLOT_SECONDARY_POTION_X = -1;
+		static const int ALCH_SLOT_BASE_POTION_X = -2;
+		static const int ALCH_SLOT_RESULT_POTION_X = -3;
+		static const int ALCH_SLOT_RECIPE_PREVIEW_POTION1_X = -4;
+		static const int ALCH_SLOT_RECIPE_PREVIEW_POTION2_X = -5;
 		struct AlchemyRecipes_t
 		{
 			AlchemyGUI_t& alchemy;
@@ -646,7 +651,7 @@ public:
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
 
-			const int kNumRecipesToDisplayVertical = 3;
+			const int kNumRecipesToDisplayVertical = 6;
 			int getNumRecipesToDisplayVertical() const;
 			void openRecipePanel();
 			void closeRecipePanel();
@@ -655,21 +660,65 @@ public:
 			bool isSlotVisible(int x, int y) const;
 			bool isItemVisible(Item* item) const;
 
-			Item alchemyRecipeItem;
+			int activateRecipeIndex = -1;
+
+			struct RecipeEntry_t
+			{
+				Item resultItem;
+				Item dummyPotion1;
+				Item dummyPotion2;
+				int x = 0;
+				int y = 0;
+				Uint32 basePotionUid = 0;
+				Uint32 secondaryPotionUid = 0;
+				RecipeEntry_t()
+				{
+					dummyPotion1.appearance = 0;
+					dummyPotion1.type = POTION_EMPTY;
+					dummyPotion1.node = nullptr;
+					dummyPotion1.status = SERVICABLE;
+					dummyPotion1.beatitude = 0;
+					dummyPotion1.count = 1;
+					dummyPotion1.appearance = 0;
+					dummyPotion1.identified = true;
+					dummyPotion1.uid = 0;
+					dummyPotion1.isDroppable = false;
+					dummyPotion1.x = 0;
+					dummyPotion1.y = 0;
+
+					dummyPotion2.appearance = 0;
+					dummyPotion2.type = POTION_EMPTY;
+					dummyPotion2.node = nullptr;
+					dummyPotion2.status = SERVICABLE;
+					dummyPotion2.beatitude = 0;
+					dummyPotion2.count = 1;
+					dummyPotion2.appearance = 0;
+					dummyPotion2.identified = true;
+					dummyPotion2.uid = 0;
+					dummyPotion2.isDroppable = false;
+					dummyPotion2.x = 0;
+					dummyPotion2.y = 0;
+
+					resultItem.appearance = 0;
+					resultItem.type = POTION_EMPTY;
+					resultItem.node = nullptr;
+					resultItem.status = SERVICABLE;
+					resultItem.beatitude = 0;
+					resultItem.count = 1;
+					resultItem.appearance = 0;
+					resultItem.identified = true;
+					resultItem.uid = 0;
+					resultItem.isDroppable = false;
+					resultItem.x = 0;
+					resultItem.y = 0;
+				}
+			};
+			std::vector<RecipeEntry_t> recipeList;
+
 			AlchemyRecipes_t(AlchemyGUI_t& a) :
 				alchemy(a) 
-			{
-				alchemyRecipeItem.appearance = 0;
-				alchemyRecipeItem.type = POTION_EMPTY;
-				alchemyRecipeItem.node = nullptr;
-				alchemyRecipeItem.status = SERVICABLE;
-				alchemyRecipeItem.beatitude = 0;
-				alchemyRecipeItem.count = 1;
-				alchemyRecipeItem.appearance = 0;
-				alchemyRecipeItem.identified = true;
-			}
+			{}
 		} recipes;
-
 
 		Item alchemyResultPotion;
 		AlchemyGUI_t(GenericGUIMenu& g) :
@@ -684,6 +733,10 @@ public:
 			alchemyResultPotion.count = 1;
 			alchemyResultPotion.appearance = 0;
 			alchemyResultPotion.identified = false;
+			alchemyResultPotion.uid = 0;
+			alchemyResultPotion.isDroppable = false;
+			alchemyResultPotion.x = ALCH_SLOT_RESULT_POTION_X;
+			alchemyResultPotion.y = 0;
 		}
 		enum AlchemyActions_t : int
 		{
@@ -725,6 +778,8 @@ public:
 		Uint32 animRandomPotionTicks = 0;
 		Uint32 animRandomPotionUpdatedThisTick = 0;
 		int animRandomPotionVariation = 0;
+		Uint32 animRecipeAutoAddToSlot1Uid = 0;
+		Uint32 animRecipeAutoAddToSlot2Uid = 0;
 		bool isInteractable = true;
 		bool bOpen = false;
 		bool bFirstTimeSnapCursor = false;
@@ -738,9 +793,7 @@ public:
 		std::string itemDesc = "";
 		int itemType = -1;
 		bool itemRequiresTitleReflow = true;
-		static const int ALCH_SLOT_BASE_POTION_X = -2;
-		static const int ALCH_SLOT_RESULT_POTION_X = -3;
-		static const int ALCH_SLOT_SECONDARY_POTION_X = -1;
+		bool itemTooltipForRecipe = false;
 		int selectedAlchemySlotX = -1;
 		int selectedAlchemySlotY = -1;
 		static const int MAX_ALCH_X;
@@ -752,7 +805,7 @@ public:
 		const int getSelectedAlchemySlotX() const { return selectedAlchemySlotX; }
 		const int getSelectedAlchemySlotY() const { return selectedAlchemySlotY; }
 		Frame* getAlchemySlotFrame(int x, int y) const;
-		void setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion = false);
+		void setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion, bool isTooltipForRecipe);
 		bool warpMouseToSelectedAlchemyItem(Item* snapToItem, Uint32 flags);
 		void clearItemDisplayed();
 		static int heightOffsetWhenNotCompact;

@@ -381,7 +381,14 @@ const char* itemUseString(int player, const Item& item)
 			case TOOL_BEARTRAP:
 				return language[337];
 			case TOOL_ALEMBIC:
-				return language[3339];
+				if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == &item )
+				{
+					return language[3341];
+				}
+				else
+				{
+					return language[3339];
+				}
 			case TOOL_METAL_SCRAP:
 			case TOOL_MAGIC_SCRAP:
 				return language[1881];
@@ -2225,6 +2232,63 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 	return stackedItems;
 }
 
+bool releaseInventoryItemIntoAlchemy(const int player)
+{
+	return false; // disable for now
+	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+	if ( !selectedItem )
+	{
+		return false;
+	}
+	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	if ( !alchemyGUI.bOpen || !alchemyGUI.isInteractable )
+	{
+		return false;
+	}
+
+	if ( !(itemCategory(selectedItem) == POTION && selectedItem->type != POTION_EMPTY)
+		|| itemIsEquipped(selectedItem, player) || !selectedItem->identified )
+	{
+		return false;
+	}
+
+	if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(GenericGUIMenu::AlchemyGUI_t::ALCH_SLOT_BASE_POTION_X, 0) )
+	{
+		if ( slotFrame->capturesMouseInRealtimeCoords() )
+		{
+			if ( selectedItem->uid != alchemyGUI.potion1Uid )
+			{
+				alchemyGUI.potion1Uid = selectedItem->uid;
+				alchemyGUI.recipes.activateRecipeIndex = -1;
+				if ( selectedItem->uid == alchemyGUI.potion2Uid )
+				{
+					alchemyGUI.potion2Uid = 0;
+					alchemyGUI.animPotion2 = 0.0;
+				}
+			}
+			return true;
+		}
+	}
+	if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(GenericGUIMenu::AlchemyGUI_t::ALCH_SLOT_SECONDARY_POTION_X, 0) )
+	{
+		if ( slotFrame->capturesMouseInRealtimeCoords() )
+		{
+			if ( selectedItem->uid != alchemyGUI.potion2Uid )
+			{
+				alchemyGUI.potion2Uid = selectedItem->uid;
+				alchemyGUI.recipes.activateRecipeIndex = -1;
+				if ( selectedItem->uid == alchemyGUI.potion1Uid )
+				{
+					alchemyGUI.potion1Uid = 0;
+					alchemyGUI.animPotion1 = 0.0;
+				}
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 void releaseChestItem(const int player)
 {
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
@@ -2964,6 +3028,20 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			}
 			return;
 		}
+		else if ( GenericGUI[player].alchemyGUI.bOpen )
+		{
+			if ( releaseInventoryItemIntoAlchemy(player) )
+			{
+				selectedItem = nullptr;
+				inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+				toggleclick = false;
+				if ( inputs.bMouseLeft(player) )
+				{
+					inputs.mouseClearLeft(player);
+				}
+				return;
+			}
+		}
 
 		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
@@ -2979,6 +3057,8 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY, itemCategory(selectedItem) == SPELL_CAT);
 			bool mouseInInventory = mouseInsidePlayerInventory(player);
 			bool mouseInChest = false;
+			bool mouseInAlchemyBasePotion = false;
+			bool mouseInAlchemySecondaryPotion = false;
 			if ( !mouseInInventory )
 			{
 				if ( players[player]->inventoryUI.chestFrame
@@ -2994,6 +3074,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					}
 				}
 			}
+
 			if ( mouseOverSlot && mouseInInventory && slotFrameY > Player::Inventory_t::DOLL_ROW_5 )
 			{
 				if ( bPaperDollItem )
@@ -6506,8 +6587,7 @@ void Player::Inventory_t::updateInventory()
 		}
 
 		if ( alchemyGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
-			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY)
-			&& alchemyGUI.animPotion1 < 0.001 && alchemyGUI.animPotion2 < 0.001 )
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY) )
 		{
 			for ( int x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X; x < alchemyGUI.MAX_ALCH_X; ++x )
 			{
@@ -6517,21 +6597,16 @@ void Player::Inventory_t::updateInventory()
 					{
 						continue;
 					}
-					bool slotVisible = true;
-					if ( alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_BREW )
+					bool slotVisible = false;
+					if ( x < 0 )
 					{
-						if ( x >= 0 )
+						if ( alchemyGUI.animPotion1 < 0.001 && alchemyGUI.animPotion2 < 0.001 )
 						{
-							continue;
+							slotVisible = true;
 						}
-						slotVisible = true;
 					}
-					else if ( alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_RECIPES )
+					else if ( alchemyGUI.recipes.bOpen && alchemyGUI.recipes.isInteractable )
 					{
-						if ( x < 0 )
-						{
-							continue;
-						}
 						slotVisible = alchemyGUI.recipes.isSlotVisible(x, y);
 					}
 
@@ -6607,6 +6682,7 @@ void Player::Inventory_t::updateInventory()
 
 		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& !tinkerCraftableListOpen
+			&& !(alchemyGUI.bOpen && !alchemyGUI.isInteractable)
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
@@ -7849,7 +7925,7 @@ void Player::Inventory_t::updateInventory()
 					alchemyOpen = true;
 					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
 					{
-						alchemyGUI.setItemDisplayNameAndPrice(item);
+						alchemyGUI.setItemDisplayNameAndPrice(item, false, false);
 					}
 				}
 				else

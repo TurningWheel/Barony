@@ -55,6 +55,8 @@ extern CustomColors_t hudColors;
 
 extern int GAMEUI_FRAMEDATA_ANIMATING_ITEM;
 extern int GAMEUI_FRAMEDATA_ALCHEMY_ITEM;
+extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT; // displaying in main alchemy gui when hovering over recipe
+extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
 
 // if true, use the new user interface
 extern bool newui;

@@ -80,6 +80,8 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 
 int GAMEUI_FRAMEDATA_ANIMATING_ITEM = 1;
 int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
+int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
+int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 
 void capitalizeString(std::string& str)
 {
@@ -11586,6 +11588,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	{
 		return false;
 	}
+
 	if ( players[player]->inventoryUI.chestFrame && !spells
 		&& !players[player]->inventoryUI.chestFrame->isDisabled() )
 	{
@@ -11692,7 +11695,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	if ( slotFrame->getUserData() )
 	{
 		slotType = (int*)slotFrame->getUserData();
-		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM )
+		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM || *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT )
 		{
 			disableBackgrounds = true;
 		}
@@ -11766,7 +11769,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 		if ( slotFrame->getUserData() )
 		{
-			if ( *slotType == GAMEUI_FRAMEDATA_ALCHEMY_ITEM )
+			if ( *slotType == GAMEUI_FRAMEDATA_ALCHEMY_ITEM || *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT )
 			{
 				SDL_Color color;
 				getColor(spriteImage->color, &color.r, &color.g, &color.b, &color.a);
@@ -11784,10 +11787,18 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			drawQty = true;
 		}
+		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY )
+		{
+			drawQty = true;
+		}
 		Uint32 qtyColor = 0xFFFFFFFF;
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-		if ( selectedItem && !isHotbarIcon && !alchemyResultIcon )
+		if ( selectedItem && !isHotbarIcon && !alchemyResultIcon 
+			&& !(slotType 
+				&& (*slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM 
+					|| *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT
+					|| *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY)) )
 		{
 			if ( item != selectedItem 
 				&& !itemIsEquipped(selectedItem, player)
@@ -12000,7 +12011,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
 	{
 		brokenIconFrame->setDisabled(true);
-		if ( broken && !disableBackgrounds )
+		if ( broken && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT))) )
 		{
 			brokenIconFrame->setDisabled(false);
 		}
@@ -15605,7 +15616,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		if ( item->type == TOOL_ALEMBIC )
 		{
 			// not experimenting
-			if ( !disableItemUsage )
+			if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )
+			{
+				GenericGUI[player].closeGUI();
+			}
+			else if ( !disableItemUsage )
 			{
 				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
 			}

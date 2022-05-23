@@ -4403,7 +4403,7 @@ Inflicts [pacify] status on failure#
 3338 You have no familiar base potions to start mixing!#
 3339 Brew#
 3340 Alchemy#
-3341 Experiment#
+3341 Stop Brewing#
 3342 You have no potions left to mix!#
 3343 You have no potions to mix!#
 3344 Experimenting Alchemy: Choose a base potion#
@@ -6130,5 +6130,10 @@ formalities of gold, now!#
 4162 [New combination]#
 4163 Duplication Chance:#
 4164 [Random result]#
+4165 [Unequip to use]#
+4166 [Copy of first potion]#
+4167 Caution!!
+Volatile combination#
+4168 [Missing ingredients]#
 
 4199 end#

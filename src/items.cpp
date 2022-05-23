@@ -2342,7 +2342,14 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )
+				{
+					GenericGUI[player].closeGUI();
+				}
+				else
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
 			}
 			break;
 		case ENCHANTED_FEATHER:
