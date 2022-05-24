@@ -4886,17 +4886,108 @@ static void openMapWindow(int player) {
 	container->setBorder(2);
 	container->setColor(0);
 
+    struct Position {
+        real_t x;
+        real_t y;
+    };
+	static Position minimap_cursor[MAXPLAYERS];
+	minimap_cursor[player].x = map_size / 2;
+	minimap_cursor[player].y = map_size / 2;
+
+	Input::inputs[player].consumeBinary("MinimapPing");
+
 	auto minimap = container->addFrame("minimap");
-	minimap->setSize(SDL_Rect{16, 32, map_size, map_size});
+	minimap->setSize(SDL_Rect{16, 0, map_size, map_size});
 	minimap->setColor(0);
     minimap->setBorder(0);
+
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
-        drawMinimap(widget.getOwner(), rect);
+	    int player = widget.getOwner();
+        drawMinimap(player, rect);
+        if (!inputs.getVirtualMouse(player)->draw_cursor) {
+	        auto& cursor = minimap_cursor[player];
+			auto image = Image::get("images/system/cursor.png");
+			SDL_Rect pos;
+			pos.x = cursor.x - image->getWidth() / 2 + rect.x;
+			pos.y = cursor.y - image->getHeight() / 2 + rect.y;
+			pos.w = image->getWidth();
+			pos.h = image->getHeight();
+			image->drawColor(nullptr, pos, SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, 0xffffffff);
+        }
         });
+
 	minimap->setTickCallback([](Widget& widget){
+	    int player = widget.getOwner();
+	    auto& input = Input::inputs[player];
 	    auto minimap = static_cast<Frame*>(&widget);
-	    //if (player->
-        if (minimap->capturesMouse()) {
+
+	    static ConsoleVariable<float> speed("/minimap_cursor_speed", 2.f);
+
+	    // gamepad moves cursor with right stick
+	    auto& cursor = minimap_cursor[player];
+        cursor.x += (input.analog("MinimapRight") - input.analog("MinimapLeft")) * (*speed);
+        cursor.y += (input.analog("MinimapDown") - input.analog("MinimapUp")) * (*speed);
+        cursor.x = std::min(std::max((real_t)0, cursor.x), (real_t)minimap->getSize().w);
+        cursor.y = std::min(std::max((real_t)0, cursor.y), (real_t)minimap->getSize().h);
+        input.consumeBindingsSharedWithBinding("MinimapRight");
+        input.consumeBindingsSharedWithBinding("MinimapLeft");
+        input.consumeBindingsSharedWithBinding("MinimapDown");
+        input.consumeBindingsSharedWithBinding("MinimapUp");
+        if (input.consumeBinaryToggle("MinimapClose")) {
+            if (players[player]->hud.mapWindow) {
+                players[player]->hud.mapWindow->removeSelf();
+                players[player]->hud.mapWindow = nullptr;
+            }
+            auto buttons = gui->findFrame("log map buttons");
+            if (buttons) {
+                auto button = buttons->findButton("map button");
+                if (button) {
+                    button->select();
+                }
+            }
+        }
+
+        // minimap pings
+		if (minimapPingGimpTimer[player] <= 0) {
+            if (input.consumeBinaryToggle("MinimapPing")) {
+                auto mouse_position = inputs.getVirtualMouse(player)->draw_cursor ?
+                    minimap->getRelativeMousePosition(false):
+                    SDL_Rect{(int)cursor.x, (int)cursor.y, minimap->getSize().w, minimap->getSize().h};
+                messagePlayer(clientnum, MESSAGE_DEBUG, "[Minimap] Clicked %d %d %d %d",
+                    mouse_position.x, mouse_position.y, mouse_position.w, mouse_position.h);
+                if (mouse_position.w > 0 && mouse_position.h > 0) {
+                    const int size = std::max((int)map.width, (int)map.height);
+                    const int xdiff = std::max(0, (int)map.height - (int)map.width) / 2;
+                    const int ydiff = std::max(0, (int)map.width - (int)map.height) / 2;
+                    const int x = (mouse_position.x * size) / mouse_position.w - xdiff;
+                    const int y = (mouse_position.y * size) / mouse_position.h - ydiff;
+                    if (x >= 0 && y >= 0 && x < map.width && y < map.height) {
+                        MinimapPing newPing(ticks, player, x, y);
+		                if ( multiplayer != CLIENT ) {
+			                minimapPingAdd(player, player, newPing);
+		                }
+		                sendMinimapPing(player, newPing.x, newPing.y);
+
+                        // can also issue move commands via minimap
+                        FollowerRadialMenu& followerMenu = FollowerMenu[player];
+		                if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
+		                {
+			                if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+			                {
+                                if (!players[player]->usingCommand() && players[player]->bControlEnabled) {
+				                    createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
+				                    followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
+				                    followerMenu.selectMoveTo = false;
+				                    followerMenu.moveToX = static_cast<int>(newPing.x);
+				                    followerMenu.moveToY = static_cast<int>(newPing.y);
+			                    }
+			                }
+			            }
+			        }
+                }
+            }
+        } else { // if (minimapPingGimpTimer[player] <= 0)
+		    --minimapPingGimpTimer[player];
         }
         });
 
@@ -5368,6 +5459,9 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
 			    openMapWindow(button.getOwner());
+			    if (players[button.getOwner()]->hud.mapWindow) {
+	                button.deselect();
+			    }
 			});
 			mapButton->setTickCallback(charsheet_deselect_fn);
 			

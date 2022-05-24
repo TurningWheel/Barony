@@ -1746,10 +1746,60 @@ void Frame::resizeForEntries() {
 	actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
 }
 
-bool Frame::capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const {
-#ifdef NINTENDO
-	return false;
+SDL_Rect Frame::getRelativeMousePositionImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const {
+#ifdef EDITOR
+    return SDL_Rect{0, 0, 0, 0};
 #else
+	Sint32 _mousex = (inputs.getMouse(owner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 _mousey = (inputs.getMouse(owner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 _omousex = (inputs.getMouse(owner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 _omousey = (inputs.getMouse(owner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 mousex = realtime ? _mousex : _omousex;
+	Sint32 mousey = realtime ? _mousey : _omousey;
+
+	if (parent) {
+		auto pframe = static_cast<Frame*>(parent);
+		auto presult = pframe->getRelativeMousePositionImpl(_size, _actualSize, realtime);
+		if (presult.w > 0 && presult.h > 0) {
+			_size.x = _size.x + std::max(0, size.x - _actualSize.x);
+			_size.y = _size.y + std::max(0, size.y - _actualSize.y);
+			if (size.h < actualSize.h && allowScrolling && scrollbars) {
+				_size.w = std::min(size.w - sliderSize, _size.w - sliderSize - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+			} else {
+				_size.w = std::min(size.w, _size.w - size.x + _actualSize.x) + std::min(0, size.x - _actualSize.x);
+			}
+			if (size.w < actualSize.w && allowScrolling && scrollbars) {
+				_size.h = std::min(size.h - sliderSize, _size.h - sliderSize - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+			} else {
+				_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
+			}
+			_actualSize = actualSize;
+			if (_size.w <= 0 || _size.h <= 0) {
+		        return SDL_Rect{0, 0, 0, 0};
+			} else {
+				if (rectContainsPoint(_size, mousex, mousey)) {
+					return SDL_Rect{mousex - _size.x, mousey - _size.y, _size.w, _size.h};
+				}
+				else {
+			        return SDL_Rect{0, 0, 0, 0};
+				}
+			}
+		} else {
+			return SDL_Rect{0, 0, 0, 0};
+		}
+	} else {
+		return SDL_Rect{mousex, mousey, actualSize.w, actualSize.h};
+	}
+#endif
+}
+
+SDL_Rect Frame::getRelativeMousePosition(bool realtime) const {
+	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	return getRelativeMousePositionImpl(_size, _actualSize, realtime);
+}
+
+bool Frame::capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const {
 	if (parent) {
 		auto pframe = static_cast<Frame*>(parent);
 		if (pframe->capturesMouseImpl(_size, _actualSize, realtime)) {
@@ -1796,7 +1846,18 @@ bool Frame::capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realt
 	} else {
 		return true;
 	}
-#endif
+}
+
+bool Frame::capturesMouseInRealtimeCoords() const {
+	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	return capturesMouseImpl(_size, _actualSize, true);
+}
+
+bool Frame::capturesMouse() const {
+	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	return capturesMouseImpl(_size, _actualSize, false);
 }
 
 void Frame::warpMouseToFrame(const int player, Uint32 flags) const
@@ -1821,18 +1882,6 @@ SDL_Rect Frame::getAbsoluteSize() const
 		_parent = pframe->parent;
 	}
 	return _size;
-}
-
-bool Frame::capturesMouseInRealtimeCoords() const {
-	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	return capturesMouseImpl(_size, _actualSize, true);
-}
-
-bool Frame::capturesMouse() const {
-	SDL_Rect _size = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	SDL_Rect _actualSize = SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	return capturesMouseImpl(_size, _actualSize, false);
 }
 
 Frame* Frame::getParent() {

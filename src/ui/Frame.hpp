@@ -18,6 +18,10 @@ class Slider;
 //! When a frame's size is smaller than its actual size, sliders will automatically be placed in the frame.
 //! Frame objects can be populated with Field objects, Button objects, other Frame objects, and more.
 class Frame : public Widget {
+private:
+    static int _virtualScreenX;
+    static int _virtualScreenY;
+
 public:
 	Frame() = delete;
 	Frame(const char* _name = "");
@@ -115,13 +119,6 @@ public:
 	//! width/height of the slider(s) that appear when actualSize > size (in pixels)
 	static const Sint32 sliderSize;
 
-private:
-
-    static int _virtualScreenX;
-    static int _virtualScreenY;
-
-public:
-
 	//! virtual screen size (width)
 	static constexpr const int& virtualScreenX = _virtualScreenX;
 
@@ -186,6 +183,11 @@ public:
 	//! @param resizeFrame if true, the size of the frame will be reduced after removing the entry
 	//! @return the newly created entry object
 	entry_t* addEntry(const char* name, bool resizeFrame);
+
+	//! get the mouse position relative to this frame's position
+	//! @param realtime always use actual mouse position instead of pre-click position
+	//! @return the x and y position of the mouse (if w or h == 0 then the frame is totally clipped and invisible)
+	SDL_Rect getRelativeMousePosition(bool realtime) const;
 
 	//! adds a new slider object to the current frame
 	//! @param name the name of the slider
@@ -430,6 +432,8 @@ private:
 	result_t process(SDL_Rect _size, SDL_Rect actualSize, const std::vector<Widget*>& selectedWidgets, const bool usable);
 
 	bool capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
+
+	SDL_Rect getRelativeMousePositionImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
 };
 
 // root frame object

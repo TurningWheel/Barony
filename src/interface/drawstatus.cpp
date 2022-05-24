@@ -1723,45 +1723,6 @@ void drawStatus(int player)
 			}
 			pos.x += hotbar_t.getSlotSize();
 		}
-
-		// minimap pinging.
-		// TODO use the new minimap code for this in GameUI.cpp
-		int minimapTotalScale = minimapScale;
-		if ( map.height > 64 || map.width > 64 )
-		{
-			int maxDimension = std::max(map.height, map.width);
-			maxDimension -= 64;
-			int numMinimapSizesToReduce = 0;
-			while ( maxDimension > 0 )
-			{
-				maxDimension -= 32;
-				++numMinimapSizesToReduce;
-			}
-			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
-		}
-		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w, 
-			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
-		{
-			if ( inputs.bMouseRight(player) || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
-			{
-				inputs.mouseClearRight(player);
-				inputs.controllerClearInput(player, INJOY_MENU_USE);
-				if ( minimapPingGimpTimer[player] == -1 )
-				{
-					MinimapPing newPing(ticks, player, (omousex - (minimaps[player].x)) / minimapTotalScale, (omousey - (yres - minimaps[player].y - minimaps[player].h)) / minimapTotalScale);
-					minimapPingGimpTimer[player] = TICKS_PER_SECOND / 4;
-					if ( multiplayer != CLIENT )
-					{
-						minimapPingAdd(player, player, newPing);
-					}
-					sendMinimapPing(player, newPing.x, newPing.y);
-				}
-			}
-		}
-	}
-	if ( minimapPingGimpTimer[player] >= 0 )
-	{
-		--minimapPingGimpTimer[player];
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
@@ -2934,44 +2895,6 @@ void drawStatusNew(const int player)
 				}
 			}
 		}
-
-		// minimap pinging.
-		int minimapTotalScale = minimapScale;
-		if ( map.height > 64 || map.width > 64 )
-		{
-			int maxDimension = std::max(map.height, map.width);
-			maxDimension -= 64;
-			int numMinimapSizesToReduce = 0;
-			while ( maxDimension > 0 )
-			{
-				maxDimension -= 32;
-				++numMinimapSizesToReduce;
-			}
-			minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
-		}
-		if ( !FollowerMenu[player].selectMoveTo && mouseInBounds(player, minimaps[player].x, minimaps[player].x + minimaps[player].w,
-			yres - minimaps[player].y - minimaps[player].h, yres - minimaps[player].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
-		{
-			if ( inputs.bMouseRight(player) || (inputs.bControllerInputPressed(player, INJOY_MENU_USE)) )
-			{
-				inputs.mouseClearRight(player);
-				inputs.controllerClearInput(player, INJOY_MENU_USE);
-				if ( minimapPingGimpTimer[player] == -1 )
-				{
-					MinimapPing newPing(ticks, player, (omousex - (minimaps[player].x)) / minimapTotalScale, (omousey - (yres - minimaps[player].y - minimaps[player].h)) / minimapTotalScale);
-					minimapPingGimpTimer[player] = TICKS_PER_SECOND / 4;
-					if ( multiplayer != CLIENT )
-					{
-						minimapPingAdd(player, player, newPing);
-					}
-					sendMinimapPing(player, newPing.x, newPing.y);
-				}
-			}
-		}
-	}
-	if ( minimapPingGimpTimer[player] >= 0 )
-	{
-		--minimapPingGimpTimer[player];
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.

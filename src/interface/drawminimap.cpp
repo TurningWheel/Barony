@@ -314,32 +314,12 @@ void drawMinimap(const int player, SDL_Rect rect)
 	lastMapTick = ticks;
 
 	// draw player pings
-	// TODO fix these!!!
 	if ( !minimapPings[player].empty() )
 	{
 	    int minimapTotalScale = minimapScale;
 		for ( std::vector<MinimapPing>::iterator it = minimapPings[player].begin(); it != minimapPings[player].end();)
 		{
-		    Uint32 color;
 			MinimapPing ping = *it;
-			switch ( ping.player )
-			{
-				case 0:
-					color = makeColor(64, 255, 64, 255); // green
-					break;
-				case 1:
-					color = makeColor(86, 180, 233, 255); // sky blue
-					break;
-				case 2:
-					color = makeColor(240, 228, 66, 255); // yellow
-					break;
-				case 3:
-					color = makeColor(204, 121, 167, 255); // pink
-					break;
-				default:
-					color = makeColor(192, 192, 192, 255); // grey
-					break;
-			}
 
 			int aliveTime = ticks - ping.tickStart;
 			if ( aliveTime < TICKS_PER_SECOND * 2.5 ) // 2.5 second duration.
@@ -347,32 +327,37 @@ void drawMinimap(const int player, SDL_Rect rect)
 				if ( (aliveTime < TICKS_PER_SECOND && (aliveTime % 10 < 5)) || aliveTime >= TICKS_PER_SECOND || ping.radiusPing )
 				{
 					// draw the ping blinking every 5 ticks if less than 1 second lifetime, otherwise constantly draw.
-					int x = rect.x + ping.x * minimapTotalScale + minimapTotalScale / 2;
-					int y = yres - (rect.y + rect.h) + ping.y * minimapTotalScale + minimapTotalScale / 2;
-					int alpha = 255;
-					if ( ping.radiusPing )
-					{
-						alpha = 50;
-					}
+					Uint8 alpha = ping.radiusPing ? 50 : 255;
 					if ( aliveTime >= TICKS_PER_SECOND * 2 )
 					{
 						// start fading ping after 2 seconds, lasting 0.5 seconds.
 						real_t alphafade = 1 - (aliveTime - TICKS_PER_SECOND * 2) / static_cast<real_t>(TICKS_PER_SECOND * 0.5);
-						alpha = std::max(static_cast<int>(alphafade * alpha), 0);
+						alpha = std::max((int)(alphafade * alpha), 0);
 					}
+
+					// set color
+		            Uint32 color;
+			        switch ( ping.player )
+			        {
+				        case 0:
+					        color = makeColor(64, 255, 64, alpha); // green
+					        break;
+				        case 1:
+					        color = makeColor(86, 180, 233, alpha); // sky blue
+					        break;
+				        case 2:
+					        color = makeColor(240, 228, 66, alpha); // yellow
+					        break;
+				        case 3:
+					        color = makeColor(204, 121, 167, alpha); // pink
+					        break;
+				        default:
+					        color = makeColor(192, 192, 192, alpha); // grey
+					        break;
+			        }
+
 					// draw a circle
-					if ( ping.radiusPing )
-					{
-						int radius = 3 + std::min(30, aliveTime);
-						radius = std::min(minimapTotalScale * 6, radius);
-					    // TODO THESE DON'T WORK!!!
-						//drawCircle(x - 1, y - 1, std::max(radius + minimapObjectZoom, 0), color, alpha);
-					}
-					else
-					{
-					    // TODO THESE DON'T WORK!!!
-						//drawCircle(x - 1, y - 1, std::max(3 + minimapObjectZoom, 0), color, alpha);
-					}
+			        drawCircleMesh((real_t)ping.x + 0.5, (real_t)ping.y + 0.5, rect, color);
 				}
 			}
 

@@ -121,6 +121,12 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageUp", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogScrollDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogScrollUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapPing", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapClose", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapRight", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapLeft", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
@@ -140,6 +146,7 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMiddleClick", "Mouse2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("InspectWithMouse", "Mouse1"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MinimapPing", "Mouse1"));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("LogHome", "Home"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("LogEnd", "End"));
