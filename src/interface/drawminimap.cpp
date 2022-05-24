@@ -526,7 +526,7 @@ void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPi
 					if ( ping.player == srcPlayer )
 					{
 						// this is the player creating the sound source.
-						minimapPingGimpTimer[srcPlayer] = TICKS_PER_SECOND * 3; // 3 second penalty for spam.
+						minimapPingGimpTimer[srcPlayer] = TICKS_PER_SECOND * 2; // 2 second penalty for spam.
 					}
 					it = minimapPings[destPlayer].erase(it);
 					continue;

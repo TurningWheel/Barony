@@ -230,3 +230,6 @@ struct SkillSheetFrames_t
 extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
 extern Frame* minimapFrame; // shared minimap
+
+void openMapWindow(int player);
+void openLogWindow(int player);

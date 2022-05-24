@@ -4845,11 +4845,14 @@ static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
 static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 
-static void openMapWindow(int player) {
+void openMapWindow(int player) {
     auto& frame = players[player]->hud.mapWindow;
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
+        if (players[player]->gui_mode == GUI_MODE_NONE) {
+            players[player]->shootmode = true;
+        }
         return;
     }
     auto& otherWindow = players[player]->hud.logWindow;
@@ -4937,6 +4940,9 @@ static void openMapWindow(int player) {
             if (players[player]->hud.mapWindow) {
                 players[player]->hud.mapWindow->removeSelf();
                 players[player]->hud.mapWindow = nullptr;
+                if (players[player]->gui_mode == GUI_MODE_NONE) {
+                    players[player]->shootmode = true;
+                }
             }
             auto buttons = gui->findFrame("log map buttons");
             if (buttons) {
@@ -4947,8 +4953,10 @@ static void openMapWindow(int player) {
             }
         }
 
+        static ConsoleVariable<bool> minimapGimpEnabled("/minimap_gimp_enabled", true);
+
         // minimap pings
-		if (minimapPingGimpTimer[player] <= 0) {
+		if (minimapPingGimpTimer[player] <= 0 || !*minimapGimpEnabled) {
             if (input.consumeBinaryToggle("MinimapPing")) {
                 auto mouse_position = inputs.getVirtualMouse(player)->draw_cursor ?
                     minimap->getRelativeMousePosition(false):
@@ -5009,6 +5017,9 @@ static void openMapWindow(int player) {
         players[player]->hud.mapWindow = nullptr;
         auto parent = static_cast<Frame*>(button.getParent());
         parent->removeSelf();
+        if (players[player]->gui_mode == GUI_MODE_NONE) {
+            players[player]->shootmode = true;
+        }
         });
 }
 
@@ -5076,11 +5087,14 @@ void addMessageToLogWindow(int player, string_t* string) {
     }
 }
 
-static void openLogWindow(int player) {
+void openLogWindow(int player) {
     auto& frame = players[player]->hud.logWindow;
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
+        if (players[player]->gui_mode == GUI_MODE_NONE) {
+            players[player]->shootmode = true;
+        }
         return;
     }
     auto& otherWindow = players[player]->hud.mapWindow;
@@ -5249,6 +5263,9 @@ static void openLogWindow(int player) {
         players[player]->hud.logWindow = nullptr;
         auto parent = static_cast<Frame*>(button.getParent());
         parent->removeSelf();
+        if (players[player]->gui_mode == GUI_MODE_NONE) {
+            players[player]->shootmode = true;
+        }
         });
 
     auto help_left = frame->addField("help_left", 128);
@@ -19205,6 +19222,10 @@ Frame::result_t doFrames() {
 
         static ConsoleVariable<bool> gui_process("/gui_process", true);
         if (*gui_process) {
+	        for (auto& input : Input::inputs) {
+	            // release any consumed inputs from rest of game
+		        input.update();
+	        }
 	        result = gui->process();
 	    }
 

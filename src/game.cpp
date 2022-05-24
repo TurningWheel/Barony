@@ -692,6 +692,8 @@ std::string TimerExperiments::render(State state)
 
 -------------------------------------------------------------------------------*/
 
+static ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
+
 void gameLogic(void)
 {
 	Uint32 x;
@@ -1356,17 +1358,6 @@ void gameLogic(void)
 			}
 			real_t accum = 0.0;
 			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
-
-            // consume mouse buttons that were eaten by GUI
-			if (!framesProcResult.usable) {
-			    for (int c = 0; c < MAXPLAYERS; ++c) {
-			        if (!players[c]->shootmode) {
-			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuLeftClick");
-			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuMiddleClick");
-			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuRightClick");
-			        }
-			    }
-			}
 
 			// run world UI entities
 			for ( node = map.worldUI->first; node != nullptr; node = nextnode )
@@ -2579,17 +2570,6 @@ void gameLogic(void)
 				}
 			}
 
-            // consume mouse buttons that were eaten by GUI
-			if (!framesProcResult.usable) {
-			    for (int c = 0; c < MAXPLAYERS; ++c) {
-			        if (!players[c]->shootmode) {
-			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuLeftClick");
-			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuMiddleClick");
-			            Input::inputs[c].consumeBindingsSharedWithBinding("MenuRightClick");
-			        }
-			    }
-			}
-
 			// run world UI entities
 			for ( node = map.worldUI->first; node != nullptr; node = nextnode )
 			{
@@ -3228,6 +3208,23 @@ void handleEvents(void)
 		input.updateReleasedBindings();
 		input.update();
 		input.consumeBindingsSharedWithFaceHotbar();
+	}
+
+    // consume mouse buttons that were eaten by GUI
+	if (!framesProcResult.usable && *framesEatMouse) {
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (!players[c]->shootmode) {
+	            if (Input::inputs[c].consumeBinaryToggle("MenuLeftClick")) {
+	                Input::inputs[c].consumeBindingsSharedWithBinding("MenuLeftClick");
+	            }
+	            if (Input::inputs[c].consumeBinaryToggle("MenuMiddleClick")) {
+	                Input::inputs[c].consumeBindingsSharedWithBinding("MenuMiddleClick");
+	            }
+	            if (Input::inputs[c].consumeBinaryToggle("MenuRightClick")) {
+	                Input::inputs[c].consumeBindingsSharedWithBinding("MenuRightClick");
+	            }
+	        }
+	    }
 	}
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
@@ -4143,12 +4140,29 @@ void ingameHud()
 
 	    Input& input = Input::inputs[player];
 
-	    // toggle minimap
-		// player not needed to be alive
-        if ( players[player]->shootmode && !players[player]->usingCommand() && input.consumeBinaryToggle("Toggle Minimap")
-			&& !gamePaused
-			&& bControlEnabled ) {
-            openMinimap(player);
+        // various UI keybinds
+        if ( !gamePaused && bControlEnabled && !players[player]->usingCommand() )
+        {
+	        // toggle minimap
+		    // player not needed to be alive
+            if ( players[player]->shootmode && input.consumeBinaryToggle("Toggle Minimap") )
+            {
+                openMinimap(player);
+            }
+
+            // map window bind
+            if ( input.consumeBinaryToggle("Open Map") )
+            {
+                players[player]->shootmode = false;
+                openMapWindow(player);
+            }
+
+            // log window bind
+            if ( input.consumeBinaryToggle("Open Log") )
+            {
+                players[player]->shootmode = false;
+                openLogWindow(player);
+            }
         }
 
 		// inventory interface
@@ -5797,8 +5811,7 @@ int main(int argc, char** argv)
 							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 
-						framesProcResult = doFrames();
-
+                        framesProcResult = doFrames();
 #ifndef NINTENDO
 						// draw mouse
 						// only draw 1 cursor in the main menu
@@ -6010,7 +6023,7 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-				framesProcResult = doFrames();
+                framesProcResult = doFrames();
 				ingameHud();
 
                 static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
