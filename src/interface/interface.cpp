@@ -1226,6 +1226,24 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		}
 		return true;
 	}
+	else if ( activeModule == MODULE_ALCHEMY )
+	{
+		auto& alchemyGUI = GenericGUI[player.playernum].alchemyGUI;
+		auto& inventoryUI = player.inventoryUI;
+		if ( alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = alchemyGUI.getAlchemySlotFrame(alchemyGUI.getSelectedAlchemySlotX(), alchemyGUI.getSelectedAlchemySlotY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
+		return true;
+	}
 	else if ( activeModule == MODULE_TINKERING )
 	{
 		auto& tinkerGUI = GenericGUI[player.playernum].tinkerGUI;
@@ -1278,12 +1296,14 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| oldModule == MODULE_SPELLS
 					|| oldModule == MODULE_CHEST 
 					|| oldModule == MODULE_SHOP
+					|| oldModule == MODULE_ALCHEMY
 					|| oldModule == MODULE_TINKERING)
 				&& !(activeModule == MODULE_INVENTORY 
 					|| activeModule == MODULE_HOTBAR 
 					|| activeModule == MODULE_SPELLS
 					|| activeModule == MODULE_CHEST
 					|| activeModule == MODULE_SHOP
+					|| activeModule == MODULE_ALCHEMY
 					|| activeModule == MODULE_TINKERING)
 				&& !bActiveModuleHasNoCursor()
 				&& hoveringOverModuleButton() == MODULE_NONE )
@@ -1301,15 +1321,17 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 			else if ( ((activeModule == MODULE_INVENTORY 
 				|| activeModule == MODULE_HOTBAR 
 				|| activeModule == MODULE_SPELLS
-				|| oldModule == MODULE_CHEST
-				|| oldModule == MODULE_SHOP
-				|| oldModule == MODULE_TINKERING)
+				|| activeModule == MODULE_CHEST
+				|| activeModule == MODULE_SHOP
+				|| activeModule == MODULE_ALCHEMY
+				|| activeModule == MODULE_TINKERING)
 				&& !(oldModule == MODULE_INVENTORY 
 					|| oldModule == MODULE_HOTBAR 
 					|| oldModule == MODULE_SPELLS
-					|| activeModule == MODULE_CHEST
-					|| activeModule == MODULE_SHOP
-					|| activeModule == MODULE_TINKERING))
+					|| oldModule == MODULE_CHEST
+					|| oldModule == MODULE_SHOP
+					|| oldModule == MODULE_ALCHEMY
+					|| oldModule == MODULE_TINKERING))
 				|| hoveringOverModuleButton() != MODULE_NONE )
 			{
 				SDL_Rect size = hudCursor->getSize();
@@ -4778,7 +4800,7 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
 	guiType = static_cast<GUICurrentType>(type);
-	players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+	//players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
 	alchemyGUI.openAlchemyMenu();
 
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
@@ -5850,7 +5872,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 	}
 
-	int appearance = 0;
+	int appearance = -1;
 	int blessing = std::min(static_cast<int>(std::min(basePotion->beatitude, secondaryPotion->beatitude)), 0);
 	if ( basePotion->type == secondaryPotion->type )
 	{
@@ -6019,7 +6041,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( (*it).first == result )
 		{
-			if ( appearance == 0 )
+			if ( appearance == -1 )
 			{
 				appearance = (*it).second;
 			}
@@ -6045,6 +6067,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			}
 
 			int count = 1;
+			appearance = std::max(0, appearance);
 			Item* newPotion = newItem(result, status, blessing, count, appearance, knewBothBaseIngredients, nullptr);
 			if ( tryDuplicatePotion )
 			{
@@ -11517,7 +11540,7 @@ void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
 }
 
 const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_X = 4;
-const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_Y = 10;
+const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_Y = 6;
 
 void GenericGUIMenu::AlchemyGUI_t::openAlchemyMenu()
 {
@@ -11535,11 +11558,7 @@ void GenericGUIMenu::AlchemyGUI_t::openAlchemyMenu()
 			isInteractable = false;
 			bFirstTimeSnapCursor = false;
 		}
-		if ( getSelectedAlchemySlotX() < 0 || getSelectedAlchemySlotX() >= MAX_ALCH_X
-			|| getSelectedAlchemySlotY() < 0 || getSelectedAlchemySlotY() >= MAX_ALCH_Y )
-		{
-			selectAlchemySlot(0, 0);
-		}
+		selectAlchemySlot(ALCH_SLOT_BASE_POTION_X, 0);
 		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player->inventory_mode = INVENTORY_MODE_ITEM;
 		bOpen = true;
@@ -11612,6 +11631,7 @@ void GenericGUIMenu::AlchemyGUI_t::closeAlchemyMenu()
 	}
 	recipes.closeRecipePanel();
 	recipesFrame = nullptr;
+	notifications.clear();
 }
 
 int GenericGUIMenu::AlchemyGUI_t::heightOffsetWhenNotCompact = 150;
@@ -11737,7 +11757,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				if ( !inputs.getUIInteraction(playernum)->selectedItem
 					&& player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
 				{
-					warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+					//warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
 			}
 			isInteractable = true;
@@ -11951,11 +11971,11 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 
 	animPotion1DestX = baseFrame->getSize().x + 36;
-	animPotion1DestY = baseFrame->getSize().y + 130;
+	animPotion1DestY = baseFrame->getSize().y + 128;
 	animPotion2DestX = baseFrame->getSize().x + 128;
-	animPotion2DestY = baseFrame->getSize().y + 130;
+	animPotion2DestY = baseFrame->getSize().y + 128;
 	animPotionResultStartX = baseFrame->getSize().x + 74;
-	animPotionResultStartY = baseFrame->getSize().y + 264;
+	animPotionResultStartY = baseFrame->getSize().y + 286;
 
 	Frame* recipePreview1Frame = getAlchemySlotFrame(ALCH_SLOT_RECIPE_PREVIEW_POTION1_X, 0);
 	{
@@ -12198,6 +12218,67 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		return; // I can't see!
 	}
 
+	if ( keystatus[SDL_SCANCODE_B] )
+	{
+		keystatus[SDL_SCANCODE_B] = 0;
+		notifications.push_back(std::make_pair(ticks, AlchNotification_t()));
+		auto& n = notifications.back().second;
+		n.img = "items/images/Alembic.png";
+		n.title = "Wow a title!";
+		n.body = "This is a body";
+	}
+	auto notificationFrame = alchFrame->findFrame("notification");
+	notificationFrame->setDisabled(true);
+	if ( !notifications.empty() )
+	{
+		auto& n = notifications.front();
+		SDL_Rect notifPos = notificationFrame->getSize();
+		notifPos.x = baseFrame->getSize().x + baseFrame->getSize().w - notifPos.w * (1.0 - n.second.animx);
+		notifPos.y = 0;
+		notificationFrame->setSize(notifPos);
+		notificationFrame->setOpacity(100.0 * n.second.animx);
+		notificationFrame->setDisabled(false);
+
+		auto notifTitle = notificationFrame->findField("notif title");
+		notifTitle->setText(n.second.title.c_str());
+		auto notifBody = notificationFrame->findField("notif body");
+		notifBody->setText(n.second.body.c_str());
+		auto notifIcon = notificationFrame->findImage("notif icon");
+		notifIcon->path = n.second.img;
+
+		if ( n.second.state == 0 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - n.second.animx)) / 2.0;
+			n.second.animx += setpointDiffX;
+			n.second.animx = std::min(1.0, n.second.animx);
+			if ( n.second.animx >= 0.999 )
+			{
+				n.second.state = 1;
+				n.first = ticks;
+			}
+		}
+		else if ( n.second.state == 1 )
+		{
+			if ( ticks - n.first > TICKS_PER_SECOND * 3 )
+			{
+				n.second.state = 2;
+			}
+		}
+		else if ( n.second.state == 2 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.05, (n.second.animx)) / 3.0;
+			n.second.animx -= setpointDiffX;
+			n.second.animx = std::max(0.0, n.second.animx);
+			if ( n.second.animx <= 0.001 )
+			{
+				n.second.state = 3;
+				notifications.erase(notifications.begin());
+			}
+		}
+	}
+
 	// alembic status
 	{
 		auto alembicTitle = baseFrame->findField("alchemy alembic title");
@@ -12252,14 +12333,15 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			alembicStatus->setText("");
 		}
 
-		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
+		SDL_Rect textPos{ 0, 21, baseFrame->getSize().w, 24 };
 		alembicTitle->setSize(textPos);
-		textPos.y += 20;
+		textPos.y += 18;
 		alembicStatus->setSize(textPos);
 	}
 
 	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
-
+	auto recipeBtn = baseFrame->findButton("recipe button");
+	auto recipeGlyph = baseFrame->findImage("recipe glyph");
 	{
 		// close btn
 		auto closeBtn = baseFrame->findButton("close alchemy button");
@@ -12278,7 +12360,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		{
 			closeBtn->deselect();
 		}
-		if ( closeBtn->isDisabled() && usingGamepad )
+		if ( closeBtn->isDisabled() && usingGamepad && potion1Uid == 0 && potion2Uid == 0 )
 		{
 			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
 			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
@@ -12295,9 +12377,16 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
 		}
 
-		auto recipeBtn = baseFrame->findButton("recipe button");
 		recipeBtn->setDisabled(true);
-		//closeGlyph->disabled = true;
+		recipeGlyph->disabled = true;
+		if ( recipes.bOpen )
+		{
+			recipeBtn->setText(language[4171]);
+		}
+		else
+		{
+			recipeBtn->setText(language[4170]);
+		}
 		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
 		{
 			recipeBtn->setDisabled(!isInteractable);
@@ -12312,19 +12401,19 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		if ( recipeBtn->isDisabled() && usingGamepad )
 		{
-			/*closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
-			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			recipeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRightAlt");
+			if ( auto imgGet = Image::get(recipeGlyph->path.c_str()) )
 			{
-				closeGlyph->pos.w = imgGet->getWidth();
-				closeGlyph->pos.h = imgGet->getHeight();
-				closeGlyph->disabled = false;
+				recipeGlyph->pos.w = imgGet->getWidth();
+				recipeGlyph->pos.h = imgGet->getHeight();
+				recipeGlyph->disabled = false;
 			}
-			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
-			if ( closeGlyph->pos.x % 2 == 1 )
+			recipeGlyph->pos.x = recipeBtn->getSize().x + recipeBtn->getSize().w / 2 - recipeGlyph->pos.w / 2;
+			if ( recipeGlyph->pos.x % 2 == 1 )
 			{
-				++closeGlyph->pos.x;
+				++recipeGlyph->pos.x;
 			}
-			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;*/
+			recipeGlyph->pos.y = recipeBtn->getSize().y + recipeBtn->getSize().h - 8;
 		}
 	}
 
@@ -12342,7 +12431,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	const int displayItemTextImgBaseX = 0;
 	displayItemTextImg->pos.x = displayItemTextImgBaseX;
 	displayItemTextImg->pos.y = 0;
-	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 4, displayItemTextImg->pos.y - 4, 178, displayItemName->getSize().h };
+	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 8, displayItemTextImg->pos.y - 4, 170, displayItemName->getSize().h };
 	displayItemName->setSize(displayItemNamePos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
@@ -12398,7 +12487,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			{
 				alchemyResultPotion.count = 1;
 			}
-			int appearance = 0;
+			int appearance = -1;
 			int blessing = std::min(static_cast<int>(std::min(potion1Item->beatitude, potion2Item->beatitude)), 0);
 			if ( samePotion )
 			{
@@ -12529,13 +12618,13 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			{
 				if ( (*it).first == alchemyResultPotion.type )
 				{
-					if ( appearance == 0 )
+					if ( appearance == -1 )
 					{
 						appearance = (*it).second;
 					}
 				}
 			}
-			alchemyResultPotion.appearance = appearance;
+			alchemyResultPotion.appearance = std::max(0, appearance);
 			if ( doRandomAppearances )
 			{
 				alchemyResultPotion.appearance = animRandomPotionVariation;
@@ -12556,6 +12645,57 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 	{
 		modifierPressed = true;
+	}
+
+	auto brewBtn = baseFrame->findButton("brew button");
+	auto brewGlyph = baseFrame->findImage("brew glyph");
+	brewBtn->setDisabled(true);
+	brewGlyph->disabled = true;
+	if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+	{
+		brewBtn->setText(language[4175]);
+		if ( potion1Uid != 0 || potion2Uid != 0 )
+		{
+			brewBtn->setDisabled(false);
+			brewBtn->setTextColor(makeColor(255, 255, 255, 255));
+		}
+		else
+		{
+			brewBtn->setTextColor(hudColors.characterSheetFaintText);
+		}
+	}
+	else if ( brewBtn->isSelected() )
+	{
+		brewBtn->deselect();
+	}
+	if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+	{
+		if ( potionResultFrame->isDisabled() )
+		{
+			brewBtn->setTextColor(hudColors.characterSheetFaintText);
+		}
+		else
+		{
+			brewBtn->setTextColor(makeColor(255, 255, 255, 255));
+		}
+		brewBtn->setText(language[4178]);
+		brewBtn->setDisabled(true);
+		if ( !potionResultFrame->isDisabled() )
+		{
+			brewGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt2");
+			if ( auto imgGet = Image::get(brewGlyph->path.c_str()) )
+			{
+				brewGlyph->pos.w = imgGet->getWidth();
+				brewGlyph->pos.h = imgGet->getHeight();
+				brewGlyph->disabled = false;
+			}
+			brewGlyph->pos.x = brewBtn->getSize().x + brewBtn->getSize().w - 16;
+			if ( brewGlyph->pos.x % 2 == 1 )
+			{
+				++brewGlyph->pos.x;
+			}
+			brewGlyph->pos.y = brewBtn->getSize().y + brewBtn->getSize().h - 16;
+		}
 	}
 
 	bool inventoryControlActive = player->bControlEnabled
@@ -12621,7 +12761,10 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							if ( auto slot = getAlchemySlotFrame(ALCH_SLOT_RESULT_POTION_X, 0) )
 							{
 								slot->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT);
+								int oldCount = entry.resultItem.count;
+								entry.resultItem.count = 1;
 								updateSlotFrameFromItem(slot, &entry.resultItem);
+								entry.resultItem.count = oldCount;
 							}
 							break;
 						}
@@ -12656,14 +12799,23 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 	}
 
+	auto activateSelectionGlyph = alchFrame->findImage("activate glyph");
+	auto activateSelectionPrompt = alchFrame->findField("activate prompt");
+	if ( !strcmp(activateSelectionPrompt->getText(), "") )
+	{
+		activateSelectionGlyph->disabled = true;
+		activateSelectionPrompt->setDisabled(true);
+	}
+
 	if ( itemType != -1 && itemDesc.size() > 1 )
 	{
 		if ( isInteractable )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
-			animTooltip += setpointDiffX;
-			animTooltip = std::min(1.0, animTooltip);
+			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			//animTooltip += setpointDiffX;
+			//animTooltip = std::min(1.0, animTooltip);
+			animTooltip = 1.0;
 			animTooltipTicks = ticks;
 		}
 
@@ -12678,7 +12830,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				displayItemName->setText(itemDesc.c_str());
 				displayItemName->reflowTextToFit(0);
 
-				if ( displayItemName->getNumTextLines() > 2 )
+				if ( displayItemName->getNumTextLines() > 2 || true )
 				{
 					auto pos = displayItemName->getSize();
 					pos.h = 74;
@@ -12752,7 +12904,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							else if ( toCompare == language[4162]
 								|| toCompare == language[4164] || toCompare == language[4166] )
 							{
-								color = hudColors.characterSheetOffWhiteText;
+								color = makeColor(54, 144, 171, 255);
 							}
 							else if ( toCompare == language[4156] )
 							{
@@ -12805,12 +12957,57 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				itemRequiresTitleReflow = false;
 			}
 		}
+
+		if ( itemActionType == ALCHEMY_ACTION_OK && strcmp(activateSelectionPrompt->getText(), "") )
+		{
+			if ( usingGamepad )
+			{
+				activateSelectionGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+			}
+			else
+			{
+				activateSelectionGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
+			}
+			if ( auto imgGet = Image::get(activateSelectionGlyph->path.c_str()) )
+			{
+				activateSelectionGlyph->pos.w = imgGet->getWidth();
+				activateSelectionGlyph->pos.h = imgGet->getHeight();
+			}
+
+			SDL_Rect pos{ 0, 0, activateSelectionGlyph->pos.w, activateSelectionGlyph->pos.h };
+			pos.x += baseFrame->getSize().x + itemDisplayTooltip->getSize().x;
+			pos.y += baseFrame->getSize().y + itemDisplayTooltip->getSize().y;
+			pos.x += displayItemTextImg->pos.x + displayItemTextImg->pos.w / 2;
+			pos.y += displayItemTextImg->pos.y + displayItemTextImg->pos.h;
+			pos.y += 4;
+
+			auto activateSelectionPromptPos = SDL_Rect{ pos.x, pos.y + 1, baseFrame->getSize().w, 24 };
+			if ( auto textGet = activateSelectionPrompt->getTextObject() )
+			{
+				activateSelectionPromptPos.x -= textGet->getWidth() / 2;
+				activateSelectionPromptPos.x += (8 + pos.w) / 2;
+				pos.x = activateSelectionPromptPos.x - 8 - pos.w;
+				pos.y += activateSelectionPrompt->getSize().h / 2;
+				pos.y -= pos.h / 2;
+			}
+			activateSelectionPrompt->setSize(activateSelectionPromptPos);
+			if ( pos.x % 2 == 1 )
+			{
+				++pos.x;
+			}
+			if ( pos.y % 2 == 1 )
+			{
+				--pos.y;
+			}
+			activateSelectionGlyph->pos = pos;
+			activateSelectionGlyph->disabled = false;
+			activateSelectionPrompt->setDisabled(false);
+		}
 	}
 	else
 	{
 		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
 			|| (usingGamepad)
-			|| true
 			|| animTooltip < 0.9999 )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -12834,6 +13031,21 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		displayItemName->setColor(makeColor(color.r, color.g, color.b, color.a));
 	}
 
+	{
+		SDL_Color color;
+		getColor(activateSelectionPrompt->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		activateSelectionPrompt->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	{
+		SDL_Color color;
+		getColor(activateSelectionGlyph->color, &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		activateSelectionGlyph->color = (makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	bool tryBrew = false;
 	bool activateSelection = false;
 	if ( isInteractable )
 	{
@@ -12844,11 +13056,56 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			&& player->bControlEnabled && !gamePaused
 			&& !player->usingCommand() )
 		{
+			
 			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
 			{
 				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
-				parentGUI.closeGUI();
+				if ( potion1Uid == 0 && potion2Uid == 0 )
+				{
+					parentGUI.closeGUI();
+					return;
+				}
+				else if ( animPotionResult < 0.001 )
+				{
+					if ( potion2Uid != 0 )
+					{
+						potion2Uid = 0;
+						animPotion2 = 0.0;
+						//animPotion2Frame->setDisabled(true);
+						animRecipeAutoAddToSlot1Uid = 0;
+						animRecipeAutoAddToSlot2Uid = 0;
+
+						recipes.activateRecipeIndex = -1;
+						animRandomPotionTicks = 0;
+					}
+					else if ( potion1Uid != 0 )
+					{
+						potion1Uid = 0;
+						animPotion1 = 0.0;
+						//animPotion1Frame->setDisabled(true);
+						animRecipeAutoAddToSlot1Uid = 0;
+						animRecipeAutoAddToSlot2Uid = 0;
+
+						recipes.activateRecipeIndex = -1;
+						animRandomPotionTicks = 0;
+					}
+				}
+			}
+			else if ( Input::inputs[playernum].binaryToggle("MenuPageRightAlt") || Input::inputs[playernum].binaryToggle("MenuPageLeftAlt") )
+			{
+				Input::inputs[playernum].consumeBinaryToggle("MenuPageLeftAlt");
+				Input::inputs[playernum].consumeBinaryToggle("MenuPageRightAlt");
+				recipeBtn->activate();
 				return;
+			}
+			else if ( Input::inputs[playernum].binaryToggle("MenuAlt2") )
+			{
+				if ( !brewGlyph->disabled )
+				{
+					activateSelection = true;
+					tryBrew = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuAlt2");
+				}
 			}
 			else
 			{
@@ -12874,6 +13131,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
 			&& getSelectedAlchemySlotX() >= 0 && getSelectedAlchemySlotX() < MAX_ALCH_X
 			&& getSelectedAlchemySlotY() >= 0 && getSelectedAlchemySlotX() < MAX_ALCH_Y
+			&& !tryBrew
 			&& recipes.bOpen
 			/*&& currentView == ALCHEMY_VIEW_RECIPES*/
 			&& itemActionType == ALCHEMY_ACTION_OK )
@@ -12927,6 +13185,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 
 								animRecipeAutoAddToSlot1Uid = entry.basePotionUid;
 								animRecipeAutoAddToSlot2Uid = entry.secondaryPotionUid;
+								alchemyResultPotion.type = POTION_EMPTY;
 							}
 						}
 						break;
@@ -12935,111 +13194,110 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				}
 			}
 		}
-		else if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
-			&& itemActionType == ALCHEMY_ACTION_OK
+		else if ( (player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY || (tryBrew && player->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY) )
+			&& (itemActionType == ALCHEMY_ACTION_OK || tryBrew)
 			&& animRecipeAutoAddToSlot1Uid == 0
 			&& animRecipeAutoAddToSlot2Uid == 0 )
 		{
 			bool tryRecipeAutofill = false;
 			ItemType oldPotion1Type = WOODEN_SHIELD;
 			ItemType oldPotion2Type = WOODEN_SHIELD;
-			if ( getSelectedAlchemySlotX() >= ALCH_SLOT_RESULT_POTION_X && getSelectedAlchemySlotX() < 0
-				&& getSelectedAlchemySlotY() == 0 )
+			if ( (getSelectedAlchemySlotX() >= ALCH_SLOT_RESULT_POTION_X && getSelectedAlchemySlotX() < 0
+				&& getSelectedAlchemySlotY() == 0) || tryBrew )
 			{
-				switch ( getSelectedAlchemySlotX() )
+				if ( !tryBrew && getSelectedAlchemySlotX() == ALCH_SLOT_BASE_POTION_X )
 				{
-					case ALCH_SLOT_BASE_POTION_X:
-						potion1Uid = 0;
-						animPotion1 = 0.0;
-						animPotion1Frame->setDisabled(true);
-						recipes.activateRecipeIndex = -1; // clear active recipe
-						break;
-					case ALCH_SLOT_SECONDARY_POTION_X:
-						potion2Uid = 0;
-						animPotion2 = 0.0;
-						animPotion2Frame->setDisabled(true);
-						recipes.activateRecipeIndex = -1; // clear active recipe
-						break;
-					case ALCH_SLOT_RESULT_POTION_X:
-						// brew it
-						if ( potion1Item && potion2Item && !potionResultFrame->isDisabled()
-							&& alchemyResultPotion.type != POTION_EMPTY
-							&& potionResultUid == 0 )
+					potion1Uid = 0;
+					animPotion1 = 0.0;
+					animPotion1Frame->setDisabled(true);
+					recipes.activateRecipeIndex = -1; // clear active recipe
+				}
+				else if ( !tryBrew && getSelectedAlchemySlotX() == ALCH_SLOT_SECONDARY_POTION_X )
+				{
+					potion2Uid = 0;
+					animPotion2 = 0.0;
+					animPotion2Frame->setDisabled(true);
+					recipes.activateRecipeIndex = -1; // clear active recipe
+
+				}
+				else if ( tryBrew || getSelectedAlchemySlotX() == ALCH_SLOT_RESULT_POTION_X )
+				{
+					// brew it
+					if ( potion1Item && potion2Item && !potionResultFrame->isDisabled()
+						&& alchemyResultPotion.type != POTION_EMPTY
+						&& potionResultUid == 0 )
+					{
+						parentGUI.basePotion = potion1Item;
+						parentGUI.secondaryPotion = potion2Item;
+						int oldCount1 = potion1Item->count;
+						int oldCount2 = potion2Item->count;
+						oldPotion1Type = potion1Item->type;
+						oldPotion2Type = potion2Item->type;
+						potionResultUid = 0;
+						parentGUI.alchemyCombinePotions();
+						if ( parentGUI.basePotion == nullptr )
 						{
-							parentGUI.basePotion = potion1Item;
-							parentGUI.secondaryPotion = potion2Item;
-							int oldCount1 = potion1Item->count;
-							int oldCount2 = potion2Item->count;
-							oldPotion1Type = potion1Item->type;
-							oldPotion2Type = potion2Item->type;
-							potionResultUid = 0;
-							parentGUI.alchemyCombinePotions();
-							if ( parentGUI.basePotion == nullptr )
+							potion1Uid = 0;
+							animPotion1 = 0.0;
+							animPotion1Frame->setDisabled(true);
+							alchemyResultPotion.type = POTION_EMPTY;
+							tryRecipeAutofill = recipes.activateRecipeIndex >= 0;
+						}
+						if ( parentGUI.secondaryPotion == nullptr )
+						{
+							potion2Uid = 0;
+							animPotion2 = 0.0;
+							animPotion2Frame->setDisabled(true);
+							alchemyResultPotion.type = POTION_EMPTY;
+							tryRecipeAutofill = recipes.activateRecipeIndex >= 0;
+						}
+						if ( potionResultUid != 0 )
+						{
+							if ( auto item = uidToItem(potionResultUid) )
 							{
-								potion1Uid = 0;
-								animPotion1 = 0.0;
-								animPotion1Frame->setDisabled(true);
-								alchemyResultPotion.type = POTION_EMPTY;
-								tryRecipeAutofill = recipes.activateRecipeIndex >= 0;
-							}
-							if ( parentGUI.secondaryPotion == nullptr )
-							{
-								potion2Uid = 0;
-								animPotion2 = 0.0;
-								animPotion2Frame->setDisabled(true);
-								alchemyResultPotion.type = POTION_EMPTY;
-								tryRecipeAutofill = recipes.activateRecipeIndex >= 0;
-							}
-							if ( potionResultUid != 0 )
-							{
-								if ( auto item = uidToItem(potionResultUid) )
+								auto slotType = player->paperDoll.getSlotForItem(*item);
+								if ( potionResultUid == potion1Uid )
 								{
-									auto slotType = player->paperDoll.getSlotForItem(*item);
-									if ( potionResultUid == potion1Uid )
+									animPotionResultDestX = animPotion1DestX;
+									animPotionResultDestY = animPotion1DestY;
+									animPotionResult = 1.0;
+								}
+								else if ( potionResultUid == potion2Uid )
+								{
+									animPotionResultDestX = animPotion2DestX;
+									animPotionResultDestY = animPotion2DestY;
+									animPotionResult = 1.0;
+								}
+								else if ( slotType != Player::PaperDoll_t::SLOT_MAX ) // on paper doll
+								{
+									animPotionResultDestX = animPotionResultStartX;
+									animPotionResultDestY = animPotionResultStartY - player->inventoryUI.getSlotSize();
+									animPotionResult = 1.0;
+								}
+								else if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
+								{
+									animPotionResultDestX = slotFrame->getSize().x;
+									animPotionResultDestY = slotFrame->getSize().y + 2 + potionAnimOffsetY;
+									animPotionResultDestY += (player->inventoryUI.bCompactView ? 6 : 0);
+									if ( item->y >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
 									{
-										animPotionResultDestX = animPotion1DestX;
-										animPotionResultDestY = animPotion1DestY;
-										animPotionResult = 1.0;
-									}
-									else if ( potionResultUid == potion2Uid )
-									{
-										animPotionResultDestX = animPotion2DestX;
-										animPotionResultDestY = animPotion2DestY;
-										animPotionResult = 1.0;
-									}
-									else if ( slotType != Player::PaperDoll_t::SLOT_MAX ) // on paper doll
-									{
-										animPotionResultDestX = animPotionResultStartX;
-										animPotionResultDestY = animPotionResultStartY - player->inventoryUI.getSlotSize();
-										animPotionResult = 1.0;
-									}
-									else if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
-									{
-										animPotionResultDestX = slotFrame->getSize().x;
-										animPotionResultDestY = slotFrame->getSize().y + 2 + potionAnimOffsetY;
-										animPotionResultDestY += (player->inventoryUI.bCompactView ? 6 : 0);
-										if ( item->y >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+										// backpack slots, add another offset.
+										if ( auto invSlotsFrame = player->inventoryUI.frame->findFrame("inventory slots") )
 										{
-											// backpack slots, add another offset.
-											if ( auto invSlotsFrame = player->inventoryUI.frame->findFrame("inventory slots") )
-											{
-												animPotionResultDestY += invSlotsFrame->getSize().h;
-											}
+											animPotionResultDestY += invSlotsFrame->getSize().h;
 										}
-										animPotionResult = 1.0;
 									}
+									animPotionResult = 1.0;
 								}
 							}
-							if ( animPotionResult < .999 )
-							{
-								potionResultUid = 0;
-							}
 						}
-						parentGUI.basePotion = nullptr;
-						parentGUI.secondaryPotion = nullptr;
-						break;
-					default:
-						break;
+						if ( animPotionResult < .999 )
+						{
+							potionResultUid = 0;
+						}
+					}
+					parentGUI.basePotion = nullptr;
+					parentGUI.secondaryPotion = nullptr;
 				}
 			}
 			if ( tryRecipeAutofill )
@@ -13081,6 +13339,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		else if ( player->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			&& itemActionType == ALCHEMY_ACTION_OK
+			&& !tryBrew
 			&& animRecipeAutoAddToSlot1Uid == 0
 			&& animRecipeAutoAddToSlot2Uid == 0 )
 		{
@@ -13091,6 +13350,10 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				{
 					Item* item = (Item*)node->element;
 					if ( !item )
+					{
+						continue;
+					}
+					if ( itemCategory(item) == SPELL_CAT )
 					{
 						continue;
 					}
@@ -13121,7 +13384,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							animPotion1 = 1.0;
 							getInventoryItemAlchemyAnimSlotPos(slotFrame, player, item->x, item->y, animPotion1StartX, animPotion1StartY, potionAnimOffsetY);
 							potion1Uid = item->uid;
-							alchemyResultPotion.type = POTION_EMPTY;
+							//alchemyResultPotion.type = POTION_EMPTY;
 						}
 						else
 						{
@@ -13132,8 +13395,10 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							animPotion2 = 1.0;
 							getInventoryItemAlchemyAnimSlotPos(slotFrame, player, item->x, item->y, animPotion2StartX, animPotion2StartY, potionAnimOffsetY);
 							potion2Uid = item->uid;
-							alchemyResultPotion.type = POTION_EMPTY;
+							//alchemyResultPotion.type = POTION_EMPTY;
 						}
+						recipes.activateRecipeIndex = -1;
+						animRandomPotionTicks = 0;
 						break;
 					}
 				}
@@ -13160,8 +13425,181 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 		return;
 	}
 
-	SDL_Rect basePos{ 0, 0, alchemyBaseWidth, 328 };
+	SDL_Rect basePos{ 0, 0, alchemyBaseWidth, 350 };
 	alchemySlotFrames.clear();
+
+	Frame* frame = alchFrame->addFrame("player recipes");
+	recipesFrame = frame;
+	frame->setSize(SDL_Rect{ 0,
+		0,
+		alchemyBaseWidth,
+		kRecipeListHeight });
+	frame->setHollow(true);
+	frame->setBorder(0);
+	frame->setOwner(player);
+	frame->setInheritParentFrameOpacity(false);
+	frame->setDisabled(true);
+
+	{
+		auto bgFrame = recipesFrame->addFrame("recipe base");
+		bgFrame->setSize(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeListHeight });
+		bgFrame->setHollow(true);
+		const auto bgSize = bgFrame->getSize();
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"images/ui/Alchemy/Alchemy_Recipes_00.png", "recipe base img");
+
+		auto bgHeader = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeHeaderHeight },
+			makeColor(255, 0, 255, 128),
+			"images/system/white.png", "recipe header img");
+
+		auto bgFooter = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeFooterHeight },
+			makeColor(255, 0, 255, 128),
+			"images/system/white.png", "recipe footer img");
+		auto clearRecipeBtn = bgFrame->addButton("clear recipe");
+		clearRecipeBtn->setSize(SDL_Rect{ 0, 0, 194, 26 });
+		clearRecipeBtn->setColor(makeColor(255, 255, 255, 255));
+		clearRecipeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		clearRecipeBtn->setText(language[4169]);
+		clearRecipeBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		clearRecipeBtn->setHideGlyphs(true);
+		clearRecipeBtn->setHideKeyboardGlyphs(true);
+		clearRecipeBtn->setHideSelectors(true);
+		clearRecipeBtn->setBackground("images/ui/Alchemy/Alchemy_RecipeClear_Button_00.png");
+		clearRecipeBtn->setColor(makeColor(255, 255, 255, 255));
+		clearRecipeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		clearRecipeBtn->setMenuConfirmControlType(0);
+		clearRecipeBtn->setBackgroundHighlighted("images/ui/Alchemy/Alchemy_RecipeClear_ButtonHigh_00.png");
+		clearRecipeBtn->setBackgroundActivated("images/ui/Alchemy/Alchemy_RecipeClear_ButtonPress_00.png");
+		clearRecipeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+		clearRecipeBtn->setCallback([](Button& button) {
+			int player = button.getOwner();
+			auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+			alchemyGUI.recipes.activateRecipeIndex = -1;
+			alchemyGUI.potion1Uid = 0;
+			alchemyGUI.animPotion1 = 0.0;
+			alchemyGUI.potion2Uid = 0;
+			alchemyGUI.animPotion2 = 0.0;
+			alchemyGUI.alchemyResultPotion.type = POTION_EMPTY;
+			alchemyGUI.potionResultUid = 0;
+			alchemyGUI.animPotionResult = 0.0;
+			alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
+			alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
+		});
+		clearRecipeBtn->setTickCallback([](Widget& widget)
+		{
+			genericgui_deselect_fn(widget);
+		});
+		clearRecipeBtn->setDisabled(true);
+
+		auto slider = bgFrame->addSlider("recipe slider");
+		slider->setBorder(16);
+		slider->setMinValue(0);
+		slider->setMaxValue(100);
+		slider->setValue(0);
+		SDL_Rect sliderPos{ alchemyBaseWidth - 26, 8, 20, kRecipeListHeight - 2 * 8 };
+		slider->setRailSize(sliderPos);
+		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		//slider->setCallback(callback);
+		slider->setColor(makeColor(255, 255, 255, 255));
+		slider->setHighlightColor(makeColor(255, 255, 255, 255));
+		slider->setHandleImage("images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setRailImage("images/ui/Sliders/HUD_Slider_Blank.png");
+		slider->setHideGlyphs(true);
+		slider->setDisabled(true);
+		slider->setHideKeyboardGlyphs(true);
+		slider->setHideSelectors(true);
+		slider->setMenuConfirmControlType(0);
+	}
+	{
+		int numGrids = (MAX_ALCH_Y / recipes.kNumRecipesToDisplayVertical) + 1;
+		const int baseSlotOffsetX = 0;
+		const int baseSlotOffsetY = 0;
+		const int baseGridOffsetY = kRecipeListGridY;
+		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+		SDL_Rect recipeSlotsPos{ 6, 0, alchemyBaseWidth, kRecipeListHeight };
+		auto recipeSlotsFrame = recipesFrame->addFrame("alchemy slots");
+		recipeSlotsFrame->setSize(recipeSlotsPos);
+		recipeSlotsFrame->setActualSize(SDL_Rect{ 0, 0, recipeSlotsPos.w, (kRecipeGridImgHeight + 2) * numGrids });
+		recipeSlotsFrame->setHollow(true);
+		recipeSlotsFrame->setAllowScrollBinds(false);
+
+		auto gridImg = recipeSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, (kRecipeGridImgHeight + 2) * numGrids },
+			0xFFFFFFFF, "images/ui/Alchemy/Alchemy_ScrollGrid.png", "grid img");
+		gridImg->tiled = true;
+
+		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+		const int maxRecipesX = MAX_ALCH_X;
+		const int maxRecipesY = MAX_ALCH_Y;
+
+		auto cursorFrame = recipeSlotsFrame->addFrame("active recipe");
+		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+		cursorFrame->setDisabled(true);
+		auto color = makeColor(177, 72, 3, 255);
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TL.png", "cursor topleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_TR.png", "cursor topright");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BL.png", "cursor bottomleft");
+		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
+			color, "images/ui/Inventory/SelectorGrey_BR.png", "cursor bottomright");
+
+		for ( int x = 0; x < maxRecipesX; ++x )
+		{
+			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
+			for ( int y = 0; y < maxRecipesY; ++y )
+			{
+				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
+
+				char slotname[32] = "";
+				snprintf(slotname, sizeof(slotname), "recipe %d %d", x, y);
+
+				auto slotFrame = recipeSlotsFrame->addFrame(slotname);
+				alchemySlotFrames[x + y * 100] = slotFrame;
+				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+				slotFrame->setSize(slotPos);
+
+				createPlayerInventorySlotFrameElements(slotFrame);
+			}
+		}
+	}
+
+	{
+		auto notificationFrame = alchFrame->addFrame("notification");
+		notificationFrame->setHollow(true);
+		notificationFrame->setBorder(0);
+		notificationFrame->setInheritParentFrameOpacity(false);
+		notificationFrame->setDisabled(true);
+		notificationFrame->setSize(SDL_Rect{ 0, 0, 182, 40 });
+
+		auto notifBg = notificationFrame->addImage(SDL_Rect{ 0, 0, 182, 40 }, 0xFFFFFFFF,
+			"images/ui/Alchemy/Alchemy_LabelName_3Row_00.png", "notif bg");
+
+		auto notifIcon = notificationFrame->addImage(SDL_Rect{ 4, 2,
+			players[player]->inventoryUI.getItemSpriteSize(),
+			players[player]->inventoryUI.getItemSpriteSize() }, 0xFFFFFFFF,
+			"", "notif icon");
+
+		auto title = notificationFrame->addField("notif title", 128);
+		title->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		title->setText("New Title Unlocked!");
+		title->setHJustify(Field::justify_t::LEFT);
+		title->setVJustify(Field::justify_t::TOP);
+		title->setSize(SDL_Rect{ notifIcon->pos.x + notifIcon->pos.w + 4, 0, notificationFrame->getSize().w, 24 });
+		title->setColor(makeColor(255, 255, 255, 255));
+
+		auto body = notificationFrame->addField("notif body", 128);
+		body->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		body->setText("Blah Blah Blah!");
+		body->setHJustify(Field::justify_t::LEFT);
+		body->setVJustify(Field::justify_t::TOP);
+		body->setSize(SDL_Rect{ notifIcon->pos.x + notifIcon->pos.w + 4, 20, notificationFrame->getSize().w, 24 });
+		body->setColor(makeColor(255, 255, 255, 255));
+	}
+
 	{
 		auto bgFrame = alchFrame->addFrame("alchemy base");
 		bgFrame->setSize(basePos);
@@ -13169,7 +13607,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
-			"images/ui/Alchemy/Alchemy_Base_00.png", "alchemy base img");
+			"images/ui/Alchemy/Alchemy_Base_01.png", "alchemy base img");
 
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto alembicTitle = bgFrame->addField("alchemy alembic title", 128);
@@ -13210,22 +13648,22 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 		}
 		{
 			auto recipeBtn = bgFrame->addButton("recipe button");
-			SDL_Rect recipeBtnPos{ 12, 74, 182, 40 };
+			SDL_Rect recipeBtnPos{ 12, 72, 182, 40 };
 			recipeBtn->setSize(recipeBtnPos);
 			recipeBtn->setColor(makeColor(255, 255, 255, 255));
 			recipeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-			recipeBtn->setText("RECIPES");
+			recipeBtn->setText(language[4170]);
 			recipeBtn->setFont(itemFont);
 			recipeBtn->setHideGlyphs(true);
 			recipeBtn->setHideKeyboardGlyphs(true);
 			recipeBtn->setHideSelectors(true);
 			recipeBtn->setMenuConfirmControlType(0);
-			recipeBtn->setBackground("");
-			recipeBtn->setColor(makeColor(255, 255, 255, 1));
-			recipeBtn->setHighlightColor(makeColor(255, 255, 255, 1));
-			recipeBtn->setBackgroundHighlighted("");
-			recipeBtn->setBackgroundActivated("");
-			recipeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			recipeBtn->setBackground("images/ui/Alchemy/Alchemy_Recipe_Button_00.png");
+			recipeBtn->setColor(makeColor(255, 255, 255, 255));
+			recipeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			recipeBtn->setBackgroundHighlighted("images/ui/Alchemy/Alchemy_Recipe_ButtonHigh_00.png");
+			recipeBtn->setBackgroundActivated("images/ui/Alchemy/Alchemy_Recipe_ButtonHigh_00.png");
+			//recipeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			recipeBtn->setCallback([](Button& button) {
 				int player = button.getOwner();
 				if ( GenericGUI[player].alchemyGUI.bOpen )
@@ -13245,8 +13683,13 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 				genericgui_deselect_fn(widget);
 			});
 
+			auto openRecipesGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "recipe glyph");
+			openRecipesGlyph->disabled = true;
+			openRecipesGlyph->ontop = true;
+
 			auto closeBtn = bgFrame->addButton("close alchemy button");
-			SDL_Rect closeBtnPos{ basePos.w - 8 - 26, 8, 26, 26 };
+			SDL_Rect closeBtnPos{ basePos.w - 0 - 26, 0, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -13272,6 +13715,45 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 				0xFFFFFFFF, "", "close alchemy glyph");
 			closeGlyph->disabled = true;
 			closeGlyph->ontop = true;
+
+			auto brewBtn = bgFrame->addButton("brew button");
+			SDL_Rect brewPos{ basePos.w - 18 - 64, basePos.h - 20 - 46, 64, 46 };
+			brewBtn->setSize(brewPos);
+			brewBtn->setColor(makeColor(255, 255, 255, 255));
+			brewBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			brewBtn->setText("Brew");
+			brewBtn->setFont(itemFont);
+			brewBtn->setHideGlyphs(true);
+			brewBtn->setHideKeyboardGlyphs(true);
+			brewBtn->setHideSelectors(true);
+			brewBtn->setMenuConfirmControlType(0);
+			brewBtn->setBackground("images/ui/Alchemy/Alchemy_ButtonBrew_Base_00.png");
+			brewBtn->setBackgroundHighlighted("images/ui/Alchemy/Alchemy_ButtonBrew_High_00.png");
+			brewBtn->setBackgroundActivated("images/ui/Alchemy/Alchemy_ButtonBrew_Press_00.png");
+			brewBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			brewBtn->setCallback([](Button& button) {
+				int player = button.getOwner();
+				auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+				alchemyGUI.recipes.activateRecipeIndex = -1;
+				alchemyGUI.potion1Uid = 0;
+				alchemyGUI.animPotion1 = 0.0;
+				alchemyGUI.potion2Uid = 0;
+				alchemyGUI.animPotion2 = 0.0;
+				alchemyGUI.alchemyResultPotion.type = POTION_EMPTY;
+				alchemyGUI.potionResultUid = 0;
+				alchemyGUI.animPotionResult = 0.0;
+				alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
+				alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
+			});
+			brewBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto brewGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "brew glyph");
+			brewGlyph->disabled = true;
+			brewGlyph->ontop = true;
 		}
 
 		{
@@ -13344,143 +13826,19 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 		}*/
 	}
 
-	Frame* frame = alchFrame->addFrame("player recipes");
-	recipesFrame = frame;
-	frame->setSize(SDL_Rect{ 0,
-		0,
-		alchemyBaseWidth,
-		kRecipeListHeight });
-	frame->setHollow(true);
-	frame->setBorder(0);
-	frame->setOwner(player);
-	frame->setInheritParentFrameOpacity(false);
-	frame->setDisabled(true);
-
-	{
-		auto bgFrame = recipesFrame->addFrame("recipe base");
-		bgFrame->setSize(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeListHeight });
-		bgFrame->setHollow(true);
-		const auto bgSize = bgFrame->getSize();
-		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeListHeight },
-			makeColor(255, 255, 255, 128),
-			"images/system/white.png", "recipe base img");
-
-		auto bgHeader = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeHeaderHeight },
-			makeColor(255, 0, 255, 128),
-			"images/system/white.png", "recipe header img");
-
-		auto bgFooter = bgFrame->addImage(SDL_Rect{ 0, 0, alchemyBaseWidth, kRecipeFooterHeight },
-			makeColor(255, 0, 255, 128),
-			"images/system/white.png", "recipe footer img");
-		auto clearRecipeBtn = bgFrame->addButton("clear recipe");
-		clearRecipeBtn->setSize(SDL_Rect{0, 0, alchemyBaseWidth - 20, 26});
-		clearRecipeBtn->setColor(makeColor(255, 255, 255, 255));
-		clearRecipeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
-		clearRecipeBtn->setText("Clear Selected Recipe");
-		clearRecipeBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
-		clearRecipeBtn->setHideGlyphs(true);
-		clearRecipeBtn->setHideKeyboardGlyphs(true);
-		clearRecipeBtn->setHideSelectors(true);
-		clearRecipeBtn->setMenuConfirmControlType(0);
-		clearRecipeBtn->setBackground("");
-		clearRecipeBtn->setColor(makeColor(255, 255, 255, 1));
-		clearRecipeBtn->setHighlightColor(makeColor(255, 255, 255, 1));
-		clearRecipeBtn->setBackgroundHighlighted("");
-		clearRecipeBtn->setBackgroundActivated("");
-		clearRecipeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
-		clearRecipeBtn->setCallback([](Button& button) {
-			int player = button.getOwner();
-			auto& alchemyGUI = GenericGUI[player].alchemyGUI;
-			alchemyGUI.recipes.activateRecipeIndex = -1;
-			alchemyGUI.potion1Uid = 0;
-			alchemyGUI.animPotion1 = 0.0;
-			alchemyGUI.potion2Uid = 0;
-			alchemyGUI.animPotion2 = 0.0;
-			alchemyGUI.alchemyResultPotion.type = POTION_EMPTY;
-			alchemyGUI.potionResultUid = 0;
-			alchemyGUI.animPotionResult = 0.0;
-			alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
-			alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
-		});
-		clearRecipeBtn->setTickCallback([](Widget& widget)
-		{
-			genericgui_deselect_fn(widget);
-		});
-		clearRecipeBtn->setDisabled(true);
-
-		auto slider = bgFrame->addSlider("recipe slider");
-		slider->setBorder(16);
-		slider->setMinValue(0);
-		slider->setMaxValue(100);
-		slider->setValue(0);
-		SDL_Rect sliderPos{ alchemyBaseWidth - 26, 8, 20, kRecipeListHeight - 2 * 8 };
-		slider->setRailSize(sliderPos);
-		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
-		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		//slider->setCallback(callback);
-		slider->setColor(makeColor(255, 255, 255, 255));
-		slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		slider->setHandleImage("images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
-		slider->setRailImage("images/ui/Sliders/HUD_Slider_Blank.png");
-		slider->setHideGlyphs(true);
-		slider->setHideKeyboardGlyphs(true);
-		slider->setHideSelectors(true);
-		slider->setMenuConfirmControlType(0);
-	}
-	{
-		int numGrids = (MAX_ALCH_Y / recipes.kNumRecipesToDisplayVertical) + 1;
-		const int baseSlotOffsetX = 0;
-		const int baseSlotOffsetY = 0;
-		const int baseGridOffsetY = kRecipeListGridY;
-		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
-
-		SDL_Rect recipeSlotsPos{ 6, 0, alchemyBaseWidth, kRecipeListHeight };
-		auto recipeSlotsFrame = recipesFrame->addFrame("alchemy slots");
-		recipeSlotsFrame->setSize(recipeSlotsPos);
-		recipeSlotsFrame->setActualSize(SDL_Rect{ 0, 0, recipeSlotsPos.w, (kRecipeGridImgHeight + 2) * numGrids });
-		recipeSlotsFrame->setHollow(true);
-		recipeSlotsFrame->setAllowScrollBinds(false);
-
-		auto gridImg = recipeSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, (kRecipeGridImgHeight + 2) * numGrids },
-			0xFFFFFFFF, "images/ui/Alchemy/Alchemy_ScrollGrid.png", "grid img");
-		gridImg->tiled = true;
-
-		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
-		const int maxRecipesX = MAX_ALCH_X;
-		const int maxRecipesY = MAX_ALCH_Y;
-
-		auto cursorFrame = recipeSlotsFrame->addFrame("active recipe");
-		cursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		cursorFrame->setDisabled(true);
-		auto color = makeColor(177, 72, 3, 255);
-		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_TL.png", "cursor topleft");
-		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_TR.png", "cursor topright");
-		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_BL.png", "cursor bottomleft");
-		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
-			color, "images/ui/Inventory/SelectorGrey_BR.png", "cursor bottomright");
-
-		for ( int x = 0; x < maxRecipesX; ++x )
-		{
-			currentSlotPos.x = baseSlotOffsetX + (x * inventorySlotSize);
-			for ( int y = 0; y < maxRecipesY; ++y )
-			{
-				currentSlotPos.y = baseSlotOffsetY + (y * inventorySlotSize);
-
-				char slotname[32] = "";
-				snprintf(slotname, sizeof(slotname), "recipe %d %d", x, y);
-
-				auto slotFrame = recipeSlotsFrame->addFrame(slotname);
-				alchemySlotFrames[x + y * 100] = slotFrame;
-				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
-				slotFrame->setSize(slotPos);
-
-				createPlayerInventorySlotFrameElements(slotFrame);
-			}
-		}
-	}
+	auto activateSelectionGlyph = alchFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "", "activate glyph");
+	activateSelectionGlyph->disabled = true;
+	activateSelectionGlyph->ontop = true;
+	auto activateSelectionPrompt = alchFrame->addField("activate prompt", 64);
+	activateSelectionPrompt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+	activateSelectionPrompt->setText("");
+	activateSelectionPrompt->setHJustify(Field::justify_t::LEFT);
+	activateSelectionPrompt->setVJustify(Field::justify_t::TOP);
+	activateSelectionPrompt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	activateSelectionPrompt->setColor(makeColor(255, 255, 255, 255));
+	activateSelectionPrompt->setDisabled(true);
+	activateSelectionPrompt->setOntop(true);
 }
 
 void GenericGUIMenu::AlchemyGUI_t::selectAlchemySlot(const int x, const int y)
@@ -13537,7 +13895,13 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 	{
 		snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
 	}
+
+	auto activateSelectionPrompt = alchFrame->findField("activate prompt");
+	activateSelectionPrompt->setText("");
+
 	int player = parentGUI.getPlayer();
+	bool isSameResult = false;
+	bool isDuplicationResult = false;
 	if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
 	{
 		bool isEquipped = itemIsEquipped(item, player);
@@ -13552,9 +13916,7 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 		auto find = clientLearnedAlchemyIngredients[player].find(item->type);
 		Item* basePotion = nullptr;
 		Item* secondaryPotion = nullptr;
-		bool isDuplicationResult = false;
 		bool isRandomResult = false;
-		bool isSameResult = false;
 		bool recipeMissingMaterials = false;
 		if ( isTooltipForRecipe )
 		{
@@ -13684,6 +14046,63 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 	}
 	itemDesc = buf;
 	itemType = item->type;
+	if ( itemActionType == ALCHEMY_ACTION_OK )
+	{
+		if ( isTooltipForRecipe )
+		{
+			int index = 0;
+			activateSelectionPrompt->setText(language[4174]);
+			if ( recipes.activateRecipeIndex >= 0 )
+			{
+				for ( auto& entry : recipes.recipeList )
+				{
+					if ( &entry.resultItem == item )
+					{
+						if ( recipes.activateRecipeIndex == index )
+						{
+							activateSelectionPrompt->setText(language[4175]);
+						}
+						break;
+					}
+					++index;
+				}
+			}
+			else
+			{
+				activateSelectionPrompt->setText(language[4174]);
+			}
+		}
+		else if ( !isTooltipForResultPotion )
+		{
+			if ( item->uid == potion1Uid || item->uid == potion2Uid )
+			{
+				activateSelectionPrompt->setText(language[4173]);
+			}
+			else
+			{
+				activateSelectionPrompt->setText(language[4172]);
+			}
+		}
+		else if ( isTooltipForResultPotion )
+		{
+			bool usingGamepad = inputs.hasController(player) && !inputs.getVirtualMouse(player)->draw_cursor;
+			if ( !usingGamepad )
+			{
+				if ( isSameResult )
+				{
+					activateSelectionPrompt->setText(language[4177]);
+				}
+				else if ( isDuplicationResult )
+				{
+					activateSelectionPrompt->setText(language[4178]);
+				}
+				else
+				{
+					activateSelectionPrompt->setText(language[4176]);
+				}
+			}
+		}
+	}
 	return;
 }
 
@@ -13770,12 +14189,21 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::closeRecipePanel()
 	scrollPercent = 0.0;
 	scrollInertia = 0.0;
 	scrollAnimateX = scrollSetpoint;
+	bool wasOpen = bOpen;
 	bOpen = false;
 	bFirstTimeSnapCursor = false;
 	recipeList.clear();
 	activateRecipeIndex = -1;
 	alchemy.animRecipeAutoAddToSlot1Uid = 0;
 	alchemy.animRecipeAutoAddToSlot2Uid = 0;
+	if ( wasOpen && alchemy.getSelectedAlchemySlotX() >= 0 )
+	{
+		alchemy.selectAlchemySlot(alchemy.ALCH_SLOT_BASE_POTION_X, 0);
+		if ( alchemy.bOpen )
+		{
+			alchemy.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+		}
+	}
 }
 
 void buildRecipeList(const int player)
@@ -13789,18 +14217,26 @@ void buildRecipeList(const int player)
 	auto oldSize = recipes.recipeList.size();
 	recipes.recipeList.clear();
 
-	std::unordered_map<int, std::vector<Item*>> inventoryPotions;
+	std::unordered_map<int, std::pair<std::vector<Item*>, int>> inventoryPotions;
 	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		if ( !item ) { continue; }
-		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+		if ( itemCategory(item) == POTION )
 		{
-			if ( !item->identified || itemIsEquipped(item, player) )
+			if ( !item->identified )
 			{
 				continue;
 			}
-			inventoryPotions[item->type].push_back(item);
+			if ( inventoryPotions.find(item->type) == inventoryPotions.end() )
+			{
+				inventoryPotions[item->type].second = 0;
+			}
+			if ( !itemIsEquipped(item, player) )
+			{
+				inventoryPotions[item->type].first.push_back(item);
+			}
+			inventoryPotions[item->type].second += item->count;
 		}
 	}
 
@@ -13811,7 +14247,7 @@ void buildRecipeList(const int player)
 		Item* secondaryPotion = nullptr;
 		if ( !hideRecipe && inventoryPotions.find(entry.second.first) != inventoryPotions.end() )
 		{
-			for ( auto& item : inventoryPotions[entry.second.first] )
+			for ( auto& item : inventoryPotions[entry.second.first].first )
 			{
 				if ( !basePotion )
 				{
@@ -13874,7 +14310,7 @@ void buildRecipeList(const int player)
 
 		if ( !hideRecipe && inventoryPotions.find(entry.second.second) != inventoryPotions.end() )
 		{
-			for ( auto& item : inventoryPotions[entry.second.second] )
+			for ( auto& item : inventoryPotions[entry.second.second].first )
 			{
 				if ( !secondaryPotion )
 				{
@@ -13943,10 +14379,7 @@ void buildRecipeList(const int player)
 			recipe.resultItem.count = 0;
 			if ( inventoryPotions.find(recipe.resultItem.type) != inventoryPotions.end() )
 			{
-				for ( auto& item : inventoryPotions[recipe.resultItem.type] )
-				{
-					recipe.resultItem.count += item->count;
-				}
+				recipe.resultItem.count += inventoryPotions[recipe.resultItem.type].second;
 			}
 			recipe.resultItem.identified = true;
 			recipe.resultItem.status = EXCELLENT;
@@ -14107,8 +14540,8 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 		int totalFrameHeightChange = kRecipeHeaderHeight;
 		recipeFramePos.h = frameHeight + totalFrameHeightChange + kRecipeFooterHeight;
 		recipeFrame->setSize(recipeFramePos);
-		baseBackgroundImg->pos.y = totalFrameHeightChange;
-		baseHeaderImg->pos.y = baseBackgroundImg->pos.y - baseHeaderImg->pos.h;
+		baseBackgroundImg->pos.y = 0;
+		baseHeaderImg->pos.y = totalFrameHeightChange - baseHeaderImg->pos.h;
 
 		clearRecipeBtn->setPos(recipeFramePos.w / 2 - clearRecipeBtn->getSize().w / 2,
 			recipeFramePos.h - kRecipeFooterHeight / 2 - clearRecipeBtn->getSize().h / 2);
@@ -14120,6 +14553,8 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 		baseFrame->setSize(recipeBasePos);
 
 		int numGrids = (MAX_ALCH_Y / getNumRecipesToDisplayVertical()) + 1;
+		auto gridImg = recipeSlotsFrame->findImage("grid img");
+
 		SDL_Rect recipeSlotsFramePos = recipeSlotsFrame->getSize();
 
 		int heightChange = 0;
@@ -14128,19 +14563,26 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 			heightChange = slotSize * (kNumRecipesToDisplayVertical - getNumRecipesToDisplayVertical());
 		}
 		recipeSlotsFramePos.y = 4 + heightChange + totalFrameHeightChange;
+		if ( slider->isDisabled() )
+		{
+			recipeSlotsFramePos.x = (recipeBasePos.w / 2) - 6 - gridImg->pos.w / 2;
+		}
+		else
+		{
+			recipeSlotsFramePos.x = 6;
+		}
 		recipeSlotsFramePos.h = (kRecipeGridImgHeight + 2) - heightChange;
 		recipeSlotsFrame->setActualSize(SDL_Rect{ recipeSlotsFrame->getActualSize().x,
 			recipeSlotsFrame->getActualSize().y,
 			recipeSlotsFrame->getActualSize().w,
 			(recipeSlotsFramePos.h) * numGrids });
 		recipeSlotsFrame->setSize(recipeSlotsFramePos);
-		auto gridImg = recipeSlotsFrame->findImage("grid img");
 		gridImg->pos.y = kRecipeListGridY;
 		gridImg->pos.h = (recipeSlotsFramePos.h) * numGrids;
 
 		SDL_Rect sliderPos = slider->getRailSize();
 		sliderPos.y = 8 + heightChange + totalFrameHeightChange;
-		sliderPos.h = (kRecipeListHeight - 2 * 8) - heightChange;
+		sliderPos.h = (kRecipeListHeight - 2 * 8);
 		slider->setRailSize(sliderPos);
 	}
 
@@ -14151,7 +14593,7 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 
 	buildRecipeList(player);
 
-	if ( !recipeList.empty() )
+	if ( !recipeList.empty() && false ) // disable scrolling
 	{
 		for ( auto it = recipeList.rbegin(); it != recipeList.rend(); ++it )
 		{
@@ -14237,7 +14679,7 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 	}
 	else
 	{
-		slider->setDisabled(false);
+		//slider->setDisabled(false);
 	}
 
 	currentScrollRow = scrollSetpoint / slotSize;

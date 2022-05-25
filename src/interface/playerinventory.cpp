@@ -1556,6 +1556,141 @@ void select_tinkering_slot(int player, int currentx, int currenty, int diffx, in
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	int lowestItemY = alchemyGUI.recipes.getNumRecipesToDisplayVertical() - 1;
+	if ( !alchemyGUI.recipes.bOpen )
+	{
+		lowestItemY = 0;
+	}
+
+	if ( currentx < 0 )
+	{
+		if ( diffy != 0 )
+		{
+			// main alchemy frame
+			if ( currentx == alchemyGUI.ALCH_SLOT_RESULT_POTION_X )
+			{
+				x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+			}
+			else if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X || currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+			{
+				x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+			}
+			y = 0;
+		}
+		else if ( diffx != 0 )
+		{
+			if ( diffx > 0 )
+			{
+				if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X )
+				{
+					x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
+				}
+				else if ( currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+				{
+					if ( alchemyGUI.recipes.bOpen )
+					{
+						x = 0;
+						y = 0;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(0, 0);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+				else
+				{
+					if ( alchemyGUI.recipes.bOpen )
+					{
+						x = 0;
+						y = 4;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(0, 4);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+			}
+			else if ( diffx < 0 )
+			{
+				if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X )
+				{
+					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 0);
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+					return;
+				}
+				else if ( currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+				{
+					x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+				}
+				else
+				{
+					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 4);
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+					return;
+				}
+			}
+			y = 0;
+		}
+	}
+	else if ( currentx >= 0 )
+	{
+		if ( alchemyGUI.recipes.bOpen )
+		{
+			if ( diffy != 0 )
+			{
+				if ( y < 0 )
+				{
+					y = lowestItemY;
+				}
+				if ( y > lowestItemY )
+				{
+					y = 0;
+				}
+				x = std::min(std::max(0, currentx), alchemyGUI.MAX_ALCH_X - 1);
+			}
+			else if ( diffx != 0 )
+			{
+				if ( x < 0 )
+				{
+					if ( y < 3 )
+					{
+						x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
+						y = 0;
+					}
+					else
+					{
+						x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+						y = 0;
+					}
+				}
+				else if ( x >= alchemyGUI.MAX_ALCH_X )
+				{
+					players[player]->inventoryUI.selectSlot(0, currenty);
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+					return;
+				}
+			}
+		}
+		else
+		{
+			x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+			y = 0;
+		}
+	}
+	alchemyGUI.selectAlchemySlot(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	int x = currentx + diffx;
@@ -1871,6 +2006,29 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 			return;
 		}
+		else if ( !selectedItem && GenericGUI[player].alchemyGUI.bOpen )
+		{
+			if ( y >= GenericGUI[player].alchemyGUI.MAX_ALCH_Y )
+			{
+				y = GenericGUI[player].alchemyGUI.MAX_ALCH_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			if ( GenericGUI[player].alchemyGUI.recipes.bOpen )
+			{
+				select_alchemy_slot(player, GenericGUI[player].alchemyGUI.MAX_ALCH_X - 1, y, 0, 0);
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
+			else
+			{
+				select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X, 0, 0, 0);
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
+		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
 		{
 			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
@@ -1905,6 +2063,20 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			}
 			select_chest_slot(player, 0, y, 0, 0);
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+			return;
+		}
+		else if ( !selectedItem && GenericGUI[player].alchemyGUI.bOpen )
+		{
+			if ( y >= GenericGUI[player].alchemyGUI.MAX_ALCH_Y )
+			{
+				y = GenericGUI[player].alchemyGUI.MAX_ALCH_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_BASE_POTION_X, 0, 0, 0);
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
 			return;
 		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
@@ -6464,6 +6636,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+				{
+					alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
@@ -6629,6 +6805,7 @@ void Player::Inventory_t::updateInventory()
 							&& y == alchemyGUI.getSelectedAlchemySlotY()
 							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
 							&& alchemyGUI.isInteractable
+							&& !(x == alchemyGUI.ALCH_SLOT_RESULT_POTION_X && alchemyGUI.animPotionResult > 0.001)
 							&& slotVisible )
 						{
 							slotFrameToHighlight = slotFrame;
@@ -7950,7 +8127,8 @@ void Player::Inventory_t::updateInventory()
 				if ( ((tooltipOpen && (!tooltipPromptWasDisabled))
 					|| bIsTooltipDelayed()
 					|| sellingItemToShop
-					|| tinkerOpen)
+					|| tinkerOpen
+					|| alchemyOpen)
 					&& inventoryControlActive
 					&& !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
@@ -8967,6 +9145,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	bool sellingToShop = false;
 	bool tinkerOpen = false;
+	bool alembicOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -8978,13 +9157,22 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		tinkerOpen = true;
 	}
+	else if ( GenericGUI[player].alchemyGUI.bOpen )
+	{
+		alembicOpen = true;
+	}
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop || tinkerOpen )
+		if ( sellingToShop || tinkerOpen || alembicOpen )
 		{
 			if ( getContextMenuOptionBindingName(*it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(*it) == "MenuCancel" )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			if ( alembicOpen && getContextMenuOptionBindingName(*it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;

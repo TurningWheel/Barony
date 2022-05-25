@@ -916,6 +916,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_CHARACTERSHEET:
 				case Player::GUI_t::MODULE_CHEST:
 				case Player::GUI_t::MODULE_SHOP:
+				case Player::GUI_t::MODULE_ALCHEMY:
 					leftBumperTxt->setDisabled(false);
 					leftBumperTxt->setText("/");
 					break;
@@ -933,6 +934,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_CHARACTERSHEET:
 				case Player::GUI_t::MODULE_CHEST:
 				case Player::GUI_t::MODULE_SHOP:
+				case Player::GUI_t::MODULE_ALCHEMY:
 					rightBumperTxt->setDisabled(false);
 					rightBumperTxt->setText(language[4092]);
 					break;
@@ -1054,7 +1056,7 @@ void Player::HUD_t::updateUINavigation()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
-			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen )
+			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -1107,7 +1109,7 @@ void Player::HUD_t::updateUINavigation()
 			}
 
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
-				&& !GenericGUI[player.playernum].tinkerGUI.bOpen )
+				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
@@ -16086,6 +16088,21 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 			else if ( tinkerGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			auto& alchemyGUI = GenericGUI[player.playernum].alchemyGUI;
+			if ( !alchemyGUI.alchemyGUIHasBeenCreated()
+				|| alchemyGUI.alchFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( alchemyGUI.isInteractable )
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;

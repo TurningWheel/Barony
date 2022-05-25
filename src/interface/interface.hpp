@@ -197,6 +197,7 @@ void select_spell_slot(int player, int currentx, int currenty, int diffx, int di
 void select_chest_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -751,6 +752,15 @@ public:
 			ALCHEMY_VIEW_BREW,
 			ALCHEMY_VIEW_RECIPES
 		};
+		struct AlchNotification_t
+		{
+			std::string img = "";
+			std::string title = "";
+			std::string body = "";
+			real_t animx = 0.0;
+			int state = 0;
+		};
+		std::vector<std::pair<Uint32, AlchNotification_t>> notifications;
 		AlchemyView_t currentView = ALCHEMY_VIEW_BREW;
 		Frame* alchFrame = nullptr;
 		real_t animx = 0.0;
