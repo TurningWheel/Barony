@@ -6131,9 +6131,19 @@ formalities of gold, now!#
 4163 Duplication Chance:#
 4164 [Random result]#
 4165 [Unequip to use]#
-4166 [Copy of first potion]#
-4167 Caution!!
-Volatile combination#
+4166 [Copy of left potion]#
+4167 Caution!! Unstable
+Combination!#
 4168 [Missing ingredients]#
+4169 Clear Recipe#
+4170 RECIPES#
+4171 RECIPES#
+4172 Select#
+4173 Remove#
+4174 Prepare#
+4175 Clear#
+4176 Brew#
+4177 Decant#
+4178 Brew#
 
 4199 end#
