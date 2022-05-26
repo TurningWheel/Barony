@@ -3937,7 +3937,7 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 		&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK && stats[player.playernum]->cloak->status != BROKEN
 		&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
 	{
-		y = DEFAULT_INVENTORY_SIZEY + 1;
+		y = DEFAULT_INVENTORY_SIZEY + 2;
 	}
 	return y;
 }

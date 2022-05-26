@@ -11703,7 +11703,7 @@ bool playerKnowsRecipe(const int player, ItemType basePotion, ItemType secondary
 
 void getInventoryItemAlchemyAnimSlotPos(Frame* slotFrame, Player* player, int itemx, int itemy, int& outPosX, int& outPosY, int yOffset)
 {
-	outPosX = slotFrame->getSize().x;
+	outPosX = slotFrame->getSize().x + slotFrame->getParent()->getSize().x;
 	outPosY = slotFrame->getSize().y + (player->inventoryUI.bCompactView ? 8 : 0) + yOffset;
 	if ( itemy >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
 	{
@@ -11824,6 +11824,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 					isInteractable = false;
 				}
 				alchFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+				alchFramePos.w = player->camera_virtualWidth();
 			}
 		}
 	}
@@ -11859,6 +11860,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	{
 		baseFramePos.x += alchFramePos.x;
 		alchFramePos.w += alchFramePos.x;
+		alchFramePos.w = std::min(player->camera_virtualWidth(), alchFramePos.w);
 		alchFramePos.x = 0;
 		baseFrame->setSize(baseFramePos);
 	}
@@ -11958,13 +11960,12 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	recipes.updateRecipePanel();
 	if ( animx >= 0.999 )
 	{
-		if ( !recipesFrame->isDisabled() && recipes.bOpen )
+		SDL_Rect recipePos = recipesFrame->getSize();
+		if ( !player->inventoryUI.bCompactView )
 		{
-			SDL_Rect recipePos = recipesFrame->getSize();
-			if ( recipePos.x + recipePos.w > alchFramePos.w )
+			if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 			{
-				int diff = (recipePos.x + recipePos.w) - alchFramePos.w;
-				alchFramePos.w += diff;
+				alchFramePos.w += recipePos.w;
 				alchFrame->setSize(alchFramePos);
 			}
 		}
@@ -12002,12 +12003,6 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 
 	auto animPotion1Frame = getAlchemySlotFrame(ALCH_SLOT_BASE_POTION_X, 0);
-	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		real_t setpointDiffX = fpsScale * std::max(.05, (animPotion1)) / 3.0;
-		animPotion1 -= setpointDiffX;
-		animPotion1 = std::max(0.0, animPotion1);
-	}
 	animPotion1Frame->setDisabled(true);
 	Item* potion1Item = nullptr;
 	if ( animRecipeAutoAddToSlot1Uid != 0 && animPotionResult < 0.001 )
@@ -12019,6 +12014,12 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			potion1Uid = animRecipeAutoAddToSlot1Uid;
 		}
 		animRecipeAutoAddToSlot1Uid = 0;
+	}
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.05, (animPotion1)) / 3.0;
+		animPotion1 -= setpointDiffX;
+		animPotion1 = std::max(0.0, animPotion1);
 	}
 	if ( potion1Uid != 0 )
 	{
@@ -13276,17 +13277,9 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 								}
 								else if ( auto slotFrame = player->inventoryUI.getInventorySlotFrame(item->x, item->y) )
 								{
-									animPotionResultDestX = slotFrame->getSize().x;
-									animPotionResultDestY = slotFrame->getSize().y + 2 + potionAnimOffsetY;
-									animPotionResultDestY += (player->inventoryUI.bCompactView ? 6 : 0);
-									if ( item->y >= player->inventoryUI.DEFAULT_INVENTORY_SIZEY )
-									{
-										// backpack slots, add another offset.
-										if ( auto invSlotsFrame = player->inventoryUI.frame->findFrame("inventory slots") )
-										{
-											animPotionResultDestY += invSlotsFrame->getSize().h;
-										}
-									}
+									getInventoryItemAlchemyAnimSlotPos(slotFrame, player, item->x, item->y, animPotionResultDestX, animPotionResultDestY, potionAnimOffsetY);
+									animPotionResultDestY += 2;
+									animPotionResultDestY += (player->inventoryUI.bCompactView ? -2 : 0);
 									animPotionResult = 1.0;
 								}
 							}
