@@ -2453,19 +2453,19 @@ namespace MainMenu {
 		sort_text->setHJustify(Field::justify_t::CENTER);
 
 		// background
-		window->addImage(
-			SDL_Rect{18, 54, 942, 658},
-			0xffffffff,
-			"images/system/white.png",
-			"rock_background_dimmer"
-		);
 		auto rock_background = window->addImage(
 			SDL_Rect{18, 54, 942, 658},
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Settings/Settings_BGTile00.png",
+			"*images/ui/Main Menus/Settings/Settings_Window_06_BGPattern.png",
 			"rock_background"
 		);
 		rock_background->tiled = true;
+		auto gradient_background = window->addImage(
+			SDL_Rect{18, 54, 942, 658},
+			makeColor(255, 255, 255, 255),
+			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
+			"gradient_background"
+		);
 		auto window_frame = window->addImage(
 			window->getActualSize(),
 			0xffffffff,
@@ -3295,8 +3295,8 @@ namespace MainMenu {
 		}
 		settings_subwindow = settings->addFrame("settings_subwindow");
 		settings_subwindow->setScrollBarsEnabled(false);
-		settings_subwindow->setSize(SDL_Rect{16, 71 * 2, 547 * 2, 224 * 2});
-		settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 224 * 2});
+		settings_subwindow->setSize(SDL_Rect{16, 71 * 2, 547 * 2, 223 * 2});
+		settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 223 * 2});
 		settings_subwindow->setColor(0);
 		settings_subwindow->setBorder(0);
 		settings_subwindow->setTickCallback([](Widget& widget){
@@ -3307,15 +3307,21 @@ namespace MainMenu {
 		auto rock_background = settings_subwindow->addImage(
 			settings_subwindow->getActualSize(),
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Settings/Settings_BGTile00.png",
+			"*images/ui/Main Menus/Settings/Settings_Window_06_BGPattern.png",
 			"background"
 		);
 		rock_background->tiled = true;
+		auto gradient_background = settings_subwindow->addImage(
+			settings_subwindow->getActualSize(),
+			makeColor(255, 255, 255, 255),
+			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
+			"gradient_background"
+		);
 		auto slider = settings_subwindow->addSlider("scroll_slider");
-		slider->setBorder(24);
+		slider->setBorder(48);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{1040, 8, 30, 440});
-		slider->setRailImage("*images/ui/Main Menus/Settings/Settings_Slider_Backing00.png");
+		slider->setRailSize(SDL_Rect{1026, 0, 54, 474});
+		slider->setRailImage("*images/ui/Main Menus/Settings/Settings_Slider_Backing05.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("*images/ui/Main Menus/Settings/Settings_Slider_Boulder00.png");
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -3325,9 +3331,12 @@ namespace MainMenu {
 			actualSize.y = slider.getValue();
 			frame->setActualSize(actualSize);
 			auto railSize = slider.getRailSize();
-			railSize.y = 8 + actualSize.y;
+			railSize.y = actualSize.y;
 			slider.setRailSize(railSize);
 			slider.updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
 			});
 		slider->setTickCallback([](Widget& widget){
 			Slider* slider = static_cast<Slider*>(&widget);
@@ -3335,9 +3344,12 @@ namespace MainMenu {
 			auto actualSize = frame->getActualSize();
 			slider->setValue(actualSize.y);
 			auto railSize = slider->getRailSize();
-			railSize.y = 8 + actualSize.y;
+			railSize.y = actualSize.y;
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
 			});
 		slider->setWidgetSearchParent("settings");
 		slider->setWidgetBack("discard_and_exit");
@@ -3474,7 +3486,7 @@ namespace MainMenu {
 		window->setColor(0);
 
 		auto tooltip = window->addField("tooltip", 256);
-		tooltip->setSize(SDL_Rect{30, 566, 766, 54});
+		tooltip->setSize(SDL_Rect{66, 594, 646, 22});
 		tooltip->setFont(smallfont_no_outline);
 		tooltip->setJustify(Field::justify_t::CENTER);
 		tooltip->setText("");
@@ -3487,7 +3499,7 @@ namespace MainMenu {
 		);
 
 		auto timber = window->addImage(
-			window->getActualSize(),
+			SDL_Rect{0, 54, 826, 78},
 			0xffffffff,
 			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window01.png",
 			"timber"
@@ -3501,8 +3513,8 @@ namespace MainMenu {
 		banner->setJustify(Field::justify_t::CENTER);
 
 		auto subwindow = window->addFrame("subwindow");
-		subwindow->setSize(SDL_Rect{30, 64, 766, 502});
-		subwindow->setActualSize(SDL_Rect{0, 0, 766, 502});
+		subwindow->setSize(SDL_Rect{30, 64, 766, 524});
+		subwindow->setActualSize(SDL_Rect{0, 0, 766, 524});
 		subwindow->setScrollBarsEnabled(false);
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
@@ -3515,16 +3527,23 @@ namespace MainMenu {
 		auto rocks = subwindow->addImage(
 			subwindow->getActualSize(),
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks00.png",
+			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks01.png",
 			"background"
 		);
 		rocks->tiled = true;
 
+		auto gradient_background = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(255, 255, 255, 255),
+			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
+			"gradient_background"
+		);
+
 		auto slider = subwindow->addSlider("scroll_slider");
-		slider->setBorder(24);
+		slider->setBorder(48);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{724, 8, 30, 486});
-		slider->setRailImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar00.png");
+		slider->setRailSize(SDL_Rect{712, 0, 54, 554});
+		slider->setRailImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar01.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -3534,9 +3553,12 @@ namespace MainMenu {
 			actualSize.y = slider.getValue();
 			frame->setActualSize(actualSize);
 			auto railSize = slider.getRailSize();
-			railSize.y = 8 + actualSize.y;
+			railSize.y = actualSize.y;
 			slider.setRailSize(railSize);
 			slider.updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
 			});
 		slider->setTickCallback([](Widget& widget){
 			Slider* slider = static_cast<Slider*>(&widget);
@@ -3544,9 +3566,12 @@ namespace MainMenu {
 			auto actualSize = frame->getActualSize();
 			slider->setValue(actualSize.y);
 			auto railSize = slider->getRailSize();
-			railSize.y = 8 + actualSize.y;
+			railSize.y = actualSize.y;
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
 			});
 		slider->setWidgetSearchParent(name);
 		slider->setWidgetBack("discard_and_exit");
@@ -4123,34 +4148,6 @@ bind_failed:
 		}
 		int y = 0;
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
-			"Disable the appearance of blood and other explicit kinds of content in the game",
-			allSettings.content_control_enabled, [](Button& button){soundToggle(); allSettings.content_control_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
-			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
-			allSettings.colorblind_mode_enabled, [](Button& button){soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed();});
-		const char* arachnophobia_desc;
-		if (intro) {
-		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
-		} else {
-		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
-		}
-		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
-			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
-			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
-
-		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
-			"Toggle the camera's ability to twist and roll when the player stumbles or receives damage.",
-			allSettings.shaking_enabled, [](Button& button){soundToggle(); allSettings.shaking_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing",
-			"Toggle the camera's ability to bob steadily as the player moves.",
-			allSettings.bobbing_enabled, [](Button& button){soundToggle(); allSettings.bobbing_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
-			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
-			allSettings.light_flicker_enabled, [](Button& button){soundToggle(); allSettings.light_flicker_enabled = button.isPressed();});
-
 		int selected_res = 0;
 		std::list<resolution> resolutions;
 		getResolutionList(allSettings.video.display_id, resolutions);
@@ -4216,32 +4213,63 @@ bind_failed:
 			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
 #endif
 
+		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
+		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
+			"Disable the appearance of blood and other explicit kinds of content in the game",
+			allSettings.content_control_enabled, [](Button& button){soundToggle(); allSettings.content_control_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
+			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
+			allSettings.colorblind_mode_enabled, [](Button& button){soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed();});
+		const char* arachnophobia_desc;
+		if (intro) {
+		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
+		} else {
+		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
+		}
+		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
+			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
+			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
+
+		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
+		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
+			"Toggle the camera's ability to twist and roll when the player stumbles or receives damage.",
+			allSettings.shaking_enabled, [](Button& button){soundToggle(); allSettings.shaking_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing",
+			"Toggle the camera's ability to bob steadily as the player moves.",
+			allSettings.bobbing_enabled, [](Button& button){soundToggle(); allSettings.bobbing_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
+			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
+			allSettings.light_flicker_enabled, [](Button& button){soundToggle(); allSettings.light_flicker_enabled = button.isPressed();});
+
 #ifndef NINTENDO
-		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "content_control"},
-			{Setting::Type::Boolean, "colorblind_mode"},
-			{Setting::Type::Boolean, "arachnophobia_filter"},
-			{Setting::Type::Boolean, "shaking"},
-			{Setting::Type::Boolean, "bobbing"},
-			{Setting::Type::Boolean, "light_flicker"},
+		hookSettings(*settings_subwindow,{
+			{Setting::Type::Dropdown, "device"},
 			{Setting::Type::Dropdown, "resolution"},
 			{Setting::Type::Dropdown, "window_mode"},
 			{Setting::Type::Boolean, "vsync"},
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
-			{Setting::Type::Slider, "fps"}});
-#else
-		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "content_control"},
+			{Setting::Type::Slider, "fps"},
+			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},
 			{Setting::Type::Boolean, "arachnophobia_filter"},
 			{Setting::Type::Boolean, "shaking"},
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
+			});
+#else
+		hookSettings(*settings_subwindow,{
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Slider, "gamma"},
-			{Setting::Type::Slider, "fov"}});
+			{Setting::Type::Slider, "fov"},
+			{Setting::Type::Boolean, "content_control"},
+			{Setting::Type::Boolean, "colorblind_mode"},
+			{Setting::Type::Boolean, "arachnophobia_filter"},
+			{Setting::Type::Boolean, "shaking"},
+			{Setting::Type::Boolean, "bobbing"},
+			{Setting::Type::Boolean, "light_flicker"},
+			});
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "content_control"});
@@ -10443,25 +10471,25 @@ bind_failed:
 		timber->ontop = true;
 
 		auto subwindow = window->addFrame("subwindow");
-		subwindow->setSize(SDL_Rect{22, 142, 1164, 476}); // 1118
+		subwindow->setSize(SDL_Rect{22, 142, 1118, 476});
 		subwindow->setActualSize(SDL_Rect{0, 0, 1164, 774});
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
 
-		auto rock_background_dimmer = subwindow->addImage(
-			subwindow->getActualSize(),
-			0xffffffff,
-			"images/system/white.png",
-			"rock_background_dimmer"
-		);
-
 		auto rock_background = subwindow->addImage(
 			subwindow->getActualSize(),
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Play/HallofTrials/HoT_Background_00.png",
+			"*images/ui/Main Menus/Play/HallofTrials/Settings_Window_06_BGPattern.png",
 			"rock_background"
 		);
 		rock_background->tiled = true;
+
+		auto gradient_background = subwindow->addImage(
+			SDL_Rect{0, 0, 1164, 476},
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_02_BGGradient.png",
+			"gradient_background"
+		);
 
 		auto window_title = window->addField("title", 64);
 		window_title->setFont(banner_font);
@@ -10526,10 +10554,10 @@ bind_failed:
 		}
 
 		auto slider = subwindow->addSlider("scroll_slider");
-		slider->setBorder(24);
+		slider->setBorder(48);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{1072, 8, 30, 440});
-		slider->setRailImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_00.png");
+		slider->setRailSize(SDL_Rect{1118 - 54, 0, 54, 476});
+		slider->setRailImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_01.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -10539,9 +10567,12 @@ bind_failed:
 			actualSize.y = slider.getValue();
 			frame->setActualSize(actualSize);
 			auto railSize = slider.getRailSize();
-			railSize.y = 8 + actualSize.y;
+			railSize.y = actualSize.y;
 			slider.setRailSize(railSize);
 			slider.updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
 			});
 		slider->setTickCallback([](Widget& widget){
 			Slider* slider = static_cast<Slider*>(&widget);
@@ -10549,9 +10580,12 @@ bind_failed:
 			auto actualSize = frame->getActualSize();
 			slider->setValue(actualSize.y);
 			auto railSize = slider->getRailSize();
-			railSize.y = 8 + actualSize.y;
+			railSize.y = actualSize.y;
 			slider->setRailSize(railSize);
 			slider->updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
 			});
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
@@ -11070,7 +11104,7 @@ bind_failed:
 		tooltip->setFont(smallfont_no_outline);
 		tooltip->setColor(makeColor(91, 76, 50, 255));
 		tooltip->setJustify(Field::justify_t::CENTER);
-		tooltip->setText("Help text goes here.");
+		tooltip->setText("");
 	}
 
 	static void playNew(Button& button) {
@@ -11910,20 +11944,15 @@ bind_failed:
 		settings->setColor(0);
 		settings->setBorder(0);
 		settings->addImage(
-			SDL_Rect{
-				(settings->getActualSize().w - 553 * 2) / 2,
-				0,
-				553 * 2,
-				357 * 2
-			},
+			settings->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Settings/Settings_Window02.png",
+			"*images/ui/Main Menus/Settings/Settings_Window04.png",
 			"background"
 		);
 		auto timber = settings->addImage(
 			SDL_Rect{0, 66 * 2, 1126, 586},
 			0xffffffff,
-			"*images/ui/Main Menus/Settings/Settings_TimberEdge00.png",
+			"*images/ui/Main Menus/Settings/Settings_TimberEdge05.png",
 			"timber"
 		);
 		timber->ontop = true;
@@ -12104,8 +12133,9 @@ bind_failed:
 		tab_right->setGlyphPosition(Button::glyph_position_t::CENTERED);
 
 		auto tooltip = settings->addField("tooltip", 256);
-		tooltip->setSize(SDL_Rect{92, 590, 948, 32});
+		tooltip->setSize(SDL_Rect{66, 594, 946, 22});
 		tooltip->setFont(smallfont_no_outline);
+		tooltip->setJustify(Field::justify_t::CENTER);
 		tooltip->setText("");
 
 		auto restore_defaults = settings->addButton("restore_defaults");

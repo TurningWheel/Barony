@@ -117,19 +117,35 @@ void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewpo
 }
 
 void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const {
+	drawSurface(texid, surf, src, dest, viewport, color);
+}
+
+void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) {
 	if (!surf) {
 		return;
 	}
-	if (!color) {
+
+	// read color
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	if (!a) {
 	    return;
 	}
+
+    // set GL state
+	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
+
+    // push projection matrix
 	glMatrixMode(GL_PROJECTION);
-	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
+	glPushMatrix();
 	glLoadIdentity();
 	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+
+    // push model matrix
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glLoadIdentity();
 
 	// for the use of a whole image
@@ -144,10 +160,6 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 
 	// bind texture
 	glBindTexture(GL_TEXTURE_2D, texid);
-
-	// consume color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
 	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 
 	// draw quad
@@ -165,53 +177,12 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 	// unbind texture
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glColor4f(1.f, 1.f, 1.f, 1.f);
-}
 
-void Image::drawSurface(SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color)
-{
-	if ( !surf )
-	{
-		return;
-	}
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION);
-	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
-	glLoadIdentity();
-	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+    // pop matrices
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	// for the use of a whole image
-	SDL_Rect secondsrc;
-	if ( src == nullptr ) {
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = surf->w;
-		secondsrc.h = surf->h;
-		src = &secondsrc;
-	}
-
-	// consume color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
-	glEnd();
-
-	// unbind texture
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glColor4f(1.f, 1.f, 1.f, 1.f);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 static std::unordered_map<std::string, Image*> hashed_images;

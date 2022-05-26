@@ -75,21 +75,25 @@ constexpr Uint32 makeColorRGB(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 class TempTexture {
+private:
+	GLuint _texid = 0;
 public:
+    const GLuint& texid = _texid;
+
 	TempTexture() {
 	}
 
 	~TempTexture() {
-		if( texid ) {
-			glDeleteTextures(1,&texid);
-			texid = 0;
+		if( _texid ) {
+			glDeleteTextures(1,&_texid);
+			_texid = 0;
 		}
 	}
 
 	void load(SDL_Surface* surf, bool clamp, bool point) {
 		SDL_LockSurface(surf);
-		glGenTextures(1,&texid);
-		glBindTexture(GL_TEXTURE_2D, texid);
+		glGenTextures(1,&_texid);
+		glBindTexture(GL_TEXTURE_2D, _texid);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 		if (clamp) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -111,11 +115,8 @@ public:
 	}
 
 	void bind() {
-		glBindTexture(GL_TEXTURE_2D, texid);
+		glBindTexture(GL_TEXTURE_2D, _texid);
 	}
-
-private:
-	GLuint texid = 0;
 };
 
 struct framebuffer {

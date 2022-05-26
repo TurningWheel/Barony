@@ -2314,7 +2314,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 	newSrc.w = actualImage->getOutlineSurf()->w;
 	newSrc.h = actualImage->getOutlineSurf()->h;
 
-	Image::drawSurface(const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
+	Image::drawSurface(outlineTexture->texid, const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
 
 	if ( outlineTexture ) {
 		delete outlineTexture;
