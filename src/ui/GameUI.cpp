@@ -4845,6 +4845,9 @@ static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
 static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
 static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 
+static ConsoleVariable<Vector4> mapBgColor("/map_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+static ConsoleVariable<Vector4> logBgColor("/log_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+
 void openMapWindow(int player) {
     auto& frame = players[player]->hud.mapWindow;
     if (frame) {
@@ -4870,8 +4873,10 @@ void openMapWindow(int player) {
     frame->setOwner(player);
     frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
     frame->setBorderColor(makeColor(51, 33, 26, 255));
-    frame->setColor(makeColor(0, 0, 0, 223));
-    frame->setBorder(2);
+    frame->setColor(0);
+    //frame->setBorder(2);
+    frame->setBorder(0);
+    frame->setColor(makeColor(mapBgColor->x, mapBgColor->y, mapBgColor->z, mapBgColor->w));
     frame->setTickCallback([](Widget& widget){
         const int player = widget.getOwner();
         auto frame = static_cast<Frame*>(&widget);
@@ -4881,13 +4886,67 @@ void openMapWindow(int player) {
         }
         });
 
-    const int map_size = std::min(w, h - 32);
+    // frame images
+    {
+        frame->addImage(
+            SDL_Rect{0, 0, 16, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_TL00.png",
+            "TL");
+        frame->addImage(
+            SDL_Rect{16, 0, w - 32, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_T00.png",
+            "T");
+        frame->addImage(
+            SDL_Rect{w - 16, 0, 16, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_TR00.png",
+            "TR");
+        auto L = frame->addImage(
+            SDL_Rect{0, 32, 4, h - 48},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_L00.png",
+            "L");
+        L->ontop = true;
+        auto R = frame->addImage(
+            SDL_Rect{w - 4, 32, 4, h - 48},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_R00.png",
+            "R");
+        R->ontop = true;
+        auto BL = frame->addImage(
+            SDL_Rect{0, h - 16, 16, 16},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_BL00.png",
+            "BL");
+        BL->ontop = true;
+        auto B = frame->addImage(
+            SDL_Rect{16, h - 4, w - 32, 4},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_B00.png",
+            "B");
+        B->ontop = true;
+        auto BR = frame->addImage(
+            SDL_Rect{w - 16, h - 16, 16, 16},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_BR00.png",
+            "BR");
+        BR->ontop = true;
+    }
 
     auto container = frame->addFrame("container");
-	container->setSize(SDL_Rect{0, 32, map_size + 32, map_size});
+	container->setSize(SDL_Rect{0, 32, w, h - 32});
     container->setBorderColor(makeColor(51, 33, 26, 255));
-	container->setBorder(2);
+	//container->setBorder(2);
+	container->setBorder(0);
 	container->setColor(0);
+
+    const int map_size = std::min(w - 32, h - 64);
+	auto minimap = container->addFrame("minimap");
+	minimap->setSize(SDL_Rect{(w - map_size) / 2, (h - 32 - map_size) / 2, map_size, map_size});
+	minimap->setColor(0);
+    minimap->setBorder(0);
 
     struct Position {
         real_t x;
@@ -4899,17 +4958,12 @@ void openMapWindow(int player) {
 
 	Input::inputs[player].consumeBinary("MinimapPing");
 
-	auto minimap = container->addFrame("minimap");
-	minimap->setSize(SDL_Rect{16, 0, map_size, map_size});
-	minimap->setColor(0);
-    minimap->setBorder(0);
-
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
 	    int player = widget.getOwner();
         drawMinimap(player, rect);
         if (!inputs.getVirtualMouse(player)->draw_cursor) {
 	        auto& cursor = minimap_cursor[player];
-			auto image = Image::get("images/system/cursor.png");
+			auto image = Image::get("*#images/ui/MapAndLog/cursor.png");
 			SDL_Rect pos;
 			pos.x = cursor.x - image->getWidth() / 2 + rect.x;
 			pos.y = cursor.y - image->getHeight() / 2 + rect.y;
@@ -5000,7 +5054,7 @@ void openMapWindow(int player) {
         });
 
     auto label = frame->addField("label", 64);
-    label->setSize(SDL_Rect{8, 0, w - 40, 32});
+    label->setSize(SDL_Rect{16, 0, w - 40, 32});
     label->setHJustify(Field::justify_t::LEFT);
     label->setVJustify(Field::justify_t::CENTER);
     label->setFont(bigfont_outline);
@@ -5119,8 +5173,9 @@ void openLogWindow(int player) {
     frame->setOwner(player);
     frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
     frame->setBorderColor(makeColor(51, 33, 26, 255));
-    frame->setColor(makeColor(0, 0, 0, 223));
-    frame->setBorder(2);
+    frame->setColor(makeColor(logBgColor->x, logBgColor->y, logBgColor->z, logBgColor->w));
+    //frame->setBorder(2);
+    frame->setBorder(0);
     frame->setTickCallback([](Widget& widget){
         const int player = widget.getOwner();
         auto frame = static_cast<Frame*>(&widget);
@@ -5235,18 +5290,64 @@ void openLogWindow(int player) {
             subframe_size.y = std::min(limit, subframe_size.y);
             subframe->setActualSize(subframe_size);
         }
-
         });
+
+    // frame images
+    {
+        frame->addImage(
+            SDL_Rect{0, 0, 16, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_TL00.png",
+            "TL");
+        frame->addImage(
+            SDL_Rect{16, 0, w - 32, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_T00.png",
+            "T");
+        frame->addImage(
+            SDL_Rect{w - 16, 0, 16, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_TR00.png",
+            "TR");
+        auto L = frame->addImage(
+            SDL_Rect{0, 32, 4, h - 64},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_L00.png",
+            "L");
+        L->ontop = true;
+        auto R = frame->addImage(
+            SDL_Rect{w - 4, 32, 4, h - 64},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_R00.png",
+            "R");
+        R->ontop = true;
+        frame->addImage(
+            SDL_Rect{0, h - 32, 16, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_BL01.png",
+            "BL");
+        frame->addImage(
+            SDL_Rect{16, h - 32, w - 32, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_B01.png",
+            "B");
+        frame->addImage(
+            SDL_Rect{w - 16, h - 32, 16, 32},
+            0xffffffff,
+            "*#images/ui/MapAndLog/Hover_BR01.png",
+            "BR");
+    }
 
     auto subframe = frame->addFrame("subframe");
     subframe->setScrollWithLeftControls(false);
     subframe->setSize(SDL_Rect{0, 32, w, h - 64});
     subframe->setActualSize(SDL_Rect{0, 0, w, 4});
-    subframe->setBorderColor(makeColor(51, 33, 26, 255));
-    subframe->setSliderColor(makeColor(121, 71, 52, 255));
+    subframe->setBorderColor(makeColor(22, 24, 29, 255));
+    subframe->setSliderColor(makeColor(44, 48, 58, 255));
     subframe->setColor(makeColor(0, 0, 0, 0));
     subframe->setScrollBarsEnabled(true);
-    subframe->setBorder(2);
+    //subframe->setBorder(2);
+    subframe->setBorder(0);
 
     for (auto node = messages.first; node != nullptr; node = node->next) {
         auto string = (string_t*)node->element;
@@ -5254,7 +5355,7 @@ void openLogWindow(int player) {
     }
 
     auto label = frame->addField("label", 64);
-    label->setSize(SDL_Rect{8, 0, w - 40, 32});
+    label->setSize(SDL_Rect{16, 0, w - 40, 32});
     label->setHJustify(Field::justify_t::LEFT);
     label->setVJustify(Field::justify_t::CENTER);
     label->setFont(bigfont_outline);

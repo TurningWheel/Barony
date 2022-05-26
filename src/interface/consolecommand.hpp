@@ -16,6 +16,13 @@
 
 const char* FindConsoleCommand(const char* str, int index);
 
+struct Vector4 {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
 /*
  * How to define a console command:
  *
@@ -106,3 +113,4 @@ extern template class ConsoleVariable<std::string>;
 extern template class ConsoleVariable<int>;
 extern template class ConsoleVariable<float>;
 extern template class ConsoleVariable<bool>;
+extern template class ConsoleVariable<Vector4>;
