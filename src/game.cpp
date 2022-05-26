@@ -3506,13 +3506,18 @@ void handleEvents(void)
 				if ( Input::waitingToBindControllerForPlayer >= 0
 					&& event.cbutton.button == SDL_CONTROLLER_BUTTON_A )
 				{
-					const int id = event.cdevice.which;
-					if ( SDL_IsGameController(id) )
+					SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
+					if ( !pad )
+					{
+						printlog("(Unknown pad pressed input (instance: %d), null controller returned.)\n", event.cbutton.which);
+					}
+					else
 					{
 						for ( auto& controller : game_controllers )
 						{
-							if ( controller.isActive() && controller.getID() == id )
+							if ( controller.isActive() && controller.getControllerDevice() == pad )
 							{
+								const int id = controller.getID();
 							    int player = Input::waitingToBindControllerForPlayer;
 								inputs.removeControllerWithDeviceID(id); // clear any other player using this
 								inputs.setControllerID(player, id);
