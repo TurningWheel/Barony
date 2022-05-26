@@ -776,7 +776,7 @@ static auto genericgui_deselect_fn = [](Widget& widget) {
 
 void saveCommand(char* content)
 {
-	newString(&command_history, 0xFFFFFFFF, content);
+	newString(&command_history, 0xFFFFFFFF, ticks, content);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1441,6 +1441,9 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		inputs.getUIInteraction(playernum)->toggleclick = false;
 		GUI.closeDropdowns();
 		shootmode = true;
+	}
+	if (gameUIFrame[playernum]) {
+	    gameUIFrame[playernum]->deselect();
 	}
 }
 

@@ -34,8 +34,10 @@ public:
 
 	//! the result of the field process
 	struct result_t {
-		bool highlighted;
-		bool entered;
+	    const char* tooltip = nullptr;  //!< field's tooltip
+		bool highlighted;               //!< whether or not field was highlighted
+		Uint32 highlightTime;			//!< time since field was highlighted
+		bool entered;                   //!< whether or not changes to field were confirmed
 	};
 
 	//! scroll the parent frame (if any) to be within our bounds
@@ -116,6 +118,7 @@ public:
 	const bool					isNumbersOnly() const { return numbersOnly; }
 	void						(*getCallback() const)(Field&) { return callback; }
 	const char*					getGuide() const { return guide.c_str(); }
+	const char*                 getTooltip() const { return tooltip.c_str(); }
 	const bool					isOntop() const { return ontop; }
 	const bool                  isActivated() const { return activated; }
 
@@ -137,6 +140,7 @@ public:
 	void	setCallback(void (*const fn)(Field&)) { callback = fn; }
 	void	setFont(const char* _font) { font = _font; }
 	void	setGuide(const char* _guide) { guide = _guide; }
+	void	setTooltip(const char* _tooltip) { tooltip = _tooltip; }
 	void    reflowTextToFit(const int characterOffset);
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
 	static char* tokenize(char* str, const char* const delimiters);
@@ -144,6 +148,7 @@ public:
 private:
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
 	std::string guide;									//!< string to use as a descriptive guide for the field (eg "Enter character's name");
+	std::string tooltip;                                //!< tooltip string
 	char* text = nullptr;								//!< internal text buffer
 	size_t textlen = 0;									//!< length of internal text buffer
 	Uint32 color = 0;									//!< color mixed w/ final rendered text

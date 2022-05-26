@@ -151,6 +151,24 @@ template<> void ConsoleVariable<bool>::operator=(const char* arg)
         name + 1, data ? "true" : "false");
 }
 
+/*******************************************************************************
+    Vector4 cvars
+*******************************************************************************/
+
+template class ConsoleVariable<Vector4>;
+template<> void ConsoleVariable<Vector4>::operator=(const char* arg)
+{
+    if (arg && arg[0] != '\0') {
+        char* ptr = const_cast<char*>(arg);
+        data.x = strtof(ptr, &ptr);
+        data.y = strtof(ptr, &ptr);
+        data.z = strtof(ptr, &ptr);
+        data.w = strtof(ptr, &ptr);
+    }
+    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f %f %f %f\"",
+        name + 1, data.x, data.y, data.z, data.w);
+}
+
 /*-------------------------------------------------------------------------------
 
 	consoleCommand

@@ -141,7 +141,6 @@ void sound_update()
 	fmod_system->update();
 	//TODO: Mute sound if focus lost.
 }
-#define SOUND
 
 #elif defined USE_OPENAL
 
@@ -925,8 +924,6 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 		alDeleteBuffers( 1, &buffer->id );
 	free(buffer);
 }
-
-#define SOUND
 
 #endif
 

@@ -24,7 +24,6 @@
 #define VERSION "v3.8.0"
 #define GAME_CODE
 
-//#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 class Entity;
 
 #define DEBUG 1
@@ -306,10 +305,12 @@ void actLightSource(Entity* my);
 void actSignalTimer(Entity* my);
 
 void startMessages();
-bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true);
+bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true, bool sleep = false);
 extern Uint32 networkTickrate;
 extern bool gameloopFreezeEntities;
 extern Uint32 serverSchedulePlayerHealthUpdate;
+
+void drawAllPlayerCameras();
 
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
@@ -405,8 +406,6 @@ public:
 	};
 };
 extern TileEntityListHandler TileEntityList;
-
-extern float framerateAccumulatedTime;
 
 class DebugStatsClass
 {

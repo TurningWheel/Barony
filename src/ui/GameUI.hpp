@@ -2,13 +2,14 @@
 
 #pragma once
 
-void doFrames();
 #include "Frame.hpp"
 #include "../interface/consolecommand.hpp"
 #include <deque>
 
+Frame::result_t doFrames();
 void doSharedMinimap();
 extern Frame* gameUIFrame[MAXPLAYERS];
+void addMessageToLogWindow(int player, string_t* string);
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable = false);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
@@ -228,4 +229,7 @@ struct SkillSheetFrames_t
 };
 extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
-extern Frame* minimapFrame;
+extern Frame* minimapFrame; // shared minimap
+
+void openMapWindow(int player);
+void openLogWindow(int player);

@@ -715,27 +715,13 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	my->pitch -= PLAYER_ROTY * refreshRateDelta;
 
-	if ( softwaremode )
+	if ( my->pitch > PI / 3 )
 	{
-		if ( my->pitch > PI / 6 )
-		{
-			my->pitch = PI / 6;
-		}
-		if ( my->pitch < -PI / 6 )
-		{
-			my->pitch = -PI / 6;
-		}
+		my->pitch = PI / 3;
 	}
-	else
+	if ( my->pitch < -PI / 3 )
 	{
-		if ( my->pitch > PI / 3 )
-		{
-			my->pitch = PI / 3;
-		}
-		if ( my->pitch < -PI / 3 )
-		{
-			my->pitch = -PI / 3;
-		}
+		my->pitch = -PI / 3;
 	}
 	if ( !smoothmouse )
 	{
@@ -1419,14 +1405,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		if ( !TimerExperiments::bUseTimerInterpolation )
 		{
 			cameras[PLAYER_NUM].ang = my->yaw;
-			if ( softwaremode )
-			{
-				cameras[PLAYER_NUM].vang = (my->pitch / (PI / 4)) * cameras[PLAYER_NUM].winh;
-			}
-			else
-			{
-				cameras[PLAYER_NUM].vang = my->pitch;
-			}
+			cameras[PLAYER_NUM].vang = my->pitch;
 		}
 	}
 }
@@ -4450,33 +4429,8 @@ void actPlayer(Entity* my)
 							// we're selecting a point for the ally to move to.
 							input.consumeBinaryToggle("Use");
 
-							// TODO use the new minimap code for this in GameUI.cpp
 							// we're selecting a point for the ally to move to.
-							int minimapTotalScale = minimapScale;
-							if ( map.height > 64 || map.width > 64 )
-							{
-								int maxDimension = std::max(map.height, map.width);
-								maxDimension -= 64;
-								int numMinimapSizesToReduce = 0;
-								while ( maxDimension > 0 )
-								{
-									maxDimension -= 32;
-									++numMinimapSizesToReduce;
-								}
-								minimapTotalScale = std::max(1, minimapScale - numMinimapSizesToReduce);
-							}
-							if ( !shootmode && mouseInBounds(PLAYER_NUM, minimaps[PLAYER_NUM].x, minimaps[PLAYER_NUM].x + minimaps[PLAYER_NUM].w,
-								yres - minimaps[PLAYER_NUM].y - minimaps[PLAYER_NUM].h, yres - minimaps[PLAYER_NUM].y) ) // mouse within minimap pixels (each map tile is 4 pixels)
-							{
-								MinimapPing newPing(ticks, -1, (mouseX - (minimaps[PLAYER_NUM].x)) / minimapTotalScale, (mouseY - (yres - minimaps[PLAYER_NUM].y - minimaps[PLAYER_NUM].h)) / minimapTotalScale);
-								minimapPingAdd(PLAYER_NUM, PLAYER_NUM, newPing);
-								createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
-								followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
-								followerMenu.selectMoveTo = false;
-								followerMenu.moveToX = static_cast<int>(newPing.x);
-								followerMenu.moveToY = static_cast<int>(newPing.y);
-							}
-							else if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
 							{
 								real_t startx = players[PLAYER_NUM]->entity->x;
 								real_t starty = players[PLAYER_NUM]->entity->y;

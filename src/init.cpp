@@ -44,6 +44,9 @@
 #include "ui/Frame.hpp"
 #include "ui/Button.hpp"
 #include "ui/LoadingScreen.hpp"
+#ifndef EDITOR
+#include "ui/MainMenu.hpp"
+#endif
 
 #include <thread>
 #include <future>
@@ -74,6 +77,8 @@ int initApp(char const * const title, int fullscreen)
 	char name[128] = { '\0' };
 	File* fp;
 	Uint32 x, c;
+
+	srand(time(nullptr));
 
 	// open log file
 	if ( !logfile )
@@ -263,91 +268,77 @@ int initApp(char const * const title, int fullscreen)
 	// get pointers to opengl extensions
 #ifdef WINDOWS
 	bool noextensions = false;
-	if ( !softwaremode )
+	if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL )
 	{
-		if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)SDL_GL_GetProcAddress("glFramebufferTexture2D")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glDrawBuffers = (PFNGLDRAWBUFFERSPROC)SDL_GL_GetProcAddress("glDrawBuffers")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)SDL_GL_GetProcAddress("glBlendFuncSeparate")) == NULL )
-		{
-			noextensions = true;
-		}
+		noextensions = true;
+	}
+	else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)SDL_GL_GetProcAddress("glFramebufferTexture2D")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glDrawBuffers = (PFNGLDRAWBUFFERSPROC)SDL_GL_GetProcAddress("glDrawBuffers")) == NULL )
+	{
+		noextensions = true;
+	}
+	else if ( (SDL_glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)SDL_GL_GetProcAddress("glBlendFuncSeparate")) == NULL )
+	{
+		noextensions = true;
+	}
 /*
 // Unused
-		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
-		{
-			noextensions = true;
-		}
-		else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL )
-		{
-			noextensions = true;
-		}
-*/
-	}
-	if (softwaremode)
+	else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
 	{
-		printlog("notice: using software rendering.\n");
+		noextensions = true;
 	}
+	else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL )
+	{
+		noextensions = true;
+	}
+*/
 	if ( noextensions )
 	{
 		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
 		disablevbos = true;
 	}
-#else
-	if (softwaremode)
-	{
-		printlog("notice: using software rendering.\n");
-	}
 #endif
 
 	// initialize buffers
-	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	texid = (GLuint*) malloc(MAXTEXTURES * sizeof(GLuint));
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	//vboid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
@@ -588,10 +579,7 @@ int initApp(char const * const title, int fullscreen)
 			}
 		}
 		updateLoadingScreen(30);
-		if ( !softwaremode )
-		{
-			generatePolyModels(0, nummodels, false);
-		}
+		generatePolyModels(0, nummodels, false);
 		FileIO::close(fp);
 		updateLoadingScreen(60);
 
@@ -599,6 +587,7 @@ int initApp(char const * const title, int fullscreen)
 		int soundStatus = loadSoundResources();
 		if ( 0 != soundStatus )
 		{
+		    loading_done = true;
 			return soundStatus;
 		}
 
@@ -611,7 +600,12 @@ int initApp(char const * const title, int fullscreen)
 		doLoadingScreen();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+
+#ifdef EDITOR
+	// Don't destroy the loading screen in the game.
+	// It will be used later.
 	destroyLoadingScreen();
+#endif
 
 	int result = loading_task.get();
 	if (result == 0)
@@ -948,7 +942,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
 		if ( useModelCache )
 		{
-            std::string cache_path = std::string(outputdir) + "models.cache";
+            std::string cache_path = std::string(outputdir) + "/models.cache";
 			model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
@@ -1909,7 +1903,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		list_FreeAll(&quads);
 	}
 #ifndef NINTENDO
-    std::string cache_path = std::string(outputdir) + "models.cache";
+    std::string cache_path = std::string(outputdir) + "/models.cache";
 	if (useModelCache && (model_cache = openDataFile(cache_path.c_str(), "wb")))
 	{
 		char modelCacheHeader[32] = "BARONY";
@@ -2260,32 +2254,18 @@ int deinitApp()
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
 	exitSoundEngine();
+	if ( renderer )
+	{
+		SDL_GL_DeleteContext(renderer);
+		renderer = NULL;
+	}
 	if ( screen )
 	{
 		SDL_DestroyWindow(screen);
 		screen = NULL;
 	}
-	if ( renderer )
-	{
-#ifdef APPLE
-		SDL_DestroyRenderer(renderer);
-#else
-		SDL_GL_DeleteContext(renderer);
-#endif
-		renderer = NULL;
-	}
 	TTF_Quit();
 	SDL_Quit();
-
-	// free video and input buffers
-	if ( zbuffer != NULL )
-	{
-		free(zbuffer);
-	}
-	if ( clickmap != NULL )
-	{
-		free(clickmap);
-	}
 
 	// shutdown steamworks
 #ifdef STEAMWORKS
@@ -2472,68 +2452,82 @@ void GO_InitFBO()
 
 bool initVideo()
 {
+    if (!renderer) {
 #ifdef NINTENDO
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
-	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+	    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
+	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #else
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
-	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
-	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
-	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
+	    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
+	    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
+	    SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
+	    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+	    //SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+	    //SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
+	    //SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
 #endif
+    }
 
-	printlog("setting display mode to %dx%d...\n", xres, yres);
-	Uint32 flags = 0;
-#ifdef PANDORA
-	fullscreen = true;
-#endif
-#ifdef NINTENDO
-	flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
-#else
-	if ( fullscreen )
-	{
-		flags |= SDL_WINDOW_FULLSCREEN;
-	}
-	if ( borderless )
-	{
-		flags |= SDL_WINDOW_BORDERLESS;
-	}
-	if ( !game )
-	{
-		flags |= SDL_WINDOW_RESIZABLE;
-	}
-	if ( !softwaremode )
-	{
-		flags |= SDL_WINDOW_OPENGL;
-	}
-#endif
-#ifdef APPLE
-	if ( fullscreen )
-	{
-		flags |= SDL_WINDOW_BORDERLESS;
-	}
-	SDL_DestroyWindow(screen);
-	screen = NULL;
-#endif
+    int screen_x = SDL_WINDOWPOS_CENTERED;
+    int screen_y = SDL_WINDOWPOS_CENTERED;
 #ifdef PANDORA
 	int screen_width = 800;
+	int screen_height = 480;
 #else
 	int screen_width = xres;
+	int screen_height = yres;
+    static const int displays = SDL_GetNumVideoDisplays();
+    std::vector<SDL_Rect> displayBounds;
+    for( int i = 0; i < displays; i++ ) {
+        displayBounds.push_back( SDL_Rect() );
+        SDL_GetDisplayBounds( i, &displayBounds.back() );
+    }
+    if (display_id >= 0 && display_id < displays) {
+        auto& bound = displayBounds[display_id];
+        /*if (borderless && fullscreen) {
+            screen_width = bound.w;
+            screen_height = bound.h;
+        }*/
+        screen_width = std::min(bound.w, screen_width);
+        screen_height = std::min(bound.h, screen_height);
+        if (fullscreen) {
+            screen_x = bound.x;
+            screen_y = bound.y;
+        } else {
+            screen_x = bound.x + (bound.w - screen_width) / 2;
+            screen_y = bound.y + (bound.h - screen_height) / 2;
+        }
+    }
 #endif
+    xres = screen_width;
+    yres = screen_height;
+
+	printlog("setting display mode to %dx%d on device %d...\n", xres, yres, display_id);
+
 	if ( !screen )
 	{
+	    //Uint32 flags = game ? 0 : SDL_WINDOW_RESIZABLE;
+	    Uint32 flags = SDL_WINDOW_RESIZABLE;
+	    flags |= SDL_WINDOW_OPENGL;
 #ifdef PANDORA
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, 480, flags )) == NULL)
-#else
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL)
+	    flags |= SDL_WINDOW_FULLSCREEN;
 #endif
+#ifdef NINTENDO
+    	flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
+#else
+	    if ( fullscreen )
+	    {
+		    flags |= SDL_WINDOW_FULLSCREEN;
+	    }
+	    else if ( borderless )
+	    {
+		    flags |= SDL_WINDOW_BORDERLESS;
+	    }
+#endif
+		if ((screen = SDL_CreateWindow( window_title, screen_x, screen_y, screen_width, screen_height, flags )) == NULL)
 		{
 			printlog("failed to set video mode.\n");
 			return false;
@@ -2541,81 +2535,48 @@ bool initVideo()
 	}
 	else
 	{
-#ifdef PANDORA
-		SDL_SetWindowSize(screen, screen_width, 480);
-#else
-		SDL_SetWindowSize(screen, screen_width, yres);
-#endif
-#ifndef NINTENDO
-		if ( fullscreen )
-		{
-			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
+        SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
+        SDL_SetWindowPosition(screen, screen_x, screen_y);
+	    if (fullscreen) {
+	        SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
+		    SDL_DisplayMode mode;
+            SDL_GetDesktopDisplayMode(display_id, &mode);
+            mode.w = screen_width;
+            mode.h = screen_height;
+		    SDL_SetWindowDisplayMode(screen, &mode);
+		} else {
+	        SDL_SetWindowSize(screen, screen_width, screen_height);
+	        SDL_SetWindowFullscreen(screen, 0);
 		}
-		else
-		{
-			SDL_SetWindowFullscreen(screen, 0);
-		}
-
-		if ( borderless )
-		{
-			SDL_SetWindowBordered(screen, SDL_bool::SDL_FALSE);
-		}
-		else
-		{
-			SDL_SetWindowBordered(screen, SDL_bool::SDL_TRUE);
-		}
-		SDL_SetWindowPosition(screen, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-#endif // !NINTENDO
 	}
 
 	if ( !renderer )
 	{
-#ifdef APPLE
-		if ((renderer = SDL_CreateRenderer(screen, -1, 0)) == NULL)
-		{
-#else
+#ifdef NINTENDO
+	    initNxGL();
+#endif
 		if ((renderer = SDL_GL_CreateContext(screen)) == NULL)
 		{
-#endif
-			printlog("failed to create SDL renderer. Reason: \"%s\"\n", SDL_GetError());
+			printlog("failed to create GL context. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
 			return false;
 		}
-	}
-#ifndef APPLE
-	SDL_GL_MakeCurrent(screen, renderer);
-#endif
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	Uint32 rmask = 0xff000000;
-	Uint32 gmask = 0x00ff0000;
-	Uint32 bmask = 0x0000ff00;
-	Uint32 amask = 0x000000ff;
-#else
-	Uint32 rmask = 0x000000ff;
-	Uint32 gmask = 0x0000ff00;
-	Uint32 bmask = 0x00ff0000;
-	Uint32 amask = 0xff000000;
-#endif
-	if ( !softwaremode )
-	{
+
 #ifdef PANDORA
-		GO_InitFBO();
+	    GO_InitFBO();
 #endif
-#ifdef NINTENDO
-		initNxGL();
-#endif
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		//glEnableClientState(GL_VERTEX_ARRAY);
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		glClearColor( 0, 0, 0, 0 );
+
+	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	    glEnable(GL_TEXTURE_2D);
+	    glEnable(GL_CULL_FACE);
+	    glCullFace(GL_BACK);
+	    glEnable(GL_BLEND);
+	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	    glMatrixMode( GL_MODELVIEW );
+	    glLoadIdentity();
+	    glMatrixMode( GL_PROJECTION );
+	    glLoadIdentity();
+	    glClearColor( 0.f, 0.f, 0.f, 0.f );
 	}
 
 	if ( verticalSync )
@@ -2626,13 +2587,14 @@ bool initVideo()
 	{
 		SDL_GL_SetSwapInterval(0);
 	}
+
 #ifndef NINTENDO
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
-		return true;
 	}
 #endif
+
 	printlog("display changed successfully.\n");
 	return true;
 }
@@ -2650,52 +2612,15 @@ bool initVideo()
 bool changeVideoMode(int new_xres, int new_yres)
 {
 	if (new_xres) {
-		xres = new_xres;
+		xres = std::max(1024, new_xres);
 	}
 	if (new_yres) {
-		yres = new_yres;
+		yres = std::max(720, new_yres);
 	}
 	printlog("changing video mode (%d x %d).\n", xres, yres);
-#ifdef PANDORA
-	GO_InitFBO();
-#else
-	int c;
-
-	// delete old texture names (they're going away anyway)
-	glDeleteTextures(MAXTEXTURES, texid);
 
 	// destroy gui fbo
-#ifndef EDITOR
 	Frame::fboDestroy();
-#endif
-
-	// delete vertex data
-	if ( !disablevbos )
-	{
-		for ( c = 0; c < nummodels; c++ )
-		{
-			SDL_glDeleteBuffers(1, &polymodels[c].vbo);
-			SDL_glDeleteBuffers(1, &polymodels[c].colors);
-			SDL_glDeleteVertexArrays(1, &polymodels[c].va);
-			SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
-			SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
-			SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-		}
-	}
-
-	/*if( screen ) {
-		SDL_DestroyWindow(screen);
-		screen = NULL;
-	}*/
-	if ( renderer )
-	{
-#ifdef APPLE
-		SDL_DestroyRenderer(renderer);
-#else
-		SDL_GL_DeleteContext(renderer);
-#endif
-		renderer = NULL;
-	}
 
 	// set video mode
 	int result = initVideo();
@@ -2712,43 +2637,36 @@ bool changeVideoMode(int new_xres, int new_yres)
 		}
 	}
 
-	// now reload all textures
-	glGenTextures(MAXTEXTURES, texid);
-	for ( c = 1; c < imgref; c++ )
-	{
-		glLoadTexture(allsurfaces[c], c);
+	// create new frame fbo
+	Frame::fboInit();
+
+	// success
+	return true;
+}
+
+bool resizeWindow(int new_xres, int new_yres)
+{
+    if (!screen || !renderer) {
+        return false;
+    }
+	if (new_xres) {
+		xres = std::max(100, new_xres);
+	}
+	if (new_yres) {
+		yres = std::max(100, new_yres);
 	}
 
-	// regenerate vbos
-	if ( !disablevbos )
-	{
-		generateVBOs(0, nummodels);
-	}
+	// destroy gui fbo
+	Frame::fboDestroy();
 
 #ifndef EDITOR
-	// dump ui resources, these are all no good too!
-	Text::dumpCache();
-	Image::dumpCache();
-	Font::dumpCache();
-#endif // !EDITOR
+    if (!intro) {
+        MainMenu::setupSplitscreen();
+    }
+#endif
 
 	// create new frame fbo
-#ifndef EDITOR
 	Frame::fboInit();
-#endif
-
-#endif
-
-	if ( zbuffer != NULL )
-	{
-		free(zbuffer);
-	}
-	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-	if ( clickmap != NULL )
-	{
-		free(clickmap);
-	}
-	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 
 	// success
 	return true;

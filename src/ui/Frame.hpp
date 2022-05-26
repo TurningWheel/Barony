@@ -18,6 +18,10 @@ class Slider;
 //! When a frame's size is smaller than its actual size, sliders will automatically be placed in the frame.
 //! Frame objects can be populated with Field objects, Button objects, other Frame objects, and more.
 class Frame : public Widget {
+private:
+    static int _virtualScreenX;
+    static int _virtualScreenY;
+
 public:
 	Frame() = delete;
 	Frame(const char* _name = "");
@@ -115,13 +119,6 @@ public:
 	//! width/height of the slider(s) that appear when actualSize > size (in pixels)
 	static const Sint32 sliderSize;
 
-private:
-
-    static int _virtualScreenX;
-    static int _virtualScreenY;
-
-public:
-
 	//! virtual screen size (width)
 	static constexpr const int& virtualScreenX = _virtualScreenX;
 
@@ -137,7 +134,9 @@ public:
 	static void fboDestroy();
 
     //! resize gui
-    static void guiResize(int x, int y);
+    //! @param x the width of the gui (0 = fit to aspect ratio)
+    //@ @param y the height of the gui (0 = fit to aspect ratio)
+    static void guiResize(int x = 0, int y = 0);
 
 	//! stuff to do before drawing anything
 	static void predraw();
@@ -184,6 +183,11 @@ public:
 	//! @param resizeFrame if true, the size of the frame will be reduced after removing the entry
 	//! @return the newly created entry object
 	entry_t* addEntry(const char* name, bool resizeFrame);
+
+	//! get the mouse position relative to this frame's position
+	//! @param realtime always use actual mouse position instead of pre-click position
+	//! @return the x and y position of the mouse (if w or h == 0 then the frame is totally clipped and invisible)
+	SDL_Rect getRelativeMousePosition(bool realtime) const;
 
 	//! adds a new slider object to the current frame
 	//! @param name the name of the slider
@@ -339,6 +343,7 @@ public:
 	void    setSelectedEntryColor(const Uint32& _color) { selectedEntryColor = _color; }
 	void    setActivatedEntryColor(const Uint32& _color) { activatedEntryColor = _color; }
 	void	setBorderColor(const Uint32& _color) { borderColor = _color; }
+	void    setSliderColor(const Uint32& _color) { sliderColor = _color; }
 	void	setDisabled(const bool _disabled) { disabled = _disabled; }
 	void	setHollow(const bool _hollow) { hollow = _hollow; }
 	void	setDropDown(const bool _dropDown) { dropDown = _dropDown; }
@@ -365,6 +370,7 @@ private:
 	Uint32 selectedEntryColor = 0;                      //!< selected entry color
 	Uint32 activatedEntryColor = 0;                     //!< activated entry color
 	Uint32 borderColor = 0;								//!< the frame's border color (only used for flat border)
+	Uint32 sliderColor = 0;                             //!< color used for scroll sliders
 	const char* tooltip = nullptr;						//!< points to the tooltip that should be displayed by the (master) frame, or nullptr if none should be displayed
 	bool hollow = false;								//!< if true, the frame doesn't have a solid background
 	bool draggingHSlider = false;						//!< if true, we are dragging the horizontal slider
@@ -377,7 +383,7 @@ private:
 	entry_t* activation = nullptr;                      //!< activated entry
 	bool allowScrollBinds = true;						//!< if true, scroll wheel + right stick can scroll frame
 	bool allowScrolling = false;						//!< must be enabled for any kind of scrolling/actualSize to work
-	bool scrollbars = true;								//!< must be true for sliders to be drawn/usable
+	bool scrollbars = false;							//!< must be true for sliders to be drawn/usable
 	bool activated = false;								//!< true if this frame is consuming input (to navigate list entries)
 	SDL_Rect listOffset{0, 0, 0, 0};					//!< frame list offset in x, y
 	real_t opacity = 100.0;								//!< opacity multiplier of elements within this frame (image/fields etc)
@@ -426,6 +432,8 @@ private:
 	result_t process(SDL_Rect _size, SDL_Rect actualSize, const std::vector<Widget*>& selectedWidgets, const bool usable);
 
 	bool capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
+
+	SDL_Rect getRelativeMousePositionImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
 };
 
 // root frame object

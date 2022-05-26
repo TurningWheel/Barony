@@ -22,6 +22,8 @@
 #include "items.hpp"
 #include "ui/Image.hpp"
 #include "interface/consolecommand.hpp"
+#include "colors.hpp"
+#include "ui/Text.hpp"
 
 #include <cassert>
 
@@ -1184,17 +1186,6 @@ void drawForeground(long camx, long camy)
 
 void drawClearBuffers()
 {
-	// empty video and input buffers
-	if ( zbuffer != NULL )
-	{
-		memset( zbuffer, 0, xres * yres * sizeof(real_t) );
-	}
-	if ( clickmap != NULL )
-	{
-		memset( clickmap, 0, xres * yres * sizeof(Entity*) );
-	}
-
-	// clear the screen
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	drawRect(NULL, 0, 255);
 }
@@ -2369,13 +2360,6 @@ void drawDepressed(int x1, int y1, int x2, int y2)
 
 void drawWindowFancy(int x1, int y1, int x2, int y2)
 {
-	if (softwaremode)
-	{
-		// no fancy stuff in software mode
-		drawWindow(x1, y1, x2, y2);
-		return;
-	}
-
 	// update projection
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -2427,162 +2411,54 @@ void drawWindowFancy(int x1, int y1, int x2, int y2)
 
 -------------------------------------------------------------------------------*/
 
-SDL_Rect errorRect = { 0 };
-
 SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str )
 {
-#ifdef NINTENDO
-	if (font == ttf8)
-	{
-		printTextFormattedColor(font8x8_bmp, x, y, color, const_cast<char*>(str));
-	}
-	if (font == ttf12)
-	{
-		printTextFormattedColor(font12x12_bmp, x, y, color, const_cast<char*>(str));
-	}
-	if (font == ttf16)
-	{
-		printTextFormattedColor(font16x16_bmp, x, y, color, const_cast<char*>(str));
-	}
-	return errorRect;
-#endif
-	SDL_Rect pos = { x, y, 0, 0 };
-	SDL_Surface* surf;
-	int c;
-
-	if ( !str )
-	{
-		return errorRect;
-	}
-	char newStr[1024] = { 0 };
-	strcpy(newStr, str);
-
-	// tokenize string
-	for ( c = 0; c < strlen(newStr) + 1; c++ )
-	{
-		if ( newStr[c] == '\n' || newStr[c] == '\r' )
-		{
-			int offY = 0;
-			if ( newStr[c] == '\n' )
-			{
-				offY = getHeightOfFont(font);
-			}
-			newStr[c] = 0;
-			ttfPrintTextColor(font, x, y + offY, color, outline, (char*)&newStr[c + 1]);
-			break;
-		}
-		else if ( newStr[c] == 0 )
-		{
-			break;
-		}
-	}
-
-	if ( imgref > ttfTextCacheLimit )
-	{
-		// time to flush the cache.
-		imgref -= 6144;
-		for ( int i = 0; i < HASH_SIZE; ++i )
-		{
-			list_FreeAll(&ttfTextHash[i]);
-		}
-		printlog("notice: stored hash limit exceeded, clearing ttfTextHash...");
-	}
-
-	// retrieve text surface
-	if ( (surf = ttfTextHashRetrieve(ttfTextHash, newStr, font, outline)) == NULL )
-	{
-		// create the text outline surface
-		if ( outline )
-		{
-			if ( font == ttf8 )
-			{
-				TTF_SetFontOutline(font, 1);
-			}
-			else
-			{
-				TTF_SetFontOutline(font, 2);
-			}
-			SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
-			surf = TTF_RenderUTF8_Blended(font, newStr, sdlColorBlack);
-		}
-		else
-		{
-			int w, h;
-			getSizeOfText(font, newStr, &w, &h);
-			if ( font == ttf8 )
-			{
-				surf = SDL_CreateRGBSurface(0, w + 2, h + 2, 32,
-				                            0x000000ff,
-				                            0x0000ff00,
-				                            0x00ff0000,
-				                            0xff000000
-				                           );
-			}
-			else
-			{
-				surf = SDL_CreateRGBSurface(0, w + 4, h + 4, 32,
-				                            0x000000ff,
-				                            0x0000ff00,
-				                            0x00ff0000,
-				                            0xff000000
-				                           );
-			}
-		}
-
-		if (!surf)
-		{
-			printlog("warning: failed to create the surface\n");
-			return errorRect;
-		}
-		// create the text surface
-		TTF_SetFontOutline(font, 0);
-		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(font, newStr, sdlColorWhite);
-
-		// combine the surfaces
-		if ( font == ttf8 )
-		{
-			pos.x = 1;
-			pos.y = 1;
-		}
-		else
-		{
-			pos.x = 2;
-			pos.y = 2;
-		}
-		SDL_BlitSurface(textSurf, NULL, surf, &pos);
-		SDL_FreeSurface(textSurf);
-		// load the text outline surface as a GL texture
-		allsurfaces[imgref] = surf;
-		allsurfaces[imgref]->userdata = (void*)((long int)imgref);
-		glLoadTexture(allsurfaces[imgref], imgref);
-		imgref++;
-		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, newStr, font, outline, surf) )
-		{
-			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
-		}
-	}
-
-	// draw the text surface
-	if ( font == ttf8 )
-	{
-		pos.x = x;
-		pos.y = y - 3;
-	}
-	else
-	{
-		pos.x = x + 1;
-		pos.y = y - 4;
-	}
-	pos.w = surf->w;
-	pos.h = surf->h;
-	drawImageColor(surf, NULL, &pos, color);
-	pos.x = x;
-	pos.y = y;
-
-	return pos;
+    const char* filename = "lang/en.ttf#12#1"; // default
+    if (outline) {
+        if (font == ttf8) {
+            filename = "lang/en.ttf#12#1";
+            x -= 1;
+            y -= 1;
+        }
+        else if (font == ttf12) {
+            filename = "lang/en.ttf#16#2";
+            x -= 2;
+            y -= 4;
+        }
+        else if (font == ttf16) {
+            filename = "lang/en.ttf#22#2";
+            x -= 2;
+            y -= 4;
+        }
+    } else {
+        if (font == ttf8) {
+            filename = "lang/en.ttf#12#0";
+        }
+        else if (font == ttf12) {
+            filename = "lang/en.ttf#16#0";
+        }
+        else if (font == ttf16) {
+            filename = "lang/en.ttf#22#0";
+        }
+    }
+    char buf[1024];
+    char* ptr = buf;
+    snprintf(buf, sizeof(buf), str);
+    for (int c = 0; ptr[c] != '\0'; ++c) {
+        if (ptr[c] == '\n') {
+            ptr[c] = '\0';
+            auto text = Text::get(ptr, filename, uint32ColorWhite, uint32ColorBlack);
+            text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{x, y, 0, 0}, SDL_Rect{0, 0, xres, yres}, color);
+            y += text->getHeight();
+            ptr += c + 1;
+        }
+    }
+    auto text = Text::get(ptr, filename, uint32ColorWhite, uint32ColorBlack);
+    text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{x, y, 0, 0}, SDL_Rect{0, 0, xres, yres}, color);
+    return SDL_Rect{x, y, (int)text->getWidth(), (int)text->getHeight()};
 }
+
+static SDL_Rect errorRect = { 0 };
 
 SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str )
 {
@@ -2979,6 +2855,14 @@ void occlusionCulling(map_t& map, const view_t& camera)
     // clear vismap
     const int camx = std::min(std::max(0, (int)camera.x), (int)map.width - 1);
     const int camy = std::min(std::max(0, (int)camera.y), (int)map.height - 1);
+
+    // don't do culling if camera in wall
+    if ( map.tiles[OBSTACLELAYER + camy * MAPLAYERS + camx * MAPLAYERS * map.height] != 0 )
+	{
+		memset(map.vismap, 1, sizeof(bool) * size);
+		return;
+	}
+
     memset(map.vismap, 0, sizeof(bool) * size);
     map.vismap[camy + camx * map.height] = true;
 
