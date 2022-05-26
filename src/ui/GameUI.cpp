@@ -5007,11 +5007,19 @@ void openMapWindow(int player) {
     label->setText("Map");
 
     auto close_button = frame->addButton("close");
-    close_button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
-    close_button->setFont(smallfont_outline);
-    close_button->setText("x");
-    close_button->setColor(makeColor(51, 33, 26, 255));
-    close_button->setHighlightColor(makeColor(121, 71, 52, 255));
+    close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
+	close_button->setColor(makeColor(255, 255, 255, 255));
+	close_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	close_button->setText("X");
+	close_button->setFont(smallfont_outline);
+	close_button->setHideGlyphs(true);
+	close_button->setHideKeyboardGlyphs(true);
+	close_button->setHideSelectors(true);
+	close_button->setMenuConfirmControlType(0);
+	close_button->setBackground("*#images/ui/Shop/Button_X_00.png");
+	close_button->setBackgroundHighlighted("*#images/ui/Shop/Button_XHigh_00.png");
+	close_button->setBackgroundActivated("*#images/ui/Shop/Button_XPress_00.png");
+	close_button->setTextHighlightColor(makeColor(201, 162, 100, 255));
     close_button->setCallback([](Button& button){
         const int player = button.getOwner();
         players[player]->hud.mapWindow = nullptr;
@@ -5253,11 +5261,19 @@ void openLogWindow(int player) {
     label->setText("Log");
 
     auto close_button = frame->addButton("close");
-    close_button->setSize(SDL_Rect{frame->getSize().w - 32, 0, 32, 32});
-    close_button->setFont(smallfont_outline);
-    close_button->setText("x");
-    close_button->setColor(makeColor(51, 33, 26, 255));
-    close_button->setHighlightColor(makeColor(121, 71, 52, 255));
+    close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
+	close_button->setColor(makeColor(255, 255, 255, 255));
+	close_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	close_button->setText("X");
+	close_button->setFont(smallfont_outline);
+	close_button->setHideGlyphs(true);
+	close_button->setHideKeyboardGlyphs(true);
+	close_button->setHideSelectors(true);
+	close_button->setMenuConfirmControlType(0);
+	close_button->setBackground("*#images/ui/Shop/Button_X_00.png");
+	close_button->setBackgroundHighlighted("*#images/ui/Shop/Button_XHigh_00.png");
+	close_button->setBackgroundActivated("*#images/ui/Shop/Button_XPress_00.png");
+	close_button->setTextHighlightColor(makeColor(201, 162, 100, 255));
     close_button->setCallback([](Button& button){
         const int player = button.getOwner();
         players[player]->hud.logWindow = nullptr;
@@ -5474,6 +5490,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			mapButton->setWidgetBack("close");
 			mapButton->setCallback([](Button& button){
 			    openMapWindow(button.getOwner());
 			    if (players[button.getOwner()]->hud.mapWindow) {
@@ -5499,11 +5516,11 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
+			logButton->setWidgetBack("close");
 			logButton->setCallback([](Button& button) {
 			    openLogWindow(button.getOwner());
 			});
 			logButton->setTickCallback(charsheet_deselect_fn);
-			logButton->setTooltip("Test tooltip!");
 			
 			auto logSelector = buttonFrame->addFrame("log button selector");
 			logSelector->setSize(buttonPos);
