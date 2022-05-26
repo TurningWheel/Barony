@@ -4143,7 +4143,11 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
+#ifndef NINTENDO
+			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
+#else
+			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#endif
 			return;
 		}
 		int y = 0;
@@ -4258,6 +4262,9 @@ bind_failed:
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
 			});
+
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
 #else
 		hookSettings(*settings_subwindow,{
 			{Setting::Type::Boolean, "vertical_split"},
@@ -4270,10 +4277,10 @@ bind_failed:
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
 			});
-#endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "content_control"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "content_control"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "vertical_split"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
+#endif
 	}
 
 	static void settingsAudio(Button& button) {
