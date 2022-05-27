@@ -235,3 +235,6 @@ struct SkillSheetFrames_t
 extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
 extern Frame* minimapFrame;
+
+void capitalizeString(std::string& str);
+void uppercaseString(std::string& str);

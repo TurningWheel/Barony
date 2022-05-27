@@ -20502,6 +20502,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 							itemName.erase(pos, potionName.length());
 						}
 					}
+					capitalizeString(itemName);
 					if ( outputList != "" )
 					{
 						outputList += '\n';
