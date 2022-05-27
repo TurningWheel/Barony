@@ -538,7 +538,6 @@ namespace MainMenu {
 			    }
 		    }
 		    if (clientnum == -1) {
-		        // TODO loading a splitscreen game?
 		        clientnum = 0;
 		        client_disconnected[0] = false;
 		        playercount = 1;
@@ -728,7 +727,8 @@ namespace MainMenu {
 				auto customize = "*images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png";
 				auto dropdown = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
-				// TODO more sensible ways to identify these button types...
+
+				// Maybe we need a more sensible way to identify these button types.
 				auto boolean_button_text = "Off          On";
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
@@ -4388,10 +4388,14 @@ bind_failed:
 
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-		// TODO we need a special window just for Nintendo Switch joycons.
+		// TODO design a special window just for Nintendo Switch joycons.
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-			"Modify controller bindings.",
-			nullptr);
+			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
+			[](Button&){
+			    allSettings.bindings = Bindings::load();
+			    settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+			        {Setting::Type::Dropdown, "player_dropdown_button"});
+			    });
 #else
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
 #endif
@@ -5614,6 +5618,10 @@ bind_failed:
 
 /******************************************************************************/
 
+    static void addLobbyChatMessage(Uint32 color, const char* msg) {
+        // WIP
+    }
+
 	static void disconnectFromLobby() {
 	    if (multiplayer == SINGLE) {
 	        return;
@@ -5712,8 +5720,10 @@ bind_failed:
 					}
 					char shortname[32] = { 0 };
 					strncpy(shortname, stats[i]->name, 22);
-					//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
-					//TODO print a message to the lobby chatbox
+
+					char buf[1024];
+					snprintf(buf, sizeof(buf), language[1376], shortname);
+					addLobbyChatMessage(0xffffffff, buf);
 					continue;
 				}
 			}
@@ -6220,8 +6230,7 @@ bind_failed:
 					net_packet->address.port = net_clients[i - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
-				// TODO handle chat messages the new way!
-				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
+				addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
 				playSound(238, 64);
 				continue;
 			}
@@ -6252,8 +6261,9 @@ bind_failed:
 				char shortname[32] = { 0 };
 				strncpy(shortname, stats[player]->name, 22);
 
-				// TODO print the disconnect message somewhere.
-				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
+				char buf[1024];
+				snprintf(buf, sizeof(buf), language[1376], shortname);
+				addLobbyChatMessage(0xffffffff, buf);
 				continue;
 			}
 
@@ -6569,8 +6579,8 @@ bind_failed:
 					    packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					    Uint32 bytesRead = 0;
 					    if (!SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0)) {
-					        //TODO Sometimes if a host closes a lobby, it can crash here for a client.
-					        //Are we sure about this in 2022?
+					        //Sometimes if a host closes a lobby, it can crash here for a client.
+					        //NOTE: Are we sure about this in 2022?
 						    continue;
 					    }
 					    net_packet->len = packetlen;
@@ -6621,7 +6631,7 @@ bind_failed:
                     createDummyMainMenu();
 				    beginFade(FadeDestination::GameStart);
 
-				    // TODO we may not get a unique game key or server flags this way!!
+				    // NOTE we may not get a unique game key or server flags this way!!
 
 				    continue;
 			    }
@@ -6636,10 +6646,13 @@ bind_failed:
 				    stats[player]->playerRace = net_packet->data[8];
 				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
 
-				    //char shortname[32] = { 0 };
-				    //strncpy(shortname, stats[player]->name, 22);
-				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
-				    // TODO report player joined in message log
+				    char shortname[32] = { 0 };
+				    strncpy(shortname, stats[player]->name, 22);
+
+				    char buf[1024];
+				    snprintf(buf, sizeof(buf), language[1388], shortname);
+				    addLobbyChatMessage(0xffffffff, buf);
+
 			        if (player != clientnum) {
 			            createReadyStone((int)player, false, false);
 			        }
@@ -6689,7 +6702,9 @@ bind_failed:
 			            createMainMenu(false);
 		                connectionErrorPrompt("You have been kicked\nfrom the remote server.");
 				    } else {
-				        //TODO announce player disconnect
+				        char buf[1024];
+				        snprintf(buf, sizeof(buf), language[1120], stats[playerDisconnected]->name);
+				        addLobbyChatMessage(0xffffffff, buf);
 					    if (directConnect) {
 			                createWaitingStone(playerDisconnected);
 			            } else {
@@ -6701,8 +6716,7 @@ bind_failed:
 
 			    // got a chat message
 			    else if (packetId == 'CMSG') {
-				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
-				    // TODO print lobby message
+				    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
 				    playSound(238, 64);
 				    continue;
 			    }
@@ -6950,7 +6964,6 @@ bind_failed:
 		                    auto dimmer = static_cast<Frame*>(frame->getParent());
 		                    dimmer->removeSelf();
 		                    connectionErrorPrompt("Failed to join lobby.");
-		                    // TODO localize, get error message, etc.
 			            }
 			            return;
 		            }
@@ -8373,8 +8386,8 @@ bind_failed:
 		subframe->setScrollBarsEnabled(false);
 		subframe->setSize(SDL_Rect{34, 160, 226, 258});
 		subframe->setActualSize(SDL_Rect{0, 0, 226, std::max(258, 6 + 54 * (int)(classes.size() / 4 + ((classes.size() % 4) ? 1 : 0)))});
-		subframe->setHollow(true);
 		subframe->setBorder(0);
+		subframe->setColor(0);
 
 		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
@@ -9461,10 +9474,6 @@ bind_failed:
 		        if (clientnum == c) {
 		            createStartButton(c);
 		        } else {
-		            // TODO once connected, a new client needs to get ready
-		            // states for all of the already-connected players.
-		            // OR perhaps players should automatically un-ready if
-		            // a new player connects? TBD
 		            if (client_disconnected[c]) {
 		                if (directConnect) {
 		                    createWaitingStone(c);
@@ -12933,7 +12942,6 @@ bind_failed:
 			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
 			auto image = notification->addImage(notification->getActualSize(), 0xffffffff,
 				"*images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
-            // TODO notification!
 #if 1
             image->disabled = true;
 #endif
@@ -13067,7 +13075,6 @@ bind_failed:
 		);
 
 		if (!ingame) {
-		    // TODO banners!
 #if 0
 			for (int c = 0; c < 2; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);

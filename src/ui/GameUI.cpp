@@ -3665,7 +3665,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				{
 					forceBlankInteractText = true;
 
-					cursor->path = "images/system/cross.png";
+					cursor->path = "*#images/system/cross.png";
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
@@ -3937,7 +3937,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			cursor->path = "images/system/cross.png";
+			cursor->path = "*#images/system/cross.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
