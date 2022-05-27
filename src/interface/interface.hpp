@@ -651,6 +651,7 @@ public:
 			bool bOpen = false;
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
+			bool panelJustifyInverted = false;
 
 			const int kNumRecipesToDisplayVertical = 6;
 			int getNumRecipesToDisplayVertical() const;
@@ -715,6 +716,7 @@ public:
 				}
 			};
 			std::vector<RecipeEntry_t> recipeList;
+			std::unordered_map<int, Frame::image_t*> stones;
 
 			AlchemyRecipes_t(AlchemyGUI_t& a) :
 				alchemy(a) 
@@ -722,6 +724,7 @@ public:
 		} recipes;
 
 		Item alchemyResultPotion;
+		Item emptyBottleCount;
 		AlchemyGUI_t(GenericGUIMenu& g) :
 			parentGUI(g),
 			recipes(*this)
@@ -738,6 +741,19 @@ public:
 			alchemyResultPotion.isDroppable = false;
 			alchemyResultPotion.x = ALCH_SLOT_RESULT_POTION_X;
 			alchemyResultPotion.y = 0;
+
+			emptyBottleCount.appearance = 0;
+			emptyBottleCount.type = POTION_EMPTY;
+			emptyBottleCount.node = nullptr;
+			emptyBottleCount.status = SERVICABLE;
+			emptyBottleCount.beatitude = 0;
+			emptyBottleCount.count = 0;
+			emptyBottleCount.appearance = 0;
+			emptyBottleCount.identified = true;
+			emptyBottleCount.uid = 0;
+			emptyBottleCount.isDroppable = false;
+			emptyBottleCount.x = 0;
+			emptyBottleCount.y = 0;
 		}
 		enum AlchemyActions_t : int
 		{
@@ -759,6 +775,12 @@ public:
 			std::string body = "";
 			real_t animx = 0.0;
 			int state = 0;
+			AlchNotification_t(std::string _title, std::string _body, std::string _img)
+			{
+				title = _title;
+				img = _img;
+				body = _body;
+			}
 		};
 		std::vector<std::pair<Uint32, AlchNotification_t>> notifications;
 		AlchemyView_t currentView = ALCHEMY_VIEW_BREW;

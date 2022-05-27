@@ -1585,15 +1585,33 @@ void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int 
 		}
 		else if ( diffx != 0 )
 		{
-			if ( diffx > 0 )
+			if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X )
 			{
-				if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X )
+				if ( diffx > 0 )
 				{
 					x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
+					y = 0;
 				}
-				else if ( currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+				else
 				{
-					if ( alchemyGUI.recipes.bOpen )
+					if ( alchemyGUI.recipes.bOpen && alchemyGUI.recipes.panelJustifyInverted )
+					{
+						x = alchemyGUI.MAX_ALCH_X - 1;
+						y = 0;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 0);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+			}
+			else if ( currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+			{
+				if ( diffx > 0 )
+				{
+					if ( alchemyGUI.recipes.bOpen && !alchemyGUI.recipes.panelJustifyInverted )
 					{
 						x = 0;
 						y = 0;
@@ -1607,39 +1625,41 @@ void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int 
 				}
 				else
 				{
-					if ( alchemyGUI.recipes.bOpen )
+					x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+					y = 0;
+				}
+			}
+			else
+			{
+				if ( diffx > 0 )
+				{
+					if ( alchemyGUI.recipes.bOpen && !alchemyGUI.recipes.panelJustifyInverted )
 					{
 						x = 0;
-						y = 4;
+						y = alchemyGUI.MAX_ALCH_Y - 1;
 					}
 					else
 					{
-						players[player]->inventoryUI.selectSlot(0, 4);
+						players[player]->inventoryUI.selectSlot(0, 5);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+				else
+				{
+					if ( alchemyGUI.recipes.bOpen && alchemyGUI.recipes.panelJustifyInverted )
+					{
+						x = alchemyGUI.MAX_ALCH_X - 1;
+						y = alchemyGUI.MAX_ALCH_Y - 1;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 5);
 						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
 						return;
 					}
 				}
 			}
-			else if ( diffx < 0 )
-			{
-				if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X )
-				{
-					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 0);
-					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-					return;
-				}
-				else if ( currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
-				{
-					x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
-				}
-				else
-				{
-					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 4);
-					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-					return;
-				}
-			}
-			y = 0;
 		}
 	}
 	else if ( currentx >= 0 )
@@ -1660,24 +1680,52 @@ void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int 
 			}
 			else if ( diffx != 0 )
 			{
-				if ( x < 0 )
+				//if ( diffx > 0 )
 				{
-					if ( y < 3 )
+					if ( x >= alchemyGUI.MAX_ALCH_X )
 					{
-						x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
-						y = 0;
+						if ( !alchemyGUI.recipes.panelJustifyInverted )
+						{
+							players[player]->inventoryUI.selectSlot(0, currenty);
+							players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+							return;
+						}
+						else
+						{
+							if ( y < alchemyGUI.MAX_ALCH_Y - 2 )
+							{
+								x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+								y = 0;
+							}
+							else
+							{
+								x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+								y = 0;
+							}
+						}
 					}
-					else
+					else if ( x < 0 )
 					{
-						x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
-						y = 0;
+						if ( !alchemyGUI.recipes.panelJustifyInverted )
+						{
+							if ( y < alchemyGUI.MAX_ALCH_Y - 2 )
+							{
+								x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
+								y = 0;
+							}
+							else
+							{
+								x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+								y = 0;
+							}
+						}
+						else
+						{
+							players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, currenty);
+							players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+							return;
+						}
 					}
-				}
-				else if ( x >= alchemyGUI.MAX_ALCH_X )
-				{
-					players[player]->inventoryUI.selectSlot(0, currenty);
-					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-					return;
 				}
 			}
 		}
@@ -2016,7 +2064,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			{
 				y = 0;
 			}
-			if ( GenericGUI[player].alchemyGUI.recipes.bOpen )
+			if ( GenericGUI[player].alchemyGUI.recipes.bOpen && !GenericGUI[player].alchemyGUI.recipes.panelJustifyInverted )
 			{
 				select_alchemy_slot(player, GenericGUI[player].alchemyGUI.MAX_ALCH_X - 1, y, 0, 0);
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
@@ -2024,7 +2072,14 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			}
 			else
 			{
-				select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X, 0, 0, 0);
+				if ( y >= 4 )
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_RESULT_POTION_X, 0, 0, 0);
+				}
+				else
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X, 0, 0, 0);
+				}
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
 				return;
 			}
@@ -2075,9 +2130,25 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			{
 				y = 0;
 			}
-			select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_BASE_POTION_X, 0, 0, 0);
-			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
-			return;
+			if ( GenericGUI[player].alchemyGUI.recipes.bOpen && GenericGUI[player].alchemyGUI.recipes.panelJustifyInverted )
+			{
+				select_alchemy_slot(player, 0, y, 0, 0);
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
+			else
+			{
+				if ( y >= 4 )
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_RESULT_POTION_X, 0, 0, 0);
+				}
+				else
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_BASE_POTION_X, 0, 0, 0);
+				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
 		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
 		{
@@ -6801,8 +6872,14 @@ void Player::Inventory_t::updateInventory()
 							}
 						}
 
+						bool hideCursor = false;
+						/*if ( !alchemyGUI.notifications.empty() && alchemyGUI.recipes.bOpen && y == 0 && x >= 0 )
+						{
+							hideCursor = true;
+						}*/
 						if ( x == alchemyGUI.getSelectedAlchemySlotX()
 							&& y == alchemyGUI.getSelectedAlchemySlotY()
+							&& !hideCursor
 							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
 							&& alchemyGUI.isInteractable
 							&& !(x == alchemyGUI.ALCH_SLOT_RESULT_POTION_X && alchemyGUI.animPotionResult > 0.001)
