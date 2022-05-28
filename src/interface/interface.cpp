@@ -13259,6 +13259,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 						recipes.activateRecipeIndex = -1;
 						animRandomPotionTicks = 0;
 					}
+					playSound(139, 64); // click sound
 				}
 			}
 			else if ( Input::inputs[playernum].binaryToggle("MenuPageRightAlt") || Input::inputs[playernum].binaryToggle("MenuPageLeftAlt") )
@@ -13333,6 +13334,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 
 							animRecipeAutoAddToSlot1Uid = 0;
 							animRecipeAutoAddToSlot2Uid = 0;
+							playSound(139, 64); // click sound
 						}
 						else if ( animRecipeAutoAddToSlot1Uid != 0 || animRecipeAutoAddToSlot2Uid != 0
 							|| animPotion1 > 0.001 || animPotion2 > 0.001 )
@@ -13361,6 +13363,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 								animRecipeAutoAddToSlot2Uid = entry.secondaryPotionUid;
 								alchemyResultPotion.type = POTION_EMPTY;
 							}
+							playSound(139, 64); // click sound
 						}
 						break;
 					}
@@ -13385,6 +13388,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 					animPotion1 = 0.0;
 					animPotion1Frame->setDisabled(true);
 					recipes.activateRecipeIndex = -1; // clear active recipe
+					playSound(139, 64); // click sound
 				}
 				else if ( !tryBrew && getSelectedAlchemySlotX() == ALCH_SLOT_SECONDARY_POTION_X )
 				{
@@ -13392,6 +13396,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 					animPotion2 = 0.0;
 					animPotion2Frame->setDisabled(true);
 					recipes.activateRecipeIndex = -1; // clear active recipe
+					playSound(139, 64); // click sound
 
 				}
 				else if ( tryBrew || getSelectedAlchemySlotX() == ALCH_SLOT_RESULT_POTION_X )
@@ -13565,6 +13570,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 						}
 						recipes.activateRecipeIndex = -1;
 						animRandomPotionTicks = 0;
+						playSound(139, 64); // click sound
 						break;
 					}
 				}
@@ -13711,6 +13717,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			alchemyGUI.animPotionResult = 0.0;
 			alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
 			alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
+			playSound(139, 64); // click sound
 		});
 		clearRecipeBtn->setTickCallback([](Widget& widget)
 		{
@@ -13853,6 +13860,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 					{
 						GenericGUI[player].alchemyGUI.recipes.openRecipePanel();
 					}
+					playSound(139, 64); // click sound
 				}
 			});
 			recipeBtn->setTickCallback([](Widget& widget)
