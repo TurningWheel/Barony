@@ -3833,7 +3833,7 @@ void GenericGUIMenu::updateGUI()
 			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
 		}
 
-		if ( guiType != GUI_TYPE_TINKERING ) // gradually remove all this for all windows once upgraded
+		if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY ) // gradually remove all this for all windows once upgraded
 		{
 			drawImage(identifyGUI_img, NULL, &pos);
 
@@ -3974,7 +3974,7 @@ void GenericGUIMenu::updateGUI()
 			}
 			else if ( guiType == GUI_TYPE_ALCHEMY )
 			{
-				if ( !basePotion )
+				/*if ( !basePotion )
 				{
 					if ( !experimentingAlchemy )
 					{
@@ -4004,7 +4004,7 @@ void GenericGUIMenu::updateGUI()
 					basePotion->count = count;
 					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(description)) / 2))),
 						gui_startx + 4, description);
-				}
+				}*/
 			}
 			else if ( guiType == GUI_TYPE_REMOVECURSE )
 			{
@@ -4017,7 +4017,7 @@ void GenericGUIMenu::updateGUI()
 				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 			}
 
-			if ( guiType != GUI_TYPE_TINKERING )
+			if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY )
 			{
 				//GUI up button.
 				if ( buttonclick == 7 )
@@ -4112,7 +4112,7 @@ void GenericGUIMenu::updateGUI()
 			//Okay, now prepare to render all the items.
 			y = gui_startx + 22;
 			c = 0;
-			if ( player_inventory )
+			if ( player_inventory && guiType != GUI_TYPE_ALCHEMY )
 			{
 				rebuildGUIInventory();
 
@@ -5486,6 +5486,7 @@ bool alchemyAddRecipe(int player, int basePotion, int secondaryPotion, int resul
 			}
 			GenericGUI[player].alchemyGUI.notifications.push_back(std::make_pair(ticks,
 				GenericGUIMenu::AlchemyGUI_t::AlchNotification_t(language[4179], itemName, iconPath)));
+			messagePlayerColor(player, MESSAGE_PROGRESSION, makeColorRGB(0, 255, 0), language[4182], items[result].name_identified);
 		}
 		return true;
 	}
@@ -13297,6 +13298,10 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	{
 		parentGUI.basePotion = nullptr;
 		parentGUI.secondaryPotion = nullptr;
+		if ( itemActionType != ALCHEMY_ACTION_OK && !tryBrew && itemActionType != ALCHEMY_ACTION_NONE )
+		{
+			playSound(90, 64);
+		}
 		if ( player->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
 			&& getSelectedAlchemySlotX() >= 0 && getSelectedAlchemySlotX() < MAX_ALCH_X
 			&& getSelectedAlchemySlotY() >= 0 && getSelectedAlchemySlotX() < MAX_ALCH_Y

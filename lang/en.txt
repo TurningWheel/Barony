@@ -6135,7 +6135,7 @@ formalities of gold, now!#
 4167 Caution!! Unstable
 Combination!#
 4168 [Missing ingredients]#
-4169 Clear Recipe#
+4169 Deselect Recipe#
 4170 RECIPES#
 4171 RECIPES#
 4172 Select#
@@ -6145,5 +6145,10 @@ Combination!#
 4176 Brew#
 4177 Decant#
 4178 Brew#
+4179 New Recipe!#
+4180 Discovered Use!#
+4181 OBTAINED: %d/24#
+4182 You discovered a new alchemy recipe
+ for a %s.#
 
 4199 end#
