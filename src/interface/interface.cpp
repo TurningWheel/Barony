@@ -11984,7 +11984,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		alchFrame->findImage("tmp")->pos = SDL_Rect{ 0, 0, alchFramePos.w, alchFramePos.h };
 	}*/
 
-	if ( keystatus[SDL_SCANCODE_J] )
+	if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
 	{
 		if ( keystatus[SDL_SCANCODE_LSHIFT] )
 		{
@@ -12029,7 +12029,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		keystatus[SDL_SCANCODE_J] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_H] )
+	if ( keystatus[SDL_SCANCODE_H] && enableDebugKeys )
 	{
 		keystatus[SDL_SCANCODE_H] = 0;
 		if ( keystatus[SDL_SCANCODE_LSHIFT] )
@@ -12333,7 +12333,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		return; // I can't see!
 	}
 
-	if ( keystatus[SDL_SCANCODE_B] )
+	if ( keystatus[SDL_SCANCODE_B] && enableDebugKeys )
 	{
 		keystatus[SDL_SCANCODE_B] = 0;
 		notifications.push_back(std::make_pair(ticks, AlchNotification_t("Wow a title!", "This is a body", "items/images/Alembic.png")));
