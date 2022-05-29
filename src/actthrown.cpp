@@ -865,7 +865,8 @@ void actThrown(Entity* my)
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
-						switch ( item->type )
+						ItemType itemType = item->type;
+						switch ( itemType )
 						{
 							case POTION_WATER:
 								usedpotion = true;
@@ -1088,7 +1089,7 @@ void actThrown(Entity* my)
 									hitstats = newTarget->getStats();
 				                    if (hitstats) {
 				                        hitstats->killer = KilledBy::ITEM;
-				                        hitstats->killer_item = item->type;
+				                        hitstats->killer_item = itemType;
 				                    }
 								}
 								skipMessage = true;
