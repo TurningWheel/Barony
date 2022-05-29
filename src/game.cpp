@@ -4158,14 +4158,12 @@ void ingameHud()
             // map window bind
             if ( input.consumeBinaryToggle("Open Map") )
             {
-                players[player]->shootmode = false;
                 openMapWindow(player);
             }
 
             // log window bind
             if ( input.consumeBinaryToggle("Open Log") )
             {
-                players[player]->shootmode = false;
                 openLogWindow(player);
             }
         }

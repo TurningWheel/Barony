@@ -1378,7 +1378,8 @@ void Player::HUD_t::updateUINavigation()
 					continue;
 				}
 			}
-			if ( GenericGUI[player.playernum].isGUIOpen() || player.GUI.isDropdownActive() )
+			if ( GenericGUI[player.playernum].isGUIOpen() || player.GUI.isDropdownActive()
+				|| player.hud.mapWindow || player.hud.logWindow )
 			{
 				button->setDisabled(true);
 				continue;
@@ -1390,7 +1391,9 @@ void Player::HUD_t::updateUINavigation()
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
 				&& !player.bUseCompactGUIWidth()
-				&& !GenericGUI[player.playernum].isGUIOpen() )
+				&& !GenericGUI[player.playernum].isGUIOpen()
+				&& !player.hud.mapWindow
+				&& !player.hud.logWindow )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
 				{
@@ -4864,11 +4867,28 @@ void openMapWindow(int player) {
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
-        if (players[player]->gui_mode == GUI_MODE_NONE) {
-            players[player]->shootmode = true;
-        }
+		if ( players[player]->gui_mode == GUI_MODE_NONE ) {
+			players[player]->shootmode = true;
+		}
+		else
+		{
+			players[player]->GUI.returnToPreviousActiveModule();
+		}
         return;
     }
+
+	players[player]->GUI.previousModule = players[player]->GUI.activeModule;
+	if ( players[player]->shootmode )
+	{
+		players[player]->openStatusScreen(GUI_MODE_NONE,
+			INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_MAP);
+	}
+	else
+	{
+		players[player]->openStatusScreen(GUI_MODE_INVENTORY,
+			players[player]->inventory_mode, Player::GUI_t::MODULE_MAP); // Reset the GUI to the inventory.
+	}
+
     auto& otherWindow = players[player]->hud.logWindow;
     if (otherWindow) {
         otherWindow->removeSelf();
@@ -5008,13 +5028,10 @@ void openMapWindow(int player) {
                 if (players[player]->gui_mode == GUI_MODE_NONE) {
                     players[player]->shootmode = true;
                 }
-            }
-            auto buttons = gui->findFrame("log map buttons");
-            if (buttons) {
-                auto button = buttons->findButton("map button");
-                if (button) {
-                    button->select();
-                }
+				else
+				{
+					players[player]->GUI.returnToPreviousActiveModule();
+				}
             }
         }
 
@@ -5165,11 +5182,28 @@ void openLogWindow(int player) {
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
-        if (players[player]->gui_mode == GUI_MODE_NONE) {
-            players[player]->shootmode = true;
-        }
+		if ( players[player]->gui_mode == GUI_MODE_NONE ) {
+			players[player]->shootmode = true;
+		}
+		else
+		{
+			players[player]->GUI.returnToPreviousActiveModule();
+		}
         return;
     }
+
+	players[player]->GUI.previousModule = players[player]->GUI.activeModule;
+	if ( players[player]->shootmode )
+	{
+		players[player]->openStatusScreen(GUI_MODE_NONE,
+			INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_LOG);
+	}
+	else
+	{
+		players[player]->openStatusScreen(GUI_MODE_INVENTORY,
+			players[player]->inventory_mode, Player::GUI_t::MODULE_LOG); // Reset the GUI to the inventory.
+	}
+
     auto& otherWindow = players[player]->hud.mapWindow;
     if (otherWindow) {
         otherWindow->removeSelf();
@@ -5301,6 +5335,19 @@ void openLogWindow(int player) {
             subframe_size.y = std::min(limit, subframe_size.y);
             subframe->setActualSize(subframe_size);
         }
+		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {
+			if ( players[player]->hud.logWindow ) {
+				players[player]->hud.logWindow->removeSelf();
+				players[player]->hud.logWindow = nullptr;
+				if ( players[player]->gui_mode == GUI_MODE_NONE ) {
+					players[player]->shootmode = true;
+				}
+				else
+				{
+					players[player]->GUI.returnToPreviousActiveModule();
+				}
+			}
+		}
         });
 
     // frame images
@@ -5394,6 +5441,10 @@ void openLogWindow(int player) {
         if (players[player]->gui_mode == GUI_MODE_NONE) {
             players[player]->shootmode = true;
         }
+		else
+		{
+			players[player]->GUI.returnToPreviousActiveModule();
+		}
         });
 
     auto help_left = frame->addField("help_left", 128);

@@ -1127,7 +1127,8 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 			return false;
 		}
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
-			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
+			|| FollowerMenu[player.playernum].followerMenuIsOpen()
+			|| player.hud.mapWindow || player.hud.logWindow )
 		{
 			return false;
 		}

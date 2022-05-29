@@ -1092,6 +1092,8 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 	{
 		case MODULE_BOOK_VIEW:
 		case MODULE_SKILLS_LIST:
+		case MODULE_LOG:
+		case MODULE_MAP:
 		case MODULE_NONE:
 			return true;
 		default:
@@ -1359,6 +1361,16 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		FollowerMenu[playernum].closeFollowerMenuGUI();
 	}
 	GenericGUI[playernum].closeGUI();
+	if ( hud.mapWindow )
+	{
+		hud.mapWindow->removeSelf();
+		hud.mapWindow = nullptr;
+	}
+	if ( hud.logWindow )
+	{
+		hud.logWindow->removeSelf();
+		hud.logWindow = nullptr;
+	}
 
 	int oldgui = gui_mode;
 	gui_mode = whichGUIMode;
@@ -1457,6 +1469,17 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	inventoryUI.closeInventory();
 	skillSheet.closeSkillSheet();
 	bookGUI.closeBookGUI();
+
+	if ( hud.mapWindow )
+	{
+		hud.mapWindow->removeSelf();
+		hud.mapWindow = nullptr;
+	}
+	if ( hud.logWindow )
+	{
+		hud.logWindow->removeSelf();
+		hud.logWindow = nullptr;
+	}
 
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{

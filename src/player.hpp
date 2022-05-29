@@ -711,7 +711,9 @@ public:
 			MODULE_BOOK_VIEW,
 			MODULE_HOTBAR,
 			MODULE_SPELLS,
-			MODULE_STATUS_EFFECTS
+			MODULE_STATUS_EFFECTS,
+			MODULE_LOG,
+			MODULE_MAP
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
