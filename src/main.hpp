@@ -162,7 +162,6 @@ extern bool autoLimbReload;
 #define PI 3.14159265358979323846
 
 extern FILE* logfile;
-static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
 extern bool enableDebugKeys; // if true, certain special keys can be used for debugging
 
@@ -519,6 +518,7 @@ typedef struct string_t
 	char* data;
 	node_t* node;
 	Uint32 color;
+	Uint32 time;
 } string_t;
 
 // door structure (used for map generation)
@@ -550,17 +550,14 @@ extern cameravars_t cameravars[MAXPLAYERS];
 extern int game;
 extern bool loading;
 extern SDL_Window* screen;
-#ifdef APPLE
-extern SDL_Renderer* renderer;
-#else
 extern SDL_GLContext renderer;
-#endif
 extern SDL_Event event;
 extern bool firstmouseevent;
 extern char const * window_title;
 extern Sint32 fullscreen;
 extern bool borderless;
 extern bool smoothlighting;
+extern Sint32 display_id;
 extern Sint32 xres;
 extern Sint32 yres;
 extern int mainloop;
@@ -601,11 +598,8 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern bool softwaremode;
-extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern Sint32* lightmapSmoothed;
-extern Entity** clickmap;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
@@ -758,7 +752,7 @@ void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
-string_t* newString(list_t* list, Uint32 color, char const * const content, ...);
+string_t* newString(list_t* list, Uint32 color, Uint32 time, char const * const content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
 // function prototypes for opengl.c:

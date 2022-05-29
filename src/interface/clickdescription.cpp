@@ -37,7 +37,7 @@ void clickDescription(int player, Entity* entity)
 
 	if ( entity == NULL )
 	{
-		if ( !input.binaryToggle("Attack") || players[player]->shootmode )
+		if ( !input.binaryToggle("InspectWithMouse") || players[player]->shootmode )
 		{
 			return;
 		}
@@ -204,17 +204,10 @@ void clickDescription(int player, Entity* entity)
 			return;
 		}
 
-		input.consumeBinaryToggle("Attack");
+		input.consumeBinaryToggle("InspectWithMouse");
 
-		if ( softwaremode )
-		{
-			entity = clickmap[my + mx * (camera.winy + camera.winh)];
-		}
-		else
-		{
-			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
-			entity = uidToEntity(uidnum);
-		}
+		uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
+		entity = uidToEntity(uidnum);
 	}
 
 	if ( entity != NULL )

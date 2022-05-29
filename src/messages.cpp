@@ -16,6 +16,8 @@
 #include "player.hpp"
 #include <regex>
 
+const int MESSAGE_LIST_SIZE_CAP = 400;
+
 void messageDeconstructor(void* data)
 {
 	if (data != NULL)
@@ -67,6 +69,10 @@ void Player::MessageZone_t::addMessage(Uint32 color, const char* content)
 		            }
 		            ++lines;
 		        }
+		    }
+		    if (msg->text->lines > lines) {
+		        // how did this message record more lines than it has?
+		        msg->text->lines = lines;
 		    }
 		} else {
 		    total_lines -= msg->text->lines;

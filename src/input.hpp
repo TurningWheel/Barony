@@ -206,8 +206,8 @@ public:
 	//! consume inputs related to the players face-hotbar if it is open
 	void consumeBindingsSharedWithFaceHotbar();
 
-	//! consume bindings shared with given input
-	void consumeBindingsSharedWithBinding(const char* input);
+	//! consume bindings that all use the same input as given binding
+	void consumeBindingsSharedWithBinding(const char* binding);
 private:
 	std::unordered_map<std::string, binding_t> bindings;
 

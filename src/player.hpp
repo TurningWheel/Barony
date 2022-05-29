@@ -1302,6 +1302,8 @@ public:
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
 		Frame* minimapFrame = nullptr;
+		Frame* mapWindow = nullptr;
+		Frame* logWindow = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;

@@ -327,7 +327,7 @@ void updateGameplayStatisticsInMainLoop(); // check for achievement values for g
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
 void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
-static const int SAVE_GAMES_MAX = 100;
+static const int SAVE_GAMES_MAX = 10;
 
 class AchievementObserver
 {

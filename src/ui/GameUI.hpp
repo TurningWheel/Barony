@@ -2,13 +2,14 @@
 
 #pragma once
 
-void doFrames();
 #include "Frame.hpp"
 #include "../interface/consolecommand.hpp"
 #include <deque>
 
+Frame::result_t doFrames();
 void doSharedMinimap();
 extern Frame* gameUIFrame[MAXPLAYERS];
+void addMessageToLogWindow(int player, string_t* string);
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable = false);
 void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
@@ -49,14 +50,8 @@ struct CustomColors_t
 	Uint32 characterSheetFaintText = 0xFFFFFFFF;
 	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
-	Uint32 characterSheetHighlightText = 0xFFFFFFFF;
 };
 extern CustomColors_t hudColors;
-
-extern int GAMEUI_FRAMEDATA_ANIMATING_ITEM;
-extern int GAMEUI_FRAMEDATA_ALCHEMY_ITEM;
-extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT; // displaying in main alchemy gui when hovering over recipe
-extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
 
 // if true, use the new user interface
 extern bool newui;
@@ -234,7 +229,7 @@ struct SkillSheetFrames_t
 };
 extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
-extern Frame* minimapFrame;
+extern Frame* minimapFrame; // shared minimap
 
-void capitalizeString(std::string& str);
-void uppercaseString(std::string& str);
+void openMapWindow(int player);
+void openLogWindow(int player);

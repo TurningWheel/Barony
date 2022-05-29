@@ -80,7 +80,7 @@ int initGame()
 	initGameControllers();
 
 	// another loading screen!
-	createLoadingScreen(90);
+	updateLoadingScreen(90);
 	doLoadingScreen();
 
 	// load achievement images

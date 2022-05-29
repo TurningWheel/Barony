@@ -620,7 +620,7 @@ void updateAppraisalItemBox(const int player)
         return;
     }
 
-    static ConsoleVariable<bool> disable("/disableappraisalbox", false);
+    static ConsoleVariable<bool> disable("/disableappraisalbox", true);
     if (*disable) {
         return;
     }
@@ -7521,7 +7521,7 @@ void Player::Inventory_t::updateInventory()
 	{
 		drawDepressed(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
 	}
-	ttfPrintText(ttf12, mode_pos.x, mode_pos.y + 6, "||");
+	//ttfPrintText(ttf12, mode_pos.x, mode_pos.y + 6, "||");
 	if ( mouse_in_bounds )
 	{
 		mode_pos.x += 2;

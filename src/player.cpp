@@ -5362,6 +5362,8 @@ void Player::clearGUIPointers()
 	hud.hpFrame = nullptr;
 	hud.mpFrame = nullptr;
 	hud.minimapFrame = nullptr;
+	hud.mapWindow = nullptr;
+	hud.logWindow = nullptr;
 	hud.enemyBarFrame = nullptr;
 	hud.enemyBarFrameHUD = nullptr;
 	hud.actionPromptsFrame = nullptr;

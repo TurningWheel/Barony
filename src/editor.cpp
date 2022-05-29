@@ -859,28 +859,16 @@ void handleEvents(void)
 					{
 						break;
 					}
-					xres = std::max(event.window.data1, 100);
-					yres = std::max(event.window.data2, 75);
-					if ( zbuffer != NULL )
+					if ( !resizeWindow(event.window.data1, event.window.data2) )
 					{
-						free(zbuffer);
+						printlog("critical error! Attempting to abort safely...\n");
+						mainloop = 0;
 					}
-					zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
-					if ( clickmap != NULL )
-					{
-						free(clickmap);
-					}
-					clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 					if (palette != NULL)
 					{
 						free(palette);
 					}
 					palette = (int*) malloc(sizeof(unsigned int) * xres * yres);
-					if ( !changeVideoMode() )
-					{
-						printlog("critical error! Attempting to abort safely...\n");
-						mainloop = 0;
-					}
 				}
 				break;
 		}
@@ -1556,9 +1544,6 @@ int main(int argc, char** argv)
 	cursorBrush = newCursor(cursor_brush);
 	cursorSelect = cursorArrow;
 	cursorFill = newCursor(cursor_fill);
-
-	// seed rng
-	srand(time(nullptr));
 
 	// create an empty map
 	map.width = 32;

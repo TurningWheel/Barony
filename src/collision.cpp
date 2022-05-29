@@ -281,44 +281,28 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			return NULL;
 		}
 
-		if ( softwaremode )
+		if ( players[player]->worldUI.isEnabled() )
 		{
-			return clickmap[my + mx * (camera.winy + camera.winh)];
+			uidnum = 0;
 		}
 		else
 		{
-			if ( players[player]->worldUI.isEnabled() )
-			{
-				uidnum = 0;
-			}
-			else
-			{
-				uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
-			}
+			uidnum = GO_GetPixelU32(mx, yres - my, cameras[player]);
 		}
 	}
 	else
 	{
-		if ( softwaremode )
+		if ( players[player]->worldUI.isEnabled() )
 		{
-			return clickmap[
-				(cameras[player].winy + cameras[player].winh / 2) 
-				+ (cameras[player].winx + (cameras[player].winw / 2) * (cameras[player].winy + (cameras[player].winh / 2) * 2))];
+			uidnum = 0;
 		}
 		else
 		{
-			if ( players[player]->worldUI.isEnabled() )
-			{
-				uidnum = 0;
-			}
-			else
-			{
-				uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), yres - (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
-			}
-			//messagePlayer(0, "first: %d", uidnum);
-			//uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
-			//messagePlayer(0, "sec: %d", uidnum);
+			uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), yres - (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
 		}
+		//messagePlayer(0, "first: %d", uidnum);
+		//uidnum = GO_GetPixelU32(cameras[player].winx + (cameras[player].winw / 2), (cameras[player].winy + (cameras[player].winh / 2)), cameras[player]);
+		//messagePlayer(0, "sec: %d", uidnum);
 	}
 
 	Entity* entity = uidToEntity(uidnum);
@@ -479,16 +463,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			}
 		}
 	}
-
-	// pixel processing (opengl only)
-	if ( softwaremode == false)
-	{
-		return entity;
-	}
-	else
-	{
-		return NULL;
-	}
+	return entity;
 }
 
 /*-------------------------------------------------------------------------------

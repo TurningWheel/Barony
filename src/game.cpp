@@ -48,8 +48,13 @@
 #include "input.hpp"
 #include "ui/Image.hpp"
 #include "ui/MainMenu.hpp"
+#include "ui/LoadingScreen.hpp"
 
 #include "UnicodeDecoder.h"
+
+#include <atomic>
+#include <future>
+#include <thread>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -236,6 +241,13 @@ Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
 bool arachnophobia_filter = false;
+
+static Frame::result_t framesProcResult{
+    false,
+    0,
+    nullptr,
+    false
+};
 
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 
@@ -679,6 +691,8 @@ std::string TimerExperiments::render(State state)
 	Updates the gamestate; moves actors, primarily
 
 -------------------------------------------------------------------------------*/
+
+static ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 
 void gameLogic(void)
 {
@@ -1498,6 +1512,9 @@ void gameLogic(void)
 
 				if ( loadnextlevel == true )
 				{
+				    // when this flag is set, it's time to load the next level.
+					loadnextlevel = false;
+
 					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
@@ -1611,17 +1628,6 @@ void gameLogic(void)
 							}
 						}
 					}
-
-
-
-					// show loading message
-					loading = true;
-					drawClearBuffers();
-					int w, h;
-					getSizeOfText(ttf16, language[709], &w, &h);
-					ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[709]);
-
-					GO_SwapBuffers(screen);
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
@@ -1770,18 +1776,43 @@ void gameLogic(void)
 					}
 					loadingSameLevelAsCurrent = false;
 					darkmap = false;
-					numplayers = 0;
 
-					gameplayCustomManager.readFromFile();
-					textSourceScript.scriptVariables.clear();
+                    // load map file
+					loading = true;
+	                createLevelLoadScreen(5);
+	                std::atomic_bool loading_done {false};
+	                auto loading_task = std::async(std::launch::async, [&loading_done](){
+					    gameplayCustomManager.readFromFile();
+					    textSourceScript.scriptVariables.clear();
+	                    updateLoadingScreen(10);
 
-					int checkMapHash = -1;
-					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-					if ( checkMapHash == 0 )
-					{
-						conductGameChallenges[CONDUCT_MODDED] = 1;
-						gamemods_disableSteamAchievements = true;
-					}
+					    int checkMapHash = -1;
+					    int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+					    if ( checkMapHash == 0 )
+					    {
+						    conductGameChallenges[CONDUCT_MODDED] = 1;
+						    gamemods_disableSteamAchievements = true;
+					    }
+	                    updateLoadingScreen(50);
+
+					    numplayers = 0;
+					    assignActions(&map);
+                        updateLoadingScreen(55);
+
+					    generatePathMaps();
+	                    updateLoadingScreen(99);
+
+		                loading_done = true;
+		                return result;
+		            });
+	                while (!loading_done)
+	                {
+		                doLoadingScreen();
+		                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	                }
+	                destroyLoadingScreen();
+		            loading = false;
+	                int result = loading_task.get();
 
 					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
@@ -1795,9 +1826,6 @@ void gameLogic(void)
 						}
 						enemyHPDamageBarHandler[i].HPBars.clear();
 					}
-
-					assignActions(&map);
-					generatePathMaps();
 
 					achievementObserver.updateData();
 
@@ -1915,8 +1943,9 @@ void gameLogic(void)
 					{
 						Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 					}
-					loadnextlevel = false;
+
 					loading = false;
+
 					fadeout = false;
 					fadealpha = 255;
 
@@ -3181,6 +3210,23 @@ void handleEvents(void)
 		input.consumeBindingsSharedWithFaceHotbar();
 	}
 
+    // consume mouse buttons that were eaten by GUI
+	if (!framesProcResult.usable && *framesEatMouse) {
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (!players[c]->shootmode) {
+	            if (Input::inputs[c].consumeBinaryToggle("MenuLeftClick")) {
+	                Input::inputs[c].consumeBindingsSharedWithBinding("MenuLeftClick");
+	            }
+	            if (Input::inputs[c].consumeBinaryToggle("MenuMiddleClick")) {
+	                Input::inputs[c].consumeBindingsSharedWithBinding("MenuMiddleClick");
+	            }
+	            if (Input::inputs[c].consumeBinaryToggle("MenuRightClick")) {
+	                Input::inputs[c].consumeBindingsSharedWithBinding("MenuRightClick");
+	            }
+	        }
+	    }
+	}
+
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
 		// Global events
@@ -3460,13 +3506,18 @@ void handleEvents(void)
 				if ( Input::waitingToBindControllerForPlayer >= 0
 					&& event.cbutton.button == SDL_CONTROLLER_BUTTON_A )
 				{
-					const int id = event.cdevice.which;
-					if ( SDL_IsGameController(id) )
+					SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
+					if ( !pad )
+					{
+						printlog("(Unknown pad pressed input (instance: %d), null controller returned.)\n", event.cbutton.which);
+					}
+					else
 					{
 						for ( auto& controller : game_controllers )
 						{
-							if ( controller.isActive() && controller.getID() == id )
+							if ( controller.isActive() && controller.getControllerDevice() == pad )
 							{
+								const int id = controller.getID();
 							    int player = Input::waitingToBindControllerForPlayer;
 								inputs.removeControllerWithDeviceID(id); // clear any other player using this
 								inputs.setControllerID(player, id);
@@ -3784,9 +3835,11 @@ void handleEvents(void)
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
-					xres = event.window.data1;
-					yres = event.window.data2;
-					if (!changeVideoMode())
+					if (fullscreen || ticks == 0)
+					{
+						break;
+					}
+					if (!resizeWindow(event.window.data1, event.window.data2))
 					{
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
@@ -4033,31 +4086,48 @@ void pauseGame(int mode, int ignoreplayer)
 -------------------------------------------------------------------------------*/
 
 // records the SDL_GetTicks() value at the moment the mainloop restarted
-Uint64 lastGameTickCount = 0;
-float framerateAccumulatedTime = 0.f;
-bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
+static Uint64 lastGameTickCount = 0;
+static Uint64 framerateAccumulatedTicks = 0;
+bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 {
 	if ( maxFrameRate == 0 )
 	{
 		return false;
 	}
-	float desiredFrameMilliseconds = 1.0f / maxFrameRate;
+	float desiredFrameSeconds = 1.0f / maxFrameRate;
 	Uint64 gameTickCount = SDL_GetPerformanceCounter();
 	Uint64 ticksPerSecond = SDL_GetPerformanceFrequency();
-	float millisecondsElapsed = (gameTickCount - lastGameTickCount) / static_cast<float>(ticksPerSecond);
+	Uint64 ticksElapsed = gameTickCount - lastGameTickCount;
 	lastGameTickCount = gameTickCount;
-	framerateAccumulatedTime += millisecondsElapsed;
+	framerateAccumulatedTicks += ticksElapsed;
 
-	if ( framerateAccumulatedTime < desiredFrameMilliseconds )
+	const float accumulatedSeconds = framerateAccumulatedTicks / (float)ticksPerSecond;
+	const float diff = desiredFrameSeconds - accumulatedSeconds;
+
+    static ConsoleVariable<bool> allowSleep("/timer_sleep_enabled", true,
+        "allow main thread to sleep between ticks (saves power)");
+    static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
+    static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
+
+	if ( diff >= 0.f )
 	{
-		// if enough time is left wait, otherwise just keep spinning so we don't go over the limit...
+	    // we have not passed a full frame, so we must delay.
+        if ( *allowSleep && sleep )
+        {
+            // sleep a fraction of the remaining time.
+            // This saves power if you're running on battery.
+            if ( diff >= *sleepLimit )
+            {
+                std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor))));
+            }
+        }
 		return true;
 	}
 	else
 	{
 		if ( resetAccumulator )
 		{
-			framerateAccumulatedTime = 0.f;
+			framerateAccumulatedTicks = 0;
 		}
 		return false;
 	}
@@ -4075,12 +4145,29 @@ void ingameHud()
 
 	    Input& input = Input::inputs[player];
 
-	    // toggle minimap
-		// player not needed to be alive
-        if ( players[player]->shootmode && !players[player]->usingCommand() && input.consumeBinaryToggle("Toggle Minimap")
-			&& !gamePaused
-			&& bControlEnabled ) {
-            openMinimap(player);
+        // various UI keybinds
+        if ( !gamePaused && bControlEnabled && !players[player]->usingCommand() )
+        {
+	        // toggle minimap
+		    // player not needed to be alive
+            if ( players[player]->shootmode && input.consumeBinaryToggle("Toggle Minimap") )
+            {
+                openMinimap(player);
+            }
+
+            // map window bind
+            if ( input.consumeBinaryToggle("Open Map") )
+            {
+                players[player]->shootmode = false;
+                openMapWindow(player);
+            }
+
+            // log window bind
+            if ( input.consumeBinaryToggle("Open Log") )
+            {
+                players[player]->shootmode = false;
+                openLogWindow(player);
+            }
         }
 
 		// inventory interface
@@ -4957,6 +5044,173 @@ void ingameHud()
 	}
 }
 
+void drawAllPlayerCameras() {
+	int playercount = 0;
+	for (int c = 0; c < MAXPLAYERS; ++c)
+	{
+		if (!client_disconnected[c] && players[c]->isLocalPlayer())
+		{
+			++playercount;
+		}
+	}
+	if (playercount >= 1)
+	{
+        // drunkenness spinning
+	    double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
+	    double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
+
+		//int maximum = splitscreen ? MAXPLAYERS : 1;
+		for (int c = 0; c < MAXPLAYERS; ++c)
+		{
+			if (client_disconnected[c])
+			{
+				continue;
+			}
+			if ( !splitscreen && c != clientnum )
+			{
+				continue;
+			}
+			auto& camera = players[c]->camera();
+			if (shaking && players[c] && players[c]->entity && !gamePaused)
+			{
+				camera.ang += cosspin * drunkextend;
+				camera.vang += sinspin * drunkextend;
+			}
+
+			if ( players[c] && players[c]->entity )
+			{
+				if ( usecamerasmoothing )
+				{
+					real_t oldYaw = players[c]->entity->yaw;
+					//printText(font8x8_bmp, 20, 20, "using smooth camera");
+					players[c]->movement.handlePlayerCameraBobbing(true);
+					players[c]->movement.handlePlayerMovement(true);
+					players[c]->movement.handlePlayerCameraUpdate(true);
+					players[c]->movement.handlePlayerCameraPosition(true);
+					//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
+				}
+			}
+
+			// do occlusion culling from the perspective of this camera
+			occlusionCulling(map, camera);
+
+			if ( players[c] && players[c]->entity )
+			{
+				if ( players[c]->entity->isBlind() )
+				{
+					if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED
+						|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
+					{
+						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
+						globalLightModifier = 0.f;
+						globalLightTelepathyModifier = 0.f;
+						if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+						{
+							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+							{
+								Entity* mapCreature = (Entity*)mapNode->element;
+								if ( mapCreature )
+								{
+									mapCreature->monsterEntityRenderAsTelepath = 1;
+								}
+							}
+						}
+					}
+
+					int PERModifier = 0;
+					if ( stats[c] && stats[c]->EFFECTS[EFF_BLIND]
+						&& !stats[c]->EFFECTS[EFF_ASLEEP] && !stats[c]->EFFECTS[EFF_MESSY] )
+					{
+						// blind but not messy or asleep = allow PER to let you see the world a little.
+						PERModifier = players[c]->entity->getPER() / 5;
+						if ( PERModifier < 0 )
+						{
+							PERModifier = 0;
+						}
+					}
+
+					real_t limit = PERModifier * 0.01;
+					globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
+
+					int telepathyLimit = std::min(64, 48 + players[c]->entity->getPER());
+					globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
+				}
+				else
+				{
+					if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+					{
+						for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+						{
+							Entity* mapCreature = (Entity*)mapNode->element;
+							if ( mapCreature )
+							{
+								mapCreature->monsterEntityRenderAsTelepath = 0;
+							}
+						}
+					}
+					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+					globalLightTelepathyModifier = 0.f;
+					if ( globalLightModifier < 1.f )
+					{
+						globalLightModifier += 0.01;
+					}
+					else
+					{
+						globalLightModifier = 1.01;
+						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+					}
+				}
+				if ( !players[c]->entity->isBlind() )
+				{
+				    raycast(&camera, minimap); // update minimap
+				}
+				glDrawWorld(&camera, REALCOLORS);
+
+				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( i != clientnum && players[i] && players[i]->entity )
+						{
+						    if ( !players[i]->entity->isBlind() )
+						    {
+							    real_t x = camera.x;
+							    real_t y = camera.y;
+							    real_t ang = camera.ang;
+
+							    camera.x = players[i]->entity->x / 16.0;
+							    camera.y = players[i]->entity->y / 16.0;
+							    camera.ang = players[i]->entity->yaw;
+							    raycast(&camera, minimap); // update minimap from other players' perspectives
+							    camera.x = x;
+							    camera.y = y;
+							    camera.ang = ang;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+			    // player is dead, spectate
+				glDrawWorld(&camera, REALCOLORS);
+			}
+
+			drawEntities3D(&camera, REALCOLORS);
+
+			if (shaking && players[c] && players[c]->entity && !gamePaused)
+			{
+				camera.ang -= cosspin * drunkextend;
+				camera.vang -= sinspin * drunkextend;
+			}
+
+			auto& cvars = cameravars[c];
+			camera.ang -= cvars.shakex2;
+			camera.vang -= cvars.shakey2 / 200.0;
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	main
@@ -5273,7 +5527,6 @@ int main(int argc, char** argv)
 		setDefaultPlayerConducts();
 
 		// seed random generators
-		srand(time(NULL));
 		fountainSeed.seed(rand());
 
 		// play splash sound
@@ -5601,8 +5854,7 @@ int main(int argc, char** argv)
 							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 
-						doFrames();
-
+                        framesProcResult = doFrames();
 #ifndef NINTENDO
 						// draw mouse
 						// only draw 1 cursor in the main menu
@@ -5776,167 +6028,9 @@ int main(int argc, char** argv)
 					}
 				}
 
-				int playercount = 0;
-				for (int c = 0; c < MAXPLAYERS; ++c)
-				{
-					if (!client_disconnected[c] && players[c]->isLocalPlayer())
-					{
-						++playercount;
-					}
-				}
-
 				if ( !MainMenu::isCutsceneActive() )
 				{
-					// drunkenness spinning
-					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
-					double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
-
-					if (playercount >= 1)
-					{
-						//int maximum = splitscreen ? MAXPLAYERS : 1;
-						for (int c = 0; c < MAXPLAYERS; ++c)
-						{
-							if (client_disconnected[c]) 
-							{
-								continue;
-							}
-							if ( !splitscreen && c != clientnum )
-							{
-								continue;
-							}
-							auto& camera = players[c]->camera();
-							if (shaking && players[c] && players[c]->entity && !gamePaused)
-							{
-								camera.ang += cosspin * drunkextend;
-								camera.vang += sinspin * drunkextend;
-							}
-
-							if ( players[c] && players[c]->entity )
-							{
-								if ( usecamerasmoothing )
-								{
-									real_t oldYaw = players[c]->entity->yaw;
-									//printText(font8x8_bmp, 20, 20, "using smooth camera");
-									players[c]->movement.handlePlayerCameraBobbing(true);
-									players[c]->movement.handlePlayerMovement(true);
-									players[c]->movement.handlePlayerCameraUpdate(true);
-									players[c]->movement.handlePlayerCameraPosition(true);
-									//messagePlayer(0, "%3.2f | %3.2f", players[c]->entity->yaw, oldYaw);
-								}
-							}
-
-							// do occlusion culling from the perspective of this camera
-							occlusionCulling(map, camera);
-
-							if ( players[c] && players[c]->entity )
-							{
-								if ( players[c]->entity->isBlind() )
-								{
-									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED 
-										|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
-									{
-										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
-										globalLightModifier = 0.f;
-										globalLightTelepathyModifier = 0.f;
-										if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
-										{
-											for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
-											{
-												Entity* mapCreature = (Entity*)mapNode->element;
-												if ( mapCreature )
-												{
-													mapCreature->monsterEntityRenderAsTelepath = 1;
-												}
-											}
-										}
-									}
-
-									int PERModifier = 0;
-									if ( stats[c] && stats[c]->EFFECTS[EFF_BLIND]
-										&& !stats[c]->EFFECTS[EFF_ASLEEP] && !stats[c]->EFFECTS[EFF_MESSY] )
-									{
-										// blind but not messy or asleep = allow PER to let you see the world a little.
-										PERModifier = players[c]->entity->getPER() / 5;
-										if ( PERModifier < 0 )
-										{
-											PERModifier = 0;
-										}
-									}
-
-									real_t limit = PERModifier * 0.01;
-									globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
-
-									int telepathyLimit = std::min(64, 48 + players[c]->entity->getPER());
-									globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
-								}
-								else
-								{
-									if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
-									{
-										for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
-										{
-											Entity* mapCreature = (Entity*)mapNode->element;
-											if ( mapCreature )
-											{
-												mapCreature->monsterEntityRenderAsTelepath = 0;
-											}
-										}
-									}
-									globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
-									globalLightTelepathyModifier = 0.f;
-									if ( globalLightModifier < 1.f )
-									{
-										globalLightModifier += 0.01;
-									}
-									else
-									{
-										globalLightModifier = 1.01;
-										globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
-									}
-								}
-								raycast(&camera, minimap); // update minimap
-								glDrawWorld(&camera, REALCOLORS);
-
-								if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
-								{
-									for ( int i = 0; i < MAXPLAYERS; ++i )
-									{
-										if ( i != clientnum && players[i] && players[i]->entity )
-										{
-											real_t x = camera.x;
-											real_t y = camera.y;
-											real_t ang = camera.ang;
-
-											camera.x = players[i]->entity->x / 16.0;
-											camera.y = players[i]->entity->y / 16.0;
-											camera.ang = players[i]->entity->yaw;
-											raycast(&camera, minimap);
-											camera.x = x;
-											camera.y = y;
-											camera.ang = ang;
-										}
-									}
-								}
-							}
-							else
-							{
-							    // player is dead, spectate
-								glDrawWorld(&camera, REALCOLORS);
-							}
-
-							drawEntities3D(&camera, REALCOLORS);
-
-							if (shaking && players[c] && players[c]->entity && !gamePaused)
-							{
-								camera.ang -= cosspin * drunkextend;
-								camera.vang -= sinspin * drunkextend;
-							}
-
-							auto& cvars = cameravars[c];
-							camera.ang -= cvars.shakex2;
-							camera.vang -= cvars.shakey2 / 200.0;
-						}
-					}
+					drawAllPlayerCameras();
 				}
 
 				if ( TimerExperiments::bUseTimerInterpolation )
@@ -5972,8 +6066,19 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-				doFrames();
+                framesProcResult = doFrames();
 				ingameHud();
+
+                static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
+                if (!framesProcResult.usable) {
+				    if (*showConsumeMouseInputs) {
+				        printText(font8x8_bmp, 16, 16, "eating mouse input");
+				    }
+				} else {
+				    if (*showConsumeMouseInputs) {
+				        printText(font8x8_bmp, 16, 16, "NOT eating mouse input");
+				    }
+				}
 
 				if ( gamePaused )
 				{
@@ -6120,7 +6225,7 @@ int main(int argc, char** argv)
 			}
 
 			// frame rate limiter
-			while ( frameRateLimit(fpsLimit, true) )
+			while ( frameRateLimit(fpsLimit, true, true) )
 			{
 				if ( !intro )
 				{

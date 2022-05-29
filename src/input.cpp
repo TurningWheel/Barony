@@ -115,6 +115,19 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Up", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Down", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogHome", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogEnd", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageDown", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageUp", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogScrollDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogScrollUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapPing", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapClose", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapRight", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapLeft", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));
@@ -129,7 +142,18 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDown", "MouseWheelDown")); // consumed automatically by frame.cpp
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelUpAlt", "MouseWheelUp"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDownAlt", "MouseWheelDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeftClick", "Mouse1"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMiddleClick", "Mouse2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("InspectWithMouse", "Mouse1"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("MinimapPing", "Mouse1"));
+
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogHome", "Home"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogEnd", "End"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogPageDown", "PageDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogPageUp", "PageUp"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogScrollDown", "MouseWheelDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("LogScrollUp", "MouseWheelUp"));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuUp", "Up"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeft", "Left"));
@@ -403,7 +427,7 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 		{
 			return rootPath + "Stick_Switch_L_Right_00.png";
 		}
-}
+    }
 	if ( in == "StickLeftY-" )
 	{
 		if ( pressed )
@@ -1464,7 +1488,7 @@ Input::playerControlType_t Input::getPlayerControlType()
 	return Input::PLAYER_CONTROLLED_BY_INVALID;
 }
 
-void Input::consumeBindingsSharedWithBinding(const char* input)
+void Input::consumeBindingsSharedWithBinding(const char* binding)
 {
 #ifndef EDITOR
 	if ( disabled )
@@ -1472,7 +1496,7 @@ void Input::consumeBindingsSharedWithBinding(const char* input)
 		return;
 	}
 	const std::pair<std::string, binding_t> checkBinding =
-		std::make_pair("input", this->input("input"));
+		std::make_pair(binding, input(binding));
 	for ( auto& b : bindings )
 	{
 		if ( !b.second.binary )
