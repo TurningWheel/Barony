@@ -412,11 +412,14 @@ void actFountain(Entity* my)
 							}
 							if ( stats[i]->weapon )
 							{
-								if ( stats[i]->type == SUCCUBUS && stats[i]->weapon->beatitude == 0 )
+								if ( stats[i]->weapon->type != POTION_EMPTY )
 								{
-									stuckOnYouSuccess = true;
+									if ( stats[i]->type == SUCCUBUS && stats[i]->weapon->beatitude == 0 )
+									{
+										stuckOnYouSuccess = true;
+									}
+									stats[i]->weapon->beatitude++;
 								}
-								stats[i]->weapon->beatitude++;
 							}
 							if ( stats[i]->cloak )
 							{
