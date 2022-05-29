@@ -5405,6 +5405,14 @@ ItemType alchemyMixResult(ItemType potion1, ItemType potion2,
 		}
 	}
 
+	if ( potion1 == potion2 )
+	{
+		outExplodeSelf = false;
+		outRandomResult = false;
+		outSamePotion = true;
+		outTryDuplicatePotion = false;
+		return potion1;
+	}
 	if ( outExplodeSelf )
 	{
 		return TOOL_BOMB;
@@ -5413,14 +5421,6 @@ ItemType alchemyMixResult(ItemType potion1, ItemType potion2,
 		|| (potion1 != POTION_POLYMORPH && potion2 == POTION_POLYMORPH) )
 	{
 		outRandomResult = true;
-	}
-	else if ( potion1 == potion2 )
-	{
-		outExplodeSelf = false;
-		outRandomResult = false;
-		outSamePotion = true;
-		outTryDuplicatePotion = false;
-		return potion1;
 	}
 	return result;
 }
@@ -5872,7 +5872,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite, language[3335]);
 	}
 
-	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
+	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion && !samePotion )
 	{
 		if ( !(alchemyLearnRecipe(basePotion->type, true)) )
 		{
