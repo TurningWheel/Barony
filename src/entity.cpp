@@ -8077,6 +8077,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										increaseSkill = false;
 									}
+									else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+									{
+										increaseSkill = false;
+									}
 									if ( increaseSkill )
 									{
 										hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
