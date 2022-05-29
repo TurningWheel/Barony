@@ -2669,6 +2669,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		followerSelectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
 		maxDist = 256;
 	}
+	else if ( parent 
+		&& (parent->getMonsterTypeFromSprite() == SHOPKEEPER 
+			|| (parent->behavior == &actFloorDecoration && parent->sprite == 991 /* sign */)
+			|| (parent->behavior == &actMonster && !parent->checkEnemy(player.entity))
+			|| (parent->monsterAllyGetPlayerLeader()
+				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity)) )
+	{
+		maxDist = TOUCHRANGE;
+	}
 
 	if ( dist < maxDist && dist > minDist )
 	{
