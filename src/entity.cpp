@@ -7963,49 +7963,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int armornum = 0;
 					bool isWeakArmor = false;
 
-					if ( damage > 0 )
+					if ( damage >= 0 )
 					{
 						// choose random piece of equipment to target
-						int armorRoll = rand() % 6;
-						if ( armorRoll == 4 && hitstats->shield )
-						{
-							if ( itemTypeIsQuiver(hitstats->shield->type)
-								|| itemCategory(hitstats->shield) == SPELLBOOK
-								|| hitstats->shield->type == TOOL_TINKERING_KIT )
-							{
-								armorRoll = rand() % 4; // reroll for non-shield slot.
-							}
-						}
-						switch ( rand() % 6 )
-						{
-							case 0:
-								armor = hitstats->helmet;
-								armornum = 0;
-								break;
-							case 1:
-								armor = hitstats->breastplate;
-								armornum = 1;
-								break;
-							case 2:
-								armor = hitstats->gloves;
-								armornum = 2;
-								break;
-							case 3:
-								armor = hitstats->shoes;
-								armornum = 3;
-								break;
-							case 4:
-								armor = hitstats->shield;
-								armornum = 4;
-								break;
-							case 5:
-								armor = hitstats->cloak;
-								armornum = 6;
-								break;
-							default:
-								break;
-						}
-
+						armornum = hitstats->pickRandomEquippedItemToDegradeOnHit(&armor, true, false, false, true);
 						if ( armor != NULL && armor->status > BROKEN )
 						{
 							switch ( armor->type )
