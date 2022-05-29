@@ -10930,6 +10930,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			{
 				raceTextPos.x = 4 + ((sexImg->pos.w + 4)) / 2;
 			}
+			if ( raceTextPos.x % 2 == 1 )
+			{
+				--raceTextPos.x;
+			}
 			raceText->setSize(raceTextPos);
 
 			sexImg->pos.x = 16;
@@ -10937,6 +10941,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			{
 				sexImg->pos.x = raceText->getSize().x + raceText->getSize().w / 2 - width / 2;
 				sexImg->pos.x -= (sexImg->pos.w + 4);
+			}
+			if ( sexImg->pos.x % 2 == 1 )
+			{
+				--sexImg->pos.x;
 			}
 			sexImg->pos.y = raceText->getSize().y + raceText->getSize().h / 2 - sexImg->pos.h / 2;
 		}
