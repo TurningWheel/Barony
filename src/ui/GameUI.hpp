@@ -50,8 +50,14 @@ struct CustomColors_t
 	Uint32 characterSheetFaintText = 0xFFFFFFFF;
 	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
+	Uint32 characterSheetHighlightText = 0xFFFFFFFF;
 };
 extern CustomColors_t hudColors;
+
+extern int GAMEUI_FRAMEDATA_ANIMATING_ITEM;
+extern int GAMEUI_FRAMEDATA_ALCHEMY_ITEM;
+extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT; // displaying in main alchemy gui when hovering over recipe
+extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
 
 // if true, use the new user interface
 extern bool newui;
@@ -233,3 +239,6 @@ extern Frame* minimapFrame; // shared minimap
 
 void openMapWindow(int player);
 void openLogWindow(int player);
+
+void capitalizeString(std::string& str);
+void uppercaseString(std::string& str);

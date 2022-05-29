@@ -723,13 +723,14 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	{
 		my->pitch = -PI / 3;
 	}
-	if ( !smoothmouse )
+
+	if ( smoothmouse )
+	{
+		PLAYER_ROTY *= pow(0.5, refreshRateDelta);
+	}
+	else
 	{
 		PLAYER_ROTY = 0;
-	}
-	else if ( !shootmode )
-	{
-		PLAYER_ROTY *= .5;
 	}
 
 	if ( TimerExperiments::bUseTimerInterpolation )
