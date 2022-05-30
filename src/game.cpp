@@ -3795,7 +3795,7 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
-					if (initialized)
+					if (initialized && !loading)
 					{
 						gameLogic();
 					}
