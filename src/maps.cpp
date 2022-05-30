@@ -339,7 +339,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	list_t mapList, *newList, *subRoomList, subRoomMapList;
 	node_t* node, *node2, *node3, *nextnode, *subRoomNode;
 	Sint32 c, i, j;
-	Sint32 numlevels, levelnum, levelnum2, subRoomNumLevels;
+	Sint32 numlevels, levelnum, levelnum2;
 	Sint32 x, y, z;
 	Sint32 x0, y0, x1, y1;
 	door_t* door, *newDoor;
@@ -528,6 +528,20 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	doorList.first = nullptr;
 	doorList.last = nullptr;
 
+	struct ShopSubRooms_t
+	{
+		std::string shopFileName = "";
+		int count = 0;
+		list_t list;
+
+		ShopSubRooms_t()
+		{
+			list.first = nullptr;
+			list.last = nullptr;
+		}
+	};
+	ShopSubRooms_t shopSubRooms;
+
 	// load shop room
 	if ( shoplevel )
 	{
@@ -558,7 +572,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				snprintf(sublevelnum, 3, "%02d", shopleveltouse);
 				strcat(sublevelname, sublevelnum);
 			}
-
+			shopSubRooms.shopFileName = sublevelname;
 			fullMapPath = physfsFormatMapName(sublevelname);
 
 			shopmap.tiles = nullptr;
@@ -688,7 +702,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	int subroomCount[100] = {0};
 
 	// a maximum of 100 (0-99 inclusive) sublevels can be added to the pool
-	for ( subRoomNumLevels = 0; subRoomNumLevels <= numlevels; subRoomNumLevels++ )
+	for ( int subRoomNumLevels = 0; subRoomNumLevels <= numlevels; subRoomNumLevels++ )
 	{
 		for ( char letter = 'a'; letter <= 'z'; letter++ )
 		{
@@ -785,6 +799,55 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}*/
 		}
+	}
+
+	for ( char letter = 'a'; letter <= 'z' && shoplevel && shopSubRooms.shopFileName.size() > 0; letter++ )
+	{
+		// look for mapnames ending in a letter a to z
+		char shopSubRoomName[64];
+		snprintf(shopSubRoomName, sizeof(shopSubRoomName), "%s%c", shopSubRooms.shopFileName.c_str(), letter);
+		fullMapPath = physfsFormatMapName(shopSubRoomName);
+
+		if ( fullMapPath.empty() )
+		{
+			break;    // no more levels to load
+		}
+
+		// check if there is another subroom to load
+		//if ( !dataPathExists(fullMapPath.c_str()) )
+		//{
+		//	break;    // no more levels to load
+		//}
+
+		printlog("[SUBMAP GENERATOR] Found map lv %s, count: %d", shopSubRoomName, shopSubRooms.count);
+		++shopSubRooms.count;
+
+		// allocate memory for the next subroom and attempt to load it
+		map_t* subRoomMap = (map_t*)malloc(sizeof(map_t));
+		subRoomMap->tiles = nullptr;
+		subRoomMap->vismap = nullptr;
+		subRoomMap->entities = (list_t*)malloc(sizeof(list_t));
+		subRoomMap->entities->first = nullptr;
+		subRoomMap->entities->last = nullptr;
+		subRoomMap->creatures = new list_t;
+		subRoomMap->creatures->first = nullptr;
+		subRoomMap->creatures->last = nullptr;
+		subRoomMap->worldUI = nullptr;
+		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
+		{
+			mapDeconstructor((void*)subRoomMap);
+			continue; // failed to load level
+		}
+		if ( checkMapHash == 0 )
+		{
+			conductGameChallenges[CONDUCT_MODDED] = 1;
+			gamemods_disableSteamAchievements = true;
+		}
+
+		// level is successfully loaded, add it to the pool
+		node = list_AddNodeLast(&shopSubRooms.list);
+		node->element = subRoomMap;
+		node->deconstructor = &mapDeconstructor;
 	}
 
 	// generate dungeon level...
@@ -1160,40 +1223,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 			//**********pick subroom if available
 			int pickSubRoom = 0;
-			int k = 0;
 			int subRoom_tilex = 0;
 			int subRoom_tiley = 0;
 			int subRoom_tileStartx = -1;
 			int subRoom_tileStarty = -1;
-			int foundSubRoom = 0;
-			if ( ((levelnum2 - levelnum) > 1) && (c > 0) && (subroomCount[levelnum2] > 0) )
+			bool foundSubRoom = false;
+			if ( c == 2 && shoplevel && tempMap == &shopmap && shopSubRooms.count > 0 )
 			{
-				// levelnum is the start of map search, levelnum2 is jumps required to get to a suitable map.
-				// normal operation is levelnum2 - levelnum == 1. if a levelnum map is unavailable, 
-				// then levelnum2 will advance search by 1 (higher than normal).
-				// levelnum2 will keep incrementing until a suitable map is found.
-				printlog("[SUBMAP GENERATOR] Skipped map when searching for levelnum %d, setting to %d", levelnum, levelnum2 - 1);
-				levelnum = levelnum2 - 1;
-			}
-			//printlog("(%d | %d), possible: (%d, %d) x: %d y: %d", levelnum, levelnum2, possiblerooms[1], possiblerooms[2], x, y);
-			if ( subroomCount[levelnum + 1] > 0 )
-			{
-				int jumps = 0;
-				pickSubRoom = prng_get_uint() % subroomCount[levelnum + 1];
-				// traverse the map list to the picked level
-				subRoomNode = subRoomMapList.first;
-				for ( int cycleRooms = 0; (cycleRooms < levelnum + 1) && (subRoomNode != nullptr); ++cycleRooms )
-				{
-					for ( int cycleRoomSubMaps = subroomCount[cycleRooms]; cycleRoomSubMaps > 0; --cycleRoomSubMaps )
-					{
-						// advance the subroom map list by the previous entries.
-						// e.g 2 subrooms, 3 maps each should advance pointer 3 maps when loading second room.
-						subRoomNode = subRoomNode->next;
-						jumps++; // just to keep track of how many jumps we made.
-					}
-				}
-				k = 0;
-
+				pickSubRoom = prng_get_uint() % shopSubRooms.count;
+				subRoomNode = shopSubRooms.list.first;
+				int k = 0;
 				while ( 1 )
 				{
 					if ( k == pickSubRoom )
@@ -1203,26 +1242,84 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
-				//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
-				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
-				subRoomDoorNode = subRoomNode->next;
+				subRoomDoorNode = nullptr;
+			}
+			else
+			{
+				if ( ((levelnum2 - levelnum) > 1) && (c > 0) && (subroomCount[levelnum2] > 0) )
+				{
+					// levelnum is the start of map search, levelnum2 is jumps required to get to a suitable map.
+					// normal operation is levelnum2 - levelnum == 1. if a levelnum map is unavailable, 
+					// then levelnum2 will advance search by 1 (higher than normal).
+					// levelnum2 will keep incrementing until a suitable map is found.
+					printlog("[SUBMAP GENERATOR] Skipped map when searching for levelnum %d, setting to %d", levelnum, levelnum2 - 1);
+					levelnum = levelnum2 - 1;
+				}
+				//printlog("(%d | %d), possible: (%d, %d) x: %d y: %d", levelnum, levelnum2, possiblerooms[1], possiblerooms[2], x, y);
+				if ( subroomCount[levelnum + 1] > 0 )
+				{
+					int jumps = 0;
+					pickSubRoom = prng_get_uint() % subroomCount[levelnum + 1];
+					// traverse the map list to the picked level
+					subRoomNode = subRoomMapList.first;
+					for ( int cycleRooms = 0; (cycleRooms < levelnum + 1) && (subRoomNode != nullptr); ++cycleRooms )
+					{
+						for ( int cycleRoomSubMaps = subroomCount[cycleRooms]; cycleRoomSubMaps > 0; --cycleRoomSubMaps )
+						{
+							// advance the subroom map list by the previous entries.
+							// e.g 2 subrooms, 3 maps each should advance pointer 3 maps when loading second room.
+							subRoomNode = subRoomNode->next;
+							jumps++; // just to keep track of how many jumps we made.
+						}
+					}
+					int k = 0;
+					while ( 1 )
+					{
+						if ( k == pickSubRoom )
+						{
+							break;
+						}
+						subRoomNode = subRoomNode->next;
+						k++;
+					}
+					//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
+					subRoomNode = ((list_t*)subRoomNode->element)->first;
+					subRoomMap = (map_t*)subRoomNode->element;
+					subRoomDoorNode = nullptr;
+				}
 			}
 
+			int subroomLogCount = 0;
+			if ( shopSubRooms.count > 0 )
+			{
+				subroomLogCount = shopSubRooms.count;
+			}
+			else
+			{
+				subroomLogCount = subroomCount[levelnum + 1];
+			}
 			for ( z = 0; z < MAPLAYERS; z++ )
 			{
 				for ( y0 = y; y0 < y1; y0++ )
 				{
 					for ( x0 = x; x0 < x1; x0++ )
 					{
-						if ( subroomCount[levelnum + 1] > 0 && tempMap->tiles[z + (y0 - y) * MAPLAYERS + (x0 - x) * MAPLAYERS * tempMap->height] == 201 )
+						if ( (subroomLogCount > 0) && tempMap->tiles[z + (y0 - y) * MAPLAYERS + (x0 - x) * MAPLAYERS * tempMap->height] == 201 )
 						{
 							if ( !foundSubRoom )
 							{
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
-								foundSubRoom = 1;
-								printlog("Picked level: %d from %d possible rooms in submap %d at x:%d y:%d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1, x, y);
+								foundSubRoom = true;
+								if ( shoplevel && c == 2 )
+								{
+									printlog("Picked level: %d from %d possible rooms in submap %s at x:%d y:%d", pickSubRoom + 1, subroomLogCount, shopSubRooms.shopFileName.c_str(), x, y);
+								}
+								else
+								{
+									printlog("Picked level: %d from %d possible rooms in submap %d at x:%d y:%d", pickSubRoom + 1, subroomLogCount, levelnum + 1, x, y);
+								}
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
@@ -1395,11 +1492,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			++roomcount;
 		}
+		list_FreeAll(&shopSubRooms.list);
 		free(possiblerooms);
 		free(possiblelocations2);
 	}
 	else
 	{
+		list_FreeAll(&shopSubRooms.list);
 		free(subRoomName);
 		free(sublevelname);
 		list_FreeAll(&subRoomMapList);
