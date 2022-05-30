@@ -1400,6 +1400,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				setSpriteAttributes(childEntity, entity, entity);
 				childEntity->x = entity->x + x * 16;
 				childEntity->y = entity->y + y * 16;
+				childEntity->mapGenerationRoomX = x;
+				childEntity->mapGenerationRoomY = y;
 				//printlog("1 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 
 				if ( entity->behavior == actMonster || entity->behavior == actPlayer )
@@ -1426,7 +1428,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					setSpriteAttributes(childEntity, entity, entity);
 					childEntity->x = entity->x + subRoom_tileStartx * 16;
 					childEntity->y = entity->y + subRoom_tileStarty * 16;
-
+					childEntity->mapGenerationRoomX = subRoom_tileStartx;
+					childEntity->mapGenerationRoomY = subRoom_tileStarty;
 					if ( entity->behavior == actMonster || entity->behavior == actPlayer )
 					{
 						entity->addToCreatureList(map.creatures);

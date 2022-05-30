@@ -734,7 +734,7 @@ void actTextSource(Entity* my)
 
 TextSourceScript textSourceScript;
 
-int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string findTag)
+int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string findTag, Entity& src)
 {
 	size_t foundScriptTag = input.find(findTag);
 	if ( foundScriptTag != std::string::npos )
@@ -823,6 +823,12 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 				y1 = std::stoi(y_str);
 				y2 = y1;
 			}
+
+			// offset for generated dungeons
+			x1 += src.mapGenerationRoomX;
+			x2 += src.mapGenerationRoomX;
+			y1 += src.mapGenerationRoomY;
+			y2 += src.mapGenerationRoomY;
 
 			x1 = std::min(std::max(0, x1), (int)map.width - 1);
 			y1 = std::min(std::max(0, y1), (int)map.height - 1);
@@ -1004,7 +1010,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 
 		if ( (*it).find("@reattachto=") != std::string::npos )
 		{
-			int attachTo = textSourceProcessScriptTag(input, "@reattachto=");
+			int attachTo = textSourceProcessScriptTag(input, "@reattachto=", src);
 			if ( attachTo == k_ScriptError )
 			{
 				return;
@@ -1017,9 +1023,16 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 			int x2 = static_cast<int>(src.x / 16);
 			int y1 = static_cast<int>(src.y / 16);
 			int y2 = static_cast<int>(src.y / 16);
+
+			// offset for generated dungeons
+			x1 += src.mapGenerationRoomX;
+			x2 += src.mapGenerationRoomX;
+			y1 += src.mapGenerationRoomY;
+			y2 += src.mapGenerationRoomY;
+
 			if ( input.find("@attachrange=") != std::string::npos )
 			{
-				int result = textSourceProcessScriptTag(input, "@attachrange=");
+				int result = textSourceProcessScriptTag(input, "@attachrange=", src);
 				if ( result != k_ScriptError )
 				{
 					x1 = result & 0xFF;
@@ -1064,7 +1077,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@clrplayer") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@clrplayer");
+			int result = textSourceProcessScriptTag(input, "@clrplayer", src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1109,7 +1122,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@class=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@class=");
+			int result = textSourceProcessScriptTag(input, "@class=", src);
 			if ( result != k_ScriptError && result >= CLASS_BARBARIAN && result < NUMCLASSES )
 			{
 				if ( !enabledDLCPack1 && result >= CLASS_CONJURER && result <= CLASS_BREWER )
@@ -1167,7 +1180,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@clrstats") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@clrstats");
+			int result = textSourceProcessScriptTag(input, "@clrstats", src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1226,7 +1239,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@hunger=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@hunger=");
+			int result = textSourceProcessScriptTag(input, "@hunger=", src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1273,7 +1286,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@nextlevel=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@nextlevel=");
+			int result = textSourceProcessScriptTag(input, "@nextlevel=", src);
 			if ( result != k_ScriptError )
 			{
 				loadnextlevel = true;
@@ -1282,7 +1295,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@power=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@power=");
+			int result = textSourceProcessScriptTag(input, "@power=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1334,7 +1347,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@unpower=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@unpower=");
+			int result = textSourceProcessScriptTag(input, "@unpower=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1362,7 +1375,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@wire=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@wire=");
+			int result = textSourceProcessScriptTag(input, "@wire=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1410,7 +1423,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@unwire=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@unwire=");
+			int result = textSourceProcessScriptTag(input, "@unwire=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1438,7 +1451,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@freezemonsters=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@freezemonsters=");
+			int result = textSourceProcessScriptTag(input, "@freezemonsters=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1481,7 +1494,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@unfreezemonsters=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@unfreezemonsters=");
+			int result = textSourceProcessScriptTag(input, "@unfreezemonsters=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1524,7 +1537,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@seteffect=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@seteffect=");
+			int result = textSourceProcessScriptTag(input, "@seteffect=", src);
 			if ( result != k_ScriptError )
 			{
 				int effect = result & 0xFF;
@@ -1554,7 +1567,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@clreffect=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@clreffect=");
+			int result = textSourceProcessScriptTag(input, "@clreffect=", src);
 			if ( result != k_ScriptError )
 			{
 				int effect = result & 0xFF;
@@ -1581,7 +1594,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@findtarget=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@findtarget=");
+			int result = textSourceProcessScriptTag(input, "@findtarget=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1641,7 +1654,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@killall=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@killall=");
+			int result = textSourceProcessScriptTag(input, "@killall=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1684,7 +1697,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@killenemies=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@killenemies=");
+			int result = textSourceProcessScriptTag(input, "@killenemies=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1727,7 +1740,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		}
 		else if ( (*it).find("@nodropitems=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@nodropitems=");
+			int result = textSourceProcessScriptTag(input, "@nodropitems=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1777,7 +1790,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@copyNPC=") != std::string::npos )
 		{
 			std::string profTag = "@copyNPC=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				std::vector<Entity*> applyToEntities;
@@ -1837,7 +1850,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@setenemy=") != std::string::npos )
 		{
 			std::string profTag = "@setenemy=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1888,7 +1901,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@setally=") != std::string::npos )
 		{
 			std::string profTag = "@setally=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -1937,7 +1950,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 		else if ( (*it).find("@setvar=") != std::string::npos )
 		{
 			std::string profTag = "@setvar=";
-			int result = textSourceProcessScriptTag(input, profTag);
+			int result = textSourceProcessScriptTag(input, profTag, src);
 			if ( result != k_ScriptError )
 			{
 				achievementObserver.checkMapScriptsOnVariableSet();
@@ -1947,9 +1960,312 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				}*/
 			}
 		}
+		//else if ( (*it).find("@addtomonster=") != std::string::npos ) // adds entire stack to 1 destination monster
+		//{
+		//	int result = textSourceProcessScriptTag(input, "@addtomonster=", src);
+		//	if ( result != k_ScriptError )
+		//	{
+		//		int x1 = result & 0xFF;
+		//		int x2 = (result >> 8) & 0xFF;
+		//		int y1 = (result >> 16) & 0xFF;
+		//		int y2 = (result >> 24) & 0xFF;
+		//		std::vector<Entity*> applyToEntities;
+		//		if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+		//		{
+		//			for ( auto entity : attachedEntities )
+		//			{
+		//				if ( entity->behavior == &actItem )
+		//				{
+		//					applyToEntities.push_back(entity);
+		//				}
+		//			}
+		//			Entity* monster = nullptr;
+		//			for ( node_t* node = map.creatures->first; node; node = node->next )
+		//			{
+		//				Entity* entity = (Entity*)node->element;
+		//				if ( entity && entity->behavior == &actMonster )
+		//				{
+		//					int findx = static_cast<int>(entity->x) >> 4;
+		//					int findy = static_cast<int>(entity->y) >> 4;
+		//					if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+		//					{
+		//						monster = entity;
+		//					}
+		//				}
+		//			}
+		//			for ( auto entity : applyToEntities )
+		//			{
+		//				Item* item = newItemFromEntity(entity);
+		//				if ( item && monster )
+		//				{
+		//					monster->addItemToMonsterInventory(item);
+		//				}
+		//				list_RemoveNode(entity->mynode);
+		//				entity = nullptr;
+		//			}
+		//		}
+		//		else
+		//		{
+		//			// not implemented, needs to be attached to items.
+		//		}
+		//	}
+		//}
+		else if ( (*it).find("@addtomonsters=") != std::string::npos ) // adds entire stack between monster(s)
+		{
+			int result = textSourceProcessScriptTag(input, "@addtomonsters=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actItem )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+					std::vector<Entity*> monsters;
+					for ( node_t* node = map.creatures->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actMonster )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								monsters.push_back(entity);
+							}
+						}
+					}
+					for ( auto entity : applyToEntities )
+					{
+						for ( auto monster : monsters )
+						{
+							Item* item = newItemFromEntity(entity);
+							if ( item )
+							{
+								monster->addItemToMonsterInventory(item);
+							}
+						}
+						list_RemoveNode(entity->mynode);
+						entity = nullptr;
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to items.
+				}
+			}
+		}
+		else if ( (*it).find("@equipitems=") != std::string::npos ) // monster try equip items
+		{
+			int result = textSourceProcessScriptTag(input, "@equipitems=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actMonster )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					std::vector<Entity*> items;
+					if ( attachedEntities.size() > 0 )
+					{
+						for ( node_t* node = map.entities->first; node; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actItem )
+							{
+								int findx = static_cast<int>(entity->x) >> 4;
+								int findy = static_cast<int>(entity->y) >> 4;
+								if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+								{
+									items.push_back(entity);
+								}
+							}
+						}
+					}
+					for ( auto entity : applyToEntities )
+					{
+						for ( auto i : items )
+						{
+							Item* item = newItemFromEntity(i);
+							Stat* myStats = entity->getStats();
+							if ( item && myStats )
+							{
+								Item** itemSlot = nullptr;
+								switch ( ::items[item->type].item_slot )
+								{
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+										itemSlot = &myStats->weapon;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+										if ( itemCategory(item) == SPELLBOOK )
+										{
+											itemSlot = &myStats->weapon;
+										}
+										else
+										{
+											itemSlot = &myStats->shield;
+										}
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+										itemSlot = &myStats->gloves;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+										itemSlot = &myStats->cloak;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+										itemSlot = &myStats->shoes;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+										itemSlot = &myStats->breastplate;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+										itemSlot = &myStats->amulet;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+										itemSlot = &myStats->ring;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+										itemSlot = &myStats->mask;
+										break;
+									case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+										itemSlot = &myStats->helmet;
+										break;
+									case ItemEquippableSlot::NO_EQUIP:
+										break;
+									default:
+										break;
+
+								}
+								if ( itemSlot )
+								{
+									if ( (*itemSlot) != nullptr )
+									{
+										copyItem(*itemSlot, item); // set equipped item to this new one.
+									}
+									else
+									{
+										(*itemSlot) = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, 0, false, NULL);
+										copyItem(*itemSlot, item); // set equipped item to this new one.
+									}
+								}
+								free(item);
+							}
+						}
+					}
+					for ( auto i : items )
+					{
+						list_RemoveNode(i->mynode);
+						i = nullptr;
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to creatures
+				}
+			}
+		}
+		else if ( (*it).find("@pickupitems=") != std::string::npos ) // adds entire stack between monster(s)
+		{
+			int result = textSourceProcessScriptTag(input, "@pickupitems=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( (entity->behavior == &actMonster 
+							&& textSourceScript.getAttachedToEntityType(src.textSourceIsScript) != textSourceScript.TO_PLAYERS)
+							|| (entity->behavior == &actPlayer
+								&& textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_PLAYERS) )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					std::vector<Entity*> items;
+					if ( attachedEntities.size() > 0 )
+					{
+						for ( node_t* node = map.entities->first; node; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actItem )
+							{
+								int findx = static_cast<int>(entity->x) >> 4;
+								int findy = static_cast<int>(entity->y) >> 4;
+								if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+								{
+									items.push_back(entity);
+								}
+							}
+						}
+					}
+					for ( auto entity : applyToEntities )
+					{
+						for ( auto i : items )
+						{
+							Item* item = newItemFromEntity(i);
+							if ( item )
+							{
+								if ( entity->behavior == &actMonster )
+								{
+									entity->addItemToMonsterInventory(item);
+								}
+								else if ( entity->behavior == &actPlayer )
+								{
+									Item* pickedUp = itemPickup(entity->skill[2], item);
+									if ( pickedUp )
+									{
+										if ( players[entity->skill[2]]->isLocalPlayer() )
+										{
+											// item is the new inventory stack for server, free the picked up items
+											free(item);
+										}
+										else
+										{
+											free(pickedUp); // item is the picked up items (pickedUp == item)
+										}
+									}
+								}
+							}
+						}
+					}
+					for ( auto i : items )
+					{
+						list_RemoveNode(i->mynode);
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to creatures
+				}
+			}
+		}
 		else if ( (*it).find("@addtochest=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(input, "@addtochest=");
+			int result = textSourceProcessScriptTag(input, "@addtochest=", src);
 			if ( result != k_ScriptError )
 			{
 				int x1 = result & 0xFF;
@@ -2031,7 +2347,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append("=");
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -2121,7 +2437,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append("+");
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -2188,7 +2504,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append(std::to_string(i).append("="));
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -2233,7 +2549,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				profTag.append(std::to_string(i).append("+"));
 				if ( (*it).find(profTag) != std::string::npos )
 				{
-					int result = textSourceProcessScriptTag(input, profTag);
+					int result = textSourceProcessScriptTag(input, profTag, src);
 					if ( result != k_ScriptError )
 					{
 						std::vector<Entity*> applyToEntities;
@@ -2651,7 +2967,7 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 
 	if ( script.find("@triggerif=") != std::string::npos )
 	{
-		int result = textSourceProcessScriptTag(script, "@triggerif=");
+		int result = textSourceProcessScriptTag(script, "@triggerif=", src);
 		if ( result != k_ScriptError )
 		{
 			textSourceScript.setTriggerType(src.textSourceIsScript, static_cast<ScriptTriggeredBy>(result));
@@ -2660,7 +2976,7 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 
 	if ( script.find("@attachto=") != std::string::npos )
 	{
-		int attachTo = textSourceProcessScriptTag(script, "@attachto=");
+		int attachTo = textSourceProcessScriptTag(script, "@attachto=", src);
 		if ( attachTo == k_ScriptError )
 		{
 			return;
@@ -2670,9 +2986,14 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 		int x2 = static_cast<int>(src.x / 16);
 		int y1 = static_cast<int>(src.y / 16);
 		int y2 = static_cast<int>(src.y / 16);
+		// offset for generated dungeons
+		x1 += src.mapGenerationRoomX;
+		x2 += src.mapGenerationRoomX;
+		y1 += src.mapGenerationRoomY;
+		y2 += src.mapGenerationRoomY;
 		if ( script.find("@attachrange=") != std::string::npos )
 		{
-			int result = textSourceProcessScriptTag(script, "@attachrange=");
+			int result = textSourceProcessScriptTag(script, "@attachrange=", src);
 			if ( result != k_ScriptError )
 			{
 				x1 = result & 0xFF;

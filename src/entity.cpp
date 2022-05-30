@@ -405,6 +405,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	lerpRenderState.resetPosition();
 	bNeedsRenderPositionInit = true;
 	bUseRenderInterpolation = false;
+	mapGenerationRoomX = 0;
+	mapGenerationRoomY = 0;
 	lerp_ox = 0.0;
 	lerp_oy = 0.0;
 	sprite = in_sprite;

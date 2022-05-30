@@ -151,6 +151,8 @@ public:
 	real_t lerp_oy;
 	bool bNeedsRenderPositionInit = true;
 	bool bUseRenderInterpolation = false;
+	int mapGenerationRoomX = 0; // captures the x/y of the 'room' this spawned in on generate dungeon
+	int mapGenerationRoomY = 0; // captures the x/y of the 'room' this spawned in on generate dungeon
 
 	//--PUBLIC CHEST SKILLS--
 
@@ -1238,7 +1240,7 @@ public:
 	std::string getScriptFromEntity(Entity& src);
 	void parseScriptInMapGeneration(Entity& src);
 	void handleTextSourceScript(Entity& src, std::string input);
-	int textSourceProcessScriptTag(std::string& input, std::string findTag);
+	int textSourceProcessScriptTag(std::string& input, std::string findTag, Entity& src);
 	bool hasClearedInventory = false;
 	int getScriptType(Sint32 skill)
 	{
