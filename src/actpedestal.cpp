@@ -174,6 +174,11 @@ void Entity::actPedestalBase()
 		}
 	}
 
+	if ( pedestalPowerStatus == SWITCH_POWERED )
+	{
+		switchUpdateNeighbors();
+	}
+
 	if ( pedestalHasOrb == pedestalOrbType )
 	{
 		bool applyAura = false;
