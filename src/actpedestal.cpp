@@ -54,7 +54,10 @@ void Entity::actPedestalBase()
 {
 	node_t* node = children.first;
 	Entity* orbEntity = (Entity*)(node->element);
-
+	if ( pedestalInit == 0 )
+	{
+		pedestalPowerStatus = -1;
+	}
 	if ( pedestalInit == 0 && !pedestalInGround )
 	{
 		pedestalInit = 1;
@@ -158,16 +161,16 @@ void Entity::actPedestalBase()
 		return;
 	}
 
-	if ( circuit_status < CIRCUIT_OFF )
+	if ( pedestalPowerStatus < SWITCH_UNPOWERED )
 	{
 		// set the entity to be a circuit if not already set.
 		if ( !pedestalInvertedPower )
 		{
-			circuit_status = CIRCUIT_OFF; 
+			pedestalPowerStatus = SWITCH_UNPOWERED;
 		}
 		else
 		{
-			circuit_status = CIRCUIT_ON;
+			pedestalPowerStatus = SWITCH_POWERED;
 		}
 	}
 
@@ -175,19 +178,21 @@ void Entity::actPedestalBase()
 	{
 		bool applyAura = false;
 		// power on/off the circuit if it hasn't updated
-		if ( circuit_status == CIRCUIT_OFF && !pedestalInvertedPower )
+		if ( pedestalPowerStatus == SWITCH_UNPOWERED && !pedestalInvertedPower )
 		{
-			mechanismPowerOn();
-			updateCircuitNeighbors();
+			//mechanismPowerOn();
+			//updateCircuitNeighbors();
+			toggleSwitch(8);
 			if ( !strncmp(map.name, "Boss", 4) )
 			{
 				applyAura = true;
 			}
 		}
-		else if ( circuit_status == CIRCUIT_ON && pedestalInvertedPower )
+		else if ( pedestalPowerStatus == SWITCH_POWERED && pedestalInvertedPower )
 		{
-			mechanismPowerOff();
-			updateCircuitNeighbors();
+			//mechanismPowerOff();
+			//updateCircuitNeighbors();
+			toggleSwitch(8);
 		}
 
 		if ( (applyAura || ticks % 400 == 0) && pedestalOrbType != 3 && !strncmp(map.name, "Boss", 4) )
@@ -281,15 +286,18 @@ void Entity::actPedestalBase()
 							if ( pedestalHasOrb == pedestalOrbType )
 							{
 								// only update power when right orb is in place.
-								if ( !pedestalInvertedPower )
+								if ( !pedestalInvertedPower && pedestalPowerStatus == SWITCH_POWERED )
 								{
-									mechanismPowerOff();
+									//mechanismPowerOff();
+									//updateCircuitNeighbors();
+									toggleSwitch(8);
 								}
-								else
+								else if ( pedestalInvertedPower && pedestalPowerStatus == SWITCH_UNPOWERED )
 								{
-									mechanismPowerOn();
+									//mechanismPowerOn();
+									//updateCircuitNeighbors();
+									toggleSwitch(8);
 								}
-								updateCircuitNeighbors();
 							}
 							pedestalHasOrb = 0;
 							serverUpdateEntitySkill(this, 0); // update orb status.
@@ -381,15 +389,18 @@ void Entity::actPedestalOrb()
 									if ( parent->pedestalHasOrb == parent->pedestalOrbType )
 									{
 										// only update power when right orb is in place.
-										if ( !parent->pedestalInvertedPower )
+										if ( !parent->pedestalInvertedPower && parent->pedestalPowerStatus == SWITCH_POWERED )
 										{
-											parent->mechanismPowerOff();
+											//mechanismPowerOff();
+											//updateCircuitNeighbors();
+											parent->toggleSwitch(8);
 										}
-										else
+										else if ( parent->pedestalInvertedPower && parent->pedestalPowerStatus == SWITCH_UNPOWERED )
 										{
-											parent->mechanismPowerOn();
+											//mechanismPowerOn();
+											//updateCircuitNeighbors();
+											parent->toggleSwitch(8);
 										}
-										parent->updateCircuitNeighbors();
 									}
 									parent->pedestalHasOrb = 0;
 									serverUpdateEntitySkill(parent, 0); // update orb status 

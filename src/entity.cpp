@@ -202,6 +202,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	pedestalInit(skill[5]),
 	pedestalAmbience(skill[6]),
 	pedestalLockOrb(skill[7]),
+	pedestalPowerStatus(skill[8]),
 	orbInitialised(skill[1]),
 	orbHoverDirection(skill[7]),
 	orbHoverWaitTimer(skill[8]),

@@ -524,12 +524,12 @@ void actTrapPermanent(Entity* my)
 }
 
 //This is called when the switch is toggled by the player.
-void Entity::toggleSwitch()
+void Entity::toggleSwitch(int skillIndexForPower)
 {
 	//If off, power on and send poweron signal. If on, power off and send poweroff signal.
-
-	switch_power = (switch_power == SWITCH_UNPOWERED);
-	serverUpdateEntitySkill(this, 0);
+	Sint32& switchPower = skill[skillIndexForPower >= 0 ? skillIndexForPower : 0];
+	switchPower = (switchPower == SWITCH_UNPOWERED);
+	serverUpdateEntitySkill(this, skillIndexForPower);
 
 	//(my->skill[0]) ? my->sprite = 171 : my->sprite = 168;
 
@@ -548,7 +548,7 @@ void Entity::toggleSwitch()
 				{
 					if (powerable->behavior == actCircuit)
 					{
-						(switch_power) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
+						(switchPower) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
 					}
 					else if ( powerable->behavior == &::actSignalTimer )
 					{
@@ -562,25 +562,25 @@ void Entity::toggleSwitch()
 							case 0: // west
 								if ( (x1 + 1) == x2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							case 1: // south
 								if ( (y1 - 1) == y2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							case 2: // east
 								if ( (x1 - 1) == x2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							case 3: // north
 								if ( (y1 + 1) == y2 )
 								{
-									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+									(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
 							default:
@@ -589,7 +589,7 @@ void Entity::toggleSwitch()
 					}
 					else
 					{
-						(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+						(switchPower) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 					}
 				}
 			}

@@ -329,6 +329,7 @@ public:
 	Sint32& pedestalInit; //skill[5]
 	Sint32& pedestalAmbience; //skill[6]
 	Sint32& pedestalLockOrb; //skill[7]
+	Sint32& pedestalPowerStatus; //skill[8]
 
 	real_t& orbStartZ; // fskill[0] mid point of animation, starting height.
 	real_t& orbMaxZVelocity; //fskill[1]
@@ -634,7 +635,7 @@ public:
 	void updateCircuitNeighbors(); //Called when a circuit's powered state changes.
 	void mechanismPowerOn(); //Called when a circuit or switch next to a mechanism powers on.
 	void mechanismPowerOff(); //Called when a circuit or switch next to a mechanism powers on.
-	void toggleSwitch(); //Called when a player flips a switch (lever).
+	void toggleSwitch(int skillIndexForPower = -1); //Called when a player flips a switch (lever). skillIndexForPower can use any skill[] to reference for the entity power status (defaults to skill[0] for switches)
 	void switchUpdateNeighbors(); //Run each time actSwitch() is called to make sure the network is online if any one switch connected to it is still set to the on position.
 	list_t* getPowerableNeighbors(); //Returns a list of all circuits and mechanisms this entity can influence.
 
