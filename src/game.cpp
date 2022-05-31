@@ -4112,6 +4112,7 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 	if ( diff >= 0.f )
 	{
 	    // we have not passed a full frame, so we must delay.
+#ifndef WINDOWS
         if ( *allowSleep && sleep )
         {
             // sleep a fraction of the remaining time.
@@ -4121,6 +4122,7 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
                 std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor))));
             }
         }
+#endif // !WIN32
 		return true;
 	}
 	else
