@@ -55,12 +55,13 @@ void actThrown(Entity* my)
 	ItemType type = WOODEN_SHIELD;
 	char* itemname = nullptr;
 
-	item = newItemFromEntity(my);
+	item = newItemFromEntity(my, true);
 	if ( item )
 	{
 		cat = itemCategory(item);
 		type = item->type;
 		free(item);
+		item = nullptr;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -129,7 +130,7 @@ void actThrown(Entity* my)
 		// select appropriate model
 		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
-		item = newItemFromEntity(my);
+		item = newItemFromEntity(my, true);
 		if ( item )
 		{
 			my->sprite = itemModel(item);
@@ -142,6 +143,7 @@ void actThrown(Entity* my)
 				}
 			}
 			free(item);
+			item = nullptr;
 		}
 	}
 
@@ -863,7 +865,8 @@ void actThrown(Entity* my)
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
-						switch ( item->type )
+						ItemType itemType = item->type;
+						switch ( itemType )
 						{
 							case POTION_WATER:
 								usedpotion = true;
@@ -1086,7 +1089,7 @@ void actThrown(Entity* my)
 									hitstats = newTarget->getStats();
 				                    if (hitstats) {
 				                        hitstats->killer = KilledBy::ITEM;
-				                        hitstats->killer_item = item->type;
+				                        hitstats->killer_item = itemType;
 				                    }
 								}
 								skipMessage = true;
@@ -1200,9 +1203,31 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
-					if ( rand() % 5 == 0 && parent != NULL )
+
+					bool doSkillIncrease = true;
+					if ( monsterIsImmobileTurret(hit.entity, hitstats) )
 					{
-						parent->increaseSkill(PRO_RANGED);
+						if ( hitstats->type == DUMMYBOT && hitstats->HP > 0 )
+						{
+							doSkillIncrease = true; // can train on dummybots.
+						}
+						else
+						{
+							doSkillIncrease = false; // no skill for killing/hurting other turrets.
+						}
+					}
+					if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no skill for killing/hurting players
+					}
+					int chance = 5;
+					if ( doSkillIncrease && (rand() % chance == 0) && parent && parent->getStats() )
+					{
+						if ( hitstats->type != DUMMYBOT 
+							|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < 20) )
+						{
+							parent->increaseSkill(PRO_RANGED);
+						}
 					}
 				}
 				else
@@ -1306,7 +1331,11 @@ void actThrown(Entity* my)
 						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity && entity != polymorphedTarget )
 						{
-							if ( entity->checkFriend(hit.entity) )
+							if ( entity->getStats() && entity->getStats()->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+							{
+								continue; // shopkeepers don't care about hitting humans/robots etc.
+							}
+							if ( entity->checkFriend(ohitentity) )
 							{
 								if ( entity->monsterState == MONSTER_STATE_WAIT )
 								{

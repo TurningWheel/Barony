@@ -381,7 +381,14 @@ const char* itemUseString(int player, const Item& item)
 			case TOOL_BEARTRAP:
 				return language[337];
 			case TOOL_ALEMBIC:
-				return language[3339];
+				if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == &item )
+				{
+					return language[3341];
+				}
+				else
+				{
+					return language[3339];
+				}
 			case TOOL_METAL_SCRAP:
 			case TOOL_MAGIC_SCRAP:
 				return language[1881];
@@ -1211,7 +1218,7 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	if ( inventoryUI.bCompactView )
 	{
-		if ( GenericGUI[player].tinkerGUI.bOpen )
+		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen )
 		{
 			return false;
 		}
@@ -1549,6 +1556,189 @@ void select_tinkering_slot(int player, int currentx, int currenty, int diffx, in
 }
 
 // only called by handleInventoryMovement in player.cpp
+void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	int lowestItemY = alchemyGUI.recipes.getNumRecipesToDisplayVertical() - 1;
+	if ( !alchemyGUI.recipes.bOpen )
+	{
+		lowestItemY = 0;
+	}
+
+	if ( currentx < 0 )
+	{
+		if ( diffy != 0 )
+		{
+			// main alchemy frame
+			if ( currentx == alchemyGUI.ALCH_SLOT_RESULT_POTION_X )
+			{
+				x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+			}
+			else if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X || currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+			{
+				x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+			}
+			y = 0;
+		}
+		else if ( diffx != 0 )
+		{
+			if ( currentx == alchemyGUI.ALCH_SLOT_BASE_POTION_X )
+			{
+				if ( diffx > 0 )
+				{
+					x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
+					y = 0;
+				}
+				else
+				{
+					if ( alchemyGUI.recipes.bOpen && alchemyGUI.recipes.panelJustifyInverted )
+					{
+						x = alchemyGUI.MAX_ALCH_X - 1;
+						y = 0;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 0);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+			}
+			else if ( currentx == alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X )
+			{
+				if ( diffx > 0 )
+				{
+					if ( alchemyGUI.recipes.bOpen && !alchemyGUI.recipes.panelJustifyInverted )
+					{
+						x = 0;
+						y = 0;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(0, 0);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+				else
+				{
+					x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+					y = 0;
+				}
+			}
+			else
+			{
+				if ( diffx > 0 )
+				{
+					if ( alchemyGUI.recipes.bOpen && !alchemyGUI.recipes.panelJustifyInverted )
+					{
+						x = 0;
+						y = alchemyGUI.MAX_ALCH_Y - 1;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(0, 5);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+				else
+				{
+					if ( alchemyGUI.recipes.bOpen && alchemyGUI.recipes.panelJustifyInverted )
+					{
+						x = alchemyGUI.MAX_ALCH_X - 1;
+						y = alchemyGUI.MAX_ALCH_Y - 1;
+					}
+					else
+					{
+						players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 5);
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						return;
+					}
+				}
+			}
+		}
+	}
+	else if ( currentx >= 0 )
+	{
+		if ( alchemyGUI.recipes.bOpen )
+		{
+			if ( diffy != 0 )
+			{
+				if ( y < 0 )
+				{
+					y = lowestItemY;
+				}
+				if ( y > lowestItemY )
+				{
+					y = 0;
+				}
+				x = std::min(std::max(0, currentx), alchemyGUI.MAX_ALCH_X - 1);
+			}
+			else if ( diffx != 0 )
+			{
+				//if ( diffx > 0 )
+				{
+					if ( x >= alchemyGUI.MAX_ALCH_X )
+					{
+						if ( !alchemyGUI.recipes.panelJustifyInverted )
+						{
+							players[player]->inventoryUI.selectSlot(0, currenty);
+							players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+							return;
+						}
+						else
+						{
+							if ( y < alchemyGUI.MAX_ALCH_Y - 2 )
+							{
+								x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+								y = 0;
+							}
+							else
+							{
+								x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+								y = 0;
+							}
+						}
+					}
+					else if ( x < 0 )
+					{
+						if ( !alchemyGUI.recipes.panelJustifyInverted )
+						{
+							if ( y < alchemyGUI.MAX_ALCH_Y - 2 )
+							{
+								x = alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X;
+								y = 0;
+							}
+							else
+							{
+								x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X;
+								y = 0;
+							}
+						}
+						else
+						{
+							players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, currenty);
+							players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+							return;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			x = alchemyGUI.ALCH_SLOT_BASE_POTION_X;
+			y = 0;
+		}
+	}
+	alchemyGUI.selectAlchemySlot(x, y);
+}
+
+// only called by handleInventoryMovement in player.cpp
 void select_spell_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
 	int x = currentx + diffx;
@@ -1750,7 +1940,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 					else
 					{
 						bool skipPaperDollSelection = false;
-						if ( GenericGUI[player].tinkerGUI.bOpen )
+						if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen )
 						{
 							skipPaperDollSelection = true;
 						}
@@ -1864,6 +2054,36 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 			return;
 		}
+		else if ( !selectedItem && GenericGUI[player].alchemyGUI.bOpen )
+		{
+			if ( y >= GenericGUI[player].alchemyGUI.MAX_ALCH_Y )
+			{
+				y = GenericGUI[player].alchemyGUI.MAX_ALCH_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			if ( GenericGUI[player].alchemyGUI.recipes.bOpen && !GenericGUI[player].alchemyGUI.recipes.panelJustifyInverted )
+			{
+				select_alchemy_slot(player, GenericGUI[player].alchemyGUI.MAX_ALCH_X - 1, y, 0, 0);
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
+			else
+			{
+				if ( y >= 4 )
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_RESULT_POTION_X, 0, 0, 0);
+				}
+				else
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_SECONDARY_POTION_X, 0, 0, 0);
+				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
+		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
 		{
 			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
@@ -1899,6 +2119,36 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 			select_chest_slot(player, 0, y, 0, 0);
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
 			return;
+		}
+		else if ( !selectedItem && GenericGUI[player].alchemyGUI.bOpen )
+		{
+			if ( y >= GenericGUI[player].alchemyGUI.MAX_ALCH_Y )
+			{
+				y = GenericGUI[player].alchemyGUI.MAX_ALCH_Y - 1;
+			}
+			else if ( y < 0 )
+			{
+				y = 0;
+			}
+			if ( GenericGUI[player].alchemyGUI.recipes.bOpen && GenericGUI[player].alchemyGUI.recipes.panelJustifyInverted )
+			{
+				select_alchemy_slot(player, 0, y, 0, 0);
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
+			else
+			{
+				if ( y >= 4 )
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_RESULT_POTION_X, 0, 0, 0);
+				}
+				else
+				{
+					select_alchemy_slot(player, GenericGUI[player].alchemyGUI.ALCH_SLOT_BASE_POTION_X, 0, 0, 0);
+				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+				return;
+			}
 		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
 		{
@@ -2223,6 +2473,63 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 	}
 
 	return stackedItems;
+}
+
+bool releaseInventoryItemIntoAlchemy(const int player)
+{
+	return false; // disable for now
+	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+	if ( !selectedItem )
+	{
+		return false;
+	}
+	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	if ( !alchemyGUI.bOpen || !alchemyGUI.isInteractable )
+	{
+		return false;
+	}
+
+	if ( !(itemCategory(selectedItem) == POTION && selectedItem->type != POTION_EMPTY)
+		|| itemIsEquipped(selectedItem, player) || !selectedItem->identified )
+	{
+		return false;
+	}
+
+	if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(GenericGUIMenu::AlchemyGUI_t::ALCH_SLOT_BASE_POTION_X, 0) )
+	{
+		if ( slotFrame->capturesMouseInRealtimeCoords() )
+		{
+			if ( selectedItem->uid != alchemyGUI.potion1Uid )
+			{
+				alchemyGUI.potion1Uid = selectedItem->uid;
+				alchemyGUI.recipes.activateRecipeIndex = -1;
+				if ( selectedItem->uid == alchemyGUI.potion2Uid )
+				{
+					alchemyGUI.potion2Uid = 0;
+					alchemyGUI.animPotion2 = 0.0;
+				}
+			}
+			return true;
+		}
+	}
+	if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(GenericGUIMenu::AlchemyGUI_t::ALCH_SLOT_SECONDARY_POTION_X, 0) )
+	{
+		if ( slotFrame->capturesMouseInRealtimeCoords() )
+		{
+			if ( selectedItem->uid != alchemyGUI.potion2Uid )
+			{
+				alchemyGUI.potion2Uid = selectedItem->uid;
+				alchemyGUI.recipes.activateRecipeIndex = -1;
+				if ( selectedItem->uid == alchemyGUI.potion1Uid )
+				{
+					alchemyGUI.potion1Uid = 0;
+					alchemyGUI.animPotion1 = 0.0;
+				}
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 void releaseChestItem(const int player)
@@ -2964,6 +3271,20 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			}
 			return;
 		}
+		else if ( GenericGUI[player].alchemyGUI.bOpen )
+		{
+			if ( releaseInventoryItemIntoAlchemy(player) )
+			{
+				selectedItem = nullptr;
+				inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+				toggleclick = false;
+				if ( inputs.bMouseLeft(player) )
+				{
+					inputs.mouseClearLeft(player);
+				}
+				return;
+			}
+		}
 
 		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
@@ -2979,6 +3300,8 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY, itemCategory(selectedItem) == SPELL_CAT);
 			bool mouseInInventory = mouseInsidePlayerInventory(player);
 			bool mouseInChest = false;
+			bool mouseInAlchemyBasePotion = false;
+			bool mouseInAlchemySecondaryPotion = false;
 			if ( !mouseInInventory )
 			{
 				if ( players[player]->inventoryUI.chestFrame
@@ -2994,6 +3317,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					}
 				}
 			}
+
 			if ( mouseOverSlot && mouseInInventory && slotFrameY > Player::Inventory_t::DOLL_ROW_5 )
 			{
 				if ( bPaperDollItem )
@@ -3666,7 +3990,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					playSound(139, 64); // click sound
 				}
 			}
-			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory )
+			else if ( itemCategory(selectedItem) == SPELL_CAT || mouseInInventory || !players[player]->inventoryUI.guiAllowDropItems() )
 			{
 				//Outside inventory. Spells can't be dropped.
 				//If mouseInInventory, we dropped onto a slot frame area and the item should return to where it was
@@ -3677,7 +4001,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				{
 					//Add spell to hotbar.
 					Item* tempItem = uidToItem(slot->item);
-					if ( tempItem )
+					if ( tempItem && tempItem != selectedItem )
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
@@ -3690,6 +4014,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 						toggleclick = false;
 					}
+
 					// empty out duplicate slots that match this item uid.
 					int i = 0;
 					for ( auto& s : players[player]->hotbar.slots() )
@@ -5705,13 +6030,13 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !itemMenuOpen 
-		&& !selectedItem 
+	if ( !players[player]->GUI.isDropdownActive()
+		&& !selectedItem
 		&& !inputs.getVirtualMouse(player)->draw_cursor 
 		&& !players[player]->shootmode
 		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{
-		auto options = getContextTooltipOptionsForItem(player, item);
+		auto options = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad);
 
 		std::sort(options.begin(), options.end(), [](const ItemContextMenuPrompts& lhs, const ItemContextMenuPrompts& rhs) {
 			return getContextMenuOptionOrder(lhs) < getContextMenuOptionOrder(rhs);
@@ -5786,7 +6111,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						if ( txt->getHJustify() == Field::justify_t::RIGHT )
 						{
 							// find the furthest left text
-							alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textGet->getWidth(), alignx1);
+							const unsigned int textWidth = textGet->getWidth();
+							alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textWidth, alignx1);
 						}
 					}
 				}
@@ -5819,7 +6145,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					{
 						if ( txt->getHJustify() == Field::justify_t::LEFT )
 						{
-							alignx2 = std::max(txt->getSize().x + (int)textGet->getWidth(), alignx2);
+							const unsigned int textWidth = textGet->getWidth();
+							alignx2 = std::max(txt->getSize().x + (int)textWidth, alignx2);
+							SDL_Rect txtSize = txt->getSize();
+							txtSize.w = textWidth;
+							txt->setSize(txtSize);
 						}
 					}
 				}
@@ -6172,6 +6502,35 @@ void Player::Inventory_t::closeInventory()
 	itemTooltipDisplay.expandAnimate = 0;
 }
 
+bool Player::Inventory_t::guiAllowDefaultRightClick() const
+{
+	if ( player.GUI.bModuleAccessibleWithMouse(player.GUI.activeModule) )
+	{
+		if ( GenericGUI[player.playernum].isGUIOpen() )
+		{
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+bool Player::Inventory_t::guiAllowDropItems() const
+{
+	if ( player.GUI.bModuleAccessibleWithMouse(player.GUI.activeModule) )
+	{
+		if ( player.shopGUI.bOpen || GenericGUI[player.playernum].isGUIOpen()
+			|| player.GUI.isDropdownActive() || player.GUI.isGameoverActive()
+			|| player.inventoryUI.chestGUI.bOpen
+			|| !players[player.playernum]->bControlEnabled )
+		{
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
@@ -6180,6 +6539,7 @@ void Player::Inventory_t::updateInventory()
 
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
+	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
 
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
@@ -6227,6 +6587,9 @@ void Player::Inventory_t::updateInventory()
 		slideOutPercent = std::max(0.0, slideOutPercent);
 		return;
 	}
+
+	static ConsoleVariable<bool> cvar_gamepadDropdown("/gamepad_dropdown", false);
+	useItemDropdownOnGamepad = *cvar_gamepadDropdown;
 
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
@@ -6344,6 +6707,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+				{
+					alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
@@ -6399,7 +6766,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = tinkerGUI.getTinkerSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( tinkerGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6437,7 +6804,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = shopGUI.getShopSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( shopGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6466,6 +6833,69 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 
+		if ( alchemyGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ALCHEMY) )
+		{
+			for ( int x = alchemyGUI.ALCH_SLOT_RESULT_POTION_X; x < alchemyGUI.MAX_ALCH_X; ++x )
+			{
+				for ( int y = 0; y < alchemyGUI.MAX_ALCH_Y; ++y )
+				{
+					if ( y > 0 && x < 0 )
+					{
+						continue;
+					}
+					bool slotVisible = false;
+					if ( x < 0 )
+					{
+						if ( alchemyGUI.animPotion1 < 0.001 && alchemyGUI.animPotion2 < 0.001 )
+						{
+							slotVisible = true;
+						}
+					}
+					else if ( alchemyGUI.recipes.bOpen && alchemyGUI.recipes.isInteractable )
+					{
+						slotVisible = alchemyGUI.recipes.isSlotVisible(x, y);
+					}
+
+					if ( auto slotFrame = alchemyGUI.getAlchemySlotFrame(x, y) )
+					{
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
+						{
+							if ( slotVisible && alchemyGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								alchemyGUI.selectAlchemySlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
+								}
+							}
+						}
+
+						bool hideCursor = false;
+						/*if ( !alchemyGUI.notifications.empty() && alchemyGUI.recipes.bOpen && y == 0 && x >= 0 )
+						{
+							hideCursor = true;
+						}*/
+						if ( x == alchemyGUI.getSelectedAlchemySlotX()
+							&& y == alchemyGUI.getSelectedAlchemySlotY()
+							&& !hideCursor
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY
+							&& alchemyGUI.isInteractable
+							&& !(x == alchemyGUI.ALCH_SLOT_RESULT_POTION_X && alchemyGUI.animPotionResult > 0.001)
+							&& slotVisible )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
+
 		if ( chestGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_CHEST) )
 		{
@@ -6475,7 +6905,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getChestSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( chestGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6506,6 +6936,7 @@ void Player::Inventory_t::updateInventory()
 
 		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& !tinkerCraftableListOpen
+			&& !(alchemyGUI.bOpen && !alchemyGUI.isInteractable)
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
@@ -6514,7 +6945,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getInventorySlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
 							{
@@ -6552,7 +6983,7 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getSpellSlotFrame(x, y) )
 					{
-						if ( !itemMenuOpen ) // don't update selected slot while item menu open
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
 						{
 							if ( spellPanel.isSlotVisible(x, y) && spellPanel.isInteractable )
 							{
@@ -6588,9 +7019,9 @@ void Player::Inventory_t::updateInventory()
 
 		if ( slotFrameToHighlight )
 		{
-			if ( (itemMenuOpen && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
+			if ( (players[player]->GUI.isDropdownActive() && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
 				(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
-					&& !(itemMenuOpen && itemMenuFromHotbar)
+					&& !(players[player]->GUI.isDropdownActive() && itemMenuFromHotbar)
 					&& (!inputs.getVirtualMouse(player)->draw_cursor
 						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
 			{
@@ -6994,6 +7425,7 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 			{
+				slotFrame->setUserData(nullptr);
 				if ( shopOpen && !isItemSellableToShop(player, item) )
 				{
 					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
@@ -7003,7 +7435,8 @@ void Player::Inventory_t::updateInventory()
 					// grab action status of this item, don't modify using 'true' param
 					auto res = tinkerGUI.setItemDisplayNameAndPrice(item, true); 
 					bool invalidItem = !(res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK
-						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE);
+						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UPGRADE
+						|| res == GenericGUIMenu::TinkerGUI_t::TINKER_ACTION_OK_UNIDENTIFIED_SALVAGE);
 					if ( tinkerCraftableListOpen && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
 					{
 						if ( invalidItem )
@@ -7030,6 +7463,37 @@ void Player::Inventory_t::updateInventory()
 					else
 					{
 						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
+				else if ( alchemyGUI.bOpen )
+				{
+					if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY /*&& item != GenericGUI[player].alembicItem*/
+						&& item->identified && !itemIsEquipped(item, player)) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true);
+					}
+					else if ( alchemyGUI.potionResultUid == item->uid 
+						&& alchemyGUI.potionResultUid != alchemyGUI.potion1Uid
+						&& alchemyGUI.potionResultUid != alchemyGUI.potion2Uid )
+					{
+						// set qty to 
+						int oldCount = item->count;
+						item->count = std::max(0, item->count - alchemyGUI.animPotionResultCount);
+						if ( item->count > 0 )
+						{
+							slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+							updateSlotFrameFromItem(slotFrame, item);
+						}
+						item->count = oldCount;
+					}
+					else if ( (alchemyGUI.potion1Uid == item->uid || alchemyGUI.potion2Uid == item->uid) )
+					{
+						slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item, !item->identified);
 					}
 				}
 				else
@@ -7086,6 +7550,7 @@ void Player::Inventory_t::updateInventory()
 
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
+	alchemyGUI.clearItemDisplayed();
 
 	if ( !selectedItem && tinkerCraftableListOpen )
 	{
@@ -7340,11 +7805,18 @@ void Player::Inventory_t::updateInventory()
 						break;
 					}
 
-					if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) || bIsTooltipDelayed())
-						&& inventoryControlActive && !selectedItem
+					bool tooltipPromptWasDisabled = tooltipPromptFrame->isDisabled();
+					if ( useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+					{
+						tooltipPromptFrame->setDisabled(true);
+					}
+					if ( ((tooltipOpen && (!tooltipPromptWasDisabled))
+						|| bIsTooltipDelayed())
+						&& inventoryControlActive 
+						&& !selectedItem
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
-						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad);
 						bool bindingPressed = false;
 						for ( auto& option : contextTooltipOptions )
 						{
@@ -7382,6 +7854,37 @@ void Player::Inventory_t::updateInventory()
 								else
 								{
 									activateItemContextMenuOption(item, option);
+									if ( option == ItemContextMenuPrompts::PROMPT_DROPDOWN )
+									{
+										if ( !players[player]->GUI.isDropdownActive() )
+										{
+											players[player]->GUI.dropdownMenu.open("chest_interact");
+											players[player]->GUI.dropdownMenu.dropDownToggleClick = true;
+											players[player]->GUI.dropdownMenu.dropDownItem = item->uid;
+											SDL_Rect dropdownPos = slotFrame->getAbsoluteSize();
+											dropdownPos.y += dropdownPos.h / 2;
+											if ( auto interactMenuTop = players[player]->GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+											{
+												// 10px is slot half height, move by 0.5 slots, minus the top interact text height
+												dropdownPos.y -= (interactMenuTop->pos.h + (1 * 10) + 4);
+											}
+
+											if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("chest_interact") )
+											{
+												dropdownPos.x += dropdownPos.w - 10;
+											}
+											else
+											{
+												dropdownPos.x += 10;
+											}
+											dropdownPos.x = std::max(dropdownPos.x, players[player]->camera_virtualx1());
+											dropdownPos.x = std::min(dropdownPos.x, players[player]->camera_virtualx1() + players[player]->camera_virtualWidth());
+											players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x;
+											dropdownPos.y = std::max(dropdownPos.y, players[player]->camera_virtualy1());
+											dropdownPos.y = std::min(dropdownPos.y, players[player]->camera_virtualy1() + players[player]->camera_virtualHeight());
+											players[player]->GUI.dropdownMenu.dropDownY = dropdownPos.y;
+										}
+									}
 								}
 							}
 						}
@@ -7523,7 +8026,7 @@ void Player::Inventory_t::updateInventory()
 			mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
 				&& slotFrame->capturesMouse();
 
-			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor && !(itemMenuOpen && itemMenuFromHotbar) )
+			if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor && !(players[player]->GUI.isDropdownActive() && itemMenuFromHotbar) )
 			{
 				// mouse movement captures the inventory
 				if ( itemCategory(item) == SPELL_CAT )
@@ -7604,6 +8107,18 @@ void Player::Inventory_t::updateInventory()
 						tooltipCoordX = inventoryBgFrame->getSize().x - 8;
 						tooltipCoordX += invBaseImg->pos.x;
 					}
+
+					if ( alchemyGUI.alchFrame && alchemyGUI.bOpen && alchemyGUI.isInteractable )
+					{
+						if ( justify == PANEL_JUSTIFY_LEFT )
+						{
+							tooltipCoordX += alchemyGUI.alchFrame->getSize().w;
+						}
+						else
+						{
+							tooltipCoordX -= alchemyGUI.alchFrame->getSize().w;
+						}
+					}
 				}
 				else
 				{
@@ -7644,6 +8159,7 @@ void Player::Inventory_t::updateInventory()
 				bool tooltipOpen = false;
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
+				bool alchemyOpen = false;
 				if ( tinkeringSalvageOrRepairMenuActive )
 				{
 					tooltipOpen = false;
@@ -7656,6 +8172,14 @@ void Player::Inventory_t::updateInventory()
 					if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 					{
 						shopGUI.setItemDisplayNameAndPrice(item);
+					}
+				}
+				else if ( alchemyGUI.bOpen )
+				{
+					alchemyOpen = true;
+					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					{
+						alchemyGUI.setItemDisplayNameAndPrice(item, false, false);
 					}
 				}
 				else
@@ -7672,15 +8196,21 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( ((tooltipOpen && !tooltipPromptFrame->isDisabled()) 
+				bool tooltipPromptWasDisabled = tooltipPromptFrame->isDisabled();
+				if ( useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+				{
+					tooltipPromptFrame->setDisabled(true);
+				}
+				if ( ((tooltipOpen && (!tooltipPromptWasDisabled))
 					|| bIsTooltipDelayed()
 					|| sellingItemToShop
-					|| tinkerOpen)
+					|| tinkerOpen
+					|| alchemyOpen)
 					&& inventoryControlActive
 					&& !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
-					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad);
 					bool bindingPressed = false;
 					for ( auto& option : contextTooltipOptions )
 					{
@@ -7718,7 +8248,39 @@ void Player::Inventory_t::updateInventory()
 							else
 							{
 								activateItemContextMenuOption(item, option);
+								if ( option == ItemContextMenuPrompts::PROMPT_DROPDOWN )
+								{
+									if ( !players[player]->GUI.isDropdownActive() )
+									{
+										players[player]->GUI.dropdownMenu.open("item_interact");
+										players[player]->GUI.dropdownMenu.dropDownToggleClick = true;
+										players[player]->GUI.dropdownMenu.dropDownItem = item->uid;
+										SDL_Rect dropdownPos = slotFrame->getAbsoluteSize();
+										dropdownPos.y += dropdownPos.h / 2;
+										if ( auto interactMenuTop = players[player]->GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+										{
+											// 10px is slot half height, move by 0.5 slots, minus the top interact text height
+											dropdownPos.y -= (interactMenuTop->pos.h + (1 * 10) + 4);
+										}
+
+										if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("item_interact") )
+										{
+											dropdownPos.x += dropdownPos.w - 10;
+										}
+										else
+										{
+											dropdownPos.x += 10;
+										}
+										dropdownPos.x = std::max(dropdownPos.x, players[player]->camera_virtualx1());
+										dropdownPos.x = std::min(dropdownPos.x, players[player]->camera_virtualx1() + players[player]->camera_virtualWidth());
+										players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x;
+										dropdownPos.y = std::max(dropdownPos.y, players[player]->camera_virtualy1());
+										dropdownPos.y = std::min(dropdownPos.y, players[player]->camera_virtualy1() + players[player]->camera_virtualHeight());
+										players[player]->GUI.dropdownMenu.dropDownY = dropdownPos.y;
+									}
+								}
 							}
+							break;
 						}
 					}
 					if ( bindingPressed )
@@ -7731,7 +8293,6 @@ void Player::Inventory_t::updateInventory()
 						break;
 					}
 				}
-
 
 				bool disableItemUsage = false;
 				if ( item )
@@ -7758,9 +8319,12 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 					{
-						if ( dropItem(item, player) ) // Quick item drop
+						if ( guiAllowDropItems() )
 						{
-							item = nullptr;
+							if ( dropItem(item, player) ) // Quick item drop
+							{
+								item = nullptr;
+							}
 						}
 					}
 					else
@@ -7781,20 +8345,27 @@ void Player::Inventory_t::updateInventory()
 				else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
 					&& inventoryControlActive && !selectedItem )
 				{
-					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) //TODO: selected shop slot, identify, remove curse?
 					{
-						// auto-appraise the item
-						appraisal.appraiseItem(item);
-						inputs.mouseClearRight(player);
+						if ( guiAllowDefaultRightClick() )
+						{
+							// auto-appraise the item
+							appraisal.appraiseItem(item);
+							inputs.mouseClearRight(player);
+						}
 					}
-					else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
+					else if ( !disableItemUsage
+						&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 						(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 					{
 						inputs.mouseClearRight(player);
-						// force equip potion/spellbook
-						playerTryEquipItemAndUpdateServer(player, item, false);
+						if ( guiAllowDefaultRightClick() )
+						{
+							// force equip potion/spellbook
+							playerTryEquipItemAndUpdateServer(player, item, false);
+						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -8138,6 +8709,37 @@ void Player::Inventory_t::updateInventory()
 								updateSlotFrameFromItem(slotFrame, item);
 							}
 						}
+						else if ( alchemyGUI.bOpen )
+						{
+							if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY /*&& item != GenericGUI[player].alembicItem*/
+								&& item->identified && !itemIsEquipped(item, player)) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true);
+							}
+							else if ( alchemyGUI.potionResultUid == item->uid
+								&& alchemyGUI.potionResultUid != alchemyGUI.potion1Uid
+								&& alchemyGUI.potionResultUid != alchemyGUI.potion2Uid )
+							{
+								// set qty to 
+								int oldCount = item->count;
+								item->count = std::max(0, item->count - alchemyGUI.animPotionResultCount);
+								if ( item->count > 0 )
+								{
+									slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+									updateSlotFrameFromItem(slotFrame, item);
+								}
+								item->count = oldCount;
+							}
+							else if ( (alchemyGUI.potion1Uid == item->uid || alchemyGUI.potion2Uid == item->uid) )
+							{
+								slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+								updateSlotFrameFromItem(slotFrame, item);
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item, !item->identified);
+							}
+						}
 						else
 						{
 							updateSlotFrameFromItem(slotFrame, item);
@@ -8343,6 +8945,8 @@ std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
 		case PROMPT_UNEQUIP_FOR_DROP:
 		case PROMPT_RETRIEVE_CHEST_ALL:
 		case PROMPT_STORE_CHEST_ALL:
+		case PROMPT_CONSUME_ALTERNATE:
+		case PROMPT_INSPECT_ALTERNATE:
 			return "MenuAlt2";
 		case PROMPT_GRAB:
 			return "MenuAlt1";
@@ -8356,6 +8960,7 @@ std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt)
 		case PROMPT_STORE_CHEST:
 		case PROMPT_RETRIEVE_CHEST:
 		case PROMPT_INSPECT:
+		case PROMPT_DROPDOWN:
 			return "MenuConfirm";
 		case PROMPT_DROP:
 			return "MenuCancel";
@@ -8385,8 +8990,10 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 		case PROMPT_APPRAISE:
 			return language[1161];
 		case PROMPT_CONSUME:
+		case PROMPT_CONSUME_ALTERNATE:
 			return language[3487];
 		case PROMPT_INSPECT:
+		case PROMPT_INSPECT_ALTERNATE:
 			return language[1881];
 		case PROMPT_SELL:
 			return language[345];
@@ -8405,25 +9012,36 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return language[1162];
 		case PROMPT_GRAB:
 			return language[4050];
+		case PROMPT_DROPDOWN:
+			return language[4040];
 		default:
 			return "Invalid";
 	}
 	return "Invalid";
 }
 
-std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item)
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, bool useDropdownMenu)
 {
 	if ( stats[player] && stats[player]->HP <= 0 )
 	{
 		// ded, cant do anything with items
 		return std::vector<ItemContextMenuPrompts>();
 	}
-	auto options = getContextMenuOptionsForItem(player, item);
-	options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
-	auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
-	if ( findAppraise != options.end() )
+	std::vector<ItemContextMenuPrompts> options;
+	if ( useDropdownMenu )
 	{
-		options.erase(findAppraise);
+		options.push_back(ItemContextMenuPrompts::PROMPT_DROPDOWN);
+		options.push_back(ItemContextMenuPrompts::PROMPT_GRAB);
+	}
+	else
+	{
+		options = getContextMenuOptionsForItem(player, item);
+		options.push_back(ItemContextMenuPrompts::PROMPT_GRAB); // additional prompt here for non-right click menu
+		auto findAppraise = std::find(options.begin(), options.end(), ItemContextMenuPrompts::PROMPT_APPRAISE);
+		if ( findAppraise != options.end() )
+		{
+			options.erase(findAppraise);
+		}
 	}
 	return options;
 }
@@ -8473,13 +9091,19 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		if ( is_potion_bad )
 		{
 			options.push_back(PROMPT_EQUIP);
-			options.push_back(PROMPT_EAT);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_EAT);
+			}
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
 		else
 		{
-			options.push_back(PROMPT_EAT);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_EAT);
+			}
 			options.push_back(PROMPT_EQUIP);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
@@ -8498,42 +9122,58 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
 	}
+	else if ( item->type == FOOD_CREAMPIE )
+	{
+		if ( !itemIsEquipped(item, player) )
+		{
+			if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
+			{
+				options.push_back(PROMPT_CONSUME);
+			}
+			else
+			{
+				options.push_back(PROMPT_EAT);
+			}
+		}
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
 	else if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
 	{
 		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
 		{
-			options.push_back(PROMPT_CONSUME);
+			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_INSPECT);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
 		else if ( itemCategory(item) == FOOD )
 		{
-			options.push_back(PROMPT_CONSUME);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_CONSUME);
+			}
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
 		else if ( itemCategory(item) == GEM )
 		{
 			options.push_back(PROMPT_EQUIP);
-			options.push_back(PROMPT_CONSUME);
+			if ( !itemIsEquipped(item, player) )
+			{
+				options.push_back(PROMPT_CONSUME);
+			}
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
 		else
 		{
+			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_INTERACT);
-			options.push_back(PROMPT_CONSUME);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
-	}
-	else if ( item->type == FOOD_CREAMPIE )
-	{
-		options.push_back(PROMPT_EAT);
-		options.push_back(PROMPT_EQUIP);
-		options.push_back(PROMPT_APPRAISE);
-		options.push_back(PROMPT_DROP);
 	}
 	else if ( itemCategory(item) == SPELLBOOK )
 	{
@@ -8582,6 +9222,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	bool sellingToShop = false;
 	bool tinkerOpen = false;
+	bool alembicOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -8593,13 +9234,27 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		tinkerOpen = true;
 	}
+	else if ( GenericGUI[player].alchemyGUI.bOpen )
+	{
+		alembicOpen = true;
+	}
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop || tinkerOpen )
+		if ( sellingToShop || tinkerOpen || alembicOpen )
 		{
 			if ( getContextMenuOptionBindingName(*it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(*it) == "MenuCancel" )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			if ( alembicOpen && getContextMenuOptionBindingName(*it) == "MenuAlt2" )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			if ( *it == PROMPT_CONSUME_ALTERNATE || *it == PROMPT_INSPECT_ALTERNATE )
 			{
 				it = options.erase(it);
 				continue;
@@ -8627,6 +9282,19 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		options.insert(options.begin(), PROMPT_SELL);
 	}
+
+#ifndef NDEBUG
+	std::unordered_map<std::string, int> optionsMap;
+	for ( auto it = options.begin(); it != options.end(); ++it )
+	{
+		optionsMap[getContextMenuOptionBindingName(*it)] += 1;
+	}
+	for ( auto& pair : optionsMap )
+	{
+		assert(pair.second <= 1);
+	}
+#endif // NDEBUG
+
 	return options;
 }
 

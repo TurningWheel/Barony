@@ -643,6 +643,7 @@ public:
 		int dropDownX = 0;
 		int dropDownY = 0;
 		int dropDownOptionSelected = -1;
+		Uint32 dropDownItem = 0;
 		bool bOpen = false;
 		std::string currentName = "";
 		Frame* dropdownBlockClickFrame = nullptr;
@@ -703,13 +704,16 @@ public:
 			MODULE_REMOVECURSE,
 			MODULE_IDENTIFY,
 			MODULE_TINKERING,
+			MODULE_ALCHEMY,
 			MODULE_FOLLOWERMENU,
 			MODULE_CHARACTERSHEET,
 			MODULE_SKILLS_LIST,
 			MODULE_BOOK_VIEW,
 			MODULE_HOTBAR,
 			MODULE_SPELLS,
-			MODULE_STATUS_EFFECTS
+			MODULE_STATUS_EFFECTS,
+			MODULE_LOG,
+			MODULE_MAP
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -778,6 +782,7 @@ public:
 		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
 		void setCompactView(bool bCompact);
 		void resizeAndPositionInventoryElements();
+		bool useItemDropdownOnGamepad = false;
 
 		struct Cursor_t
 		{
@@ -936,6 +941,8 @@ public:
 		bool warpMouseToSelectedItem(Item* snapToItem, Uint32 flags);
 		bool warpMouseToSelectedSpell(Item* snapToItem, Uint32 flags);
 		bool warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags);
+		bool guiAllowDropItems() const;
+		bool guiAllowDefaultRightClick() const;
 		void processInventory();
 		void updateInventory();
 		void updateCursor();

@@ -2634,6 +2634,7 @@ class ItemTooltips_t
 		std::vector<std::string> imagePaths;
 		std::map<std::string, Sint32> attributes;
 		std::string tooltip = "tooltip_default";
+		std::string iconLabelPath = "";
 	};
 
 	enum SpellItemTypes : int
@@ -2741,6 +2742,7 @@ public:
 	std::string& getItemEquipmentEffectsForIconText(std::string& attribute);
 	std::string& getItemEquipmentEffectsForAttributesText(std::string& attribute);
 	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
+	std::string& getIconLabel(Item& item);
 	std::string getSpellIconText(const int player, Item& item);
 	std::string getSpellDescriptionText(const int player, Item& item);
 	std::string getSpellIconPath(const int player, Item& item);
@@ -2869,3 +2871,5 @@ public:
 	}
 };
 extern GlyphRenderer_t GlyphHelper;
+
+bool charIsWordSeparator(char c);

@@ -683,6 +683,25 @@ void Stat::printStats()
 	}
 }
 
+int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry)
+{
+	if ( EFFECTS[EFF_SHAPESHIFT] )
+	{
+		returnItem = nullptr;
+		return -1;
+	}
+	if ( shield && (itemTypeIsQuiver(shield->type)
+		|| itemCategory(shield) == SPELLBOOK
+		|| shield->type == TOOL_TINKERING_KIT) )
+	{
+		excludeShield = true;
+	}
+	Item* maskItem = mask; // exclude mask
+	mask = nullptr;
+	int result = pickRandomEquippedItem(returnItem, excludeWeapon, excludeShield, excludeArmor, excludeJewelry);
+	mask = maskItem;
+	return result;
+}
 
 int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry)
 {

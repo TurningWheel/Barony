@@ -578,9 +578,31 @@ void actArrow(Entity* my)
 								}
 							}
 						}
-						if ( rand() % 10 == 0 && parent )
+
+						bool doSkillIncrease = true;
+						if ( monsterIsImmobileTurret(hit.entity, hitstats) )
 						{
-							parent->increaseSkill(PRO_RANGED);
+							if ( hitstats->type == DUMMYBOT && hitstats->HP > 0 )
+							{
+								doSkillIncrease = true; // can train on dummybots.
+							}
+							else
+							{
+								doSkillIncrease = false; // no skill for killing/hurting other turrets.
+							}
+						}
+						if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
+						{
+							doSkillIncrease = false; // no skill for killing/hurting players
+						}
+						int chance = 10;
+						if ( doSkillIncrease && (rand() % chance == 0) && parent && parent->getStats() )
+						{
+							if ( hitstats->type != DUMMYBOT 
+								|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < 20) )
+							{
+								parent->increaseSkill(PRO_RANGED);
+							}
 						}
 					}
 					else
@@ -652,7 +674,11 @@ void actArrow(Entity* my)
 								Stat* buddystats = entity->getStats();
 								if ( buddystats != nullptr )
 								{
-									if ( entity->checkFriend(hit.entity) )
+									if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+									{
+										continue; // shopkeepers don't care about hitting humans/robots etc.
+									}
+									if ( entity->checkFriend(ohitentity) )
 									{
 										if ( entity->monsterState == MONSTER_STATE_WAIT ) // monster is waiting
 										{

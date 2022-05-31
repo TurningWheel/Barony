@@ -621,7 +621,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 		return false;
 	}
 
-	if ( my->monsterState != 0 )
+	if ( my->monsterState != MONSTER_STATE_WAIT )
 	{
 		return false;
 	}
@@ -1780,8 +1780,14 @@ void actMonster(Entity* my)
 		return;
 	}
 
-	if ( ticks % (TICKS_PER_SECOND) == my->getUID() % (TICKS_PER_SECOND / 2) )
+	if ( (my->monsterExtraReflexTick > 0 && ticks % (TICKS_PER_SECOND) == (Uint32)my->monsterExtraReflexTick) )
 	{
+		my->monsterExtraReflexTick = 0;
+		myReflex = true;
+	}
+	else if ( ticks % (TICKS_PER_SECOND) == my->getUID() % (TICKS_PER_SECOND / 2) )
+	{
+		my->monsterExtraReflexTick = 0;
 		myReflex = true;
 	}
 	else
@@ -3467,6 +3473,7 @@ void actMonster(Entity* my)
 		}
 	}
 
+	bool wasInsideEntity = false;
 	if ( my->isMobile() )
 	{
 		// ghouls rise out of the dirt :O
@@ -3542,12 +3549,19 @@ void actMonster(Entity* my)
 								MONSTER_VELY = 0;
 							}
 						}
-						//messagePlayer(0, "path: %d", my->monsterPathCount);
+						wasInsideEntity = true;
+						//messagePlayer(0, MESSAGE_DEBUG, "path: %d", my->monsterPathCount);
 						++my->monsterPathCount;
 						if ( my->monsterPathCount > 50 )
 						{
 							my->monsterPathCount = 0;
 							monsterMoveAside(my, my);
+						}
+						if ( my->monsterState == MONSTER_STATE_ATTACK )
+						{
+							MONSTER_VELX = 0.f;
+							MONSTER_VELY = 0.f;
+							continue;
 						}
 					}
 
@@ -3563,9 +3577,10 @@ void actMonster(Entity* my)
 					}
 					else
 					{
+						bool oldFlag = entity->flags[PASSABLE];
 						entity->flags[PASSABLE] = true;
 						clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
-						entity->flags[PASSABLE] = false;
+						entity->flags[PASSABLE] = oldFlag;
 					}
 				}
 			}
@@ -3621,33 +3636,33 @@ void actMonster(Entity* my)
 
 		//if ( myStats->type == DEVIL )
 		//{
-		//	std::string state_string;
-
-		//	switch(my->monsterState)
-		//	{
-		//	case MONSTER_STATE_WAIT:
-		//		state_string = "WAIT";
-		//		break;
-		//	case MONSTER_STATE_ATTACK:
-		//		state_string = "CHARGE";
-		//		break;
-		//	case MONSTER_STATE_PATH:
-		//		state_string = "PATH";
-		//		break;
-		//	case MONSTER_STATE_HUNT:
-		//		state_string = "HUNT";
-		//		break;
-		//	case MONSTER_STATE_TALK:
-		//		state_string = "TALK";
-		//		break;
-		//	default:
-		//		state_string = std::to_string(my->monsterState);
-		//		//state_string = "Unknown state";
-		//		break;
-		//	}
-
-		//	messagePlayer(0, "%s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
-		//		state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
+			//std::string state_string;
+			//
+			//switch(my->monsterState)
+			//{
+			//case MONSTER_STATE_WAIT:
+			//	state_string = "WAIT";
+			//	break;
+			//case MONSTER_STATE_ATTACK:
+			//	state_string = "CHARGE";
+			//	break;
+			//case MONSTER_STATE_PATH:
+			//	state_string = "PATH";
+			//	break;
+			//case MONSTER_STATE_HUNT:
+			//	state_string = "HUNT";
+			//	break;
+			//case MONSTER_STATE_TALK:
+			//	state_string = "TALK";
+			//	break;
+			//default:
+			//	state_string = std::to_string(my->monsterState);
+			//	//state_string = "Unknown state";
+			//	break;
+			//}
+			//
+			//messagePlayer(0, MESSAGE_DEBUG, "%s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
+			//	state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
 		//}
 
 		//Begin state machine
@@ -3726,7 +3741,7 @@ void actMonster(Entity* my)
 							real_t monsterVisionRange = sightranges[myStats->type];
 							if ( hitstats->type == DUMMYBOT )
 							{
-								monsterVisionRange = std::min(monsterVisionRange, 96.0);
+								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
@@ -4328,7 +4343,7 @@ void actMonster(Entity* my)
 				real_t monsterVisionRange = sightranges[myStats->type];
 				if ( hitstats && hitstats->type == DUMMYBOT )
 				{
-					monsterVisionRange = std::min(monsterVisionRange, 96.0);
+					monsterVisionRange = std::max(monsterVisionRange, 96.0);
 				}
 				if ( myStats->EFFECTS[EFF_FEAR] )
 				{
@@ -4415,6 +4430,37 @@ void actMonster(Entity* my)
 								if ( hasrangedweapon )
 								{
 									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+									if ( hit.entity == entity )
+									{
+										Entity* ohitentity = hit.entity;
+										real_t odist = dist;
+
+										Entity* hitentity1 = nullptr;
+										{
+											real_t my1 = my->y + 2.5 * sin(tangent + PI / 2);
+											real_t mx1 = my->x + 2.5 * cos(tangent + PI / 2);
+											real_t tangent1 = atan2(my->monsterTargetY - my1, my->monsterTargetX - mx1);
+											dist = lineTraceTarget(my, mx1, my1, tangent1, monsterVisionRange, 0, false, entity);
+											hitentity1 = hit.entity;
+										}
+										Entity* hitentity2 = nullptr;
+										{
+											real_t my2 = my->y - 2.5 * sin(tangent + PI / 2);
+											real_t mx2 = my->x - 2.5 * cos(tangent + PI / 2);
+											real_t tangent2 = atan2(my->monsterTargetY - my2, my->monsterTargetX - mx2);
+											dist = lineTraceTarget(my, mx2, my2, tangent2, monsterVisionRange, 0, false, entity);
+											hitentity2 = hit.entity;
+										}
+										if ( hitentity1 && hitentity2 )
+										{
+											hit.entity = ohitentity;
+											dist = odist;
+										}
+										else
+										{
+											hit.entity = nullptr;
+										}
+									}
 								}
 								else
 								{
@@ -4443,6 +4489,7 @@ void actMonster(Entity* my)
 							else
 							{
 								my->monsterState = MONSTER_STATE_PATH; // path state
+								my->monsterExtraReflexTick = my->getUID() % (TICKS_PER_SECOND / 2) + 10;
 							}
 						}
 						else
@@ -4703,6 +4750,13 @@ timeToGoAgain:
 										{
 											MONSTER_VELX = maxVelX;
 											MONSTER_VELY = maxVelY;
+
+											if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon)
+												&& wasInsideEntity )
+											{
+												MONSTER_VELX *= .01;
+												MONSTER_VELY *= .01;
+											}
 										}
 									}
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
@@ -5120,7 +5174,7 @@ timeToGoAgain:
 							real_t monsterVisionRange = sightranges[myStats->type];
 							if ( hitstats->type == DUMMYBOT )
 							{
-								monsterVisionRange = std::min(monsterVisionRange, 96.0);
+								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
@@ -5804,13 +5858,14 @@ timeToGoAgain:
 											if ( my->monsterPathCount > 100 )
 											{
 												my->monsterPathCount = 0;
-												//messagePlayer(0, "remaking path!");
+												//messagePlayer(0, MESSAGE_DEBUG, "remaking path!");
 												my->monsterMoveBackwardsAndPath();
 											}
 										}
 										else
 										{
 											my->monsterPathCount = 0;
+											//messagePlayer(0, MESSAGE_DEBUG, "remaking path 2!");
 										}
 									}
 								}

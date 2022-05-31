@@ -4403,7 +4403,7 @@ Inflicts [pacify] status on failure#
 3338 You have no familiar base potions to start mixing!#
 3339 Brew#
 3340 Alchemy#
-3341 Experiment#
+3341 Stop Brewing#
 3342 You have no potions left to mix!#
 3343 You have no potions to mix!#
 3344 Experimenting Alchemy: Choose a base potion#
@@ -6119,5 +6119,36 @@ formalities of gold, now!#
 4151 Select an item to repair: #
 4152 Your Tinkering Kit needs repairs#
 4153 This needs to be identified first#
+4154 Salvage All#
+4155 [Unknown use]#
+4156 [Base Potion]#
+4157 [Secondary Potion]#
+4158 [No unique use]#
+4159 You can't see what you're doing!#
+4160 [Needs identifying]#
+4161 Unknown potion#
+4162 [New combination]#
+4163 Duplication Chance:#
+4164 [Random result]#
+4165 [Unequip to use]#
+4166 [Copy of left potion]#
+4167 Caution!! Unstable
+Combination!#
+4168 [Missing ingredients]#
+4169 Deselect Recipe#
+4170 RECIPES#
+4171 RECIPES#
+4172 Select#
+4173 Remove#
+4174 Prepare#
+4175 Clear#
+4176 Brew#
+4177 Decant#
+4178 Brew#
+4179 New Recipe!#
+4180 Discovered Use!#
+4181 OBTAINED: %d/24#
+4182 You discovered a new alchemy recipe
+ for a %s.#
 
 4199 end#

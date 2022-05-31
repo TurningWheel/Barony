@@ -26,6 +26,7 @@
 #include <arm_neon.h>
 #endif
 #include "ui/MainMenu.hpp"
+#include "interface/consolecommand.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1091,6 +1092,8 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				continue;
 			}
 
+			int entitymapx = static_cast<int>(entity->x) >> 4;
+			int entitymapy = static_cast<int>(entity->y) >> 4;
 			if ( quadrant == 2 || quadrant == 4 )
 			{
 				// upper right and lower left
@@ -1115,6 +1118,25 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				// determine whether line intersects entity
 				if ( quadrant == 2 )
 				{
+					if ( entitymapx == originx && entitymapy == originy )
+					{
+						if ( x1 > upperX || y1 > lowerY )
+						{
+							/*if ( my && my->behavior == &actPlayer && entity->behavior == &actDoor )
+							{
+								messagePlayer(0, MESSAGE_DEBUG, "quad 2 skip door");
+							}*/
+							continue;
+						}
+					}
+					else if ( entitymapx < originx || entitymapy < originy )
+					{
+						// if behind, check if we intersect
+						if ( !(x1 >= lowerX && x1 <= upperX && y1 >= upperY && y1 <= lowerY) )
+						{
+							continue; // no intersection
+						}
+					}
 					if ( angle >= upperTan && angle <= lowerTan )
 					{
 						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
@@ -1127,6 +1149,25 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				}
 				else
 				{
+					if ( entitymapx == originx && entitymapy == originy )
+					{
+						if ( x1 < lowerX || y1 < upperY )
+						{
+							/*if ( my && my->behavior == &actPlayer && entity->behavior == &actDoor )
+							{
+								messagePlayer(0, MESSAGE_DEBUG, "quad 4 skip door");
+							}*/
+							continue;
+						}
+					}
+					else if ( entitymapx > originx || entitymapy > originy )
+					{
+						// if behind, check if we intersect
+						if ( !(x1 >= lowerX && x1 <= upperX && y1 >= upperY && y1 <= lowerY) )
+						{
+							continue; // no intersection
+						}
+					}
 					if ( angle <= upperTan && angle >= lowerTan )
 					{
 						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
@@ -1162,6 +1203,25 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				// determine whether line intersects entity
 				if ( quadrant == 3 )
 				{
+					if ( entitymapx == originx && entitymapy == originy )
+					{
+						if ( x1 > lowerX || y1 < upperY )
+						{
+							/*if ( my && my->behavior == &actPlayer && entity->behavior == &actDoor )
+							{
+								messagePlayer(0, MESSAGE_DEBUG, "quad 3 skip door");
+							}*/
+							continue;
+						}
+					}
+					else if ( entitymapx < originx || entitymapy > originy )
+					{
+						// if behind, check if we intersect
+						if ( !(x1 >= upperX && x1 <= lowerX && y1 >= upperY && y1 <= lowerY) )
+						{
+							continue; // no intersection
+						}
+					}
 					if ( angle >= upperTan && angle <= lowerTan )
 					{
 						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
@@ -1174,6 +1234,25 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				}
 				else
 				{
+					if ( entitymapx == originx && entitymapy == originy )
+					{
+						if ( x1 < upperX || y1 > lowerY )
+						{
+							/*if ( my && my->behavior == &actPlayer && entity->behavior == &actDoor )
+							{
+								messagePlayer(0, MESSAGE_DEBUG, "quad 1 skip door");
+							}*/
+							continue;
+						}
+					}
+					else if ( entitymapx > originx || entitymapy < originy )
+					{
+						// if behind, check if we intersect
+						if ( !(x1 >= upperX && x1 <= lowerX && y1 >= upperY && y1 <= lowerY) )
+						{
+							continue; // no intersection
+						}
+					}
 					if ( angle <= upperTan && angle >= lowerTan )
 					{
 						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
@@ -1338,38 +1417,42 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		if ( entity )
 		{
 			// debug particles.
-			//if ( entity->behavior == &actMonster && entities != 0 )
-			//{
-			//	Entity* particle = spawnMagicParticle(my);
-			//	particle->sprite = 576;
-			//	particle->x = ix;
-			//	particle->y = iy;
-			//	particle->z = 0;
+			if ( my && my->behavior == &actMonster && entities == 0 )
+			{
+				static ConsoleVariable<bool> cvar_linetracedebug("/linetracedebug", false);
+				if ( *cvar_linetracedebug )
+				{
+					Entity* particle = spawnMagicParticle(my);
+					particle->sprite = 576;
+					particle->x = ix;
+					particle->y = iy;
+					particle->z = 0;
 
-			//	particle = spawnMagicParticle(my);
-			//	particle->sprite = 942;
-			//	particle->x = entity->x + entity->sizex;
-			//	particle->y = entity->y + entity->sizey;
-			//	particle->z = 0;
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x + entity->sizex;
+					particle->y = entity->y + entity->sizey;
+					particle->z = 0;
 
-			//	particle = spawnMagicParticle(my);
-			//	particle->sprite = 942;
-			//	particle->x = entity->x - entity->sizex;
-			//	particle->y = entity->y + entity->sizey;
-			//	particle->z = 0;
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x - entity->sizex;
+					particle->y = entity->y + entity->sizey;
+					particle->z = 0;
 
-			//	particle = spawnMagicParticle(my);
-			//	particle->sprite = 942;
-			//	particle->x = entity->x + entity->sizex;
-			//	particle->y = entity->y - entity->sizey;
-			//	particle->z = 0;
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x + entity->sizex;
+					particle->y = entity->y - entity->sizey;
+					particle->z = 0;
 
-			//	particle = spawnMagicParticle(my);
-			//	particle->sprite = 942;
-			//	particle->x = entity->x - entity->sizex;
-			//	particle->y = entity->y - entity->sizey;
-			//	particle->z = 0;
-			//}
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x - entity->sizex;
+					particle->y = entity->y - entity->sizey;
+					particle->z = 0;
+				}
+			}
 
 			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex )
 			{
@@ -1513,6 +1596,44 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 		// check against entity
 		if ( entity )
 		{
+			// debug particles.
+			if ( my && my->behavior == &actMonster && entities == 0 )
+			{
+				static ConsoleVariable<bool> cvar_linetracetargetdebug("/linetracetargetdebug", false);
+				if ( *cvar_linetracetargetdebug )
+				{
+					Entity* particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = ix;
+					particle->y = iy;
+					particle->z = 0;
+
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x + entity->sizex;
+					particle->y = entity->y + entity->sizey;
+					particle->z = 0;
+
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x - entity->sizex;
+					particle->y = entity->y + entity->sizey;
+					particle->z = 0;
+
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x + entity->sizex;
+					particle->y = entity->y - entity->sizey;
+					particle->z = 0;
+
+					particle = spawnMagicParticle(my);
+					particle->sprite = 942;
+					particle->x = entity->x - entity->sizex;
+					particle->y = entity->y - entity->sizey;
+					particle->z = 0;
+				}
+			}
+
 			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex )
 			{
 				if ( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey )

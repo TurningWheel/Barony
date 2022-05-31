@@ -302,6 +302,7 @@ public:
 	void copyNPCStatsAndInventoryFrom(Stat& src);
 	void printStats();
 	Sint32 EDITOR_ITEMS[ITEM_SLOT_NUM];
+	int pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
 	int pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
 	enum MonsterForceAllegiance : int
 	{

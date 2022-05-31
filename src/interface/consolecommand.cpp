@@ -2770,6 +2770,57 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Gave you some kills");
 	    });
 
+	static ConsoleCommand ccmd_gimmepotions2("/gimmepotions2", "give the player some potions (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		ItemType item1 = POTION_BOOZE;
+		ItemType item2 = POTION_BLINDNESS;
+
+		Item* potion = newItem(item1, EXCELLENT, 0, 1, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, SERVICABLE, 0, 3, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, WORN, 0, 1, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, DECREPIT,	0, 1, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, SERVICABLE, 1, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, SERVICABLE, 2, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, EXCELLENT, -1, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item1, EXCELLENT, -2, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+
+		potion = newItem(item2, EXCELLENT, 0, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, WORN, 0, 1, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, SERVICABLE, 0, 1, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, DECREPIT, 0, 4, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, SERVICABLE, 1, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, SERVICABLE, 2, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, EXCELLENT, -1, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+		potion = newItem(item2, EXCELLENT, -2, 2, 0, true, nullptr);
+		itemPickup(clientnum, potion);
+	});
+
 	static ConsoleCommand ccmd_gimmepotions("/gimmepotions", "give the player some potions (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
@@ -2780,6 +2831,19 @@ namespace ConsoleCommands {
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		if ( argc >= 2 )
+		{
+			int count = std::max(1, atoi(argv[1]));
+			for ( int i = 0; i < 17; ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(i);
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					0, count, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+			}
 			return;
 		}
 
@@ -3831,5 +3895,37 @@ namespace ConsoleCommands {
 		} else {
 		    rocksFall(clientnum);
 		}
+	});
+
+	static ConsoleCommand ccmd_listalchemyrecipes("/listalchemyrecipes", "lists known alchemy recipes", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( argc >= 2 ) {
+			int player = (int)strtol(argv[1], nullptr, 10);
+			if ( player < 0 || player >= MAXPLAYERS )
+			{
+				player = clientnum;
+			}
+			for ( auto& entry : clientLearnedAlchemyRecipes[player] )
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, "[%s]: %s | %s",
+					items[entry.first].name_identified, items[entry.second.first].name_identified,
+					items[entry.second.second].name_identified);
+			}
+		}
+		else {
+			for ( auto& entry : clientLearnedAlchemyRecipes[clientnum] )
+			{
+				messagePlayer(clientnum, MESSAGE_MISC, "[%s]: %s | %s",
+					items[entry.first].name_identified, items[entry.second.first].name_identified,
+					items[entry.second.second].name_identified);
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_itemuids("/itemuids", "prints current global itemuids", []CCMD{
+		messagePlayer(clientnum, MESSAGE_DEBUG, "itemuids: %d", itemuids);
 	});
 }

@@ -1809,6 +1809,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 				entity->setEffect(EFF_BLEEDING, false, 0, false);
 			}
 		}
+		serverUpdateEffects(player);
 		if ( shouldConsumeItem )
 		{
 			consumeItem(item, player);
@@ -1869,7 +1870,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 			entity->setEffect(EFF_BLEEDING, false, 0, false);
 		}
 	}
-
+	serverUpdateEffects(player);
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item, player);
@@ -1953,6 +1954,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 				entity->setEffect(EFF_BLEEDING, false, 0, false);
 			}
 		}
+		serverUpdateEffects(player);
 		if ( shouldConsumeItem )
 		{
 			consumeItem(item, player);
@@ -2012,7 +2014,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 			entity->setEffect(EFF_BLEEDING, false, 0, false);
 		}
 	}
-
+	serverUpdateEffects(player);
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item, player);
@@ -4461,9 +4463,18 @@ void item_FoodTin(Item*& item, int player)
 	// greasy fingers
 	if ( slippery )
 	{
-		messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[966]);
-		stats[player]->EFFECTS[EFF_GREASY] = true;
-		stats[player]->EFFECTS_TIMERS[EFF_GREASY] = TICKS_PER_SECOND * (60 + rand() % 60); // 1-2 minutes of greasy
+		// 1-2 minutes of greasy
+		if ( players[player] && players[player]->entity )
+		{
+			if ( players[player]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * (60 + rand() % 60), true) )
+			{
+				messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[966]);
+			}
+			else
+			{
+				slippery = false;
+			}
+		}
 	}
 
 	if ( slippery || hpBuff || mpBuff )

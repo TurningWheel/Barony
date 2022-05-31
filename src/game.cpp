@@ -3795,7 +3795,7 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
-					if (initialized)
+					if (initialized && !loading)
 					{
 						gameLogic();
 					}
@@ -4158,14 +4158,12 @@ void ingameHud()
             // map window bind
             if ( input.consumeBinaryToggle("Open Map") )
             {
-                players[player]->shootmode = false;
                 openMapWindow(player);
             }
 
             // log window bind
             if ( input.consumeBinaryToggle("Open Log") )
             {
-                players[player]->shootmode = false;
                 openLogWindow(player);
             }
         }
@@ -4183,6 +4181,39 @@ void ingameHud()
 			else
 			{
 				players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+			}
+		}
+
+		// if useItemDropdownOnGamepad, then 'b' will close inventory, with a 'couple' checks..
+		if ( players[player]->isLocalPlayer() 
+			&& !players[player]->shootmode
+			&& players[player]->inventoryUI.useItemDropdownOnGamepad
+			&& !inputs.getVirtualMouse(player)->draw_cursor
+			&& !players[player]->usingCommand() && input.binaryToggle("MenuCancel")
+			&& !players[player]->GUI.isDropdownActive()
+			&& players[player]->GUI.bModuleAccessibleWithMouse(players[player]->GUI.activeModule)
+			&& !inputs.getUIInteraction(player)->selectedItem
+			&& !gamePaused
+			&& bControlEnabled
+			&& players[player]->gui_mode == GUI_MODE_INVENTORY
+			&& players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& !players[player]->inventoryUI.chestGUI.bOpen
+			&& !players[player]->shopGUI.bOpen
+			&& !GenericGUI[player].isGUIOpen() )
+		{
+			if ( (players[player]->inventoryUI.isInteractable && players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY)
+				|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
+				|| players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+			{
+				players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+				input.consumeBinaryToggle("MenuCancel");
+				input.consumeBindingsSharedWithBinding("MenuCancel");
+				input.consumeBinaryToggle("HotbarFacebarLeft");
+				input.consumeBinaryToggle("HotbarFacebarUp");
+				input.consumeBinaryToggle("HotbarFacebarRight");
+				input.consumeBinaryReleaseToggle("HotbarFacebarLeft");
+				input.consumeBinaryReleaseToggle("HotbarFacebarUp");
+				input.consumeBinaryReleaseToggle("HotbarFacebarRight");
 			}
 		}
 
@@ -4625,6 +4656,7 @@ void ingameHud()
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
+		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
@@ -4675,8 +4707,8 @@ void ingameHud()
 		}
 
 
-		bool debugMouse = false;
-		if ( debugMouse )
+		static ConsoleVariable<bool> cvar_debugmouse("/debugmouse", false);
+		if ( *cvar_debugmouse )
 		{
 			int x = players[player]->camera_x1() + 12;
 			int y = players[player]->camera_y1() + 12;
@@ -4707,6 +4739,10 @@ void ingameHud()
 				printTextFormatted(font8x8_bmp, x, y + 112, "leftx: %4f | lefty: %4f",
 					inputs.getController(player)->getLeftXPercent(),
 					inputs.getController(player)->getLeftYPercent());
+			}
+			if ( players[player]->entity )
+			{
+				printTextFormatted(font8x8_bmp, x, y + 124, "%.5f | %.5f", players[player]->entity->fskill[6], players[player]->entity->fskill[7]);
 			}
 		}
 	}
@@ -5889,28 +5925,31 @@ int main(int argc, char** argv)
 
 				// toggling the game menu
 				bool doPause = false;
-				for ( int i = 0; i < MAXPLAYERS; ++i )
+				if ( !fadeout )
 				{
-					if ( !players[i]->isLocalPlayer() )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						continue;
-					}
-					if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
-							|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
-						&& !command )
-					{
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
-						if ( !players[i]->shootmode )
+						if ( !players[i]->isLocalPlayer() )
 						{
-							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-							players[i]->gui_mode = GUI_MODE_INVENTORY;
-							players[i]->characterSheet.attributespage = 0;
+							continue;
 						}
-						else
+						if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
+								|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
+							&& !command )
 						{
-							doPause = true;
+							keystatus[SDL_SCANCODE_ESCAPE] = 0;
+							if ( !players[i]->shootmode )
+							{
+								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+								players[i]->gui_mode = GUI_MODE_INVENTORY;
+								players[i]->characterSheet.attributespage = 0;
+							}
+							else
+							{
+								doPause = true;
+							}
+							break;
 						}
-						break;
 					}
 				}
 				if ( doPause )

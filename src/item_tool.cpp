@@ -631,10 +631,10 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		consumeItem(item, player);
 
 		int skillLVL = 2; // 0 to 5
-		if ( stats[player] )
+		/*if ( stats[player] )
 		{
 			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
-		}
+		}*/
 
 		std::vector<int> potionChances =
 		{
@@ -659,7 +659,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		{
 			potionChances =
 			{
-				4,	//POTION_WATER,
+				2,	//POTION_WATER,
 				5,	//POTION_BOOZE,
 				5,	//POTION_JUICE,
 				5,	//POTION_SICKNESS,
@@ -749,17 +749,17 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		{
 			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
 			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
-			item = newItem(static_cast<ItemType>(generatedPotion.first), SERVICABLE, 0, 1, generatedPotion.second, false, NULL);
+			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
 		}
 		else
 		{
 			if ( entity.skill[3] == 1 ) // slime
 			{
-				item = newItem(POTION_ACID, SERVICABLE, 0, 1, 0, false, NULL);
+				item = newItem(POTION_ACID, EXCELLENT, 0, 1, 0, false, NULL);
 			}
 			else
 			{
-				item = newItem(POTION_WATER, SERVICABLE, 0, 1, 0, false, NULL);
+				item = newItem(POTION_WATER, EXCELLENT, 0, 1, 0, false, NULL);
 			}
 		}
 		if ( item )
@@ -832,17 +832,85 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				serverUpdateEntitySkill(&entity, 0);
 			}
 		}
-		else if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // fountain would spawn potions
+		else if ( entity.skill[1] >= 2 && entity.skill[1] <= 4 )
 		{
-			//messagePlayer(player, language[474]);
-			entity.skill[0] = 0; //Dry up fountain.
-			serverUpdateEntitySkill(&entity, 0);
-		}
-		else if ( entity.skill[1] == 3 || entity.skill[1] == 4 )
-		{
-			// fountain would bless equipment.
-			entity.skill[0] = 0; //Dry up fountain.
-			serverUpdateEntitySkill(&entity, 0);
+			if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // fountain would spawn potions
+			{
+				//messagePlayer(player, language[474]);
+				entity.skill[0] = 0; //Dry up fountain.
+				serverUpdateEntitySkill(&entity, 0);
+			}
+			else if ( entity.skill[1] == 3 || entity.skill[1] == 4 )
+			{
+				// fountain would bless equipment.
+				entity.skill[0] = 0; //Dry up fountain.
+				serverUpdateEntitySkill(&entity, 0);
+			}
+
+			if ( stats[player] && (stats[player]->type == GOATMAN
+				|| (stats[player]->playerRace == RACE_GOATMAN && stats[player]->appearance == 0)) )
+			{
+				int potionDropQuantity = 0;
+				// drop some random potions.
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						potionDropQuantity = 1;
+						break;
+					case 4:
+					case 5:
+						potionDropQuantity = 2;
+						break;
+					case 6:
+						potionDropQuantity = 3;
+						break;
+					case 7:
+					case 8:
+					case 9:
+						// nothing
+						potionDropQuantity = 0;
+						break;
+					default:
+						break;
+				}
+
+				if ( potionDropQuantity > 0 )
+				{
+					steamStatisticUpdateClient(player, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
+				}
+
+				for ( int j = 0; j < potionDropQuantity; ++j )
+				{
+					std::pair<int, int> generatedPotion = fountainGeneratePotionDrop();
+					ItemType type = static_cast<ItemType>(generatedPotion.first);
+					int appearance = generatedPotion.second;
+					Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
+					if ( Entity* dropped = dropItemMonster(item, &entity, NULL) )
+					{
+						dropped->yaw = ((0 + rand() % 360) / 180.f) * PI;
+						dropped->vel_x = (0.75 + .025 * (rand() % 11)) * cos(dropped->yaw);
+						dropped->vel_y = (0.75 + .025 * (rand() % 11)) * sin(dropped->yaw);
+						dropped->vel_z = (-10 - rand() % 20) * .01;
+						dropped->flags[USERFLAG1] = false;
+					}
+				}
+
+				if ( potionDropQuantity > 0 )
+				{
+					playSoundEntity(&entity, 47 + rand() % 3, 64);
+				}
+				if ( potionDropQuantity > 1 )
+				{
+					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, language[3245], potionDropQuantity);
+				}
+				else if ( potionDropQuantity == 1 )
+				{
+					messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, language[3246]);
+				}
+			}
 		}
 		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL) == 0 ) )
 		{

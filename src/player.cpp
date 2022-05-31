@@ -1117,7 +1117,8 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 	}
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
-		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING )
+		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
+		|| moduleToAccess == MODULE_ALCHEMY )
 	{
 		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
 			&& ( player.shopGUI.bOpen 
@@ -1126,7 +1127,8 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 			return false;
 		}
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
-			|| FollowerMenu[player.playernum].followerMenuIsOpen() )
+			|| FollowerMenu[player.playernum].followerMenuIsOpen()
+			|| player.hud.mapWindow || player.hud.logWindow )
 		{
 			return false;
 		}
@@ -1239,6 +1241,29 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				return MODULE_INVENTORY;*/
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+			{
+				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+				{
+					if ( !checkDestinationOnly )
+					{
+						input.consumeBinaryToggle("UINavLeftBumper");
+					}
+					return MODULE_NONE;
+				}
+				else
+				{
+					if ( !checkDestinationOnly )
+					{
+						player.inventory_mode = INVENTORY_MODE_ITEM;
+						activateModule(MODULE_ALCHEMY);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavLeftBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_ALCHEMY;
+				}
+			}
 			else if ( player.inventoryUI.chestGUI.bOpen )
 			{
 				if ( !checkDestinationOnly )
@@ -1322,6 +1347,30 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_ALCHEMY
+			&& (GenericGUI[player.playernum].alchemyGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				if ( !checkDestinationOnly )
+				{
+					input.consumeBinaryToggle("UINavLeftBumper");
+				}
+				return MODULE_NONE;
+			}
+			else
+			{
+				if ( !checkDestinationOnly )
+				{
+					player.inventory_mode = INVENTORY_MODE_ITEM;
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavLeftBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_INVENTORY;
+			}
 		}
 		else if ( activeModule == MODULE_TINKERING )
 		{
@@ -1458,6 +1507,29 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				return MODULE_INVENTORY;*/
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+			{
+				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+				{
+					if ( !checkDestinationOnly )
+					{
+						input.consumeBinaryToggle("UINavRightBumper");
+					}
+					return MODULE_NONE;
+				}
+				else
+				{
+					if ( !checkDestinationOnly )
+					{
+						player.inventory_mode = INVENTORY_MODE_ITEM;
+						activateModule(MODULE_ALCHEMY);
+						warpControllerToModule(false);
+						input.consumeBinaryToggle("UINavRightBumper");
+						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					}
+					return MODULE_ALCHEMY;
+				}
+			}
 			else if ( player.inventoryUI.chestGUI.bOpen )
 			{
 				if ( !checkDestinationOnly )
@@ -1525,6 +1597,30 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_ALCHEMY
+			&& (GenericGUI[player.playernum].alchemyGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
+		{
+			if ( inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				if ( !checkDestinationOnly )
+				{
+					input.consumeBinaryToggle("UINavRightBumper");
+				}
+				return MODULE_NONE;
+			}
+			else
+			{
+				if ( !checkDestinationOnly )
+				{
+					player.inventory_mode = INVENTORY_MODE_ITEM;
+					activateModule(MODULE_INVENTORY);
+					warpControllerToModule(false);
+					input.consumeBinaryToggle("UINavRightBumper");
+					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				}
+				return MODULE_INVENTORY;
+			}
 		}
 		else if ( activeModule == MODULE_TINKERING )
 		{
@@ -1720,6 +1816,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+		{
+			select_alchemy_slot(player,
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1774,6 +1877,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_tinkering_slot(player,
 				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotX(),
 				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+		{
+			select_alchemy_slot(player,
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -1885,6 +1995,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+		{
+			select_alchemy_slot(player,
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1992,6 +2109,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_tinkering_slot(player,
 				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotX(),
 				GenericGUI[player].tinkerGUI.getSelectedTinkerSlotY(),
+				0, 1);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+		{
+			select_alchemy_slot(player,
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
+				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, 1);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -2545,6 +2669,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	{
 		followerSelectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
 		maxDist = 256;
+	}
+	else if ( parent 
+		&& (parent->getMonsterTypeFromSprite() == SHOPKEEPER 
+			|| (parent->behavior == &actFloorDecoration && parent->sprite == 991 /* sign */)
+			|| (parent->behavior == &actMonster && !parent->checkEnemy(player.entity))
+			|| (parent->monsterAllyGetPlayerLeader()
+				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity)) )
+	{
+		maxDist = TOUCHRANGE;
 	}
 
 	if ( dist < maxDist && dist > minDist )
@@ -3814,7 +3947,7 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 		&& stats[player.playernum]->cloak->type == CLOAK_BACKPACK && stats[player.playernum]->cloak->status != BROKEN
 		&& (shouldInvertEquipmentBeatitude(stats[player.playernum]) ? abs(stats[player.playernum]->cloak->beatitude) >= 0 : stats[player.playernum]->cloak->beatitude >= 0) )
 	{
-		y = DEFAULT_INVENTORY_SIZEY + 1;
+		y = DEFAULT_INVENTORY_SIZEY + 2;
 	}
 	return y;
 }
@@ -5248,6 +5381,9 @@ void Player::clearGUIPointers()
 	genericGUI.tinkerGUI.tinkerFrame = nullptr;
 	genericGUI.tinkerGUI.tinkerSlotFrames.clear();
 	genericGUI.tinkerGUI.itemRequiresTitleReflow = true;
+	genericGUI.alchemyGUI.alchFrame = nullptr;
+	genericGUI.alchemyGUI.alchemySlotFrames.clear();
+	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
 
 	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
 	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;

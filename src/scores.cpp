@@ -44,6 +44,7 @@ std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_
 bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
 Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
 std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
+std::vector<std::pair<int, std::pair<int, int>>> clientLearnedAlchemyRecipes[MAXPLAYERS];
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
@@ -1417,6 +1418,16 @@ int saveGame(int saveIndex)
 		        spell_t* spell = (spell_t*)node->element;
 		        fp->write(&spell->ID, sizeof(Uint32), 1);
 	        }
+
+			// write alchemy recipes
+			Uint32 numrecipes = clientLearnedAlchemyRecipes[player].size();
+			fp->write(&numrecipes, sizeof(Uint32), 1);
+			for ( auto& entry : clientLearnedAlchemyRecipes[player] )
+			{
+				fp->write(&entry.first, sizeof(Sint32), 1);
+				fp->write(&entry.second.first, sizeof(Sint32), 1);
+				fp->write(&entry.second.second, sizeof(Sint32), 1);
+			}
 	    }
     }
     else
@@ -1441,6 +1452,16 @@ int saveGame(int saveIndex)
 		    spell_t* spell = (spell_t*)node->element;
 		    fp->write(&spell->ID, sizeof(Uint32), 1);
 	    }
+
+		// write alchemy recipes
+		Uint32 numrecipes = clientLearnedAlchemyRecipes[clientnum].size();
+		fp->write(&numrecipes, sizeof(Uint32), 1);
+		for ( auto& entry : clientLearnedAlchemyRecipes[clientnum] )
+		{
+			fp->write(&entry.first, sizeof(Sint32), 1);
+			fp->write(&entry.second.first, sizeof(Sint32), 1);
+			fp->write(&entry.second.second, sizeof(Sint32), 1);
+		}
     }
 
 	// player data
@@ -2171,6 +2192,22 @@ int loadGame(int player, int saveIndex)
 		            node->deconstructor = &spellDeconstructor;
 		            node->size = sizeof(spell);
 	            }
+
+				clientLearnedAlchemyRecipes[c].clear();
+				if ( versionNumber >= 381 )
+				{
+					// read alchemy recipes
+					Uint32 numrecipes = 0;
+					fp->read(&numrecipes, sizeof(Uint32), 1);
+					for ( int r = 0; r < numrecipes; ++r )
+					{
+						std::pair<int, std::pair<int, int>> recipeEntry;
+						fp->read(&recipeEntry.first, sizeof(Sint32), 1);
+						fp->read(&recipeEntry.second.first, sizeof(Sint32), 1);
+						fp->read(&recipeEntry.second.second, sizeof(Sint32), 1);
+						clientLearnedAlchemyRecipes[c].push_back(recipeEntry);
+					}
+				}
             }
             else
             {
@@ -2182,6 +2219,19 @@ int loadGame(int player, int saveIndex)
                 {
 	                fp->seek(sizeof(Uint32), File::SeekMode::ADD);
                 }
+
+				if ( versionNumber >= 381 )
+				{
+					// read alchemy recipes
+					Uint32 numrecipes = 0;
+					fp->read(&numrecipes, sizeof(Uint32), 1);
+					for ( int r = 0; r < numrecipes; ++r )
+					{
+						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+					}
+				}
             }
         }
     }
@@ -2208,6 +2258,22 @@ int loadGame(int player, int saveIndex)
 		    node->deconstructor = &spellDeconstructor;
 		    node->size = sizeof(spell);
 	    }
+
+		clientLearnedAlchemyRecipes[player].clear();
+		if ( versionNumber >= 381 )
+		{
+			// read alchemy recipes
+			Uint32 numrecipes = 0;
+			fp->read(&numrecipes, sizeof(Uint32), 1);
+			for ( int r = 0; r < numrecipes; ++r )
+			{
+				std::pair<int, std::pair<int, int>> recipeEntry;
+				fp->read(&recipeEntry.first, sizeof(Sint32), 1);
+				fp->read(&recipeEntry.second.first, sizeof(Sint32), 1);
+				fp->read(&recipeEntry.second.second, sizeof(Sint32), 1);
+				clientLearnedAlchemyRecipes[player].push_back(recipeEntry);
+			}
+		}
     }
 
 	int monsters = NUMMONSTERS;
@@ -3046,10 +3112,15 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	    }
 	}
 	fp->read(&plnum, sizeof(Uint32), 1);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // mapseed
 	fp->read(&dungeonlevel, sizeof(Uint32), 1);
 	dungeonlevel = dungeonlevel & 0xFF;
-	fp->seek(sizeof(bool), File::SeekMode::ADD);
+	fp->seek(sizeof(bool), File::SeekMode::ADD); // secretlevel
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // completion time
+	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct penniless
+	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct foodless
+	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct vegetarian
+	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct illiterate
 	if ( versionNumber >= 310 )
 	{
 		fp->seek(sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, File::SeekMode::ADD);
@@ -3070,6 +3141,19 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
         {
 	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
         }
+
+		if ( versionNumber >= 381 )
+		{
+			// read alchemy recipes
+			Uint32 numrecipes = 0;
+			fp->read(&numrecipes, sizeof(Uint32), 1);
+			for ( int r = 0; r < numrecipes; ++r )
+			{
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+			}
+		}
     }
 
 	int monsters = NUMMONSTERS;
@@ -3544,6 +3628,7 @@ void setDefaultPlayerConducts()
 		achievementBaitAndSwitchTimer[c] = 0;
 		playerFailedRangedOnlyConduct[c] = false;
 		clientLearnedAlchemyIngredients[c].clear();
+		clientLearnedAlchemyRecipes[c].clear();
 	}
 	achievementObserver.clearPlayerAchievementData();
 }

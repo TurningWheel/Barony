@@ -2342,7 +2342,14 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+				if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )
+				{
+					GenericGUI[player].closeGUI();
+				}
+				else
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
 			}
 			break;
 		case ENCHANTED_FEATHER:
@@ -3198,13 +3205,23 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 
 -------------------------------------------------------------------------------*/
 
-Item* newItemFromEntity(const Entity* const entity)
+Item* newItemFromEntity(const Entity* const entity, bool discardUid)
 {
 	if ( entity == nullptr )
 	{
 		return nullptr;
 	}
+	Uint32 oldUids = itemuids;
 	Item* item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
+	if ( !item )
+	{
+		return nullptr;
+	}
+	if ( discardUid && itemuids == oldUids + 1 )
+	{
+		--itemuids;
+		item->uid = 0;
+	}
 	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
 	item->interactNPCUid = static_cast<Uint32>(entity->interactedByMonster);
 	return item;

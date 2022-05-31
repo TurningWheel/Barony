@@ -268,6 +268,7 @@ extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 extern bool achievementStatusBaitAndSwitch[MAXPLAYERS];
 extern Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS];
 extern std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
+extern std::vector<std::pair<int, std::pair<int, int>>> clientLearnedAlchemyRecipes[MAXPLAYERS];
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];

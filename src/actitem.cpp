@@ -140,7 +140,7 @@ void actItem(Entity* my)
 		{
 			my->flags[INVISIBLE] = false;
 		}
-		item = newItemFromEntity(my);
+		item = newItemFromEntity(my, true);
 		my->sprite = itemModel(item);
 		free(item);
 	}

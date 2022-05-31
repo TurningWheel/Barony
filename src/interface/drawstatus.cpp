@@ -2496,7 +2496,7 @@ void drawStatusNew(const int player)
 						}
 					}
 					if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
-						&& !itemMenuOpen && !selectedItem )
+						&& !players[player]->GUI.isDropdownActive() && !selectedItem )
 					{
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 						{
@@ -2712,6 +2712,8 @@ void drawStatusNew(const int player)
 	}
 
 	bool tooltipOpen = false;
+	Frame* tooltipSlotFrame = nullptr;
+	bool tooltipPromptFrameWasDisabled = true;
 
 	if ( !shootmode || drawHotBarTooltipOnCycle )
 	{
@@ -2783,20 +2785,22 @@ void drawStatusNew(const int player)
 
 					if ( hotbar_t.hotbarFrame && players[player]->inventoryUI.tooltipFrame 
 						&& !inputs.getUIInteraction(player)->selectedItem
-						&& !itemMenuOpen )
+						&& !players[player]->GUI.isDropdownActive() )
 					{
 						src.x = hotbarSlotFrame->getSize().x + hotbarSlotFrame->getSize().w / 2;
 						src.y = hotbarSlotFrame->getSize().y - 16;
 						src.x += players[player]->camera_virtualx1();
 						src.y += players[player]->camera_virtualy1();
 						tooltipOpen = true;
+						tooltipSlotFrame = hotbarSlotFrame;
 						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->PANEL_JUSTIFY_LEFT);
 						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;
 						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
 						if ( players[player]->inventoryUI.tooltipPromptFrame
-							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled() )
+							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled()
+							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor) )
 						{
 							SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 							SDL_Rect promptPos = players[player]->inventoryUI.tooltipPromptFrame->getSize();
@@ -2810,6 +2814,14 @@ void drawStatusNew(const int player)
 
 							players[player]->inventoryUI.tooltipPromptFrame->setSize(promptPos);
 							players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
+						}
+						if ( players[player]->inventoryUI.tooltipPromptFrame )
+						{
+							tooltipPromptFrameWasDisabled = players[player]->inventoryUI.tooltipPromptFrame->isDisabled();
+							if ( players[player]->inventoryUI.useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+							{
+								players[player]->inventoryUI.tooltipPromptFrame->setDisabled(true);
+							}
 						}
 					}
 
@@ -3078,7 +3090,7 @@ void drawStatusNew(const int player)
 		//Moving the cursor changes the currently selected hotbar slot.
 		if ( (mousexrel || mouseyrel) 
 			&& !shootmode
-			&& !itemMenuOpen
+			&& !players[player]->GUI.isDropdownActive()
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_HOTBAR) )
 		{
 			if ( hotbar_t.hotbarFrame )
@@ -3106,7 +3118,7 @@ void drawStatusNew(const int player)
 			{
 				// no action, gamepads can't scroll when useHotbarFaceMenu
 			}
-			else if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
+			else if ( shootmode && !players[player]->GUI.isDropdownActive() && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
@@ -3137,7 +3149,7 @@ void drawStatusNew(const int player)
 			{
 				// no action, gamepads can't scroll when useHotbarFaceMenu
 			}
-			else if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
+			else if ( shootmode && !players[player]->GUI.isDropdownActive() && !openedChest[player]
 				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
@@ -3160,7 +3172,7 @@ void drawStatusNew(const int player)
 			}
 		}
 
-		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
+		if ( !players[player]->GUI.isDropdownActive() && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
 			if ( input.consumeBinaryToggle("Hotbar Select") 
 				&& shootmode 
@@ -3183,15 +3195,19 @@ void drawStatusNew(const int player)
 			//	hotbar[hotbar_t.current_hotbar].item = 0;
 			//}
 
-			if ( !shootmode && players[player]->inventoryUI.isInteractable && !players[player]->bookGUI.bBookOpen && !openedChest[player]
+			bool inventoryInteractable = players[player]->inventoryUI.isInteractable;
+			if ( players[player]->inventoryUI.bCompactView && !inventoryInteractable )
+			{
+				inventoryInteractable = players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR;
+			}
+			if ( !shootmode && inventoryInteractable && !players[player]->bookGUI.bBookOpen && !openedChest[player]
 				&& mouseInsidePlayerHotbar(player) )
 			{
 				if ( tooltipOpen
-					&& players[player]->inventoryUI.tooltipPromptFrame 
-					&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled() )
+					&& !tooltipPromptFrameWasDisabled )
 				{
 					item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad);
 					bool bindingPressed = false;
 					for ( auto& option : contextTooltipOptions )
 					{
@@ -3233,6 +3249,37 @@ void drawStatusNew(const int player)
 							else
 							{
 								players[player]->inventoryUI.activateItemContextMenuOption(item, option);
+								if ( option == ItemContextMenuPrompts::PROMPT_DROPDOWN && tooltipSlotFrame )
+								{
+									if ( !players[player]->GUI.isDropdownActive() )
+									{
+										players[player]->GUI.dropdownMenu.open("hotbar_interact");
+										players[player]->GUI.dropdownMenu.dropDownToggleClick = true;
+										players[player]->GUI.dropdownMenu.dropDownItem = hotbar[hotbar_t.current_hotbar].item;
+										SDL_Rect dropdownPos = tooltipSlotFrame->getAbsoluteSize();
+										dropdownPos.y += dropdownPos.h / 2;
+										if ( auto interactMenuTop = players[player]->GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+										{
+											// 10px is slot half height, move by 0.5 slots, minus the top interact text height
+											dropdownPos.y -= (interactMenuTop->pos.h + (1 * 10) + 4);
+										}
+
+										if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("hotbar_interact") )
+										{
+											dropdownPos.x += dropdownPos.w - 10;
+										}
+										else
+										{
+											dropdownPos.x += 10;
+										}
+										dropdownPos.x = std::max(dropdownPos.x, players[player]->camera_virtualx1());
+										dropdownPos.x = std::min(dropdownPos.x, players[player]->camera_virtualx1() + players[player]->camera_virtualWidth());
+										players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x;
+										dropdownPos.y = std::max(dropdownPos.y, players[player]->camera_virtualy1());
+										dropdownPos.y = std::min(dropdownPos.y, players[player]->camera_virtualy1() + players[player]->camera_virtualHeight());
+										players[player]->GUI.dropdownMenu.dropDownY = dropdownPos.y;
+									}
+								}
 							}
 						}
 					}

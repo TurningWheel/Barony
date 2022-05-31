@@ -29,6 +29,7 @@
 #include "mod_tools.hpp"
 #include "classdescriptions.hpp"
 #include "ui/MainMenu.hpp"
+#include "interface/consolecommand.hpp"
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
@@ -723,13 +724,14 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	{
 		my->pitch = -PI / 3;
 	}
-	if ( !smoothmouse )
+
+	if ( smoothmouse )
+	{
+		PLAYER_ROTY *= pow(0.5, refreshRateDelta);
+	}
+	else
 	{
 		PLAYER_ROTY = 0;
-	}
-	else if ( !shootmode )
-	{
-		PLAYER_ROTY *= .5;
 	}
 
 	if ( TimerExperiments::bUseTimerInterpolation )
@@ -2814,6 +2816,11 @@ void actPlayer(Entity* my)
 	}*/
 	if (enableDebugKeys)
 	{
+		static ConsoleVariable<bool> cvar_levelgentest("/levelgentest", false);
+		if ( *cvar_levelgentest && PLAYER_ALIVETIME == 15 )
+		{
+			consoleCommand("/jumplevel -1");
+		}
 		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_1] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 0;

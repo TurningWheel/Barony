@@ -1169,6 +1169,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
+#ifndef EDITOR
 	SDL_Surface* sprite = nullptr;
 	real_t s = 1;
 
@@ -1257,7 +1258,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			&& (multiplayer != CLIENT 
 				|| (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))) )
 		{
-			Item* item = newItemFromEntity(uidToEntity(entity->parent));
+			Item* item = newItemFromEntity(uidToEntity(entity->parent), true);
 			if ( !item )
 			{
 				return;
@@ -1525,6 +1526,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			sprite = nullptr;
 		}
 	}
+#endif
 }
 
 void glDrawSprite(view_t* camera, Entity* entity, int mode)

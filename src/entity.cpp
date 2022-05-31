@@ -137,6 +137,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
 	monsterLastDistractedByNoisemaker(skill[55]), // shares with above as above only applies to inner demons.
+	monsterExtraReflexTick(skill[56]),
 	monsterSentrybotLookDir(fskill[10]),
 	monsterKnockbackTangentDir(fskill[11]),
 	playerStrafeVelocity(fskill[12]),
@@ -201,6 +202,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	pedestalInit(skill[5]),
 	pedestalAmbience(skill[6]),
 	pedestalLockOrb(skill[7]),
+	pedestalPowerStatus(skill[8]),
 	orbInitialised(skill[1]),
 	orbHoverDirection(skill[7]),
 	orbHoverWaitTimer(skill[8]),
@@ -403,6 +405,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	lerpRenderState.resetPosition();
 	bNeedsRenderPositionInit = true;
 	bUseRenderInterpolation = false;
+	mapGenerationRoomX = 0;
+	mapGenerationRoomY = 0;
 	lerp_ox = 0.0;
 	lerp_oy = 0.0;
 	sprite = in_sprite;
@@ -7097,7 +7101,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								Stat* buddystats = entity->getStats();
 								if ( buddystats != nullptr )
 								{
-									if ( entity->checkFriend(hit.entity) )
+									if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+									{
+										continue; // shopkeepers don't care about hitting humans/robots etc.
+									}
+									if ( entity->checkFriend(ohitentity) )
 									{
 										if ( entity->monsterState == MONSTER_STATE_WAIT )
 										{
@@ -7684,6 +7692,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							doSkillIncrease = false; // no skill for killing/hurting other turrets.
 						}
 					}
+					if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no skill for killing/hurting players
+					}
 					if ( doSkillIncrease
 						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED) )
 					{
@@ -7954,49 +7966,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int armornum = 0;
 					bool isWeakArmor = false;
 
-					if ( damage > 0 )
+					if ( damage >= 0 )
 					{
 						// choose random piece of equipment to target
-						int armorRoll = rand() % 6;
-						if ( armorRoll == 4 && hitstats->shield )
-						{
-							if ( itemTypeIsQuiver(hitstats->shield->type)
-								|| itemCategory(hitstats->shield) == SPELLBOOK
-								|| hitstats->shield->type == TOOL_TINKERING_KIT )
-							{
-								armorRoll = rand() % 4; // reroll for non-shield slot.
-							}
-						}
-						switch ( rand() % 6 )
-						{
-							case 0:
-								armor = hitstats->helmet;
-								armornum = 0;
-								break;
-							case 1:
-								armor = hitstats->breastplate;
-								armornum = 1;
-								break;
-							case 2:
-								armor = hitstats->gloves;
-								armornum = 2;
-								break;
-							case 3:
-								armor = hitstats->shoes;
-								armornum = 3;
-								break;
-							case 4:
-								armor = hitstats->shield;
-								armornum = 4;
-								break;
-							case 5:
-								armor = hitstats->cloak;
-								armornum = 6;
-								break;
-							default:
-								break;
-						}
-
+						armornum = hitstats->pickRandomEquippedItemToDegradeOnHit(&armor, true, false, false, true);
 						if ( armor != NULL && armor->status > BROKEN )
 						{
 							switch ( armor->type )
@@ -8102,7 +8075,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( (rand() % 15 == 0 && damage > 0) || (damage == 0 && rand() % 8 == 0) )
 								{
-									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+									bool increaseSkill = true;
+									if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
+									{
+										increaseSkill = false;
+									}
+									else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+									{
+										increaseSkill = false;
+									}
+									if ( increaseSkill )
+									{
+										hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
+									}
 								}
 							}
 
@@ -14272,6 +14257,12 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	{
 		switch ( effect )
 		{
+			case EFF_GREASY:
+				if ( myStats->type == GOATMAN )
+				{
+					return false;
+				}
+				break;
 			case EFF_ASLEEP:
 			case EFF_PARALYZED:
 			case EFF_PACIFY:
@@ -15083,6 +15074,38 @@ node_t* Entity::addItemToMonsterInventory(Item* item)
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
 	item->node->size = sizeof(Item);
+
+	if ( myStats->type == SHOPKEEPER )
+	{
+		// sort items into slots
+		std::vector<std::pair<int, Item*>> priceAndItems;
+		for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( !item ) { continue; }
+
+			priceAndItems.push_back(std::make_pair(item->buyValue(clientnum), item));
+		}
+
+		std::sort(priceAndItems.begin(), priceAndItems.end(), [](std::pair<int, Item*> lhs, std::pair<int, Item*> rhs) {
+			return lhs.first > rhs.first;
+		});
+
+		int slotx = 0;
+		int sloty = 0;
+		for ( auto& v : priceAndItems )
+		{
+			Item* item = v.second;
+			item->x = slotx;
+			item->y = sloty;
+			++slotx;
+			if ( slotx >= Player::ShopGUI_t::MAX_SHOP_X )
+			{
+				slotx = 0;
+				++sloty;
+			}
+		}
+	}
 
 	return item->node;
 }

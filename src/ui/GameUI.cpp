@@ -79,6 +79,11 @@ std::string StatusEffectQueue_t::StatusEffectDefinitions_t::notificationFont = "
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue);
 
+int GAMEUI_FRAMEDATA_ANIMATING_ITEM = 1;
+int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
+int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
+int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
+
 void capitalizeString(std::string& str)
 {
 	if ( str.size() < 1 ) { return; }
@@ -912,6 +917,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_CHARACTERSHEET:
 				case Player::GUI_t::MODULE_CHEST:
 				case Player::GUI_t::MODULE_SHOP:
+				case Player::GUI_t::MODULE_ALCHEMY:
 					leftBumperTxt->setDisabled(false);
 					leftBumperTxt->setText("/");
 					break;
@@ -929,6 +935,7 @@ void Player::HUD_t::updateUINavigation()
 				case Player::GUI_t::MODULE_CHARACTERSHEET:
 				case Player::GUI_t::MODULE_CHEST:
 				case Player::GUI_t::MODULE_SHOP:
+				case Player::GUI_t::MODULE_ALCHEMY:
 					rightBumperTxt->setDisabled(false);
 					rightBumperTxt->setText(language[4092]);
 					break;
@@ -936,7 +943,11 @@ void Player::HUD_t::updateUINavigation()
 					break;
 			}
 		}
-		if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
+		if ( player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY || player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+
+		}
+		else if ( player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET )
 		{
 			auto selectedElement = player.characterSheet.selectedElement;
 			if ( selectedElement >= Player::CharacterSheet_t::SHEET_STR && selectedElement <= Player::CharacterSheet_t::SHEET_WGT )
@@ -1046,7 +1057,7 @@ void Player::HUD_t::updateUINavigation()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
-			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen )
+			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -1099,7 +1110,7 @@ void Player::HUD_t::updateUINavigation()
 			}
 
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
-				&& !GenericGUI[player.playernum].tinkerGUI.bOpen )
+				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
@@ -1367,9 +1378,10 @@ void Player::HUD_t::updateUINavigation()
 					continue;
 				}
 			}
-			if ( GenericGUI[player.playernum].isGUIOpen() )
+			if ( GenericGUI[player.playernum].isGUIOpen() || player.GUI.isDropdownActive()
+				|| player.hud.mapWindow || player.hud.logWindow )
 			{
-				button->setInvisible(true);
+				button->setDisabled(true);
 				continue;
 			}
 		}
@@ -1379,7 +1391,9 @@ void Player::HUD_t::updateUINavigation()
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
 				&& !player.bUseCompactGUIWidth()
-				&& !GenericGUI[player.playernum].isGUIOpen() )
+				&& !GenericGUI[player.playernum].isGUIOpen()
+				&& !player.hud.mapWindow
+				&& !player.hud.logWindow )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
 				{
@@ -4853,11 +4867,28 @@ void openMapWindow(int player) {
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
-        if (players[player]->gui_mode == GUI_MODE_NONE) {
-            players[player]->shootmode = true;
-        }
+		if ( players[player]->gui_mode == GUI_MODE_NONE ) {
+			players[player]->shootmode = true;
+		}
+		else
+		{
+			players[player]->GUI.returnToPreviousActiveModule();
+		}
         return;
     }
+
+	players[player]->GUI.previousModule = players[player]->GUI.activeModule;
+	if ( players[player]->shootmode )
+	{
+		players[player]->openStatusScreen(GUI_MODE_NONE,
+			INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_MAP);
+	}
+	else
+	{
+		players[player]->openStatusScreen(GUI_MODE_INVENTORY,
+			players[player]->inventory_mode, Player::GUI_t::MODULE_MAP); // Reset the GUI to the inventory.
+	}
+
     auto& otherWindow = players[player]->hud.logWindow;
     if (otherWindow) {
         otherWindow->removeSelf();
@@ -4956,7 +4987,10 @@ void openMapWindow(int player) {
 	minimap_cursor[player].x = map_size / 2;
 	minimap_cursor[player].y = map_size / 2;
 
-	Input::inputs[player].consumeBinary("MinimapPing");
+	if ( !inputs.getVirtualMouse(player)->draw_cursor )
+	{
+		Input::inputs[player].consumeBinary("MinimapPing");
+	}
 
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
 	    int player = widget.getOwner();
@@ -4997,13 +5031,10 @@ void openMapWindow(int player) {
                 if (players[player]->gui_mode == GUI_MODE_NONE) {
                     players[player]->shootmode = true;
                 }
-            }
-            auto buttons = gui->findFrame("log map buttons");
-            if (buttons) {
-                auto button = buttons->findButton("map button");
-                if (button) {
-                    button->select();
-                }
+				else
+				{
+					players[player]->GUI.returnToPreviousActiveModule();
+				}
             }
         }
 
@@ -5154,11 +5185,28 @@ void openLogWindow(int player) {
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
-        if (players[player]->gui_mode == GUI_MODE_NONE) {
-            players[player]->shootmode = true;
-        }
+		if ( players[player]->gui_mode == GUI_MODE_NONE ) {
+			players[player]->shootmode = true;
+		}
+		else
+		{
+			players[player]->GUI.returnToPreviousActiveModule();
+		}
         return;
     }
+
+	players[player]->GUI.previousModule = players[player]->GUI.activeModule;
+	if ( players[player]->shootmode )
+	{
+		players[player]->openStatusScreen(GUI_MODE_NONE,
+			INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_LOG);
+	}
+	else
+	{
+		players[player]->openStatusScreen(GUI_MODE_INVENTORY,
+			players[player]->inventory_mode, Player::GUI_t::MODULE_LOG); // Reset the GUI to the inventory.
+	}
+
     auto& otherWindow = players[player]->hud.mapWindow;
     if (otherWindow) {
         otherWindow->removeSelf();
@@ -5290,6 +5338,19 @@ void openLogWindow(int player) {
             subframe_size.y = std::min(limit, subframe_size.y);
             subframe->setActualSize(subframe_size);
         }
+		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {
+			if ( players[player]->hud.logWindow ) {
+				players[player]->hud.logWindow->removeSelf();
+				players[player]->hud.logWindow = nullptr;
+				if ( players[player]->gui_mode == GUI_MODE_NONE ) {
+					players[player]->shootmode = true;
+				}
+				else
+				{
+					players[player]->GUI.returnToPreviousActiveModule();
+				}
+			}
+		}
         });
 
     // frame images
@@ -5383,6 +5444,10 @@ void openLogWindow(int player) {
         if (players[player]->gui_mode == GUI_MODE_NONE) {
             players[player]->shootmode = true;
         }
+		else
+		{
+			players[player]->GUI.returnToPreviousActiveModule();
+		}
         });
 
     auto help_left = frame->addField("help_left", 128);
@@ -6525,6 +6590,45 @@ bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
 			invert = true;
 		}
 	}
+	else if ( name == "chest_interact" )
+	{
+		if ( player.inventoryUI.bCompactView )
+		{
+			if ( player.inventoryUI.inventoryPanelJustify != PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				invert = true;
+			}
+		}
+	}
+	else if ( name == "item_interact" )
+	{
+		if ( player.inventoryUI.bCompactView )
+		{
+			Item* item = uidToItem(dropDownItem);
+			if ( item && player.paperDoll.isItemOnDoll(*item) )
+			{
+				if ( player.inventoryUI.paperDollPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					invert = true;
+				}
+			}
+			else if ( item && itemCategory(item) == SPELL_CAT )
+			{
+				if ( player.inventoryUI.spellPanel.panelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					invert = true;
+				}
+			}
+			else
+			{
+				// normal inventory items
+				if ( player.inventoryUI.inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					invert = true;
+				}
+			}
+		}
+	}
 	return (invert ? !allDropDowns[name].alignRight : allDropDowns[name].alignRight);
 }
 
@@ -6936,6 +7040,7 @@ void Player::GUIDropdown_t::process()
 	{
 		dropdownFrame->setDisabled(true);
 		dropDownOptionSelected = -1;
+		dropDownItem = 0;
 		dropDownX = 0;
 		dropDownY = 0;
 		dropDownToggleClick = false;
@@ -6970,7 +7075,56 @@ void Player::GUIDropdown_t::process()
 	int maxHeight = 0;
 	const int textPaddingX = 8;
 
-	auto& dropDown = allDropDowns[currentName];
+	auto dropDown = allDropDowns[currentName];
+	std::vector<ItemContextMenuPrompts> contextOptions;
+	Item* item = uidToItem(dropDownItem);
+	if ( currentName == "chest_interact" )
+	{
+		list_t* chest_inventory = nullptr;
+		if ( multiplayer == CLIENT )
+		{
+			chest_inventory = &chestInv[player.playernum];
+		}
+		else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+		{
+			chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+		}
+
+		if ( chest_inventory )
+		{
+			for ( node_t* node = chest_inventory->first; node != NULL; node = node->next )
+			{
+				Item* chestItem = (Item*)node->element;
+				if ( !chestItem )
+				{
+					continue;
+				}
+				if ( chestItem->uid == dropDownItem )
+				{
+					item = chestItem;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( dropDownItem != 0 && !item )
+	{
+		close();
+		return;
+	}
+	if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+	{
+		if ( item )
+		{
+			dropDown.options.clear();
+			contextOptions = getContextMenuOptionsForItem(player.playernum, item);
+			for ( auto option : contextOptions )
+			{
+				dropDown.options.push_back(DropdownOption_t(getContextMenuLangEntry(player.playernum, option, *item), "", "", ""));
+			}
+		}
+	}
 	if ( dropDown.module != Player::GUI_t::MODULE_NONE )
 	{
 		if ( dropDown.module != player.GUI.activeModule )
@@ -7064,6 +7218,9 @@ void Player::GUIDropdown_t::process()
 			txt->setSize(size);
 		}
 
+		img->pos.x = txt->getSize().x - 8;
+		img->pos.y = txt->getSize().y + txt->getSize().h / 2 - img->pos.h / 2;
+
 		maxHeight = std::max(std::max(txt->getSize().y + txt->getSize().h, img->pos.y + img->pos.h), maxHeight);
 		++index;
 	}
@@ -7085,9 +7242,6 @@ void Player::GUIDropdown_t::process()
 			size.w = maxWidth;
 			txt->setSize(size);
 		}
-
-		img->pos.x = txt->getSize().x - 8;
-		img->pos.y = txt->getSize().y + txt->getSize().h / 2 - img->pos.h / 2;
 
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
@@ -7169,6 +7323,10 @@ void Player::GUIDropdown_t::process()
 	{
 		frameSize.x -= frameSize.w;
 	}
+	if ( frameSize.y + frameSize.h > player.camera_virtualHeight() )
+	{
+		frameSize.y -= (frameSize.y + frameSize.h) - player.camera_virtualy2();
+	}
 	dropdownFrame->setSize(frameSize);
 
 	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
@@ -7235,7 +7393,48 @@ void Player::GUIDropdown_t::process()
 	{
 		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 		{
-			activateSelection(currentName, dropDownOptionSelected);
+			if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+			{
+				if ( item && dropDownOptionSelected < contextOptions.size() )
+				{
+					if ( contextOptions[dropDownOptionSelected] == ItemContextMenuPrompts::PROMPT_DROP 
+						&& player.paperDoll.isItemOnDoll(*item) )
+					{
+						// need to unequip
+						player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+						player.paperDoll.updateSlots();
+						if ( player.paperDoll.isItemOnDoll(*item) )
+						{
+							// couldn't unequip, no more actions
+						}
+						else
+						{
+							// successfully unequipped, let's drop it.
+							bool droppedAll = false;
+							while ( item && item->count > 1 )
+							{
+								droppedAll = dropItem(item, player.playernum);
+								if ( droppedAll )
+								{
+									item = nullptr;
+								}
+							}
+							if ( !droppedAll )
+							{
+								dropItem(item, player.playernum);
+							}
+						}
+					}
+					else
+					{
+						player.inventoryUI.activateItemContextMenuOption(item, contextOptions[dropDownOptionSelected]);
+					}
+				}
+			}
+			else
+			{
+				activateSelection(currentName, dropDownOptionSelected);
+			}
 		}
 		//Close the menu.
 		close();
@@ -7257,6 +7456,7 @@ void Player::GUIDropdown_t::close()
 		dropdownBlockClickFrame = nullptr;
 	}
 	dropDownOptionSelected = 0;
+	dropDownItem = 0;
 	bOpen = false;
 	dropDownToggleClick = false;
 	currentName = "";
@@ -11292,6 +11492,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 
 		if ( auto sexImg = characterInnerFrame->findImage("character sex img") )
 		{
+			int offsetx = 0;
 			if ( stats[player.playernum]->sex == sex_t::MALE )
 			{
 				if ( type == AUTOMATON )
@@ -11301,6 +11502,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				else
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
+					static ConsoleVariable<int> cvar_sexoffset("/sexoffsetx", -1);
+					offsetx = *cvar_sexoffset;
 				}
 			}
 			else if ( stats[player.playernum]->sex == sex_t::FEMALE )
@@ -11324,7 +11527,11 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			raceTextPos.x = 4;
 			if ( centerIconAndText )
 			{
-				raceTextPos.x = 4 + ((sexImg->pos.w + 4)) / 2;
+				raceTextPos.x = 4 + (((sexImg->pos.w + 4)) / 2) + offsetx;
+			}
+			if ( raceTextPos.x % 2 == 1 )
+			{
+				--raceTextPos.x;
 			}
 			raceText->setSize(raceTextPos);
 
@@ -11332,7 +11539,11 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			if ( centerIconAndText )
 			{
 				sexImg->pos.x = raceText->getSize().x + raceText->getSize().w / 2 - width / 2;
-				sexImg->pos.x -= (sexImg->pos.w + 4);
+				sexImg->pos.x -= (sexImg->pos.w + 4) + (offsetx * 2);
+			}
+			if ( sexImg->pos.x % 2 == 1 )
+			{
+				--sexImg->pos.x;
 			}
 			sexImg->pos.y = raceText->getSize().y + raceText->getSize().h / 2 - sexImg->pos.h / 2;
 		}
@@ -11384,13 +11595,14 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 			else if ( (!inputs.getVirtualMouse(player.playernum)->draw_cursor
 					&& inputs.hasController(player.playernum)
-					&& Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm")
+					&& Input::inputs[player.playernum].binaryToggle("MenuConfirm")
 				)
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHARACTERSHEET
 				&& !player.GUI.isDropdownActive()
 				&& !player.usingCommand()
 				&& player.bControlEnabled && !gamePaused )
 			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm");
 				player.GUI.dropdownMenu.open("drop_gold");
 				player.GUI.dropdownMenu.dropDownToggleClick = true;
 				SDL_Rect dropdownPos = characterInfoFrame->getSize();
@@ -11894,13 +12106,19 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	auto img = itemSpriteFrame->addImage(imgPos, 0xFFFFFFFF, "images/system/white.png", "item sprite img");
 	img->outline = false;
 	img->outlineColor = 0;
+	auto iconLabelBgImg = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"images/ui/Inventory/Icon_Label_Backing_00.png", "icon label bg img");
+	iconLabelBgImg->disabled = true;
+
+	auto iconLabelImg = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"", "icon label img");
+	iconLabelImg->disabled = true;
 
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, makeColor( 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
-
 
 	static const char* qtyfont = "fonts/pixel_maz.ttf#32#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
@@ -11979,6 +12197,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	{
 		return false;
 	}
+
 	if ( players[player]->inventoryUI.chestFrame && !spells
 		&& !players[player]->inventoryUI.chestFrame->isDisabled() )
 	{
@@ -12076,7 +12295,23 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	spriteImage->path = getItemSpritePath(player, *item);
 	bool disableBackgrounds = false;
+	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
+	{
+		disableBackgrounds = true;
+	}
+
+	int* slotType = nullptr;
+	if ( slotFrame->getUserData() )
+	{
+		slotType = (int*)slotFrame->getUserData();
+		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM || *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT )
+		{
+			disableBackgrounds = true;
+		}
+	}
+
 	bool isHotbarIcon = false;
+	bool alchemyResultIcon = &GenericGUI[player].alchemyGUI.alchemyResultPotion == item;
 	if ( spriteImage->path != "" )
 	{
 		spriteImageFrame->setDisabled(false);
@@ -12118,6 +12353,39 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			spriteImage->color = 0xFFFFFFFF;
 		}
+		if ( auto iconLabelImg = spriteImageFrame->findImage("icon label img") )
+		{
+			iconLabelImg->path = ItemTooltips.getIconLabel(*item);
+			iconLabelImg->disabled = true;
+			const int size = 16;
+			const int padx = spriteImageFrame->getSize().w / 2 - size / 2;
+			iconLabelImg->pos = SDL_Rect{ spriteImageFrame->getSize().w - size - 1,
+				1 /*spriteImageFrame->getSize().h - size*/, size, size };
+			if ( iconLabelImg->path != "" )
+			{
+				iconLabelImg->disabled = !item->identified;
+			}
+			iconLabelImg->color = spriteImage->color;
+			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
+			{
+				iconLabelBgImg->pos.w = 24;
+				iconLabelBgImg->pos.h = iconLabelBgImg->pos.w;
+				iconLabelBgImg->pos.x = spriteImageFrame->getSize().w - iconLabelBgImg->pos.w - 1;
+				iconLabelBgImg->pos.y = 1;
+				iconLabelBgImg->disabled = iconLabelImg->disabled || disableBackgrounds;
+				iconLabelBgImg->color = makeColor(255, 255, 255, 255);
+			}
+		}
+		if ( slotFrame->getUserData() )
+		{
+			if ( *slotType == GAMEUI_FRAMEDATA_ALCHEMY_ITEM || *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT )
+			{
+				SDL_Color color;
+				getColor(spriteImage->color, &color.r, &color.g, &color.b, &color.a);
+				color.a /= 2;
+				spriteImage->color = makeColor(color.r, color.g, color.b, color.a);
+			}
+		}
 	}
 
 	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
@@ -12128,10 +12396,18 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			drawQty = true;
 		}
+		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY )
+		{
+			drawQty = true;
+		}
 		Uint32 qtyColor = 0xFFFFFFFF;
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-		if ( selectedItem && !isHotbarIcon )
+		if ( selectedItem && !isHotbarIcon && !alchemyResultIcon 
+			&& !(slotType 
+				&& (*slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM 
+					|| *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT
+					|| *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY)) )
 		{
 			if ( item != selectedItem 
 				&& !itemIsEquipped(selectedItem, player)
@@ -12174,11 +12450,6 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				qtyText->setColor(qtyColor);
 			}
 		}
-	}
-
-	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
-	{
-		disableBackgrounds = true;
 	}
 	
 	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
@@ -12223,7 +12494,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				}
 				else
 				{
-					spriteImage->outlineColor = makeColor(0, 0, 0, 192);
+					spriteImage->outlineColor = makeColor(0, 0, 0, 255);
 				}
 				if ( !beatitudeFrame->isDisabled() )
 				{
@@ -12314,6 +12585,19 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			broken = true;
 		}
+		else if ( alchemyResultIcon && stats[player]->weapon 
+			&& itemCategory(stats[player]->weapon) == POTION
+			&& stats[player]->weapon->identified && item->identified )
+		{
+			int selectedItemQty;
+			int destItemQty;
+			auto result = getItemStackingBehavior(player, item, stats[player]->weapon, selectedItemQty, destItemQty);
+			if ( result.resultType == ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK
+				|| result.resultType == ITEM_ADDED_PARTIALLY_TO_DESTINATION_STACK )
+			{
+				equipped = true;
+			}
+		}
 	}
 	else
 	{
@@ -12328,7 +12612,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
 	{
 		equippedIconFrame->setDisabled(true);
-		if ( equipped && !disableBackgrounds )
+		if ( equipped && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM))) )
 		{
 			equippedIconFrame->setDisabled(false);
 		}
@@ -12336,7 +12620,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
 	{
 		brokenIconFrame->setDisabled(true);
-		if ( broken && !disableBackgrounds )
+		if ( broken && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT))) )
 		{
 			brokenIconFrame->setDisabled(false);
 		}
@@ -12868,7 +13152,7 @@ void createInventoryTooltipFrame(const int player)
 			glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 4");
 
-		const int textWidth = 80;
+		const int textWidth = 200;
 		const int textHeight = glyphSizeH + 8;
 
 		Uint32 promptTextColor = makeColor( 188, 154, 114, 255);
@@ -13839,6 +14123,14 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_heading_text"]["b"].GetInt(),
 							d["colors"]["charsheet_heading_text"]["a"].GetInt());
 					}
+					if ( d["colors"].HasMember("charsheet_highlight_text") )
+					{
+						hudColors.characterSheetHighlightText = makeColor(
+							d["colors"]["charsheet_highlight_text"]["r"].GetInt(),
+							d["colors"]["charsheet_highlight_text"]["g"].GetInt(),
+							d["colors"]["charsheet_highlight_text"]["b"].GetInt(),
+							d["colors"]["charsheet_highlight_text"]["a"].GetInt());
+					}
 				}
 				if ( d.HasMember("dropdowns") )
 				{
@@ -13866,6 +14158,18 @@ void loadHUDSettingsJSON()
 							if ( moduleName == "character_sheet" )
 							{
 								dropdown.module = Player::GUI_t::MODULE_CHARACTERSHEET;
+							}
+							else if ( moduleName == "inventory" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_INVENTORY;
+							}
+							else if ( moduleName == "chest" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_CHEST;
+							}
+							else if ( moduleName == "hotbar" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_HOTBAR;
 							}
 							else
 							{
@@ -14780,7 +15084,6 @@ void createPlayerInventory(const int player)
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
 
-	createInventoryTooltipFrame(player);
 	createChestGUI(player);
 	createShopGUI(player);
 
@@ -15000,6 +15303,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].tinkerGUI.tinkerFrame->setOwner(player);
 		GenericGUI[player].tinkerGUI.tinkerFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].tinkerGUI.tinkerFrame->setDisabled(true);
+
+		GenericGUI[player].alchemyGUI.alchFrame = frame->addFrame("alchemy");
+		GenericGUI[player].alchemyGUI.alchFrame->setHollow(true);
+		GenericGUI[player].alchemyGUI.alchFrame->setBorder(0);
+		GenericGUI[player].alchemyGUI.alchFrame->setOwner(player);
+		GenericGUI[player].alchemyGUI.alchFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].alchemyGUI.alchFrame->setDisabled(true);
 
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
@@ -15541,6 +15851,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		sellingItemToShop = true;
 	}
 
+	if ( prompt == PROMPT_DROPDOWN )
+	{
+		return;
+	}
 	if ( prompt == PROMPT_APPRAISE )
 	{
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
@@ -15883,7 +16197,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		}
 		return;
 	}
-	else if ( prompt == PROMPT_CONSUME )
+	else if ( prompt == PROMPT_CONSUME || prompt == PROMPT_CONSUME_ALTERNATE )
 	{
 		// consume item
 		if ( multiplayer == CLIENT )
@@ -15904,14 +16218,18 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		item_FoodAutomaton(item, player);
 		return;
 	}
-	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_TINKER )
+	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_INSPECT_ALTERNATE || prompt == PROMPT_TINKER )
 	{
 		if ( item->type == TOOL_ALEMBIC )
 		{
 			// not experimenting
-			if ( !disableItemUsage )
+			if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, false, item);
+				GenericGUI[player].closeGUI();
+			}
+			else if ( !disableItemUsage )
+			{
+				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
 			}
 			else
 			{
@@ -16380,6 +16698,21 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+		{
+			auto& alchemyGUI = GenericGUI[player.playernum].alchemyGUI;
+			if ( !alchemyGUI.alchemyGUIHasBeenCreated()
+				|| alchemyGUI.alchFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( alchemyGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
 		if ( moveMouse && cursor.queuedFrameToWarpTo )
 		{
 			//messagePlayer(0, "Queue warp: %d", queuedModule);
@@ -16828,9 +17161,17 @@ void Player::Hotbar_t::updateCursor()
 
 void Player::Inventory_t::processInventory()
 {
+	if ( !player.characterSheet.sheetFrame )
+	{
+		player.characterSheet.createCharacterSheet();
+	}
 	if ( !frame )
 	{
 		createPlayerInventory(player.playernum);
+	}
+	if ( !tooltipFrame )
+	{
+		createInventoryTooltipFrame(player.playernum);
 	}
 
 	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
@@ -20783,6 +21124,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 							itemName.erase(pos, potionName.length());
 						}
 					}
+					capitalizeString(itemName);
 					if ( outputList != "" )
 					{
 						outputList += '\n';

@@ -151,6 +151,8 @@ public:
 	real_t lerp_oy;
 	bool bNeedsRenderPositionInit = true;
 	bool bUseRenderInterpolation = false;
+	int mapGenerationRoomX = 0; // captures the x/y of the 'room' this spawned in on generate dungeon
+	int mapGenerationRoomY = 0; // captures the x/y of the 'room' this spawned in on generate dungeon
 
 	//--PUBLIC CHEST SKILLS--
 
@@ -212,6 +214,7 @@ public:
 	Sint32& creatureShadowTaggedThisUid; //skill[54]
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& monsterLastDistractedByNoisemaker;//skill[55] shared with above as above only is for inner demons.
+	Sint32& monsterExtraReflexTick; //skill[56]
 	Sint32& entityShowOnMap; //skill[59]
 	real_t& monsterSentrybotLookDir; //fskill[10]
 	real_t& monsterKnockbackTangentDir; //fskill[11]
@@ -328,6 +331,7 @@ public:
 	Sint32& pedestalInit; //skill[5]
 	Sint32& pedestalAmbience; //skill[6]
 	Sint32& pedestalLockOrb; //skill[7]
+	Sint32& pedestalPowerStatus; //skill[8]
 
 	real_t& orbStartZ; // fskill[0] mid point of animation, starting height.
 	real_t& orbMaxZVelocity; //fskill[1]
@@ -633,7 +637,7 @@ public:
 	void updateCircuitNeighbors(); //Called when a circuit's powered state changes.
 	void mechanismPowerOn(); //Called when a circuit or switch next to a mechanism powers on.
 	void mechanismPowerOff(); //Called when a circuit or switch next to a mechanism powers on.
-	void toggleSwitch(); //Called when a player flips a switch (lever).
+	void toggleSwitch(int skillIndexForPower = -1); //Called when a player flips a switch (lever). skillIndexForPower can use any skill[] to reference for the entity power status (defaults to skill[0] for switches)
 	void switchUpdateNeighbors(); //Run each time actSwitch() is called to make sure the network is online if any one switch connected to it is still set to the on position.
 	list_t* getPowerableNeighbors(); //Returns a list of all circuits and mechanisms this entity can influence.
 
@@ -1128,6 +1132,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 //Fountain potion drop chance variables.
 extern const std::vector<int> fountainPotionDropChances;
 extern const std::vector<std::pair<int, int>> potionStandardAppearanceMap;
+std::pair<int, int> fountainGeneratePotionDrop();
 extern std::mt19937 fountainSeed;
 
 class TextSourceScript
@@ -1235,7 +1240,7 @@ public:
 	std::string getScriptFromEntity(Entity& src);
 	void parseScriptInMapGeneration(Entity& src);
 	void handleTextSourceScript(Entity& src, std::string input);
-	int textSourceProcessScriptTag(std::string& input, std::string findTag);
+	int textSourceProcessScriptTag(std::string& input, std::string findTag, Entity& src);
 	bool hasClearedInventory = false;
 	int getScriptType(Sint32 skill)
 	{

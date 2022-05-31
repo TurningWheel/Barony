@@ -177,7 +177,7 @@ void actFountain(Entity* my)
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
 					int potionDropQuantity = 0;
-					if ( stats[i] && (stats[i]->type == GOATMAN || stats[i]->playerRace == RACE_GOATMAN) && stats[i]->appearance == 0 )
+					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0)) )
 					{
 						// drop some random potions.
 						switch ( rand() % 10 )
@@ -216,12 +216,14 @@ void actFountain(Entity* my)
 							ItemType type = static_cast<ItemType>(generatedPotion.first);
 							int appearance = generatedPotion.second;
 							Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
-							Entity* dropped = dropItemMonster(item, my, NULL);
-							dropped->yaw = ((0 + rand() % 360) / 180.f) * PI;
-							dropped->vel_x = (0.75 + .025 * (rand() % 11)) * cos(dropped->yaw);
-							dropped->vel_y = (0.75 + .025 * (rand() % 11)) * sin(dropped->yaw);
-							dropped->vel_z = (-10 - rand() % 20) * .01;
-							dropped->flags[USERFLAG1] = false;
+							if ( Entity* dropped = dropItemMonster(item, my, NULL) )
+							{
+								dropped->yaw = ((0 + rand() % 360) / 180.f) * PI;
+								dropped->vel_x = (0.75 + .025 * (rand() % 11)) * cos(dropped->yaw);
+								dropped->vel_y = (0.75 + .025 * (rand() % 11)) * sin(dropped->yaw);
+								dropped->vel_z = (-10 - rand() % 20) * .01;
+								dropped->flags[USERFLAG1] = false;
+							}
 						}
 					}
 					switch (my->skill[1])
@@ -410,11 +412,14 @@ void actFountain(Entity* my)
 							}
 							if ( stats[i]->weapon )
 							{
-								if ( stats[i]->type == SUCCUBUS && stats[i]->weapon->beatitude == 0 )
+								if ( stats[i]->weapon->type != POTION_EMPTY )
 								{
-									stuckOnYouSuccess = true;
+									if ( stats[i]->type == SUCCUBUS && stats[i]->weapon->beatitude == 0 )
+									{
+										stuckOnYouSuccess = true;
+									}
+									stats[i]->weapon->beatitude++;
 								}
-								stats[i]->weapon->beatitude++;
 							}
 							if ( stats[i]->cloak )
 							{
