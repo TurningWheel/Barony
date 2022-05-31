@@ -11489,6 +11489,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 
 		if ( auto sexImg = characterInnerFrame->findImage("character sex img") )
 		{
+			int offsetx = 0;
 			if ( stats[player.playernum]->sex == sex_t::MALE )
 			{
 				if ( type == AUTOMATON )
@@ -11498,6 +11499,8 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				else
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
+					static ConsoleVariable<int> cvar_sexoffset("/sexoffsetx", -1);
+					offsetx = *cvar_sexoffset;
 				}
 			}
 			else if ( stats[player.playernum]->sex == sex_t::FEMALE )
@@ -11521,7 +11524,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			raceTextPos.x = 4;
 			if ( centerIconAndText )
 			{
-				raceTextPos.x = 4 + ((sexImg->pos.w + 4)) / 2;
+				raceTextPos.x = 4 + (((sexImg->pos.w + 4)) / 2) + offsetx;
 			}
 			if ( raceTextPos.x % 2 == 1 )
 			{
@@ -11533,7 +11536,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			if ( centerIconAndText )
 			{
 				sexImg->pos.x = raceText->getSize().x + raceText->getSize().w / 2 - width / 2;
-				sexImg->pos.x -= (sexImg->pos.w + 4);
+				sexImg->pos.x -= (sexImg->pos.w + 4) + (offsetx * 2);
 			}
 			if ( sexImg->pos.x % 2 == 1 )
 			{
