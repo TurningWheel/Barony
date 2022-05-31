@@ -55,16 +55,7 @@ void initClass(const int player)
 		curseItems = true;
 	}
 
-	// SEX MODIFIER
-	// female; else male
-	if ( stats[player]->sex )
-	{
-		stats[player]->DEX += 1;
-	}
-	else
-	{
-		stats[player]->STR += 1;
-	}
+	//stats[player]->STR += 1;
 
 	stats[player]->type = HUMAN;
 
