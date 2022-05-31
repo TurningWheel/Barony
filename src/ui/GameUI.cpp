@@ -4987,7 +4987,10 @@ void openMapWindow(int player) {
 	minimap_cursor[player].x = map_size / 2;
 	minimap_cursor[player].y = map_size / 2;
 
-	Input::inputs[player].consumeBinary("MinimapPing");
+	if ( !inputs.getVirtualMouse(player)->draw_cursor )
+	{
+		Input::inputs[player].consumeBinary("MinimapPing");
+	}
 
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
 	    int player = widget.getOwner();
