@@ -87,8 +87,9 @@ public:
 		std::string name;
 		std::string text;
 		std::string tooltip;
-		Uint32 color;
 		std::string image;
+		Uint32 color = makeColor(255, 255, 255, 255);
+		void* data = nullptr;
 
         bool clickable = true;
 		bool pressed = false;

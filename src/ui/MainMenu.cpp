@@ -21,6 +21,7 @@
 #include "../lobbies.hpp"
 #include "../interface/consolecommand.hpp"
 #include "../eos.hpp"
+#include "../colors.hpp"
 
 #include <cassert>
 #include <functional>
@@ -5941,7 +5942,8 @@ bind_failed:
 	        }
 	        SDLNet_Write32(numplayers, &net_packet->data[offset]);
 	        net_packet->data[offset + 4] = intro ? 0 : 1;
-	        net_packet->len = offset + 5;
+	        SDLNet_Write32(svFlags, &net_packet->data[offset + 5]);
+	        net_packet->len = offset + 9;
 	        sendPacket(net_sock, -1, net_packet, 0);
 	    }
 	}
@@ -9579,21 +9581,28 @@ bind_failed:
 	    int players;
 	    int ping;
 	    bool locked;
+	    Uint32 flags;
 	    std::string address;
+	    int index = -1;
 	    LobbyInfo(
 	        const char* _name = "Barony",
 	        int _players = 0,
 	        int _ping = 0,
 	        bool _locked = false,
+	        Uint32 _flags = 0,
 	        const char* _address = ""):
 	        name(_name),
 	        players(_players),
 	        ping(_ping),
 	        locked(_locked),
+	        flags(_flags),
 	        address(_address)
 	    {}
 	};
 
+    static const int numFilters = NUM_SERVER_FLAGS + 3;
+    static bool lobbyFilters[numFilters] = { false };
+    static bool lobbyFiltersEnabled = false;
 	static std::vector<LobbyInfo> lobbies;
 	static int selectedLobby = 0;
 
@@ -9602,6 +9611,39 @@ bind_failed:
 	        // probably the result of an out-of-date network scan
 	        return;
 	    }
+
+        if (info.index == -1) {
+            lobbies.push_back(info);
+            lobbies.back().index = lobbies.size() - 1;
+        }
+
+        if (lobbyFiltersEnabled) {
+            if (!lobbyFilters[0] && info.locked) {
+                // this lobby is locked and we don't want to show those
+                printlog("skipping lobby '%s' (lobby is locked)\n", info.name.c_str());
+                return;
+            }
+            if (lobbyFilters[1]) {
+                // TODO friends-only filter
+                printlog("skipping lobby '%s' (has no friends)\n", info.name.c_str());
+                //return;
+            }
+            if (lobbyFilters[2] && (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+                // lobbies with cheats or +1 life do not count for
+                // achievements.
+                printlog("skipping lobby '%s' (achievements disabled)\n", info.name.c_str());
+                return;
+            }
+            for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
+                const bool flag = (info.flags & (1 << c)) == 0 ? false : true;
+                const int index = (numFilters - NUM_SERVER_FLAGS) + c;
+                if (lobbyFilters[index] != flag) {
+                    // check the server flag filters
+                    printlog("skipping lobby '%s' (server flag %d mismatch)\n", info.name.c_str(), c);
+                    return;
+                }
+            }
+        }
 
 	    assert(main_menu_frame);
 	    auto window = main_menu_frame->findFrame("lobby_browser_window");
@@ -9620,9 +9662,10 @@ bind_failed:
 	        auto names = window->findFrame("names"); assert(names);
 	        auto players = window->findFrame("players"); assert(players);
 	        auto pings = window->findFrame("pings"); assert(pings);
-	        names->setSelection(entry.parent.getSelection());
-	        players->setSelection(entry.parent.getSelection());
-	        pings->setSelection(entry.parent.getSelection());
+	        auto selection = entry.parent.getSelection();
+	        names->setSelection(selection);
+	        players->setSelection(selection);
+	        pings->setSelection(selection);
             };
 
         // function to choose a specific lobby
@@ -9636,7 +9679,7 @@ bind_failed:
             names->setActivation(names->getEntries()[selection]);
             players->setActivation(players->getEntries()[selection]);
             pings->setActivation(pings->getEntries()[selection]);
-            selectedLobby = selection;
+            selectedLobby = *(int*)entry.data;
             };
 
         // name cell
@@ -9647,6 +9690,7 @@ bind_failed:
         entry_name->selected = selection_fn;
         entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
         entry_name->text = info.name;
+        entry_name->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // players cell
         const char* players_image;
@@ -9669,6 +9713,7 @@ bind_failed:
         entry_players->selected = selection_fn;
         entry_players->color = 0xffffffff;
         entry_players->image = players_image;
+        entry_players->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // ping cell
         auto entry_ping = pings->addEntry(info.name.c_str(), true);
@@ -9677,6 +9722,7 @@ bind_failed:
         entry_ping->highlight = selection_fn;
         entry_ping->selected = selection_fn;
         entry_ping->color = 0xffffffff;
+        entry_ping->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
         if (!info.locked) {
             if (info.ping < 100) {
                 entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
@@ -9692,8 +9738,6 @@ bind_failed:
         auto slider = window->findSlider("scroll_slider");
         slider->setMaxValue(names->getActualSize().h - names->getSize().h);
 		slider->updateHandlePosition();
-
-        lobbies.push_back(info);
 	}
 
 	static void clearLobbies() {
@@ -9706,10 +9750,14 @@ bind_failed:
 	    auto players = window->findFrame("players"); assert(players);
 	    auto pings = window->findFrame("pings"); assert(pings);
 	    names->clearEntries();
+	    names->setSelection(-1);
+	    names->setActivation(nullptr);
 	    players->clearEntries();
+	    players->setSelection(-1);
+	    players->setActivation(nullptr);
 	    pings->clearEntries();
-	    lobbies.clear();
-	    selectedLobby = -1;
+	    pings->setSelection(-1);
+	    pings->setActivation(nullptr);
 	}
 
 	static void refreshOnlineLobbies() {
@@ -9781,6 +9829,7 @@ bind_failed:
 	                info.players = lobbyPlayers[c];
 	                info.ping = 100; // TODO
 	                info.locked = false; // TODO
+	                info.flags = 0; // TODO
 	                info.address = "steam:" + std::to_string(c);
 	                addLobby(info);
 	            }
@@ -9882,7 +9931,9 @@ bind_failed:
 
 		static auto refresh_fn = [](Button& button){
 		    soundActivate();
-		    clearLobbies();
+		    clearLobbies(); // clear visible list
+	        lobbies.clear(); // clear internal list
+	        selectedLobby = -1; // select no lobby at all
 		    scan_ticks = ticks;
             if (directConnect) {
                 memcpy(scan.packet->data, "SCAN", 4);
@@ -9928,6 +9979,7 @@ bind_failed:
 				            info.players = players;
 				            info.ping = ping;
 				            info.locked = scan.packet->data[offset + 4];
+				            info.flags = SDLNet_Read32(&scan.packet->data[offset + 5]);
 
                             Uint32 host = scan.packet->address.host;
 				            char buf[16];
@@ -10005,7 +10057,67 @@ bind_failed:
 		    label->setFont(smallfont_outline);
 		    label->setText("Filters");
 
+            const char* filter_names[] = {
+                "Show non-joinable",
+                "Show friends only",
+                "Achievements enabled",
+                "Cheats enabled",
+                "Friendly fire enabled",
+                "Minotaurs enabled",
+                "Hunger enabled",
+                "Random traps enabled",
+                "Hardcore mode",
+                "Classic mode",
+                "Keep items on death",
+                "+1 Life",
+            };
+            constexpr int num_filter_names = sizeof(filter_names) / sizeof(filter_names[0]);
+
+            for (int index = 0, c = 0; c < num_filter_names; ++c) {
+                if (directConnect && c == 1) {
+                    // skip "friends only" filter in direct connect mode.
+                    continue;
+                }
+
+		        auto label = frame_right->addField("filter_label", 128);
+		        label->setHJustify(Field::justify_t::LEFT);
+		        label->setVJustify(Field::justify_t::CENTER);
+		        label->setSize(SDL_Rect{64, 72 + 24 * index, 192, 24});
+		        label->setFont(smallfont_outline);
+		        label->setColor(makeColor(102, 69, 36, 255));
+		        label->setText(filter_names[c]);
+
+		        std::string checkbox_name = std::string("filter_checkbox") + std::to_string(index);
+
+		        auto checkbox = frame_right->addButton(checkbox_name.c_str());
+		        checkbox->setSize(SDL_Rect{32, 74 + index * 24, 28, 24});
+		        checkbox->setStyle(Button::style_t::STYLE_CHECKBOX);
+		        checkbox->setBackground("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_BoxSmall00.png");
+		        checkbox->setIcon("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_PickSmall00.png");
+		        checkbox->setHighlightColor(uint32ColorWhite);
+		        checkbox->setColor(uint32ColorWhite);
+		        checkbox->setUserData(&lobbyFilters[c]);
+		        checkbox->setSelectorOffset(SDL_Rect{0, 2, -6, 0});
+		        checkbox->setCallback([](Button& button){
+		            soundCheckmark();
+                    bool* filter = (bool*)button.getUserData();
+                    *filter = button.isPressed();
+                    clearLobbies();
+                    for (auto& lobby : lobbies) {
+                        addLobby(lobby);
+                    }
+		            });
+		        checkbox->setWidgetBack("names");
+		        std::string next_name = std::string("filter_checkbox") + std::to_string(index + 1);
+		        std::string prev_name = std::string("filter_checkbox") + std::to_string(index - 1);
+		        checkbox->setWidgetDown(next_name.c_str());
+		        checkbox->setWidgetUp(prev_name.c_str());
+		        checkbox->setWidgetLeft("names");
+
+		        ++index;
+            }
 		}
+        lobbyFiltersEnabled = !frame_right->isInvisible();
 
 		auto frame_left = window->addFrame("frame_left");
 		frame_left->setInvisible(true);
@@ -10014,10 +10126,42 @@ bind_failed:
 		frame_left->setBorder(0);
 		frame_left->setColor(0);
 		frame_left->setTickCallback([](Widget& widget){
-		    //auto frame = static_cast<Frame*>(&widget);
 	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
-                //const auto& lobby = lobbies[selectedLobby];
                 widget.setInvisible(false);
+
+                const auto& lobby = lobbies[selectedLobby];
+		        auto frame = static_cast<Frame*>(&widget); assert(frame);
+                auto headers = frame->findField("headers"); assert(headers);
+                auto values = frame->findField("values"); assert(values);
+
+                const char* flag_names[] = {
+                    "Cheats enabled",
+                    "Friendly fire enabled",
+                    "Minotaurs enabled",
+                    "Hunger enabled",
+                    "Random traps enabled",
+                    "Hardcore mode",
+                    "Classic mode",
+                    "Keep items on death",
+                    "+1 Life",
+                };
+                constexpr int num_flag_names = sizeof(flag_names) / sizeof(flag_names[0]);
+
+                std::string flags;
+                for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
+                    if (lobby.flags & (1 << c)) {
+                        flags.append(flag_names[c]);
+                        flags.append("\n");
+                    }
+                }
+
+		        char buf[1024];
+                const char* header_fmt = "Name:\n\n\nFlags:";
+		        const char* values_fmt = "\n%s\n\n\n%s";
+		        snprintf(buf, sizeof(buf), values_fmt, lobby.name.c_str(), flags.c_str());
+
+                headers->setText(header_fmt);
+                values->setText(buf);
             } else {
                 widget.setInvisible(true);
             }
@@ -10034,7 +10178,21 @@ bind_failed:
 		    label->setJustify(Field::justify_t::CENTER);
 		    label->setSize(SDL_Rect{78, 48, 146, 22});
 		    label->setFont(smallfont_outline);
-		    label->setText("Lobby");
+		    label->setText("Lobby Info");
+
+		    auto headers = frame_left->addField("headers", 1024);
+		    headers->setHJustify(Field::justify_t::LEFT);
+		    headers->setVJustify(Field::justify_t::TOP);
+		    headers->setSize(SDL_Rect{72, 72, 210, 320});
+		    headers->setFont(smallfont_outline);
+		    headers->setColor(makeColor(180, 112, 24, 255));
+
+		    auto values = frame_left->addField("values", 1024);
+		    values->setHJustify(Field::justify_t::LEFT);
+		    values->setVJustify(Field::justify_t::TOP);
+		    values->setSize(SDL_Rect{72, 72, 210, 320});
+		    values->setFont(smallfont_outline);
+		    values->setColor(makeColor(102, 69, 36, 255));
 		}
 
 		auto online_tab = window->addButton("online_tab");
@@ -10153,7 +10311,7 @@ bind_failed:
 		enter_code->addWidgetAction("MenuAlt2", "refresh");
 		enter_code->setWidgetBack("back_button");
 		enter_code->setWidgetRight("join_lobby");
-		enter_code->setWidgetUp("names");
+		enter_code->setWidgetUp("crossplay");
 		enter_code->setTickCallback([](Widget& widget){
 		    auto button = static_cast<Button*>(&widget);
 		    if (mode == BrowserMode::Online) {
@@ -10392,6 +10550,22 @@ bind_failed:
 		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
 		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
 		    frame_right->setInvisible(frame_right->isInvisible()==false);
+		    lobbyFiltersEnabled = !frame_right->isInvisible();
+            clearLobbies();
+            for (auto& lobby : lobbies) {
+                addLobby(lobby);
+            }
+            if (lobbyFiltersEnabled) {
+                if (!inputs.getVirtualMouse(clientnum)->draw_cursor) {
+                    auto checkbox = frame_right->findButton("filter_checkbox0");
+                    if (checkbox) {
+                        checkbox->select();
+                    }
+                }
+		        soundActivate();
+            } else {
+                soundCancel();
+            }
 		    });
 
 		auto crossplay_fn = [](Button&){};
@@ -10430,14 +10604,14 @@ bind_failed:
 	    // scan for lobbies immediately
 	    refresh->activate();
 #else
-        if (0) {
+        if (1) {
             // test lobbies
-		    addLobby(LobbyInfo("Ben", 1, 50, false));
-		    addLobby(LobbyInfo("Sheridan", 3, 50, false));
-		    addLobby(LobbyInfo("Paulie", 2, 250, false));
-		    addLobby(LobbyInfo("Fart_Face", 1, 420, false));
-		    addLobby(LobbyInfo("Tim", 3, 90, true));
-		    addLobby(LobbyInfo("Johnny", 3, 30, false));
+		    addLobby(LobbyInfo("Ben", 1, 50, false, SV_FLAG_CHEATS));
+		    addLobby(LobbyInfo("Sheridan", 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
+		    addLobby(LobbyInfo("Paulie", 2, 250, false, SV_FLAG_HARDCORE));
+		    addLobby(LobbyInfo("Fart_Face", 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
+		    addLobby(LobbyInfo("Tim", 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
+		    addLobby(LobbyInfo("Johnny", 3, 30, false, SV_FLAG_FRIENDLYFIRE));
 		    addLobby(LobbyInfo("Boaty McBoatFace", 2, 20, false));
 		    addLobby(LobbyInfo("RIP_Morgan_", 0, 120, false));
 		    addLobby(LobbyInfo("What is the longest name we can fit in a Barony lobby?", 4, 150, false));
