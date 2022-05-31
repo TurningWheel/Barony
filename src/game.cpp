@@ -5925,28 +5925,31 @@ int main(int argc, char** argv)
 
 				// toggling the game menu
 				bool doPause = false;
-				for ( int i = 0; i < MAXPLAYERS; ++i )
+				if ( !fadeout )
 				{
-					if ( !players[i]->isLocalPlayer() )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						continue;
-					}
-					if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
-							|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
-						&& !command )
-					{
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
-						if ( !players[i]->shootmode )
+						if ( !players[i]->isLocalPlayer() )
 						{
-							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-							players[i]->gui_mode = GUI_MODE_INVENTORY;
-							players[i]->characterSheet.attributespage = 0;
+							continue;
 						}
-						else
+						if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
+								|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
+							&& !command )
 						{
-							doPause = true;
+							keystatus[SDL_SCANCODE_ESCAPE] = 0;
+							if ( !players[i]->shootmode )
+							{
+								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+								players[i]->gui_mode = GUI_MODE_INVENTORY;
+								players[i]->characterSheet.attributespage = 0;
+							}
+							else
+							{
+								doPause = true;
+							}
+							break;
 						}
-						break;
 					}
 				}
 				if ( doPause )
