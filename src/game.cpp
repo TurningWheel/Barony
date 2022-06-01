@@ -4104,10 +4104,20 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 	const float accumulatedSeconds = framerateAccumulatedTicks / (float)ticksPerSecond;
 	const float diff = desiredFrameSeconds - accumulatedSeconds;
 
+#ifdef WINDOWS
+	// Windows seems to have a very inaccurate sleep timer, still better than nothing.
+	constexpr float timer_sleep_limit_default = 0.002f;
+	constexpr float timer_sleep_factor_default = 0.6f;
+#else
+	// Linux appears to have a much more accurate sleep timer.
+	constexpr float timer_sleep_limit_default = 0.001f;
+	constexpr float timer_sleep_factor_default = 0.97f;
+#endif
+
     static ConsoleVariable<bool> allowSleep("/timer_sleep_enabled", true,
         "allow main thread to sleep between ticks (saves power)");
-    static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
-    static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
+    static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", timer_sleep_limit_default);
+    static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", timer_sleep_factor_default);
 
 	if ( diff >= 0.f )
 	{

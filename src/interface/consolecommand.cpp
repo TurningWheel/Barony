@@ -105,7 +105,7 @@ template class ConsoleVariable<std::string>;
 template<> void ConsoleVariable<std::string>::operator=(const char* arg)
 {
     data = arg;
-    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+    messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%s\"",
         name + 1, data.c_str());
 }
 
@@ -119,7 +119,7 @@ template<> void ConsoleVariable<int>::operator=(const char* arg)
     if (arg && arg[0] != '\0') {
         data = (int)strtol(arg, nullptr, 10);
     }
-    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%d\"",
+    messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%d\"",
         name + 1, data);
 }
 
@@ -133,7 +133,7 @@ template<> void ConsoleVariable<float>::operator=(const char* arg)
     if (arg && arg[0] != '\0') {
         data = strtof(arg, nullptr);
     }
-    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f\"",
+    messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%f\"",
         name + 1, data);
 }
 
@@ -147,7 +147,7 @@ template<> void ConsoleVariable<bool>::operator=(const char* arg)
     if (arg && arg[0] != '\0') {
         data = !(!strcmp(arg, "false") || !strcmp(arg, "0"));
     }
-    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%s\"",
+    messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%s\"",
         name + 1, data ? "true" : "false");
 }
 
@@ -165,7 +165,7 @@ template<> void ConsoleVariable<Vector4>::operator=(const char* arg)
         data.z = strtof(ptr, &ptr);
         data.w = strtof(ptr, &ptr);
     }
-    messagePlayer(clientnum, MESSAGE_DEBUG, "\"%s\" is \"%f %f %f %f\"",
+    messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%f %f %f %f\"",
         name + 1, data.x, data.y, data.z, data.w);
 }
 
