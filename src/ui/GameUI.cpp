@@ -5376,7 +5376,7 @@ void openLogWindow(int player) {
                 subframe_size.h - subframe->getSize().h + 16:
                 subframe_size.h - subframe->getSize().h;
             subframe_size.x = 0;
-            subframe_size.y = limit;
+            subframe_size.y = std::max(0, limit);
             subframe->setActualSize(subframe_size);
         }
         if (Input::inputs[player].consumeBinaryToggle("LogPageUp")) {
@@ -5391,7 +5391,7 @@ void openLogWindow(int player) {
             const int limit = subframe_size.w > w ?
                 subframe_size.h - subframe->getSize().h + 16:
                 subframe_size.h - subframe->getSize().h;
-            subframe_size.y = std::min(limit, subframe_size.y);
+            subframe_size.y = std::min(std::max(0, limit), subframe_size.y);
             subframe->setActualSize(subframe_size);
         }
 		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {

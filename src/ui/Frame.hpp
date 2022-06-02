@@ -337,7 +337,7 @@ public:
 	void	setBorder(const int _border) { border = _border; }
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(SDL_Rect _size) { size = _size; }
-	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; allowScrolling = true; }
+	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; allowScrolling = true; scrollInertiaX = 0.f; scrollInertiaY = 0.f; }
 	void	setBorderStyle(int _borderStyle) { borderStyle = static_cast<border_style_t>(_borderStyle); }
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }
