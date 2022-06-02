@@ -901,10 +901,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			// reset array of possible locations for the current room
 			for ( y = 0; y < map.height; y++ )
+			{
 				for ( x = 0; x < map.width; x++ )
 				{
 					possiblelocations2[x + y * map.width] = true;
 				}
+			}
+			doorNode = nullptr;
 
 			// pick the room to be used
 			if ( c == 0 )
