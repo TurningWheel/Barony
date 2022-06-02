@@ -3258,7 +3258,7 @@ namespace MainMenu {
 		slider->setMaxValue(maxValue);
 		slider->setBorder(16);
 		slider->setValue(value);
-		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 282 : 450, 24});
+		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 238 : 450, 24});
 		slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 		slider->setCallback(callback);
 		slider->setColor(makeColor(255,255,255,255));
@@ -3487,7 +3487,7 @@ namespace MainMenu {
 		window->setColor(0);
 
 		auto tooltip = window->addField("tooltip", 256);
-		tooltip->setSize(SDL_Rect{66, 594, 646, 22});
+		tooltip->setSize(SDL_Rect{66, 576, 646, 40});
 		tooltip->setFont(smallfont_no_outline);
 		tooltip->setJustify(Field::justify_t::CENTER);
 		tooltip->setText("");
@@ -3514,8 +3514,8 @@ namespace MainMenu {
 		banner->setJustify(Field::justify_t::CENTER);
 
 		auto subwindow = window->addFrame("subwindow");
-		subwindow->setSize(SDL_Rect{30, 64, 766, 524});
-		subwindow->setActualSize(SDL_Rect{0, 0, 766, 524});
+		subwindow->setSize(SDL_Rect{30, 64, 766, 506});
+		subwindow->setActualSize(SDL_Rect{0, 0, 766, 506});
 		subwindow->setScrollBarsEnabled(false);
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
@@ -3543,7 +3543,7 @@ namespace MainMenu {
 		auto slider = subwindow->addSlider("scroll_slider");
 		slider->setBorder(48);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{712, 0, 54, 554});
+		slider->setRailSize(SDL_Rect{712, 0, 54, 536});
 		slider->setRailImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar01.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
@@ -3771,7 +3771,7 @@ namespace MainMenu {
 			allSettings.show_messages.combat, [](Button& button){allSettings.show_messages.combat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
-			"Enable report of player character status changes and other passive effects.",
+			"Enable report of character status changes and other passive effects.",
 			allSettings.show_messages.status, [](Button& button){allSettings.show_messages.status = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
@@ -3994,6 +3994,7 @@ namespace MainMenu {
 						bound_binding.c_str());
 					tooltip->setText(buf);
 					Input::inputs[bound_player].setDisabled(true);
+					Input::lastInputOfAnyKind = "";
 					for (auto button : subwindow->getButtons()) {
 						button->setDisabled(true);
 					}
@@ -4033,7 +4034,7 @@ namespace MainMenu {
 							goto bind_failed;
 						}
 						auto begin = Input::lastInputOfAnyKind.substr(0, 3);
-						std:: string newinput = begin == "Pad" || begin == "Joy" ?
+						std::string newinput = begin == "Pad" || begin == "Joy" ?
 								Input::lastInputOfAnyKind.substr(4) : Input::lastInputOfAnyKind;
 						bound_button->setText(newinput.c_str());
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
@@ -9600,8 +9601,15 @@ bind_failed:
 	    {}
 	};
 
+	enum Filter : int {
+	    UNCHECKED,
+	    OFF,
+	    ON,
+	    NUM,
+	};
+
     static const int numFilters = NUM_SERVER_FLAGS + 3;
-    static bool lobbyFilters[numFilters] = { false };
+    static Filter lobbyFilters[numFilters] = { Filter::UNCHECKED };
     static bool lobbyFiltersEnabled = false;
 	static std::vector<LobbyInfo> lobbies;
 	static int selectedLobby = 0;
@@ -9618,28 +9626,48 @@ bind_failed:
         }
 
         if (lobbyFiltersEnabled) {
-            if (!lobbyFilters[0] && info.locked) {
+            if (lobbyFilters[0] == Filter::ON && !info.locked) {
                 // this lobby is locked and we don't want to show those
                 printlog("skipping lobby '%s' (lobby is locked)\n", info.name.c_str());
                 return;
             }
-            if (lobbyFilters[1]) {
+            if (lobbyFilters[0] == Filter::OFF && info.locked) {
+                // this lobby isn't locked and we don't want to show those
+                printlog("skipping lobby '%s' (lobby is not locked)\n", info.name.c_str());
+                return;
+            }
+            if (lobbyFilters[1] == Filter::ON) {
                 // TODO friends-only filter
                 printlog("skipping lobby '%s' (has no friends)\n", info.name.c_str());
                 //return;
             }
-            if (lobbyFilters[2] && (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+            if (lobbyFilters[1] == Filter::OFF) {
+                // TODO friends-only filter
+                printlog("skipping lobby '%s' (has friends)\n", info.name.c_str());
+                //return;
+            }
+            if (lobbyFilters[2] == Filter::ON && (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
                 // lobbies with cheats or +1 life do not count for
                 // achievements.
                 printlog("skipping lobby '%s' (achievements disabled)\n", info.name.c_str());
                 return;
             }
+            if (lobbyFilters[2] == Filter::OFF && !(info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+                // we're only looking for lobbies where achievements aren't enabled
+                printlog("skipping lobby '%s' (achievements enabled)\n", info.name.c_str());
+                return;
+            }
             for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
                 const bool flag = (info.flags & (1 << c)) == 0 ? false : true;
                 const int index = (numFilters - NUM_SERVER_FLAGS) + c;
-                if (lobbyFilters[index] != flag) {
+                if (lobbyFilters[index] == Filter::ON && !flag) {
                     // check the server flag filters
-                    printlog("skipping lobby '%s' (server flag %d mismatch)\n", info.name.c_str(), c);
+                    printlog("skipping lobby '%s' (server flag %d is off)\n", info.name.c_str(), c);
+                    return;
+                }
+                if (lobbyFilters[index] == Filter::OFF && flag) {
+                    // check the server flag filters
+                    printlog("skipping lobby '%s' (server flag %d is on)\n", info.name.c_str(), c);
                     return;
                 }
             }
@@ -10089,19 +10117,30 @@ bind_failed:
 
 		        std::string checkbox_name = std::string("filter_checkbox") + std::to_string(index);
 
+                static const char* icons[(int)Filter::NUM] = {
+                    "",
+                    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_RedXSmall00.png",
+                    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_PickSmall00.png",
+                };
+
 		        auto checkbox = frame_right->addButton(checkbox_name.c_str());
 		        checkbox->setSize(SDL_Rect{32, 74 + index * 24, 28, 24});
-		        checkbox->setStyle(Button::style_t::STYLE_CHECKBOX);
 		        checkbox->setBackground("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_BoxSmall00.png");
-		        checkbox->setIcon("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_PickSmall00.png");
+		        checkbox->setIcon(icons[(int)lobbyFilters[c]]);
 		        checkbox->setHighlightColor(uint32ColorWhite);
 		        checkbox->setColor(uint32ColorWhite);
 		        checkbox->setUserData(&lobbyFilters[c]);
 		        checkbox->setSelectorOffset(SDL_Rect{0, 2, -6, 0});
 		        checkbox->setCallback([](Button& button){
 		            soundCheckmark();
-                    bool* filter = (bool*)button.getUserData();
-                    *filter = button.isPressed();
+                    Filter* filter = (Filter*)button.getUserData();
+                    switch (*filter) {
+                    default:
+                    case Filter::UNCHECKED: *filter = Filter::ON; break;
+                    case Filter::ON: *filter = Filter::OFF; break;
+                    case Filter::OFF: *filter = Filter::UNCHECKED; break;
+                    }
+                    button.setIcon(icons[(int)*filter]);
                     clearLobbies();
                     for (auto& lobby : lobbies) {
                         addLobby(lobby);

@@ -17,9 +17,6 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	if ( invisible || isDisabled() ) {
 		return;
 	}
-	if (maxValue == minValue) {
-		return;
-	}
 
 	SDL_Rect _handleSize, _railSize;
 
@@ -79,6 +76,10 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 		}
 	}
 	
+	if (maxValue == minValue) {
+		return;
+	}
+
 	// draw handle
 	SDL_Rect handleSize = this->handleSize;
 	if (handleSize.x == 0 && handleSize.y == 0) {
@@ -208,15 +209,15 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	int offX = _size.x + (railSize.x + border) - _actualSize.x;
 	int offY = _size.y + (railSize.y + border) - _actualSize.y;
 	if (orientation == SLIDER_HORIZONTAL) {
-		_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2);
+		_size.x = std::max(_size.x, _railSize.x - _handleSize.w / 2 + border);
 		_size.y = std::max(_size.y, _railSize.y + _railSize.h / 2 - _handleSize.h / 2);
-		_size.w = std::min(_size.w, _railSize.w + _handleSize.w);
+		_size.w = std::min(_size.w, _railSize.w + _handleSize.w - border * 2);
 		_size.h = _handleSize.h;
 	} else if (orientation == SLIDER_VERTICAL) {
 		_size.x = std::max(_size.x, _railSize.x + _railSize.w / 2 - _handleSize.w / 2);
-		_size.y = std::max(_size.y, _railSize.y - _handleSize.h / 2);
+		_size.y = std::max(_size.y, _railSize.y - _handleSize.h / 2 + border);
 		_size.w = _handleSize.w;
-		_size.h = std::min(_size.h, _railSize.h + _handleSize.h);
+		_size.h = std::min(_size.h, _railSize.h + _handleSize.h - border * 2);
 	}
 
 	if (_size.w <= 0 || _size.h <= 0) {
