@@ -7966,7 +7966,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int armornum = 0;
 					bool isWeakArmor = false;
 
-					if ( damage >= 0 )
+					if ( damage > 0 || (damage == 0 && !(hitstats->shield && hitstats->defending)) )
 					{
 						// choose random piece of equipment to target
 						armornum = hitstats->pickRandomEquippedItemToDegradeOnHit(&armor, true, false, false, true);
