@@ -4088,6 +4088,72 @@ void pauseGame(int mode, int ignoreplayer)
 // records the SDL_GetTicks() value at the moment the mainloop restarted
 static Uint64 lastGameTickCount = 0;
 static Uint64 framerateAccumulatedTicks = 0;
+
+// credit "computerBear" for preciseSleep/preciseSleepWindows https://blat-blatnik.github.io/computerBear/making-accurate-sleep-function/
+void preciseSleep(double seconds) 
+{
+	static double estimate = 5e-3;
+	static double mean = 5e-3;
+	static double m2 = 0;
+	static int64_t count = 1;
+
+	while ( seconds > estimate ) {
+		auto start = std::chrono::high_resolution_clock::now();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		auto end = std::chrono::high_resolution_clock::now();
+
+		double observed = (end - start).count() / 1e9;
+		seconds -= observed;
+
+		++count;
+		double delta = observed - mean;
+		mean += delta / count;
+		m2 += delta * (observed - mean);
+		double stddev = sqrt(m2 / (count - 1));
+		estimate = mean + stddev;
+	}
+
+	// spin lock
+	auto start = std::chrono::high_resolution_clock::now();
+	while ( (std::chrono::high_resolution_clock::now() - start).count() / 1e9 < seconds );
+}
+
+void preciseSleepWindows(double seconds)
+{
+#ifdef WINDOWS
+	static HANDLE timer = CreateWaitableTimer(NULL, FALSE, NULL);
+	static double estimate = 5e-3;
+	static double mean = 5e-3;
+	static double m2 = 0;
+	static int64_t count = 1;
+
+	while ( seconds - estimate > 1e-7 ) {
+		double toWait = seconds - estimate;
+		LARGE_INTEGER due;
+		due.QuadPart = -int64_t(toWait * 1e7);
+		auto start = std::chrono::high_resolution_clock::now();
+		SetWaitableTimerEx(timer, &due, 0, NULL, NULL, NULL, 0);
+		WaitForSingleObject(timer, INFINITE);
+		auto end = std::chrono::high_resolution_clock::now();
+
+		double observed = (end - start).count() / 1e9;
+		seconds -= observed;
+
+		++count;
+		double error = observed - toWait;
+		double delta = error - mean;
+		mean += delta / count;
+		m2 += delta * (error - mean);
+		double stddev = sqrt(m2 / (count - 1));
+		estimate = mean + stddev;
+	}
+
+	// spin lock
+	auto start = std::chrono::high_resolution_clock::now();
+	while ( (std::chrono::high_resolution_clock::now() - start).count() / 1e9 < seconds );
+#endif // WINDOWS
+}
+
 bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 {
 	if ( maxFrameRate == 0 )
@@ -4108,21 +4174,23 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
         "allow main thread to sleep between ticks (saves power)");
     static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
     static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
-
 	if ( diff >= 0.f )
 	{
 	    // we have not passed a full frame, so we must delay.
-#ifndef WINDOWS
         if ( *allowSleep && sleep )
         {
             // sleep a fraction of the remaining time.
             // This saves power if you're running on battery.
+#ifdef WINDOWS
+				auto microseconds = std::chrono::microseconds((Uint64)(diff * 1000000 /** (*sleepFactor)*/));
+				preciseSleep(microseconds.count() / 1e6);
+#else
             if ( diff >= *sleepLimit )
             {
-                std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor))));
+				std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor)));
             }
+#endif
         }
-#endif // !WIN32
 		return true;
 	}
 	else
