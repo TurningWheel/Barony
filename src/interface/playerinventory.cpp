@@ -9772,6 +9772,7 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 			autosortInventory(player.playernum, true);
 			return true;
 		}
+		foundaspot = false;
 
 		// backpack sorting, sort into here as last priority.
 		if ( x > getSizeX() - 1 && getSizeY() > DEFAULT_INVENTORY_SIZEY )
@@ -9817,10 +9818,17 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 				}
 				if ( foundaspot )
 				{
-					item->x = -1;
-					autosortInventory(player.playernum, true);
-					return true;
-					break;
+					if ( x < getSizeX() && y < getSizeY() )
+					{
+						item->x = -1;
+						autosortInventory(player.playernum, true);
+						return true;
+					}
+					else
+					{
+						foundaspot = false;
+						break;
+					}
 				}
 				x++;
 			}

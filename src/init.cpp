@@ -2538,12 +2538,12 @@ bool initVideo()
         SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
         SDL_SetWindowPosition(screen, screen_x, screen_y);
 	    if (fullscreen) {
-	        SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		    SDL_DisplayMode mode;
             SDL_GetDesktopDisplayMode(display_id, &mode);
             mode.w = screen_width;
             mode.h = screen_height;
 		    SDL_SetWindowDisplayMode(screen, &mode);
+	        SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		} else {
 	        SDL_SetWindowSize(screen, screen_width, screen_height);
 	        SDL_SetWindowFullscreen(screen, 0);

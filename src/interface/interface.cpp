@@ -5916,7 +5916,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 	}
 	else
 	{
-		if ( basePotion->type == POTION_ACID || secondaryPotion->type == POTION_ACID )
+		if ( (basePotion->type == POTION_ACID || secondaryPotion->type == POTION_ACID) && !samePotion )
 		{
 			if ( rand() % 5 == 0 )
 			{
@@ -6075,8 +6075,12 @@ void GenericGUIMenu::alchemyCombinePotions()
 					blessing = std::max(2, (int)alembicItem->beatitude);
 				}
 			}
-			degradeAlembic = false;
 		}
+	}
+
+	if ( skillCapstoneUnlocked(gui_player, PRO_ALCHEMY) )
+	{
+		degradeAlembic = false;
 	}
 
 	if ( degradeAlembic && alembicItem )

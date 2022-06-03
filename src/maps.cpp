@@ -546,9 +546,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( shoplevel )
 	{
 		sublevelname = (char*) malloc(sizeof(char) * 128);
+		std::string shopMapTitle = "shop";
+		if ( MFLAG_GENADJACENTROOMS )
+		{
+			shopMapTitle = "shop-roomgen";
+		}
 		for ( numlevels = 0; numlevels < 100; numlevels++ )
 		{
-			strcpy(sublevelname, "shop");
+			strcpy(sublevelname, shopMapTitle.c_str());
 			snprintf(sublevelnum, 3, "%02d", numlevels);
 			strcat(sublevelname, sublevelnum);
 
@@ -562,16 +567,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if ( numlevels )
 		{
 			int shopleveltouse = prng_get_uint() % numlevels;
-			if ( !strncmp(map.name, "Citadel", 7) )
-			{
-				strcpy(sublevelname, "shopcitadel");
-			}
-			else
-			{
-				strcpy(sublevelname, "shop");
-				snprintf(sublevelnum, 3, "%02d", shopleveltouse);
-				strcat(sublevelname, sublevelnum);
-			}
+			strcpy(sublevelname, shopMapTitle.c_str());
+			snprintf(sublevelnum, 3, "%02d", shopleveltouse);
+			strcat(sublevelname, sublevelnum);
 			shopSubRooms.shopFileName = sublevelname;
 			fullMapPath = physfsFormatMapName(sublevelname);
 
@@ -903,10 +901,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			// reset array of possible locations for the current room
 			for ( y = 0; y < map.height; y++ )
+			{
 				for ( x = 0; x < map.width; x++ )
 				{
 					possiblelocations2[x + y * map.width] = true;
 				}
+			}
+			doorNode = nullptr;
 
 			// pick the room to be used
 			if ( c == 0 )
