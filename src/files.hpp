@@ -71,8 +71,31 @@ public:
 	// @param buf the buffer to contain the read string
 	// @param size the maximum size of the string to read
 	// @return buf if successfully read a string, otherwise nullptr
-	// The base class only contains the common implementation between FileNX and FilePC (currently just input validation), not a default implementation, so deriving implementation is mandatory.
-	virtual char* gets(char* buf, int size) = 0;
+	char* gets(char* buf, int size)
+	{
+	    if (!buf) {
+		    return nullptr;
+	    }
+		for (int c = 0; c < size - 1; ++c) {
+			size_t bytesRead = read(buf, sizeof(char), 1);
+			if (bytesRead > 0U) {
+				if (*buf == '\0' || *buf == '\n') {
+					buf += bytesRead;
+					break;
+				}
+				buf += bytesRead;
+			} else {
+				*buf = '\0';
+				if (c == 0) {
+					return nullptr;
+				} else {
+					return buf;
+				}
+			}
+		}
+		*(buf + 1) = '\0';
+		return buf;
+	}
 
 	// read an integer from the stream
 	// @return the read integer or possibly 0 if we failed to read one
@@ -198,30 +221,21 @@ public:
 			return nullptr;
 		}
 
-		FileBase::FileMode fileMode = FileBase::FileMode::INVALID;
+		FileBase::FileMode fileMode;
+		switch (mode[0])
+		{
+		case 'r': fileMode = FileBase::FileMode::READ; break;
+		case 'w': fileMode = FileBase::FileMode::WRITE; break;
+		default: fileMode = FileBase::FileMode::INVALID; break;
+		}
 
 #ifdef NINTENDO
 		return FileNX::FileIO_NintendoOpen(path, mode, fileMode);
 #else
 		FILE* fp = fopen(path, mode);
-		switch (mode[0])
-		{
-		case 'r':
-			fileMode = FileBase::FileMode::READ;
-			break;
-		case 'w':
-			fileMode = FileBase::FileMode::WRITE;
-			break;
-		default:
-			break;
-		}
-
-		if (fp)
-		{
+		if (fp) {
 			return new File(fp, fileMode, path);
-		}
-		else
-		{
+		} else {
 			return nullptr;
 		}
 #endif

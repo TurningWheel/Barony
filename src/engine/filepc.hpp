@@ -1,5 +1,12 @@
 #pragma once
 
+#include "../files.hpp"
+
+#include <assert.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <vector>
+
 /*-------------------------------------------------------------------------------
 
 	BARONY
@@ -11,8 +18,6 @@
 
 -------------------------------------------------------------------------------*/
 
-class FileBase;
-
 //Don't create a FileBase or derivative class (such as this one) directly, use FileIO::open to get one...
 class FilePC : public FileBase
 {
@@ -20,68 +25,58 @@ class FilePC : public FileBase
 public:
 	size_t write(const void* src, size_t size, size_t count) override
 	{
-		if (0U == FileBase::write(src, size, count))
-		{
+		if (0U == FileBase::write(src, size, count)) {
 			return 0U;
 		}
-
-		return fwrite(src, size, count, fp);
+        const size_t writeSize = size * count;
+        (void)data.insert(data.begin() + pos, (const uint8_t*)src, (const uint8_t*)src + writeSize);
+        pos += writeSize;
+		return writeSize;
 	}
 
 	size_t read(void* buffer, size_t size, size_t count) override
 	{
-		if (0U == FileBase::read(buffer, size, count))
-		{
+		if (0U == FileBase::read(buffer, size, count)) {
 			return 0U;
 		}
-
-		return fread(buffer, size, count, fp);
+		size_t result = 0U;
+		size_t end = std::min(this->size(), pos + size * count);
+		uint8_t* buf = (uint8_t*)buffer;
+		for (size_t c = pos; c < end; ++c) {
+			*buf = data[c]; ++buf;
+			++result;
+		}
+		pos += result;
+		return result;
 	}
 
 	size_t size()
 	{
-		size_t offset = ftell(fp);
-		(void)fseek(fp, 0, SEEK_END);
-		size_t input_file_size = ftell(fp);
-		(void)fseek(fp, offset, SEEK_SET);
-		return input_file_size;
+		return data.size();
 	}
 
 	bool eof()
 	{
-		return feof(fp) != 0;
-	}
-
-	char* gets(char* buf, int size) override
-	{
-		if (nullptr == FileBase::gets(buf, size))
-		{
-			return nullptr;
-		}
-
-		return fgets(buf, size, fp);
+		return pos >= size();
 	}
 
 	int seek(ptrdiff_t offset, SeekMode mode)
 	{
-		switch (mode)
-		{
-			case SeekMode::SET: return fseek(fp, offset, SEEK_SET);
-			case SeekMode::ADD: return fseek(fp, offset, SEEK_CUR);
-			case SeekMode::SETEND: return fseek(fp, offset, SEEK_END);
+		switch (mode) {
+			case SeekMode::SET: pos = offset; break;
+			case SeekMode::ADD: pos += offset; break;
+			case SeekMode::SETEND: pos = size() + offset; break;
 		}
-
-		return -1; //Idk, it says "return non-zero on error"
+		if (eof()) {
+			return -1;
+		} else {
+			return 0;
+		}
 	}
 
 	long int tell()
 	{
-		return (long int)ftell(fp);
-	}
-
-	FILE *handle()
-	{
-		return fp;
+		return (long int)pos;
 	}
 
 private:
@@ -89,16 +84,31 @@ private:
 		FileBase(mode, path),
 		fp(fp)
 	{
+	    assert(fp);
+	    if (mode == FileMode::READ) {
+		    (void)fseek(fp, 0, SEEK_END);
+		    size_t end = ftell(fp);
+		    (void)fseek(fp, 0, SEEK_SET);
+		    data.resize(end);
+		    (void)fread(data.data(), sizeof(uint8_t), size(), fp);
+		}
 	}
 
 	~FilePC()
 	{
 	}
 
-	void close()
+	void close() override
 	{
-		fclose(fp);
+	    if (mode == FileMode::WRITE) {
+	        size_t result = fwrite(data.data(), sizeof(uint8_t), size(), fp);
+	        assert(result == size());
+	    }
+		int result = fclose(fp);
+		assert(result == 0);
 	}
 
 	FILE* fp = nullptr;
+	std::vector<uint8_t> data;
+	size_t pos = 0u;
 };

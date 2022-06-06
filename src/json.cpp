@@ -243,16 +243,7 @@ protected:
 	}
 
 	bool readAllFileData(File * fp) {
-		if (fp->seek(0, FileBase::SeekMode::SETEND)) {
-			printlog("JsonFileReader: failed to seek end (%d)", errno);
-			return false;
-		}
-
-		long size = fp->tell();
-		if (fp->seek(0, FileBase::SeekMode::SET)) {
-			printlog("JsonFileReader: failed to seek beg (%d)", errno);
-			return false;
-		}
+		long size = fp->size();
 
 		// reserve an extra byte for the null terminator
 		char * data = (char *)calloc(sizeof(char), size + 1);

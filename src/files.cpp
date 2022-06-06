@@ -2843,12 +2843,3 @@ size_t FileBase::read(void* buffer, size_t size, size_t count)
 	}
 	return 1U; //Input validation passed.
 }
-
-char* FileBase::gets(char* buf, int size)
-{
-	if (!buf)
-	{
-		return nullptr;
-	}
-	return buf; //Input validation passed.
-}
