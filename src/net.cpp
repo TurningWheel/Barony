@@ -5164,18 +5164,33 @@ void serverHandlePacket()
 		entitystats->GOLD += buyValue;
 		stats[client]->GOLD -= buyValue;
 		stats[client]->GOLD = std::max(0, stats[client]->GOLD);
-		if ( players[client] && players[client]->entity )
+		if ( players[client] && players[client]->entity && !item->playerSoldItemToShop )
 		{
-			if ( buyValue <= 1 )
+			bool increaseSkill = false;
+			if ( buyValue >= 100 )
 			{
-				if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-				{
-					players[client]->entity->increaseSkill(PRO_TRADING);
-				}
+				increaseSkill = true;
 			}
 			else
 			{
-				players[client]->entity->increaseSkill(PRO_TRADING);
+				if ( rand() % 100 <= (std::max(10, buyValue)) ) // 20% to 100% from 1-100 gold
+				{
+					increaseSkill = true;
+				}
+			}
+			if ( increaseSkill )
+			{
+				if ( buyValue <= 1 )
+				{
+					if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					{
+						players[client]->entity->increaseSkill(PRO_TRADING);
+					}
+				}
+				else
+				{
+					players[client]->entity->increaseSkill(PRO_TRADING);
+				}
 			}
 			//if ( rand() % 2 )
 			//{
