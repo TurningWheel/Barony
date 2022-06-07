@@ -3172,14 +3172,6 @@ namespace ConsoleCommands {
 		usecamerasmoothing = (usecamerasmoothing == false);
 		});
 
-	static ConsoleCommand ccmd_lightupdate("/lightupdate", "", []CCMD{
-		if (argc < 2)
-        {
-            return;
-        }
-		globalLightSmoothingRate = atoi(argv[1]);
-		});
-
 	static ConsoleCommand ccmd_dumpnetworkdata("/dumpnetworkdata", "", []CCMD{
 		for ( auto element : DebugStats.networkPackets )
 		{

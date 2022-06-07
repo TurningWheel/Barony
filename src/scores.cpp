@@ -1359,12 +1359,13 @@ int saveGame(int saveIndex)
 
 	Sint16 mul = 0;
 	if ( multiplayer == SINGLE ) {
-		mul = SINGLE;
-	} else {
 	    if (splitscreen) {
 	        mul = SPLITSCREEN;
-	    }
-	    else if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+	    } else {
+		    mul = SINGLE;
+		}
+	} else {
+	    if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 			mul = SERVERCROSSPLAY;
 		}
 	    else if (multiplayer == SERVER || multiplayer == CLIENT) {
@@ -2138,9 +2139,36 @@ int loadGame(int player, int saveIndex)
 	// read basic header info
 	fp->read(&uniqueGameKey, sizeof(Uint32), 1);
 
+	Sint16 players_connected;
+	fp->read(&players_connected, sizeof(Sint16), 1);
 	Sint16 mul;
-	fp->seek(sizeof(Sint16), File::SeekMode::ADD);
 	fp->read(&mul, sizeof(Sint16), 1);
+
+	if (players_connected == 0) {
+	    if (mul == SINGLE) {
+	        players_connected = 1;
+	    } else {
+	        players_connected =
+	            (1 << 0) |
+	            (1 << 1) |
+	            (1 << 2) |
+	            (1 << 3);
+	    }
+	}
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+	    client_disconnected[c] = !(players_connected & (1<<c));
+	}
+	switch (mul) {
+	default:
+	case SINGLE: multiplayer = SINGLE; splitscreen = false; directConnect = false; break;
+	case SERVER: multiplayer = SERVER; splitscreen = false; directConnect = false; break;
+	case CLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = false; break;
+	case DIRECTSERVER: multiplayer = SERVER; splitscreen = false; directConnect = true; break;
+	case DIRECTCLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = true; break;
+	case SERVERCROSSPLAY: multiplayer = SERVER; splitscreen = false; directConnect = false; break; // TODO!
+	case SPLITSCREEN: multiplayer = SINGLE; splitscreen = true; directConnect = false; break;
+	}
+
 	fp->read(&clientnum, sizeof(Uint32), 1);
 	fp->read(&mapseed, sizeof(Uint32), 1);
 	fp->read(&currentlevel, sizeof(Uint32), 1);
@@ -2182,7 +2210,7 @@ int loadGame(int player, int saveIndex)
 
     // load hotbar and spells list
     Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
-    if (mul == SPLITSCREEN)
+    if (splitscreen)
     {
         for (int c = 0; c < MAXPLAYERS; ++c)
         {
@@ -2742,9 +2770,15 @@ int loadGame(int player, int saveIndex)
 		else
 		{
 			hotbar[c].item = 0;
+			hotbar[c].lastItemUid = 0;
+			hotbar[c].lastItemCategory = -1;
+			hotbar[c].lastItemType = -1;
 			for ( int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d )
 			{
 				hotbar_alternate[d][c].item = 0;
+				hotbar_alternate[d][c].lastItemUid = 0;
+				hotbar_alternate[d][c].lastItemCategory = -1;
+				hotbar_alternate[d][c].lastItemType = -1;
 			}
 		}
 	}
@@ -3157,10 +3191,11 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
 
-	Sint16 mul;
 	Sint16 players_connected;
 	fp->read(&players_connected, sizeof(Sint16), 1);
+	Sint16 mul;
 	fp->read(&mul, sizeof(Sint16), 1);
+
 	if (players_connected == 0) {
 	    if (mul == SINGLE) {
 	        players_connected = 1;
@@ -3172,6 +3207,7 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	            (1 << 3);
 	    }
 	}
+
 	fp->read(&plnum, sizeof(Uint32), 1);
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // mapseed
 	fp->read(&dungeonlevel, sizeof(Uint32), 1);
@@ -3237,26 +3273,28 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	// skip through other player data until you get to the correct player
 	for ( int c = 0; c < plnum; c++ )
 	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Monster), File::SeekMode::ADD);
-		fp->seek(sizeof(sex_t), File::SeekMode::ADD);
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-		fp->seek(sizeof(char) * 32, File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // character class
+		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD); // kill count
+		fp->seek(sizeof(Monster), File::SeekMode::ADD); // monster type
+		fp->seek(sizeof(sex_t), File::SeekMode::ADD); // sex
+		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // race and appearance
+		fp->seek(sizeof(char) * 32, File::SeekMode::ADD); // name
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // HP
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // MAXHP
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // MP
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // MAXMP
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // STR
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // DEX
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // CON
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // INT
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // PER
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // CHR
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // EXP
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // LVL
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // GOLD
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // HUNGER
+
+		// proficiencies (skills)
 		if ( versionNumber >= 323 )
 		{
 			fp->seek(sizeof(Sint32)*NUMPROFICIENCIES, File::SeekMode::ADD);
@@ -3266,6 +3304,7 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 			fp->seek(sizeof(Sint32)*14, File::SeekMode::ADD);
 		}
 
+        // effects
 		if ( versionNumber <= 323 )
 		{
 			fp->seek(sizeof(bool)*32, File::SeekMode::ADD);
@@ -3277,11 +3316,13 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 			fp->seek(sizeof(Sint32)*NUMEFFECTS, File::SeekMode::ADD);
 		}
 
+        // statistics
 		if ( versionNumber >= 323 )
 		{
 			fp->seek(sizeof(Sint32) * 32, File::SeekMode::ADD); // stat flags
 		}
 
+        // inventory
 		if (mul == SPLITSCREEN)
 		{
 			int numitems = 0;
@@ -3289,14 +3330,14 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 
 			for ( int i = 0; i < numitems; i++ )
 			{
-				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-				fp->seek(sizeof(Status), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-				fp->seek(sizeof(bool), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(ItemType), File::SeekMode::ADD); // type
+				fp->seek(sizeof(Status), File::SeekMode::ADD); // quality
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD); // beatitude
+				fp->seek(sizeof(Sint16), File::SeekMode::ADD); // count
+				fp->seek(sizeof(Uint32), File::SeekMode::ADD); // appearance
+				fp->seek(sizeof(bool), File::SeekMode::ADD); // identified
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD); // x inventory
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD); // y inventory
 			}
 			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
 		}
@@ -3306,18 +3347,18 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 		}
 	}
 
-	fp->read(&class_, sizeof(Uint32), 1);
+	fp->read(&class_, sizeof(Uint32), 1); // character class
 	for ( int c = 0; c < monsters; c++ )
 	{
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // kill count
 	}
-	fp->seek(sizeof(Monster), File::SeekMode::ADD);
-	fp->seek(sizeof(sex_t), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->read(&name, sizeof(char), 32);
+	fp->seek(sizeof(Monster), File::SeekMode::ADD); // monster type
+	fp->seek(sizeof(sex_t), File::SeekMode::ADD); // sex
+	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // race and appearance
+	fp->read(&name, sizeof(char), 32); // name
 	name[32] = 0;
-	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD);
-	fp->read(&level, sizeof(Sint32), 1);
+	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD); // a lot of stats...
+	fp->read(&level, sizeof(Sint32), 1); // character level
 
 	// assemble string
 	char timestamp[128] = "";

@@ -273,7 +273,6 @@ int thirdEndNumLines = 6;
 int fourthendmoviestage = 0;
 int fourthendmovietime = 0;
 int fourthEndNumLines = 13;
-real_t drunkextend = 0;
 bool losingConnection[MAXPLAYERS] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
@@ -9540,8 +9539,8 @@ void doNewGame(bool makeHighscore) {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		minimapPings[i].clear(); // clear minimap pings
+	    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 	}
-	globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 	gameplayCustomManager.readFromFile();
 	textSourceScript.scriptVariables.clear();
 
@@ -9938,7 +9937,7 @@ void doNewGame(bool makeHighscore) {
 			saveGame();
 		}
 	}
-	else
+	else // if ( multiplayer != CLIENT ) (ergo in the block below, it is)
 	{
 		// hack to fix these things from breaking everything...
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -12247,6 +12246,9 @@ void buttonJoinMultiplayer(button_t* my)
 // starts a lobby as host
 void buttonHostLobby(button_t* my)
 {
+    // deprecated
+    return;
+
 	button_t* button;
 	char *portnumbererr;
 	int c;
@@ -12434,6 +12436,9 @@ void buttonHostLobby(button_t* my)
 // otherwise for matchmaking, this is called asynchronously after a matchmaking lobby has been joined
 void buttonJoinLobby(button_t* my)
 {
+    // deprecated
+    return;
+
 	button_t* button;
 	int c;
 
@@ -12651,6 +12656,9 @@ void buttonJoinLobby(button_t* my)
 // starts the game as server
 void buttonStartServer(button_t* my)
 {
+    // deprecated
+	return;
+
 	int c;
 
 	// close window

@@ -694,6 +694,8 @@ std::string TimerExperiments::render(State state)
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 
+static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
+
 void gameLogic(void)
 {
 	Uint32 x;
@@ -811,60 +813,67 @@ void gameLogic(void)
 	// drunkenness
 	if ( !intro )
 	{
-		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
-		{
-			// goat/drunkards no spin!
-			if ( stats[clientnum]->type == GOATMAN )
-			{
-				// return to normal.
-				if ( drunkextend > 0 )
-				{
-					drunkextend -= .005;
-					if ( drunkextend < 0 )
-					{
-						drunkextend = 0;
-					}
-				}
-			}
-			else
-			{
-				if ( drunkextend < 0.5 )
-				{
-					drunkextend += .005;
-					if ( drunkextend > 0.5 )
-					{
-						drunkextend = 0.5;
-					}
-				}
-			}
-		}
-		else
-		{
-			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] || stats[clientnum]->EFFECTS[EFF_DISORIENTED] )
-			{
-				// special widthdrawal shakes
-				if ( drunkextend < 0.2 )
-				{
-					drunkextend += .005;
-					if ( drunkextend > 0.2 )
-					{
-						drunkextend = 0.2;
-					}
-				}
-			}
-			else
-			{
-				// return to normal.
-				if ( drunkextend > 0 )
-				{
-					drunkextend -= .005;
-					if ( drunkextend < 0 )
-					{
-						drunkextend = 0;
-					}
-				}
-			}
-		}
+	    for (int c = 0; c < MAXPLAYERS; ++c)
+	    {
+	        if (c != clientnum && !splitscreen)
+	        {
+	            continue;
+	        }
+	        if ( stats[c]->EFFECTS[EFF_DRUNK] )
+		    {
+			    // goat/drunkards no spin!
+			    if ( stats[c]->type == GOATMAN )
+			    {
+				    // return to normal.
+				    if ( drunkextend[c] > 0 )
+				    {
+					    drunkextend[c] -= .005;
+					    if ( drunkextend[c] < 0 )
+					    {
+						    drunkextend[c] = 0;
+					    }
+				    }
+			    }
+			    else
+			    {
+				    if ( drunkextend[c] < 0.5 )
+				    {
+					    drunkextend[c] += .005;
+					    if ( drunkextend[c] > 0.5 )
+					    {
+						    drunkextend[c] = 0.5;
+					    }
+				    }
+			    }
+		    }
+		    else
+		    {
+			    if ( stats[c]->EFFECTS[EFF_WITHDRAWAL] || stats[c]->EFFECTS[EFF_DISORIENTED] )
+			    {
+				    // special widthdrawal shakes
+				    if ( drunkextend[c] < 0.2 )
+				    {
+					    drunkextend[c] += .005;
+					    if ( drunkextend[c] > 0.2 )
+					    {
+						    drunkextend[c] = 0.2;
+					    }
+				    }
+			    }
+			    else
+			    {
+				    // return to normal.
+				    if ( drunkextend[c] > 0 )
+				    {
+					    drunkextend[c] -= .005;
+					    if ( drunkextend[c] < 0 )
+					    {
+						    drunkextend[c] = 0;
+					    }
+				    }
+			    }
+		    }
+	    }
 	}
 
 	// fading in/out
@@ -1814,7 +1823,9 @@ void gameLogic(void)
 		            loading = false;
 	                int result = loading_task.get();
 
-					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+					    players[c]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+					}
 
 					// clear follower menu entities.
 					for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -4403,7 +4414,7 @@ void ingameHud()
 					    }
 					    else
 					    {
-						    if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
+						    if ( allowCasting && players[player]->entity->isBlind() )
 						    {
 							    messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, language[3863]); // prevent casting of spell.
 							    input.consumeBinaryToggle("Block");
@@ -5176,10 +5187,13 @@ void drawAllPlayerCameras() {
 				continue;
 			}
 			auto& camera = players[c]->camera();
+		    auto& globalLightModifier = players[c]->camera().globalLightModifier;
+		    auto& globalLightModifierEntities = players[c]->camera().globalLightModifierEntities;
+		    auto& globalLightModifierActive = players[c]->camera().globalLightModifierActive;
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
-				camera.ang += cosspin * drunkextend;
-				camera.vang += sinspin * drunkextend;
+				camera.ang += cosspin * drunkextend[c];
+				camera.vang += sinspin * drunkextend[c];
 			}
 
 			if ( players[c] && players[c]->entity )
@@ -5208,7 +5222,7 @@ void drawAllPlayerCameras() {
 					{
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
 						globalLightModifier = 0.f;
-						globalLightTelepathyModifier = 0.f;
+						globalLightModifierEntities = 0.f;
 						if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
 						{
 							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
@@ -5238,7 +5252,7 @@ void drawAllPlayerCameras() {
 					globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
 
 					int telepathyLimit = std::min(64, 48 + players[c]->entity->getPER());
-					globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
+					globalLightModifierEntities = std::min(telepathyLimit / 255.0, globalLightModifierEntities + (0.2 / 255.0));
 				}
 				else
 				{
@@ -5254,7 +5268,7 @@ void drawAllPlayerCameras() {
 						}
 					}
 					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
-					globalLightTelepathyModifier = 0.f;
+					globalLightModifierEntities = 0.f;
 					if ( globalLightModifier < 1.f )
 					{
 						globalLightModifier += 0.01;
@@ -5305,8 +5319,8 @@ void drawAllPlayerCameras() {
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
-				camera.ang -= cosspin * drunkextend;
-				camera.vang -= sinspin * drunkextend;
+				camera.ang -= cosspin * drunkextend[c];
+				camera.vang -= sinspin * drunkextend[c];
 			}
 
 			auto& cvars = cameravars[c];
@@ -5708,7 +5722,6 @@ int main(int argc, char** argv)
 
 			if ( intro )
 			{
-				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
 					players[i]->shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
