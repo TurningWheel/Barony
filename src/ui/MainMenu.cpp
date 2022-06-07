@@ -105,7 +105,8 @@ namespace MainMenu {
 	};
 
 	static LobbyType currentLobbyType = LobbyType::None;
-	static bool playersInLobby[4];
+	static bool playersInLobby[MAXPLAYERS];
+	static bool playerSlotsLocked[MAXPLAYERS];
 
     bool story_active = false;
     bool isCutsceneActive() {
@@ -274,6 +275,10 @@ namespace MainMenu {
 		playSound(500, 96);
 	}
 
+	static inline int getMenuOwner() {
+	    return intro ? clientnum : pause_menu_owner;
+	}
+
 	static inline void soundMove() {
 		playSound(495, 48);
 	}
@@ -295,7 +300,7 @@ namespace MainMenu {
 	}
 
 	static inline void soundSlider(bool deafen_unless_gamepad = false) {
-	    if (inputs.getVirtualMouse(clientnum)->draw_cursor && deafen_unless_gamepad) {
+	    if (inputs.getVirtualMouse(getMenuOwner())->draw_cursor && deafen_unless_gamepad) {
 	        return;
 	    }
 	    static Uint32 timeSinceLastTick = 0;
@@ -425,6 +430,7 @@ namespace MainMenu {
 
     static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
+	static void createLockedStone(int index);
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
 	static void createWaitingStone(int index);
@@ -526,31 +532,12 @@ namespace MainMenu {
 		}
 
 	    int playercount = 0;
-        if (intro) {
-		    clientnum = -1;
-		    for (int c = 0; c < 4; ++c) {
-			    if (playersInLobby[c]) {
-				    clientnum = clientnum == -1 ? c : clientnum;
-				    client_disconnected[c] = false;
-				    ++playercount;
-			    } else {
-				    client_disconnected[c] = true;
-				    players[c]->bSplitscreen = false;
-			    }
+	    for (int c = 0; c < 4; ++c) {
+		    if (client_disconnected[c]) {
+			    continue;
 		    }
-		    if (clientnum == -1) {
-		        clientnum = 0;
-		        client_disconnected[0] = false;
-		        playercount = 1;
-		    }
-		} else {
-		    for (int c = 0; c < 4; ++c) {
-			    if (client_disconnected[c]) {
-				    continue;
-			    }
-				++playercount;
-		    }
-		}
+			++playercount;
+	    }
 		splitscreen = playercount > 1;
 
 		int c, playerindex;
@@ -1827,7 +1814,7 @@ namespace MainMenu {
 			    });
 		    back_button->setWidgetBack("back");
 		    back_button->setHideKeyboardGlyphs(false);
-		    if (inputs.hasController(clientnum)) {
+		    if (inputs.hasController(getMenuOwner())) {
 		        back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
 		        back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
 		    } else {
@@ -3891,7 +3878,7 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset();
-				settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+				settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
 				    {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
@@ -4366,7 +4353,7 @@ bind_failed:
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
-			    settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+			    settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 
@@ -4395,7 +4382,7 @@ bind_failed:
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
-			    settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+			    settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 #else
@@ -6623,6 +6610,7 @@ bind_failed:
 				    beginFade(FadeDestination::GameStart);
 				    numplayers = MAXPLAYERS;
 				    if (net_packet->data[12] == 0) {
+				        // necessary?
 					    loadingsavegame = 0;
 				    }
 				    continue;
@@ -8946,7 +8934,49 @@ bind_failed:
 		ready_button->select();
 	}
 
+	static void createLockedStone(int index) {
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
+			"backdrop"
+		);
+
+		auto banner = card->addField("banner", 64);
+		banner->setText("LOCKED");
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+
+		auto text = card->addField("text", 128);
+		text->setText("New players\ncannot join");
+		text->setFont(smallfont_outline);
+		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		text->setVJustify(Field::justify_t::TOP);
+		text->setHJustify(Field::justify_t::CENTER);
+	}
+
 	static void createStartButton(int index) {
+	    if (playerSlotsLocked[index]) {
+	        createLockedStone(index);
+	        return;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -9014,6 +9044,11 @@ bind_failed:
 	}
 
 	static void createInviteButton(int index) {
+	    if (playerSlotsLocked[index]) {
+	        createLockedStone(index);
+	        return;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -9056,6 +9091,11 @@ bind_failed:
 	}
 
 	static void createWaitingStone(int index) {
+	    if (playerSlotsLocked[index]) {
+	        createLockedStone(index);
+	        return;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -9343,29 +9383,32 @@ bind_failed:
 		createDummyMainMenu();
 
 		// reset ALL player stats
-		for (int c = 0; c < 4; ++c) {
-		    if (multiplayer != CLIENT || c == clientnum) {
-			    stats[c]->playerRace = 0;
-			    stats[c]->sex = static_cast<sex_t>(rand() % 2);
-			    stats[c]->appearance = rand() % NUMAPPEARANCES;
-			    stats[c]->clearStats();
-			    client_classes[c] = 0;
-			    initClass(c);
+        if (!loadingsavegame) {
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (multiplayer != CLIENT || c == clientnum) {
+		            playerSlotsLocked[c] = false;
 
-			    // random name
-			    auto& names = stats[c]->sex == sex_t::MALE ?
-				    randomPlayerNamesMale : randomPlayerNamesFemale;
-			    auto name = names[rand() % names.size()].c_str();
-			    size_t len = strlen(name);
-			    len = std::min(sizeof(Stat::name) - 1, len);
-			    memcpy(stats[c]->name, name, len);
-			    stats[c]->name[len] = '\0';
+			        stats[c]->playerRace = 0;
+			        stats[c]->sex = static_cast<sex_t>(rand() % 2);
+			        stats[c]->appearance = rand() % NUMAPPEARANCES;
+			        stats[c]->clearStats();
+			        client_classes[c] = 0;
+			        initClass(c);
 
-                if (multiplayer == CLIENT) {
-			        sendPlayerOverNet();
+			        // random name
+			        auto& names = stats[c]->sex == sex_t::MALE ?
+				        randomPlayerNamesMale : randomPlayerNamesFemale;
+			        auto name = names[rand() % names.size()].c_str();
+			        size_t len = strlen(name);
+			        len = std::min(sizeof(Stat::name) - 1, len);
+			        memcpy(stats[c]->name, name, len);
+			        stats[c]->name[len] = '\0';
 			    }
 			}
 		}
+        if (multiplayer == CLIENT) {
+            sendPlayerOverNet();
+        }
 
 		currentLobbyType = type;
 
@@ -10595,7 +10638,7 @@ bind_failed:
                 addLobby(lobby);
             }
             if (lobbyFiltersEnabled) {
-                if (!inputs.getVirtualMouse(clientnum)->draw_cursor) {
+                if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
                     auto checkbox = frame_right->findButton("filter_checkbox0");
                     if (checkbox) {
                         checkbox->select();
@@ -11485,19 +11528,74 @@ bind_failed:
 	    binaryPrompt(
 	        window_text, "Yes", "No",
 	        [](Button& button) { // Yes button
-	            // TODO handle multiplayer games.
                 soundActivate();
                 destroyMainMenu();
-                beginFade(MainMenu::FadeDestination::GameStart);
 
                 savegameCurrentFileIndex = load_save_index;
-                auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
-                if (info.multiplayer_type == SPLITSCREEN) {
-                    for (int c = 0; c < MAXPLAYERS; ++c) {
-                        client_disconnected[c] = info.players_connected[c];
-                    }
-                }
                 loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
+                auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
+
+                if (info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE) {
+                    clientnum = -1;
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+                        if (info.players_connected[c]) {
+                            clientnum = clientnum == -1 ? c : clientnum;
+                            playerSlotsLocked[c] = false;
+                            loadGame(c);
+                        } else {
+                            playerSlotsLocked[c] = true;
+                        }
+                    }
+                    assert(clientnum != -1);
+                    inputs.setPlayerIDAllowedKeyboard(clientnum);
+                    createLobby(LobbyType::LobbyLocal);
+                } else if (info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY) {
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+                        if (info.players_connected[c]) {
+                            playerSlotsLocked[c] = false;
+                        } else {
+                            playerSlotsLocked[c] = true;
+                        }
+                    }
+                    loadGame(info.player_num);
+                    if (info.multiplayer_type == SERVERCROSSPLAY) {
+#ifdef STEAMWORKS
+			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+			            if ( LobbyHandler.crossplayEnabled )
+			            {
+				            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			            }
+#endif
+#elif defined USE_EOS
+			            // if just eos, then force hosting settings to default.
+			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+                        createLobby(LobbyType::LobbyOnline);
+                    } else if (info.multiplayer_type == SERVER) {
+			            if ( getSaveGameVersionNum(false) <= 335 )
+			            {
+				            // legacy support for steam ver not remembering if crossplay or not. no action.
+				            // starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+			            }
+			            else
+			            {
+#ifdef STEAMWORKS
+				            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+			            }
+                        createLobby(LobbyType::LobbyOnline);
+                    } else if (info.multiplayer_type == DIRECTSERVER) {
+                        createLobby(LobbyType::LobbyLAN);
+                    }
+                } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
+                    loadGame(info.player_num);
+                    createLobbyBrowser(button);
+                }
 	        },
 	        [](Button& button) { // No button
 			    soundCancel();
@@ -11520,6 +11618,7 @@ bind_failed:
 	}
 
 	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
+	    static Uint32 timeSinceScroll = 0;
 		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
 		subwindow.setSize(SDL_Rect{90, 82, 898, 294});
 		subwindow.setColor(0);
@@ -11557,30 +11656,37 @@ bind_failed:
 		                scrolled |= input.binary("MenuMouseWheelUp");
 		                scrolled |= input.binary("MenuMouseWheelDown");
 		                if (scrolled) {
-		                    savegame_selected = nullptr;
-		                } else if (widget.isSelected() && !inputs.getVirtualMouse(clientnum)->draw_cursor) {
+		                    timeSinceScroll = ticks;
+		                } else if (widget.isSelected() && !inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
 		                    savegame_selected = button;
 		                }
 
-		                if (savegame_selected == &widget) {
-		                    auto frame_pos = frame->getActualSize();
-		                    auto button_size = button->getSize();
-		                    int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
-		                    if (diff > 0) {
-		                        frame_pos.x += std::max(1, diff / 8);
-		                    } else if (diff < 0) {
-		                        frame_pos.x += std::min(-1, diff / 8);
+	                    auto frame_pos = frame->getActualSize();
+	                    auto button_size = button->getSize();
+	                    const int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
+
+		                if (ticks - timeSinceScroll > TICKS_PER_SECOND / 2) {
+		                    if (savegame_selected == button) {
+		                        if (diff > 0) {
+		                            frame_pos.x += std::max(1, diff / 8);
+		                        } else if (diff < 0) {
+		                            frame_pos.x += std::min(-1, diff / 8);
+		                        }
+		                        frame->setActualSize(frame_pos);
 		                    }
-		                    frame->setActualSize(frame_pos);
+		                } else {
+	                        if (abs(diff) < 100) {
+	                            savegame_selected = button;
+	                        }
 		                }
 		                });
 		            savegame_book->setCallback([](Button& button){
-		                if (savegame_selected != &button && inputs.getVirtualMouse(clientnum)->draw_cursor) {
+		                if (savegame_selected != &button && inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
 		                    soundCheckmark();
 	                        savegame_selected = &button;
+	                        timeSinceScroll = 0;
 		                    return;
 		                } else {
-		                    soundActivate();
 	                        savegame_selected = &button;
 		                    int save_index = -1;
 	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
@@ -12151,7 +12257,7 @@ bind_failed:
                     );
 	        }
 	    } else {
-	        createControllerPrompt(clientnum, false, return_to_main_menu);
+	        createControllerPrompt(getMenuOwner(), false, return_to_main_menu);
 	    }
 	}
 
@@ -12511,8 +12617,8 @@ bind_failed:
 			        net_packet->len = 5;
 			        sendPacketSafe(net_sock, -1, net_packet, 0);
 		        } else {
-			        if (players[pause_menu_owner] && players[pause_menu_owner]->entity) {
-				        players[pause_menu_owner]->entity->setHP(0);
+			        if (players[getMenuOwner()] && players[getMenuOwner()]->entity) {
+				        players[getMenuOwner()]->entity->setHP(0);
 			        }
 		        }
 			},
@@ -12790,7 +12896,6 @@ bind_failed:
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
-				setupSplitscreen();
 				if (!loadingsavegame) {
 	                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
                         if (!saveGameExists(multiplayer == SINGLE, i)) {
@@ -12799,8 +12904,30 @@ bind_failed:
                         }
                     }
 				}
+
+				// set clientnum and client_disconnected[] based on the state of the lobby
+				if (currentLobbyType == LobbyType::LobbyLocal) {
+		            clientnum = -1;
+		            int playercount = 0;
+		            for (int c = 0; c < 4; ++c) {
+			            if (playersInLobby[c]) {
+				            clientnum = clientnum == -1 ? c : clientnum;
+				            client_disconnected[c] = false;
+				            ++playercount;
+			            } else {
+				            client_disconnected[c] = true;
+			            }
+		            }
+		            splitscreen = playercount >= 2; // necessary for save file to be valid
+		            assert(playercount > 0 && clientnum != -1);
+		        } else if (currentLobbyType != LobbyType::None) {
+		            // this is an online game. make SURE the splitscreen variable is false
+		            splitscreen = false;
+		        }
+
 				doNewGame(false);
 				destroyMainMenu();
+				setupSplitscreen();
 
                 // don't show the first time prompt anymore
 				if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
@@ -12969,8 +13096,8 @@ bind_failed:
 
         // if no controller is connected, you can always connect one just for the main menu.
         if (!ingame && currentLobbyType == LobbyType::None) {
-            if (!inputs.hasController(clientnum)) {
-                Input::waitingToBindControllerForPlayer = clientnum;
+            if (!inputs.hasController(getMenuOwner())) {
+                Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
         }
 	}
@@ -13011,7 +13138,7 @@ bind_failed:
 	void createTitleScreen() {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(clientnum);
+        main_menu_frame->setOwner(getMenuOwner());
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -13116,7 +13243,7 @@ bind_failed:
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(ingame ? pause_menu_owner : clientnum);
+        main_menu_frame->setOwner(getMenuOwner());
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -13373,7 +13500,7 @@ bind_failed:
 
 	void createDummyMainMenu() {
 		main_menu_frame = gui->addFrame("main_menu");
-        main_menu_frame->setOwner(clientnum);
+        main_menu_frame->setOwner(getMenuOwner());
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setHollow(true);

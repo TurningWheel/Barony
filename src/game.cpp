@@ -2126,6 +2126,7 @@ void gameLogic(void)
 						list_FreeAll(&tempFollowers[c]);
 					}
 
+                    // save at end of level change
 					saveGame();
 					break;
 				}

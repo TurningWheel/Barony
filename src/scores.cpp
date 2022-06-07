@@ -2219,7 +2219,7 @@ int loadGame(int player, int saveIndex)
 	            // read hotbar item offsets
 	            for ( int i = 0; i < NUM_HOTBAR_SLOTS; i++ )
 	            {
-		            fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
+		            fp->read(&temp_hotbar[i], sizeof(Uint32), 1);
 	            }
 
 	            // read spells
