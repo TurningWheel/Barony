@@ -1783,6 +1783,7 @@ bool Player::GUI_t::handleInventoryMovement()
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -1826,6 +1827,13 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				return false;
+			}
 			select_feather_slot(player,
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
@@ -1846,13 +1854,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedSlotY(),
 				-1, 0);
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -1896,6 +1904,13 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				return false;
+			}
 			select_feather_slot(player,
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
@@ -1916,13 +1931,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedSlotY(),
 				1, 0);
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2019,6 +2034,13 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				return false;
+			}
 			select_feather_slot(player,
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
@@ -2039,13 +2061,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				0, -1);
 			//Will handle warping to hotbar.
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2142,6 +2164,13 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				return false;
+			}
 			select_feather_slot(player,
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
 				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
@@ -2161,7 +2190,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedSlotY(),
 				0, 1);
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+
 		dpad_moved = true;
 	}
 

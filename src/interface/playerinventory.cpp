@@ -1562,7 +1562,8 @@ void select_feather_slot(int player, int currentx, int currenty, int diffx, int 
 
 	auto& featherGUI = GenericGUI[player].featherGUI;
 
-	if ( !featherGUI.bFirstTimeSnapCursor )
+	if ( !featherGUI.bFirstTimeSnapCursor 
+		|| !featherGUI.isInteractable )
 	{
 		return;
 	}
@@ -1576,6 +1577,7 @@ void select_feather_slot(int player, int currentx, int currenty, int diffx, int 
 	{
 		y = 0;
 	}
+
 	x = 0;
 	featherGUI.selectFeatherSlot(x, y);
 	featherGUI.scrollToSlot(x, y, false);

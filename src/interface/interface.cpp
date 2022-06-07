@@ -16731,7 +16731,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	if ( bOpen && isInteractable )
 	{
 		// do sliders
-		if ( !slider->isDisabled() )
+		if ( !slider->isDisabled() && !(abs(scrollSetpoint - scrollAnimateX) > 0.00001) )
 		{
 			if ( !inputs.getUIInteraction(playernum)->selectedItem
 				&& players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
@@ -16752,12 +16752,20 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				if ( Input::inputs[playernum].analogToggle("MenuScrollDown") )
 				{
 					Input::inputs[playernum].consumeAnalogToggle("MenuScrollDown");
-					scrollSetpoint = std::max(scrollSetpoint + inscriptionSlotHeight, 0);
+					scrollSetpoint = std::max(scrollSetpoint + inscriptionSlotHeight * kNumInscriptionsToDisplayVertical, 0);
+					if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
+					{
+						player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
 				}
 				else if ( Input::inputs[playernum].analogToggle("MenuScrollUp") )
 				{
 					Input::inputs[playernum].consumeAnalogToggle("MenuScrollUp");
-					scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight, 0);
+					scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight * kNumInscriptionsToDisplayVertical, 0);
+					if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
+					{
+						player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
 				}
 			}
 		}

@@ -192,6 +192,7 @@ public:
 	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;
 
 	static float getJoystickRebindingDeadzone() { return rebinding_deadzone; }
+	static float getAnalogToggleThreshold() { return analogToggleThreshold; }
 
 	//! list of connected input devices
 	static std::string lastInputOfAnyKind;
