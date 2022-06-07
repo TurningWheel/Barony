@@ -11536,6 +11536,7 @@ bind_failed:
                 auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
 
                 if (info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE) {
+                    multiplayer = SINGLE;
                     clientnum = -1;
                     for (int c = 0; c < MAXPLAYERS; ++c) {
                         if (info.players_connected[c]) {
@@ -11550,6 +11551,7 @@ bind_failed:
                     inputs.setPlayerIDAllowedKeyboard(clientnum);
                     createLobby(LobbyType::LobbyLocal);
                 } else if (info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY) {
+                    multiplayer = SERVER;
                     for (int c = 0; c < MAXPLAYERS; ++c) {
                         if (info.players_connected[c]) {
                             playerSlotsLocked[c] = false;
@@ -11593,6 +11595,7 @@ bind_failed:
                         createLobby(LobbyType::LobbyLAN);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
+                    multiplayer = CLIENT;
                     loadGame(info.player_num);
                     createLobbyBrowser(button);
                 }

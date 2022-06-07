@@ -4217,8 +4217,6 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 
     static ConsoleVariable<bool> allowSleep("/timer_sleep_enabled", true,
         "allow main thread to sleep between ticks (saves power)");
-    static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
-    static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
 	if ( diff >= 0.f )
 	{
 	    // we have not passed a full frame, so we must delay.
@@ -4226,13 +4224,15 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
         {
             // sleep a fraction of the remaining time.
             // This saves power if you're running on battery.
-#ifdef WINDOWS
-				auto microseconds = std::chrono::microseconds((Uint64)(diff * 1000000 /** (*sleepFactor)*/));
-				preciseSleep(microseconds.count() / 1e6);
+#if 1
+			auto microseconds = std::chrono::microseconds((Uint64)(diff * 1000000));
+			preciseSleep(microseconds.count() / 1e6);
 #else
+            static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
+            static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
             if ( diff >= *sleepLimit )
             {
-				std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor)));
+				std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor))));
             }
 #endif
         }
