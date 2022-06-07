@@ -2263,6 +2263,17 @@ int loadGame(int player, int saveIndex)
 						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 					}
 				}
+
+				if ( versionNumber >= 382 )
+				{
+					// read scroll labels
+					Uint32 numscrolls = 0;
+					fp->read(&numscrolls, sizeof(Uint32), 1);
+					for ( int s = 0; s < numscrolls; ++s )
+					{
+						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+					}
+				}
             }
         }
     }
@@ -3196,6 +3207,17 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 			{
 				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+			}
+		}
+
+		if ( versionNumber >= 382 )
+		{
+			// read alchemy recipes
+			Uint32 numscrolls = 0;
+			fp->read(&numscrolls, sizeof(Uint32), 1);
+			for ( int s = 0; s < numscrolls; ++s )
+			{
 				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 			}
 		}
