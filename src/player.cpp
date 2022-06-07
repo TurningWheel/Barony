@@ -1118,6 +1118,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
+		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY )
 	{
 		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
@@ -1823,6 +1824,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -1884,6 +1892,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -2002,6 +2017,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			select_spell_slot(player,
@@ -2116,6 +2138,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				0, 1);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
 				0, 1);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
@@ -5384,6 +5413,9 @@ void Player::clearGUIPointers()
 	genericGUI.alchemyGUI.alchFrame = nullptr;
 	genericGUI.alchemyGUI.alchemySlotFrames.clear();
 	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
+	genericGUI.featherGUI.featherFrame = nullptr;
+	genericGUI.featherGUI.featherSlotFrames.clear();
+	genericGUI.featherGUI.itemRequiresTitleReflow = true;
 
 	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
 	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;

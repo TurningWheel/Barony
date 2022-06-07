@@ -1218,7 +1218,7 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	if ( inventoryUI.bCompactView )
 	{
-		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen )
+		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen || GenericGUI[player].featherGUI.bOpen )
 		{
 			return false;
 		}
@@ -1555,6 +1555,32 @@ void select_tinkering_slot(int player, int currentx, int currenty, int diffx, in
 	tinkerGUI.selectTinkerSlot(x, y);
 }
 
+void select_feather_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& featherGUI = GenericGUI[player].featherGUI;
+
+	if ( !featherGUI.bFirstTimeSnapCursor )
+	{
+		return;
+	}
+
+	int lowestItemY = featherGUI.MAX_FEATHER_Y - 1;
+	if ( y < 0 )
+	{
+		y = lowestItemY;
+	}
+	if ( y > lowestItemY )
+	{
+		y = 0;
+	}
+	x = 0;
+	featherGUI.selectFeatherSlot(x, y);
+	featherGUI.scrollToSlot(x, y, false);
+}
+
 // only called by handleInventoryMovement in player.cpp
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
@@ -1744,6 +1770,11 @@ void select_spell_slot(int player, int currentx, int currenty, int diffx, int di
 	int x = currentx + diffx;
 	int y = currenty + diffy;
 
+	if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor )
+	{
+		return;
+	}
+
 	if ( x < 0 ) 
 	{ 
 		x = Player::Inventory_t::MAX_SPELLS_X - 1; 
@@ -1790,6 +1821,14 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 		// prevent inventory moving if tinkering not selected when it should be
 		select_tinkering_slot(player, x, y, 0, 0);
 		players[player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+		return;
+	}
+	else if ( !selectedItem && GenericGUI[player].featherGUI.isInscriptionDrawerOpen()
+		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_FEATHER )
+	{
+		// prevent inventory moving if feather not selected when it should be
+		select_feather_slot(player, x, y, 0, 0);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_FEATHER);
 		return;
 	}
 
@@ -1940,7 +1979,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 					else
 					{
 						bool skipPaperDollSelection = false;
-						if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen )
+						if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen || GenericGUI[player].featherGUI.bOpen )
 						{
 							skipPaperDollSelection = true;
 						}
@@ -6540,6 +6579,7 @@ void Player::Inventory_t::updateInventory()
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	auto& featherGUI = GenericGUI[player].featherGUI;
 
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
@@ -6711,6 +6751,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
 				}
+				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+				{
+					featherGUI.warpMouseToSelectedFeatherItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
 				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
 				{
 					disableMouseDisablingHotbarFocus = true;
@@ -6748,6 +6792,8 @@ void Player::Inventory_t::updateInventory()
 
 	bool tinkerCraftableListOpen = tinkerGUI.isConstructMenuActive();
 	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
+	bool featherDrawerOpen = featherGUI.isInscriptionDrawerOpen();
+	bool featherInscribeOrRepairActive = featherGUI.isInscribeOrRepairActive();
 
 	if ( GenericGUI[player].selectedSlot < 0 )
 	{
@@ -6757,6 +6803,8 @@ void Player::Inventory_t::updateInventory()
 		Frame* slotFrameToHighlight = nullptr;
 		int startx = 0;
 		int starty = 0;
+		int highlightWidth = 0;
+		int highlightHeight = 0;
 
 		if ( tinkerCraftableListOpen && players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_TINKERING) )
 		{
@@ -6789,6 +6837,46 @@ void Player::Inventory_t::updateInventory()
 							starty = slotFrame->getAbsoluteSize().y;
 							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
 							starty -= players[player]->camera_virtualy1();
+						}
+					}
+				}
+			}
+		}
+
+		if ( featherDrawerOpen && players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_FEATHER) )
+		{
+			for ( int x = 0; x < featherGUI.MAX_FEATHER_X; ++x )
+			{
+				for ( int y = 0; y < featherGUI.MAX_FEATHER_Y; ++y )
+				{
+					if ( auto slotFrame = featherGUI.getFeatherSlotFrame(x, y) )
+					{
+						if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
+						{
+							if ( featherGUI.isSlotVisible(x, y) && featherGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								featherGUI.selectFeatherSlot(x, y);
+								if ( inputs.getVirtualMouse(player)->draw_cursor )
+								{
+									// mouse movement captures the inventory
+									players[player]->GUI.activateModule(Player::GUI_t::MODULE_FEATHER);
+								}
+							}
+						}
+
+						if ( x == featherGUI.getSelectedFeatherSlotX()
+							&& y == featherGUI.getSelectedFeatherSlotY()
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER
+							&& featherGUI.isInteractable
+							&& featherGUI.isSlotVisible(x, y) )
+						{
+							slotFrameToHighlight = slotFrame;
+							startx = slotFrame->getAbsoluteSize().x;
+							starty = slotFrame->getAbsoluteSize().y;
+							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+							starty -= players[player]->camera_virtualy1();
+							highlightWidth = slotFrame->getSize().w;
+							featherGUI.scrollToSlot(x, y, false);
 						}
 					}
 				}
@@ -6936,6 +7024,7 @@ void Player::Inventory_t::updateInventory()
 
 		if ( players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& !tinkerCraftableListOpen
+			&& !featherDrawerOpen
 			&& !(alchemyGUI.bOpen && !alchemyGUI.isInteractable)
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
@@ -6975,6 +7064,7 @@ void Player::Inventory_t::updateInventory()
 		}
 		else if ( players[player]->inventory_mode == INVENTORY_MODE_SPELL
 			&& !tinkerCraftableListOpen
+			&& !featherDrawerOpen
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_SPELLS) )
 		{
 			for ( int x = 0; x < MAX_SPELLS_X; ++x )
@@ -7025,11 +7115,16 @@ void Player::Inventory_t::updateInventory()
 					&& (!inputs.getVirtualMouse(player)->draw_cursor
 						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
 			{
+				int width = getSlotSize();
+				if ( highlightWidth > 0 )
+				{
+					width = highlightWidth;
+				}
 				selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 				selectedSlotFrame->setDisabled(false);
 
 				selectedSlotCursor->setDisabled(false);
-				updateSelectedSlotAnimation(startx, starty, getSlotSize(), getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+				updateSelectedSlotAnimation(startx, starty, width, getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 				//messagePlayer(0, "0: %d, %d", x, y);
 			}
 		}
@@ -7430,6 +7525,18 @@ void Player::Inventory_t::updateInventory()
 				{
 					updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 				}
+				else if ( featherInscribeOrRepairActive )
+				{
+					auto res = featherGUI.setItemDisplayNameAndPrice(item, true);
+					if ( res == GenericGUIMenu::FeatherGUI_t::FEATHER_ACTION_OK )
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+				}
 				else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
 				{
 					// grab action status of this item, don't modify using 'true' param
@@ -7551,7 +7658,71 @@ void Player::Inventory_t::updateInventory()
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
 	alchemyGUI.clearItemDisplayed();
+	if ( !featherDrawerOpen )
+	{
+		featherGUI.clearItemDisplayed();
+	}
+	else
+	{
+		featherGUI.currentHoveringInscriptionLabel = "";
+		featherGUI.chargeCostMin = 0;
+		featherGUI.chargeCostMax = 0;
+	}
+	
+	if ( !selectedItem && featherDrawerOpen )
+	{
+		list_t* player_inventory = nullptr;
+		player_inventory = &GenericGUI[player].scribingTotalItems;
+		if ( player_inventory )
+		{
+			for ( node = player_inventory->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				Item* item = (Item*)node->element;
+				if ( !item ) { continue; }
 
+				if ( !GenericGUI[player].isNodeScribingCraftableItem(item->node) )
+				{
+					continue;
+				}
+
+				bool mouseOverSlot = false;
+
+				int itemx = item->x;
+				int itemy = item->y;
+
+				auto slotFrame = featherGUI.getFeatherSlotFrame(itemx, itemy);
+				if ( !slotFrame ) { continue; }
+
+				mouseOverSlot = players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_FEATHER)
+					&& slotFrame->capturesMouse();
+
+				if ( mouseOverSlot && inputs.getVirtualMouse(player)->draw_cursor )
+				{
+					// mouse movement captures the inventory
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_FEATHER);
+				}
+
+				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER
+					&& (!featherGUI.isInteractable) )
+				{
+					// don't do anything while in motion
+					break;
+				}
+
+				if ( stats[player]->HP <= 0 )
+				{
+					break;
+				}
+
+				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() && featherGUI.isInteractable )
+				{
+					featherGUI.setItemDisplayNameAndPrice(item, false);
+					break;
+				}
+			}
+		}
+	}
 	if ( !selectedItem && tinkerCraftableListOpen )
 	{
 		list_t* player_inventory = nullptr;
@@ -7603,19 +7774,6 @@ void Player::Inventory_t::updateInventory()
 				{
 					break;
 				}
-
-				//if ( hideItemFromShopView(*item) )
-				//{
-				//	continue;
-				//}
-				//if ( shopGUI.buybackView && !item->playerSoldItemToShop )
-				//{
-				//	continue;
-				//}
-				//else if ( !shopGUI.buybackView && item->playerSoldItemToShop )
-				//{
-				//	continue;
-				//}
 
 				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() && tinkerGUI.isInteractable )
 				{
@@ -7976,7 +8134,7 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
-	if ( !selectedItem && !tinkerCraftableListOpen )
+	if ( !selectedItem && !tinkerCraftableListOpen && !featherDrawerOpen )
 	{
 		for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 		{
@@ -8059,6 +8217,12 @@ void Player::Inventory_t::updateInventory()
 			}
 			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING
 				&& !tinkerGUI.isInteractable )
+			{
+				// don't do anything while in motion
+				break;
+			}
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER
+				&& !featherGUI.isInteractable )
 			{
 				// don't do anything while in motion
 				break;
@@ -8160,7 +8324,17 @@ void Player::Inventory_t::updateInventory()
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
 				bool alchemyOpen = false;
-				if ( tinkeringSalvageOrRepairMenuActive )
+				bool featherOpen = false;
+				if ( featherInscribeOrRepairActive )
+				{
+					tooltipOpen = false;
+					featherOpen = true;
+					if ( !featherDrawerOpen )
+					{
+						featherGUI.setItemDisplayNameAndPrice(item, false);
+					}
+				}
+				else if ( tinkeringSalvageOrRepairMenuActive )
 				{
 					tooltipOpen = false;
 					tinkerOpen = true;
@@ -8205,6 +8379,7 @@ void Player::Inventory_t::updateInventory()
 					|| bIsTooltipDelayed()
 					|| sellingItemToShop
 					|| tinkerOpen
+					|| featherOpen
 					|| alchemyOpen)
 					&& inventoryControlActive
 					&& !selectedItem
@@ -8365,7 +8540,7 @@ void Player::Inventory_t::updateInventory()
 							playerTryEquipItemAndUpdateServer(player, item, false);
 						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !featherInscribeOrRepairActive )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -8675,6 +8850,18 @@ void Player::Inventory_t::updateInventory()
 						if ( shopOpen && !isItemSellableToShop(player, item) )
 						{
 							updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+						}
+						else if ( featherInscribeOrRepairActive )
+						{
+							auto res = featherGUI.setItemDisplayNameAndPrice(item, true);
+							if ( res == GenericGUIMenu::FeatherGUI_t::FEATHER_ACTION_OK )
+							{
+								updateSlotFrameFromItem(slotFrame, item);
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
 						}
 						else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
 						{
@@ -9223,6 +9410,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	bool sellingToShop = false;
 	bool tinkerOpen = false;
 	bool alembicOpen = false;
+	bool featherOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -9238,10 +9426,14 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		alembicOpen = true;
 	}
+	else if ( GenericGUI[player].featherGUI.bOpen )
+	{
+		featherOpen = true;
+	}
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop || tinkerOpen || alembicOpen )
+		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen )
 		{
 			if ( getContextMenuOptionBindingName(*it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(*it) == "MenuCancel" )

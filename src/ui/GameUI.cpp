@@ -106,6 +106,20 @@ void uppercaseString(std::string& str)
 	}
 }
 
+void camelCaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	char prevLetter = ' ';
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'a' && letter <= 'z' && prevLetter == ' ' )
+		{
+			letter = toupper(letter);
+		}
+		prevLetter = letter;
+	}
+}
+
 std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 {
 	if ( !entity ) { return "default"; }
@@ -14262,7 +14276,7 @@ void createPlayerSpellList(const int player)
 		spellSlotsFrame->setAllowScrollBinds(false);
 
 		auto gridImg = spellSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, 242 * numGrids },
-			0xFFFFFFFF, "*#images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
+			0xFFFFFFFF, "*images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -15310,6 +15324,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].alchemyGUI.alchFrame->setOwner(player);
 		GenericGUI[player].alchemyGUI.alchFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].alchemyGUI.alchFrame->setDisabled(true);
+
+		GenericGUI[player].featherGUI.featherFrame = frame->addFrame("feather");
+		GenericGUI[player].featherGUI.featherFrame->setHollow(true);
+		GenericGUI[player].featherGUI.featherFrame->setBorder(0);
+		GenericGUI[player].featherGUI.featherFrame->setOwner(player);
+		GenericGUI[player].featherGUI.featherFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].featherGUI.featherFrame->setDisabled(true);
 
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
@@ -16608,6 +16629,8 @@ void Player::Inventory_t::updateCursor()
 	if ( cursor.queuedModule != Player::GUI_t::MODULE_NONE
 		&& !player.shootmode && !nohud )
 	{
+		int cursorWidth = player.inventoryUI.getSlotSize();
+		int cursorHeight = player.inventoryUI.getSlotSize();
 		bool moveMouse = false;
 		auto queuedModule = cursor.queuedModule;
 		if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
@@ -16698,7 +16721,7 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
-		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_ALCHEMY )
 		{
 			auto& alchemyGUI = GenericGUI[player.playernum].alchemyGUI;
 			if ( !alchemyGUI.alchemyGUIHasBeenCreated()
@@ -16713,6 +16736,27 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			auto& featherGUI = GenericGUI[player.playernum].featherGUI;
+			if ( !featherGUI.featherGUIHasBeenCreated()
+				|| featherGUI.featherFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( featherGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			if ( cursor.queuedFrameToWarpTo )
+			{
+				cursorWidth = cursor.queuedFrameToWarpTo->getSize().w;
+				cursorHeight = cursor.queuedFrameToWarpTo->getSize().h;
+			}
+		}
+
 		if ( moveMouse && cursor.queuedFrameToWarpTo )
 		{
 			//messagePlayer(0, "Queue warp: %d", queuedModule);
@@ -16721,7 +16765,7 @@ void Player::Inventory_t::updateCursor()
 			pos.x -= player.camera_virtualx1(); // offset any splitscreen camera positioning
 			pos.y -= player.camera_virtualy1();
 			player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
-				player.inventoryUI.getSlotSize(), player.inventoryUI.getSlotSize(), false);
+				cursorWidth, cursorHeight, false);
 			cursor.queuedFrameToWarpTo = nullptr;
 		}
 		else if ( cursor.queuedFrameToWarpTo && cursor.queuedModule == Player::GUI_t::MODULE_NONE )
