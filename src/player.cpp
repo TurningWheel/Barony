@@ -22,6 +22,7 @@
 #include "colors.hpp"
 #include "ui/GameUI.hpp"
 #include "ui/Frame.hpp"
+#include "ui/Slider.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -1832,6 +1833,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
 				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
 			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
 				return false;
 			}
 			select_feather_slot(player,
@@ -1841,6 +1843,26 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+						|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(), 
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -1909,6 +1931,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
 				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
 			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
 				return false;
 			}
 			select_feather_slot(player,
@@ -1918,6 +1941,26 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+						|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(),
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -2039,6 +2082,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
 				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
 			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
 				return false;
 			}
 			select_feather_slot(player,
@@ -2048,6 +2092,26 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+						|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(),
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -2169,6 +2233,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
 				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
 			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
 				return false;
 			}
 			select_feather_slot(player,
@@ -2178,6 +2243,26 @@ bool Player::GUI_t::handleInventoryMovement()
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+					|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(),
 				players[player]->inventoryUI.getSelectedSpellY(),

@@ -22752,15 +22752,24 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
 				}
+
 				if ( Input::inputs[player.playernum].analogToggle("MenuScrollDown") )
 				{
 					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+					{
+						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
 				}
 				else if ( Input::inputs[player.playernum].analogToggle("MenuScrollUp") )
 				{
 					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+					{
+						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
 				}
 			}
 		}
@@ -22771,6 +22780,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
 		{
 			isInteractable = false;
+			player.inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
 			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
 			real_t setpointDiff = 0.0;
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
