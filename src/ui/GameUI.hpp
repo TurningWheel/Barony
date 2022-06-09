@@ -64,6 +64,8 @@ extern bool newui;
 extern bool bUsePreciseFieldTextReflow;
 extern bool bUseSelectedSlotCycleAnimation;
 extern ConsoleVariable<bool> shareMinimap;
+extern Frame::result_t framesProcResult;
+extern ConsoleVariable<bool> framesEatMouse;
 
 void openMinimap(int player);
 
