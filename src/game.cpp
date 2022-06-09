@@ -242,7 +242,7 @@ Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
 bool arachnophobia_filter = false;
 
-static Frame::result_t framesProcResult{
+Frame::result_t framesProcResult{
     false,
     0,
     nullptr,
@@ -692,7 +692,7 @@ std::string TimerExperiments::render(State state)
 
 -------------------------------------------------------------------------------*/
 
-static ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
+ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 
 void gameLogic(void)
 {
@@ -5884,8 +5884,13 @@ int main(int argc, char** argv)
 
 						enchantedFeatherScrollSeed.seed(uniqueGameKey);
 						enchantedFeatherScrollsShuffled.clear();
-						enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
-						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+						auto scrollsToPick = enchantedFeatherScrollsFixedList;
+						while ( !scrollsToPick.empty() )
+						{
+							int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
+							enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
+							scrollsToPick.erase(scrollsToPick.begin() + index);
+						}
 						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 						//{
 						//	printlog("Sequence: %d", *it);

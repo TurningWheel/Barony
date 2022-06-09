@@ -2774,8 +2774,13 @@ int loadGame(int player, int saveIndex)
 
 	enchantedFeatherScrollSeed.seed(uniqueGameKey);
 	enchantedFeatherScrollsShuffled.clear();
-	enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
-	std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+	auto scrollsToPick = enchantedFeatherScrollsFixedList;
+	while ( !scrollsToPick.empty() )
+	{
+		int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
+		enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
+		scrollsToPick.erase(scrollsToPick.begin() + index);
+	}
 	for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 	{
 		//printlog("Sequence: %d", *it);
