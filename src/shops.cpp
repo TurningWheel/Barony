@@ -66,9 +66,12 @@ void closeShop(const int player)
 
 	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
 	{
-		list_FreeAll(shopInv[player]);
-		shopInv[player]->first = nullptr;
-		shopInv[player]->last = nullptr;
+		if ( shopInv[player] )
+		{
+			list_FreeAll(shopInv[player]);
+			shopInv[player]->first = nullptr;
+			shopInv[player]->last = nullptr;
+		}
 	}
 	else
 	{

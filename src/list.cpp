@@ -24,6 +24,10 @@
 
 void list_FreeAll(list_t* list)
 {
+	if ( !list )
+	{
+		return;
+	}
 	node_t* node, *nextnode;
 	if (list == map.entities)
 		map.entities_map.clear();
