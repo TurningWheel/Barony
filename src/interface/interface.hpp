@@ -660,11 +660,14 @@ public:
 			FEATHER_ACTION_NONE,
 			FEATHER_ACTION_OK,
 			FEATHER_ACTION_INVALID_ITEM,
+			FEATHER_ACTION_NO_BLANK_SCROLL,
+			FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT,
 			FEATHER_ACTION_FULLY_REPAIRED,
 			FEATHER_ACTION_UNIDENTIFIED,
 			FEATHER_ACTION_CANT_AFFORD,
 			FEATHER_ACTION_MAY_SUCCEED,
-			FEATHER_ACTION_OK_AND_DESTROY
+			FEATHER_ACTION_OK_AND_DESTROY,
+			FEATHER_ACTION_OK_UNKNOWN_SCROLL
 		};
 		FeatherActions_t itemActionType = FEATHER_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;
@@ -677,6 +680,9 @@ public:
 		bool animPromptMoveLeft = false;
 		real_t animInvalidAction = 0.0;
 		Uint32 animInvalidActionTicks = 0;
+		bool bDrawerOpen = false;
+		Uint32 inscribeSuccessTicks = 0;
+		std::string inscribeSuccessName = "";
 
 		real_t scrollPercent = 0.0;
 		real_t scrollInertia = 0.0;
@@ -691,6 +697,18 @@ public:
 		Sint32 changeFeatherCharge = 0;
 		real_t animCharge = 0.0;
 		Uint32 animChargeStartTicks = 0;
+		int highlightedSlot = -1;
+		struct DiscoveryAnim_t
+		{
+			Uint32 startTicks = 0;
+			Uint32 processedOnTick = 0;
+			std::string name = "";
+			DiscoveryAnim_t() :
+				startTicks(ticks),
+				processedOnTick(0)
+			{}
+		};
+		std::unordered_map<std::string, DiscoveryAnim_t> labelDiscoveries;
 
 		enum InvalidActionFeedback_t : int
 		{

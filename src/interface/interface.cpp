@@ -5066,6 +5066,7 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			if ( item->identified && item->type == SCROLL_BLANK )
 			{
 				scribingBlankScrollTarget = item;
+				featherGUI.bDrawerOpen = true;
 				featherGUI.scrollListRequiresSorting = true;
 				onFeatherChangeTabAction(gui_player, false);
 				featherGUI.animPrompt = 1.0;
@@ -6189,7 +6190,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 			bool raiseSkill = true;
 			if ( result == POTION_SICKNESS )
 			{
-				appearance = 0 + rand() % items[POTION_SICKNESS].variations;
+				if ( !samePotion )
+				{
+					appearance = 0 + rand() % items[POTION_SICKNESS].variations;
+				}
 				if ( rand() % 10 > 0 )
 				{
 					raiseSkill = false;
@@ -8718,7 +8722,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		}
 		std::string label = item->getScrollLabel();
 		Item* crafted = newItem(item->type, scribingBlankScrollTarget->status, 
-			scribingBlankScrollTarget->beatitude, 1, item->appearance, false, nullptr);
+			scribingBlankScrollTarget->beatitude, 1, item->appearance, true, nullptr);
 		if ( crafted )
 		{
 			if ( crafted->type == SCROLL_MAIL )
@@ -8733,7 +8737,8 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, language[3724], pickedUp->description());
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
-			//scribingBlankScrollTarget = nullptr;
+			featherGUI.inscribeSuccessName = label;
+			featherGUI.inscribeSuccessTicks = ticks;
 			if ( client_classes[gui_player] == CLASS_SHAMAN )
 			{
 				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
@@ -8742,6 +8747,10 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				if ( label == scroll_label[i] )
 				{
+					if ( clientLearnedScrollLabels[gui_player].find(i) == clientLearnedScrollLabels[gui_player].end() )
+					{
+						featherGUI.labelDiscoveries[label] = FeatherGUI_t::DiscoveryAnim_t();
+					}
 					clientLearnedScrollLabels[gui_player].insert(i);
 					break;
 				}
@@ -10956,7 +10965,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		auto drawerFrame = tinkerFrame->addFrame("tinker drawer");
 		SDL_Rect drawerPos{ 0, 0, 258, 228 };
 		drawerFrame->setSize(drawerPos);
-		drawerFrame->setHollow(true);
+		drawerFrame->setHollow(false);
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
 			"*images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "tinker drawer img");
@@ -11034,7 +11043,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 	{
 		auto bgFrame = tinkerFrame->addFrame("tinker base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
@@ -12779,7 +12788,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			if ( alchemyResultPotion.identified )
 			{
 				alchemyResultPotion.type = res;
-				if ( res == POTION_SICKNESS )
+				if ( res == POTION_SICKNESS && !samePotion )
 				{
 					doRandomAppearances = true;
 				}
@@ -13698,7 +13707,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 		16,
 		recipeWidth,
 		kRecipeListHeight });
-	frame->setHollow(true);
+	frame->setHollow(false);
 	frame->setBorder(0);
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
@@ -13762,7 +13771,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 
 	auto bgImgFrame = recipesFrame->addFrame("recipe img frame");
 	bgImgFrame->setSize(SDL_Rect{ 0, 0, recipeWidth, 328 });
-	bgImgFrame->setHollow(true);
+	bgImgFrame->setHollow(false);
 	auto bg = bgImgFrame->addImage(SDL_Rect{ 0, 0, recipeWidth, 328 },
 		makeColor(255, 255, 255, 255),
 		"*#images/ui/Alchemy/Alchemy_Recipes_00.png", "recipe base img");
@@ -13845,7 +13854,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 
 	{
 		auto notificationFrame = alchFrame->addFrame("notification");
-		notificationFrame->setHollow(true);
+		notificationFrame->setHollow(false);
 		notificationFrame->setBorder(0);
 		notificationFrame->setInheritParentFrameOpacity(false);
 		notificationFrame->setDisabled(true);
@@ -13879,7 +13888,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 	{
 		auto bgFrame = alchFrame->addFrame("alchemy base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
@@ -15448,6 +15457,7 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 							{
 								// we know this scroll's index
 								identified = true;
+								break;
 							}
 						}
 						break;
@@ -15463,6 +15473,7 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 	int index = 0;
 	for ( auto& scroll : sortedScrolls )
 	{
+		Item* scrollItem = nullptr;
 		for ( node_t* node = parentGUI.scribingTotalItems.first; node; node = node->next )
 		{
 			if ( node->list == &stats[parentGUI.getPlayer()]->inventory )
@@ -15476,6 +15487,7 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 				{
 					item->x = 0;
 					item->y = index;
+					scrollItem = item;
 					break;
 				}
 			}
@@ -15484,9 +15496,19 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 		{
 			auto titleTxt = frame->findField("title");
 			titleTxt->setText(scroll.first.c_str());
+			titleTxt->setColor(hudColors.characterSheetNeutral);
+			auto result = FEATHER_ACTION_NONE;
+			if ( scrollItem && scroll.second.second )
+			{
+				result = setItemDisplayNameAndPrice(scrollItem, true);
+				if ( result == FEATHER_ACTION_CANT_AFFORD )
+				{
+					titleTxt->setColor(hudColors.characterSheetFaintText);
+				}
+			}
 			auto bodyTxt = frame->findField("body");
 			bodyTxt->setText("???");
-			bodyTxt->setColor(hudColors.characterSheetFaintText);
+			bodyTxt->setColor(hudColors.characterSheetOffWhiteText);
 			if ( scroll.second.second )
 			{
 				std::string scrollShortName = items[scroll.second.first].name_identified;
@@ -15499,8 +15521,57 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 					scrollShortName = scrollShortName.substr(ItemTooltips.adjectives["scroll_prefixes"]["piece_of"].size());
 				}
 				camelCaseString(scrollShortName);
-				bodyTxt->setText(scrollShortName.c_str());
 				bodyTxt->setColor(hudColors.characterSheetOffWhiteText);
+
+				if ( labelDiscoveries.find(scroll.first) != labelDiscoveries.end() )
+				{
+					bool deleted = false;
+					auto& discovery = labelDiscoveries[scroll.first];
+					if ( discovery.processedOnTick != ticks && ticks % 2 == 0 )
+					{
+						real_t percent = ((ticks - discovery.startTicks) / (TICKS_PER_SECOND / 10)) + 1;
+						percent /= 10.0;
+						percent = std::min(percent, 1.0);
+						size_t numChars = std::min(size_t(scrollShortName.size() * percent), scrollShortName.size());
+						discovery.name = scrollShortName.substr(0, numChars);
+						for ( auto sz = numChars; sz < scrollShortName.size(); ++sz )
+						{
+							discovery.name += 'A' + (rand() % 26);
+						}
+						if ( percent >= 0.999 )
+						{
+							deleted = true;
+							labelDiscoveries.erase(scroll.first);
+						}
+						discovery.processedOnTick = ticks;
+					}
+					if ( !deleted )
+					{
+						bodyTxt->setText(discovery.name.c_str());
+					}
+					else
+					{
+						bodyTxt->setText(scrollShortName.c_str());
+					}
+				}
+				else
+				{
+					bodyTxt->setText(scrollShortName.c_str());
+				}
+			}
+			if ( result == FEATHER_ACTION_CANT_AFFORD )
+			{
+				bodyTxt->setColor(hudColors.characterSheetFaintText);
+			}
+			auto bg = frame->findImage("bg");
+			bg->path = "images/ui/Feather/Feather_ListUnselected_00.png";
+			if ( scrollItem && isInteractable && highlightedSlot == index )
+			{
+				if ( getSelectedFeatherSlotX() == scrollItem->x
+					&& getSelectedFeatherSlotY() == scrollItem->y )
+				{
+					bg->path = "images/ui/Feather/Feather_ListSelected_00.png";
+				}
 			}
 		}
 		++index;
@@ -15566,6 +15637,11 @@ void GenericGUIMenu::FeatherGUI_t::closeFeatherMenu()
 	bool wasOpen = bOpen;
 	bOpen = false;
 	bFirstTimeSnapCursor = false;
+	highlightedSlot = -1;
+	bDrawerOpen = false;
+	labelDiscoveries.clear();
+	inscribeSuccessTicks = 0;
+	inscribeSuccessName = "";
 	if ( wasOpen )
 	{
 		if ( inputs.getUIInteraction(playernum)->selectedItem )
@@ -15636,6 +15712,7 @@ void onFeatherChangeTabAction(const int playernum, bool changingToNewTab)
 	}
 	if ( changingToNewTab )
 	{
+		featherGUI.bDrawerOpen = false;
 		featherGUI.clearItemDisplayed();
 		featherGUI.itemRequiresTitleReflow = true;
 		featherGUI.animPrompt = 1.0;
@@ -15745,7 +15822,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	}
 
 	bool usingScribingMenu = parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE
-		&& parentGUI.scribingBlankScrollTarget != nullptr;
+		&& bDrawerOpen;
 	if ( !usingScribingMenu )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -15953,7 +16030,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 
 	bool itemActionOK = itemActionType == FEATHER_ACTION_OK 
 		|| itemActionType == FEATHER_ACTION_MAY_SUCCEED
-		|| itemActionType == FEATHER_ACTION_OK_AND_DESTROY;
+		|| itemActionType == FEATHER_ACTION_OK_AND_DESTROY
+		|| itemActionType == FEATHER_ACTION_OK_UNKNOWN_SCROLL;
 	if ( itemActionOK )
 	{
 		animInvalidAction = 0.0;
@@ -16086,7 +16164,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		{
 			closeBtn->deselect();
 		}
-		if ( closeBtn->isDisabled() && usingGamepad && !parentGUI.scribingBlankScrollTarget )
+		if ( closeBtn->isDisabled() && usingGamepad && !bDrawerOpen )
 		{
 			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
 			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
@@ -16199,6 +16277,9 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		modifierPressed = true;
 	}
 
+	real_t inscribeSuccessFeedbackPercent = 0.0;
+	bool inscribeSuccessFeedbackActive = false;
+
 	if ( itemActionType != FEATHER_ACTION_NONE && itemDesc.size() > 1 )
 	{
 		if ( isInteractable )
@@ -16216,7 +16297,40 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		{
 			// prompt + glyph
 			actionPromptTxt->setDisabled(false);
-			if ( itemActionOK )
+			if ( inscribeSuccessName != "" && inscribeSuccessTicks > 0 && ((ticks - inscribeSuccessTicks) < 2 * TICKS_PER_SECOND) )
+			{
+				inscribeSuccessFeedbackActive = true;
+				inscribeSuccessFeedbackPercent = 1.0;
+				auto tickDiff = ticks - inscribeSuccessTicks;
+				if ( (tickDiff) < (TICKS_PER_SECOND / 4) )
+				{
+					inscribeSuccessFeedbackPercent = 1.0 - ((TICKS_PER_SECOND / 4) - tickDiff) / (real_t)(TICKS_PER_SECOND / 4);
+				}
+				/*else if ( tickDiff > (3 * TICKS_PER_SECOND / 2) )
+				{
+					inscribeSuccessFeedbackPercent = 1.0 - (tickDiff - (3 * TICKS_PER_SECOND / 2)) / (real_t)(TICKS_PER_SECOND / 2);
+				}*/
+				char buf[128] = "";
+				int index = 0;
+				for ( auto& scroll : sortedScrolls )
+				{
+					if ( scroll.first == inscribeSuccessName )
+					{
+						if ( auto frame = getFeatherSlotFrame(0, index) )
+						{
+							auto bodyTxt = frame->findField("body");
+							snprintf(buf, sizeof(buf), language[4191], bodyTxt->getText());
+						}
+						break;
+					}
+					++index;
+				}
+				actionPromptTxt->setText(buf);
+				actionPromptTxt->setColor(hudColors.characterSheetGreen);
+				actionPromptImg->disabled = true;
+				actionModifierImg->disabled = true;
+			}
+			else if ( itemActionOK && isInteractable )
 			{
 				if ( usingGamepad )
 				{
@@ -16301,9 +16415,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				actionPromptTxt->setText("");
 				actionPromptImg->disabled = true;
 				actionModifierImg->disabled = true;
-				if ( !(parentGUI.scribingBlankScrollTarget 
+				if ( !(bDrawerOpen 
 					&& parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE
-					&& currentHoveringInscriptionLabel == "") )
+					&& currentHoveringInscriptionLabel == "")
+					&& isInteractable )
 				{
 					switch ( itemActionType )
 					{
@@ -16315,6 +16430,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 							break;
 						case FEATHER_ACTION_CANT_AFFORD:
 							actionPromptTxt->setText(language[4186]);
+							break;
+						case FEATHER_ACTION_NO_BLANK_SCROLL:
+						case FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT:
+							actionPromptTxt->setText(language[4190]);
 							break;
 						default:
 							actionPromptTxt->setText("-");
@@ -16382,13 +16501,24 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			// charge costs
 			minChargeText->setColor(neutralColor);
 			maxChargeText->setColor(neutralColor);
-			if ( (!itemActionOK && itemActionType != FEATHER_ACTION_CANT_AFFORD)
+			if ( itemActionType == FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT )
+			{
+				minChargeText->setText("?");
+				maxChargeText->setText("?");
+			}
+			else if ( (!itemActionOK && itemActionType != FEATHER_ACTION_CANT_AFFORD && itemActionType != FEATHER_ACTION_NO_BLANK_SCROLL)
 				|| (chargeCostMin == 0 && chargeCostMax == 0))
 			{
 				minChargeText->setText("-");
 				maxChargeText->setText("-");
 			}
-			else if ( itemActionOK || itemActionType == FEATHER_ACTION_CANT_AFFORD )
+			else if ( itemActionOK && itemActionType == FEATHER_ACTION_OK_UNKNOWN_SCROLL )
+			{
+				minChargeText->setText("?");
+				maxChargeText->setText("?");
+			}
+			else if ( itemActionOK || itemActionType == FEATHER_ACTION_CANT_AFFORD
+				|| itemActionType == FEATHER_ACTION_NO_BLANK_SCROLL )
 			{
 				minChargeText->setText(std::to_string(chargeCostMin).c_str());
 				maxChargeText->setText(std::to_string(chargeCostMax).c_str());
@@ -16427,7 +16557,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		actionPromptUnselectedTxt->setColor(makeColor(224, 224, 224, 255));
 		if ( parentGUI.scribingFilter == SCRIBING_FILTER_CRAFTABLE )
 		{
-			if ( parentGUI.scribingBlankScrollTarget )
+			if ( bDrawerOpen )
 			{
 				actionPromptUnselectedTxt->setText(language[4187]);
 			}
@@ -16474,6 +16604,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		SDL_Color color;
 		getColor(actionPromptTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
 		color.a = (Uint8)(255 * animTooltip);
+		if ( inscribeSuccessFeedbackActive )
+		{
+			color.a *= inscribeSuccessFeedbackPercent;
+		}
 		actionPromptImg->color = makeColor(255, 255, 255, color.a);
 		actionModifierImg->color = actionPromptImg->color;
 		actionPromptTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
@@ -16545,7 +16679,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
 			{
 				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
-				if ( parentGUI.scribingBlankScrollTarget )
+				if ( bDrawerOpen )
 				{
 					parentGUI.scribingBlankScrollTarget = nullptr;
 					// reset to inventory mode
@@ -16605,6 +16739,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		bool foundItem = false;
 		bool inscribingBlankScroll = false;
 		bool repairingSpellbook = false;
+		inscribeSuccessTicks = 0;
+		inscribeSuccessName = "";
 		if ( player_inventory )
 		{
 			for ( node_t* node = player_inventory->first; node != NULL; node = nextnode )
@@ -16616,7 +16752,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 					if ( isInscriptionDrawerItemSelected(item) )
 					{
 						foundItem = true;
-						if ( itemActionOK )
+						if ( itemActionOK && parentGUI.scribingBlankScrollTarget )
 						{
 							parentGUI.executeOnItemClick(item);
 						}
@@ -16731,7 +16867,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	if ( bOpen && isInteractable )
 	{
 		// do sliders
-		if ( !slider->isDisabled() && !(abs(scrollSetpoint - scrollAnimateX) > 0.00001) )
+		if ( !slider->isDisabled() && !(abs(scrollSetpoint - scrollAnimateX) > 0.00001 && usingGamepad) )
 		{
 			if ( !inputs.getUIInteraction(playernum)->selectedItem
 				&& players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
@@ -16833,7 +16969,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		auto drawerFrame = featherFrame->addFrame("feather drawer");
 		SDL_Rect drawerPos{ 0, 0, featherDrawerWidth, 248 };
 		drawerFrame->setSize(drawerPos);
-		drawerFrame->setHollow(true);
+		drawerFrame->setHollow(false);
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
 			"*images/ui/Feather/Feather_Drawer_00.png", "feather drawer img");
@@ -16890,6 +17026,11 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 					body->setSize(SDL_Rect{ 8, 18, listEntry->getSize().w, 24 });
 					body->setColor(hudColors.characterSheetFaintText);
 
+					auto bg = listEntry->addImage(listEntry->getSize(), 0xFFFFFFFF,
+						"images/ui/Feather/Feather_ListUnselected_00.png", "bg");
+					bg->pos.x = 0;
+					bg->pos.y = 0;
+
 					//auto slotFrame = listEntry->addFrame("item slot frame");
 					//SDL_Rect slotPos{ 0, 0, inventorySlotSize, inventorySlotSize };
 					//slotFrame->setSize(slotPos);
@@ -16924,7 +17065,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 	{
 		auto bgFrame = featherFrame->addFrame("feather base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
@@ -17224,11 +17365,57 @@ GenericGUIMenu::FeatherGUI_t::FeatherActions_t GenericGUIMenu::FeatherGUI_t::set
 		{
 			if ( isItemInscriptionNode )
 			{
-				currentHoveringInscriptionLabel = item->getScrollLabel();
+				std::string label = item->getScrollLabel();
+				if ( !checkResultOnly )
+				{
+					currentHoveringInscriptionLabel = label;
+				}
+				bool identified = false;
+				for ( int i = 0; i < NUMLABELS; ++i )
+				{
+					if ( label == scroll_label[i] )
+					{
+						for ( auto& s : clientLearnedScrollLabels[parentGUI.getPlayer()] )
+						{
+							if ( s == i )
+							{
+								// we know this scroll's index
+								identified = true;
+								break;
+							}
+						}
+						break;
+					}
+				}
 				int chargeMin = 0;
 				int chargeMax = 0;
 				parentGUI.scribingGetChargeCost(item, chargeMin, chargeMax);
-				if ( featherCharge >= chargeMin )
+				if ( bDrawerOpen && !parentGUI.scribingBlankScrollTarget )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					if ( !identified )
+					{
+						result = FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT;
+					}
+					else
+					{
+						result = FEATHER_ACTION_NO_BLANK_SCROLL;
+					}
+				}
+				else if ( !identified )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					result = FEATHER_ACTION_OK_UNKNOWN_SCROLL;
+				}
+				else if ( featherCharge >= chargeMin )
 				{
 					if ( !checkResultOnly )
 					{
@@ -17334,6 +17521,22 @@ GenericGUIMenu::FeatherGUI_t::FeatherActions_t GenericGUIMenu::FeatherGUI_t::set
 		if ( isItemInscriptionNode )
 		{
 			displayItem = parentGUI.scribingBlankScrollTarget;
+			if ( !parentGUI.scribingBlankScrollTarget )
+			{
+				itemDesc = "  ";
+				itemRequiresTitleReflow = true;
+				if ( featherFrame )
+				{
+					if ( auto baseFrame = featherFrame->findFrame("feather base") )
+					{
+						if ( auto itemTooltipFrame = baseFrame->findFrame("feather display tooltip") )
+						{
+							auto itemSlotFrame = itemTooltipFrame->findFrame("item slot frame");
+							itemSlotFrame->setDisabled(true);
+						}
+					}
+				}
+			}
 		}
 		if ( result != FEATHER_ACTION_NONE && displayItem )
 		{
@@ -17589,7 +17792,7 @@ bool GenericGUIMenu::FeatherGUI_t::isInscriptionDrawerOpen() const
 	}
 	if ( bOpen && parentGUI.guiType == GUICurrentType::GUI_TYPE_SCRIBING
 		&& parentGUI.scribingFilter == ScribingFilter::SCRIBING_FILTER_CRAFTABLE
-		&& parentGUI.scribingBlankScrollTarget != nullptr )
+		&& bDrawerOpen )
 	{
 		return true;
 	}
