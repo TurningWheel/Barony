@@ -3301,19 +3301,11 @@ namespace ConsoleCommands {
 				{
 					inputs.setPlayerIDAllowedKeyboard(0);
 					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", 0);
-					for ( int c = 0; c < MAXPLAYERS; ++c )
-					{
-						Input::inputs[c].refresh();
-					}
 				}
 				else
 				{
 					inputs.setPlayerIDAllowedKeyboard(i + 1);
 					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", i + 1);
-					for ( int c = 0; c < MAXPLAYERS; ++c )
-					{
-						Input::inputs[c].refresh();
-					}
 				}
 				break;
 			}
@@ -3322,6 +3314,10 @@ namespace ConsoleCommands {
 		{
 			inputs.setPlayerIDAllowedKeyboard(0);
 		}
+        for ( int i = 0; i < MAXPLAYERS; ++i )
+        {
+	        Input::inputs[i].refresh();
+        }
 		});
 
 	static ConsoleCommand ccmd_cyclegamepad("/cyclegamepad", "", []CCMD{

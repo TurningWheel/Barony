@@ -380,7 +380,12 @@ public:
 	~Inputs() {};
 	const void setPlayerIDAllowedKeyboard(const int player)
 	{
+	    printlog("giving keyboard to player %d", player);
 		playerUsingKeyboardControl = player;
+	}
+	const int getPlayerIDAllowedKeyboard()
+	{
+	    return playerUsingKeyboardControl;
 	}
 	const bool bPlayerUsingKeyboardControl(const int player) const
 	{

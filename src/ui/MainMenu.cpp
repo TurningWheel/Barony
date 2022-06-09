@@ -7243,6 +7243,13 @@ bind_failed:
 		card->setHideSelectors(true);
 		card->setHideGlyphs(true);
 
+		card->setTickCallback([](Widget& widget){
+		    const int player = widget.getOwner();
+		    if (inputs.getPlayerIDAllowedKeyboard() != player && !inputs.hasController(player)) {
+                createStartButton(player);
+		    }
+		    });
+
 		return card;
 	}
 
@@ -8971,6 +8978,39 @@ bind_failed:
 		text->setHJustify(Field::justify_t::CENTER);
 	}
 
+	static inline int countControllers() {
+        int num_controllers = 0;
+        for (auto& controller : game_controllers) {
+			if (controller.isActive()) {
+			    ++num_controllers;
+			}
+		}
+        return num_controllers;
+	}
+
+	static inline int countUnassignedControllers() {
+	    int num_controllers = countControllers();
+        for (int c = 0; c < MAXPLAYERS; ++c) {
+            if (inputs.hasController(c)) {
+                --num_controllers;
+            }
+        }
+        return num_controllers;
+	}
+
+	static bool isControllerAvailable(int player, int num_controllers) {
+        for (int c = 0; c < player; ++c) {
+            if (!isPlayerSignedIn(c)) {
+                return false;
+            }
+        }
+        if (num_controllers) {
+            return true;
+        } else {
+            return false;
+        }
+	}
+
 	static void createStartButton(int index) {
 	    if (playerSlotsLocked[index]) {
 	        createLockedStone(index);
@@ -8980,9 +9020,9 @@ bind_failed:
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
-		// release any controller assigned to this player
 #ifndef NINTENDO
-        if (inputs.hasController(index) && index != 0) {
+		// release any controller assigned to this player
+        if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
             Input::inputs[index].refresh();
         }
@@ -9014,33 +9054,178 @@ bind_failed:
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 
-		static auto invite_func = [](Button& button){
+		static auto start_func = [](int index){
 		    auto controller_prompt = main_menu_frame->findWidget("controller_dimmer", false);
-		    if (!controller_prompt) {
-		        switch (button.getOwner()) {
-		        case 0: createControllerPrompt(0, true, [](){createCharacterCard(0);}); break;
-		        case 1: createControllerPrompt(1, true, [](){createCharacterCard(1);}); break;
-		        case 2: createControllerPrompt(2, true, [](){createCharacterCard(2);}); break;
-		        case 3: createControllerPrompt(3, true, [](){createCharacterCard(3);}); break;
-		        }
-		    }
+	        if (!controller_prompt) {
+                if (loadingsavegame) {
+                    createReadyStone(index, true, true);
+                } else {
+                    createCharacterCard(index);
+                }
+	        }
 		    };
 
-		auto invite = card->addButton("invite_button");
-		invite->setText("Press to Start");
-		invite->setHideSelectors(true);
-		invite->setFont(smallfont_outline);
-		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		invite->setVJustify(Button::justify_t::TOP);
-		invite->setHJustify(Button::justify_t::CENTER);
-		invite->setBorder(0);
-		invite->setColor(0);
-		invite->setBorderColor(0);
-		invite->setHighlightColor(0);
-		invite->setWidgetBack("back_button");
-		invite->setHideKeyboardGlyphs(false);
-		invite->setCallback(invite_func);
-		invite->select();
+		auto start = card->addField("start", 128);
+		start->setFont(smallfont_outline);
+		start->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		start->setVJustify(Field::justify_t::TOP);
+		start->setHJustify(Field::justify_t::CENTER);
+		start->setTickCallback([](Widget& widget){
+		    const int player = widget.getOwner();
+
+            // determine whether I should own the keyboard
+            if (inputs.getPlayerIDAllowedKeyboard() != player) {
+		        if (currentLobbyType == LobbyType::LobbyLocal) {
+		            bool shouldOwnKeyboard = true;
+		            if (isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
+		                shouldOwnKeyboard = false;
+		            } else {
+		                for (int c = 0; c < player; ++c) {
+		                    if (isPlayerSignedIn(c)) {
+		                        if (inputs.getPlayerIDAllowedKeyboard() == c) {
+		                            shouldOwnKeyboard = false;
+		                            break;
+		                        }
+		                    } else {
+	                            shouldOwnKeyboard = false;
+	                            break;
+		                    }
+		                }
+		            }
+		            if (shouldOwnKeyboard) {
+		                inputs.setPlayerIDAllowedKeyboard(player);
+		            }
+		        } else {
+		            inputs.setPlayerIDAllowedKeyboard(player);
+		        }
+		    }
+
+            // set field text
+		    auto field = static_cast<Field*>(&widget);
+		    if (inputs.getPlayerIDAllowedKeyboard() == player ||
+		        inputs.hasController(player)) {
+		        field->setText("Press to Start");
+		    } else {
+		        const int num_controllers = countUnassignedControllers();
+		        if (isControllerAvailable(player, num_controllers)) {
+		            field->setText("Press to Start");
+		        } else {
+		            if (num_controllers < player) {
+		                field->setText("Connect Controller");
+		            } else {
+		                field->setText("Please Wait");
+		            }
+		        }
+		    }
+
+		    auto& input = Input::inputs[player];
+
+		    // handle B to go back
+		    bool no_one_logged_in = true;
+		    if (currentLobbyType == LobbyType::LobbyLocal) {
+		        for (int c = 0; c < MAXPLAYERS; ++c) {
+		            if (isPlayerSignedIn(c)) {
+		                no_one_logged_in = false;
+		                break;
+		            }
+		        }
+		    } else if (isPlayerSignedIn(clientnum)) {
+		        no_one_logged_in = false;
+		    }
+		    if (no_one_logged_in) {
+		        if (input.binary("MenuCancel")) {
+		            assert(main_menu_frame);
+		            auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+		            auto back = lobby->findFrame("back"); assert(back);
+		            auto back_button = back->findButton("back_button"); assert(back_button);
+		            back_button->select();
+		        }
+		    }
+
+		    // handle login button presses
+		    if (input.consumeBinaryToggle("GamepadLoginA") || input.consumeBinaryToggle("GamepadLoginStart")) {
+		        if (input.binary("GamepadLoginA")) {
+		            input.consumeBindingsSharedWithBinding("GamepadLoginA");
+		        }
+		        if (input.binary("GamepadLoginStart")) {
+		            input.consumeBindingsSharedWithBinding("GamepadLoginStart");
+		        }
+		        // let the next empty player slot login with the keyboard
+		        if (!isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
+		            for (int c = 0; c < MAXPLAYERS; ++c) {
+		                if (c == player) {
+		                    // skip ourselves
+		                    continue;
+		                }
+		                if (!isPlayerSignedIn(c)) {
+		                    inputs.setPlayerIDAllowedKeyboard(c);
+		                    break;
+		                }
+		            }
+		        }
+		        start_func(player);
+		        return;
+		    }
+		    if (inputs.getPlayerIDAllowedKeyboard() == player && input.consumeBinaryToggle("KeyboardLogin")) {
+		        input.consumeBindingsSharedWithBinding("KeyboardLogin");
+#ifndef NINTENDO
+		        // release any controller assigned to this player
+                if (inputs.hasController(player)) {
+                    inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
+                    Input::inputs[player].refresh();
+                }
+#endif
+		        start_func(player);
+		        return;
+		    }
+		    });
+		start->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+		    const int player = widget.getOwner();
+		    const bool controllerAvailable = inputs.hasController(player) || isControllerAvailable(player, countUnassignedControllers());
+		    const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+		    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+            if (inputs.getPlayerIDAllowedKeyboard() == player) {
+                if (controllerAvailable) {
+                    // draw spacebar and A button
+                    {
+                        std::string path = Input::getGlyphPathForInput("Space", pressed);
+		                auto image = Image::get((std::string("*") + path).c_str());
+		                const int x = pos.x + pos.w / 2 - 32;
+		                const int y = pos.y + pos.h / 2 + 16;
+		                const int w = image->getWidth();
+		                const int h = image->getHeight();
+		                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+                    }
+                    {
+                        std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+		                auto image = Image::get((std::string("*") + path).c_str());
+		                const int x = pos.x + pos.w / 2 + 32;
+		                const int y = pos.y + pos.h / 2 + 16;
+		                const int w = image->getWidth();
+		                const int h = image->getHeight();
+		                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+                    }
+                } else {
+                    // only draw spacebar
+                    std::string path = Input::getGlyphPathForInput("Space", pressed);
+		            auto image = Image::get((std::string("*") + path).c_str());
+		            const int x = pos.x + pos.w / 2;
+		            const int y = pos.y + pos.h / 2 + 16;
+		            const int w = image->getWidth();
+		            const int h = image->getHeight();
+		            image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+                }
+            } else if (controllerAvailable) {
+                // draw A button
+                std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+                auto image = Image::get((std::string("*") + path).c_str());
+                const int x = pos.x + pos.w / 2;
+                const int y = pos.y + pos.h / 2 + 16;
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+            }
+		    });
 	}
 
 	static void createInviteButton(int index) {
@@ -9080,7 +9265,7 @@ bind_failed:
 		auto invite = card->addButton("invite_button");
 		invite->setText("Press to Invite");
 		invite->setFont(smallfont_outline);
-		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 16});
 		invite->setVJustify(Button::justify_t::TOP);
 		invite->setHJustify(Button::justify_t::CENTER);
 		invite->setBorder(0);
@@ -9195,36 +9380,62 @@ bind_failed:
 
         if (local) {
             static auto cancel_fn = [](int index){
-                if (main_menu_fade_destination == FadeDestination::GameStart) {
-                    // fix servers being able to back out on the last frame
+                if (main_menu_fade_destination == FadeDestination::GameStart ||
+                    main_menu_fade_destination == FadeDestination::GameStartDummy) {
+                    // fix being able to back out on the last frame
                     return;
+                }
+                if (loadingsavegame) {
+                    createStartButton(index);
                 } else {
                     createCharacterCard(index);
                 }
                 };
 
-		    auto cancel = card->addButton("cancel_button"); assert(cancel);
-		    cancel->setText("Ready!");
-		    cancel->setHideSelectors(true);
-		    cancel->setFont(smallfont_outline);
-		    cancel->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		    cancel->setVJustify(Button::justify_t::TOP);
-		    cancel->setHJustify(Button::justify_t::CENTER);
-		    cancel->setBorder(0);
-		    cancel->setColor(0);
-		    cancel->setBorderColor(0);
-		    cancel->setHighlightColor(0);
-		    cancel->setWidgetBack("cancel_button");
-		    cancel->setHideKeyboardGlyphs(false);
-		    cancel->setWidgetSearchParent(card->getName());
-		    cancel->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
-		    switch (index) {
-		    case 0: cancel->setCallback([](Button&){cancel_fn(0);}); break;
-		    case 1: cancel->setCallback([](Button&){cancel_fn(1);}); break;
-		    case 2: cancel->setCallback([](Button&){cancel_fn(2);}); break;
-		    case 3: cancel->setCallback([](Button&){cancel_fn(3);}); break;
+            static auto ready_fn = [](int index){
+                if (main_menu_fade_destination == FadeDestination::GameStart ||
+                    main_menu_fade_destination == FadeDestination::GameStartDummy) {
+                    // fix being able to back out on the last frame
+                    return;
+                }
+                createReadyStone(index, true, true);
+                };
+
+		    auto button = card->addButton("button"); assert(button);
+		    if (ready) {
+		        button->setText("Ready!");
+		    } else {
+		        button->setText("Not Ready");
 		    }
-		    cancel->select();
+		    button->setHideSelectors(true);
+		    button->setFont(smallfont_outline);
+		    button->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		    button->setVJustify(Button::justify_t::TOP);
+		    button->setHJustify(Button::justify_t::CENTER);
+		    button->setBorder(0);
+		    button->setColor(0);
+		    button->setBorderColor(0);
+		    button->setHighlightColor(0);
+		    button->setWidgetBack("button");
+		    button->setHideKeyboardGlyphs(false);
+		    button->setWidgetSearchParent(card->getName());
+		    button->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
+		    if (ready) {
+		        switch (index) {
+		        case 0: button->setCallback([](Button&){cancel_fn(0);}); break;
+		        case 1: button->setCallback([](Button&){cancel_fn(1);}); break;
+		        case 2: button->setCallback([](Button&){cancel_fn(2);}); break;
+		        case 3: button->setCallback([](Button&){cancel_fn(3);}); break;
+		        }
+		    } else {
+		        switch (index) {
+		        case 0: button->setCallback([](Button&){ready_fn(0);}); break;
+		        case 1: button->setCallback([](Button&){ready_fn(1);}); break;
+		        case 2: button->setCallback([](Button&){ready_fn(2);}); break;
+		        case 3: button->setCallback([](Button&){ready_fn(3);}); break;
+		        }
+		    }
+		    button->select();
 		} else {
 		    auto status = card->addField("status", 64); assert(status);
 		    if (ready) {
@@ -9250,8 +9461,15 @@ bind_failed:
 			auto backdrop = card->findImage("backdrop"); assert(backdrop);
 			if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
 				playersInLobby[c] = false;
-				if (multiplayer != SINGLE && !client_disconnected[c]) {
-			        allReady = false;
+				if (multiplayer == SINGLE) {
+				    if (loadingsavegame && !playerSlotsLocked[c]) {
+				        allReady = false;
+				    }
+				} else {
+				    if (!client_disconnected[c]) {
+				        // we know a player is connected to this slot, and they're not ready
+			            allReady = false;
+			        }
 			    }
 			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
 				playersInLobby[c] = true;
@@ -9382,6 +9600,12 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
+		// just in case we're still awaiting a controller for player 1,
+		// this clears it.
+		if (type == LobbyType::LobbyLocal) {
+		    Input::waitingToBindControllerForPlayer = -1;
+		}
+
 		// reset ALL player stats
         if (!loadingsavegame) {
 		    for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -9476,6 +9700,33 @@ bind_failed:
 			currentLobbyType = LobbyType::None;
 			createMainMenu(false);
 			});
+		back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+		    if (currentLobbyType == LobbyType::None) {
+		        return;
+		    }
+		    bool no_one_logged_in = true;
+		    if (currentLobbyType == LobbyType::LobbyLocal) {
+		        for (int c = 0; c < MAXPLAYERS; ++c) {
+		            if (isPlayerSignedIn(c)) {
+		                no_one_logged_in = false;
+		                break;
+		            }
+		        }
+		    } else if (isPlayerSignedIn(clientnum)) {
+		        no_one_logged_in = false;
+		    }
+		    if (no_one_logged_in && countControllers() > 0) {
+		        const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+		        const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+                std::string path = Input::getGlyphPathForInput("ButtonB", pressed);
+                auto image = Image::get((std::string("*") + path).c_str());
+                const int x = pos.x + pos.w + 8;
+                const int y = pos.y + pos.h / 2;
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		    }
+		    });
 
 		auto back_frame = back_button->getParent();
 		back_frame->setTickCallback([](Widget& widget){
@@ -9556,19 +9807,22 @@ bind_failed:
 	        if (Input::waitingToBindControllerForPlayer >= 0) {
 	            // this only happens if the mouse was used to click this button
 	            Input::waitingToBindControllerForPlayer = -1;
-	            inputs.setPlayerIDAllowedKeyboard(index);
-	            inputs.getVirtualMouse(index)->draw_cursor = true;
-	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	            if (inputs.hasController(index)) {
 	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
 	            }
+	            inputs.setPlayerIDAllowedKeyboard(index);
+	            inputs.getVirtualMouse(index)->draw_cursor = true;
+	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	        } else {
 	            // this happens if a controller was bound to the player
 				inputs.getVirtualMouse(index)->draw_cursor = false;
 				inputs.getVirtualMouse(index)->lastMovementFromController = true;
-	            if (inputs.bPlayerUsingKeyboardControl(index)) {
-	                inputs.setPlayerIDAllowedKeyboard(0);
+	            if (inputs.getPlayerIDAllowedKeyboard() == index) {
+	                inputs.setPlayerIDAllowedKeyboard(-1);
 	            }
+	        }
+	        for (auto& input : Input::inputs) {
+	            input.refresh();
 	        }
 		    button.deselect();
 		    clicked = true;
@@ -12244,7 +12498,7 @@ bind_failed:
 	        players.clear();
 	        players.reserve(4);
 	        for (int c = 0; c < 4; ++c) {
-	            if (!client_disconnected[c]) {
+	            if (isPlayerSignedIn(c)) {
 	                players.push_back(c);
 	            }
 	        }
@@ -13871,5 +14125,54 @@ bind_failed:
 
 	void receiveInvite() {
 	    assert(0 && "Received an invite. Behavior goes here!");
+	}
+
+	bool isPlayerSignedIn(int index) {
+	    if (index < 0 || index >= MAXPLAYERS) {
+	        return false;
+	    }
+	    if (intro) {
+	        switch (currentLobbyType) {
+	        default:
+	        case LobbyType::None: return false;
+	        case LobbyType::LobbyLocal: {
+	            auto lobby = main_menu_frame->findFrame("lobby");
+	            if (!lobby) {
+	                return false;
+	            }
+			    auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+			    if (!card) {
+			        return false;
+			    }
+			    auto backdrop = card->findImage("backdrop");
+			    if (!backdrop) {
+			        return false;
+			    }
+			    return backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
+			}
+			case LobbyType::LobbyLAN:
+			case LobbyType::LobbyOnline: {
+			    if (index == clientnum) {
+	                auto lobby = main_menu_frame->findFrame("lobby");
+	                if (!lobby) {
+	                    return false;
+	                }
+			        auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+			        if (!card) {
+			            return false;
+			        }
+			        auto backdrop = card->findImage("backdrop");
+			        if (!backdrop) {
+			            return false;
+			        }
+			        return backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
+			    } else {
+			        return !client_disconnected[index];
+			    }
+			}
+			}
+	    } else {
+	        return !client_disconnected[index];
+	    }
 	}
 }

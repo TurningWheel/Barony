@@ -9488,6 +9488,11 @@ void doNewGame(bool makeHighscore) {
 	multiplayerselect = SINGLE;
 	intro = true; //Fix items auto-adding to the hotbar on game restart.
 
+    for ( int i = 0; i < MAXPLAYERS; ++i )
+    {
+        Input::inputs[i].refresh();
+    }
+
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_DEFAULT )
 	{
 		if ( makeHighscore )

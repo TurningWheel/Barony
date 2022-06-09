@@ -62,6 +62,7 @@ namespace MainMenu {
 		HallOfTrials,
 	};
 
+    bool isPlayerSignedIn(int index);
     bool isCutsceneActive();
 	void beginFade(FadeDestination);
 

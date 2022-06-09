@@ -129,6 +129,9 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("GamepadLoginA", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("GamepadLoginStart", (std::string("Pad") + std::to_string(c) + std::string("ButtonStart")).c_str()));
+
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));
@@ -148,6 +151,8 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("InspectWithMouse", "Mouse1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MinimapPing", "Mouse1"));
+
+		inputs[c].kb_system_bindings.insert(std::make_pair("KeyboardLogin", "Space"));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("LogHome", "Home"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("LogEnd", "End"));

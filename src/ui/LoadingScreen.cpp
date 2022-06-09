@@ -130,13 +130,17 @@ void createLevelLoadScreen(real_t progress) {
 }
 
 void doLoadingScreen() {
+	std::lock_guard<std::mutex> lock(loading_mutex);
+	auto loading_frame = gui->findFrame("loading_frame"); assert(loading_frame);
+	if (!loading_frame)
+	{
+		return;
+	}
+
 	Uint32 oldTicks = ticks;
 	handleEvents();
 	if (oldTicks != ticks) {
-		std::lock_guard<std::mutex> lock(loading_mutex);
-
 		// find spinning widget
-		auto loading_frame = gui->findFrame("loading_frame"); assert(loading_frame);
 		auto spinning_widget = loading_frame->findImage("spinning_widget"); assert(spinning_widget);
 
 		// build new image path

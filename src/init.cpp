@@ -599,15 +599,14 @@ int initApp(char const * const title, int fullscreen)
 		FileIO::close(fp);
 		updateLoadingScreen(60);
 
-		// TODO this function now needs to call updateLoadingScreen() as well.
-		int soundStatus = loadSoundResources();
+		int soundStatus = loadSoundResources(60, 20); // start at 60% loading, progress to 80%
 		if ( 0 != soundStatus )
 		{
 		    loading_done = true;
 			return soundStatus;
 		}
 
-		updateLoadingScreen(90);
+		updateLoadingScreen(80);
 		loading_done = true;
 		return 0;
 	});
@@ -1946,7 +1945,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 void generateVBOs(int start, int end)
 {
-	int count = end - start;
+	const int count = end - start;
 
 	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
 	SDL_glGenVertexArrays(count, vas.get());
@@ -2032,6 +2031,10 @@ void generateVBOs(int start, int end)
 		// grayscale shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+
+        const int current = c - start;
+		updateLoadingScreen(80 + (10 * current) / count);
+		doLoadingScreen();
 	}
 }
 

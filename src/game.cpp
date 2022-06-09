@@ -3169,6 +3169,31 @@ void handleButtons(void)
 
 -------------------------------------------------------------------------------*/
 
+static void bindControllerToPlayer(int id, int player) {
+    inputs.removeControllerWithDeviceID(id); // clear any other player using this
+    inputs.setControllerID(player, id);
+    inputs.getVirtualMouse(player)->draw_cursor = false;
+    inputs.getVirtualMouse(player)->lastMovementFromController = true;
+    printlog("(Device %d bound to player %d)", id, player);
+    for (int c = 0; c < 4; ++c) {
+        auto& input = Input::inputs[c];
+	    input.refresh();
+    }
+    auto& input = Input::inputs[player];
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_A)
+    {
+        input.consumeBinary("MenuConfirm");
+    }
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_B)
+    {
+        input.consumeBinary("MenuBack");
+    }
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_START)
+    {
+        input.consumeBinary("MenuStart");
+    }
+}
+
 #ifdef NINTENDO
 static real_t time_diff = (real_t)0;
 #endif
@@ -3515,37 +3540,59 @@ void handleEvents(void)
 				}
 				Input::lastInputOfAnyKind = buf;
 #ifndef NINTENDO
-				if ( Input::waitingToBindControllerForPlayer >= 0
-					&& event.cbutton.button == SDL_CONTROLLER_BUTTON_A )
-				{
-					SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
-					if ( !pad )
-					{
-						printlog("(Unknown pad pressed input (instance: %d), null controller returned.)\n", event.cbutton.which);
-					}
-					else
-					{
-						for ( auto& controller : game_controllers )
-						{
-							if ( controller.isActive() && controller.getControllerDevice() == pad )
-							{
-								const int id = controller.getID();
-							    int player = Input::waitingToBindControllerForPlayer;
-								inputs.removeControllerWithDeviceID(id); // clear any other player using this
-								inputs.setControllerID(player, id);
-								inputs.getVirtualMouse(player)->draw_cursor = false;
-								inputs.getVirtualMouse(player)->lastMovementFromController = true;
-								printlog("(Device %d added to player %d", id, player);
-								Input::waitingToBindControllerForPlayer = -1;
-								for (int c = 0; c < 4; ++c) {
-								    auto& input = Input::inputs[c];
-									input.refresh();
-								}
-								auto& input = Input::inputs[player];
-								input.consumeBinary("MenuConfirm");
-								break;
-							}
-						}
+			    //if ( event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
+			    //     event.cbutton.button == SDL_CONTROLLER_BUTTON_START )
+			    {
+				    SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
+				    if ( !pad )
+				    {
+					    printlog("(Unknown pad pressed input (instance: %d), null controller returned.)\n", event.cbutton.which);
+				    }
+				    else
+				    {
+					    for ( auto& controller : game_controllers )
+					    {
+						    if ( controller.isActive() && controller.getControllerDevice() == pad )
+						    {
+			                    if ( Input::waitingToBindControllerForPlayer >= 0 )
+			                    {
+			                        // we are explicitly waiting to bind a controller to a specific player
+			                        bindControllerToPlayer(controller.getID(), Input::waitingToBindControllerForPlayer);
+								    Input::waitingToBindControllerForPlayer = -1;
+							    }
+							    else
+							    {
+							        // we are not strictly waiting to bind a controller to a player, but check if this one is already bound
+							        bool alreadyBound = false;
+							        for (int player = 0; player < MAXPLAYERS; ++player)
+							        {
+							            if (inputs.getControllerID(player) == controller.getID())
+							            {
+							                alreadyBound = true;
+							                break;
+							            }
+							        }
+							        if (!alreadyBound)
+							        {
+							            // controller is not already bound - bind it to the first player who does not have a controller
+							            for (int player = 0; player < MAXPLAYERS; ++player)
+							            {
+							                if (MainMenu::isPlayerSignedIn(player))
+							                {
+							                    // don't assign controllers to players who are already signed in...
+							                    continue;
+							                }
+							                if (inputs.getControllerID(player) == -1)
+							                {
+			                                    bindControllerToPlayer(controller.getID(), player);
+							                    break;
+							                }
+							            }
+							        }
+							    }
+							    break;
+						    }
+					    }
 					}
 				}
 #endif
