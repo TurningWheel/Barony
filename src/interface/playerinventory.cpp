@@ -3298,18 +3298,15 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 
 	// releasing items
-	if ( (!inputs.bMouseLeft(player) && !toggleclick)
-		|| (inputs.bMouseLeft(player) && toggleclick)
+	if ( (!Input::inputs[player].binary("MenuLeftClick") && !toggleclick)
+		|| (Input::inputs[player].binaryToggle("MenuLeftClick") && toggleclick)
 		|| ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str()) && toggleclick) )
 	{
 		Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
 		if ( players[player]->inventoryUI.isItemFromChest(selectedItem) )
 		{
 			releaseChestItem(player);
-			if ( inputs.bMouseLeft(player) )
-			{
-				inputs.mouseClearLeft(player);
-			}
+			Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 			return;
 		}
 		else if ( GenericGUI[player].alchemyGUI.bOpen )
@@ -3319,10 +3316,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				selectedItem = nullptr;
 				inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 				toggleclick = false;
-				if ( inputs.bMouseLeft(player) )
-				{
-					inputs.mouseClearLeft(player);
-				}
+				Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 				return;
 			}
 		}
@@ -3370,10 +3364,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						selectedItem = nullptr;
 						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 						toggleclick = false;
-						if ( inputs.bMouseLeft(player) )
-						{
-							inputs.mouseClearLeft(player);
-						}
+						Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 						return;
 					}
 				}
@@ -3529,10 +3520,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 										selectedItem = nullptr;
 										inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 										toggleclick = false;
-										if ( inputs.bMouseLeft(player) )
-										{
-											inputs.mouseClearLeft(player);
-										}
+										Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 										return;
 									}
 									else
@@ -3794,10 +3782,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 									toggleclick = false;
 								}
 							}
-							if ( inputs.bMouseLeft(player) )
-							{
-								inputs.mouseClearLeft(player);
-							}
+							Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 							if ( swappedItem && selectedItem )
 							{
 								players[player]->inventoryUI.selectedItemAnimate.animateX = 0.0;
@@ -3987,10 +3972,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 							selectedItem = nullptr;
 							inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 							toggleclick = false;
-							if ( inputs.bMouseLeft(player) )
-							{
-								inputs.mouseClearLeft(player);
-							}
+							Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 							return;
 						}
 
@@ -4188,9 +4170,9 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 				}
 			}
 		}
-		if ( inputs.bMouseLeft(player) )
+		if ( Input::inputs[player].binaryToggle("MenuLeftClick") )
 		{
-			inputs.mouseClearLeft(player);
+			Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 		}
 	}
 }
@@ -6796,6 +6778,7 @@ void Player::Inventory_t::updateInventory()
 	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
 	bool featherDrawerOpen = featherGUI.isInscriptionDrawerOpen();
 	bool featherInscribeOrRepairActive = featherGUI.isInscribeOrRepairActive();
+	featherGUI.highlightedSlot = -1;
 
 	if ( GenericGUI[player].selectedSlot < 0 )
 	{
@@ -6872,6 +6855,7 @@ void Player::Inventory_t::updateInventory()
 							&& featherGUI.isInteractable
 							&& featherGUI.isSlotVisible(x, y) )
 						{
+							featherGUI.highlightedSlot = y;
 							slotFrameToHighlight = slotFrame;
 							startx = slotFrame->getAbsoluteSize().x;
 							starty = slotFrame->getAbsoluteSize().y;
@@ -7109,6 +7093,7 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 
+		bool highlighted = false;
 		if ( slotFrameToHighlight )
 		{
 			if ( (players[player]->GUI.isDropdownActive() && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
@@ -7117,6 +7102,7 @@ void Player::Inventory_t::updateInventory()
 					&& (!inputs.getVirtualMouse(player)->draw_cursor
 						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
 			{
+				highlighted = true;
 				int width = getSlotSize();
 				if ( highlightWidth > 0 )
 				{
@@ -7129,6 +7115,11 @@ void Player::Inventory_t::updateInventory()
 				updateSelectedSlotAnimation(startx, starty, width, getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
 				//messagePlayer(0, "0: %d, %d", x, y);
 			}
+		}
+
+		if ( !highlighted )
+		{
+			featherGUI.highlightedSlot = -1;
 		}
 	}
 
@@ -7660,7 +7651,7 @@ void Player::Inventory_t::updateInventory()
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
 	alchemyGUI.clearItemDisplayed();
-	if ( !featherDrawerOpen )
+	if ( !featherDrawerOpen || (featherDrawerOpen && GenericGUI[player].scribingBlankScrollTarget == nullptr) )
 	{
 		featherGUI.clearItemDisplayed();
 	}
@@ -8060,7 +8051,7 @@ void Player::Inventory_t::updateInventory()
 					}
 
 					// handle clicking
-					if ( inputs.bMouseLeft(player) && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
+					if ( Input::inputs[player].binaryToggle("MenuLeftClick") && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						inputs.getUIInteraction(player)->selectedItemFromHotbar = -1;
 						inputs.getUIInteraction(player)->selectedItemFromChest = item->uid;
@@ -8074,7 +8065,7 @@ void Player::Inventory_t::updateInventory()
 
 						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 					}
-					else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
+					else if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 						&& inventoryControlActive && !selectedItem )
 					{
 						// open a drop-down menu of options for "using" the item
@@ -8492,7 +8483,7 @@ void Player::Inventory_t::updateInventory()
 				}
 
 				// handle clicking
-				if ( inputs.bMouseLeft(player) && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
+				if ( Input::inputs[player].binaryToggle("MenuLeftClick") && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
 				{
 					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 					{
@@ -8519,7 +8510,7 @@ void Player::Inventory_t::updateInventory()
 						toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 					}
 				}
-				else if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
+				else if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 					&& inventoryControlActive && !selectedItem )
 				{
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) //TODO: selected shop slot, identify, remove curse?
@@ -8528,14 +8519,14 @@ void Player::Inventory_t::updateInventory()
 						{
 							// auto-appraise the item
 							appraisal.appraiseItem(item);
-							inputs.mouseClearRight(player);
+							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
 					}
 					else if ( !disableItemUsage
 						&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 						(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 					{
-						inputs.mouseClearRight(player);
+						Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						if ( guiAllowDefaultRightClick() )
 						{
 							// force equip potion/spellbook

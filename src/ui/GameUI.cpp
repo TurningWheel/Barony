@@ -15791,7 +15791,7 @@ void Player::Inventory_t::updateItemContextMenu()
 	}
 
 	bool activateSelection = false;
-	if ( !inputs.bMouseRight(player.playernum) && !toggleclick )
+	if ( !Input::inputs[player.playernum].binary("MenuRightClick") && !toggleclick )
 	{
 		activateSelection = true;
 	}
@@ -16207,7 +16207,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		inputs.getUIInteraction(player)->selectedItem = item;
 		playSound(139, 64); // click sound
 		inputs.getUIInteraction(player)->toggleclick = true;
-		inputs.mouseClearLeft(player);
+		Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 		return;
 	}
 	else if ( prompt == PROMPT_EAT )
@@ -21730,7 +21730,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		}
 	}
 	bool mouseClickedOutOfBounds = false;
-	if ( inputs.bPlayerUsingKeyboardControl(player.playernum) && inputs.bMouseLeft(player.playernum) )
+	if ( inputs.bPlayerUsingKeyboardControl(player.playernum) && Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
 	{
 		mouseClickedOutOfBounds = true;
 	}
@@ -21805,10 +21805,10 @@ void Player::SkillSheet_t::processSkillSheet()
 							skillSlideDirection = -1;
 						}
 					}
-					if ( inputs.bMouseLeft(player.playernum) )
+					if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
 					{
 						selectSkill(i);
-						inputs.mouseClearLeft(player.playernum);
+						Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 					}
 				}
 			}
@@ -22537,7 +22537,8 @@ void Player::SkillSheet_t::processSkillSheet()
 	{
 		if ( mouseClickedOutOfBounds )
 		{
-			inputs.mouseClearLeft(player.playernum);
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
 		}
 		closeSkillSheet();
 		return;
