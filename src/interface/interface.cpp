@@ -15239,7 +15239,7 @@ void featherChangeChargeEvent(const int player, int chargeAmount, int realCharge
 	auto& featherGUI = GenericGUI[player].featherGUI;
 	{
 		bool addedToCurrentTotal = false;
-		bool isAnimatingValue = true || ((ticks - featherGUI.animChargeStartTicks) > TICKS_PER_SECOND / 2);
+		bool isAnimatingValue = ((ticks - featherGUI.animChargeStartTicks) > TICKS_PER_SECOND / 2);
 		if ( chargeAmount < 0 )
 		{
 			if ( featherGUI.changeFeatherCharge < 0
@@ -15282,8 +15282,8 @@ void featherChangeChargeEvent(const int player, int chargeAmount, int realCharge
 				featherGUI.changeFeatherCharge = chargeAmount;
 			}
 		}
-		//featherGUI.animChargeStartTicks = ticks;
-		featherGUI.animCharge = 1.0;
+		featherGUI.animChargeStartTicks = ticks;
+		featherGUI.animCharge = 0.0;
 		if ( !addedToCurrentTotal )
 		{
 			featherGUI.currentFeatherCharge = realCharge;
@@ -15291,14 +15291,15 @@ void featherChangeChargeEvent(const int player, int chargeAmount, int realCharge
 	}
 }
 
-void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, int currentCharge)
+void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, void* featherChangeChargeText, int currentCharge)
 {
 	Field* featherChargeField = static_cast<Field*>(featherChargeText);
+	Field* featherChangeChargeField = static_cast<Field*>(featherChangeChargeText);
 
 	bool pauseChangeChargeAnim = false;
 	if ( changeFeatherCharge != 0 )
 	{
-		if ( true || ((ticks - animChargeStartTicks) > TICKS_PER_SECOND / 2) )
+		if ( ((ticks - animChargeStartTicks) > TICKS_PER_SECOND / 2) )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (animCharge)) / 10.0;
@@ -15322,7 +15323,6 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, 
 	}
 
 	{
-		bool pauseChangeChargeAnim = false;
 		bool showChangedCharge = false;
 		if ( changeFeatherCharge != 0 )
 		{
@@ -15334,26 +15334,30 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, 
 			if ( abs(displayedChangeCharge) > 0 )
 			{
 				showChangedCharge = true;
-				//changeGoldText->setDisabled(false);
-				//std::string s = "+";
-				//if ( changeFeatherCharge < 0 )
-				//{
-				//	s = "";
-				//}
-				//s += std::to_string(displayedChangeCharge);
-				//changeGoldText->setText(s.c_str());
+				featherChangeChargeField->setDisabled(false);
+				std::string s = "+";
+				if ( changeFeatherCharge < 0 )
+				{
+					s = "";
+				}
+				s += std::to_string(displayedChangeCharge);
+				featherChangeChargeField->setText(s.c_str());
 				int displayedCurrentCharge = currentFeatherCharge
 					+ (changeFeatherCharge - displayedChangeCharge);
-				featherChargeField->setText(std::to_string(displayedCurrentCharge).c_str());
+				char buf[32] = "";
+				snprintf(buf, sizeof(buf), "%d%%", displayedCurrentCharge);
+				featherChargeField->setText(buf);
 			}
 		}
 
 		if ( !showChangedCharge )
 		{
 			int displayedChangeCharge = 0;
-			//changeGoldText->setDisabled(true);
-			//changeGoldText->setText(std::to_string(displayedChangeCharge).c_str());
-			featherChargeField->setText(std::to_string(currentCharge).c_str());
+			featherChangeChargeField->setDisabled(true);
+			featherChangeChargeField->setText(std::to_string(displayedChangeCharge).c_str());
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "%d%%", currentCharge);
+			featherChargeField->setText(buf);
 		}
 	}
 }
@@ -16055,6 +16059,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	// held qtys
 	int currentCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
 	auto currentChargeText = baseFrame->findField("current charge txt");
+	auto changeChargeText = baseFrame->findField("change charge txt");
 	{
 		auto currentChargeLabel = baseFrame->findField("current charge label");
 		currentChargeLabel->setDisabled(false);
@@ -16063,11 +16068,16 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		currentChargeBg->pos.x = baseFrame->getSize().w - 18 - currentChargeBg->pos.w;
 		currentChargeBg->pos.y = baseFrame->getSize().h - 48 - 38;
 
-		SDL_Rect currentChargeTextPos{ currentChargeBg->pos.x, currentChargeBg->pos.y + 9, 74, 24 };
+		SDL_Rect currentChargeTextPos{ currentChargeBg->pos.x, currentChargeBg->pos.y + 9, 112, 24 };
 		currentChargeText->setSize(currentChargeTextPos);
 		currentChargeText->setColor(hudColors.characterSheetLightNeutral);
 
-		updateFeatherCharge(currentChargeText, currentCharge);
+		changeChargeText->setText("");
+		SDL_Rect changeChargeTextPos = currentChargeTextPos;
+		changeChargeTextPos.x -= 44;
+		changeChargeText->setSize(changeChargeTextPos);
+
+		updateFeatherCharge(currentChargeText, changeChargeText, currentCharge);
 
 		SDL_Rect heldScrapTxtPos = currentChargeLabel->getSize();
 		heldScrapTxtPos.w = currentChargeBg->pos.x - 4;
@@ -16075,7 +16085,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		heldScrapTxtPos.y = currentChargeTextPos.y;
 		heldScrapTxtPos.h = 24;
 		currentChargeLabel->setSize(heldScrapTxtPos);
-		currentChargeLabel->setText(language[4131]);
+		currentChargeLabel->setText(language[4192]);
 		if ( invalidActionType == INVALID_ACTION_NO_CHARGE )
 		{
 			currentChargeTextPos.x += -2 + 2 * (cos(animInvalidAction * 4 * PI));
@@ -16208,7 +16218,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
 	displayItemNamePos.h = 50;
 	displayItemName->setSize(displayItemNamePos);
-	SDL_Rect actionPromptTxtPos{ 0, 197, baseFrame->getSize().w - 18 - 8, 24 };
+	SDL_Rect actionPromptTxtPos{ 26, 197, baseFrame->getSize().w - (26 * 2), 24 };
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
@@ -16225,7 +16235,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	{
 		costBg->pos.x = displayItemTextImgBaseX + displayItemTextImg->pos.w - costBg->pos.w;
 		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
-		SDL_Rect minChargePos{ costBg->pos.x + 12, costBg->pos.y + 9, 50, 24 };
+		SDL_Rect minChargePos{ costBg->pos.x + 28, costBg->pos.y + 9, 66, 24 };
 		SDL_Rect maxChargePos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
 		minChargeText->setSize(minChargePos);
 		maxChargeText->setSize(maxChargePos);
@@ -16297,8 +16307,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		{
 			// prompt + glyph
 			actionPromptTxt->setDisabled(false);
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
 			if ( inscribeSuccessName != "" && inscribeSuccessTicks > 0 && ((ticks - inscribeSuccessTicks) < 2 * TICKS_PER_SECOND) )
 			{
+				//actionPromptTxt->setHJustify(Field::justify_t::LEFT);
 				inscribeSuccessFeedbackActive = true;
 				inscribeSuccessFeedbackPercent = 1.0;
 				auto tickDiff = ticks - inscribeSuccessTicks;
@@ -16326,7 +16338,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 					++index;
 				}
 				actionPromptTxt->setText(buf);
-				actionPromptTxt->setColor(hudColors.characterSheetGreen);
+				actionPromptTxt->setColor(makeColor(236, 175, 28, 255));
 				actionPromptImg->disabled = true;
 				actionModifierImg->disabled = true;
 			}
@@ -16501,27 +16513,36 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			// charge costs
 			minChargeText->setColor(neutralColor);
 			maxChargeText->setColor(neutralColor);
+			maxChargeText->setText("");
 			if ( itemActionType == FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT )
 			{
 				minChargeText->setText("?");
-				maxChargeText->setText("?");
+				//maxChargeText->setText("?");
 			}
 			else if ( (!itemActionOK && itemActionType != FEATHER_ACTION_CANT_AFFORD && itemActionType != FEATHER_ACTION_NO_BLANK_SCROLL)
 				|| (chargeCostMin == 0 && chargeCostMax == 0))
 			{
 				minChargeText->setText("-");
-				maxChargeText->setText("-");
+				//maxChargeText->setText("-");
 			}
 			else if ( itemActionOK && itemActionType == FEATHER_ACTION_OK_UNKNOWN_SCROLL )
 			{
 				minChargeText->setText("?");
-				maxChargeText->setText("?");
+				//maxChargeText->setText("?");
 			}
 			else if ( itemActionOK || itemActionType == FEATHER_ACTION_CANT_AFFORD
 				|| itemActionType == FEATHER_ACTION_NO_BLANK_SCROLL )
 			{
-				minChargeText->setText(std::to_string(chargeCostMin).c_str());
-				maxChargeText->setText(std::to_string(chargeCostMax).c_str());
+				char buf[32];
+				if ( chargeCostMin == chargeCostMax )
+				{
+					snprintf(buf, sizeof(buf), "%d%%", chargeCostMin);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%d-%d%%", chargeCostMin, chargeCostMax);
+				}
+				minChargeText->setText(buf);
 			}
 		}
 	}
@@ -16572,9 +16593,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 
 		{
-			SDL_Rect pos = actionPromptTxt->getSize();
-			pos.x = 26;
-			pos.w -= 26;
+			SDL_Rect pos{ 26, 63, baseFrame->getSize().w - 52, 24 };
 			if ( animPromptMoveLeft )
 			{
 				pos.x -= actionPromptUnselectedTxt->getSize().w * animPrompt;
@@ -16583,7 +16602,6 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			{
 				pos.x += actionPromptUnselectedTxt->getSize().w * animPrompt;
 			}
-			pos.y = 63;
 			actionPromptUnselectedTxt->setSize(pos);
 		}
 
@@ -16682,6 +16700,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				if ( bDrawerOpen )
 				{
 					parentGUI.scribingBlankScrollTarget = nullptr;
+					bDrawerOpen = false;
 					// reset to inventory mode
 					players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 					players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
@@ -17109,7 +17128,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			auto itemDisplayTextBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 220, 42 },
 				0xFFFFFFFF, "*images/ui/Feather/Feather_LabelName_2Row_00.png", "item text img");
 
-			auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 144, 34 },
+			auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 104, 34 },
 				0xFFFFFFFF, "*images/ui/Feather/Feather_CostBacking_00.png", "item cost img");
 
 			auto minChargeText = itemDisplayTooltip->addField("item min value", 32);
@@ -17148,7 +17167,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 
 		{
 			auto closeBtn = bgFrame->addButton("close feather button");
-			SDL_Rect closeBtnPos{ basePos.w - 8 - 26, 8, 26, 26 };
+			SDL_Rect closeBtnPos{ basePos.w - 0 - 26, 0, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -17205,10 +17224,10 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			actionPromptUnselectedTxt->setColor(makeColor(255, 255, 255, 255));
 			actionPromptUnselectedTxt->setDisabled(true);
 
-			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 60, 56, 26 },
+			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 60, 28, 26 },
 				0xFFFFFFFF, "*images/ui/Feather/Feather_PromptCoverLeft_00.png", "action prompt lcover");
 			actionPromptCoverLeftImg->ontop = true;
-			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 60, 56, 26 },
+			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 28, 60, 28, 26 },
 				0xFFFFFFFF, "*images/ui/Feather/Feather_PromptCoverRight_00.png", "action prompt rcover");
 			actionPromptCoverRightImg->ontop = true;
 		}
@@ -17280,8 +17299,8 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		}
 
 		{
-			auto currentChargeBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 34 },
-				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_ScrapBacking_00.png", "current charge img");
+			auto currentChargeBg = bgFrame->addImage(SDL_Rect{ 0, 0, 122, 34 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_ChargeBacking_00.png", "current charge img");
 
 			auto currentChargeLabel = bgFrame->addField("current charge label", 64);
 			currentChargeLabel->setFont(itemFont);
@@ -17298,6 +17317,14 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			currentChargeText->setVJustify(Field::justify_t::TOP);
 			currentChargeText->setSize(SDL_Rect{ 0, 0, 0, 0 });
 			currentChargeText->setColor(hudColors.characterSheetLightNeutral);
+
+			auto changeChargeText = bgFrame->addField("change charge txt", 32);
+			changeChargeText->setFont(itemFont);
+			changeChargeText->setText("");
+			changeChargeText->setHJustify(Field::justify_t::RIGHT);
+			changeChargeText->setVJustify(Field::justify_t::TOP);
+			changeChargeText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			changeChargeText->setColor(hudColors.characterSheetRed);
 		}
 	}
 }

@@ -740,7 +740,7 @@ public:
 		bool isItemVisible(Item* item) const;
 		const int kNumInscriptionsToDisplayVertical = 5;
 		int getNumInscriptionsToDisplayVertical() const;
-		void updateFeatherCharge(void* featherChargeText, int currentCharge);
+		void updateFeatherCharge(void* featherChargeText, void* featherChangeChargeText, int currentCharge);
 		enum SortTypes_t : int
 		{
 			SORT_SCROLL_DEFAULT,
