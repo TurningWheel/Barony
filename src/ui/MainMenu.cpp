@@ -790,7 +790,7 @@ namespace MainMenu {
 		return back_button;
 	}
 
-	static Frame* createPrompt(const char* name) {
+	static Frame* createPrompt(const char* name, bool small = true) {
 		if (main_menu_frame->findFrame(name)) {
 			return nullptr;
 		}
@@ -802,16 +802,27 @@ namespace MainMenu {
 		dimmer->setBorder(0);
 
 		auto frame = dimmer->addFrame(name);
-		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
-		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		frame->setColor(0);
 		frame->setBorder(0);
-		frame->addImage(
-			frame->getActualSize(),
-			0xffffffff,
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
-			"background"
-		);
+		if (small) {
+		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		    frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		    frame->addImage(
+			    frame->getActualSize(),
+			    0xffffffff,
+			    "*#images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			    "background"
+		    );
+		} else {
+		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 548) / 2, (Frame::virtualScreenY - 264) / 2, 548, 264});
+		    frame->setActualSize(SDL_Rect{0, 0, 548, 264});
+		    frame->addImage(
+			    frame->getActualSize(),
+			    0xffffffff,
+			    "*#images/ui/Main Menus/TextboxWindowL_00.png",
+			    "background"
+		    );
+		}
 
 		return frame;
 	}
@@ -1007,15 +1018,16 @@ namespace MainMenu {
 	static Frame* textPrompt(
 	    const char* name,
 	    const char* window_text,
-	    void (*tick_callback)(Widget&)
+	    void (*tick_callback)(Widget&),
+	    bool small = true
 	    ) {
 		soundActivate();
 
-	    Frame* frame = createPrompt(name);
+	    Frame* frame = createPrompt(name, small);
 	    assert(frame);
 
 		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 12, 304, 142});
+		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 34});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
@@ -4377,7 +4389,6 @@ bind_failed:
 
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-		// TODO design a special window just for Nintendo Switch joycons.
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
 			[](Button&){
@@ -5744,7 +5755,7 @@ bind_failed:
 #elif defined(USE_EOS)
 				auto error_code = EOS.ConnectingToLobbyStatus;
 #else
-                auto error_code = -1; // TODO just so this compiles always
+                auto error_code = -1; // just so this compiles always
 #endif
 				auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
                 disconnectFromLobby();
@@ -9055,7 +9066,7 @@ bind_failed:
 		banner->setHJustify(Field::justify_t::CENTER);
 
 		static auto start_func = [](int index){
-		    auto controller_prompt = main_menu_frame->findWidget("controller_dimmer", false);
+		    auto controller_prompt = main_menu_frame->findFrame("controller_prompt");
 	        if (!controller_prompt) {
                 if (loadingsavegame) {
                     createReadyStone(index, true, true);
@@ -9785,17 +9796,10 @@ bind_failed:
 		}
 	}
 
-	static void createControllerPrompt(int index, bool show_player_text, void (*after_func)()) {
-		auto dimmer = main_menu_frame->addFrame("controller_dimmer");
-		dimmer->setOwner(index);
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(0);
-		dimmer->setBorder(0);
-
-        if (inputs.hasController(index)) {
+	static void createControllerPrompt(int index, bool multiple_players, void (*after_func)()) {
+        /*if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-        }
+        }*/
 
         static void (*end_func)();
 		static bool clicked;
@@ -9821,9 +9825,6 @@ bind_failed:
 	                inputs.setPlayerIDAllowedKeyboard(-1);
 	            }
 	        }
-	        for (auto& input : Input::inputs) {
-	            input.refresh();
-	        }
 		    button.deselect();
 		    clicked = true;
 		    };
@@ -9833,8 +9834,11 @@ bind_failed:
 		    int index = button->getOwner();
 		    auto& input = Input::inputs[index];
 		    if (clicked && !input.binary("MenuConfirm")) {
-                input.refresh(); // this has to be deferred because it knocks out consumed statuses.
+	            for (auto& input : Input::inputs) {
+	                input.refresh(); // this has to be deferred because it knocks out consumed statuses.
+	            }
 		        auto parent = static_cast<Frame*>(button->getParent());
+		        parent = static_cast<Frame*>(parent->getParent());
 	            parent->removeSelf();
 	            parent->setDisabled(true);
 	            soundActivate();
@@ -9843,34 +9847,89 @@ bind_failed:
 		    };
 
 		char text[1024];
-        if (show_player_text) {
+        if (multiple_players) {
 		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		        "or click here to assign only the mouse and keyboard", index + 1);
+		        "or click here to assign only the mouse and keyboard\n\n\n\n", index + 1);
         } else {
 		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
 		        "or click here to use only the mouse and keyboard");
         }
 
-		auto button = dimmer->addButton("button");
-		button->setHideSelectors(true);
-		button->setBorder(0);
-		button->setColor(makeColor(0, 0, 0, 127));
-		button->setHighlightColor(makeColor(0, 0, 0, 127));
-		button->setTextColor(makeColor(255, 255, 255, 255));
-		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		button->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+        static real_t bounce;
+        bounce = (real_t)0.0;
+        auto prompt_tick_callback = [](Widget& widget){
+            auto frame = static_cast<Frame*>(widget.getParent());
+            const int index = frame->getOwner();
+			const real_t inc = (PI / fpsLimit) * 0.5f;
+            for (int c = 0; c < MAXPLAYERS; ++c) {
+                std::string name = std::string("player") + std::to_string(index);
+                auto image = frame->findImage(name.c_str());
+                if (image) {
+			        bounce += inc;
+			        const int h = image->pos.h;
+			        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
+	                const int y = frame->getSize().h - h - 32 - (int)bounce_height;
+	                image->pos.y = y;
+                }
+            }
+            };
+
+        auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        prompt->setOwner(index);
+
+        auto dimmer = static_cast<Frame*>(prompt->getParent());
+        dimmer->setOwner(index);
+
+		auto button = prompt->addButton("button");
+		button->setSize(prompt->getActualSize());
 		button->setJustify(Field::justify_t::CENTER);
-		button->setFont(bigfont_outline);
-		button->setText(text);
-		button->setCallback(button_func);
-		button->setTickCallback(button_tick_func);
 		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0,});
+		if (!multiple_players) {
+		    button->setButtonsOffset(SDL_Rect{0, 48, 0, 0,});
+		}
+		button->setTickCallback(button_tick_func);
+		button->setCallback(button_func);
 		button->setHideKeyboardGlyphs(false);
+		button->setHideSelectors(true);
+		button->setHighlightColor(0);
+		button->setBorder(0);
+		button->setColor(0);
 		button->select();
+
+		if (multiple_players) {
+		    int playercount = 0;
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (isPlayerSignedIn(c)) {
+		            ++playercount;
+		        }
+		    }
+
+		    int num = 0;
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (isPlayerSignedIn(c)) {
+	                const char* path = inputs.hasController(c) ?
+	                    "*#images/ui/Glyphs/G_Control_Xbox_01.png":
+	                    "*#images/ui/Glyphs/G_Control_Keyboard_00.png";
+	                auto image = Image::get(path);
+	                const int w = image->getWidth();
+	                const int h = image->getHeight();
+	                const int space = 100;
+	                const int x = (prompt->getSize().w - playercount * space + space - w) / 2 + num * space;
+	                const int y = prompt->getSize().h - h - 32;
+		            const std::string name = std::string("player") + std::to_string(c);
+	                prompt->addImage(
+                        SDL_Rect{x, y, w, h},
+	                    makeColor(255, 255, 255, 255),
+	                    path, name.c_str());
+                    ++num;
+		        }
+		    }
+		}
 
 		Input::waitingToBindControllerForPlayer = index;
 	}
+
+	static void reconnectControllerPrompt();
 
 /******************************************************************************/
 

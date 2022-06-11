@@ -616,17 +616,17 @@ int initApp(char const * const title, int fullscreen)
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-#ifdef EDITOR
-	// Don't destroy the loading screen in the game.
-	// It will be used later.
-	destroyLoadingScreen();
-#endif
-
 	int result = loading_task.get();
 	if (result == 0)
 	{
 		generateVBOs(0, nummodels);
 	}
+
+#ifdef EDITOR
+	// Don't destroy the loading screen in the game.
+	// It will be used later.
+	destroyLoadingScreen();
+#endif
 
 	//createTestUI();
 
