@@ -1071,7 +1071,8 @@ void Player::HUD_t::updateUINavigation()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
-			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
+			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
+				&& !GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -1124,7 +1125,8 @@ void Player::HUD_t::updateUINavigation()
 			}
 
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
-				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
+				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
+				&& !GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
