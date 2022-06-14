@@ -9439,6 +9439,11 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				it = options.erase(it);
 				continue;
 			}
+			if ( featherOpen && GenericGUI[player].featherGUI.bDrawerOpen && getContextMenuOptionBindingName(*it) == "MenuAlt2" )
+			{
+				it = options.erase(it);
+				continue;
+			}
 			if ( *it == PROMPT_CONSUME_ALTERNATE || *it == PROMPT_INSPECT_ALTERNATE )
 			{
 				it = options.erase(it);

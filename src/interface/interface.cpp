@@ -15239,7 +15239,7 @@ void featherChangeChargeEvent(const int player, int chargeAmount, int realCharge
 	auto& featherGUI = GenericGUI[player].featherGUI;
 	{
 		bool addedToCurrentTotal = false;
-		bool isAnimatingValue = ((ticks - featherGUI.animChargeStartTicks) > TICKS_PER_SECOND / 2);
+		bool isAnimatingValue = ((ticks - featherGUI.animChargeStartTicks) > TICKS_PER_SECOND);
 		if ( chargeAmount < 0 )
 		{
 			if ( featherGUI.changeFeatherCharge < 0
@@ -15284,6 +15284,7 @@ void featherChangeChargeEvent(const int player, int chargeAmount, int realCharge
 		}
 		featherGUI.animChargeStartTicks = ticks;
 		featherGUI.animCharge = 0.0;
+		featherGUI.animQtyChange = 1.0;
 		if ( !addedToCurrentTotal )
 		{
 			featherGUI.currentFeatherCharge = realCharge;
@@ -15299,7 +15300,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, 
 	bool pauseChangeChargeAnim = false;
 	if ( changeFeatherCharge != 0 )
 	{
-		if ( ((ticks - animChargeStartTicks) > TICKS_PER_SECOND / 2) )
+		if ( ((ticks - animChargeStartTicks) > TICKS_PER_SECOND) 
+			&& (inscribeSuccessTicks == 0 || (ticks - inscribeSuccessTicks) >= 1.5 * TICKS_PER_SECOND) )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (animCharge)) / 10.0;
@@ -15412,7 +15414,7 @@ void GenericGUIMenu::FeatherGUI_t::changeSortingType(GenericGUIMenu::FeatherGUI_
 void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 {
 	scrolls.clear();
-	if ( keystatus[SDL_SCANCODE_J] )
+	if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
 	{
 		keystatus[SDL_SCANCODE_J] = 0;
 		if ( keystatus[SDL_SCANCODE_LCTRL] )
@@ -15636,6 +15638,11 @@ void GenericGUIMenu::FeatherGUI_t::closeFeatherMenu()
 	animFilter = 0.0;
 	animInvalidAction = 0.0;
 	animInvalidActionTicks = 0;
+	animCharge = 0.0;
+	animChargeStartTicks = 0;
+	animQtyChange = 0.0;
+	animPromptTicks = 0;
+	animDrawer = 0.0;
 	invalidActionType = INVALID_ACTION_NONE;
 	isInteractable = false;
 	bool wasOpen = bOpen;
@@ -15929,9 +15936,9 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	{
 		drawerFrame->setDisabled(!bFeatherDrawerOpen);
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
-		const int widthDifference = animDrawer * (drawerFramePos.w/* - 8*/);
+		const int widthDifference = animDrawer * (drawerFramePos.w - 2/* - 8*/);
 		drawerFramePos.x = 0;
-		drawerFramePos.y = 20;
+		drawerFramePos.y = 6;
 		drawerFrame->setSize(drawerFramePos);
 
 		featherFramePos.x -= widthDifference;
@@ -16055,7 +16062,14 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	{
 		bInvalidActionAnimating = true;
 	}
-	bool bAnimChargeStarted = animCharge >= 1.0;
+
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.1, (animQtyChange)) / 10.0;
+		animQtyChange -= setpointDiffX;
+		animQtyChange = std::max(0.0, animQtyChange);
+	}
+
 	// held qtys
 	int currentCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
 	auto currentChargeText = baseFrame->findField("current charge txt");
@@ -16123,6 +16137,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		{
 			SDL_Rect btnPos{ 126, 264, 82, 26 };
 			filterBtn->setSize(btnPos);
+			filterLeftSideX = btnPos.x;
+			filterStartY = btnPos.y;
 		}
 		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE )
 		{
@@ -16161,6 +16177,11 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		auto closeBtn = baseFrame->findButton("close feather button");
 		auto closeGlyph = baseFrame->findImage("close feather glyph");
 		closeBtn->setDisabled(true);
+		closeBtn->setInvisible(false);
+		if ( bDrawerOpen && usingGamepad )
+		{
+			//closeBtn->setInvisible(true);
+		}
 		closeGlyph->disabled = true;
 		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
 		{
@@ -16250,17 +16271,17 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 
 	auto itemIncrementText = baseFrame->findField("item increment txt");
 	{
-		if ( animCharge > 0.01 )
+		if ( animQtyChange > 0.01 )
 		{
 			itemIncrementText->setDisabled(false);
 			auto pos = itemIncrementText->getSize();
-			pos.y = tooltipPos.y + itemSlotBg->pos.y + 16 - ((1.0 - animCharge) * 32);
+			pos.y = tooltipPos.y + itemSlotBg->pos.y + 16 - ((1.0 - animQtyChange) * 32);
 			itemIncrementText->setSize(pos);
 			SDL_Color color;
 			getColor(itemIncrementText->getColor(), &color.r, &color.g, &color.b, &color.a);
-			if ( animCharge < .2 )
+			if ( animQtyChange < .2 )
 			{
-				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255 * (animCharge / .2)));
+				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255 * (animQtyChange / .2)));
 			}
 			else
 			{
@@ -16308,7 +16329,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			// prompt + glyph
 			actionPromptTxt->setDisabled(false);
 			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
-			if ( inscribeSuccessName != "" && inscribeSuccessTicks > 0 && ((ticks - inscribeSuccessTicks) < 2 * TICKS_PER_SECOND) )
+			if ( inscribeSuccessName != "" && inscribeSuccessTicks > 0 && ((ticks - inscribeSuccessTicks) < 2.5 * TICKS_PER_SECOND) )
 			{
 				//actionPromptTxt->setHJustify(Field::justify_t::LEFT);
 				inscribeSuccessFeedbackActive = true;
@@ -16318,10 +16339,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				{
 					inscribeSuccessFeedbackPercent = 1.0 - ((TICKS_PER_SECOND / 4) - tickDiff) / (real_t)(TICKS_PER_SECOND / 4);
 				}
-				/*else if ( tickDiff > (3 * TICKS_PER_SECOND / 2) )
+				else if ( tickDiff > (2 * TICKS_PER_SECOND) )
 				{
-					inscribeSuccessFeedbackPercent = 1.0 - (tickDiff - (3 * TICKS_PER_SECOND / 2)) / (real_t)(TICKS_PER_SECOND / 2);
-				}*/
+					inscribeSuccessFeedbackPercent = 1.0 - (tickDiff - (2 * TICKS_PER_SECOND)) / (real_t)(TICKS_PER_SECOND / 2);
+				}
 				char buf[128] = "";
 				int index = 0;
 				for ( auto& scroll : sortedScrolls )
@@ -16701,13 +16722,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				{
 					parentGUI.scribingBlankScrollTarget = nullptr;
 					bDrawerOpen = false;
-					// reset to inventory mode
-					players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
-					players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
-					if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
-					{
-						players[playernum]->GUI.warpControllerToModule(false);
-					}
+					onFeatherChangeTabAction(playernum, true);
 				}
 				else
 				{
@@ -16746,6 +16761,22 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 						animPromptMoveLeft = true;
 					}
 					Input::inputs[playernum].consumeBinaryToggle("MenuPageLeft");
+				}
+				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuAlt2") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuAlt2");
+					if ( sortType == SortTypes_t::SORT_SCROLL_DEFAULT )
+					{
+						changeSortingType(SortTypes_t::SORT_SCROLL_DISCOVERED);
+					}
+					else if ( sortType == SortTypes_t::SORT_SCROLL_DISCOVERED )
+					{
+						changeSortingType(SortTypes_t::SORT_SCROLL_UNKNOWN);
+					}
+					else
+					{
+						changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
+					}
 				}
 			}
 		}
@@ -16847,6 +16878,93 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 					}
 				}
 			}
+		}
+	}
+
+	{
+		auto sortTxt = drawerFrame->findField("sort txt");
+		auto sortBtn = drawerFrame->findButton("sort btn");
+		auto sortGlyph = drawerFrame->findImage("sort glyph");
+		if ( sortType == SortTypes_t::SORT_SCROLL_DEFAULT )
+		{
+			sortBtn->setText(language[4194]);
+		}
+		else if ( sortType == SortTypes_t::SORT_SCROLL_DISCOVERED )
+		{
+			sortBtn->setText(language[4195]);
+		}
+		else if ( sortType == SortTypes_t::SORT_SCROLL_UNKNOWN )
+		{
+			sortBtn->setText(language[4196]);
+		}
+		sortTxt->setText(language[4193]);
+		sortGlyph->disabled = true;
+		sortBtn->setDisabled(true);
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			sortBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, sortBtn);
+			}
+		}
+		else if ( sortBtn->isSelected() )
+		{
+			sortBtn->deselect();
+		}
+		if ( sortBtn->isDisabled() && usingGamepad && bDrawerOpen )
+		{
+			sortGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt2");
+			if ( auto imgGet = Image::get(sortGlyph->path.c_str()) )
+			{
+				sortGlyph->pos.w = imgGet->getWidth();
+				sortGlyph->pos.h = imgGet->getHeight();
+				sortGlyph->disabled = false;
+			}
+			sortGlyph->pos.x = sortBtn->getSize().x + sortBtn->getSize().w + 2;
+			if ( sortGlyph->pos.x % 2 == 1 )
+			{
+				++sortGlyph->pos.x;
+			}
+			sortGlyph->pos.y = sortBtn->getSize().y + sortBtn->getSize().h / 2 - sortGlyph->pos.h / 2;
+			if ( sortGlyph->pos.y % 2 == 1 )
+			{
+				++sortGlyph->pos.y;
+			}
+		}
+
+		// close btn
+		auto closeBtn = drawerFrame->findButton("close drawer button");
+		auto closeGlyph = drawerFrame->findImage("close drawer glyph");
+		closeBtn->setDisabled(true);
+		closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			closeBtn->setDisabled(!isInteractable || !bDrawerOpen);
+			if ( isInteractable && bDrawerOpen )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, closeBtn);
+			}
+		}
+		else if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( closeBtn->isDisabled() && usingGamepad && bDrawerOpen )
+		{
+			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			{
+				closeGlyph->pos.w = imgGet->getWidth();
+				closeGlyph->pos.h = imgGet->getHeight();
+				closeGlyph->disabled = false;
+			}
+			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+			if ( closeGlyph->pos.x % 2 == 1 )
+			{
+				++closeGlyph->pos.x;
+			}
+			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
 		}
 	}
 
@@ -16986,8 +17104,9 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 	SDL_Rect basePos{ 0, 0, featherBaseWidth, featherBaseHeight };
 	{
 		auto drawerFrame = featherFrame->addFrame("feather drawer");
-		SDL_Rect drawerPos{ 0, 0, featherDrawerWidth, 248 };
+		SDL_Rect drawerPos{ 0, 0, featherDrawerWidth, 260 };
 		drawerFrame->setSize(drawerPos);
+		drawerPos.h -= 10; // empty area
 		drawerFrame->setHollow(false);
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
@@ -16999,7 +17118,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		const int baseSlotOffsetX = 0;
 		const int baseSlotOffsetY = 0;
 
-		SDL_Rect featherSlotsPos{ 6, 40, featherDrawerWidth, 240 };
+		SDL_Rect featherSlotsPos{ 6, 6, featherDrawerWidth, 240 };
 		{
 			int numGrids = (MAX_FEATHER_Y / kNumInscriptionsToDisplayVertical) + 1;
 
@@ -17010,12 +17129,12 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			drawerSlotsFrame->setAllowScrollBinds(false);
 			drawerSlotsFrame->setScrollBarsEnabled(false);
 
-			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, 180, 200 },
+			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, 174, 200 },
 				makeColor(255, 255, 255, 255), "*images/ui/Feather/Feather_ScrollGrid_00.png", "grid img");
 			gridImg->tiled = true;
 
 			const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
-			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
+			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inscriptionSlotHeight };
 			for ( int x = 0; x < MAX_FEATHER_X; ++x )
 			{
 				currentSlotPos.x = baseSlotOffsetX;
@@ -17049,14 +17168,6 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 						"images/ui/Feather/Feather_ListUnselected_00.png", "bg");
 					bg->pos.x = 0;
 					bg->pos.y = 0;
-
-					//auto slotFrame = listEntry->addFrame("item slot frame");
-					//SDL_Rect slotPos{ 0, 0, inventorySlotSize, inventorySlotSize };
-					//slotFrame->setSize(slotPos);
-					//createPlayerInventorySlotFrameElements(slotFrame);
-					//slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
-					//	"images/system/white.png", "tmp");
-					//slotFrame->setDisabled(true);
 				}
 			}
 		}
@@ -17066,7 +17177,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		slider->setMinValue(0);
 		slider->setMaxValue(100);
 		slider->setValue(0);
-		SDL_Rect sliderPos{ featherDrawerWidth - 22, 8, 20, 248 - 2 * 8 };
+		SDL_Rect sliderPos{ featherDrawerWidth - 24, 50, 20, drawerPos.h - 44 - 50 };
 		slider->setRailSize(sliderPos);
 		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
@@ -17079,6 +17190,87 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		slider->setHideKeyboardGlyphs(true);
 		slider->setHideSelectors(true);
 		slider->setMenuConfirmControlType(0);
+
+		{
+
+
+			auto sortTxt = drawerFrame->addField("sort txt", 128);
+			sortTxt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			sortTxt->setText("");
+			sortTxt->setHJustify(Field::justify_t::RIGHT);
+			sortTxt->setVJustify(Field::justify_t::TOP);
+			sortTxt->setSize(SDL_Rect{ 0, drawerPos.h - 33, 76, 24 });
+			sortTxt->setColor(hudColors.characterSheetNeutral);
+
+			auto sortBtn = drawerFrame->addButton("sort btn");
+			SDL_Rect sortBtnPos{ drawerPos.w - 26 - 104, drawerPos.h - 36, 104, 26 };
+			sortBtn->setSize(sortBtnPos);
+			sortBtn->setColor(makeColor(255, 255, 255, 255));
+			sortBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			sortBtn->setText("");
+			sortBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			sortBtn->setHideGlyphs(true);
+			sortBtn->setHideKeyboardGlyphs(true);
+			sortBtn->setHideSelectors(true);
+			sortBtn->setMenuConfirmControlType(0);
+			sortBtn->setBackground("*images/ui/Feather/Feather_Sort_Button_00.png");
+			sortBtn->setBackgroundHighlighted("*images/ui/Feather/Feather_Sort_ButtonHigh_00.png");
+			sortBtn->setBackgroundActivated("*images/ui/Feather/Feather_Sort_ButtonPress_00.png");
+			sortBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			sortBtn->setCallback([](Button& button) {
+				if ( GenericGUI[button.getOwner()].featherGUI.sortType == SortTypes_t::SORT_SCROLL_DEFAULT )
+				{
+					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_DISCOVERED);
+				}
+				else if ( GenericGUI[button.getOwner()].featherGUI.sortType == SortTypes_t::SORT_SCROLL_DISCOVERED )
+				{
+					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_UNKNOWN);
+				}
+				else
+				{
+					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
+				}
+			});
+			sortBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto closeBtn = drawerFrame->addButton("close drawer button");
+			SDL_Rect closeBtnPos{ drawerPos.w - 0 - 26, 2, 26, 26 };
+			closeBtn->setSize(closeBtnPos);
+			closeBtn->setColor(makeColor(255, 255, 255, 255));
+			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			closeBtn->setText("X");
+			closeBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			closeBtn->setHideGlyphs(true);
+			closeBtn->setHideKeyboardGlyphs(true);
+			closeBtn->setHideSelectors(true);
+			closeBtn->setMenuConfirmControlType(0);
+			closeBtn->setBackground("*images/ui/Feather/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("*images/ui/Feather/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("*images/ui/Feather/Button_XPress_00.png");
+			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			closeBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].scribingBlankScrollTarget = nullptr;
+				GenericGUI[button.getOwner()].featherGUI.bDrawerOpen = false;
+				onFeatherChangeTabAction(button.getOwner(), true);
+			});
+			closeBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto sortGlyph = drawerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "sort glyph");
+			sortGlyph->disabled = true;
+			sortGlyph->ontop = true;
+
+			auto closeGlyph = drawerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "close drawer glyph");
+			closeGlyph->disabled = true;
+			closeGlyph->ontop = true;
+		}
 	}
 
 	{

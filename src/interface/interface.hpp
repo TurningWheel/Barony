@@ -696,6 +696,7 @@ public:
 		Sint32 currentFeatherCharge = 0;
 		Sint32 changeFeatherCharge = 0;
 		real_t animCharge = 0.0;
+		real_t animQtyChange = 0.0;
 		Uint32 animChargeStartTicks = 0;
 		int highlightedSlot = -1;
 		struct DiscoveryAnim_t
