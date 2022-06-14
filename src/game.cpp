@@ -3609,22 +3609,36 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERDEVICEADDED:
 			{
-				const int id = event.cdevice.which;
-				if ( !SDL_IsGameController(id) )
+				const int device_index = event.cdevice.which; // this is an index within SDL_Numjoysticks(), not to be referred to from now on.
+				if ( !SDL_IsGameController(device_index) )
 				{
-					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", id);
+					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
 					break;
 				}
 
 				bool deviceAlreadyAdded = false;
-				for ( auto& controller : game_controllers )
+				SDL_GameController* newControllerAdded = SDL_GameControllerOpen(device_index);
+				if ( newControllerAdded != nullptr )
 				{
-					if ( controller.isActive() && controller.getID() == id )
+					for ( auto& controller : game_controllers )
 					{
-						printlog("(Device %d added, but already in use as game controller.)\n", id);
-						deviceAlreadyAdded = true;
-						break;
+						if ( controller.isActive() )
+						{
+							if ( controller.getControllerDevice() == newControllerAdded )
+							{
+								// we already have this controller in our system.
+								deviceAlreadyAdded = true;
+								printlog("(Device %d added, but already in use as game controller.)\n", device_index);
+								break;
+							}
+						}
 					}
+				}
+
+				if ( newControllerAdded )
+				{
+					SDL_GameControllerClose(newControllerAdded); // we're going to re-open this below..
+					newControllerAdded = nullptr;
 				}
 
 				if ( deviceAlreadyAdded )
@@ -3640,18 +3654,18 @@ void handleEvents(void)
 						continue;
 					}
 
-					if ( SDL_IsGameController(id) && controller.open(id) )
+					if ( SDL_IsGameController(device_index) && controller.open(device_index) )
 					{
-						printlog("(Device %d successfully initialized as game controller.)\n", id);
+						printlog("(Device %d successfully initialized as game controller.)\n", controller.getID());
 						//inputs.addControllerIDToNextAvailableInput(id);
-						Input::gameControllers[id] = controller.getControllerDevice();
+						Input::gameControllers[controller.getID()] = controller.getControllerDevice();
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
 					}
 					else
 					{
-						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", id);
+						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
 					}
 					break;
 				}
@@ -3666,6 +3680,7 @@ void handleEvents(void)
 				{
 					printlog("(Unknown device removed as game controller, null controller returned.)\n");
 				}
+
 				for ( auto& controller : game_controllers )
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
