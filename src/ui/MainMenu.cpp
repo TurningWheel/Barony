@@ -386,9 +386,9 @@ namespace MainMenu {
 #endif
 #ifdef USE_EOS
 	    EOS.bRequestingLobbies = false;
-	    EOS.bJoinLobbyWaitingForHostResponse = false;
 	    EOS.bConnectingToLobby = false;
 	    EOS.bConnectingToLobbyWindow = false;
+	    EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
 	}
 
@@ -6831,8 +6831,10 @@ bind_failed:
 #ifdef STEAMWORKS
 	CSteamID* getLobbySteamID(const char* name) {
 	    int lobbyID = -1;
-        if (strncmp(name, "steam:", 6) == 0) {
-            lobbyID = (int)strtol(name + 6, nullptr, 10);
+        const char str[] = "steam:";
+        size_t len = sizeof(str) - 1;
+        if (strncmp(name, str, len) == 0) {
+            lobbyID = (int)strtol(name + len, nullptr, 10);
         }
         if (lobbyID >= 0 && lobbyID < numSteamLobbies) {
             return (CSteamID*)lobbyIDs[lobbyID];
@@ -6840,6 +6842,22 @@ bind_failed:
             return nullptr;
         }
 	}
+#endif
+
+#ifdef USE_EOS
+    EOSFuncs::LobbyData_t* getLobbyEpic(const char* name) {
+        int lobbyID = -1;
+        const char str[] = "epic:";
+        size_t len = sizeof(str) - 1;
+        if (strncmp(name, str, len) == 0) {
+            lobbyID = (int)strtol(name + len, nullptr, 10);
+        }
+        if (lobbyID >= 0 && lobbyID < EOS.LobbySearchResults.results.size()) {
+            return &EOS.LobbySearchResults.results[lobbyID];
+        } else {
+            return nullptr;
+        }
+    }
 #endif
 
     static void sendJoinRequest() {
@@ -6927,36 +6945,73 @@ bind_failed:
             // here is the connection polling loop for online lobbies
             if (!directConnect) {
 #ifdef STEAMWORKS
-                if (joinLobbyWaitingForHostResponse) {
-		            if (connectingToLobbyStatus != EResult::k_EResultOK) {
-		                resetLobbyJoinFlowState();
-
-			            // close current window
-			            auto frame = static_cast<Frame*>(widget.getParent());
-			            auto dimmer = static_cast<Frame*>(frame->getParent());
-			            dimmer->removeSelf();
-
-			            auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
-			            connectionErrorPrompt(error_str.c_str());
-			            connectingToLobbyStatus = EResult::k_EResultOK;
-			            return;
-		            }
-		            if (!connectingToLobby) {
-		                if (connectingToLobbyWindow) {
+                if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+                    if (joinLobbyWaitingForHostResponse) {
+		                if (connectingToLobbyStatus != EResult::k_EResultOK) {
 		                    resetLobbyJoinFlowState();
 
-			                // record CSteamID of lobby owner (and everybody else)
-			                int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
-			                for (int c = 0; c < MAXPLAYERS; ++c) {
-				                if (steamIDRemote[c]) {
-					                cpp_Free_CSteamID(steamIDRemote[c]);
-					                steamIDRemote[c] = NULL;
-				                }
-			                }
-			                for (int c = 0; c < lobbyMembers; ++c) {
-				                steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+			                // close current window
+			                auto frame = static_cast<Frame*>(widget.getParent());
+			                auto dimmer = static_cast<Frame*>(frame->getParent());
+			                dimmer->removeSelf();
+
+			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
+			                connectionErrorPrompt(error_str.c_str());
+			                connectingToLobbyStatus = EResult::k_EResultOK;
+			                return;
+		                }
+		                if (!connectingToLobby) {
+		                    if (connectingToLobbyWindow) {
+		                        resetLobbyJoinFlowState();
+
+			                    // record CSteamID of lobby owner (and everybody else)
+			                    // shouldn't this be in steam.cpp?
+			                    int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
+			                    for (int c = 0; c < MAXPLAYERS; ++c) {
+				                    if (steamIDRemote[c]) {
+					                    cpp_Free_CSteamID(steamIDRemote[c]);
+					                    steamIDRemote[c] = NULL;
+				                    }
+			                    }
+			                    for (int c = 0; c < lobbyMembers; ++c) {
+				                    steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+			                    }
 			                }
 
+			                sendJoinRequest();
+			            } else {
+		                    resetLobbyJoinFlowState();
+
+		                    // close current window
+		                    auto frame = static_cast<Frame*>(widget.getParent());
+		                    auto dimmer = static_cast<Frame*>(frame->getParent());
+		                    dimmer->removeSelf();
+		                    connectionErrorPrompt("Failed to join lobby.");
+			            }
+			            return;
+		            }
+                }
+#endif
+#ifdef USE_EOS
+                if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+                    if (EOS.bJoinLobbyWaitingForHostResponse) {
+		                if (EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success)) {
+		                    resetLobbyJoinFlowState();
+
+			                // close current window
+			                auto frame = static_cast<Frame*>(widget.getParent());
+			                auto dimmer = static_cast<Frame*>(frame->getParent());
+			                dimmer->removeSelf();
+
+			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(EOS.ConnectingToLobbyStatus));
+			                connectionErrorPrompt(error_str.c_str());
+			                EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+			                return;
+		                }
+		                if (!EOS.bConnectingToLobby) {
+		                    if (EOS.bConnectingToLobbyWindow) {
+		                        resetLobbyJoinFlowState();
+			                }
 			                sendJoinRequest();
 			            } else {
 		                    resetLobbyJoinFlowState();
@@ -7005,7 +7060,19 @@ bind_failed:
 #endif
 #ifdef USE_EOS
 	        if (strncmp(address, "epic:", 5) == 0) {
-		        // TODO
+		        auto lobby = getLobbyEpic(address);
+		        if (lobby) {
+	                EOS.bConnectingToLobby = true;
+			        EOS.bConnectingToLobbyWindow = true;
+	                EOS.bJoinLobbyWaitingForHostResponse = true;
+                    LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                    LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			        strncpy(EOS.currentLobbyName, lobby->LobbyAttributes.lobbyName.c_str(), 31);
+			        EOS.searchLobbies(
+			            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
+				        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+				        lobby->LobbyId.c_str());
+				}
 	        }
 #endif
         } else if (lobbyType == LobbyType::LobbyLAN) {
@@ -10194,15 +10261,21 @@ bind_failed:
 	    // create new window
 	    textPrompt("lobby_list_request", "Requesting lobby list...",
 	        [](Widget& widget){
-#ifdef STEAMWORKS
+#if defined(STEAMWORKS)
 #if defined(USE_EOS)
             if (!requestingLobbies && !EOS.bRequestingLobbies) {
 #else
             if (!requestingLobbies) {
 #endif
+#elif defined (USE_EOS)
+            if (!EOS.bRequestingLobbies) {
+#else
+            {
+#endif
                 // lobby list has returned
                 closeText("lobby_list_request");
 
+#if defined(STEAMWORKS)
 	            for (Uint32 c = 0; c < numSteamLobbies; ++c) {
 	                LobbyInfo info;
 	                info.name = lobbyText[c];
@@ -10213,11 +10286,21 @@ bind_failed:
 	                info.address = "steam:" + std::to_string(c);
 	                addLobby(info);
 	            }
-#ifdef USE_EOS
-                //for (Uint32 c =
+#endif
+#if defined(USE_EOS)
+	            for (int c = 0; c < EOS.LobbySearchResults.results.size(); ++c) {
+	                auto& lobby = EOS.LobbySearchResults.results[c];
+	                LobbyInfo info;
+	                info.name = lobby.LobbyAttributes.lobbyName;
+	                info.players = MAXPLAYERS - lobby.FreeSlots;
+	                info.ping = 100; // TODO
+	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
+	                info.flags = lobby.LobbyAttributes.serverFlags;
+	                info.address = "epic:" + std::to_string(c);
+	                addLobby(info);
+	            }
 #endif
             }
-#endif
 	        });
 
         // request new lobbies

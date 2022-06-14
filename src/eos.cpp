@@ -1675,6 +1675,14 @@ void EOSFuncs::createLobby()
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	CreateOptions.MaxLobbyMembers = MAXPLAYERS;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	CreateOptions.bPresenceEnabled = true;
+	CreateOptions.bAllowInvites = true;
+	CreateOptions.BucketId = EOS_LOBBY_SEARCH_BUCKET_ID;
+	CreateOptions.bDisableHostMigration = true;
+	CreateOptions.bEnableRTCRoom = false;
+	CreateOptions.LocalRTCOptions = nullptr;
+	CreateOptions.LobbyId = nullptr;
+
 	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
