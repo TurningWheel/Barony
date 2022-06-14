@@ -499,15 +499,18 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		EOSFuncs::logError("OnLobbySearchFinished: Callback failure: %d", static_cast<int>(data->ResultCode));
 	}
 
-	int* searchOptions = static_cast<int*>(data->ClientData);
-	if ( searchOptions[EOSFuncs::LobbyParameters_t::JOIN_OPTIONS]
-		== static_cast<int>(EOSFuncs::LobbyParameters_t::LOBBY_JOIN_FIRST_SEARCH_RESULT) )
-	{
-		// we were trying to join a lobby, set error message.
-		EOS.bConnectingToLobbyWindow = false;
-		EOS.bConnectingToLobby = false;
-		EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
-	}
+    if ( data->ResultCode != EOS_EResult::EOS_OperationWillRetry )
+    {
+	    int* searchOptions = static_cast<int*>(data->ClientData);
+	    if ( searchOptions[EOSFuncs::LobbyParameters_t::JOIN_OPTIONS]
+		    == static_cast<int>(EOSFuncs::LobbyParameters_t::LOBBY_JOIN_FIRST_SEARCH_RESULT) )
+	    {
+		    // we were trying to join a lobby, set error message.
+		    EOS.bConnectingToLobbyWindow = false;
+		    EOS.bConnectingToLobby = false;
+		    EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
+	    }
+    }
 }
 
 void EOS_CALL EOSFuncs::OnLobbyJoinCallback(const EOS_Lobby_JoinLobbyCallbackInfo* data)
@@ -1048,7 +1051,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		else
 		{
 			logInfo("SetLogCallbackResult: Logging Callback set");
-			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_VeryVerbose);
 		}
 	}
 
@@ -1844,51 +1847,53 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	SetLobbyOptions.ApiVersion = EOS_LOBBYSEARCH_SETLOBBYID_API_LATEST;
 	SetLobbyOptions.TargetUserId = CurrentUserInfo.Friends.at(0).UserId;
 	Result = EOS_LobbySearch_SetTargetUserId(LobbySearch, &SetLobbyOptions);*/
-	EOS_LobbySearch_SetParameterOptions ParamOptions = {};
-	ParamOptions.ApiVersion = EOS_LOBBYSEARCH_SETPARAMETER_API_LATEST;
-	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_NOTANYOF;
-
-	EOS_Lobby_AttributeData AttrData;
-	AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
-	ParamOptions.Parameter = &AttrData;
-	AttrData.Key = "VER";
-	AttrData.Value.AsUtf8 = "0.0.0";
-	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-	EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
-
-	if ( LobbySearchResults.useLobbyCode && strcmp(lobbySearchByCode, "") )
+	if ( searchType != LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 	{
-		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
-		AttrData.Key = "JOINKEY";
-		AttrData.Value.AsUtf8 = lobbySearchByCode;
-		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
-	}
-	else
-	{
-		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
-		AttrData.Key = "PERMISSIONLEVEL";
-		AttrData.Value.AsUtf8 = "0";
-		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
-	}
+	    EOS_LobbySearch_SetParameterOptions ParamOptions = {};
+	    ParamOptions.ApiVersion = EOS_LOBBYSEARCH_SETPARAMETER_API_LATEST;
+	    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_NOTANYOF;
 
-	ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
-	AttrData.Key = "MAXPLAYERS";
-	AttrData.Value.AsInt64 = MAXPLAYERS;
-	AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_INT64;
-	resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	    EOS_Lobby_AttributeData AttrData;
+	    AttrData.ApiVersion = EOS_LOBBY_ATTRIBUTEDATA_API_LATEST;
+	    ParamOptions.Parameter = &AttrData;
+	    AttrData.Key = "VER";
+	    AttrData.Value.AsUtf8 = "0.0.0";
+	    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+	    EOS_EResult resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
 
-	if ( !LobbySearchResults.showLobbiesInProgress )
-	{
-		ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
-		AttrData.Key = "CURRENTLEVEL";
-		AttrData.Value.AsUtf8 = "-1";
-		AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-		resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	    if ( LobbySearchResults.useLobbyCode && strcmp(lobbySearchByCode, "") )
+	    {
+		    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		    AttrData.Key = "JOINKEY";
+		    AttrData.Value.AsUtf8 = lobbySearchByCode;
+		    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	    }
+	    else
+	    {
+		    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		    AttrData.Key = "PERMISSIONLEVEL";
+		    AttrData.Value.AsUtf8 = "0";
+		    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	    }
+
+	    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+	    AttrData.Key = "MAXPLAYERS";
+	    AttrData.Value.AsInt64 = MAXPLAYERS;
+	    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_INT64;
+	    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+
+	    if ( !LobbySearchResults.showLobbiesInProgress )
+	    {
+		    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		    AttrData.Key = "CURRENTLEVEL";
+		    AttrData.Value.AsUtf8 = "-1";
+		    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
+		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+	    }
 	}
-
-	if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
+	else if ( searchType == LobbyParameters_t::LOBBY_SEARCH_BY_LOBBYID )
 	{
 		// appends criteria to search for within the normal search function
 		EOS_LobbySearch_SetLobbyIdOptions SetLobbyOptions = {};
