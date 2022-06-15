@@ -4608,7 +4608,7 @@ void Player::HUD_t::processHUD()
             "#*images/system/white.png",
             "dimmer");
 
-        const char* path = "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+        const char* path = Input::getControllerGlyph();
         auto image = Image::get(path);
         const int w = image->getWidth();
         const int h = image->getHeight();

@@ -187,6 +187,8 @@ public:
 	//! return the binding_t struct for the input name
 	binding_t input(const char* binding) const;
 
+    static const char* getKeyboardGlyph();
+    static const char* getControllerGlyph();
 	static std::string getGlyphPathForInput(const char* input, bool pressed = false);
 	std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false) const;
 	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;

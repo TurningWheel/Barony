@@ -9999,8 +9999,7 @@ bind_failed:
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if (isPlayerSignedIn(c)) {
                 const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
-                    "*#images/ui/Glyphs/G_Control_Keyboard_00.png":
-                    "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();
@@ -14474,8 +14473,7 @@ bind_failed:
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if (isPlayerSignedIn(c)) {
                 const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
-                    "*#images/ui/Glyphs/G_Control_Keyboard_00.png":
-                    "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();

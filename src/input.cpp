@@ -353,6 +353,14 @@ Input::binding_t Input::input(const char* binding) const {
 	return b != bindings.end() ? (*b).second : Input::binding_t();
 }
 
+const char* Input::getKeyboardGlyph() {
+    return "*#images/ui/Glyphs/G_Control_KBM_01.png";
+}
+
+const char* Input::getControllerGlyph() {
+    return "*#images/ui/Glyphs/G_Control_Xbox_02.png";
+}
+
 std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 {
     std::string in = input;
