@@ -767,7 +767,8 @@ namespace MainMenu {
 		);
 
 		auto back_button = back->addButton("back_button");
-		back_button->setSize(SDL_Rect{10, 12, 48, 20});
+		back_button->setSize(SDL_Rect{0, 0, 66, 36});
+		back_button->setTextOffset(SDL_Rect{10, 12, 0, 0});
 		back_button->setColor(0);
 		back_button->setBorderColor(0);
 		back_button->setHighlightColor(0);
@@ -775,15 +776,15 @@ namespace MainMenu {
 		back_button->setText("Back");
 		back_button->setFont(smallfont_outline);
 		back_button->setHJustify(Button::justify_t::LEFT);
-		back_button->setVJustify(Button::justify_t::CENTER);
+		back_button->setVJustify(Button::justify_t::TOP);
 		back_button->setCallback(callback);
 		back_button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		back_button->setWidgetBack("back_button");
 		back_button->setTickCallback([](Widget& widget) {
 			if (widget.isSelected()) {
-			    widget.setButtonsOffset(SDL_Rect{32, 0, 0, 0,});
+			    widget.setButtonsOffset(SDL_Rect{23, 4, 0, 0,});
 			} else {
-			    widget.setButtonsOffset(SDL_Rect{8, 0, 0, 0,});
+			    widget.setButtonsOffset(SDL_Rect{1, 4, 0, 0,});
 			}
 			});
 
@@ -9794,8 +9795,10 @@ bind_failed:
 		        const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
                 std::string path = Input::getGlyphPathForInput("ButtonB", pressed);
                 auto image = Image::get((std::string("*") + path).c_str());
-                const int x = pos.x + pos.w + 8;
-                const int y = pos.y + pos.h / 2;
+                const int off_x = 1;
+                const int off_y = 4;
+                const int x = pos.x + pos.w + off_x;
+                const int y = pos.y + pos.h / 2 + off_y;
                 const int w = image->getWidth();
                 const int h = image->getHeight();
                 image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
@@ -10132,7 +10135,7 @@ bind_failed:
         entry_name->highlight = selection_fn;
         entry_name->selected = selection_fn;
         entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
-        entry_name->text = info.name;
+        entry_name->text = std::string("  ") + info.name;
         entry_name->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // players cell
@@ -10841,6 +10844,9 @@ bind_failed:
 		    widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
 	        };
 
+	    constexpr Uint32 highlightColor = makeColor(22, 25, 30, 255);
+	    constexpr Uint32 activatedColor = makeColor(30, 25, 22, 255);
+
         // name column
         {
 		    auto name_column_header = window->addField("name_column_header", 32);
@@ -10853,14 +10859,14 @@ bind_failed:
 
 		    auto list = window->addFrame("names");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{342, 140, 168, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 168, 200});
+		    list->setSize(SDL_Rect{336, 140, 174, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 174, 200});
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setSelectedEntryColor(highlightColor);
+		    list->setActivatedEntryColor(activatedColor);
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -10890,14 +10896,14 @@ bind_failed:
 
 		    auto list = window->addFrame("players");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{516, 140, 72, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 72, 200});
+		    list->setSize(SDL_Rect{510, 140, 78, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 78, 200});
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setSelectedEntryColor(highlightColor);
+		    list->setActivatedEntryColor(activatedColor);
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -10927,14 +10933,14 @@ bind_failed:
 
 		    auto list = window->addFrame("pings");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{594, 140, 44, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 44, 200});
+		    list->setSize(SDL_Rect{588, 140, 52, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 52, 200});
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setSelectedEntryColor(highlightColor);
+		    list->setActivatedEntryColor(activatedColor);
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -10950,6 +10956,13 @@ bind_failed:
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("players");
 		}
+
+		auto dividers = window->addImage(
+		    SDL_Rect{336, 138, 308, 234},
+		    0xffffffff,
+		    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
+		    "dividers");
+		dividers->ontop = true;
 
 		auto slider = window->addSlider("scroll_slider");
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
