@@ -1919,7 +1919,7 @@ bool physfsSearchModelsToUpdate()
 {
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	File* fp = openDataFile(modelsDirectory.c_str(), "r");
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
@@ -1946,7 +1946,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 	int startnum = 0;
 	int endnum = nummodels;
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	File *fp = openDataFile(modelsDirectory.c_str(), "r");
+	File *fp = openDataFile(modelsDirectory.c_str(), "rb");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
 		fp->gets2(modelName, PATH_MAX);
@@ -2076,7 +2076,7 @@ bool physfsSearchSoundsToUpdate()
 		return true;
 	}
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-	File* fp = openDataFile(soundsDirectory.c_str(), "r");
+	File* fp = openDataFile(soundsDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
@@ -2104,7 +2104,7 @@ void physfsReloadSounds(bool reloadAll)
 	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
-	File* fp = openDataFile(soundsDirectory.c_str(), "r");
+	File* fp = openDataFile(soundsDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	printlog("freeing sounds and loading modded sounds...\n");
@@ -2169,7 +2169,7 @@ bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 {
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
-	File* fp = openDataFile(spritesDirectory.c_str(), "r");
+	File* fp = openDataFile(spritesDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); ++c )
@@ -2203,7 +2203,7 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
-	File* fp = openDataFile(spritesDirectory.c_str(), "r");
+	File* fp = openDataFile(spritesDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); ++c )
@@ -2255,7 +2255,7 @@ bool physfsSearchTilesToUpdate()
 {
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
-	File* fp = openDataFile(tilesDirectory.c_str(), "r");
+	File* fp = openDataFile(tilesDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
@@ -2281,7 +2281,7 @@ void physfsReloadTiles(bool reloadAll)
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
-	File* fp = openDataFile(tilesDirectory.c_str(), "r");
+	File* fp = openDataFile(tilesDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
 	for ( int c = 0; !fp->eof(); c++ )
@@ -2567,7 +2567,7 @@ void physfsReloadItemsTxt()
 {
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
 	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-	File* fp = openDataFile(itemsTxtDirectory.c_str(), "r");
+	File* fp = openDataFile(itemsTxtDirectory.c_str(), "rb");
 	char buffer[PATH_MAX];
 
 	for ( int c = 0; !fp->eof() && c < NUMITEMS; ++c )
@@ -2736,7 +2736,7 @@ void physfsReloadMonsterLimbFiles()
 		}
 		std::string limbsDir = PHYSFS_getRealDir(filename);
 		limbsDir.append(PHYSFS_getDirSeparator()).append(filename);
-		if ( (fp = openDataFile(limbsDir.c_str(), "r")) == NULL )
+		if ( (fp = openDataFile(limbsDir.c_str(), "rb")) == NULL )
 		{
 			continue;
 		}

@@ -1356,7 +1356,7 @@ namespace ConsoleCommands {
 
 		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-		File *fp = openDataFile(modelsDirectory.c_str(), "r");
+		File *fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( int c = 0; !fp->eof(); c++ )
 		{
 			fp->gets2(name2, sizeof(name2));
@@ -2373,7 +2373,7 @@ namespace ConsoleCommands {
 			strcpy(filename, "models/creatures/");
 			strcat(filename, monstertypename[c]);
 			strcat(filename, "/limbs.txt");
-			if ( (fp = openDataFile(filename, "r")) == NULL )
+			if ( (fp = openDataFile(filename, "rb")) == NULL )
 			{
 				continue;
 			}

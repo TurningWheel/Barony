@@ -119,7 +119,7 @@ int initGame()
 			strcpy(filename, "models/creatures/");
 			strcat(filename, monstertypename[c]);
 			strcat(filename, "/limbs.txt");
-			if ( (fp = openDataFile(filename, "r")) == NULL )
+			if ( (fp = openDataFile(filename, "rb")) == NULL )
 			{
 				continue;
 			}
@@ -166,7 +166,7 @@ int initGame()
 		printlog( "loading items...\n");
 		std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
 		itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-		fp = openDataFile(itemsDirectory.c_str(), "r");
+		fp = openDataFile(itemsDirectory.c_str(), "rb");
 		for ( c = 0; !fp->eof(); ++c )
 		{
 			if ( c > SPELLBOOK_DETECT_FOOD )

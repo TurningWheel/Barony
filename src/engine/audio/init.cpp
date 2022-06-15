@@ -107,7 +107,7 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
+	fp = openDataFile(soundsDirectory.c_str(), "rb");
 	for ( numsounds = 0; !fp->eof(); ++numsounds )
 	{
 		while ( fp->getc() != '\n' )
@@ -126,7 +126,7 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 	}
 #ifdef USE_FMOD
 	sounds = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
+	fp = openDataFile(soundsDirectory.c_str(), "rb");
 	char full_path[PATH_MAX];
 	for ( c = 0; !fp->eof(); ++c )
 	{
@@ -143,7 +143,7 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 	fmod_system->set3DSettings(1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "r"); fp->gets2(name, 128); ++c)
+	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "rb"); fp->gets2(name, 128); ++c)
 	{
 		//TODO: Might need to malloc the sounds[c]->sound
 		OPENAL_CreateSound(name, true, &sounds[c]);

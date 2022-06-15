@@ -232,7 +232,13 @@ public:
 #ifdef NINTENDO
 		return FileNX::FileIO_NintendoOpen(path, mode, fileMode);
 #else
-		FILE* fp = fopen(path, mode);
+        // note: on PC, files are ALWAYS opened in binary mode
+		FILE* fp;
+		switch (fileMode) {
+		default: assert(0 && "invalid file open mode");
+		case FileBase::FileMode::READ: fp = fopen(path, "rb"); break;
+		case FileBase::FileMode::WRITE: fp = fopen(path, "wb"); break;
+		}
 		if (fp) {
 			return new File(fp, fileMode, path);
 		} else {

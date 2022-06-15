@@ -444,7 +444,7 @@ int initApp(char const * const title, int fullscreen)
 
 	// load sprites
 	printlog("loading sprites...\n");
-	fp = openDataFile("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "rb");
 	for ( numsprites = 0; !fp->eof(); numsprites++ )
 	{
 		while ( fp->getc() != '\n' ) if ( fp->eof() )
@@ -459,7 +459,7 @@ int initApp(char const * const title, int fullscreen)
 		return 6;
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
-	fp = openDataFile("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "rb");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
 		char name[128] = { '\0' };
@@ -485,7 +485,7 @@ int initApp(char const * const title, int fullscreen)
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
-	fp = openDataFile(tilesDirectory.c_str(), "r");
+	fp = openDataFile(tilesDirectory.c_str(), "rb");
 	for ( numtiles = 0; !fp->eof(); numtiles++ )
 	{
 		while ( fp->getc() != '\n' )
@@ -506,7 +506,7 @@ int initApp(char const * const title, int fullscreen)
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
-	fp = openDataFile(tilesDirectory.c_str(), "r");
+	fp = openDataFile(tilesDirectory.c_str(), "rb");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
 		char name[128];
@@ -560,7 +560,7 @@ int initApp(char const * const title, int fullscreen)
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 		printlog("loading models from directory %s...\n", modelsDirectory.c_str());
 
-		fp = openDataFile(modelsDirectory.c_str(), "r");
+		fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( nummodels = 0; !fp->eof(); nummodels++ )
 		{
 			while ( fp->getc() != '\n' ) if ( fp->eof() )
@@ -576,7 +576,7 @@ int initApp(char const * const title, int fullscreen)
 			return 11;
 		}
 		models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-		fp = openDataFile(modelsDirectory.c_str(), "r");
+		fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( int c = 0; !fp->eof(); c++ )
 		{
 			char name[128];
@@ -760,7 +760,7 @@ int loadLanguage(char const * const lang)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = openDataFile(langFilepath.c_str(), "r")) == NULL )
+	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
