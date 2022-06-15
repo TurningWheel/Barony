@@ -5017,18 +5017,16 @@ any gyrobot findings.#
 3715 The spell had no effect!#
 3716 Scribing#
 3717 Charge: %8d%%%%#
-3718 Inscribe #
-3719 Repair #
-3720 Select a blank scroll
-to inscribe#
+3718 Inscribe#
+3719 Repair#
+3720 Select a blank scroll to inscribe#
 3721 Write %s on the scroll#
 3722 Inscribing a         
 %+2d %s#
 3723 clear #
 3724 Inscribed %s!#
 3725 You trace over some of the faded text...#
-3726 Select a spellbook
-to repair#
+3726 Select a spellbook to repair#
 3727 Your %s is depleted!#
 3728 Your %s depletes before you can complete 
  the inscription!#
@@ -6151,4 +6149,20 @@ Combination!#
 4182 You discovered a new alchemy recipe
  for a %s.#
 
+# scribing
+4183 Charge Cost:#
+4184 Write#
+4185 Inscribe this scroll#
+4186 Not enough charge remaining#
+4187 Choose an inscription#
+4188 Write (May destroy feather)#
+4189 Write (Destroys feather)#
+4190 Missing blank scroll to inscribe#
+4191 Created Scroll: "%s"#
+4192 Feather Charge:#
+4193 Sort:#
+4194 Default#
+4195 Discovered#
+4196 Unknown#
+ 
 4199 end#
