@@ -29,6 +29,14 @@
 
 #include <assert.h>
 
+static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
+static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
+static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
+static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
+
+static ConsoleVariable<Vector4> mapBgColor("/map_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+static ConsoleVariable<Vector4> logBgColor("/log_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+
 Frame* gameUIFrame[MAXPLAYERS] = { nullptr };
 bool newui = true;
 int selectedCursorOpacity = 255;
@@ -4560,36 +4568,6 @@ void Player::HUD_t::processHUD()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight()};
 
-    if ( !controllerFrame )
-    {
-        controllerFrame = gameUIFrame[player.playernum]->addFrame("controller prompt");
-        controllerFrame->setColor(makeColor(0, 0, 0, 191));
-        controllerFrame->setOwner(player.playernum);
-        controllerFrame->setBorder(0);
-        controllerFrame->setDisabled(true);
-        controllerFrame->setHollow(true);
-        controllerFrame->setTickCallback([](Widget& widget){
-            const int player = widget.getOwner();
-	        const SDL_Rect hudSize{
-	            players[player]->camera_virtualx1(),
-		        players[player]->camera_virtualy1(),
-		        players[player]->camera_virtualWidth(),
-		        players[player]->camera_virtualHeight()};
-            auto frame = static_cast<Frame*>(&widget); assert(frame);
-            auto image = frame->findImage("controller"); assert(image);
-            image->pos.x = (hudSize.w - image->pos.w) / 2;
-            image->pos.y = (hudSize.h - image->pos.h) / 2;
-            image->disabled = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
-            });
-
-        const char* path = "*#images/ui/Glyphs/G_Control_Xbox_01.png";
-        auto image = Image::get(path);
-        const int w = image->getWidth();
-        const int h = image->getHeight();
-        const int x = (hudSize.w - w) / 2;
-        const int y = (hudSize.h - h) / 2;
-        controllerFrame->addImage(SDL_Rect{x, y, w, h}, 0xffffffff, path, "controller");
-    }
 	if ( !hudFrame )
 	{
 	    char name[32];
@@ -4599,6 +4577,61 @@ void Player::HUD_t::processHUD()
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
 	}
+    if ( !controllerFrame )
+    {
+        controllerFrame = gameUIFrame[player.playernum]->addFrame("reconnect_controller");
+        controllerFrame->setColor(0);
+        controllerFrame->setOwner(player.playernum);
+        controllerFrame->setBorder(0);
+        controllerFrame->setDisabled(true);
+        controllerFrame->setHollow(true);
+        controllerFrame->setTickCallback([](Widget& widget){
+            const int player = widget.getOwner();
+            const bool disabled = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+	        const SDL_Rect hudSize{
+	            players[player]->camera_virtualx1(),
+		        players[player]->camera_virtualy1(),
+		        players[player]->camera_virtualWidth(),
+		        players[player]->camera_virtualHeight()};
+            auto frame = static_cast<Frame*>(&widget); assert(frame);
+            auto image = frame->findImage("controller"); assert(image);
+            image->pos.x = (hudSize.w - image->pos.w) / 2;
+            image->pos.y = (hudSize.h - image->pos.h) / 2;
+            image->disabled = disabled;
+            auto field = frame->findField("label"); assert(field);
+            field->setInvisible(disabled);
+            });
+
+        auto dimmer = controllerFrame->addImage(
+            SDL_Rect{0, 0, hudSize.w, hudSize.h},
+            makeColor(0, 0, 0, 191),
+            "#*images/system/white.png",
+            "dimmer");
+
+        const char* path = "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+        auto image = Image::get(path);
+        const int w = image->getWidth();
+        const int h = image->getHeight();
+        const int x = (hudSize.w - w) / 2;
+        const int y = (hudSize.h - h) / 2;
+        auto controller = controllerFrame->addImage(
+            SDL_Rect{x, y, w, h},
+            0xffffffff, path,
+            "controller");
+
+        auto field = controllerFrame->addField("label", 16);
+        field->setSize(SDL_Rect{x, y, w, h});
+        field->setJustify(Field::justify_t::CENTER);
+        field->setText((std::string("P") + std::to_string(player.playernum + 1)).c_str());
+        field->setFont(bigfont_outline);
+        switch (player.playernum) {
+        default:
+        case 0: field->setColor(makeColor(64, 255, 64, 255)); break;
+		case 1: field->setColor(makeColor(86, 180, 233, 255)); break;
+		case 2: field->setColor(makeColor(240, 228, 66, 255)); break;
+		case 3: field->setColor(makeColor(204, 121, 167, 255)); break;
+        }
+    }
 
     controllerFrame->setSize(hudSize);
 	hudFrame->setSize(hudSize);
@@ -4971,14 +5004,6 @@ void openMinimap(int player) {
         players[player]->minimap.big = (players[player]->minimap.big==false);
     }
 }
-
-static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
-static const char* bigfont_no_outline = "fonts/pixelmix.ttf#16#0";
-static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
-static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
-
-static ConsoleVariable<Vector4> mapBgColor("/map_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
-static ConsoleVariable<Vector4> logBgColor("/log_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
 
 void openMapWindow(int player) {
     auto& frame = players[player]->hud.mapWindow;
@@ -12206,14 +12231,13 @@ void Player::Hotbar_t::processHotbar()
 	{
 		char name[32];
 		snprintf(name, sizeof(name), "player hotbar %d", player.playernum);
-		hotbarFrame = gameUIFrame[player.playernum]->addFrame(name);
+		hotbarFrame = player.hud.hudFrame->addFrame(name);
 		hotbarFrame->setHollow(true);
 		hotbarFrame->setBorder(0);
 		hotbarFrame->setOwner(player.playernum);
 		createHotbar(player.playernum);
 	}
-	hotbarFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
-		players[player.playernum]->camera_virtualy1(),
+	hotbarFrame->setSize(SDL_Rect{ 0, 0,
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 

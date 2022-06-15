@@ -9919,14 +9919,20 @@ bind_failed:
             const int index = frame->getOwner();
 			const real_t inc = (PI / fpsLimit) * 0.5f;
             for (int c = 0; c < MAXPLAYERS; ++c) {
-                std::string name = std::string("player") + std::to_string(index);
+		        bounce += inc;
+		        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
+                const std::string name = std::string("player") + std::to_string(index);
                 auto image = frame->findImage(name.c_str());
                 if (image) {
-			        bounce += inc;
-			        const int h = image->pos.h;
-			        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
-	                const int y = frame->getSize().h - h - 32 - (int)bounce_height;
+		            const int h = image->pos.h;
+                    const int y = frame->getSize().h - h - 32 - (int)bounce_height;
 	                image->pos.y = y;
+                }
+                auto field = frame->findField(name.c_str());
+                if (field) {
+                    auto size = field->getSize();
+                    size.y = frame->getSize().h - size.h - 32 - (int)bounce_height;
+                    field->setSize(size);
                 }
             }
             };
@@ -9943,6 +9949,13 @@ bind_failed:
         auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
         prompt->setOwner(index);
 
+        auto header_size = prompt->getActualSize(); header_size.h = 80;
+        auto header = prompt->addField("header", 128);
+        header->setSize(header_size);
+        header->setFont(bigfont_outline);
+        header->setJustify(Field::justify_t::CENTER);
+        header->setText("ASSIGN CONTROLLER");
+
         auto dimmer = static_cast<Frame*>(prompt->getParent());
         dimmer->setOwner(index);
 
@@ -9950,9 +9963,6 @@ bind_failed:
 		button->setSize(prompt->getActualSize());
 		button->setJustify(Field::justify_t::CENTER);
 		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		if (!multiple_players) {
-		    button->setButtonsOffset(SDL_Rect{0, 48, 0, 0,});
-		}
 		button->setTickCallback(button_tick_func);
 		button->setCallback(button_func);
 		button->setHideKeyboardGlyphs(false);
@@ -9986,6 +9996,18 @@ bind_failed:
                     SDL_Rect{x, y, w, h},
                     makeColor(255, 255, 255, 255),
                     path, name.c_str());
+                auto field = prompt->addField(name.c_str(), 16);
+                field->setSize(SDL_Rect{x, y, w, h});
+                field->setJustify(Field::justify_t::CENTER);
+                field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+                field->setFont(bigfont_outline);
+                switch (c) {
+                default:
+                case 0: field->setColor(makeColor(64, 255, 64, 255)); break;
+				case 1: field->setColor(makeColor(86, 180, 233, 255)); break;
+				case 2: field->setColor(makeColor(240, 228, 66, 255)); break;
+				case 3: field->setColor(makeColor(204, 121, 167, 255)); break;
+                }
                 ++num;
 	        }
 	    }
@@ -10958,7 +10980,7 @@ bind_failed:
 		}
 
 		auto dividers = window->addImage(
-		    SDL_Rect{336, 138, 308, 234},
+		    SDL_Rect{336, 138, 308, 204},
 		    0xffffffff,
 		    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
 		    "dividers");
@@ -14337,14 +14359,20 @@ bind_failed:
             const int player = frame->getOwner();
 			const real_t inc = (PI / fpsLimit) * 0.5f;
             for (int c = 0; c < MAXPLAYERS; ++c) {
-                std::string name = std::string("player") + std::to_string(player);
+		        bounce += inc;
+		        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
+                const std::string name = std::string("player") + std::to_string(player);
                 auto image = frame->findImage(name.c_str());
                 if (image) {
-			        bounce += inc;
-			        const int h = image->pos.h;
-			        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
-	                const int y = frame->getSize().h - h - 32 - (int)bounce_height;
+		            const int h = image->pos.h;
+                    const int y = frame->getSize().h - h - 32 - (int)bounce_height;
 	                image->pos.y = y;
+                }
+                auto field = frame->findField(name.c_str());
+                if (field) {
+                    auto size = field->getSize();
+                    size.y = frame->getSize().h - size.h - 32 - (int)bounce_height;
+                    field->setSize(size);
                 }
             }
             if (inputs.getPlayerIDAllowedKeyboard() == player) {
@@ -14368,6 +14396,13 @@ bind_failed:
 
         auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
         prompt->setOwner(player);
+
+        auto header_size = prompt->getActualSize(); header_size.h = 80;
+        auto header = prompt->addField("header", 128);
+        header->setSize(header_size);
+        header->setFont(bigfont_outline);
+        header->setJustify(Field::justify_t::CENTER);
+        header->setText("RECONNECT CONTROLLER");
 
         auto back = createBackWidget(prompt, [](Button& button){
             destroyMainMenu();
@@ -14402,6 +14437,18 @@ bind_failed:
                     SDL_Rect{x, y, w, h},
                     makeColor(255, 255, 255, 255),
                     path, name.c_str());
+                auto field = prompt->addField(name.c_str(), 16);
+                field->setSize(SDL_Rect{x, y, w, h});
+                field->setJustify(Field::justify_t::CENTER);
+                field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+                field->setFont(bigfont_outline);
+                switch (c) {
+                default:
+                case 0: field->setColor(makeColor(64, 255, 64, 255)); break;
+				case 1: field->setColor(makeColor(86, 180, 233, 255)); break;
+				case 2: field->setColor(makeColor(240, 228, 66, 255)); break;
+				case 3: field->setColor(makeColor(204, 121, 167, 255)); break;
+                }
                 ++num;
 	        }
 	    }
