@@ -6943,6 +6943,7 @@ bind_failed:
             text->setText(buf);
 
             // here is the connection polling loop for online lobbies
+            // TODO this should be moved to lobbies.cpp (actually it was largely lifted from there - put it back!)
             if (!directConnect) {
 #ifdef STEAMWORKS
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -7013,14 +7014,6 @@ bind_failed:
 		                        resetLobbyJoinFlowState();
 			                }
 			                sendJoinRequest();
-			            } else {
-		                    resetLobbyJoinFlowState();
-
-		                    // close current window
-		                    auto frame = static_cast<Frame*>(widget.getParent());
-		                    auto dimmer = static_cast<Frame*>(frame->getParent());
-		                    dimmer->removeSelf();
-		                    connectionErrorPrompt("Failed to join lobby.");
 			            }
 			            return;
 		            }
@@ -7068,10 +7061,13 @@ bind_failed:
                     LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
                     LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 			        strncpy(EOS.currentLobbyName, lobby->LobbyAttributes.lobbyName.c_str(), 31);
+
+			        // EOS.searchLobbies() nukes the lobby list, so we need to copy this.
+			        std::string lobbyId = lobby->LobbyId.c_str();
 			        EOS.searchLobbies(
 			            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 				        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
-				        lobby->LobbyId.c_str());
+				        lobbyId.c_str());
 				}
 	        }
 #endif

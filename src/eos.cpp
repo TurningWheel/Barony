@@ -1774,7 +1774,7 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		return;
 	}
 
-	EOS_Lobby_JoinLobbyOptions JoinOptions;
+	EOS_Lobby_JoinLobbyOptions JoinOptions{};
 	JoinOptions.ApiVersion = EOS_LOBBY_JOINLOBBY_API_LATEST;
 	JoinOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	JoinOptions.LobbyDetailsHandle = LobbyParameters.lobbyToJoin;
