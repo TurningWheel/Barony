@@ -903,13 +903,13 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	glEnable(GL_DEPTH_TEST);
 
 	// debug corners
-	//Uint32 color = makeColorRGB(64, 255, 64); // green
+	//Uint32 color = uint32ColorPlayer1; // green
 	//drawCircle(pos->x, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-	//color = makeColorRGB(204, 121, 167); // pink
+	//color = uint32ColorPlayer2; // pink
 	//drawCircle(pos->x, pos->y + pos->h, 5, color, 255);
-	//color = makeColorRGB(86, 180, 233); // sky blue
+	//color = uint32ColorPlayer3; // sky blue
 	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
-	//color = makeColorRGB(240, 228, 66); // yellow
+	//color = uint32ColorPlayer4; // yellow
 	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
 }
 

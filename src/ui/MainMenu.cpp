@@ -10017,11 +10017,11 @@ bind_failed:
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
                 switch (c) {
-                default:
-                case 0: field->setColor(makeColor(64, 255, 64, 255)); break;
-				case 1: field->setColor(makeColor(86, 180, 233, 255)); break;
-				case 2: field->setColor(makeColor(240, 228, 66, 255)); break;
-				case 3: field->setColor(makeColor(204, 121, 167, 255)); break;
+                default: field->setColor(uint32ColorPlayerX); break;
+                case 0: field->setColor(uint32ColorPlayer1); break;
+		        case 1: field->setColor(uint32ColorPlayer2); break;
+		        case 2: field->setColor(uint32ColorPlayer3); break;
+		        case 3: field->setColor(uint32ColorPlayer4); break;
                 }
                 ++num;
 	        }
@@ -14491,11 +14491,11 @@ bind_failed:
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
                 switch (c) {
-                default:
-                case 0: field->setColor(makeColor(64, 255, 64, 255)); break;
-				case 1: field->setColor(makeColor(86, 180, 233, 255)); break;
-				case 2: field->setColor(makeColor(240, 228, 66, 255)); break;
-				case 3: field->setColor(makeColor(204, 121, 167, 255)); break;
+                default: field->setColor(uint32ColorPlayerX); break;
+                case 0: field->setColor(uint32ColorPlayer1); break;
+		        case 1: field->setColor(uint32ColorPlayer2); break;
+		        case 2: field->setColor(uint32ColorPlayer3); break;
+		        case 3: field->setColor(uint32ColorPlayer4); break;
                 }
                 ++num;
 	        }
