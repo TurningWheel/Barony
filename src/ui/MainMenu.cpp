@@ -9060,6 +9060,7 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		banner->setColor(uint32ColorPlayerX);
 
 		auto text = card->addField("text", 128);
 		text->setText("New players\ncannot join");
@@ -9067,6 +9068,7 @@ bind_failed:
 		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		text->setVJustify(Field::justify_t::TOP);
 		text->setHJustify(Field::justify_t::CENTER);
+		text->setColor(uint32ColorPlayerX);
 	}
 
 	static inline int countControllers() {
@@ -9144,6 +9146,13 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
 		static auto start_func = [](int index){
 		    auto controller_prompt = main_menu_frame->findFrame("controller_prompt");
@@ -9352,9 +9361,16 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
 		auto invite = card->addButton("invite_button");
-		invite->setText("Press to Invite");
+		invite->setText("Click to Invite");
 		invite->setFont(smallfont_outline);
 		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 16});
 		invite->setVJustify(Button::justify_t::TOP);
@@ -9399,6 +9415,13 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
 		auto text = card->addField("text", 128);
 		text->setText("Waiting for\nplayer to join");
@@ -9468,6 +9491,13 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
         if (local) {
             static auto cancel_fn = [](int index){
