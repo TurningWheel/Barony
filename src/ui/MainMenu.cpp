@@ -7039,7 +7039,8 @@ bind_failed:
         // initialize connection
 	    if (lobbyType == LobbyType::LobbyOnline) {
 #ifdef STEAMWORKS
-	        if (strncmp(address, "steam:", 6) == 0) {
+            const char steam_str[] = "steam:";
+	        if (strncmp(address, steam_str, sizeof(steam_str) - 1) == 0) {
 		        auto lobby = getLobbySteamID(address);
 		        if (lobby) {
 				    connectingToLobby = true;
@@ -7049,11 +7050,13 @@ bind_failed:
 	                LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 	                LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			        LobbyHandler.steamValidateAndJoinLobby(*lobby);
+				    return true;
 			    }
 	        }
 #endif
 #ifdef USE_EOS
-	        if (strncmp(address, "epic:", 5) == 0) {
+            const char epic_str[] = "epic:";
+	        if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
 		        auto lobby = getLobbyEpic(address);
 		        if (lobby) {
 	                EOS.bConnectingToLobby = true;
@@ -7069,9 +7072,15 @@ bind_failed:
 			            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
 				        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
 				        lobbyId.c_str());
+				    return true;
 				}
 	        }
 #endif
+	        closeText("connect_prompt");
+	        connectionErrorPrompt("Failed to connect to lobby.\nInvalid room code.");
+	        multiplayer = SINGLE;
+	        disconnectFromLobby();
+	        return false;
         } else if (lobbyType == LobbyType::LobbyLAN) {
             // copy address
             char address_copy[128];
@@ -7131,8 +7140,15 @@ bind_failed:
 
 		    printlog("successfully contacted server at %s.\n", address);
 		    sendJoinRequest();
+	        return true;
 	    }
-	    return true;
+
+	    // connection initiation failed for unknown reason
+	    closeText("connect_prompt");
+	    connectionErrorPrompt("Failed to connect to lobby");
+	    multiplayer = SINGLE;
+	    disconnectFromLobby();
+	    return false;
 	}
 
 /******************************************************************************/
@@ -10374,8 +10390,13 @@ bind_failed:
 			LAN,
 		};
 		static BrowserMode mode;
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		mode = BrowserMode::Online;
 		directConnect = false;
+#else
+        mode = BrowserMode::LAN;
+		directConnect = true;
+#endif
 
         closeNetworkInterfaces();
         scan.close();
@@ -10510,7 +10531,11 @@ bind_failed:
 		auto interior = window->addImage(
 			SDL_Rect{330, 70, 358, 380},
 			0xffffffff,
+#if defined(STEAMWORKS) || defined(USE_EOS)
 			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png",
+#else
+			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png",
+#endif
 			"interior"
 		);
 
@@ -10707,6 +10732,7 @@ bind_failed:
 		online_tab->setWidgetBack("back_button");
 		online_tab->setWidgetRight("lan_tab");
 		online_tab->setWidgetDown("names");
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		online_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
@@ -10715,6 +10741,11 @@ bind_failed:
 			directConnect = false;
 			refresh_fn(button);
 			});
+#else
+		online_tab->setCallback([](Button& button){soundError();});
+		online_tab->setTextColor(makeColor(127, 127, 127, 255));
+		online_tab->setTextHighlightColor(makeColor(127, 127, 127, 255));
+#endif
 
 		auto lan_tab = window->addButton("lan_tab");
 		lan_tab->setSize(SDL_Rect{502, 70, 128, 38});
@@ -11109,7 +11140,7 @@ bind_failed:
 	    // scan for lobbies immediately
 	    refresh->activate();
 #else
-        if (1) {
+        if (0) {
             // test lobbies
 		    addLobby(LobbyInfo("Ben", 1, 50, false, SV_FLAG_CHEATS));
 		    addLobby(LobbyInfo("Sheridan", 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
@@ -11668,6 +11699,7 @@ bind_failed:
 		    }
 		    auto host_online_button = window->findButton("host_online"); assert(host_online_button);
 		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		    if (host_online_button->isSelected()) {
 		        tooltip->setText("Host a game with 2-4 players\nover the internet");
                 host_online_image->path =
@@ -11676,6 +11708,11 @@ bind_failed:
                 host_online_image->path =
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png";
 		    }
+#else
+		    if (host_online_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover the internet (disabled)");
+		    }
+#endif
 		    auto join_button = window->findButton("join"); assert(join_button);
 		    auto join_image = window->findImage("join_image"); assert(join_image);
 		    if (join_button->isSelected()) {
@@ -11758,15 +11795,28 @@ bind_failed:
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_online_button->setColor(makeColor(255, 255, 255, 255));
+		host_online_button->setTextColor(makeColor(255, 255, 255, 255));
+		host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+#else
+		host_online_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		host_online_button->setColor(makeColor(127, 127, 127, 255));
+		host_online_button->setTextColor(makeColor(127, 127, 127, 255));
+		host_online_button->setTextHighlightColor(makeColor(127, 127, 127, 255));
+#endif
 		host_online_button->setText("Host Online Party");
 		host_online_button->setFont(smallfont_outline);
 		host_online_button->setWidgetSearchParent(window->getName());
 		host_online_button->setWidgetBack("back_button");
 		host_online_button->setWidgetUp("host_lan");
 		host_online_button->setWidgetDown("join");
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+#else
+		host_online_button->setCallback([](Button&){soundError();});
+#endif
 
 		(void)window->addImage(
 		    SDL_Rect{270, 234, 126, 50},
@@ -12597,7 +12647,7 @@ bind_failed:
 		};
 		Option options[] = {
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
-			{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium},
+			{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
 			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
@@ -13725,7 +13775,7 @@ bind_failed:
 	        options.insert(options.begin(), {
 		        {"Back to Game", "BACK TO GAME", mainClose},
 		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
-		        {"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium},
+		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
 		        {"Settings", "SETTINGS", mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
@@ -13759,7 +13809,7 @@ bind_failed:
 				{"Play Game", "PLAY", mainPlayGame},
 #else
 				{"Play Game", "PLAY GAME", mainPlayGame},
-				{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame},
+				//{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame}, // TODO
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
 				{"Settings", "SETTINGS", mainSettings},
