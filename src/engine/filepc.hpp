@@ -90,7 +90,20 @@ private:
 		    size_t end = ftell(fp);
 		    (void)fseek(fp, 0, SEEK_SET);
 		    data.resize(end);
-		    (void)fread(data.data(), sizeof(uint8_t), size(), fp);
+		    size_t c = 0;
+		    for (; c < end;) {
+		        size_t result = fread(data.data(), sizeof(uint8_t), end - c, fp);
+		        if (!result) {
+		            // failed to read, try to read just a chunk
+		            constexpr size_t chunk_size = 1024;
+		            size_t chunk = std::min(end - c, chunk_size);
+		            printlog("[FILES] failed to read %llu bytes from '%s', trying %llu bytes instead", end - c, path, chunk);
+		            result = fread(data.data(), sizeof(uint8_t), chunk, fp);
+		            assert(result);
+		        }
+		        c += result;
+		    }
+	        assert(c == end);
 		}
 	}
 
@@ -100,9 +113,23 @@ private:
 
 	void close() override
 	{
+	    assert(fp);
 	    if (mode == FileMode::WRITE) {
-	        size_t result = fwrite(data.data(), sizeof(uint8_t), size(), fp);
-	        assert(result == size());
+	        size_t c = 0u;
+	        size_t end = size();
+		    for (; c < end;) {
+		        size_t result = fwrite(data.data(), sizeof(uint8_t), end - c, fp);
+		        if (!result) {
+		            // failed to write, try to write just a chunk
+		            constexpr size_t chunk_size = 1024;
+		            size_t chunk = std::min(end - c, chunk_size);
+		            printlog("[FILES] failed to write %llu bytes to '%s', trying %llu bytes instead", end - c, path.c_str(), chunk);
+		            result = fwrite(data.data(), sizeof(uint8_t), chunk, fp);
+		            assert(result);
+		        }
+		        c += result;
+		    }
+	        assert(c == end);
 	    }
 		int result = fclose(fp);
 		assert(result == 0);
