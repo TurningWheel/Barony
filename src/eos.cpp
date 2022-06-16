@@ -1051,7 +1051,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		else
 		{
 			logInfo("SetLogCallbackResult: Logging Callback set");
-			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_VeryVerbose);
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
 		}
 	}
 
