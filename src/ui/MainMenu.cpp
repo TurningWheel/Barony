@@ -14487,7 +14487,7 @@ bind_failed:
             destroyMainMenu();
             createMainMenu(!intro);
             });
-        back->select();
+        //back->select();
 
         auto dimmer = static_cast<Frame*>(prompt->getParent());
         dimmer->setOwner(player);

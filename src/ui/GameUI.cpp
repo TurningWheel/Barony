@@ -4599,6 +4599,7 @@ void Player::HUD_t::processHUD()
             image->pos.y = (hudSize.h - image->pos.h) / 2;
             image->disabled = disabled;
             auto field = frame->findField("label"); assert(field);
+            field->setSize(image->pos);
             field->setInvisible(disabled);
             });
 
