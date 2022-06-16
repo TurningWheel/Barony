@@ -2719,7 +2719,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 						maxStack = SCRAP_MAX_STACK_QTY;
 					}
 
-					if ( item2->count == maxStack - 1 )
+					if ( item2->count >= maxStack - 1 )
 					{
 						// can't add anymore to this stack, let's skip over this.
 

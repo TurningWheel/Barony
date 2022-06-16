@@ -16135,7 +16135,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		filterBtn->setColor(makeColor(255, 255, 255, 0));
 		filterBtn->setText(language[3718]);
 		{
-			SDL_Rect btnPos{ 126, 264, 82, 26 };
+			SDL_Rect btnPos{ 50, 264, 70, 26 };
 			filterBtn->setSize(btnPos);
 			filterLeftSideX = btnPos.x;
 			filterStartY = btnPos.y;

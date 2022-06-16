@@ -6565,6 +6565,8 @@ void Player::Inventory_t::updateInventory()
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
 	auto& featherGUI = GenericGUI[player].featherGUI;
 
+	appraisal.updateAppraisalAnim();
+
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
 	{

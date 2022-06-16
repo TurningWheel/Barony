@@ -3558,9 +3558,16 @@ void actPlayer(Entity* my)
 							Item* item2 = (Item*)node->element;
 							if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
 							{
-								if ( itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
+								if ( (itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+									|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
+										&& (tempItem->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 								{
 									int maxStack = QUIVER_MAX_AMMO_QTY;
+									if ( item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP )
+									{
+										maxStack = SCRAP_MAX_STACK_QTY;
+									}
+
 									// too many, split off into a new stack with reduced qty.
 									if ( tempItem->count >= (maxStack - 1) )
 									{

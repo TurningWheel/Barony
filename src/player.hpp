@@ -1017,6 +1017,9 @@ public:
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
+			real_t animAppraisal = 0.0;
+			Uint32 animStartTick = 0;
+			void updateAppraisalAnim();
 		} appraisal;
 		bool bNewInventoryLayout = true;
 	} inventoryUI;

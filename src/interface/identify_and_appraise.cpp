@@ -410,6 +410,8 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 		timer = getAppraisalTime(item);
 		timermax = timer;
 		current_item = item->uid;
+		animAppraisal = PI;
+		animStartTick = ticks;
 	}
 }
 

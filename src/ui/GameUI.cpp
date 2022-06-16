@@ -12086,6 +12086,138 @@ void Player::Hotbar_t::processHotbar()
 	updateHotbar();
 }
 
+void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
+{
+	/*if ( current_item == 0 )
+	{
+		animAppraisal = 0.0;
+		return;
+	}*/
+	real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	real_t scale = PI / 40;
+	animAppraisal += fpsScale * (scale);
+	if ( animAppraisal >= 4 * PI )
+	{
+		animAppraisal -= 4 * PI;
+	}
+}
+
+void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
+{
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+	if ( appraisal.animStartTick == ticks )
+	{
+		return;
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// build a circle mesh
+	static std::vector<std::pair<real_t, real_t>> circle_mesh;
+	if ( !circle_mesh.size() ) {
+		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_circle_vertices = 32;
+		for ( int c = 0; c <= num_circle_vertices; ++c ) {
+			real_t ang = (PI / 2) + ((PI * 2.0) / num_circle_vertices) * c;
+			circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
+		}
+	}
+
+	auto drawCircleMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		const real_t unitX = (real_t)rect.w;
+		const real_t unitY = (real_t)rect.h;
+		Uint8 r, g, b, a;
+
+		// bind a texture to circle mesh
+		auto testImage = Image::get("images/system/Appraisal_Icon_Outline.png");
+		testImage->bind();
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glBegin(GL_TRIANGLE_FAN);
+		auto& appraisal = players[player]->inventoryUI.appraisal;
+		//int numVertices = static_cast<int>((ticks % (144 + 1)) / 4.0);// -- if you want to draw different portions of the circle.
+		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 32;
+		int index = 0;
+		for ( auto& pair : circle_mesh ) {
+			const real_t sx = pair.first * unitX * size;
+			const real_t sy = pair.second * unitY * size;
+
+			float const tx = (pair.first / 1.0) + 0.5;
+			float const ty = (pair.second / 1.0) + 0.5;
+			glTexCoord2f(tx, ty);
+			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+			if ( index >= numVertices )
+			{
+				break;
+			}
+			++index;
+		}
+		glEnd();
+	};
+	{
+		SDL_Rect drawRect = rect;
+		drawRect.x += 4;
+		drawRect.y += 4;
+		drawRect.w -= 6;
+		drawRect.h -= 6;
+		drawCircleMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, rect, makeColor(255, 255, 255, 255));
+	}
+	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		Uint8 r, g, b, a;
+
+		// bind a texture to mesh
+		auto testImage = Image::get("images/system/Appraisal_Icon.png");
+		testImage->bind();
+
+		const real_t sx = rect.w * size;
+		const real_t sy = rect.h * size;
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex2f(x, Frame::virtualScreenY - y);
+		glTexCoord2f(0, 1);
+		glVertex2f(x, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 1);
+		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 0);
+		glVertex2f(x + sx, Frame::virtualScreenY - y);
+		glEnd();
+	};
+	{
+		const int imgSize = 26;
+		SDL_Rect drawRect = rect;
+		drawRect.x += 4 + (rect.w - 6) / 2 - imgSize / 2;
+		drawRect.y += 4 + (rect.h - 6) / 2 - imgSize / 2;
+		int offsetSize = 7;
+		int offsetx = offsetSize * cos(std::min(4 * PI, appraisal.animAppraisal));
+		int offsety = offsetSize * sin(std::min(4 * PI, appraisal.animAppraisal));
+
+		drawRect.w = imgSize;
+		drawRect.h = imgSize;
+		drawMesh(drawRect.x + offsetx, drawRect.y + offsety, 
+			(real_t)1.0, drawRect, 
+			makeColor(255, 255, 255, 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2))));
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+
 void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 {
 	const SDL_Rect slotSize = SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h };
@@ -12640,6 +12772,16 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			brokenIconFrame->setDisabled(false);
 		}
+	}
+
+	slotFrame->setDrawCallback(nullptr);
+	if ( !disableBackgrounds && players[player]->inventoryUI.appraisal.current_item > 0
+		&& !item->identified && item->node && item->node->list == &stats[player]->inventory
+		&& item->uid == players[player]->inventoryUI.appraisal.current_item )
+	{
+		slotFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+			drawUnidentifiedItemEffectCallback(widget.getOwner(), rect);
+		});
 	}
 }
 
