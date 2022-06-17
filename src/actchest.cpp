@@ -1199,7 +1199,14 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 		}
 	}
 
-	messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
+	if ( newitem->count > 1 )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[4197], newitem->count, newitem->getName());
+	}
+	else
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
+	}
 
 	return addItemToChest(newitem, forceNewStack, specificDestinationStack);
 }
