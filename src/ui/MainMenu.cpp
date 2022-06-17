@@ -124,7 +124,7 @@ namespace MainMenu {
 	static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
 	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 	static const char* menu_option_font = "fonts/kongtext.ttf#16#2";
-	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
+	static const char* banner_font = "fonts/pixelmix.ttf#16#2";
 
     // Inventory sorting options
 	struct InventorySorting {
@@ -6622,8 +6622,8 @@ bind_failed:
 				    beginFade(FadeDestination::GameStart);
 				    numplayers = MAXPLAYERS;
 				    if (net_packet->data[12] == 0) {
-				        // necessary?
-					    loadingsavegame = 0;
+				        // is this necessary? I don't think so
+					    //loadingsavegame = 0;
 				    }
 				    continue;
 			    }
@@ -8675,10 +8675,11 @@ bind_failed:
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
 		static auto name_field_fn = [](const char* text, int index) {
-			size_t len = strlen(text) + 1;
-			len = std::min(sizeof(Stat::name), len);
-			if (memcmp(stats[index]->name, text, len)) {
-			    memcpy(stats[index]->name, text, len);
+			size_t old_len = std::min(sizeof(Stat::name), strlen(stats[index]->name) + 1);
+			size_t new_len = strlen(text) + 1;
+			size_t shortest_len = std::min(old_len, new_len);
+			if (new_len != old_len || memcmp(stats[index]->name, text, shortest_len)) {
+			    memcpy(stats[index]->name, text, new_len);
 			    sendPlayerOverNet();
 			}
 		};
@@ -9113,6 +9114,11 @@ bind_failed:
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
+		auto countdown = lobby->findFrame("countdown");
+		if (countdown) {
+		    countdown->removeSelf();
+		}
+
 #ifndef NINTENDO
 		// release any controller assigned to this player
         if (inputs.hasController(index)) {
@@ -9474,19 +9480,7 @@ bind_failed:
 			"backdrop"
 		);
 
-        // shorten the name
-        constexpr int longest_name = 12;
-		char shortname[16];
-		int len = (int)strlen(stats[index]->name);
-		if (len > longest_name) {
-		    memcpy(shortname, stats[index]->name, longest_name);
-		    memcpy(shortname + longest_name, "...", 4);
-		} else {
-		    strcpy(shortname, stats[index]->name);
-		}
-
 		auto banner = card->addField("banner", 64); assert(banner);
-		banner->setText(shortname);
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
@@ -9498,6 +9492,24 @@ bind_failed:
 		case 2: banner->setColor(uint32ColorPlayer3); break;
 		case 3: banner->setColor(uint32ColorPlayer4); break;
 		}
+
+		// name needs to be updated constantly in case it gets updated over the net
+		banner->setTickCallback([](Widget& widget){
+		    const int player = widget.getOwner();
+		    auto field = static_cast<Field*>(&widget);
+
+            // shorten the name
+            constexpr int longest_name = 22;
+		    char shortname[32];
+		    int len = (int)strlen(stats[player]->name);
+		    if (len > longest_name) {
+		        memcpy(shortname, stats[player]->name, longest_name);
+		        memcpy(shortname + longest_name - 2, "...", 4);
+		    } else {
+		        strcpy(shortname, stats[player]->name);
+		    }
+		    field->setText(shortname);
+		    });
 
         if (local) {
             static auto cancel_fn = [](int index){
@@ -10533,6 +10545,7 @@ bind_failed:
 		    });
 
 		(void)createBackWidget(window, [](Button& button){
+		    loadingsavegame = 0;
 		    soundCancel();
 		    closeNetworkInterfaces();
 		    createLocalOrNetworkMenu();
@@ -11882,6 +11895,7 @@ bind_failed:
 	}
 
 	static void playNew(Button& button) {
+	    loadingsavegame = 0;
 	    if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
 	        gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
 			gameModeManager.Tutorial.writeToDocument();
@@ -12099,6 +12113,7 @@ bind_failed:
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
                     multiplayer = CLIENT;
                     loadGame(info.player_num);
+                    createDummyMainMenu();
                     createLobbyBrowser(button);
                 }
 	        },
@@ -13152,7 +13167,6 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				loadingsavegame = false;
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
@@ -13450,6 +13464,7 @@ bind_failed:
 				destroyMainMenu();
 				multiplayer = SINGLE;
 				numplayers = 0;
+				loadingsavegame = 0;
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
 
                 // don't show the first time prompt anymore
