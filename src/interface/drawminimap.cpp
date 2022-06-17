@@ -156,7 +156,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 	    static const int num_circle_vertices = 32;
 	    for (int c = 0; c <= num_circle_vertices; ++c) {
 	        real_t ang = ((PI * 2.0) / num_circle_vertices) * c;
-	        circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
+	        circle_mesh.emplace_back((real_t)(sin(ang) / 2.0), (real_t)(cos(ang) / 2.0));
 	    }
 	}
 
