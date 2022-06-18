@@ -1602,7 +1602,7 @@ Thank you!#
 1082 %d aged #
 1083 %d slightly aged #
 1084 %d fresh #
-1085 %d %s labelled %s#
+1085 %ss labelled %s#
 1086 %d copies of "%s" #
 
 
@@ -6164,5 +6164,8 @@ Combination!#
 4194 Default#
 4195 Discovered#
 4196 Unknown#
- 
+
+4197 You put %d %s into the chest.#
+4198 %3.0f%% Appraising...#
+
 4199 end#
