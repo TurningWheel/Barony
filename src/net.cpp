@@ -4080,28 +4080,24 @@ void clientHandlePacket()
 	//Add an item to the chest.
 	else if (packetId == 'CITM')
 	{
-		Item* newitem = NULL;
-		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
-		{
-			printlog( "failed to allocate memory for new item!\n" );
-			return; //TODO: Error or something.
-		}
-		newitem->node = NULL;
-		newitem->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
-		newitem->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[8]));
-		newitem->beatitude = SDLNet_Read32(&net_packet->data[12]);
-		newitem->count = SDLNet_Read32(&net_packet->data[16]);
-		newitem->appearance = SDLNet_Read32(&net_packet->data[20]);
+		ItemType itemType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
+		Status status = static_cast<Status>(SDLNet_Read32(&net_packet->data[8]));
+		Sint16 beatitude = SDLNet_Read32(&net_packet->data[12]);
+		Sint16 count = SDLNet_Read32(&net_packet->data[16]);
+		Uint32 appearance = SDLNet_Read32(&net_packet->data[20]);
+		bool identified = false;
 		if ( net_packet->data[24])   //TODO: Is this right?
 		{
-			newitem->identified = true;
+			identified = true;
 		}
 		else
 		{
-			newitem->identified = false;
+			identified = false;
 		}
+		Item* newitem = newItem(itemType, status, beatitude, count, appearance, identified, nullptr);
 		bool forceNewStack = net_packet->data[25] ? true : false;
-
+		newitem->x = (char)net_packet->data[26];
+		newitem->y = (char)net_packet->data[27];
 		addItemToChestClientside(clientnum, newitem, forceNewStack, nullptr);
 		return;
 	}
@@ -5109,7 +5105,7 @@ void serverHandlePacket()
 			printlog("[Shops]: warning: client %d bought item from a \"shop\" that has no stats! (uid=%d)\n", client, uidnum);
 			return;
 		}
-		Item* item = (Item*) malloc(sizeof(Item));
+		Item* item = newItem(WOODEN_SHIELD, BROKEN, 0, 1, 0, true, nullptr);
 		item->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8]));
 		item->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[12]));
 		item->beatitude = SDLNet_Read16(&net_packet->data[16]);
@@ -5472,13 +5468,7 @@ void serverHandlePacket()
 			return;
 		}
 
-		Item* newitem = NULL;
-		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
-		{
-			printlog( "failed to allocate memory for new item!\n" );
-			return; //Should error instead or something?
-		}
-		newitem->node = NULL;
+		Item* newitem = newItem(WOODEN_SHIELD, BROKEN, 0, 1, 0, true, nullptr);
 		newitem->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[5]));
 		newitem->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[9]));
 		newitem->beatitude = SDLNet_Read32(&net_packet->data[13]);
@@ -5506,13 +5496,7 @@ void serverHandlePacket()
 			return;
 		}
 
-		Item* theitem = NULL;
-		if ( (theitem = (Item*) malloc(sizeof(Item))) == NULL)
-		{
-			printlog( "failed to allocate memory for new item!\n" );
-			return; //Should it error instead or somesuch?
-		}
-		theitem->node = NULL;
+		Item* theitem = newItem(WOODEN_SHIELD, BROKEN, 0, 1, 0, true, nullptr);
 		theitem->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[5]));
 		theitem->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[9]));
 		theitem->beatitude = SDLNet_Read32(&net_packet->data[13]);
