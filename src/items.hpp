@@ -413,6 +413,7 @@ public:
 	bool isDroppable; // if item should drop on death
 	bool playerSoldItemToShop = false; // if item was sold to a shopkeeper
 	bool itemHiddenFromShop = false; // if item needs to be hidden in shop view
+	bool notifyIcon = false; // if item draws exclamation as a 'new' untouched item
 
 	// weight, category and other generic info reported by function calls
 

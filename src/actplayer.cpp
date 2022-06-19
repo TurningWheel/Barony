@@ -3366,6 +3366,7 @@ void actPlayer(Entity* my)
 			{
 				//Auto-succeed on rocks.
 				tempItem->identified = true;
+				tempItem->notifyIcon = true;
 				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[570], tempItem->description());
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
@@ -3489,6 +3490,7 @@ void actPlayer(Entity* my)
 					if ( success )
 					{
 						tempItem->identified = true;
+						tempItem->notifyIcon = true;
 						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[570], tempItem->description());
 						if ( tempItem->type == GEM_GLASS )
 						{
@@ -3744,7 +3746,7 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
-
+					players[PLAYER_NUM]->inventoryUI.appraisal.old_item = players[PLAYER_NUM]->inventoryUI.appraisal.current_item;
 					players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				}
 			}

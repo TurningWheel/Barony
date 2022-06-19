@@ -587,8 +587,8 @@ void createHotbar(const int player)
 
 		auto itemSlot = slot->addFrame("hotbar slot item");
 		SDL_Rect itemSlotTempSize = slot->getSize();
-		itemSlotTempSize.w -= 2;
-		itemSlotTempSize.h -= 2;
+		itemSlotTempSize.w -= 4;
+		itemSlotTempSize.h -= 4;
 		itemSlot->setSize(itemSlotTempSize); // slightly shrink to align inner item elements within rect.
 		createPlayerInventorySlotFrameElements(itemSlot);
 		itemSlot->setSize(slot->getSize());
@@ -610,8 +610,8 @@ void createHotbar(const int player)
 
 	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
 	SDL_Rect itemSlotTempSize = slotPos;
-	itemSlotTempSize.w -= 2;
-	itemSlotTempSize.h -= 2;
+	itemSlotTempSize.w -= 4;
+	itemSlotTempSize.h -= 4;
 	itemSlot->setSize(itemSlotTempSize);
 	createPlayerInventorySlotFrameElements(itemSlot); // slightly shrink to align inner item elements within rect.
 	itemSlot->setSize(highlightFrame->getSize());
@@ -12100,6 +12100,89 @@ void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
 	{
 		animAppraisal -= 4 * PI;
 	}
+
+	if ( itemNotifyUpdatedThisTick == 0 )
+	{
+		itemNotifyUpdatedThisTick = ticks;
+		itemNotifyAnimState = 0;
+	}
+	if ( (itemNotifyUpdatedThisTick != ticks) && (ticks - itemNotifyUpdatedThisTick) % (TICKS_PER_SECOND / 5) == 0 )
+	{
+		if ( itemNotifyUpdatedThisTick != ticks )
+		{
+			++itemNotifyAnimState;
+			itemNotifyUpdatedThisTick = ticks;
+		}
+		if ( itemNotifyAnimState > 2 )
+		{
+			itemNotifyAnimState = 0;
+		}
+	}
+}
+
+void drawUnidentifiedItemEffectNoProgressCallback(const int player, SDL_Rect rect)
+{
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+	if ( appraisal.animStartTick == ticks )
+	{
+		return;
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		Uint8 r, g, b, a;
+
+		// bind a texture to mesh
+		auto testImage = Image::get("images/system/Appraisal_Icon.png");
+		testImage->bind();
+
+		const real_t sx = rect.w * size;
+		const real_t sy = rect.h * size;
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex2f(x, Frame::virtualScreenY - y);
+		glTexCoord2f(0, 1);
+		glVertex2f(x, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 1);
+		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 0);
+		glVertex2f(x + sx, Frame::virtualScreenY - y);
+		glEnd();
+	};
+	{
+		const int imgSize = 26;
+		SDL_Rect drawRect = rect;
+		drawRect.x += 4 + (rect.w - 6) / 2 - imgSize / 2;
+		drawRect.y += 4 + (rect.h - 6) / 2 - imgSize / 2;
+		int offsetSize = 7;
+		int offsetx = offsetSize * cos(std::min(4 * PI, appraisal.animAppraisal));
+		int offsety = offsetSize * sin(std::min(4 * PI, appraisal.animAppraisal));
+
+		drawRect.w = imgSize;
+		drawRect.h = imgSize;
+		drawMesh(drawRect.x + offsetx, drawRect.y + offsety,
+			(real_t)1.0, drawRect,
+			makeColor(255, 255, 255, 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2))));
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
 }
 
 void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
@@ -12127,12 +12210,78 @@ void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
 		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
 		static const int num_circle_vertices = 32;
 		for ( int c = 0; c <= num_circle_vertices; ++c ) {
-			real_t ang = (PI / 2) + ((PI * 2.0) / num_circle_vertices) * c;
+			real_t ang = (PI / 2) - ((PI * 2.0) / num_circle_vertices) * c;
 			circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
 		}
 	}
+	static std::vector<std::pair<real_t, real_t>> square_mesh;
+	if ( !square_mesh.size() ) {
+		square_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_square_vertices = 200;
+		int increment = 25;
+		real_t x = 0.0;
+		real_t y = -0.5;
+		int dir = 0;
+		int iterations = 0;
+		for ( int c = 0; c <= num_square_vertices; ++c ) {
+			square_mesh.emplace_back(x, y);
+			
+			if ( dir == 0 )
+			{
+				y = -0.5;
+				x += 1.01 / increment;
+				if ( x >= 0.5 )
+				{
+					dir = 1;
+				}
+				x = std::min(x, 0.5);
+			}
+			else if ( dir == 1 )
+			{
+				x = 0.5;
+				y += 1.01 / increment;
+				if ( y >= 0.5 )
+				{
+					dir = 2;
+				}
+				y = std::min(y, 0.5);
+			}
+			else if ( dir == 2 )
+			{
+				y = 0.5;
+				x -= 1.01 / increment;
+				if ( x <= -0.5 )
+				{
+					dir = 3;
+				}
+				x = std::max(x, -0.5);
+			}
+			else if ( dir == 3 )
+			{
+				x = -0.5;
+				y -= 1.01 / increment;
+				if ( y <= -0.5 )
+				{
+					dir = 4;
+				}
+				y = std::max(y, -0.5);
+			}
+			else if ( dir == 4 )
+			{
+				y = -0.5;
+				x += 1.01 / increment;
+				if ( x >= 0.0 )
+				{
+					square_mesh.emplace_back(0.0, y);
+					++iterations;
+					break;
+				}
+				x = std::min(x, 0.0);
+			}
+		}
+	}
 
-	auto drawCircleMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
 		const real_t unitY = (real_t)rect.h;
 		Uint8 r, g, b, a;
@@ -12143,17 +12292,17 @@ void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
 
 		getColor(color, &r, &g, &b, &a);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glFrontFace(GL_CW); // we draw clockwise so need to set this.
 		glBegin(GL_TRIANGLE_FAN);
 		auto& appraisal = players[player]->inventoryUI.appraisal;
-		//int numVertices = static_cast<int>((ticks % (144 + 1)) / 4.0);// -- if you want to draw different portions of the circle.
-		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 32;
+		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * square_mesh.size() + 1;
 		int index = 0;
-		for ( auto& pair : circle_mesh ) {
-			const real_t sx = pair.first * unitX * size;
-			const real_t sy = pair.second * unitY * size;
+		for ( auto pair = square_mesh.begin(); pair != square_mesh.end(); ++pair ) {
+			const real_t sx = (*pair).first * unitX * size;
+			const real_t sy = (*pair).second * unitY * size;
 
-			float const tx = (pair.first / 1.0) + 0.5;
-			float const ty = (pair.second / 1.0) + 0.5;
+			float const tx = ((*pair).first / 1.0) + 0.5;
+			float const ty = ((*pair).second / 1.0) + 0.5;
 			glTexCoord2f(tx, ty);
 			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
 			if ( index >= numVertices )
@@ -12163,14 +12312,15 @@ void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
 			++index;
 		}
 		glEnd();
+		glFrontFace(GL_CCW);
 	};
 	{
 		SDL_Rect drawRect = rect;
-		drawRect.x += 4;
-		drawRect.y += 4;
-		drawRect.w -= 6;
-		drawRect.h -= 6;
-		drawCircleMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, rect, makeColor(255, 255, 255, 255));
+		drawRect.x += 2;
+		drawRect.y += 2;
+		drawRect.w -= 2;
+		drawRect.h -= 2;
+		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, 192));
 	}
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		Uint8 r, g, b, a;
@@ -12267,6 +12417,13 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, makeColor( 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
+
+	auto appraisalFrame = slotFrame->addFrame("appraisal frame");
+	appraisalFrame->setSize(slotSize);
+	appraisalFrame->setHollow(true);
+	appraisalFrame->setDisabled(true);
+	appraisalFrame->addImage(SDL_Rect{ 4, 4, 6, 14 }, 0xFFFFFFFF,
+		"images/ui/Inventory/tooltips/ExclamationAnim00.png", "new notif img");
 
 	static const char* qtyfont = "fonts/pixel_maz.ttf#32#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
@@ -12648,7 +12805,19 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					if ( isHotbarIcon )
 					{
-						beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+						beatitudeImg->color = makeColor(255, 255, 255, 255);
+						if ( !item->identified )
+						{
+							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_App01.png";
+						}
+						else if ( item->beatitude > 0 )
+						{
+							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Bless01.png";
+						}
+						else if ( item->beatitude < 0 )
+						{
+							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Curse01.png";
+						}
 					}
 					else
 					{
@@ -12774,14 +12943,56 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	slotFrame->setDrawCallback(nullptr);
+	auto appraisalFrame = slotFrame->findFrame("appraisal frame");
+	appraisalFrame->setDisabled(true);
+	appraisalFrame->setDrawCallback(nullptr);
+	if ( item->notifyIcon )
+	{
+		appraisalFrame->setDisabled(false);
+	}
 	if ( !disableBackgrounds && players[player]->inventoryUI.appraisal.current_item > 0
 		&& !item->identified && item->node && item->node->list == &stats[player]->inventory
 		&& item->uid == players[player]->inventoryUI.appraisal.current_item )
 	{
-		slotFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
-			drawUnidentifiedItemEffectCallback(widget.getOwner(), rect);
-		});
+		if ( isHotbarIcon )
+		{
+			appraisalFrame->setDisabled(false);
+			appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+				drawUnidentifiedItemEffectNoProgressCallback(widget.getOwner(), rect);
+			});
+		}
+		else
+		{
+			appraisalFrame->setDisabled(false);
+			appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+				drawUnidentifiedItemEffectCallback(widget.getOwner(), rect);
+			});
+		}
+	}
+	if ( !appraisalFrame->isDisabled() )
+	{
+		auto img = appraisalFrame->findImage("new notif img");
+		img->disabled = true;
+		if ( item->notifyIcon )
+		{
+			img->disabled = false;
+			auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
+			switch ( animState )
+			{
+				case 0:
+					img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
+					break;
+				case 1:
+					img->path = "images/ui/Inventory/tooltips/ExclamationAnim01.png";
+					break;
+				case 2:
+					img->path = "images/ui/Inventory/tooltips/ExclamationAnim02.png";
+					break;
+				default:
+					img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
+					break;
+			}
+		}
 	}
 }
 
@@ -14590,7 +14801,13 @@ bool takeAllChestGUIAction(const int player)
 			}
 			int oldItemQty = 0;
 			int destItemQty = 0;
+			bool oldIdentify = item->identified;
+			if ( skillCapstoneUnlocked(player, PRO_APPRAISAL) )
+			{
+				item->identified = true;
+			}
 			auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+			item->identified = oldIdentify;
 			int amountToPlace = item->count - oldItemQty;
 			assert(amountToPlace > 0);
 			if ( amountToPlace <= 0 )
@@ -16056,7 +16273,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 					int destItemQty = 0;
 					int oldQty = item->count;
 					item->count = 1;
+					bool oldIdentify = item->identified;
+					if ( skillCapstoneUnlocked(player, PRO_APPRAISAL) )
+					{
+						item->identified = true;
+					}
 					auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+					item->identified = oldIdentify;
 					item->count = oldQty;
 
 					int amountToPlace = 1;
@@ -16113,7 +16336,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 					}
 					int oldItemQty = 0;
 					int destItemQty = 0;
+					bool oldIdentify = item->identified;
+					if ( skillCapstoneUnlocked(player, PRO_APPRAISAL) )
+					{
+						item->identified = true;
+					}
 					auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+					item->identified = oldIdentify;
 					int amountToPlace = item->count - oldItemQty;
 					assert(amountToPlace > 0);
 					if ( amountToPlace <= 0 )
@@ -16656,6 +16885,14 @@ void Player::Inventory_t::ItemTooltipDisplay_t::updateItem(const int player, Ite
 		appearance = newItem->appearance;
 		identified = newItem->identified;
 
+		if ( players[player]->inventoryUI.appraisal.current_item == uid )
+		{
+			wasAppraisalTarget = true;
+		}
+		else
+		{
+			wasAppraisalTarget = false;
+		}
 		if ( stats[player] )
 		{
 			playernum = player;
@@ -16675,6 +16912,12 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 {
 	if ( newItem && player >= 0 && player < MAXPLAYERS && stats[player] )
 	{
+		bool appraisingThisItem = false;
+		if ( players[player]->inventoryUI.appraisal.current_item == uid )
+		{
+			appraisingThisItem = true;
+		}
+
 		if ( newItem->uid == uid
 			&& newItem->type == type
 			&& newItem->status == status
@@ -16682,6 +16925,7 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 			&& newItem->count == count
 			&& newItem->appearance == appearance
 			&& newItem->identified == identified
+			&& (wasAppraisalTarget == appraisingThisItem)
 			&& playernum == player
 			&& playerLVL == stats[player]->LVL
 			&& playerEXP == stats[player]->EXP
@@ -16708,7 +16952,7 @@ Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
 	count = 0;
 	appearance = 0;
 	identified = false;
-
+	wasAppraisalTarget = false;
 	playernum = -1;
 	playerLVL = 0;
 	playerEXP = 0;

@@ -4524,6 +4524,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 	}
 
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+
 	if ( bUpdateDisplayedTooltip )
 	{
 		tooltipDisplayedSettings.updateItem(player, item);
@@ -5866,7 +5868,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 			framePromptPos.h = imgBottomBackground->pos.h;
 
-			if ( (!item->identified && (!isItemFromInventory || inputs.getVirtualMouse(player)->draw_cursor)) || doShortTooltip )
+			if ( (!item->identified 
+					&& (!isItemFromInventory || (isItemFromInventory && inputs.getVirtualMouse(player)->draw_cursor && appraisal.current_item != item->uid)))
+				|| doShortTooltip
+				|| (frameDesc->isDisabled() && item->identified) )
 			{
 				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
 				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
@@ -5910,8 +5915,16 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
 		framePrompt->setSize(framePromptPos);
 
-		bool doAppraisalPrompt = !item->identified && isItemFromInventory;
-		if ( doAppraisalPrompt )
+		bool doAppraisalPrompt = !item->identified && isItemFromInventory && appraisal.current_item != item->uid;
+		bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid;
+		if ( doAppraisalProgressPrompt )
+		{
+			real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
+			char buf[32];
+			snprintf(buf, sizeof(buf), language[4198], percent);
+			txtPrompt->setText(buf);
+		}
+		else if ( doAppraisalPrompt )
 		{
 			txtPrompt->setText(language[4102]);
 		}
@@ -5953,6 +5966,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		promptImg->disabled = true;
 		if ( !players[player]->shootmode 
 			&& !txtPrompt->isDisabled() 
+			&& !doAppraisalProgressPrompt
 			&& (!doAppraisalPrompt || (doAppraisalPrompt && stats[player]->HP > 0)) )
 		{
 			auto binding = Input::inputs[player].input("Expand Inventory Tooltip");
@@ -7503,6 +7517,22 @@ void Player::Inventory_t::updateInventory()
 			players[player]->paperDoll.getCoordinatesFromSlotType(players[player]->paperDoll.getSlotForItem(*item), itemx, itemy);
 		}
 
+		if ( isInteractable && item->notifyIcon )
+		{
+			if ( appraisal.itemsToNotify.find(item->uid) == appraisal.itemsToNotify.end() )
+			{
+				appraisal.itemsToNotify[item->uid] = Appraisal_t::NOTIFY_ITEM_WAITING_TO_HOVER;
+			}
+			else
+			{
+				if ( appraisal.itemsToNotify[item->uid] == Appraisal_t::NOTIFY_ITEM_REMOVE )
+				{
+					appraisal.itemsToNotify.erase(item->uid);
+					item->notifyIcon = false;
+				}
+			}
+		}
+
 		if ( itemCategory(item) == SPELL_CAT )
 		{
 			if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
@@ -8315,6 +8345,21 @@ void Player::Inventory_t::updateInventory()
 				//	tooltipCoordY += dollSlotsFrame->getSize().y;
 				}
 
+				if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
+				{
+					if ( appraisal.itemsToNotify[item->uid] == Appraisal_t::NOTIFY_ITEM_WAITING_TO_HOVER )
+					{
+						appraisal.itemsToNotify[item->uid] = Appraisal_t::NOTIFY_ITEM_HOVERED;
+					}
+				}
+				for ( auto& itemNotify : appraisal.itemsToNotify )
+				{
+					if ( itemNotify.first != item->uid && itemNotify.second == Appraisal_t::NOTIFY_ITEM_HOVERED )
+					{
+						itemNotify.second = Appraisal_t::NOTIFY_ITEM_REMOVE;
+					}
+				}
+
 				bool tooltipOpen = false;
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
@@ -8709,6 +8754,19 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 				break;
+			}
+			else
+			{
+				if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
+				{
+					if ( players[player]->GUI.bActiveModuleUsesInventory() )
+					{
+						if ( appraisal.itemsToNotify[item->uid] == Appraisal_t::NOTIFY_ITEM_HOVERED )
+						{
+							appraisal.itemsToNotify[item->uid] = Appraisal_t::NOTIFY_ITEM_REMOVE;
+						}
+					}
+				}
 			}
 		}
 	}

@@ -388,7 +388,13 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 
 	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
-	itemPickup(player, item);
+	if ( Item* pickedUp = itemPickup(player, item) )
+	{
+		if ( !intro )
+		{
+			pickedUp->notifyIcon = true;
+		}
+	}
 	free(item);
 
 	return true;

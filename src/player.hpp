@@ -875,6 +875,7 @@ public:
 			Uint32 appearance;
 			bool identified;
 			Uint32 uid;
+			bool wasAppraisalTarget = false;
 
 			int playernum;
 			Sint32 playerLVL;
@@ -1015,10 +1016,20 @@ public:
 			int timer = 0; //There is a delay after the appraisal skill is activated before the item is identified.
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
+			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
 			real_t animAppraisal = 0.0;
 			Uint32 animStartTick = 0;
+			Uint32 itemNotifyUpdatedThisTick = 0;
+			int itemNotifyAnimState = 0;
+			enum ItemNotifyHoverStates : int
+			{
+				NOTIFY_ITEM_WAITING_TO_HOVER,
+				NOTIFY_ITEM_HOVERED,
+				NOTIFY_ITEM_REMOVE
+			};
+			std::unordered_map<Uint32, ItemNotifyHoverStates> itemsToNotify;
 			void updateAppraisalAnim();
 		} appraisal;
 		bool bNewInventoryLayout = true;
@@ -1742,7 +1753,7 @@ public:
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
-		const int getSlotSize() const { return 44; }
+		const int getSlotSize() const { return 48; }
 		const int getHotbarStartY1() const { return -106; }
 		const int getHotbarStartY2() const { return -96; }
 

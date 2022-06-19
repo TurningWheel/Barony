@@ -366,6 +366,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	if (item->identified)
 	{
 		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[319], item->getName());
+		old_item = 0;
 		return;
 	}
 
@@ -389,6 +390,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		item->identified = true;
+		item->notifyIcon = true;
 		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[320], item->description());
 		if ( timer > 0 && current_item != 0	&& current_item == item->uid)
 		{
@@ -402,17 +404,65 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	}
 	else
 	{
-		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[321], item->description());
+		Item* oldItemToUpdate = nullptr;
+		bool doMessage = true;
+		if ( current_item > 0 )
+		{
+			oldItemToUpdate = uidToItem(current_item);
+		}
+		else
+		{
+			if ( old_item == item->uid ) // auto appraising picked the same item
+			{
+				doMessage = false; // cut back on appraisal spam
+			}
+		}
+
+		if ( doMessage )
+		{
+			messagePlayer(player.playernum, MESSAGE_INVENTORY, language[321], item->description());
+		}
 
 		//Tick the timer in act player.
 		//Once the timer hits zero, roll to see if the item is identified.
 		//If it is identified, identify it and print out a message for the player.
 		timer = getAppraisalTime(item);
 		timermax = timer;
+		if ( oldItemToUpdate && current_item != item->uid )
+		{
+			bool itemOnPaperDoll = false;
+			if ( player.paperDoll.enabled && itemIsEquipped(oldItemToUpdate, player.playernum) )
+			{
+				auto slotType = player.paperDoll.getSlotForItem(*oldItemToUpdate);
+				if ( slotType != Player::PaperDoll_t::SLOT_MAX )
+				{
+					itemOnPaperDoll = true;
+				}
+			}
+
+			int itemx = oldItemToUpdate->x;
+			int itemy = oldItemToUpdate->y;
+			if ( itemOnPaperDoll )
+			{
+				player.paperDoll.getCoordinatesFromSlotType(player.paperDoll.getSlotForItem(*oldItemToUpdate), itemx, itemy);
+			}
+
+			if ( auto slotFrame = player.inventoryUI.getItemSlotFrame(oldItemToUpdate, itemx, itemy) )
+			{
+				if ( auto appraisalFrame = slotFrame->findFrame("appraisal frame") )
+				{
+					appraisalFrame->setDisabled(true);
+				}
+			}
+		}
 		current_item = item->uid;
-		animAppraisal = PI;
-		animStartTick = ticks;
+		if ( doMessage )
+		{
+			animAppraisal = PI;
+			animStartTick = ticks;
+		}
 	}
+	old_item = 0;
 }
 
 int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
