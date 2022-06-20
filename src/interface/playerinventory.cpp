@@ -8759,7 +8759,7 @@ void Player::Inventory_t::updateInventory()
 			{
 				if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
 				{
-					if ( players[player]->GUI.bActiveModuleUsesInventory() )
+					if ( players[player]->GUI.bActiveModuleUsesInventory() && players[player]->GUI.activeModule != Player::GUI_t::MODULE_HOTBAR )
 					{
 						if ( appraisal.itemsToNotify[item->uid] == Appraisal_t::NOTIFY_ITEM_HOVERED )
 						{

@@ -2369,6 +2369,8 @@ void drawStatusNew(const int player)
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
 	bool& itemMenuFromHotbar = inputs.getUIInteraction(player)->itemMenuFromHotbar;
 
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+
 	//Now the hotbar.
 	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
@@ -2395,6 +2397,22 @@ void drawStatusNew(const int player)
 		Item* item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
+			if ( shootmode && item->notifyIcon )
+			{
+				if ( appraisal.itemsToNotify.find(item->uid) == appraisal.itemsToNotify.end() )
+				{
+					appraisal.itemsToNotify[item->uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_WAITING_TO_HOVER;
+				}
+				else
+				{
+					if ( appraisal.itemsToNotify[item->uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE )
+					{
+						appraisal.itemsToNotify.erase(item->uid);
+						item->notifyIcon = false;
+					}
+				}
+			}
+
 			if ( item->type == BOOMERANG )
 			{
 				hotbar_t.magicBoomerangHotbarSlot = num;
@@ -2637,6 +2655,21 @@ void drawStatusNew(const int player)
 
 				if ( drawTooltipOnSlot )
 				{
+					if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
+					{
+						if ( appraisal.itemsToNotify[item->uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_WAITING_TO_HOVER )
+						{
+							appraisal.itemsToNotify[item->uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED;
+						}
+					}
+					for ( auto& itemNotify : appraisal.itemsToNotify )
+					{
+						if ( itemNotify.first != item->uid && itemNotify.second == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED )
+						{
+							itemNotify.second = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE;
+						}
+					}
+
 					//Tooltip
 					SDL_Rect src;
 					src.x = mousex + 16;
@@ -2778,6 +2811,21 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[9].item;
 							hotbar[9].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+						}
+					}
+				}
+				else
+				{
+					if ( shootmode 
+						|| (!shootmode 
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR) )
+					{
+						if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
+						{
+							if ( appraisal.itemsToNotify[item->uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED )
+							{
+								appraisal.itemsToNotify[item->uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE;
+							}
 						}
 					}
 				}
