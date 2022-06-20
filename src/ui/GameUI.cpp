@@ -12144,8 +12144,9 @@ void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
 	}
 }
 
-void drawUnidentifiedItemEffectHotbarCallback(const int player, SDL_Rect rect)
+void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rect)
 {
+	const int player = widget.getOwner();
 	auto& appraisal = players[player]->inventoryUI.appraisal;
 	if ( appraisal.animStartTick == ticks )
 	{
@@ -12240,6 +12241,8 @@ void drawUnidentifiedItemEffectHotbarCallback(const int player, SDL_Rect rect)
 		}
 	}
 
+	Frame* parent = static_cast<Frame*>(widget.getParent());
+
 	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
 		const real_t unitY = (real_t)rect.h;
@@ -12279,7 +12282,12 @@ void drawUnidentifiedItemEffectHotbarCallback(const int player, SDL_Rect rect)
 		drawRect.y += 4;
 		drawRect.w -= 6;
 		drawRect.h -= 6;
-		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, 192));
+		real_t opacity = 192;
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
 
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
@@ -12316,9 +12324,15 @@ void drawUnidentifiedItemEffectHotbarCallback(const int player, SDL_Rect rect)
 
 		drawRect.w = imgSize;
 		drawRect.h = imgSize;
+
+		real_t opacity = 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2));
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
 		drawMesh(drawRect.x + offsetx, drawRect.y + offsety,
 			(real_t)1.0, drawRect,
-			makeColor(255, 255, 255, 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2))));
+			makeColor(255, 255, 255, opacity));
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -12328,8 +12342,9 @@ void drawUnidentifiedItemEffectHotbarCallback(const int player, SDL_Rect rect)
 	glPopMatrix();
 }
 
-void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
+void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 {
+	const int player = widget.getOwner();
 	auto& appraisal = players[player]->inventoryUI.appraisal;
 	if ( appraisal.animStartTick == ticks )
 	{
@@ -12424,6 +12439,8 @@ void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
 		}
 	}
 
+	Frame* parent = static_cast<Frame*>(widget.getParent());
+
 	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
 		const real_t unitY = (real_t)rect.h;
@@ -12463,13 +12480,18 @@ void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
 		drawRect.y += 2;
 		drawRect.w -= 2;
 		drawRect.h -= 2;
-		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, 192));
+		real_t opacity = 192;
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		Uint8 r, g, b, a;
 
 		// bind a texture to mesh
-		auto testImage = Image::get("images/system/Appraisal_Icon.png");
+		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
 		testImage->bind();
 
 		const real_t sx = rect.w * size;
@@ -12499,9 +12521,15 @@ void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect)
 
 		drawRect.w = imgSize;
 		drawRect.h = imgSize;
+
+		real_t opacity = 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2));
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
 		drawMesh(drawRect.x + offsetx, drawRect.y + offsety, 
 			(real_t)1.0, drawRect, 
-			makeColor(255, 255, 255, 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2))));
+			makeColor(255, 255, 255, opacity));
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -13086,68 +13114,71 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	auto appraisalFrame = slotFrame->findFrame("appraisal frame");
-	appraisalFrame->setDisabled(true);
-	appraisalFrame->setDrawCallback(nullptr);
-	if ( item->notifyIcon )
+	if ( auto appraisalFrame = slotFrame->findFrame("appraisal frame") )
 	{
-		appraisalFrame->setDisabled(false);
-	}
-	if ( !disableBackgrounds && players[player]->inventoryUI.appraisal.current_item > 0
-		&& !item->identified && item->node && item->node->list == &stats[player]->inventory
-		&& item->uid == players[player]->inventoryUI.appraisal.current_item )
-	{
-		if ( isHotbarIcon )
-		{
-			appraisalFrame->setDisabled(false);
-			appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
-				drawUnidentifiedItemEffectHotbarCallback(widget.getOwner(), rect);
-			});
-		}
-		else
-		{
-			appraisalFrame->setDisabled(false);
-			appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
-				drawUnidentifiedItemEffectCallback(widget.getOwner(), rect);
-			});
-		}
-	}
-	if ( !appraisalFrame->isDisabled() )
-	{
-		auto img = appraisalFrame->findImage("new notif img");
-		img->disabled = true;
+		appraisalFrame->setDisabled(true);
+		appraisalFrame->setDrawCallback(nullptr);
 		if ( item->notifyIcon )
 		{
-			img->pos.x = 4;
-			img->pos.y = 4;
-			if ( isHotbarIcon && !players[player]->hotbar.useHotbarFaceMenu )
+			appraisalFrame->setDisabled(false);
+		}
+		if ( !disableBackgrounds && players[player]->inventoryUI.appraisal.current_item > 0
+			&& slotFrame->getOpacity() > 0.999
+			&& !item->identified && item->node && item->node->list == &stats[player]->inventory
+			&& item->uid == players[player]->inventoryUI.appraisal.current_item )
+		{
+			if ( isHotbarIcon )
 			{
-				img->pos.x = 10;
-				img->pos.y = 2;
-				if ( players[player]->hotbar.slots()[NUM_HOTBAR_SLOTS - 1].item == item->uid )
+				appraisalFrame->setDisabled(false);
+				appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+					drawUnidentifiedItemEffectHotbarCallback(widget, rect);
+				});
+			}
+			else
+			{
+				appraisalFrame->setDisabled(false);
+				appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+					drawUnidentifiedItemEffectCallback(widget, rect);
+				});
+			}
+		}
+		if ( !appraisalFrame->isDisabled() )
+		{
+			auto img = appraisalFrame->findImage("new notif img");
+			img->disabled = true;
+			if ( item->notifyIcon )
+			{
+				img->pos.x = 4;
+				img->pos.y = 4;
+				if ( isHotbarIcon && !players[player]->hotbar.useHotbarFaceMenu )
 				{
-					if ( slotFrame && slotFrame->getParent() && !strcmp(slotFrame->getParent()->getName(), "hotbar slot 9") )
+					img->pos.x = 10;
+					img->pos.y = 2;
+					if ( players[player]->hotbar.slots()[NUM_HOTBAR_SLOTS - 1].item == item->uid )
 					{
-						img->pos.x += 6;
+						if ( slotFrame && slotFrame->getParent() && !strcmp(slotFrame->getParent()->getName(), "hotbar slot 9") )
+						{
+							img->pos.x += 6;
+						}
 					}
 				}
-			}
-			img->disabled = false;
-			auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
-			switch ( animState )
-			{
-				case 0:
-					img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
-					break;
-				case 1:
-					img->path = "images/ui/Inventory/tooltips/ExclamationAnim01.png";
-					break;
-				case 2:
-					img->path = "images/ui/Inventory/tooltips/ExclamationAnim02.png";
-					break;
-				default:
-					img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
-					break;
+				img->disabled = false;
+				auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
+				switch ( animState )
+				{
+					case 0:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
+						break;
+					case 1:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim01.png";
+						break;
+					case 2:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim02.png";
+						break;
+					default:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
+						break;
+				}
 			}
 		}
 	}

@@ -38,7 +38,7 @@ public:
     };
 
     virtual type_t      getType() const = 0;
-    Widget*             getParent() { return parent; }
+    Widget*				getParent() const { return parent; }
     const char*		    getName() const { return name.c_str(); }
     bool			    isPressed() const { return reallyPressed; }
     bool			    isHighlighted() const { return highlighted; }
