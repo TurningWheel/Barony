@@ -7135,6 +7135,30 @@ void Player::GUIDropdown_t::process()
 		{
 			dropDown.options.clear();
 			contextOptions = getContextMenuOptionsForItem(player.playernum, item);
+			if ( player.inventoryUI.useItemDropdownOnGamepad == Inventory_t::GAMEPAD_DROPDOWN_FULL )
+			{
+				for ( auto it = contextOptions.begin(); it != contextOptions.end(); )
+				{
+					if ( (*it) == PROMPT_APPRAISE )
+					{
+						it = contextOptions.erase(it);
+						continue;
+					}
+					++it;
+				}
+			}
+			else if ( player.inventoryUI.useItemDropdownOnGamepad == Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
+			{
+				for ( auto it = contextOptions.begin(); it != contextOptions.end(); )
+				{
+					if ( (*it) == PROMPT_APPRAISE || (*it) == PROMPT_DROP )
+					{
+						it = contextOptions.erase(it);
+						continue;
+					}
+					++it;
+				}
+			}
 			for ( auto option : contextOptions )
 			{
 				dropDown.options.push_back(DropdownOption_t(getContextMenuLangEntry(player.playernum, option, *item), "", "", ""));
@@ -13498,7 +13522,7 @@ void createInventoryTooltipFrame(const int player)
 			color, "*#images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
 
 		const int interactOptionStartX = 60;
-		const int interactOptionStartY = 8;
+		const int interactOptionStartY = 4;
 		const int glyphSizeH = 24;
 		const int glyphSizeW = 22;
 
@@ -13578,7 +13602,7 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(promptTextColor);
 
-		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 8;
+		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 2;
 		bottomLeft->pos.y = bottomCenter->pos.y;
 		bottomRight->pos.y = bottomCenter->pos.y;
 
@@ -15862,6 +15886,10 @@ void Player::Inventory_t::updateItemContextMenu()
 	interactFrame->setDisabled(false);
 
 	auto options = getContextMenuOptionsForItem(player.playernum, item);
+	if ( itemMenuFromHotbar )
+	{
+		std::reverse(options.begin(), options.end());
+	}
 	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
 	auto glyph1 = interactFrame->findImage("glyph 1");
 	auto option1 = interactFrame->findField("interact option 1");

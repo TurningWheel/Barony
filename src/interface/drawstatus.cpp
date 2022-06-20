@@ -2433,7 +2433,7 @@ void drawStatusNew(const int player)
 					&& !players[player]->usingCommand() )
 				{
 					if ( (Input::inputs[player].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player))
-						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str())
+						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str())
 							&& hotbarGamepadControlEnabled(player))
 						&& (players[player]->inventoryUI.bFirstTimeSnapCursor) )
 					{
@@ -2460,10 +2460,10 @@ void drawStatusNew(const int player)
 								players[player]->inventoryUI.cursor.lastUpdateTick = ticks;
 							}
 
-							if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str()) 
+							if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str())
 								&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
-								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
+								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str());
 								toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								inputs.getUIInteraction(player)->selectedItemFromChest = 0;
@@ -2527,6 +2527,11 @@ void drawStatusNew(const int player)
 									// 10px is slot half height, minus the top interact text height
 									// mouse will be situated halfway in first menu option
 									itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
+									auto numOptions = getContextMenuOptionsForItem(player, item).size();
+									if ( numOptions > 1 )
+									{
+										itemMenuY -= (numOptions - 1) * (24);
+									}
 								}
 							}
 							if ( itemMenuX % 2 == 1 )
@@ -2669,7 +2674,8 @@ void drawStatusNew(const int player)
 						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
 						if ( players[player]->inventoryUI.tooltipPromptFrame
 							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled()
-							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor) )
+							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_FULL 
+								&& !inputs.getVirtualMouse(player)->draw_cursor) )
 						{
 							SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 							SDL_Rect promptPos = players[player]->inventoryUI.tooltipPromptFrame->getSize();
@@ -2687,7 +2693,8 @@ void drawStatusNew(const int player)
 						if ( players[player]->inventoryUI.tooltipPromptFrame )
 						{
 							tooltipPromptFrameWasDisabled = players[player]->inventoryUI.tooltipPromptFrame->isDisabled();
-							if ( players[player]->inventoryUI.useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+							if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_FULL 
+								&& !inputs.getVirtualMouse(player)->draw_cursor )
 							{
 								players[player]->inventoryUI.tooltipPromptFrame->setDisabled(true);
 							}
@@ -3084,7 +3091,7 @@ void drawStatusNew(const int player)
 						{
 							continue;
 						}
-						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
+						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, option).c_str()) )
 						{
 							bindingPressed = true;
 
@@ -3157,7 +3164,7 @@ void drawStatusNew(const int player)
 						for ( auto& option : contextTooltipOptions )
 						{
 							// clear the other bindings just in case.
-							Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(option).c_str());
+							Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(player, option).c_str());
 						}
 					}
 					item = nullptr; // we don't need to use this item anymore

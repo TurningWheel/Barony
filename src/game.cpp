@@ -4272,7 +4272,7 @@ void ingameHud()
 		// if useItemDropdownOnGamepad, then 'b' will close inventory, with a 'couple' checks..
 		if ( players[player]->isLocalPlayer() 
 			&& !players[player]->shootmode
-			&& players[player]->inventoryUI.useItemDropdownOnGamepad
+			&& (players[player]->inventoryUI.useItemDropdownOnGamepad != Player::Inventory_t::GAMEPAD_DROPDOWN_DISABLE)
 			&& !inputs.getVirtualMouse(player)->draw_cursor
 			&& !players[player]->usingCommand() && input.binaryToggle("MenuCancel")
 			&& !players[player]->GUI.isDropdownActive()
