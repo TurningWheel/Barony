@@ -12286,7 +12286,7 @@ void drawUnidentifiedItemEffectHotbarCallback(const int player, SDL_Rect rect)
 		Uint8 r, g, b, a;
 
 		// bind a texture to mesh
-		auto testImage = Image::get("images/system/Appraisal_Icon.png");
+		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
 		testImage->bind();
 
 		const real_t sx = rect.w * size;
