@@ -212,6 +212,7 @@ public:
 	void doRumble(Haptic_t::Rumble* r);
 	void stopRumble();
 	void handleRumble();
+	void reinitHaptic();
 
 	/*
 	 * Moves the player's head around.

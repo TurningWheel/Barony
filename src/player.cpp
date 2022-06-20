@@ -84,6 +84,7 @@ void GameController::close()
 {
 	if ( sdl_haptic )
 	{
+		stopRumble();
 		SDL_HapticClose(sdl_haptic);
 		sdl_haptic = nullptr;
 	}
@@ -96,6 +97,37 @@ void GameController::close()
 	id = -1;
 
 	initBindings(); // clear status of all values
+}
+
+void GameController::reinitHaptic()
+{
+	if ( !sdl_device )
+	{
+		return;
+	}
+	if ( sdl_haptic )
+	{
+		stopRumble();
+		printlog("[INPUTS]: Stopping haptics on device: %d...", getID());
+		SDL_HapticClose(sdl_haptic);
+		sdl_haptic = nullptr;
+	}
+
+	printlog("[INPUTS]: Reinit haptics on device: %d", getID());
+	SDL_Joystick* joystick = SDL_GameControllerGetJoystick(sdl_device);
+	sdl_haptic = SDL_HapticOpenFromJoystick(joystick);
+	if ( sdl_haptic == nullptr )
+	{
+		printlog("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+	}
+	if ( sdl_haptic )
+	{
+		printlog("Controller name is \"%s\", haptics available: %d", name.c_str(), SDL_HapticQuery(sdl_haptic));
+	}
+	else
+	{
+		printlog("Controller name is \"%s\", haptics disabled", name.c_str());
+	}
 }
 
 bool GameController::open(int c)
@@ -126,20 +158,11 @@ bool GameController::open(int c)
 		id = c;
 		printlog("Successfully initialized game controller!\n");
 		name = (SDL_GameControllerNameForIndex(c));
-		sdl_haptic = SDL_HapticOpen(c);
+		SDL_Joystick* joystick = SDL_GameControllerGetJoystick(sdl_device);
+		sdl_haptic = SDL_HapticOpenFromJoystick(joystick);
 		if ( sdl_haptic == nullptr )
 		{
-			printf("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
-		}
-		else
-		{
-			//Get initialize rumble
-			/*if ( SDL_HapticRumbleInit(sdl_haptic) < 0 )
-			{
-				printf("Warning: Unable to initialize rumble! SDL Error: %s\n", SDL_GetError());
-				SDL_HapticClose(sdl_haptic);
-				sdl_haptic = nullptr;
-			}*/
+			printlog("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
 		}
 		if ( sdl_haptic )
 		{
@@ -2312,57 +2335,15 @@ bool GameController::handleRepairGUIMovement(const int player)
 
 void initGameControllers()
 {
-#ifdef NINTENDO
-	SDL_GameControllerAddMappingsFromFile(GAME_CONTROLLER_DB_FILEPATH);
-#else
-	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
-#endif
-	for ( auto& controller : game_controllers )
-	{
-		controller.close();
-		controller.initBindings();
-	}
-
-	int c = 0;
-	bool found = false;
-
-	if ( c == 0 && !inputs.hasController(c) )
-	{
-		for ( auto& controller : game_controllers )
-		{
-			if ( controller.isActive() )
-			{
-				inputs.setControllerID(c, controller.getID());
-				break;
-			}
-		}
-	}
-
 	inputs.setPlayerIDAllowedKeyboard(0);
 
-	auto controller_itr = game_controllers.begin();
-	for ( c = 0; c < SDL_NumJoysticks(); ++c )
+	bool found = false;
+	for ( auto controller : game_controllers )
 	{
-		if (SDL_IsGameController(c) && controller_itr->open(c))
+		if ( controller.isActive() )
 		{
-			printlog("(Device %d successfully initialized as game controller.)\n", c);
-			//inputs.setControllerID(c, controller_itr->getID());
-			Input::gameControllers[controller_itr->getID()] = controller_itr->getControllerDevice();
-			for ( int c = 0; c < 4; ++c ) {
-				Input::inputs[c].refresh();
-			}
 			found = true;
-
-			controller_itr = std::next(controller_itr);
-			if ( controller_itr == game_controllers.end() )
-			{
-				printlog("Info: Max controller limit reached.");
-				break;
-			}
-		}
-		else
-		{
-			printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", c);
+			break;
 		}
 	}
 
@@ -2689,6 +2670,7 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 void GameController::stopRumble()
 {
 	SDL_HapticStopEffect(sdl_haptic, haptics.hapticEffectId);
+	haptics.hapticEffectId = -1;
 }
 
 Player::Player(int in_playernum, bool in_local_host) : 

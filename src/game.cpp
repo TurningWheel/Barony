@@ -3647,6 +3647,7 @@ void handleEvents(void)
 				}
 
 				// now find a free controller slot.
+				int newControllerInstance = -1;
 				for ( auto& controller : game_controllers )
 				{
 					if ( controller.isActive() )
@@ -3658,16 +3659,27 @@ void handleEvents(void)
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", controller.getID());
 						//inputs.addControllerIDToNextAvailableInput(id);
+						controller.initBindings();
 						Input::gameControllers[controller.getID()] = controller.getControllerDevice();
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
+						newControllerInstance = controller.getID();
 					}
 					else
 					{
 						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
 					}
 					break;
+				}
+				for ( auto& controller : game_controllers )
+				{
+					if ( controller.getID() != newControllerInstance )
+					{
+						// haptic devices are enumerated differently than joysticks
+						// reobtain haptic devices for each existing controller
+						controller.reinitHaptic();
+					}
 				}
 				break;
 			}
@@ -3694,6 +3706,12 @@ void handleEvents(void)
 							Input::inputs[c].refresh();
 						}
 					}
+				}
+				for ( auto& controller : game_controllers )
+				{
+					// haptic devices are enumerated differently than joysticks
+					// reobtain haptic devices for each existing controller
+					controller.reinitHaptic();
 				}
 				break;
 			}
