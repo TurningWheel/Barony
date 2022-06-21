@@ -670,7 +670,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1085], items[type].name_unidentified, this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].name_unidentified, this->getScrollLabel());
 				}
 				else
 				{
