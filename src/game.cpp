@@ -4302,6 +4302,8 @@ void ingameHud()
 			&& players[player]->gui_mode == GUI_MODE_INVENTORY
 			&& players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& !players[player]->inventoryUI.chestGUI.bOpen
+			&& !players[player]->hud.mapWindow
+			&& !players[player]->hud.logWindow
 			&& !players[player]->shopGUI.bOpen
 			&& !GenericGUI[player].isGUIOpen() )
 		{
