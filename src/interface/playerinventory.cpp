@@ -8851,7 +8851,7 @@ void Player::Inventory_t::updateInventory()
 								int starty = hotbarSlotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
 
 								updateSelectedSlotAnimation(startx - 1, starty - 1,
-									hotbar_t.getSlotSize(), hotbar_t.getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+									hotbar_t.getSlotSize() - 2, hotbar_t.getSlotSize() - 2, inputs.getVirtualMouse(player)->draw_cursor);
 								//messagePlayer(player, "7: hotbar: %d", c);
 								break;
 							}

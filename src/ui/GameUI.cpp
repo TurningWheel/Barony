@@ -618,11 +618,14 @@ void createHotbar(const int player)
 
 	{
 		auto oldSelectedFrame = hotbar_t.hotbarFrame->addFrame("hotbar old selected item");
-		oldSelectedFrame->setSize(slotPos);
+		SDL_Rect oldSelectedFramePos = slotPos;
+		oldSelectedFramePos.w -= 2;
+		oldSelectedFramePos.h -= 2;
+		oldSelectedFrame->setSize(oldSelectedFramePos);
 		oldSelectedFrame->setDisabled(true);
 
 		const int itemSpriteSize = players[oldSelectedFrame->getOwner()]->inventoryUI.getItemSpriteSize();
-		SDL_Rect itemSpriteBorder{ 4, 4, itemSpriteSize, itemSpriteSize };
+		SDL_Rect itemSpriteBorder{ 5, 5, itemSpriteSize, itemSpriteSize };
 
 		color = makeColor( 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
@@ -632,7 +635,7 @@ void createHotbar(const int player)
 			color, "*images/system/hotbar_slot.png", "hotbar old selected highlight");
 
 		auto oldCursorFrame = hotbar_t.hotbarFrame->addFrame("hotbar old item cursor");
-		oldCursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		oldCursorFrame->setSize(SDL_Rect{ 0, 0, oldSelectedFramePos.w + 16, oldSelectedFramePos.h + 16 });
 		oldCursorFrame->setDisabled(true);
 		color = makeColor( 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -643,11 +646,9 @@ void createHotbar(const int player)
 			color, "*#images/ui/Inventory/SelectorGrey_BL.png", "hotbar old cursor bottomleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "*#images/ui/Inventory/SelectorGrey_BR.png", "hotbar old cursor bottomright");
-	}
 
-	{
 		auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
-		cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		cursorFrame->setSize(SDL_Rect{ 0, 0, oldSelectedFramePos.w + 16, oldSelectedFramePos.h + 16 });
 		cursorFrame->setDisabled(true);
 		color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -4280,22 +4281,27 @@ void Player::HUD_t::updateActionPrompts()
 			SDL_Rect promptPos = prompt->getSize();
 			promptPos.w = maxWidth;
 			promptPos.h = promptHeight;
+			int actionPromptOffsetXTotal = actionPromptOffsetX;
+			if ( !player.hotbar.useHotbarFaceMenu )
+			{
+				actionPromptOffsetXTotal += 22;
+			}
 			switch ( index )
 			{
 				case 0: // to the left of hotbar
-					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetXTotal;
 					break;
 				case 1: // to the left after the previous
-					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetXTotal;
 					promptPos.x -= 16;
 					promptPos.x -= promptPos.w;
 					break;
 				case 2: // to the right of hotbar
-					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetXTotal;
 					promptPos.x -= promptPos.w;
 					break;
 				case 3: // to the right after the previous
-					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetXTotal;
 					promptPos.x += 16;
 					break;
 				default:
@@ -20202,7 +20208,7 @@ void Player::Hotbar_t::updateHotbar()
 							if ( players[player.playernum]->inventoryUI.selectedItemCursorFrame )
 							{
 								players[player.playernum]->inventoryUI.selectedItemCursorFrame->setDisabled(false);
-								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), 
+								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize() - 2, getSlotSize() - 2, 
 									inputs.getVirtualMouse(player.playernum)->draw_cursor);
 							}
 						}
@@ -20216,7 +20222,7 @@ void Player::Hotbar_t::updateHotbar()
 								{
 									snapCursor = true;
 								}
-								updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), snapCursor);
+								updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize() - 2, getSlotSize() - 2, snapCursor);
 							}
 						}
 					}
