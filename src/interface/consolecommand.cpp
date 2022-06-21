@@ -3428,7 +3428,7 @@ namespace ConsoleCommands {
 			if ( inputs.hasController(i) )
 			{
 				inputs.getController(i)->addRumble(GameController::Haptic_t::RUMBLE_NORMAL,
-					8000, 0, 500, 0);
+					8000, 0, TICKS_PER_SECOND, 0);
 			}
 		}
 	});

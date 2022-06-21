@@ -47,13 +47,13 @@
 #ifndef EDITOR
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
+static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_rawinput_disable", false, "disable SDL rawinput for gamepads (helps SDL_HapticOpen())");
 #endif
 
 #include <thread>
 #include <future>
 #include <chrono>
 
-static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_rawinput_disable", false, "disable SDL rawinput for gamepads (helps SDL_HapticOpen())");
 
 /*-------------------------------------------------------------------------------
 
@@ -218,12 +218,13 @@ int initApp(char const * const title, int fullscreen)
 
 	window_title = title;
 	printlog("initializing SDL...\n");
-
+#ifndef EDITOR
 	if ( (*cvar_sdl_disablejoystickrawinput) == true )
 	{
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
 		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
 	}
+#endif
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER 
 		| SDL_INIT_EVENTS | SDL_INIT_JOYSTICK 
 		| SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == -1 )
