@@ -6073,7 +6073,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		&& !players[player]->shootmode
 		&& !(itemCategory(item) == SPELL_CAT && (players[player]->shopGUI.bOpen || players[player]->inventoryUI.chestGUI.bOpen)) )
 	{
-		auto options = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad);
+		auto options = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad, players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR);
 
 		std::sort(options.begin(), options.end(), [player](const ItemContextMenuPrompts& lhs, const ItemContextMenuPrompts& rhs) {
 			return getContextMenuOptionOrder(player, lhs) < getContextMenuOptionOrder(player, rhs);
@@ -7996,7 +7996,7 @@ void Player::Inventory_t::updateInventory()
 						&& !selectedItem
 						&& GenericGUI[player].selectedSlot < 0 )
 					{
-						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad);
+						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad, false);
 						bool bindingPressed = false;
 						for ( auto& option : contextTooltipOptions )
 						{
@@ -8422,7 +8422,7 @@ void Player::Inventory_t::updateInventory()
 					&& !selectedItem
 					&& GenericGUI[player].selectedSlot < 0 )
 				{
-					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad, false);
 					bool bindingPressed = false;
 					for ( auto& option : contextTooltipOptions )
 					{
@@ -8464,7 +8464,12 @@ void Player::Inventory_t::updateInventory()
 								{
 									if ( !players[player]->GUI.isDropdownActive() )
 									{
-										players[player]->GUI.dropdownMenu.open("item_interact");
+										std::string dropdownName = "item_interact";
+										if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS && itemCategory(item) == SPELL_CAT )
+										{
+											dropdownName = "spell_interact";
+										}
+										players[player]->GUI.dropdownMenu.open(dropdownName);
 										players[player]->GUI.dropdownMenu.dropDownToggleClick = true;
 										players[player]->GUI.dropdownMenu.dropDownItem = item->uid;
 										SDL_Rect dropdownPos = slotFrame->getAbsoluteSize();
@@ -8475,7 +8480,7 @@ void Player::Inventory_t::updateInventory()
 											dropdownPos.y -= (interactMenuTop->pos.h + (1 * 10) + 4);
 										}
 
-										if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("item_interact") )
+										if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight(dropdownName) )
 										{
 											dropdownPos.x += dropdownPos.w - 10;
 										}
@@ -9237,7 +9242,8 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return language[4049];
 		case PROMPT_TINKER:
 			return language[3670];
-			break;
+		case PROMPT_CLEAR_HOTBAR_SLOT:
+			return language[3723];
 		case PROMPT_APPRAISE:
 			return language[1161];
 		case PROMPT_CONSUME:
@@ -9271,7 +9277,7 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 	return "Invalid";
 }
 
-std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu)
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem)
 {
 	if ( stats[player] && stats[player]->HP <= 0 )
 	{
@@ -9303,7 +9309,7 @@ std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int pl
 			}
 			++it;
 		}
-		if ( numPrimaryOptions >= 2 )
+		if ( numPrimaryOptions >= 2 || hotbarItem )
 		{
 			for ( auto it = options.begin(); it != options.end(); )
 			{

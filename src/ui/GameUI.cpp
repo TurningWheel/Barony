@@ -6633,7 +6633,7 @@ bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
 			}
 		}
 	}
-	else if ( name == "item_interact" )
+	else if ( name == "item_interact" || name == "spell_interact" )
 	{
 		if ( player.inventoryUI.bCompactView )
 		{
@@ -7146,12 +7146,18 @@ void Player::GUIDropdown_t::process()
 		close();
 		return;
 	}
-	if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+	if ( currentName == "item_interact" || currentName == "hotbar_interact" 
+		|| currentName == "chest_interact"
+		|| currentName == "spell_interact" )
 	{
 		if ( item )
 		{
 			dropDown.options.clear();
 			contextOptions = getContextMenuOptionsForItem(player.playernum, item);
+			if ( currentName == "hotbar_interact" )
+			{
+				contextOptions.push_back(PROMPT_CLEAR_HOTBAR_SLOT);
+			}
 			if ( player.inventoryUI.useItemDropdownOnGamepad == Inventory_t::GAMEPAD_DROPDOWN_FULL )
 			{
 				for ( auto it = contextOptions.begin(); it != contextOptions.end(); )
@@ -7450,7 +7456,8 @@ void Player::GUIDropdown_t::process()
 	{
 		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 		{
-			if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+			if ( currentName == "item_interact" || currentName == "hotbar_interact" 
+				|| currentName == "chest_interact" || currentName == "spell_interact" )
 			{
 				if ( item && dropDownOptionSelected < contextOptions.size() )
 				{
@@ -14741,6 +14748,10 @@ void loadHUDSettingsJSON()
 							{
 								dropdown.module = Player::GUI_t::MODULE_CHEST;
 							}
+							else if ( moduleName == "spells" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_SPELLS;
+							}
 							else if ( moduleName == "hotbar" )
 							{
 								dropdown.module = Player::GUI_t::MODULE_HOTBAR;
@@ -16073,6 +16084,7 @@ void Player::Inventory_t::updateItemContextMenu()
 	auto options = getContextMenuOptionsForItem(player.playernum, item);
 	if ( itemMenuFromHotbar )
 	{
+		options.push_back(PROMPT_CLEAR_HOTBAR_SLOT);
 		std::reverse(options.begin(), options.end());
 	}
 	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
@@ -16448,6 +16460,17 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 
 	if ( prompt == PROMPT_DROPDOWN )
 	{
+		return;
+	}
+	if ( prompt == PROMPT_CLEAR_HOTBAR_SLOT )
+	{
+		for ( auto& slot : players[player]->hotbar.slots() )
+		{
+			if ( slot.item == item->uid )
+			{
+				slot.item = 0;
+			}
+		}
 		return;
 	}
 	if ( prompt == PROMPT_APPRAISE )

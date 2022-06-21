@@ -2548,7 +2548,7 @@ void drawStatusNew(const int player)
 									auto numOptions = getContextMenuOptionsForItem(player, item).size();
 									if ( numOptions > 1 )
 									{
-										itemMenuY -= (numOptions - 1) * (24);
+										itemMenuY -= (numOptions - 1 + 1) * (24); // +1 because extra hotbar prompt to clear slot
 									}
 								}
 							}
@@ -3151,7 +3151,7 @@ void drawStatusNew(const int player)
 					&& !tooltipPromptFrameWasDisabled )
 				{
 					item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad, true);
 					bool bindingPressed = false;
 					for ( auto& option : contextTooltipOptions )
 					{

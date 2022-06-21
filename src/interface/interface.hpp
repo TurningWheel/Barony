@@ -1284,10 +1284,11 @@ enum ItemContextMenuPrompts {
 	PROMPT_DROP,
 	PROMPT_TINKER,
 	PROMPT_GRAB,
-	PROMPT_UNEQUIP_FOR_DROP
+	PROMPT_UNEQUIP_FOR_DROP,
+	PROMPT_CLEAR_HOTBAR_SLOT
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
-std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu);
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem);
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
 std::string getContextMenuOptionBindingName(const int player, const ItemContextMenuPrompts prompt);
