@@ -12247,7 +12247,7 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 		}
 	}
 
-	Frame* parent = static_cast<Frame*>(widget.getParent());
+	const Frame* parent = static_cast<const Frame*>(widget.getParent());
 
 	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
@@ -12445,7 +12445,7 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		}
 	}
 
-	Frame* parent = static_cast<Frame*>(widget.getParent());
+	const Frame* parent = static_cast<const Frame*>(widget.getParent());
 
 	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
