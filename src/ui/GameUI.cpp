@@ -661,6 +661,17 @@ void createHotbar(const int player)
 			color, "*#images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
 	}
 
+	auto cancelPromptTxt = hotbar_t.hotbarFrame->addField("hotbar cancel prompt", 32);
+	cancelPromptTxt->setText(language[3063]);
+	cancelPromptTxt->setSize(SDL_Rect{ 0, 0, 100, 24 });
+	cancelPromptTxt->setDisabled(true);
+	cancelPromptTxt->setFont(font);
+	cancelPromptTxt->setVJustify(Field::justify_t::TOP);
+	cancelPromptTxt->setHJustify(Field::justify_t::LEFT);
+	auto cancelPromptGlyph = hotbar_t.hotbarFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "", "hotbar cancel glyph");
+	cancelPromptGlyph->disabled = true;
+
 	auto text = highlightFrame->addField("slot num text", 4);
 	text->setText("");
 	text->setSize(SDL_Rect{ 0, -4, slotPos.w, slotPos.h });
@@ -5047,6 +5058,7 @@ void openMapWindow(int player) {
         input.consumeBindingsSharedWithBinding("MinimapDown");
         input.consumeBindingsSharedWithBinding("MinimapUp");
         if (input.consumeBinaryToggle("MinimapClose")) {
+			input.consumeBindingsSharedWithBinding("MinimapClose");
             if (players[player]->hud.mapWindow) {
                 players[player]->hud.mapWindow->removeSelf();
                 players[player]->hud.mapWindow = nullptr;
@@ -5361,6 +5373,7 @@ void openLogWindow(int player) {
             subframe->setActualSize(subframe_size);
         }
 		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {
+			Input::inputs[player].consumeBindingsSharedWithBinding("LogClose");
 			if ( players[player]->hud.logWindow ) {
 				players[player]->hud.logWindow->removeSelf();
 				players[player]->hud.logWindow = nullptr;
@@ -5678,7 +5691,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
-			mapButton->setWidgetBack("close");
 			mapButton->setCallback([](Button& button){
 			    openMapWindow(button.getOwner());
 			    if (players[button.getOwner()]->hud.mapWindow) {
@@ -5704,7 +5716,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
-			logButton->setWidgetBack("close");
 			logButton->setCallback([](Button& button) {
 			    openLogWindow(button.getOwner());
 			});
@@ -15798,21 +15809,25 @@ void createPlayerInventory(const int player)
 			charFrame->setSize(charSize);
 			charFrame->setTickCallback([](Widget& widget) {
 				int player = widget.getOwner();
-				if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+				if ( players[player]->GUI.bActiveModuleUsesInventory() 
+					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
-					camera_charsheet_offsetyaw -= 0.05;
-				}
-				else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
-				{
-					camera_charsheet_offsetyaw += 0.05;
-				}
-				if ( camera_charsheet_offsetyaw > 2 * PI )
-				{
-					camera_charsheet_offsetyaw -= 2 * PI;
-				}
-				if ( camera_charsheet_offsetyaw < 0.0 )
-				{
-					camera_charsheet_offsetyaw += 2 * PI;
+					if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+					{
+						camera_charsheet_offsetyaw -= 0.05;
+					}
+					else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+					{
+						camera_charsheet_offsetyaw += 0.05;
+					}
+					if ( camera_charsheet_offsetyaw > 2 * PI )
+					{
+						camera_charsheet_offsetyaw -= 2 * PI;
+					}
+					if ( camera_charsheet_offsetyaw < 0.0 )
+					{
+						camera_charsheet_offsetyaw += 2 * PI;
+					}
 				}
 				});
 			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
@@ -19900,6 +19915,39 @@ void Player::Hotbar_t::updateHotbar()
 		{
 			oldSelectedItemFrame->setDisabled(true);
 		}
+	}
+
+	auto cancelPromptTxt = hotbarFrame->findField("hotbar cancel prompt");
+	cancelPromptTxt->setDisabled(true);
+	auto cancelPromptGlyph = hotbarFrame->findImage("hotbar cancel glyph");
+	cancelPromptGlyph->disabled = true;
+
+	if ( !bCompactView && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	{
+		cancelPromptTxt->setDisabled(false);
+		cancelPromptTxt->setText(language[3063]);
+		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarCancel");
+		if ( auto imgGet = Image::get(cancelPromptGlyph->path.c_str()) )
+		{
+			cancelPromptGlyph->pos.w = imgGet->getWidth();
+			cancelPromptGlyph->pos.h = imgGet->getHeight();
+			cancelPromptGlyph->disabled = false;
+		}
+		SDL_Rect promptTxtPos = cancelPromptTxt->getSize();
+		promptTxtPos.x = hotbarCentreX;
+		promptTxtPos.y = hotbarStartY1 + getSlotSize();
+		if ( auto textGet = cancelPromptTxt->getTextObject() )
+		{
+			promptTxtPos.x -= textGet->getWidth() / 2;
+			promptTxtPos.x += cancelPromptGlyph->pos.w / 2 + 2;
+			if ( promptTxtPos.x % 2 == 1 )
+			{
+				++promptTxtPos.x;
+			}
+		}
+		cancelPromptGlyph->pos.y = promptTxtPos.y;
+		cancelPromptGlyph->pos.x = promptTxtPos.x - 4 - cancelPromptGlyph->pos.w;
+		cancelPromptTxt->setSize(promptTxtPos);
 	}
 
 	// position the slots
