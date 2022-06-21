@@ -3784,126 +3784,127 @@ void GenericGUIMenu::updateGUI()
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
 		{
-			windowX1 -= 20;
-			windowX2 += 20;
-			windowY1 -= 40;
-			windowY2 += 40;
-			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+			//windowX1 -= 20;
+			//windowX2 += 20;
+			//windowY1 -= 40;
+			//windowY2 += 40;
+			//drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
 
-			// title
-			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
-				language[3716]);
-			char toolStatusText[64] = "";
-			if ( scribingToolItem && scribingToolItem->identified )
-			{
-				snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
-			}
-			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
-				toolStatusText);
-			/*if ( scribingLastUsageDisplayTimer > 0 )
-			{
-				ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed,
-						"(%3d)", -scribingLastUsageAmount);
-			}*/
+			//// title
+			//ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
+			//	language[3716]);
+			//char toolStatusText[64] = "";
+			//if ( scribingToolItem && scribingToolItem->identified )
+			//{
+			//	snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+			//}
+			//ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
+			//	toolStatusText);
+			///*if ( scribingLastUsageDisplayTimer > 0 )
+			//{
+			//	ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed,
+			//			"(%3d)", -scribingLastUsageAmount);
+			//}*/
 
-			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
-			{
-				if ( scribingBlankScrollTarget )
-				{
-					snprintf(tempstr, 1024, language[3722], scribingBlankScrollTarget->beatitude, items[SCROLL_BLANK].name_identified);
-					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8, tempstr);
+			//if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			//{
+			//	if ( scribingBlankScrollTarget )
+			//	{
+			//		snprintf(tempstr, 1024, language[3722], scribingBlankScrollTarget->beatitude, items[SCROLL_BLANK].name_identified);
+			//		ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8, tempstr);
 
-					SDL_Rect smallIcon;
-					smallIcon.x = windowX1 + 16 + (longestline(tempstr) - 5) * TTF12_WIDTH;
-					smallIcon.y = windowY2 - TTF12_HEIGHT - 12 - 4;
-					smallIcon.h = 16;
-					smallIcon.w = 16;
-					node_t* imageNode = items[SCROLL_BLANK].surfaces.first;
-					if ( imageNode )
-					{
-						drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
-					}
-					smallIcon.x += smallIcon.w + 4;
-					smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
-					smallIcon.y -= 2;
-					smallIcon.h += 2;
-					if ( mouseInBounds(gui_player, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
-					{
-						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
-						if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
-						{
-							inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-							inputs.mouseClearLeft(gui_player);
-							scribingBlankScrollTarget = nullptr;
-						}
-					}
-					else
-					{
-						drawWindow(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
-					}
-					ttfPrintTextFormatted(ttf12, smallIcon.x + 6, windowY2 - 2 * TTF12_HEIGHT + 2, language[3723]);
-				}
-				else
-				{
-					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
-						language[3720]);
-				}
-			}
-			else if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
-			{
-				ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
-					language[3726]);
-			}
+			//		SDL_Rect smallIcon;
+			//		smallIcon.x = windowX1 + 16 + (longestline(tempstr) - 5) * TTF12_WIDTH;
+			//		smallIcon.y = windowY2 - TTF12_HEIGHT - 12 - 4;
+			//		smallIcon.h = 16;
+			//		smallIcon.w = 16;
+			//		node_t* imageNode = items[SCROLL_BLANK].surfaces.first;
+			//		if ( imageNode )
+			//		{
+			//			drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			//		}
+			//		smallIcon.x += smallIcon.w + 4;
+			//		smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
+			//		smallIcon.y -= 2;
+			//		smallIcon.h += 2;
+			//		if ( mouseInBounds(gui_player, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
+			//		{
+			//			drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+			//			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
+			//			{
+			//				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//				inputs.mouseClearLeft(gui_player);
+			//				scribingBlankScrollTarget = nullptr;
+			//			}
+			//		}
+			//		else
+			//		{
+			//			drawWindow(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+			//		}
+			//		ttfPrintTextFormatted(ttf12, smallIcon.x + 6, windowY2 - 2 * TTF12_HEIGHT + 2, language[3723]);
+			//	}
+			//	else
+			//	{
+			//		ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+			//			language[3720]);
+			//	}
+			//}
+			//else if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			//{
+			//	ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+			//		language[3726]);
+			//}
 
-			// draw filter labels.
-			int txtWidth = 0;
-			int txtHeight = 0;
-			int charWidth = 0;
-			TTF_Font* font = ttf8;
-			getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
-			int textstartx = pos.x + 2 * charWidth + 4;
+			//// draw filter labels.
+			//int txtWidth = 0;
+			//int txtHeight = 0;
+			//int charWidth = 0;
+			//TTF_Font* font = ttf8;
+			//getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
+			//int textstartx = pos.x + 2 * charWidth + 4;
 
-			SDL_Rect highlightBtn;
-			// Inscribe
-			getSizeOfText(ttf8, language[3718], &txtWidth, &txtHeight);
-			highlightBtn.x = textstartx;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
+			//SDL_Rect highlightBtn;
+			//// Inscribe
+			//getSizeOfText(ttf8, language[3718], &txtWidth, &txtHeight);
+			//highlightBtn.x = textstartx;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	scribingFilter = SCRIBING_FILTER_CRAFTABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
 
-			// Repair
-			getSizeOfText(font, language[3719], &txtWidth, &txtHeight);
-			highlightBtn.x += highlightBtn.w;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
+			//// Repair
+			//getSizeOfText(font, language[3719], &txtWidth, &txtHeight);
+			//highlightBtn.x += highlightBtn.w;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	scribingFilter = SCRIBING_FILTER_REPAIRABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
 		}
 
-		if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY ) // gradually remove all this for all windows once upgraded
+		if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY
+			&& guiType != GUI_TYPE_SCRIBING ) // gradually remove all this for all windows once upgraded
 		{
 			drawImage(identifyGUI_img, NULL, &pos);
 
@@ -4302,6 +4303,7 @@ void GenericGUIMenu::updateGUI()
 							}
 							else if ( guiType == GUI_TYPE_SCRIBING )
 							{
+								break;
 								if ( isNodeScribingCraftableItem(item->node) )
 								{
 									snprintf(tempstr, sizeof(tempstr), language[3721], item->getScrollLabel());
