@@ -2942,6 +2942,22 @@ void drawStatusNew(const int player)
 						Input::inputs[player].consumeBinaryToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
+						Input::inputs[player].consumeBindingsSharedWithBinding("HotbarFacebarCancel");
+
+						for ( auto& slot : players[player]->hotbar.slots() )
+						{
+							Uint32 uid = slot.item;
+							if ( uid != 0 )
+							{
+								if ( appraisal.itemsToNotify.find(uid) != appraisal.itemsToNotify.end() )
+								{
+									if ( appraisal.itemsToNotify[uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED )
+									{
+										appraisal.itemsToNotify[uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE;
+									}
+								}
+							}
+						}
 						break;
 					}
 
@@ -3009,6 +3025,10 @@ void drawStatusNew(const int player)
 
 			players[player]->hotbar.faceMenuButtonHeld = pressed;
 			Input::inputs[player].consumeBindingsSharedWithFaceHotbar();
+		}
+		else
+		{
+			players[player]->hotbar.faceMenuButtonHeld = Player::Hotbar_t::GROUP_NONE;
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.

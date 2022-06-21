@@ -4253,7 +4253,8 @@ void ingameHud()
         {
 	        // toggle minimap
 		    // player not needed to be alive
-            if ( players[player]->shootmode && input.consumeBinaryToggle("Toggle Minimap") )
+            if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE
+				&& input.consumeBinaryToggle("Toggle Minimap") )
             {
                 openMinimap(player);
             }
