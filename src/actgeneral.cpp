@@ -2538,6 +2538,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							if ( stats )
 							{
 								stats->PROFICIENCIES[i] = result;
+								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
+								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
 							}
 						}
 					}
@@ -2583,6 +2585,8 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 							if ( stats )
 							{
 								stats->PROFICIENCIES[i] += result;
+								stats->PROFICIENCIES[i] = std::min(stats->PROFICIENCIES[i], 100);
+								stats->PROFICIENCIES[i] = std::max(stats->PROFICIENCIES[i], 0);
 							}
 						}
 					}

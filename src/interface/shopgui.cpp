@@ -839,6 +839,24 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 	}
 }
 
+void buttonShopUpdateSelectorOnHighlight(const int player, Button* button)
+{
+	if ( button->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_SHOP);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_SHOP )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+		}
+		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
 void Player::ShopGUI_t::updateShop()
 {
 	updateShopWindow(player.playernum);
@@ -1126,6 +1144,11 @@ void Player::ShopGUI_t::updateShop()
 			buybackBtn->setText(buybackText);
 		}
 		closeBtn->setDisabled(!isInteractable);
+		if ( isInteractable )
+		{
+			buttonShopUpdateSelectorOnHighlight(player.playernum, closeBtn);
+			buttonShopUpdateSelectorOnHighlight(player.playernum, buybackBtn);
+		}
 
 		closePromptGlyph->disabled = true;
 		closePromptTxt->setDisabled(true);
@@ -1138,7 +1161,14 @@ void Player::ShopGUI_t::updateShop()
 		buybackBtn->setInvisible(true);
 		buybackBtn->setDisabled(true);
 		closeBtn->setDisabled(true);
-
+		if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( buybackBtn->isSelected() )
+		{
+			buybackBtn->deselect();
+		}
 		closePromptTxt->setDisabled(false);
 		closePromptTxt->setText(language[4121]);
 		buybackPromptTxt->setDisabled(false);

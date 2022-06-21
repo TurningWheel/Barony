@@ -46,6 +46,8 @@
 #include "ui/LoadingScreen.hpp"
 #ifndef EDITOR
 #include "ui/MainMenu.hpp"
+#include "interface/consolecommand.hpp"
+static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_rawinput_disable", false, "disable SDL rawinput for gamepads (helps SDL_HapticOpen())");
 #endif
 
 #include <thread>
@@ -216,6 +218,13 @@ int initApp(char const * const title, int fullscreen)
 
 	window_title = title;
 	printlog("initializing SDL...\n");
+#ifndef EDITOR
+	if ( (*cvar_sdl_disablejoystickrawinput) == true )
+	{
+		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
+		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
+	}
+#endif
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER 
 		| SDL_INIT_EVENTS | SDL_INIT_JOYSTICK 
 		| SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == -1 )
@@ -223,6 +232,13 @@ int initApp(char const * const title, int fullscreen)
 		printlog("failed to initialize SDL: %s\n", SDL_GetError());
 		return 1;
 	}
+
+#ifdef NINTENDO
+	SDL_GameControllerAddMappingsFromFile(GAME_CONTROLLER_DB_FILEPATH);
+#else
+	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+#endif
+
 	//printlog("initializing SDL_mixer. rate: %d format: %d channels: %d buffers: %d\n", audio_rate, audio_format, audio_channels, audio_buffers);
 	/*if( Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) ) {
 		SDL_Quit();

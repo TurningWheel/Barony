@@ -1323,6 +1323,7 @@ void actHudWeapon(Entity* my)
 						if (itemCategory(item) == SPELLBOOK)
 						{
 							inputs.mouseClearLeft(HUDWEAPON_PLAYERNUM);
+							input.consumeBinaryToggle("Attack");
 							players[HUDWEAPON_PLAYERNUM]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
 						else if ( itemIsThrowableTinkerTool(item) )

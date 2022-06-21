@@ -198,6 +198,7 @@ void select_chest_slot(int player, int currentx, int currenty, int diffx, int di
 void select_shop_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_tinkering_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_feather_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern SDL_Surface* inventoryChest_bmp;
 extern SDL_Surface* invclose_bmp;
@@ -399,7 +400,8 @@ public:
 		scribingLastUsageDisplayTimer(0),
 		repairItemType(0),
 		tinkerGUI(*this),
-		alchemyGUI(*this)
+		alchemyGUI(*this),
+		featherGUI(*this)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -482,6 +484,7 @@ public:
 	bool scribingWriteItem(Item* item);
 	int scribingLastUsageAmount;
 	int scribingLastUsageDisplayTimer;
+	void scribingGetChargeCost(Item* itemUsedWith, int& outChargeCostMin, int& outChargeCostMax);
 
 	inline bool isGUIOpen()
 	{
@@ -506,6 +509,7 @@ public:
 	inline bool isItemUsedForCurrentGUI(const Item& item)
 	{
 		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem
+			|| &item == scribingBlankScrollTarget
 			|| &item == basePotion || &item == secondaryPotion )
 		{
 			return true;
@@ -517,6 +521,10 @@ public:
 		if ( &item == scribingToolItem )
 		{
 			scribingToolItem = nullptr;
+		}
+		if ( &item == scribingBlankScrollTarget )
+		{
+			scribingBlankScrollTarget = nullptr;
 		}
 		if ( &item == tinkeringKitItem )
 		{
@@ -627,6 +635,130 @@ public:
 		static int heightOffsetWhenNotCompact;
 	};
 	TinkerGUI_t tinkerGUI;
+
+	struct FeatherGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		FeatherGUI_t(GenericGUIMenu& g) :
+			parentGUI(g)
+		{}
+
+		Frame* featherFrame = nullptr;
+		real_t animx = 0.0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openFeatherMenu();
+		void closeFeatherMenu();
+		void updateFeatherMenu();
+		void createFeatherMenu();
+		bool featherGUIHasBeenCreated() const;
+		std::string itemDesc = "";
+		int itemType = -1;
+		enum FeatherActions_t : int
+		{
+			FEATHER_ACTION_NONE,
+			FEATHER_ACTION_OK,
+			FEATHER_ACTION_INVALID_ITEM,
+			FEATHER_ACTION_NO_BLANK_SCROLL,
+			FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT,
+			FEATHER_ACTION_FULLY_REPAIRED,
+			FEATHER_ACTION_UNIDENTIFIED,
+			FEATHER_ACTION_CANT_AFFORD,
+			FEATHER_ACTION_MAY_SUCCEED,
+			FEATHER_ACTION_OK_AND_DESTROY,
+			FEATHER_ACTION_OK_UNKNOWN_SCROLL
+		};
+		FeatherActions_t itemActionType = FEATHER_ACTION_NONE;
+		bool itemRequiresTitleReflow = true;
+		real_t animDrawer = 0.0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animFilter = 0.0;
+		real_t animPrompt = 0.0;
+		Uint32 animPromptTicks = 0;
+		bool animPromptMoveLeft = false;
+		real_t animInvalidAction = 0.0;
+		Uint32 animInvalidActionTicks = 0;
+		bool bDrawerOpen = false;
+		Uint32 inscribeSuccessTicks = 0;
+		std::string inscribeSuccessName = "";
+
+		real_t scrollPercent = 0.0;
+		real_t scrollInertia = 0.0;
+		int scrollSetpoint = 0;
+		real_t scrollAnimateX = 0.0;
+		int currentScrollRow = 0;
+
+		int chargeCostMin = 0;
+		int chargeCostMax = 0;
+		std::string currentHoveringInscriptionLabel = "";
+		Sint32 currentFeatherCharge = 0;
+		Sint32 changeFeatherCharge = 0;
+		real_t animCharge = 0.0;
+		real_t animQtyChange = 0.0;
+		Uint32 animChargeStartTicks = 0;
+		int highlightedSlot = -1;
+		struct DiscoveryAnim_t
+		{
+			Uint32 startTicks = 0;
+			Uint32 processedOnTick = 0;
+			std::string name = "";
+			DiscoveryAnim_t() :
+				startTicks(ticks),
+				processedOnTick(0)
+			{}
+		};
+		std::unordered_map<std::string, DiscoveryAnim_t> labelDiscoveries;
+
+		enum InvalidActionFeedback_t : int
+		{
+			INVALID_ACTION_NONE,
+			INVALID_ACTION_SHAKE_PROMPT,
+			INVALID_ACTION_NO_CHARGE
+		};
+		InvalidActionFeedback_t invalidActionType = INVALID_ACTION_NONE;
+
+		int selectedFeatherSlotX = -1;
+		int selectedFeatherSlotY = -1;
+		static const int MAX_FEATHER_X;
+		static const int MAX_FEATHER_Y;
+		std::unordered_map<int, Frame*> featherSlotFrames;
+		void selectFeatherSlot(const int x, const int y);
+		const int getSelectedFeatherSlotX() const { return selectedFeatherSlotX; }
+		const int getSelectedFeatherSlotY() const { return selectedFeatherSlotY; }
+		Frame* getFeatherSlotFrame(int x, int y) const;
+		FeatherActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly);
+		bool warpMouseToSelectedFeatherItem(Item* snapToItem, Uint32 flags);
+		bool isInscriptionDrawerItemSelected(Item* item);
+		bool isItemSelectedToRepairOrInscribe(Item* item);
+		bool isInscriptionDrawerOpen() const;
+		bool isInscribeOrRepairActive() const;
+		void clearItemDisplayed();
+		static int heightOffsetWhenNotCompact;
+		void scrollToSlot(int x, int y, bool instantly);
+		bool isSlotVisible(int x, int y) const;
+		bool isItemVisible(Item* item) const;
+		const int kNumInscriptionsToDisplayVertical = 5;
+		int getNumInscriptionsToDisplayVertical() const;
+		void updateFeatherCharge(void* featherChargeText, void* featherChangeChargeText, int currentCharge);
+		enum SortTypes_t : int
+		{
+			SORT_SCROLL_DEFAULT,
+			SORT_SCROLL_DISCOVERED,
+			SORT_SCROLL_UNKNOWN
+		};
+		SortTypes_t sortType = SORT_SCROLL_DEFAULT;
+		void sortScrolls();
+		void updateScrolls();
+		std::unordered_map<std::string, std::pair<int, bool>> scrolls;
+		std::vector<std::pair<std::string, std::pair<int, bool>>> sortedScrolls;
+		bool scrollListRequiresSorting = false;
+		void changeSortingType(SortTypes_t newType);
+		bool scrollSortFunc(const std::pair<std::string, std::pair<int, bool>>& lhs,
+			const std::pair<std::string, std::pair<int, bool>>& rhs);
+	};
+	FeatherGUI_t featherGUI;
 
 	struct AlchemyGUI_t
 	{
@@ -1152,10 +1284,11 @@ enum ItemContextMenuPrompts {
 	PROMPT_DROP,
 	PROMPT_TINKER,
 	PROMPT_GRAB,
-	PROMPT_UNEQUIP_FOR_DROP
+	PROMPT_UNEQUIP_FOR_DROP,
+	PROMPT_CLEAR_HOTBAR_SLOT
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);
-std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, bool useDropdownMenu);
+std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem);
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
-std::string getContextMenuOptionBindingName(const ItemContextMenuPrompts prompt);
+std::string getContextMenuOptionBindingName(const int player, const ItemContextMenuPrompts prompt);

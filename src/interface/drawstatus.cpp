@@ -2369,6 +2369,8 @@ void drawStatusNew(const int player)
 	int& itemMenuSelected = inputs.getUIInteraction(player)->itemMenuSelected;
 	bool& itemMenuFromHotbar = inputs.getUIInteraction(player)->itemMenuFromHotbar;
 
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+
 	//Now the hotbar.
 	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
@@ -2395,6 +2397,22 @@ void drawStatusNew(const int player)
 		Item* item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
+			if ( shootmode && item->notifyIcon )
+			{
+				if ( appraisal.itemsToNotify.find(item->uid) == appraisal.itemsToNotify.end() )
+				{
+					appraisal.itemsToNotify[item->uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_WAITING_TO_HOVER;
+				}
+				else
+				{
+					if ( appraisal.itemsToNotify[item->uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE )
+					{
+						appraisal.itemsToNotify.erase(item->uid);
+						item->notifyIcon = false;
+					}
+				}
+			}
+
 			if ( item->type == BOOMERANG )
 			{
 				hotbar_t.magicBoomerangHotbarSlot = num;
@@ -2432,16 +2450,17 @@ void drawStatusNew(const int player)
 					&& players[player]->bControlEnabled && !gamePaused
 					&& !players[player]->usingCommand() )
 				{
-					if ( (inputs.bMouseLeft(player) && inputs.bPlayerUsingKeyboardControl(player))
-						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str())
+					if ( (Input::inputs[player].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player))
+						|| (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str())
 							&& hotbarGamepadControlEnabled(player))
 						&& (players[player]->inventoryUI.bFirstTimeSnapCursor) )
 					{
 						toggleclick = false;
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
-							&& inputs.bMouseLeft(player) && inputs.bPlayerUsingKeyboardControl(player) )
+							&& Input::inputs[player].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player) )
 						{
 							hotbar[num].item = 0;
+							Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 						}
 						else
 						{
@@ -2459,10 +2478,10 @@ void drawStatusNew(const int player)
 								players[player]->inventoryUI.cursor.lastUpdateTick = ticks;
 							}
 
-							if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str()) 
+							if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str())
 								&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
-								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(PROMPT_GRAB).c_str());
+								Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str());
 								toggleclick = true;
 								inputs.getUIInteraction(player)->selectedItemFromHotbar = num;
 								inputs.getUIInteraction(player)->selectedItemFromChest = 0;
@@ -2495,19 +2514,19 @@ void drawStatusNew(const int player)
 							}
 						}
 					}
-					if ( inputs.bMouseRight(player) && inputs.bPlayerUsingKeyboardControl(player)
+					if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 						&& !players[player]->GUI.isDropdownActive() && !selectedItem )
 					{
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
-							inputs.mouseClearRight(player);
+							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 						{
-							inputs.mouseClearRight(player);
+							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 							// force equip potion/spellbook
 							playerTryEquipItemAndUpdateServer(player, item, false);
 						}
@@ -2526,6 +2545,11 @@ void drawStatusNew(const int player)
 									// 10px is slot half height, minus the top interact text height
 									// mouse will be situated halfway in first menu option
 									itemMenuY -= (interactMenuTop->pos.h + 10 + 2);
+									auto numOptions = getContextMenuOptionsForItem(player, item).size();
+									if ( numOptions > 1 )
+									{
+										itemMenuY -= (numOptions - 1 + 1) * (24); // +1 because extra hotbar prompt to clear slot
+									}
 								}
 							}
 							if ( itemMenuX % 2 == 1 )
@@ -2560,138 +2584,6 @@ void drawStatusNew(const int player)
 								players[player]->inventoryUI.cursor.lastUpdateTick = ticks;
 							}
 						}
-
-						//Use the item if right clicked.
-						//if ( false )
-						//{
-						//	inputs.mouseClearRight(player);
-						//	bool badpotion = false;
-						//	bool learnedSpell = false;
-
-						//	if ( itemCategory(item) == POTION && item->identified )
-						//	{
-						//		badpotion = isPotionBad(*item); //So that you wield empty potions be default.
-						//	}
-						//	if ( item->type == POTION_EMPTY )
-						//	{
-						//		badpotion = true;
-						//	}
-						//	if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, player)) )
-						//	{
-						//		// equipped spellbook will unequip on use.
-						//		learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
-						//	}
-
-						//	if ( inputs.bPlayerUsingKeyboardControl(player)
-						//		&& (Input::keys[SDL_SCANCODE_LSHIFT] || Input::keys[SDL_SCANCODE_RSHIFT]) )
-						//	{
-						//		players[player]->inventoryUI.appraisal.appraiseItem(item);
-						//	}
-						//	else
-						//	{
-						//		if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE)
-						//			&& (inputs.bPlayerUsingKeyboardControl(player)
-						//				&& (Input::keys[SDL_SCANCODE_LALT] || Input::keys[SDL_SCANCODE_RALT])) )
-						//		{
-						//			badpotion = true;
-						//			learnedSpell = true;
-						//		}
-
-						//		if ( !learnedSpell && item->identified
-						//			&& itemCategory(item) == SPELLBOOK && players[player] && players[player]->entity )
-						//		{
-						//			learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
-						//			spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-						//			if ( currentSpell )
-						//			{
-						//				int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
-						//				if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
-						//				{
-						//					skillLVL = 100;
-						//				}
-						//				if ( skillLVL >= currentSpell->difficulty )
-						//				{
-						//					// can learn spell, try that instead.
-						//					learnedSpell = false;
-						//				}
-						//			}
-						//		}
-
-						//		if ( itemCategory(item) == SPELLBOOK && stats[player] && stats[player]->type == GOBLIN )
-						//		{
-						//			learnedSpell = true; // goblinos can't learn spells but always equip books.
-						//		}
-
-						//		if ( !badpotion && !learnedSpell )
-						//		{
-						//			if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
-						//			{
-						//				if ( !disableItemUsage )
-						//				{
-						//					if ( stats[player] && stats[player]->type == AUTOMATON
-						//						&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-						//					{
-						//						// consume item
-						//						if ( multiplayer == CLIENT )
-						//						{
-						//							strcpy((char*)net_packet->data, "FODA");
-						//							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-						//							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-						//							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-						//							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-						//							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-						//							net_packet->data[24] = item->identified;
-						//							net_packet->data[25] = player;
-						//							net_packet->address.host = net_server.host;
-						//							net_packet->address.port = net_server.port;
-						//							net_packet->len = 26;
-						//							sendPacketSafe(net_sock, -1, net_packet, 0);
-						//						}
-						//						item_FoodAutomaton(item, player);
-						//					}
-						//					else
-						//					{
-						//						useItem(item, player);
-						//					}
-						//				}
-						//				else
-						//				{
-						//					if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-						//					{
-						//						messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
-						//					}
-						//					else
-						//					{
-						//						messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
-						//					}
-						//				}
-						//			}
-						//		}
-						//		else
-						//		{
-						//			if ( !disableItemUsage )
-						//			{
-						//				playerTryEquipItemAndUpdateServer(player, item, false);
-						//			}
-						//			else
-						//			{
-						//				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
-						//				{
-						//					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
-						//				}
-						//				else
-						//				{
-						//					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
-						//				}
-						//			}
-						//		}
-						//		used = true;
-						//		if ( disableItemUsage )
-						//		{
-						//			used = false;
-						//		}
-						//	}
-						//}
 					}
 				}
 			}
@@ -2763,6 +2655,21 @@ void drawStatusNew(const int player)
 
 				if ( drawTooltipOnSlot )
 				{
+					if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
+					{
+						if ( appraisal.itemsToNotify[item->uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_WAITING_TO_HOVER )
+						{
+							appraisal.itemsToNotify[item->uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED;
+						}
+					}
+					for ( auto& itemNotify : appraisal.itemsToNotify )
+					{
+						if ( itemNotify.first != item->uid && itemNotify.second == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED )
+						{
+							itemNotify.second = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE;
+						}
+					}
+
 					//Tooltip
 					SDL_Rect src;
 					src.x = mousex + 16;
@@ -2800,7 +2707,8 @@ void drawStatusNew(const int player)
 						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
 						if ( players[player]->inventoryUI.tooltipPromptFrame
 							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled()
-							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor) )
+							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_FULL 
+								&& !inputs.getVirtualMouse(player)->draw_cursor) )
 						{
 							SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 							SDL_Rect promptPos = players[player]->inventoryUI.tooltipPromptFrame->getSize();
@@ -2818,7 +2726,8 @@ void drawStatusNew(const int player)
 						if ( players[player]->inventoryUI.tooltipPromptFrame )
 						{
 							tooltipPromptFrameWasDisabled = players[player]->inventoryUI.tooltipPromptFrame->isDisabled();
-							if ( players[player]->inventoryUI.useItemDropdownOnGamepad && !inputs.getVirtualMouse(player)->draw_cursor )
+							if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_FULL 
+								&& !inputs.getVirtualMouse(player)->draw_cursor )
 							{
 								players[player]->inventoryUI.tooltipPromptFrame->setDisabled(true);
 							}
@@ -2902,6 +2811,21 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[9].item;
 							hotbar[9].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+						}
+					}
+				}
+				else
+				{
+					if ( shootmode 
+						|| (!shootmode 
+							&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR) )
+					{
+						if ( appraisal.itemsToNotify.find(item->uid) != appraisal.itemsToNotify.end() )
+						{
+							if ( appraisal.itemsToNotify[item->uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED )
+							{
+								appraisal.itemsToNotify[item->uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE;
+							}
 						}
 					}
 				}
@@ -3018,6 +2942,22 @@ void drawStatusNew(const int player)
 						Input::inputs[player].consumeBinaryToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
+						Input::inputs[player].consumeBindingsSharedWithBinding("HotbarFacebarCancel");
+
+						for ( auto& slot : players[player]->hotbar.slots() )
+						{
+							Uint32 uid = slot.item;
+							if ( uid != 0 )
+							{
+								if ( appraisal.itemsToNotify.find(uid) != appraisal.itemsToNotify.end() )
+								{
+									if ( appraisal.itemsToNotify[uid] == Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_HOVERED )
+									{
+										appraisal.itemsToNotify[uid] = Player::Inventory_t::Appraisal_t::NOTIFY_ITEM_REMOVE;
+									}
+								}
+							}
+						}
 						break;
 					}
 
@@ -3085,6 +3025,10 @@ void drawStatusNew(const int player)
 
 			players[player]->hotbar.faceMenuButtonHeld = pressed;
 			Input::inputs[player].consumeBindingsSharedWithFaceHotbar();
+		}
+		else
+		{
+			players[player]->hotbar.faceMenuButtonHeld = Player::Hotbar_t::GROUP_NONE;
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.
@@ -3207,7 +3151,7 @@ void drawStatusNew(const int player)
 					&& !tooltipPromptFrameWasDisabled )
 				{
 					item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad);
+					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, players[player]->inventoryUI.useItemDropdownOnGamepad, true);
 					bool bindingPressed = false;
 					for ( auto& option : contextTooltipOptions )
 					{
@@ -3215,7 +3159,7 @@ void drawStatusNew(const int player)
 						{
 							continue;
 						}
-						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(option).c_str()) )
+						if ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, option).c_str()) )
 						{
 							bindingPressed = true;
 
@@ -3288,7 +3232,7 @@ void drawStatusNew(const int player)
 						for ( auto& option : contextTooltipOptions )
 						{
 							// clear the other bindings just in case.
-							Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(option).c_str());
+							Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(player, option).c_str());
 						}
 					}
 					item = nullptr; // we don't need to use this item anymore

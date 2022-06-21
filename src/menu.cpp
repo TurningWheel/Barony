@@ -9524,6 +9524,7 @@ void doNewGame(bool makeHighscore) {
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
 		enemyHPDamageBarHandler[i].HPBars.clear();
+		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	currentlevel = startfloor;
 	secretlevel = false;
@@ -10110,12 +10111,17 @@ void doNewGame(bool makeHighscore) {
 
 	enchantedFeatherScrollSeed.seed(uniqueGameKey);
 	enchantedFeatherScrollsShuffled.clear();
-	enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
-	std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
-	for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+	auto scrollsToPick = enchantedFeatherScrollsFixedList;
+	while ( !scrollsToPick.empty() )
 	{
-		//printlog("Sequence: %d", *it);
+		int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
+		enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
+		scrollsToPick.erase(scrollsToPick.begin() + index);
 	}
+	/*for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+	{
+		printlog("Sequence: %d", *it);
+	}*/
 
 	list_FreeAll(&removedEntities);
 
@@ -10520,6 +10526,7 @@ void doEndgame() {
 		}
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
+		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	gameModeManager.currentSession.restoreSavedServerFlags();
 	client_classes[0] = 0;

@@ -3366,6 +3366,7 @@ void actPlayer(Entity* my)
 			{
 				//Auto-succeed on rocks.
 				tempItem->identified = true;
+				tempItem->notifyIcon = true;
 				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[570], tempItem->description());
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
@@ -3489,6 +3490,7 @@ void actPlayer(Entity* my)
 					if ( success )
 					{
 						tempItem->identified = true;
+						tempItem->notifyIcon = true;
 						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[570], tempItem->description());
 						if ( tempItem->type == GEM_GLASS )
 						{
@@ -3558,9 +3560,16 @@ void actPlayer(Entity* my)
 							Item* item2 = (Item*)node->element;
 							if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
 							{
-								if ( itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
+								if ( (itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+									|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
+										&& (tempItem->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 								{
 									int maxStack = QUIVER_MAX_AMMO_QTY;
+									if ( item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP )
+									{
+										maxStack = SCRAP_MAX_STACK_QTY;
+									}
+
 									// too many, split off into a new stack with reduced qty.
 									if ( tempItem->count >= (maxStack - 1) )
 									{
@@ -3737,7 +3746,7 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
-
+					players[PLAYER_NUM]->inventoryUI.appraisal.old_item = players[PLAYER_NUM]->inventoryUI.appraisal.current_item;
 					players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				}
 			}

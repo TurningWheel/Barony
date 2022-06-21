@@ -321,12 +321,12 @@ void Player::BookGUI_t::updateBookGUI()
 	auto nextPageBoundary = innerFrame->findFrame("next page mouse boundary");
 
 	// book gui
-	if ( inputs.bMouseLeft(player.playernum) )
+	if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
 	{
 		//book_t GUI next page button.
 		if ( nextPageBoundary->capturesMouse() )
 		{
-			inputs.mouseClearLeft(player.playernum);
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 			if ( canAdvanceNextPage )
 			{
 				canAdvanceNextPage = false;
@@ -336,7 +336,7 @@ void Player::BookGUI_t::updateBookGUI()
 		}
 		else if ( prevPageBoundary->capturesMouse() )
 		{
-			inputs.mouseClearLeft(player.playernum);
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 			if ( canAdvancePrevPage )
 			{
 				canAdvancePrevPage = false;
@@ -346,7 +346,8 @@ void Player::BookGUI_t::updateBookGUI()
 		}
 		if ( !innerFrame->capturesMouse() )
 		{
-			inputs.mouseClearLeft(player.playernum);
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
 			closeBookGUI();
 			return;
 		}

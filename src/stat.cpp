@@ -224,6 +224,16 @@ void Stat::clearStats()
 		this->PLAYER_LVL_STAT_TIMER[x] = -1;
 	}
 
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( stats[i] == this )
+		{
+			players[i]->hud.resetBars();
+			players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+			break;
+		}
+	}
+
 	list_FreeAll(&this->inventory);
 	this->helmet = NULL;
 	this->breastplate = NULL;
@@ -235,15 +245,6 @@ void Stat::clearStats()
 	this->amulet = NULL;
 	this->ring = NULL;
 	this->mask = NULL;
-
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		if ( stats[i] == this )
-		{
-			players[i]->hud.resetBars();
-			break;
-		}
-	}
 }
 
 /*-------------------------------------------------------------------------------

@@ -66,9 +66,12 @@ void closeShop(const int player)
 
 	if ( multiplayer == CLIENT && players[player]->isLocalPlayer() )
 	{
-		list_FreeAll(shopInv[player]);
-		shopInv[player]->first = nullptr;
-		shopInv[player]->last = nullptr;
+		if ( shopInv[player] )
+		{
+			list_FreeAll(shopInv[player]);
+			shopInv[player]->first = nullptr;
+			shopInv[player]->last = nullptr;
+		}
 	}
 	else
 	{
@@ -234,18 +237,35 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 				shopstats->GOLD += item->buyValue(player);
 			}
 
-			if ( players[player] && players[player]->entity )
+			if ( players[player] && players[player]->entity && !item->playerSoldItemToShop )
 			{
-				if ( item->buyValue(player) <= 1 )
+				bool increaseSkill = false;
+				int buyValue = item->buyValue(player);
+				if ( buyValue >= 100 )
 				{
-					if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
-					{
-						players[player]->entity->increaseSkill(PRO_TRADING);
-					}
+					increaseSkill = true;
 				}
 				else
 				{
-					players[player]->entity->increaseSkill(PRO_TRADING);
+					if ( rand() % 100 <= (std::max(10, buyValue)) ) // 10% to 100% from 1-100 gold
+					{
+						increaseSkill = true;
+					}
+				}
+
+				if ( increaseSkill )
+				{
+					if ( buyValue <= 1 )
+					{
+						if ( stats[player]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+						{
+							players[player]->entity->increaseSkill(PRO_TRADING);
+						}
+					}
+					else
+					{
+						players[player]->entity->increaseSkill(PRO_TRADING);
+					}
 				}
 				//if ( rand() % 2 )
 				//{

@@ -27,6 +27,7 @@
 #endif
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
+#include "ui/GameUI.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -82,6 +83,15 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 
 	if ( !players[player]->shootmode )
 	{
+		if ( !framesProcResult.usable && *framesEatMouse )
+		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
+			return NULL;
+		}
+
 		if ( inputs.getUIInteraction(player)->itemMenuOpen )
 		{
 			if ( clickedOnGUI )

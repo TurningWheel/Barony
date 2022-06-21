@@ -160,6 +160,7 @@ real_t uiscale_hotbar = 1.f;
 real_t uiscale_inventory = 1.f;
 bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
+const int inscriptionSlotHeight = 40;
 
 EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
@@ -815,7 +816,7 @@ int loadConfig(char* filename)
 	}
 
 	// read commands from it
-	while ( fp->gets(str, 1024) != NULL )
+	while ( fp->gets2(str, 1024) != NULL )
 	{
 		if ( str[0] != '#' && str[0] != '\n' && str[0] != '\r' )   // if this line is not white space or a comment
 		{
@@ -1117,6 +1118,7 @@ bool Player::GUI_t::bActiveModuleUsesInventory()
 		case MODULE_REMOVECURSE:
 		case MODULE_IDENTIFY:
 		case MODULE_TINKERING:
+		case MODULE_FEATHER:
 		case MODULE_SPELLS:
 		case MODULE_ALCHEMY:
 			return true;
@@ -1264,6 +1266,24 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		}
 		return true;
 	}
+	else if ( activeModule == MODULE_FEATHER )
+	{
+		auto& featherGUI = GenericGUI[player.playernum].featherGUI;
+		auto& inventoryUI = player.inventoryUI;
+		if ( featherGUI.warpMouseToSelectedFeatherItem(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = featherGUI.getFeatherSlotFrame(featherGUI.getSelectedFeatherSlotX(), featherGUI.getSelectedFeatherSlotY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inscriptionSlotHeight, moveCursorInstantly);
+			}
+		}
+		return true;
+	}
 	else if ( activeModule == MODULE_HOTBAR )
 	{
 		warpMouseToSelectedHotbarSlot(player.playernum);
@@ -1299,14 +1319,16 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| oldModule == MODULE_CHEST 
 					|| oldModule == MODULE_SHOP
 					|| oldModule == MODULE_ALCHEMY
-					|| oldModule == MODULE_TINKERING)
+					|| oldModule == MODULE_TINKERING
+					|| oldModule == MODULE_FEATHER)
 				&& !(activeModule == MODULE_INVENTORY 
 					|| activeModule == MODULE_HOTBAR 
 					|| activeModule == MODULE_SPELLS
 					|| activeModule == MODULE_CHEST
 					|| activeModule == MODULE_SHOP
 					|| activeModule == MODULE_ALCHEMY
-					|| activeModule == MODULE_TINKERING)
+					|| activeModule == MODULE_TINKERING
+					|| activeModule == MODULE_FEATHER)
 				&& !bActiveModuleHasNoCursor()
 				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
@@ -1326,14 +1348,16 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 				|| activeModule == MODULE_CHEST
 				|| activeModule == MODULE_SHOP
 				|| activeModule == MODULE_ALCHEMY
-				|| activeModule == MODULE_TINKERING)
+				|| activeModule == MODULE_TINKERING
+				|| activeModule == MODULE_FEATHER)
 				&& !(oldModule == MODULE_INVENTORY 
 					|| oldModule == MODULE_HOTBAR 
 					|| oldModule == MODULE_SPELLS
 					|| oldModule == MODULE_CHEST
 					|| oldModule == MODULE_SHOP
 					|| oldModule == MODULE_ALCHEMY
-					|| oldModule == MODULE_TINKERING))
+					|| oldModule == MODULE_TINKERING
+					|| oldModule == MODULE_FEATHER))
 				|| hoveringOverModuleButton() != MODULE_NONE )
 			{
 				SDL_Rect size = hudCursor->getSize();
@@ -3482,6 +3506,26 @@ void GenericGUIMenu::rebuildGUIInventory()
 				}
 			}
 		}
+
+		/*if ( guiType == GUI_TYPE_SCRIBING && featherGUI.isInscriptionDrawerOpen() )
+		{
+			for ( node = player_inventory->first; node != nullptr; node = node->next )
+			{
+				if ( node->element )
+				{
+					item = (Item*)node->element;
+					if ( isNodeScribingCraftableItem(node)
+						&& item->x >= 0 && item->x < FeatherGUI_t::MAX_FEATHER_X
+						&& item->y >= 0 && item->y < FeatherGUI_t::MAX_FEATHER_Y )
+					{
+						if ( auto slotFrame = featherGUI.getFeatherSlotFrame(item->x, item->y) )
+						{
+							updateSlotFrameFromItem(slotFrame->findFrame("item slot frame"), item);
+						}
+					}
+				}
+			}
+		}*/
 	}
 }
 
@@ -3740,126 +3784,127 @@ void GenericGUIMenu::updateGUI()
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
 		{
-			windowX1 -= 20;
-			windowX2 += 20;
-			windowY1 -= 40;
-			windowY2 += 40;
-			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+			//windowX1 -= 20;
+			//windowX2 += 20;
+			//windowY1 -= 40;
+			//windowY2 += 40;
+			//drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
 
-			// title
-			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
-				language[3716]);
-			char toolStatusText[64] = "";
-			if ( scribingToolItem && scribingToolItem->identified )
-			{
-				snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
-			}
-			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
-				toolStatusText);
-			/*if ( scribingLastUsageDisplayTimer > 0 )
-			{
-				ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed,
-						"(%3d)", -scribingLastUsageAmount);
-			}*/
+			//// title
+			//ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
+			//	language[3716]);
+			//char toolStatusText[64] = "";
+			//if ( scribingToolItem && scribingToolItem->identified )
+			//{
+			//	snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+			//}
+			//ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
+			//	toolStatusText);
+			///*if ( scribingLastUsageDisplayTimer > 0 )
+			//{
+			//	ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed,
+			//			"(%3d)", -scribingLastUsageAmount);
+			//}*/
 
-			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
-			{
-				if ( scribingBlankScrollTarget )
-				{
-					snprintf(tempstr, 1024, language[3722], scribingBlankScrollTarget->beatitude, items[SCROLL_BLANK].name_identified);
-					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8, tempstr);
+			//if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			//{
+			//	if ( scribingBlankScrollTarget )
+			//	{
+			//		snprintf(tempstr, 1024, language[3722], scribingBlankScrollTarget->beatitude, items[SCROLL_BLANK].name_identified);
+			//		ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8, tempstr);
 
-					SDL_Rect smallIcon;
-					smallIcon.x = windowX1 + 16 + (longestline(tempstr) - 5) * TTF12_WIDTH;
-					smallIcon.y = windowY2 - TTF12_HEIGHT - 12 - 4;
-					smallIcon.h = 16;
-					smallIcon.w = 16;
-					node_t* imageNode = items[SCROLL_BLANK].surfaces.first;
-					if ( imageNode )
-					{
-						drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
-					}
-					smallIcon.x += smallIcon.w + 4;
-					smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
-					smallIcon.y -= 2;
-					smallIcon.h += 2;
-					if ( mouseInBounds(gui_player, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
-					{
-						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
-						if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
-						{
-							inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-							inputs.mouseClearLeft(gui_player);
-							scribingBlankScrollTarget = nullptr;
-						}
-					}
-					else
-					{
-						drawWindow(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
-					}
-					ttfPrintTextFormatted(ttf12, smallIcon.x + 6, windowY2 - 2 * TTF12_HEIGHT + 2, language[3723]);
-				}
-				else
-				{
-					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
-						language[3720]);
-				}
-			}
-			else if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
-			{
-				ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
-					language[3726]);
-			}
+			//		SDL_Rect smallIcon;
+			//		smallIcon.x = windowX1 + 16 + (longestline(tempstr) - 5) * TTF12_WIDTH;
+			//		smallIcon.y = windowY2 - TTF12_HEIGHT - 12 - 4;
+			//		smallIcon.h = 16;
+			//		smallIcon.w = 16;
+			//		node_t* imageNode = items[SCROLL_BLANK].surfaces.first;
+			//		if ( imageNode )
+			//		{
+			//			drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			//		}
+			//		smallIcon.x += smallIcon.w + 4;
+			//		smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
+			//		smallIcon.y -= 2;
+			//		smallIcon.h += 2;
+			//		if ( mouseInBounds(gui_player, smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
+			//		{
+			//			drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+			//			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
+			//			{
+			//				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//				inputs.mouseClearLeft(gui_player);
+			//				scribingBlankScrollTarget = nullptr;
+			//			}
+			//		}
+			//		else
+			//		{
+			//			drawWindow(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+			//		}
+			//		ttfPrintTextFormatted(ttf12, smallIcon.x + 6, windowY2 - 2 * TTF12_HEIGHT + 2, language[3723]);
+			//	}
+			//	else
+			//	{
+			//		ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+			//			language[3720]);
+			//	}
+			//}
+			//else if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			//{
+			//	ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+			//		language[3726]);
+			//}
 
-			// draw filter labels.
-			int txtWidth = 0;
-			int txtHeight = 0;
-			int charWidth = 0;
-			TTF_Font* font = ttf8;
-			getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
-			int textstartx = pos.x + 2 * charWidth + 4;
+			//// draw filter labels.
+			//int txtWidth = 0;
+			//int txtHeight = 0;
+			//int charWidth = 0;
+			//TTF_Font* font = ttf8;
+			//getSizeOfText(font, "a", &charWidth, nullptr); // get 1 character width.
+			//int textstartx = pos.x + 2 * charWidth + 4;
 
-			SDL_Rect highlightBtn;
-			// Inscribe
-			getSizeOfText(ttf8, language[3718], &txtWidth, &txtHeight);
-			highlightBtn.x = textstartx;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
+			//SDL_Rect highlightBtn;
+			//// Inscribe
+			//getSizeOfText(ttf8, language[3718], &txtWidth, &txtHeight);
+			//highlightBtn.x = textstartx;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	scribingFilter = SCRIBING_FILTER_CRAFTABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
 
-			// Repair
-			getSizeOfText(font, language[3719], &txtWidth, &txtHeight);
-			highlightBtn.x += highlightBtn.w;
-			highlightBtn.y = pos.y + (12 - txtHeight);
-			highlightBtn.w = txtWidth + 2 * charWidth + 4;
-			highlightBtn.h = txtHeight + 4;
-			if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
-				&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
-			{
-				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
-				inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-				inputs.mouseClearLeft(gui_player);
-			}
-			if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
-			{
-				drawImageScaled(button_bmp, NULL, &highlightBtn);
-			}
-			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
+			//// Repair
+			//getSizeOfText(font, language[3719], &txtWidth, &txtHeight);
+			//highlightBtn.x += highlightBtn.w;
+			//highlightBtn.y = pos.y + (12 - txtHeight);
+			//highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			//highlightBtn.h = txtHeight + 4;
+			//if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE))
+			//	&& mouseInBounds(gui_player, highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			//{
+			//	scribingFilter = SCRIBING_FILTER_REPAIRABLE;
+			//	inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+			//	inputs.mouseClearLeft(gui_player);
+			//}
+			//if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			//{
+			//	drawImageScaled(button_bmp, NULL, &highlightBtn);
+			//}
+			//ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
 		}
 
-		if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY ) // gradually remove all this for all windows once upgraded
+		if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY
+			&& guiType != GUI_TYPE_SCRIBING ) // gradually remove all this for all windows once upgraded
 		{
 			drawImage(identifyGUI_img, NULL, &pos);
 
@@ -4043,7 +4088,9 @@ void GenericGUIMenu::updateGUI()
 				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 			}
 
-			if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY )
+			if ( guiType != GUI_TYPE_TINKERING 
+				&& guiType != GUI_TYPE_ALCHEMY
+				&& guiType != GUI_TYPE_SCRIBING )
 			{
 				//GUI up button.
 				if ( buttonclick == 7 )
@@ -4256,6 +4303,7 @@ void GenericGUIMenu::updateGUI()
 							}
 							else if ( guiType == GUI_TYPE_SCRIBING )
 							{
+								break;
 								if ( isNodeScribingCraftableItem(item->node) )
 								{
 									snprintf(tempstr, sizeof(tempstr), language[3721], item->getScrollLabel());
@@ -4665,6 +4713,10 @@ void GenericGUIMenu::closeGUI()
 	{
 		alchemyGUI.closeAlchemyMenu();
 	}
+	if ( featherGUI.bOpen )
+	{
+		featherGUI.closeFeatherMenu();
+	}
 	if ( wasOpen )
 	{
 		players[gui_player]->inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
@@ -4884,6 +4936,7 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	{
 		scribingToolItem = itemOpenedWith;
 		scribingCreateCraftableItemList();
+		featherGUI.openFeatherMenu();
 	}
 	else if ( guiType == GUI_TYPE_REMOVECURSE )
 	{
@@ -4910,6 +4963,7 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 }
 
 bool hideRecipeFromList(int type);
+void onFeatherChangeTabAction(const int playernum, bool changingToNewTab = true);
 
 bool GenericGUIMenu::executeOnItemClick(Item* item)
 {
@@ -5014,6 +5068,11 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			if ( item->identified && item->type == SCROLL_BLANK )
 			{
 				scribingBlankScrollTarget = item;
+				featherGUI.bDrawerOpen = true;
+				featherGUI.scrollListRequiresSorting = true;
+				onFeatherChangeTabAction(gui_player, false);
+				featherGUI.animPrompt = 1.0;
+				featherGUI.animPromptTicks = ticks;
 			}
 			else if ( item->identified && itemCategory(item) == SPELLBOOK )
 			{
@@ -6133,7 +6192,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 			bool raiseSkill = true;
 			if ( result == POTION_SICKNESS )
 			{
-				appearance = 0 + rand() % items[POTION_SICKNESS].variations;
+				if ( !samePotion )
+				{
+					appearance = 0 + rand() % items[POTION_SICKNESS].variations;
+				}
 				if ( rand() % 10 > 0 )
 				{
 					raiseSkill = false;
@@ -8352,6 +8414,7 @@ void GenericGUIMenu::scribingCreateCraftableItemList()
 	scribingFreeLists();
 	std::vector<Item*> items;
 	std::unordered_map<int, int> scrollAppearanceMap;
+	int itemIndexY = 0;
 	for ( int i = 0; i < (NUMLABELS) && i < enchantedFeatherScrollsShuffled.size(); ++i )
 	{
 		int itemType = enchantedFeatherScrollsShuffled.at(i);
@@ -8370,6 +8433,10 @@ void GenericGUIMenu::scribingCreateCraftableItemList()
 			}
 			items.push_back(newItem(static_cast<ItemType>(itemType),
 				EXCELLENT, 0, 1, scrollAppearanceMap[itemType], false, &scribingTotalItems));
+			Item* item = items[items.size() - 1];
+			item->x = 0;
+			item->y = itemIndexY;
+			++itemIndexY;
 		}
 	}
 
@@ -8432,83 +8499,14 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	}
 
 	int durability = toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
-	int usageCost = 0;
-	if ( itemCategory(itemUsedWith) == SCROLL )
+	int usageCostMin = 0;
+	int usageCostMax = 0;
+	scribingGetChargeCost(itemUsedWith, usageCostMin, usageCostMax);
+	int usageCost = usageCostMin;
+	int randomValue = usageCostMax - usageCostMin;
+	if ( randomValue > 0 )
 	{
-		switch ( itemUsedWith->type )
-		{
-			case SCROLL_MAIL:
-				usageCost = 2;
-				break;
-			case SCROLL_DESTROYARMOR:
-			case SCROLL_FIRE:
-			case SCROLL_LIGHT:
-				usageCost = 4;
-				break;
-				break;
-			case SCROLL_SUMMON:
-			case SCROLL_IDENTIFY:
-			case SCROLL_REMOVECURSE:
-				usageCost = 6;
-				break;
-			case SCROLL_FOOD:
-			case SCROLL_TELEPORTATION:
-				usageCost = 8;
-				break;
-			case SCROLL_REPAIR:
-			case SCROLL_MAGICMAPPING:
-				usageCost = 12;
-				break;
-			case SCROLL_ENCHANTWEAPON:
-			case SCROLL_ENCHANTARMOR:
-				usageCost = 16;
-				break;
-			default:
-				usageCost = 8;
-				break;
-		}
-	}
-	else if ( itemCategory(itemUsedWith) == SPELLBOOK )
-	{
-		usageCost = 16;
-	}
-	int randomValue = 0;
-	if ( stats[gui_player] )
-	{
-		int skillLVL = 0;
-		if ( stats[gui_player] && players[gui_player] )
-		{
-			skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
-		}
-		if ( toDegrade->beatitude > 0 )
-		{
-			skillLVL = 5; // blessed feather.
-		}
-		else if ( toDegrade->beatitude < 0 )
-		{
-			skillLVL = 0; // cursed feather.
-		}
-
-		if ( skillLVL >= 4 )
-		{
-			randomValue = rand() % 5;
-			usageCost = std::max(2, usageCost - randomValue);
-		}
-		else if ( skillLVL < 2 )
-		{
-			randomValue = rand() % 7;
-			usageCost += randomValue;
-		}
-		else if ( skillLVL == 2 )
-		{
-			randomValue = rand() % 5;
-			usageCost += randomValue;
-		}
-		else if ( skillLVL == 3 )
-		{
-			randomValue = rand() % 3;
-			usageCost += randomValue;
-		}
+		usageCost += rand() % (randomValue + 1);
 	}
 
 	if ( durability - usageCost < 0 )
@@ -8544,7 +8542,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	}
 	else
 	{
-		if ( (usageCost / 2) < durability && itemCategory(itemUsedWith) == SCROLL )
+		if ( (usageCostMin / 2) < durability && itemCategory(itemUsedWith) == SCROLL )
 		{
 			// if scroll cost is a little more than the durability, then let it succeed.
 			messagePlayer(gui_player, MESSAGE_EQUIPMENT, language[3727], toDegrade->getName());
@@ -8579,6 +8577,93 @@ Item* GenericGUIMenu::scribingToolFindInInventory()
 		}
 	}
 	return nullptr;
+}
+
+void GenericGUIMenu::scribingGetChargeCost(Item* itemUsedWith, int& outChargeCostMin, int& outChargeCostMax)
+{
+	outChargeCostMin = 0;
+	outChargeCostMax = 0;
+	if ( !itemUsedWith || !scribingToolItem )
+	{
+		return;
+	}
+
+	if ( itemCategory(itemUsedWith) == SPELLBOOK )
+	{
+		outChargeCostMin = 16;
+	}
+	else if ( itemCategory(itemUsedWith) == SCROLL )
+	{
+		switch ( itemUsedWith->type )
+		{
+			case SCROLL_MAIL:
+				outChargeCostMin = 2;
+				break;
+			case SCROLL_DESTROYARMOR:
+			case SCROLL_FIRE:
+			case SCROLL_LIGHT:
+				outChargeCostMin = 4;
+				break;
+				break;
+			case SCROLL_SUMMON:
+			case SCROLL_IDENTIFY:
+			case SCROLL_REMOVECURSE:
+				outChargeCostMin = 6;
+				break;
+			case SCROLL_FOOD:
+			case SCROLL_TELEPORTATION:
+				outChargeCostMin = 8;
+				break;
+			case SCROLL_REPAIR:
+			case SCROLL_MAGICMAPPING:
+				outChargeCostMin = 12;
+				break;
+			case SCROLL_ENCHANTWEAPON:
+			case SCROLL_ENCHANTARMOR:
+				outChargeCostMin = 16;
+				break;
+			default:
+				outChargeCostMin = 8;
+				break;
+		}
+	}
+
+	outChargeCostMax = outChargeCostMin;
+	int randomValue = 0;
+	if ( stats[gui_player] )
+	{
+		int skillLVL = 0;
+		if ( stats[gui_player] && players[gui_player] )
+		{
+			skillLVL = (stats[gui_player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
+		}
+		if ( scribingToolItem->beatitude > 0 )
+		{
+			skillLVL = 5; // blessed feather.
+		}
+		else if ( scribingToolItem->beatitude < 0 )
+		{
+			skillLVL = 0; // cursed feather.
+		}
+
+		if ( skillLVL >= 4 )
+		{
+			outChargeCostMin = std::max(2, outChargeCostMin - 4);
+			outChargeCostMax = std::max(2, outChargeCostMax);
+		}
+		else if ( skillLVL < 2 )
+		{
+			outChargeCostMax += 6;
+		}
+		else if ( skillLVL == 2 )
+		{
+			outChargeCostMax += 4;
+		}
+		else if ( skillLVL == 3 )
+		{
+			outChargeCostMax += 2;
+		}
+	}
 }
 
 bool GenericGUIMenu::scribingWriteItem(Item* item)
@@ -8637,9 +8722,9 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				}
 			}
 		}
-
+		std::string label = item->getScrollLabel();
 		Item* crafted = newItem(item->type, scribingBlankScrollTarget->status, 
-			scribingBlankScrollTarget->beatitude, 1, item->appearance, false, nullptr);
+			scribingBlankScrollTarget->beatitude, 1, item->appearance, true, nullptr);
 		if ( crafted )
 		{
 			if ( crafted->type == SCROLL_MAIL )
@@ -8654,11 +8739,25 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, language[3724], pickedUp->description());
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
-			//scribingBlankScrollTarget = nullptr;
+			featherGUI.inscribeSuccessName = label;
+			featherGUI.inscribeSuccessTicks = ticks;
 			if ( client_classes[gui_player] == CLASS_SHAMAN )
 			{
 				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
 			}
+			for ( int i = 0; i < NUMLABELS; ++i )
+			{
+				if ( label == scroll_label[i] )
+				{
+					if ( clientLearnedScrollLabels[gui_player].find(i) == clientLearnedScrollLabels[gui_player].end() )
+					{
+						featherGUI.labelDiscoveries[label] = FeatherGUI_t::DiscoveryAnim_t();
+					}
+					clientLearnedScrollLabels[gui_player].insert(i);
+					break;
+				}
+			}
+
 			free(crafted);
 			return true;
 		}
@@ -9413,7 +9512,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 	Field* metalField = static_cast<Field*>(metalHeldText);
 	Field* magicField = static_cast<Field*>(magicHeldText);
 
-	bool pauseChangeGoldAnim = false;
+	bool pauseChangeScrapAnim = false;
 	if ( playerChangeMetalScrap != 0 || playerChangeMagicScrap != 0 )
 	{
 		if ( true || ((ticks - animScrapStartTicks) > TICKS_PER_SECOND / 2) )
@@ -9431,7 +9530,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 		}
 		else
 		{
-			pauseChangeGoldAnim = true;
+			pauseChangeScrapAnim = true;
 
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animScrap)) / 10.0;
@@ -9441,12 +9540,12 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 	}
 
 	{
-		bool pauseChangeGoldAnim = false;
+		bool pauseChangeScrapAnim = false;
 		bool showChangedMetalScrap = false;
 		if ( playerChangeMetalScrap != 0 )
 		{
 			int displayedChangeMetalScrap = animScrap * playerChangeMetalScrap;
-			if ( pauseChangeGoldAnim )
+			if ( pauseChangeScrapAnim )
 			{
 				displayedChangeMetalScrap = playerChangeMetalScrap;
 			}
@@ -9481,7 +9580,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 		if ( playerChangeMagicScrap != 0 )
 		{
 			int displayedChangeMagicScrap = animScrap * playerChangeMagicScrap;
-			if ( pauseChangeGoldAnim )
+			if ( pauseChangeScrapAnim )
 			{
 				displayedChangeMagicScrap = playerChangeMagicScrap;
 			}
@@ -10868,10 +10967,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		auto drawerFrame = tinkerFrame->addFrame("tinker drawer");
 		SDL_Rect drawerPos{ 0, 0, 258, 228 };
 		drawerFrame->setSize(drawerPos);
-		drawerFrame->setHollow(true);
+		drawerFrame->setHollow(false);
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
-			"images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "tinker drawer img");
+			"*images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "tinker drawer img");
 		drawerFrame->setDisabled(true);
 
 		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
@@ -10888,7 +10987,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			drawerSlotsFrame->setHollow(true);
 
 			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
-			makeColor(255, 255, 255, 255), "images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
+			makeColor(255, 255, 255, 255), "*images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
 
 			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 			const int maxTinkerX = MAX_TINKER_X;
@@ -10946,11 +11045,11 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 	{
 		auto bgFrame = tinkerFrame->addFrame("tinker base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
-			"images/ui/Tinkering/Tinker_Construct_Base_00.png", "tinker base img");
+			"*images/ui/Tinkering/Tinker_Construct_Base_00.png", "tinker base img");
 
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto tinkerKitTitle = bgFrame->addField("tinker kit title", 128);
@@ -10977,7 +11076,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		itemDisplayTooltip->setInheritParentFrameOpacity(false);
 		{
 			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 108 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Tooltip_00.png", "tooltip img");
+				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_Tooltip_00.png", "tooltip img");
 
 			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
 			itemNameText->setFont(itemFont);
@@ -10988,10 +11087,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			itemNameText->setColor(hudColors.characterSheetLightNeutral);
 
 			auto itemDisplayTextBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 220, 42 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_LabelName_2Row_00.png", "item text img");
+				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_LabelName_2Row_00.png", "item text img");
 
 			auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 144, 34 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_CostBacking_00.png", "item cost img");
+				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_CostBacking_00.png", "item cost img");
 
 			auto metalText = itemDisplayTooltip->addField("item metal value", 32);
 			metalText->setFont(itemFont);
@@ -11039,9 +11138,9 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			closeBtn->setHideKeyboardGlyphs(true);
 			closeBtn->setHideSelectors(true);
 			closeBtn->setMenuConfirmControlType(0);
-			closeBtn->setBackground("images/ui/Tinkering/Button_X_00.png");
-			closeBtn->setBackgroundHighlighted("images/ui/Tinkering/Button_XHigh_00.png");
-			closeBtn->setBackgroundActivated("images/ui/Tinkering/Button_XPress_00.png");
+			closeBtn->setBackground("*images/ui/Tinkering/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("*images/ui/Tinkering/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("*images/ui/Tinkering/Button_XPress_00.png");
 			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
@@ -11087,10 +11186,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			actionPromptUnselectedTxt->setDisabled(true);
 
 			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 60, 56, 26 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_PromptCoverLeft_00.png", "action prompt lcover");
+				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_PromptCoverLeft_00.png", "action prompt lcover");
 			actionPromptCoverLeftImg->ontop = true;
 			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 60, 56, 26 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_PromptCoverRight_00.png", "action prompt rcover");
+				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_PromptCoverRight_00.png", "action prompt rcover");
 			actionPromptCoverRightImg->ontop = true;
 		}
 
@@ -11191,7 +11290,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 
 		{
 			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 34 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_ScrapBacking_00.png", "held scrap img");
+				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_ScrapBacking_00.png", "held scrap img");
 
 			auto heldScrapText = bgFrame->addField("held scrap label", 64);
 			heldScrapText->setFont(itemFont);
@@ -12591,32 +12690,6 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	tooltipPos.y = 186;
 	tooltipPos.x = 10;// 18 - (tooltipPos.w + 18) * (1.0 - animTooltip);
 	itemDisplayTooltip->setSize(tooltipPos);
-	//auto itemIncrementText = baseFrame->findField("item increment txt");
-	{
-		/*if ( animScrap > 0.01 )
-		{
-			itemIncrementText->setDisabled(false);
-			auto pos = itemIncrementText->getSize();
-			pos.y = tooltipPos.y + itemSlotBg->pos.y + 16 - ((1.0 - animScrap) * 32);
-			itemIncrementText->setSize(pos);
-			SDL_Color color;
-			getColor(itemIncrementText->getColor(), &color.r, &color.g, &color.b, &color.a);
-			if ( animScrap < .2 )
-			{
-				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255 * (animScrap / .2)));
-			}
-			else
-			{
-				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255));
-			}
-		}
-		else
-		{
-			itemIncrementText->setSize(SDL_Rect{ tooltipPos.x + itemSlotBg->pos.x + 24, tooltipPos.y + itemSlotBg->pos.y + 16, 72, 24 });
-			itemIncrementText->setDisabled(true);
-			itemIncrementText->setText("");
-		}*/
-	}
 
 	// calculate resultant potion
 	{
@@ -12717,7 +12790,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			if ( alchemyResultPotion.identified )
 			{
 				alchemyResultPotion.type = res;
-				if ( res == POTION_SICKNESS )
+				if ( res == POTION_SICKNESS && !samePotion )
 				{
 					doRandomAppearances = true;
 				}
@@ -13636,7 +13709,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 		16,
 		recipeWidth,
 		kRecipeListHeight });
-	frame->setHollow(true);
+	frame->setHollow(false);
 	frame->setBorder(0);
 	frame->setOwner(player);
 	frame->setInheritParentFrameOpacity(false);
@@ -13700,7 +13773,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 
 	auto bgImgFrame = recipesFrame->addFrame("recipe img frame");
 	bgImgFrame->setSize(SDL_Rect{ 0, 0, recipeWidth, 328 });
-	bgImgFrame->setHollow(true);
+	bgImgFrame->setHollow(false);
 	auto bg = bgImgFrame->addImage(SDL_Rect{ 0, 0, recipeWidth, 328 },
 		makeColor(255, 255, 255, 255),
 		"*#images/ui/Alchemy/Alchemy_Recipes_00.png", "recipe base img");
@@ -13783,7 +13856,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 
 	{
 		auto notificationFrame = alchFrame->addFrame("notification");
-		notificationFrame->setHollow(true);
+		notificationFrame->setHollow(false);
 		notificationFrame->setBorder(0);
 		notificationFrame->setInheritParentFrameOpacity(false);
 		notificationFrame->setDisabled(true);
@@ -13817,7 +13890,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 	{
 		auto bgFrame = alchFrame->addFrame("alchemy base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
@@ -14852,7 +14925,7 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 				char stoneImgName[32] = "";
 				snprintf(stoneImgName, sizeof(stoneImgName), "stone %d %d", x, y);
 				stone = recipeSlotsFrame->addImage(SDL_Rect{ 0, 0, 38, 40 },
-					0xFFFFFFFF, "images/ui/Alchemy/Alchemy_Icon_RecipeTileBG_00.png", stoneImgName);
+					0xFFFFFFFF, "*images/ui/Alchemy/Alchemy_Icon_RecipeTileBG_00.png", stoneImgName);
 				stones[x + 100 * y] = stone;
 			}
 			else
@@ -15142,4 +15215,2822 @@ bool GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::isItemVisible(Item* item) c
 {
 	if ( !item ) { return false; }
 	return isSlotVisible(item->x, item->y);
+}
+
+const int GenericGUIMenu::FeatherGUI_t::MAX_FEATHER_X = 1;
+const int GenericGUIMenu::FeatherGUI_t::MAX_FEATHER_Y = NUMLABELS - 1;
+
+bool GenericGUIMenu::FeatherGUI_t::scrollSortFunc(const std::pair<std::string, std::pair<int, bool>>& lhs, 
+	const std::pair<std::string, std::pair<int, bool>>& rhs)
+{
+	int lhsVal = lhs.second.second == true ? 1 : 0; // second.second is identified status, convert to int
+	int rhsVal = rhs.second.second == true ? 1 : 0; // second.second is identified status, convert to int
+	if ( sortType == SORT_SCROLL_UNKNOWN )
+	{
+		return lhsVal < rhsVal;
+	}
+	else if ( sortType == SORT_SCROLL_DISCOVERED )
+	{
+		return lhsVal > rhsVal;
+	}
+	return lhsVal < rhsVal;
+}
+
+void featherChangeChargeEvent(const int player, int chargeAmount, int realCharge)
+{
+	auto& featherGUI = GenericGUI[player].featherGUI;
+	{
+		bool addedToCurrentTotal = false;
+		bool isAnimatingValue = ((ticks - featherGUI.animChargeStartTicks) > TICKS_PER_SECOND);
+		if ( chargeAmount < 0 )
+		{
+			if ( featherGUI.changeFeatherCharge < 0
+				&& !isAnimatingValue
+				&& abs(chargeAmount) > 0 )
+			{
+				addedToCurrentTotal = true;
+				if ( realCharge + chargeAmount < 0 )
+				{
+					featherGUI.changeFeatherCharge -= realCharge;
+				}
+				else
+				{
+					featherGUI.changeFeatherCharge += chargeAmount;
+				}
+			}
+			else
+			{
+				if ( realCharge + chargeAmount < 0 )
+				{
+					featherGUI.changeFeatherCharge = -realCharge;
+				}
+				else
+				{
+					featherGUI.changeFeatherCharge = chargeAmount;
+				}
+			}
+		}
+		else
+		{
+			if ( featherGUI.changeFeatherCharge > 0
+				&& !isAnimatingValue
+				&& abs(chargeAmount) > 0 )
+			{
+				addedToCurrentTotal = true;
+				featherGUI.changeFeatherCharge += chargeAmount;
+			}
+			else
+			{
+				featherGUI.changeFeatherCharge = chargeAmount;
+			}
+		}
+		featherGUI.animChargeStartTicks = ticks;
+		featherGUI.animCharge = 0.0;
+		featherGUI.animQtyChange = 1.0;
+		if ( !addedToCurrentTotal )
+		{
+			featherGUI.currentFeatherCharge = realCharge;
+		}
+	}
+}
+
+void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, void* featherChangeChargeText, int currentCharge)
+{
+	Field* featherChargeField = static_cast<Field*>(featherChargeText);
+	Field* featherChangeChargeField = static_cast<Field*>(featherChangeChargeText);
+
+	bool pauseChangeChargeAnim = false;
+	if ( changeFeatherCharge != 0 )
+	{
+		if ( ((ticks - animChargeStartTicks) > TICKS_PER_SECOND) 
+			&& (inscribeSuccessTicks == 0 || (ticks - inscribeSuccessTicks) >= 1.5 * TICKS_PER_SECOND) )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.1, (animCharge)) / 10.0;
+			animCharge -= setpointDiffX;
+			animCharge = std::max(0.0, animCharge);
+
+			if ( animCharge <= 0.0001 )
+			{
+				changeFeatherCharge = 0;
+			}
+		}
+		else
+		{
+			pauseChangeChargeAnim = true;
+
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animCharge)) / 10.0;
+			animCharge += setpointDiffX;
+			animCharge = std::min(1.0, animCharge);
+		}
+	}
+
+	{
+		bool showChangedCharge = false;
+		if ( changeFeatherCharge != 0 )
+		{
+			int displayedChangeCharge = animCharge * changeFeatherCharge;
+			if ( pauseChangeChargeAnim )
+			{
+				displayedChangeCharge = changeFeatherCharge;
+			}
+			if ( abs(displayedChangeCharge) > 0 )
+			{
+				showChangedCharge = true;
+				featherChangeChargeField->setDisabled(false);
+				std::string s = "+";
+				if ( changeFeatherCharge < 0 )
+				{
+					s = "";
+				}
+				s += std::to_string(displayedChangeCharge);
+				featherChangeChargeField->setText(s.c_str());
+				int displayedCurrentCharge = currentFeatherCharge
+					+ (changeFeatherCharge - displayedChangeCharge);
+				char buf[32] = "";
+				snprintf(buf, sizeof(buf), "%d%%", displayedCurrentCharge);
+				featherChargeField->setText(buf);
+			}
+		}
+
+		if ( !showChangedCharge )
+		{
+			int displayedChangeCharge = 0;
+			featherChangeChargeField->setDisabled(true);
+			featherChangeChargeField->setText(std::to_string(displayedChangeCharge).c_str());
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "%d%%", currentCharge);
+			featherChargeField->setText(buf);
+		}
+	}
+}
+
+void GenericGUIMenu::FeatherGUI_t::sortScrolls()
+{
+	if ( sortedScrolls.empty() )
+	{
+		scrollListRequiresSorting = true;
+	}
+
+	if ( !scrollListRequiresSorting )
+	{
+		for ( auto& entry : sortedScrolls )
+		{
+			if ( scrolls.find(entry.first) != scrolls.end() )
+			{
+				entry.second = scrolls[entry.first];
+			}
+		}
+		return;
+	}
+
+	scrollListRequiresSorting = false;
+	sortedScrolls.clear();
+	for ( int i = 0; i < NUMLABELS; ++i )
+	{
+		auto find = scrolls.find(scroll_label[i]);
+		if ( find != scrolls.end() )
+		{
+			sortedScrolls.push_back(std::make_pair((*find).first, (*find).second));
+		}
+	}
+	if ( sortType != SORT_SCROLL_DEFAULT )
+	{
+		std::sort(sortedScrolls.begin(), sortedScrolls.end(), [this](const std::pair<std::string, std::pair<int, bool>>& lhs,
+			const std::pair<std::string, std::pair<int, bool>>& rhs) {
+			return this->scrollSortFunc(lhs, rhs);
+		});
+	}
+}
+
+void GenericGUIMenu::FeatherGUI_t::changeSortingType(GenericGUIMenu::FeatherGUI_t::SortTypes_t newType)
+{
+	if ( sortType != newType )
+	{
+		scrollListRequiresSorting = true;
+	}
+	sortType = newType;
+}
+
+void GenericGUIMenu::FeatherGUI_t::updateScrolls()
+{
+	scrolls.clear();
+	if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
+	{
+		keystatus[SDL_SCANCODE_J] = 0;
+		if ( keystatus[SDL_SCANCODE_LCTRL] )
+		{
+			clientLearnedScrollLabels[parentGUI.getPlayer()].clear();
+			for ( int i = 0; i < NUMLABELS; ++i )
+			{
+				clientLearnedScrollLabels[parentGUI.getPlayer()].insert(i);
+			}
+		}
+		else if ( sortType == SORT_SCROLL_DEFAULT )
+		{
+			changeSortingType(SORT_SCROLL_DISCOVERED);
+		}
+		else if ( sortType == SORT_SCROLL_DISCOVERED )
+		{
+			changeSortingType(SORT_SCROLL_UNKNOWN);
+		}
+		else if ( sortType == SORT_SCROLL_UNKNOWN )
+		{
+			changeSortingType(SORT_SCROLL_DEFAULT);
+		}
+	}
+	for ( node_t* node = parentGUI.scribingTotalItems.first; node; node = node->next )
+	{
+		if ( node->list == &stats[parentGUI.getPlayer()]->inventory )
+		{
+			break;
+		}
+		if ( parentGUI.isNodeScribingCraftableItem(node) )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				std::string label = item->getScrollLabel();
+				assert(scrolls.find(label) == scrolls.end());
+
+				bool identified = false;
+				for ( int i = 0; i < NUMLABELS; ++i )
+				{
+					if ( label == scroll_label[i] )
+					{
+						for ( auto& s : clientLearnedScrollLabels[parentGUI.getPlayer()] )
+						{
+							if ( s == i )
+							{
+								// we know this scroll's index
+								identified = true;
+								break;
+							}
+						}
+						break;
+					}
+				}
+				scrolls[label] = std::make_pair(item->type, identified);
+			}
+		}
+	}
+
+	sortScrolls();
+
+	int index = 0;
+	for ( auto& scroll : sortedScrolls )
+	{
+		Item* scrollItem = nullptr;
+		for ( node_t* node = parentGUI.scribingTotalItems.first; node; node = node->next )
+		{
+			if ( node->list == &stats[parentGUI.getPlayer()]->inventory )
+			{
+				break;
+			}
+			if ( node->element )
+			{
+				Item* item = (Item*)node->element;
+				if ( item && scroll.first == item->getScrollLabel() )
+				{
+					item->x = 0;
+					item->y = index;
+					scrollItem = item;
+					break;
+				}
+			}
+		}
+		if ( auto frame = getFeatherSlotFrame(0, index) )
+		{
+			auto titleTxt = frame->findField("title");
+			titleTxt->setText(scroll.first.c_str());
+			titleTxt->setColor(hudColors.characterSheetNeutral);
+			auto result = FEATHER_ACTION_NONE;
+			if ( scrollItem && scroll.second.second )
+			{
+				result = setItemDisplayNameAndPrice(scrollItem, true);
+				if ( result == FEATHER_ACTION_CANT_AFFORD )
+				{
+					titleTxt->setColor(hudColors.characterSheetFaintText);
+				}
+			}
+			auto bodyTxt = frame->findField("body");
+			bodyTxt->setText("???");
+			bodyTxt->setColor(hudColors.characterSheetOffWhiteText);
+			if ( scroll.second.second )
+			{
+				std::string scrollShortName = items[scroll.second.first].name_identified;
+				if ( scrollShortName.find(ItemTooltips.adjectives["scroll_prefixes"]["scroll_of"]) != std::string::npos )
+				{
+					scrollShortName = scrollShortName.substr(ItemTooltips.adjectives["scroll_prefixes"]["scroll_of"].size());
+				}
+				if ( scrollShortName.find(ItemTooltips.adjectives["scroll_prefixes"]["piece_of"]) != std::string::npos )
+				{
+					scrollShortName = scrollShortName.substr(ItemTooltips.adjectives["scroll_prefixes"]["piece_of"].size());
+				}
+				camelCaseString(scrollShortName);
+				bodyTxt->setColor(hudColors.characterSheetOffWhiteText);
+
+				if ( labelDiscoveries.find(scroll.first) != labelDiscoveries.end() )
+				{
+					bool deleted = false;
+					auto& discovery = labelDiscoveries[scroll.first];
+					if ( discovery.processedOnTick != ticks && ticks % 2 == 0 )
+					{
+						real_t percent = ((ticks - discovery.startTicks) / (TICKS_PER_SECOND / 10)) + 1;
+						percent /= 10.0;
+						percent = std::min(percent, 1.0);
+						size_t numChars = std::min(size_t(scrollShortName.size() * percent), scrollShortName.size());
+						discovery.name = scrollShortName.substr(0, numChars);
+						for ( auto sz = numChars; sz < scrollShortName.size(); ++sz )
+						{
+							discovery.name += 'A' + (rand() % 26);
+						}
+						if ( percent >= 0.999 )
+						{
+							deleted = true;
+							labelDiscoveries.erase(scroll.first);
+						}
+						discovery.processedOnTick = ticks;
+					}
+					if ( !deleted )
+					{
+						bodyTxt->setText(discovery.name.c_str());
+					}
+					else
+					{
+						bodyTxt->setText(scrollShortName.c_str());
+					}
+				}
+				else
+				{
+					bodyTxt->setText(scrollShortName.c_str());
+				}
+			}
+			if ( result == FEATHER_ACTION_CANT_AFFORD )
+			{
+				bodyTxt->setColor(hudColors.characterSheetFaintText);
+			}
+			auto bg = frame->findImage("bg");
+			bg->path = "images/ui/Feather/Feather_ListUnselected_00.png";
+			if ( scrollItem && isInteractable && highlightedSlot == index )
+			{
+				if ( getSelectedFeatherSlotX() == scrollItem->x
+					&& getSelectedFeatherSlotY() == scrollItem->y )
+				{
+					bg->path = "images/ui/Feather/Feather_ListSelected_00.png";
+				}
+			}
+		}
+		++index;
+	}
+}
+
+void GenericGUIMenu::FeatherGUI_t::openFeatherMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( featherFrame )
+	{
+		bool wasDisabled = featherFrame->isDisabled();
+		featherFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			animTooltip = 0.0;
+			animPrompt = 0.0;
+			animFilter = 0.0;
+			isInteractable = false;
+			bFirstTimeSnapCursor = false;
+		}
+		if ( getSelectedFeatherSlotX() < 0 || getSelectedFeatherSlotX() >= MAX_FEATHER_X
+			|| getSelectedFeatherSlotY() < 0 || getSelectedFeatherSlotY() >= MAX_FEATHER_Y )
+		{
+			selectFeatherSlot(0, 0);
+		}
+		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		player->inventory_mode = INVENTORY_MODE_ITEM;
+		bOpen = true;
+	}
+	if ( inputs.getUIInteraction(playernum)->selectedItem )
+	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
+	}
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	clearItemDisplayed();
+	scrolls.clear();
+	sortedScrolls.clear();
+	scrollListRequiresSorting = true;
+}
+
+void GenericGUIMenu::FeatherGUI_t::closeFeatherMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( featherFrame )
+	{
+		featherFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	animTooltip = 0.0;
+	animPrompt = 0.0;
+	animFilter = 0.0;
+	animInvalidAction = 0.0;
+	animInvalidActionTicks = 0;
+	animCharge = 0.0;
+	animChargeStartTicks = 0;
+	animQtyChange = 0.0;
+	animPromptTicks = 0;
+	animDrawer = 0.0;
+	invalidActionType = INVALID_ACTION_NONE;
+	isInteractable = false;
+	bool wasOpen = bOpen;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	highlightedSlot = -1;
+	bDrawerOpen = false;
+	labelDiscoveries.clear();
+	inscribeSuccessTicks = 0;
+	inscribeSuccessName = "";
+	if ( wasOpen )
+	{
+		if ( inputs.getUIInteraction(playernum)->selectedItem )
+		{
+			inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+			inputs.getUIInteraction(playernum)->toggleclick = false;
+		}
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	}
+	if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER
+		&& !players[playernum]->shootmode )
+	{
+		// reset to inventory mode if still hanging in alchemy GUI
+		players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			players[playernum]->GUI.warpControllerToModule(false);
+		}
+	}
+	clearItemDisplayed();
+	itemRequiresTitleReflow = true;
+	if ( featherFrame )
+	{
+		for ( auto f : featherFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+		featherSlotFrames.clear();
+	}
+	scrolls.clear();
+	sortedScrolls.clear();
+	scrollListRequiresSorting = true;
+}
+
+const int featherBaseWidth = 334;
+const int featherBaseHeight = 304;
+const int featherDrawerWidth = 210;
+int GenericGUIMenu::FeatherGUI_t::heightOffsetWhenNotCompact = 200;
+
+void onFeatherChangeTabAction(const int playernum, bool changingToNewTab)
+{
+	auto& featherGUI = GenericGUI[playernum].featherGUI;
+	featherGUI.isInteractable = false;
+	featherGUI.bFirstTimeSnapCursor = false;
+
+	if ( !featherGUI.isInscriptionDrawerOpen() )
+	{
+		if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			// reset to inventory mode if still hanging in feather GUI
+			players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+			players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+			if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+			{
+				players[playernum]->GUI.warpControllerToModule(false);
+			}
+		}
+	}
+	else
+	{
+		players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_FEATHER);
+		if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			players[playernum]->GUI.warpControllerToModule(false);
+		}
+	}
+	if ( changingToNewTab )
+	{
+		featherGUI.bDrawerOpen = false;
+		featherGUI.clearItemDisplayed();
+		featherGUI.itemRequiresTitleReflow = true;
+		featherGUI.animPrompt = 1.0;
+		featherGUI.animPromptTicks = ticks;
+	}
+}
+
+void buttonFeatherUpdateSelectorOnHighlight(const int player, Button* button)
+{
+	if ( button->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_FEATHER);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_FEATHER )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_FEATHER);
+		}
+		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( !player->isLocalPlayer() )
+	{
+		closeFeatherMenu();
+		return;
+	}
+
+	if ( !featherFrame )
+	{
+		return;
+	}
+
+	featherFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
+		players[playernum]->camera_virtualy1(),
+		featherBaseWidth,
+		players[playernum]->camera_virtualHeight() });
+
+	bool bFeatherDrawerOpen = isInscriptionDrawerOpen();
+
+	if ( !featherFrame->isDisabled() && bOpen )
+	{
+		if ( !featherGUIHasBeenCreated() )
+		{
+			createFeatherMenu();
+		}
+
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		bool mainPanelReady = false;
+		if ( animx >= .9999 )
+		{
+			if ( !bFeatherDrawerOpen )
+			{
+				isInteractable = true;
+				bFirstTimeSnapCursor = false;
+			}
+			mainPanelReady = true;
+		}
+
+		if ( bFeatherDrawerOpen && mainPanelReady )
+		{
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animDrawer)) / 3.0;
+			animDrawer += setpointDiffX;
+			animDrawer = std::min(1.0, animDrawer);
+			if ( animDrawer >= .9999 )
+			{
+				if ( !bFirstTimeSnapCursor )
+				{
+					bFirstTimeSnapCursor = true;
+					if ( !inputs.getUIInteraction(playernum)->selectedItem
+						&& player->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+					{
+						warpMouseToSelectedFeatherItem(nullptr, (Inputs::SET_CONTROLLER));
+					}
+				}
+				isInteractable = true;
+			}
+			else
+			{
+				isInteractable = false;
+			}
+		}
+		else
+		{
+			real_t setpointDiffX = fpsScale * std::max(.01, (animDrawer)) / 2.0;
+			animDrawer -= setpointDiffX;
+			animDrawer = std::max(0.0, animDrawer);
+		}
+	}
+	else
+	{
+		animDrawer = 0.0;
+		animx = 0.0;
+		animTooltip = 0.0;
+		isInteractable = false;
+	}
+
+	bool usingScribingMenu = parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE
+		&& bDrawerOpen;
+	if ( !usingScribingMenu )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animFilter)) / 2.0;
+		animFilter += setpointDiffX;
+		animFilter = std::min(1.0, animFilter);
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (animFilter)) / 2.0;
+		animFilter -= setpointDiffX;
+		animFilter = std::max(0.0, animFilter);
+	}
+
+	auto featherFramePos = featherFrame->getSize();
+	if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = featherFramePos.w + 210/* + (40 * (1.0 - animFilter))*/; // inventory width 210
+			featherFramePos.x = -featherFramePos.w + animx * fullWidth;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				featherFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			featherFramePos.x = player->camera_virtualWidth() - animx * featherFramePos.w;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				featherFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = featherFramePos.w + 210 /*+ (40 * (1.0 - animFilter))*/; // inventory width 210
+			featherFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				featherFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			featherFramePos.x = -featherFramePos.w + animx * featherFramePos.w;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				featherFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+
+	if ( !player->bUseCompactGUIHeight() )
+	{
+		featherFramePos.y = heightOffsetWhenNotCompact;
+	}
+	else
+	{
+		featherFramePos.y = 0;
+	}
+
+	if ( !featherGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	auto drawerFrame = featherFrame->findFrame("feather drawer");
+	drawerFrame->setDisabled(true);
+	auto baseFrame = featherFrame->findFrame("feather base");
+	baseFrame->setDisabled(false);
+
+	featherFrame->setSize(featherFramePos);
+
+	SDL_Rect baseFramePos = baseFrame->getSize();
+	baseFramePos.x = 0;
+	baseFramePos.w = featherBaseWidth;
+	baseFrame->setSize(baseFramePos);
+
+	{
+		drawerFrame->setDisabled(!bFeatherDrawerOpen);
+		SDL_Rect drawerFramePos = drawerFrame->getSize();
+		const int widthDifference = animDrawer * (drawerFramePos.w - 2/* - 8*/);
+		drawerFramePos.x = 0;
+		drawerFramePos.y = 6;
+		drawerFrame->setSize(drawerFramePos);
+
+		featherFramePos.x -= widthDifference;
+		int adjustx = 0;
+		if ( featherFramePos.x < 0 )
+		{
+			adjustx = -featherFramePos.x; // to not slide off-frame
+			featherFramePos.x += adjustx;
+		}
+		featherFramePos.w += (widthDifference);
+		featherFramePos.h = std::max(drawerFramePos.y + drawerFramePos.h, baseFramePos.y + baseFramePos.h);
+		featherFrame->setSize(featherFramePos);
+
+		baseFramePos.x = featherFramePos.w - baseFramePos.w;
+		baseFrame->setSize(baseFramePos);
+	}
+
+	if ( !bOpen )
+	{
+		return;
+	}
+
+	if ( !parentGUI.isGUIOpen()
+		|| parentGUI.guiType != GUICurrentType::GUI_TYPE_SCRIBING
+		|| !stats[playernum]
+		|| stats[playernum]->HP <= 0
+		|| !player->entity
+		|| player->shootmode )
+	{
+		closeFeatherMenu();
+		return;
+	}
+
+	if ( player->entity && player->entity->isBlind() )
+	{
+		messagePlayer(playernum, MESSAGE_MISC, language[4159]);
+		parentGUI.closeGUI();
+		return; // I can't see!
+	}
+
+	// feather status
+	{
+		auto featherTitle = baseFrame->findField("feather title");
+		auto featherStatus = baseFrame->findField("feather status");
+		if ( auto item = parentGUI.scribingToolFindInInventory() )
+		{
+			char buf[128];
+			if ( !item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s (?)", item->getName());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s (%+d)", item->getName(), item->beatitude);
+			}
+			std::string titleStr = buf;
+			if ( !titleStr.empty() )
+			{
+				if ( titleStr[0] >= 'a' && titleStr[0] <= 'z' )
+				{
+					titleStr[0] = (char)toupper((int)titleStr[0]);
+				}
+				size_t found = titleStr.find(' ');
+				while ( found != std::string::npos )
+				{
+					auto& c = titleStr[std::min(found + 1, titleStr.size() - 1)];
+					if ( c >= 'a' && c <= 'z' )
+					{
+						c = (char)toupper((int)c);
+					}
+					found = titleStr.find(' ', found + 1);
+				}
+				featherTitle->setText(titleStr.c_str());
+			}
+			else
+			{
+				featherTitle->setText(buf);
+			}
+			featherStatus->setText(ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str());
+			if ( item->status <= DECREPIT )
+			{
+				featherStatus->setTextColor(hudColors.characterSheetRed);
+			}
+			else
+			{
+				featherStatus->setTextColor(hudColors.characterSheetLightNeutral);
+			}
+		}
+		else
+		{
+			featherTitle->setText("");
+			featherStatus->setText("");
+		}
+
+		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
+		featherTitle->setSize(textPos);
+		textPos.y += 20;
+		featherStatus->setSize(textPos);
+	}
+
+	bool itemActionOK = itemActionType == FEATHER_ACTION_OK 
+		|| itemActionType == FEATHER_ACTION_MAY_SUCCEED
+		|| itemActionType == FEATHER_ACTION_OK_AND_DESTROY
+		|| itemActionType == FEATHER_ACTION_OK_UNKNOWN_SCROLL;
+	if ( itemActionOK )
+	{
+		animInvalidAction = 0.0;
+		animInvalidActionTicks = 0;
+	}
+	else
+	{
+		// shaking feedback for invalid action
+		// constant decay for animation
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+		animInvalidAction -= setpointDiffX;
+		animInvalidAction = std::max(0.0, animInvalidAction);
+	}
+	bool bInvalidActionAnimating = false;
+	if ( animInvalidAction > 0.001 || (ticks - animInvalidActionTicks) < TICKS_PER_SECOND * .8 )
+	{
+		bInvalidActionAnimating = true;
+	}
+
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.1, (animQtyChange)) / 10.0;
+		animQtyChange -= setpointDiffX;
+		animQtyChange = std::max(0.0, animQtyChange);
+	}
+
+	// held qtys
+	int currentCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+	auto currentChargeText = baseFrame->findField("current charge txt");
+	auto changeChargeText = baseFrame->findField("change charge txt");
+	{
+		auto currentChargeLabel = baseFrame->findField("current charge label");
+		currentChargeLabel->setDisabled(false);
+
+		auto currentChargeBg = baseFrame->findImage("current charge img");
+		currentChargeBg->pos.x = baseFrame->getSize().w - 18 - currentChargeBg->pos.w;
+		currentChargeBg->pos.y = baseFrame->getSize().h - 48 - 38;
+
+		SDL_Rect currentChargeTextPos{ currentChargeBg->pos.x, currentChargeBg->pos.y + 9, 112, 24 };
+		currentChargeText->setSize(currentChargeTextPos);
+		currentChargeText->setColor(hudColors.characterSheetLightNeutral);
+
+		changeChargeText->setText("");
+		SDL_Rect changeChargeTextPos = currentChargeTextPos;
+		changeChargeTextPos.x -= 44;
+		changeChargeText->setSize(changeChargeTextPos);
+
+		updateFeatherCharge(currentChargeText, changeChargeText, currentCharge);
+
+		SDL_Rect heldScrapTxtPos = currentChargeLabel->getSize();
+		heldScrapTxtPos.w = currentChargeBg->pos.x - 4;
+		heldScrapTxtPos.x = 0;
+		heldScrapTxtPos.y = currentChargeTextPos.y;
+		heldScrapTxtPos.h = 24;
+		currentChargeLabel->setSize(heldScrapTxtPos);
+		currentChargeLabel->setText(language[4192]);
+		if ( invalidActionType == INVALID_ACTION_NO_CHARGE )
+		{
+			currentChargeTextPos.x += -2 + 2 * (cos(animInvalidAction * 4 * PI));
+			currentChargeText->setSize(currentChargeTextPos);
+			if ( bInvalidActionAnimating )
+			{
+				currentChargeText->setColor(hudColors.characterSheetRed); // red
+			}
+		}
+	}
+
+	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
+
+	int filterLeftSideX = 0;
+	int filterStartY = 0;
+	int filterRightSideX = 0;
+	{
+		// filters
+		Button* filterBtn = baseFrame->findButton("filter inscribe btn");
+		filterBtn->setDisabled(true);
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			filterBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, filterBtn);
+			}
+		}
+		else if ( filterBtn->isSelected() )
+		{
+			filterBtn->deselect();
+		}
+		filterBtn->setColor(makeColor(255, 255, 255, 0));
+		filterBtn->setText(language[3718]);
+		{
+			SDL_Rect btnPos{ 50, 264, 70, 26 };
+			filterBtn->setSize(btnPos);
+			filterLeftSideX = btnPos.x;
+			filterStartY = btnPos.y;
+		}
+		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 32));
+		}
+		filterBtn->setHighlightColor(filterBtn->getColor());
+
+		filterBtn = baseFrame->findButton("filter repair btn");
+		filterBtn->setDisabled(true);
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			filterBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, filterBtn);
+			}
+		}
+		else if ( filterBtn->isSelected() )
+		{
+			filterBtn->deselect();
+		}
+		filterBtn->setColor(makeColor(255, 255, 255, 0));
+		filterBtn->setText(language[3719]);
+		{
+			SDL_Rect btnPos{ 214, 264, 70, 26 };
+			filterBtn->setSize(btnPos);
+			filterRightSideX = btnPos.x + btnPos.w;
+		}
+		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 32));
+		}
+		filterBtn->setHighlightColor(filterBtn->getColor());
+
+		// close btn
+		auto closeBtn = baseFrame->findButton("close feather button");
+		auto closeGlyph = baseFrame->findImage("close feather glyph");
+		closeBtn->setDisabled(true);
+		closeBtn->setInvisible(false);
+		if ( bDrawerOpen && usingGamepad )
+		{
+			//closeBtn->setInvisible(true);
+		}
+		closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			closeBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, closeBtn);
+			}
+		}
+		else if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( closeBtn->isDisabled() && usingGamepad && !bDrawerOpen )
+		{
+			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			{
+				closeGlyph->pos.w = imgGet->getWidth();
+				closeGlyph->pos.h = imgGet->getHeight();
+				closeGlyph->disabled = false;
+			}
+			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+			if ( closeGlyph->pos.x % 2 == 1 )
+			{
+				++closeGlyph->pos.x;
+			}
+			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+		}
+	}
+
+	auto itemDisplayTooltip = baseFrame->findFrame("feather display tooltip");
+	itemDisplayTooltip->setDisabled(false);
+
+	auto actionPromptTxt = baseFrame->findField("action prompt txt");
+	actionPromptTxt->setDisabled(false);
+	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
+	auto actionModifierImg = baseFrame->findImage("action modifier glyph");
+
+	Uint32 negativeColor = hudColors.characterSheetRed;
+	Uint32 neutralColor = hudColors.characterSheetLightNeutral;
+	Uint32 positiveColor = hudColors.characterSheetGreen;
+	Uint32 defaultPromptColor = makeColor(255, 255, 255, 255);
+
+	auto displayItemName = itemDisplayTooltip->findField("item display name");
+	auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
+	auto itemSlotBg = itemDisplayTooltip->findImage("item bg img");
+	auto minChargeText = itemDisplayTooltip->findField("item min value");
+	auto maxChargeText = itemDisplayTooltip->findField("item max value");
+	itemSlotBg->pos.x = 12;
+	itemSlotBg->pos.y = 12;
+	const int displayItemTextImgBaseX = itemSlotBg->pos.x + itemSlotBg->pos.w;
+	displayItemTextImg->pos.x = displayItemTextImgBaseX;
+	displayItemTextImg->pos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - displayItemTextImg->pos.h / 2;
+	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
+	displayItemNamePos.h = 50;
+	displayItemName->setSize(displayItemNamePos);
+	SDL_Rect actionPromptTxtPos{ 26, 197, baseFrame->getSize().w - (26 * 2), 24 };
+	actionPromptTxt->setSize(actionPromptTxtPos);
+
+	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
+	tooltipPos.w = 298;
+	tooltipPos.h = baseFrame->getSize().h - 100;
+	tooltipPos.y = 88;
+	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
+	itemDisplayTooltip->setSize(tooltipPos);
+
+	updateScrolls();
+
+	auto costBg = itemDisplayTooltip->findImage("item cost img");
+	auto costLabel = itemDisplayTooltip->findField("item cost label");
+	{
+		costBg->pos.x = displayItemTextImgBaseX + displayItemTextImg->pos.w - costBg->pos.w;
+		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
+		SDL_Rect minChargePos{ costBg->pos.x + 28, costBg->pos.y + 9, 66, 24 };
+		SDL_Rect maxChargePos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
+		minChargeText->setSize(minChargePos);
+		maxChargeText->setSize(maxChargePos);
+
+		SDL_Rect costLabelTxtPos = costLabel->getSize();
+		costLabelTxtPos.w = costBg->pos.x - 4;
+		costLabelTxtPos.x = 0;
+		costLabelTxtPos.y = minChargePos.y;
+		costLabelTxtPos.h = 24;
+		costLabel->setSize(costLabelTxtPos);
+	}
+
+	auto itemIncrementText = baseFrame->findField("item increment txt");
+	{
+		if ( animQtyChange > 0.01 )
+		{
+			itemIncrementText->setDisabled(false);
+			auto pos = itemIncrementText->getSize();
+			pos.y = tooltipPos.y + itemSlotBg->pos.y + 16 - ((1.0 - animQtyChange) * 32);
+			itemIncrementText->setSize(pos);
+			SDL_Color color;
+			getColor(itemIncrementText->getColor(), &color.r, &color.g, &color.b, &color.a);
+			if ( animQtyChange < .2 )
+			{
+				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255 * (animQtyChange / .2)));
+			}
+			else
+			{
+				itemIncrementText->setColor(makeColor(color.r, color.g, color.b, 255));
+			}
+		}
+		else
+		{
+			itemIncrementText->setSize(SDL_Rect{ tooltipPos.x + itemSlotBg->pos.x + 24, tooltipPos.y + itemSlotBg->pos.y + 16, 72, 24 });
+			itemIncrementText->setDisabled(true);
+			itemIncrementText->setText("");
+		}
+	}
+
+	auto itemSlotFrame = itemDisplayTooltip->findFrame("item slot frame");
+	bool modifierPressed = false;
+	if ( usingGamepad && Input::inputs[playernum].binary("MenuPageLeftAlt") )
+	{
+		modifierPressed = true;
+	}
+	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
+		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+	{
+		modifierPressed = true;
+	}
+
+	real_t inscribeSuccessFeedbackPercent = 0.0;
+	bool inscribeSuccessFeedbackActive = false;
+
+	if ( itemActionType != FEATHER_ACTION_NONE && itemDesc.size() > 1 )
+	{
+		if ( isInteractable )
+		{
+			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			//animTooltip += setpointDiffX;
+			//animTooltip = std::min(1.0, animTooltip);
+			animTooltip = 1.0;
+			animTooltipTicks = ticks;
+		}
+
+		itemDisplayTooltip->setDisabled(false);
+
+		{
+			// prompt + glyph
+			actionPromptTxt->setDisabled(false);
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			if ( inscribeSuccessName != "" && inscribeSuccessTicks > 0 && ((ticks - inscribeSuccessTicks) < 2.5 * TICKS_PER_SECOND) )
+			{
+				//actionPromptTxt->setHJustify(Field::justify_t::LEFT);
+				inscribeSuccessFeedbackActive = true;
+				inscribeSuccessFeedbackPercent = 1.0;
+				auto tickDiff = ticks - inscribeSuccessTicks;
+				if ( (tickDiff) < (TICKS_PER_SECOND / 4) )
+				{
+					inscribeSuccessFeedbackPercent = 1.0 - ((TICKS_PER_SECOND / 4) - tickDiff) / (real_t)(TICKS_PER_SECOND / 4);
+				}
+				else if ( tickDiff > (2 * TICKS_PER_SECOND) )
+				{
+					inscribeSuccessFeedbackPercent = 1.0 - (tickDiff - (2 * TICKS_PER_SECOND)) / (real_t)(TICKS_PER_SECOND / 2);
+				}
+				char buf[128] = "";
+				int index = 0;
+				for ( auto& scroll : sortedScrolls )
+				{
+					if ( scroll.first == inscribeSuccessName )
+					{
+						if ( auto frame = getFeatherSlotFrame(0, index) )
+						{
+							auto bodyTxt = frame->findField("body");
+							snprintf(buf, sizeof(buf), language[4191], bodyTxt->getText());
+						}
+						break;
+					}
+					++index;
+				}
+				actionPromptTxt->setText(buf);
+				actionPromptTxt->setColor(makeColor(236, 175, 28, 255));
+				actionPromptImg->disabled = true;
+				actionModifierImg->disabled = true;
+			}
+			else if ( itemActionOK && isInteractable )
+			{
+				if ( usingGamepad )
+				{
+					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+					if ( modifierPressed )
+					{
+						actionModifierImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+					}
+				}
+				else if ( !usingGamepad )
+				{
+					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
+					if ( modifierPressed )
+					{
+						actionModifierImg->path = GlyphHelper.getGlyphPath(SDL_SCANCODE_LSHIFT, false);
+					}
+				}
+				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
+				{
+					actionPromptImg->pos.w = imgGet->getWidth();
+					actionPromptImg->pos.h = imgGet->getHeight();
+					actionPromptImg->disabled = false;
+					/*if ( modifierPressed && parentGUI.scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+					{
+						if ( auto imgGet2 = Image::get(actionModifierImg->path.c_str()) )
+						{
+							actionModifierImg->pos.w = imgGet2->getWidth();
+							actionModifierImg->pos.h = imgGet2->getHeight();
+							actionModifierImg->disabled = false;
+						}
+					}
+					else*/
+					{
+						actionModifierImg->disabled = true;
+					}
+				}
+				if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE )
+				{
+					if ( !parentGUI.scribingBlankScrollTarget )
+					{
+						actionPromptTxt->setText(language[4185]);
+					}
+					else
+					{
+						if ( currentHoveringInscriptionLabel == "" )
+						{
+							actionPromptTxt->setText("");
+							actionPromptImg->disabled = true;
+							actionModifierImg->disabled = true;
+						}
+						else
+						{
+							char buf[128];
+							if ( itemActionType == FEATHER_ACTION_MAY_SUCCEED )
+							{
+								snprintf(buf, sizeof(buf), language[4188]);
+							}
+							else if ( itemActionType == FEATHER_ACTION_OK_AND_DESTROY )
+							{
+								snprintf(buf, sizeof(buf), language[4189]);
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), language[4184]);
+							}
+							actionPromptTxt->setText(buf);
+						}
+					}
+				}
+				else if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE )
+				{
+					actionPromptTxt->setText(language[3646]);
+				}
+				else
+				{
+					actionPromptTxt->setText("");
+				}
+				actionPromptTxt->setColor(defaultPromptColor);
+			}
+			else
+			{
+				actionPromptTxt->setText("");
+				actionPromptImg->disabled = true;
+				actionModifierImg->disabled = true;
+				if ( !(bDrawerOpen 
+					&& parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE
+					&& currentHoveringInscriptionLabel == "")
+					&& isInteractable )
+				{
+					switch ( itemActionType )
+					{
+						case FEATHER_ACTION_FULLY_REPAIRED:
+							actionPromptTxt->setText(language[4136]);
+							break;
+						case FEATHER_ACTION_UNIDENTIFIED:
+							actionPromptTxt->setText(language[4153]);
+							break;
+						case FEATHER_ACTION_CANT_AFFORD:
+							actionPromptTxt->setText(language[4186]);
+							break;
+						case FEATHER_ACTION_NO_BLANK_SCROLL:
+						case FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT:
+							actionPromptTxt->setText(language[4190]);
+							break;
+						default:
+							actionPromptTxt->setText("-");
+							break;
+					}
+				}
+				actionPromptTxt->setColor(negativeColor);
+			}
+			if ( auto textGet = actionPromptTxt->getTextObject() )
+			{
+				actionPromptImg->pos.x = actionPromptTxtPos.x + actionPromptTxtPos.w
+					- textGet->getWidth() - 8 - actionPromptImg->pos.w;
+				actionPromptImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionPromptImg->pos.h / 2;
+				if ( actionPromptImg->pos.y % 2 == 1 )
+				{
+					actionPromptImg->pos.y -= 1;
+				}
+				actionModifierImg->pos.x = actionPromptImg->pos.x - 4 - actionModifierImg->pos.w;
+				actionModifierImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionModifierImg->pos.h / 2;
+				if ( actionModifierImg->pos.y % 2 == 1 )
+				{
+					actionModifierImg->pos.y -= 1;
+				}
+			}
+		}
+
+		{
+			// item slot + frame
+			SDL_Rect slotFramePos = itemSlotFrame->getSize();
+			slotFramePos.x = itemSlotBg->pos.x + itemSlotBg->pos.w / 2 - slotFramePos.w / 2 - 1;
+			slotFramePos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - slotFramePos.h / 2 - 1;
+			itemSlotFrame->setSize(slotFramePos);
+		}
+
+		{
+			// item name + text bg
+			displayItemName->setVJustify(Field::justify_t::CENTER);
+			if ( itemRequiresTitleReflow )
+			{
+				displayItemName->setText(itemDesc.c_str());
+				displayItemName->reflowTextToFit(0);
+				if ( displayItemName->getNumTextLines() > 2 )
+				{
+					// more than 2 lines, append ...
+					std::string copiedName = displayItemName->getText();
+					auto lastNewline = copiedName.find_last_of('\n');
+					copiedName = copiedName.substr(0U, lastNewline);
+					copiedName += "...";
+					displayItemName->setText(copiedName.c_str());
+					displayItemName->reflowTextToFit(0);
+					if ( displayItemName->getNumTextLines() > 2 )
+					{
+						// ... doesn't fit, replace last 3 characters with ...
+						copiedName = copiedName.substr(0U, copiedName.size() - 6);
+						copiedName += "...";
+						displayItemName->setText(copiedName.c_str());
+						displayItemName->reflowTextToFit(0);
+					}
+				}
+				itemRequiresTitleReflow = false;
+			}
+		}
+
+		{
+			// charge costs
+			minChargeText->setColor(neutralColor);
+			maxChargeText->setColor(neutralColor);
+			maxChargeText->setText("");
+			if ( itemActionType == FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT )
+			{
+				minChargeText->setText("?");
+				//maxChargeText->setText("?");
+			}
+			else if ( (!itemActionOK && itemActionType != FEATHER_ACTION_CANT_AFFORD && itemActionType != FEATHER_ACTION_NO_BLANK_SCROLL)
+				|| (chargeCostMin == 0 && chargeCostMax == 0))
+			{
+				minChargeText->setText("-");
+				//maxChargeText->setText("-");
+			}
+			else if ( itemActionOK && itemActionType == FEATHER_ACTION_OK_UNKNOWN_SCROLL )
+			{
+				minChargeText->setText("?");
+				//maxChargeText->setText("?");
+			}
+			else if ( itemActionOK || itemActionType == FEATHER_ACTION_CANT_AFFORD
+				|| itemActionType == FEATHER_ACTION_NO_BLANK_SCROLL )
+			{
+				char buf[32];
+				if ( chargeCostMin == chargeCostMax )
+				{
+					snprintf(buf, sizeof(buf), "%d%%", chargeCostMin);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%d-%d%%", chargeCostMin, chargeCostMax);
+				}
+				minChargeText->setText(buf);
+			}
+		}
+	}
+	else
+	{
+		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
+			|| (usingGamepad && !bFeatherDrawerOpen)
+			|| animTooltip < 0.9999 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
+			animTooltip -= setpointDiffX;
+			animTooltip = std::max(0.0, animTooltip);
+		}
+	}
+
+	if ( parentGUI.scribingFilter == SCRIBING_FILTER_CRAFTABLE
+		|| parentGUI.scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+	{
+		costLabel->setText(language[4183]);
+	}
+
+	auto actionPromptUnselectedTxt = baseFrame->findField("action prompt unselected txt");
+	auto actionPromptCoverLeftImg = baseFrame->findImage("action prompt lcover");
+	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
+	actionPromptCoverLeftImg->pos.x = 0;
+	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
+	actionPromptCoverLeftImg->pos.y = 60;
+	actionPromptCoverRightImg->pos.y = 60;
+
+	{
+		actionPromptUnselectedTxt->setDisabled(false);
+		actionPromptUnselectedTxt->setColor(makeColor(224, 224, 224, 255));
+		if ( parentGUI.scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+		{
+			if ( bDrawerOpen )
+			{
+				actionPromptUnselectedTxt->setText(language[4187]);
+			}
+			else
+			{
+				actionPromptUnselectedTxt->setText(language[3720]);
+			}
+		}
+		else if ( parentGUI.scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+		{
+			actionPromptUnselectedTxt->setText(language[3726]);
+		}
+
+		{
+			SDL_Rect pos{ 26, 63, baseFrame->getSize().w - 52, 24 };
+			if ( animPromptMoveLeft )
+			{
+				pos.x -= actionPromptUnselectedTxt->getSize().w * animPrompt;
+			}
+			else
+			{
+				pos.x += actionPromptUnselectedTxt->getSize().w * animPrompt;
+			}
+			actionPromptUnselectedTxt->setSize(pos);
+		}
+
+		if ( ticks - animPromptTicks > TICKS_PER_SECOND / 10 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animPrompt)) / 2.0;
+			animPrompt -= setpointDiffX;
+			animPrompt = std::max(0.0, animPrompt);
+		}
+		SDL_Color color;
+		getColor(actionPromptUnselectedTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * (pow(1.0 - animPrompt, 2)));
+		actionPromptUnselectedTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	{
+		SDL_Color color;
+		getColor(actionPromptTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		if ( inscribeSuccessFeedbackActive )
+		{
+			color.a *= inscribeSuccessFeedbackPercent;
+		}
+		actionPromptImg->color = makeColor(255, 255, 255, color.a);
+		actionModifierImg->color = actionPromptImg->color;
+		actionPromptTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
+		if ( invalidActionType == INVALID_ACTION_SHAKE_PROMPT )
+		{
+			SDL_Rect pos = actionPromptTxt->getSize();
+			pos.x += -4 + 4 * (cos(animInvalidAction * 4 * PI));
+			actionPromptTxt->setSize(pos);
+		}
+	}
+	{
+		SDL_Color color;
+		getColor(displayItemName->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		displayItemName->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+	{
+		SDL_Color color;
+		getColor(minChargeText->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		minChargeText->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+	{
+		SDL_Color color;
+		getColor(maxChargeText->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		maxChargeText->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	//itemDisplayTooltip->setOpacity(100.0 * animTooltip);
+	itemSlotFrame->setOpacity(100.0 * animTooltip);
+
+	auto filterNavLeft = baseFrame->findImage("filter nav left");
+	filterNavLeft->disabled = true;
+	auto filterNavRight = baseFrame->findImage("filter nav right");
+	filterNavRight->disabled = true;
+
+	if ( usingGamepad )
+	{
+		filterNavLeft->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeft");
+		if ( auto imgGet = Image::get(filterNavLeft->path.c_str()) )
+		{
+			filterNavLeft->pos.w = imgGet->getWidth();
+			filterNavLeft->pos.h = imgGet->getHeight();
+			filterNavLeft->disabled = false;
+			filterNavLeft->pos.x = filterLeftSideX - filterNavLeft->pos.w - 6;
+			filterNavLeft->pos.y = filterStartY + 10;
+		}
+		filterNavRight->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRight");
+		if ( auto imgGet = Image::get(filterNavRight->path.c_str()) )
+		{
+			filterNavRight->pos.w = imgGet->getWidth();
+			filterNavRight->pos.h = imgGet->getHeight();
+			filterNavRight->disabled = false;
+			filterNavRight->pos.x = filterRightSideX + 6;
+			filterNavRight->pos.y = filterStartY + 10;
+		}
+	}
+
+	bool activateSelection = false;
+	if ( isInteractable )
+	{
+		if ( !inputs.getUIInteraction(playernum)->selectedItem
+			&& !player->GUI.isDropdownActive()
+			&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_FEATHER)
+			&& player->bControlEnabled && !gamePaused
+			&& !player->usingCommand() )
+		{
+			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
+				if ( bDrawerOpen )
+				{
+					parentGUI.scribingBlankScrollTarget = nullptr;
+					bDrawerOpen = false;
+					onFeatherChangeTabAction(playernum, true);
+				}
+				else
+				{
+					parentGUI.closeGUI();
+					return;
+				}
+			}
+			else
+			{
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuRightClick") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuRightClick");
+				}
+				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageRight") )
+				{
+					if ( parentGUI.scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+					{
+						parentGUI.scribingFilter = SCRIBING_FILTER_REPAIRABLE;
+						onFeatherChangeTabAction(playernum);
+						animPromptMoveLeft = false;
+					}
+					Input::inputs[playernum].consumeBinaryToggle("MenuPageRight");
+				}
+				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageLeft") )
+				{
+					if ( parentGUI.scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+					{
+						parentGUI.scribingFilter = SCRIBING_FILTER_CRAFTABLE;
+						onFeatherChangeTabAction(playernum);
+						animPromptMoveLeft = true;
+					}
+					Input::inputs[playernum].consumeBinaryToggle("MenuPageLeft");
+				}
+				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuAlt2") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuAlt2");
+					if ( sortType == SortTypes_t::SORT_SCROLL_DEFAULT )
+					{
+						changeSortingType(SortTypes_t::SORT_SCROLL_DISCOVERED);
+					}
+					else if ( sortType == SortTypes_t::SORT_SCROLL_DISCOVERED )
+					{
+						changeSortingType(SortTypes_t::SORT_SCROLL_UNKNOWN);
+					}
+					else
+					{
+						changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
+					}
+				}
+			}
+		}
+	}
+
+	if ( activateSelection && players[playernum] && players[playernum]->entity )
+	{
+		node_t* nextnode = nullptr;
+		list_t* player_inventory = &parentGUI.scribingTotalItems;
+		bool foundItem = false;
+		bool inscribingBlankScroll = false;
+		bool repairingSpellbook = false;
+		inscribeSuccessTicks = 0;
+		inscribeSuccessName = "";
+		if ( player_inventory )
+		{
+			for ( node_t* node = player_inventory->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				if ( node->element )
+				{
+					Item* item = (Item*)node->element;
+					if ( isInscriptionDrawerItemSelected(item) )
+					{
+						foundItem = true;
+						if ( itemActionOK && parentGUI.scribingBlankScrollTarget )
+						{
+							parentGUI.executeOnItemClick(item);
+						}
+						inscribingBlankScroll = true;
+						break;
+					}
+					else if ( isInscribeOrRepairActive() && isItemSelectedToRepairOrInscribe(item) )
+					{
+						foundItem = true;
+						if ( itemCategory(item) == SPELLBOOK )
+						{
+							repairingSpellbook = true;
+						}
+						if ( itemActionOK )
+						{
+							parentGUI.executeOnItemClick(item);
+						}
+						break;
+					}
+				}
+			}
+		}
+
+		if ( foundItem )
+		{
+			parentGUI.rebuildGUIInventory();
+
+			animInvalidAction = 0.0;
+			animInvalidActionTicks = 0;
+			invalidActionType = INVALID_ACTION_NONE;
+
+			if ( !itemActionOK )
+			{
+				if ( itemActionType == FEATHER_ACTION_CANT_AFFORD )
+				{
+					invalidActionType = INVALID_ACTION_NO_CHARGE;
+				}
+				else
+				{
+					invalidActionType = INVALID_ACTION_SHAKE_PROMPT;
+				}
+				animInvalidAction = 1.0;
+				animInvalidActionTicks = ticks;
+				// play bad feedback sfx
+				playSound(90, 64);
+			}
+			else
+			{
+				if ( inscribingBlankScroll )
+				{
+					if ( !parentGUI.scribingBlankScrollTarget )
+					{
+						// immediately fade the tooltip on mouse control
+						animTooltipTicks = 0;
+					}
+				}
+				int newCharge = 0;
+				if ( parentGUI.scribingToolItem )
+				{
+					newCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+				}
+				int diffCharge = currentCharge - newCharge;
+				featherChangeChargeEvent(parentGUI.getPlayer(), -diffCharge, currentCharge);
+				if ( diffCharge != 0 )
+				{
+					if ( inscribingBlankScroll )
+					{
+						itemIncrementText->setText("-1");
+					}
+					else if ( repairingSpellbook )
+					{
+						itemIncrementText->setText("  +");
+					}
+				}
+			}
+		}
+	}
+
+	{
+		auto sortTxt = drawerFrame->findField("sort txt");
+		auto sortBtn = drawerFrame->findButton("sort btn");
+		auto sortGlyph = drawerFrame->findImage("sort glyph");
+		if ( sortType == SortTypes_t::SORT_SCROLL_DEFAULT )
+		{
+			sortBtn->setText(language[4194]);
+		}
+		else if ( sortType == SortTypes_t::SORT_SCROLL_DISCOVERED )
+		{
+			sortBtn->setText(language[4195]);
+		}
+		else if ( sortType == SortTypes_t::SORT_SCROLL_UNKNOWN )
+		{
+			sortBtn->setText(language[4196]);
+		}
+		sortTxt->setText(language[4193]);
+		sortGlyph->disabled = true;
+		sortBtn->setDisabled(true);
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			sortBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, sortBtn);
+			}
+		}
+		else if ( sortBtn->isSelected() )
+		{
+			sortBtn->deselect();
+		}
+		if ( sortBtn->isDisabled() && usingGamepad && bDrawerOpen )
+		{
+			sortGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt2");
+			if ( auto imgGet = Image::get(sortGlyph->path.c_str()) )
+			{
+				sortGlyph->pos.w = imgGet->getWidth();
+				sortGlyph->pos.h = imgGet->getHeight();
+				sortGlyph->disabled = false;
+			}
+			sortGlyph->pos.x = sortBtn->getSize().x + sortBtn->getSize().w + 2;
+			if ( sortGlyph->pos.x % 2 == 1 )
+			{
+				++sortGlyph->pos.x;
+			}
+			sortGlyph->pos.y = sortBtn->getSize().y + sortBtn->getSize().h / 2 - sortGlyph->pos.h / 2;
+			if ( sortGlyph->pos.y % 2 == 1 )
+			{
+				++sortGlyph->pos.y;
+			}
+		}
+
+		// close btn
+		auto closeBtn = drawerFrame->findButton("close drawer button");
+		auto closeGlyph = drawerFrame->findImage("close drawer glyph");
+		closeBtn->setDisabled(true);
+		closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			closeBtn->setDisabled(!isInteractable || !bDrawerOpen);
+			if ( isInteractable && bDrawerOpen )
+			{
+				buttonFeatherUpdateSelectorOnHighlight(playernum, closeBtn);
+			}
+		}
+		else if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( closeBtn->isDisabled() && usingGamepad && bDrawerOpen )
+		{
+			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			{
+				closeGlyph->pos.w = imgGet->getWidth();
+				closeGlyph->pos.h = imgGet->getHeight();
+				closeGlyph->disabled = false;
+			}
+			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+			if ( closeGlyph->pos.x % 2 == 1 )
+			{
+				++closeGlyph->pos.x;
+			}
+			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+		}
+	}
+
+	auto slider = drawerFrame->findSlider("feather slider");
+	auto drawerSlotsFrame = drawerFrame->findFrame("drawer slots");
+	// handle height changing..
+	{
+		int numGrids = (MAX_FEATHER_Y / getNumInscriptionsToDisplayVertical()) + 1;
+		auto gridImg = drawerSlotsFrame->findImage("grid img");
+
+		SDL_Rect drawerSlotsFramePos = drawerSlotsFrame->getSize();
+		drawerSlotsFramePos.h = (200 + 2);
+
+		SDL_Rect drawerSlotsFrameActualPos{ drawerSlotsFrame->getActualSize().x,
+			drawerSlotsFrame->getActualSize().y,
+			drawerSlotsFrame->getActualSize().w,
+			(drawerSlotsFramePos.h) * numGrids };
+		drawerSlotsFrame->setActualSize(drawerSlotsFrameActualPos);
+		drawerSlotsFrame->setScrollBarsEnabled(false);
+		drawerSlotsFrame->setSize(drawerSlotsFramePos);
+		gridImg->pos.y = 0;
+		gridImg->pos.h = (drawerSlotsFramePos.h) * numGrids;
+	}
+
+	int scrollAmount = std::max((MAX_FEATHER_Y) - (getNumInscriptionsToDisplayVertical()), 0) * inscriptionSlotHeight;
+	if ( scrollAmount == 0 )
+	{
+		slider->setDisabled(true);
+	}
+	else
+	{
+		slider->setDisabled(false);
+	}
+
+	currentScrollRow = scrollSetpoint / inscriptionSlotHeight;
+
+	if ( bOpen && isInteractable )
+	{
+		// do sliders
+		if ( !slider->isDisabled() && !(abs(scrollSetpoint - scrollAnimateX) > 0.00001 && usingGamepad) )
+		{
+			if ( !inputs.getUIInteraction(playernum)->selectedItem
+				&& players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+			{
+				if ( inputs.bPlayerUsingKeyboardControl(playernum) )
+				{
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
+					{
+						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
+						scrollSetpoint = std::max(scrollSetpoint + inscriptionSlotHeight, 0);
+					}
+					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
+					{
+						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
+						scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight, 0);
+					}
+				}
+				if ( Input::inputs[playernum].analogToggle("MenuScrollDown") )
+				{
+					Input::inputs[playernum].consumeAnalogToggle("MenuScrollDown");
+					scrollSetpoint = std::max(scrollSetpoint + inscriptionSlotHeight * kNumInscriptionsToDisplayVertical, 0);
+					if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
+					{
+						player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
+				}
+				else if ( Input::inputs[playernum].analogToggle("MenuScrollUp") )
+				{
+					Input::inputs[playernum].consumeAnalogToggle("MenuScrollUp");
+					scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight * kNumInscriptionsToDisplayVertical, 0);
+					if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
+					{
+						player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
+				}
+			}
+		}
+
+		scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
+		currentScrollRow = scrollSetpoint / inscriptionSlotHeight;
+
+		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+		{
+			isInteractable = false;
+			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			real_t setpointDiff = 0.0;
+			if ( scrollSetpoint - scrollAnimateX > 0.0 )
+			{
+				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			else
+			{
+				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+			}
+			scrollAnimateX += setpointDiff;
+			if ( setpointDiff > 0.0 )
+			{
+				scrollAnimateX = std::min((real_t)scrollSetpoint, scrollAnimateX);
+			}
+			else
+			{
+				scrollAnimateX = std::max((real_t)scrollSetpoint, scrollAnimateX);
+			}
+		}
+		else
+		{
+			scrollAnimateX = scrollSetpoint;
+		}
+	}
+
+	if ( scrollAmount > 0 )
+	{
+		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+	}
+	else
+	{
+		slider->setValue(0.0);
+	}
+
+	SDL_Rect actualSize = drawerSlotsFrame->getActualSize();
+	actualSize.y = scrollAnimateX;
+	drawerSlotsFrame->setActualSize(actualSize);
+}
+
+void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
+{
+	const int player = parentGUI.getPlayer();
+	if ( !gui || !featherFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+	if ( featherGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	SDL_Rect basePos{ 0, 0, featherBaseWidth, featherBaseHeight };
+	{
+		auto drawerFrame = featherFrame->addFrame("feather drawer");
+		SDL_Rect drawerPos{ 0, 0, featherDrawerWidth, 260 };
+		drawerFrame->setSize(drawerPos);
+		drawerPos.h -= 10; // empty area
+		drawerFrame->setHollow(false);
+		auto bg = drawerFrame->addImage(drawerPos,
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Feather/Feather_Drawer_00.png", "feather drawer img");
+		drawerFrame->setDisabled(true);
+
+		featherSlotFrames.clear();
+
+		const int baseSlotOffsetX = 0;
+		const int baseSlotOffsetY = 0;
+
+		SDL_Rect featherSlotsPos{ 6, 6, featherDrawerWidth, 240 };
+		{
+			int numGrids = (MAX_FEATHER_Y / kNumInscriptionsToDisplayVertical) + 1;
+
+			const auto drawerSlotsFrame = drawerFrame->addFrame("drawer slots");
+			drawerSlotsFrame->setSize(featherSlotsPos);
+			drawerSlotsFrame->setActualSize(SDL_Rect{ 0, 0, featherSlotsPos.w, (200 + 2) * numGrids });
+			drawerSlotsFrame->setHollow(true);
+			drawerSlotsFrame->setAllowScrollBinds(false);
+			drawerSlotsFrame->setScrollBarsEnabled(false);
+
+			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, 174, 200 },
+				makeColor(255, 255, 255, 255), "*images/ui/Feather/Feather_ScrollGrid_00.png", "grid img");
+			gridImg->tiled = true;
+
+			const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inscriptionSlotHeight };
+			for ( int x = 0; x < MAX_FEATHER_X; ++x )
+			{
+				currentSlotPos.x = baseSlotOffsetX;
+				for ( int y = 0; y < MAX_FEATHER_Y; ++y )
+				{
+					currentSlotPos.y = baseSlotOffsetY + (y * inscriptionSlotHeight);
+
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "feather %d %d", x, y);
+					auto listEntry = drawerSlotsFrame->addFrame(slotname);
+					listEntry->setSize(SDL_Rect{ currentSlotPos.x, currentSlotPos.y, gridImg->pos.w, inscriptionSlotHeight });
+					featherSlotFrames[x + y * 100] = listEntry;
+
+					auto title = listEntry->addField("title", 128);
+					title->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+					title->setText("");
+					title->setHJustify(Field::justify_t::LEFT);
+					title->setVJustify(Field::justify_t::TOP);
+					title->setSize(SDL_Rect{ 8, 4, listEntry->getSize().w, 24 });
+					title->setColor(hudColors.characterSheetNeutral);
+
+					auto body = listEntry->addField("body", 128);
+					body->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+					body->setText("");
+					body->setHJustify(Field::justify_t::LEFT);
+					body->setVJustify(Field::justify_t::TOP);
+					body->setSize(SDL_Rect{ 8, 18, listEntry->getSize().w, 24 });
+					body->setColor(hudColors.characterSheetFaintText);
+
+					auto bg = listEntry->addImage(listEntry->getSize(), 0xFFFFFFFF,
+						"images/ui/Feather/Feather_ListUnselected_00.png", "bg");
+					bg->pos.x = 0;
+					bg->pos.y = 0;
+				}
+			}
+		}
+
+		auto slider = drawerFrame->addSlider("feather slider");
+		slider->setBorder(16);
+		slider->setMinValue(0);
+		slider->setMaxValue(100);
+		slider->setValue(0);
+		SDL_Rect sliderPos{ featherDrawerWidth - 24, 50, 20, drawerPos.h - 44 - 50 };
+		slider->setRailSize(sliderPos);
+		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		//slider->setCallback(callback);
+		slider->setColor(makeColor(255, 255, 255, 255));
+		slider->setHighlightColor(makeColor(255, 255, 255, 255));
+		slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setRailImage("*#images/ui/Sliders/HUD_Slider_Blank.png");
+		slider->setHideGlyphs(true);
+		slider->setHideKeyboardGlyphs(true);
+		slider->setHideSelectors(true);
+		slider->setMenuConfirmControlType(0);
+
+		{
+
+
+			auto sortTxt = drawerFrame->addField("sort txt", 128);
+			sortTxt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			sortTxt->setText("");
+			sortTxt->setHJustify(Field::justify_t::RIGHT);
+			sortTxt->setVJustify(Field::justify_t::TOP);
+			sortTxt->setSize(SDL_Rect{ 0, drawerPos.h - 33, 76, 24 });
+			sortTxt->setColor(hudColors.characterSheetNeutral);
+
+			auto sortBtn = drawerFrame->addButton("sort btn");
+			SDL_Rect sortBtnPos{ drawerPos.w - 26 - 104, drawerPos.h - 36, 104, 26 };
+			sortBtn->setSize(sortBtnPos);
+			sortBtn->setColor(makeColor(255, 255, 255, 255));
+			sortBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			sortBtn->setText("");
+			sortBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			sortBtn->setHideGlyphs(true);
+			sortBtn->setHideKeyboardGlyphs(true);
+			sortBtn->setHideSelectors(true);
+			sortBtn->setMenuConfirmControlType(0);
+			sortBtn->setBackground("*images/ui/Feather/Feather_Sort_Button_00.png");
+			sortBtn->setBackgroundHighlighted("*images/ui/Feather/Feather_Sort_ButtonHigh_00.png");
+			sortBtn->setBackgroundActivated("*images/ui/Feather/Feather_Sort_ButtonPress_00.png");
+			sortBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			sortBtn->setCallback([](Button& button) {
+				if ( GenericGUI[button.getOwner()].featherGUI.sortType == SortTypes_t::SORT_SCROLL_DEFAULT )
+				{
+					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_DISCOVERED);
+				}
+				else if ( GenericGUI[button.getOwner()].featherGUI.sortType == SortTypes_t::SORT_SCROLL_DISCOVERED )
+				{
+					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_UNKNOWN);
+				}
+				else
+				{
+					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
+				}
+			});
+			sortBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto closeBtn = drawerFrame->addButton("close drawer button");
+			SDL_Rect closeBtnPos{ drawerPos.w - 0 - 26, 2, 26, 26 };
+			closeBtn->setSize(closeBtnPos);
+			closeBtn->setColor(makeColor(255, 255, 255, 255));
+			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			closeBtn->setText("X");
+			closeBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			closeBtn->setHideGlyphs(true);
+			closeBtn->setHideKeyboardGlyphs(true);
+			closeBtn->setHideSelectors(true);
+			closeBtn->setMenuConfirmControlType(0);
+			closeBtn->setBackground("*images/ui/Feather/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("*images/ui/Feather/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("*images/ui/Feather/Button_XPress_00.png");
+			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			closeBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].scribingBlankScrollTarget = nullptr;
+				GenericGUI[button.getOwner()].featherGUI.bDrawerOpen = false;
+				onFeatherChangeTabAction(button.getOwner(), true);
+			});
+			closeBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto sortGlyph = drawerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "sort glyph");
+			sortGlyph->disabled = true;
+			sortGlyph->ontop = true;
+
+			auto closeGlyph = drawerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "close drawer glyph");
+			closeGlyph->disabled = true;
+			closeGlyph->ontop = true;
+		}
+	}
+
+	{
+		auto bgFrame = featherFrame->addFrame("feather base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(false);
+		bgFrame->setDisabled(true);
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Feather/Feather_Base_00.png", "feather base img");
+
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto featherTitle = bgFrame->addField("feather title", 128);
+		featherTitle->setFont(headerFont);
+		featherTitle->setText("");
+		featherTitle->setHJustify(Field::justify_t::CENTER);
+		featherTitle->setVJustify(Field::justify_t::TOP);
+		featherTitle->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		featherTitle->setTextColor(hudColors.characterSheetLightNeutral);
+		featherTitle->setOutlineColor(makeColor(29, 16, 11, 255));
+		auto featherStatus = bgFrame->addField("feather status", 128);
+		featherStatus->setFont(headerFont);
+		featherStatus->setText("");
+		featherStatus->setHJustify(Field::justify_t::CENTER);
+		featherStatus->setVJustify(Field::justify_t::TOP);
+		featherStatus->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		featherStatus->setTextColor(hudColors.characterSheetLightNeutral);
+		featherStatus->setOutlineColor(makeColor(29, 16, 11, 255));
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemDisplayTooltip = bgFrame->addFrame("feather display tooltip");
+		itemDisplayTooltip->setSize(SDL_Rect{ 0, 0, 298, 108 });
+		itemDisplayTooltip->setHollow(true);
+		itemDisplayTooltip->setInheritParentFrameOpacity(false);
+		{
+			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 108 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_Tooltip_00.png", "tooltip img");
+
+			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
+			itemNameText->setFont(itemFont);
+			itemNameText->setText("");
+			itemNameText->setHJustify(Field::justify_t::LEFT);
+			itemNameText->setVJustify(Field::justify_t::TOP);
+			itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			itemNameText->setColor(hudColors.characterSheetLightNeutral);
+
+			auto itemDisplayTextBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 220, 42 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_LabelName_2Row_00.png", "item text img");
+
+			auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 104, 34 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_CostBacking_00.png", "item cost img");
+
+			auto minChargeText = itemDisplayTooltip->addField("item min value", 32);
+			minChargeText->setFont(itemFont);
+			minChargeText->setText("");
+			minChargeText->setHJustify(Field::justify_t::RIGHT);
+			minChargeText->setVJustify(Field::justify_t::TOP);
+			minChargeText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			minChargeText->setColor(hudColors.characterSheetLightNeutral);
+			auto maxChargeText = itemDisplayTooltip->addField("item max value", 32);
+			maxChargeText->setFont(itemFont);
+			maxChargeText->setText("");
+			maxChargeText->setHJustify(Field::justify_t::RIGHT);
+			maxChargeText->setVJustify(Field::justify_t::TOP);
+			maxChargeText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			maxChargeText->setColor(hudColors.characterSheetLightNeutral);
+
+			auto costLabel = itemDisplayTooltip->addField("item cost label", 64);
+			costLabel->setFont(itemFont);
+			costLabel->setText("");
+			costLabel->setHJustify(Field::justify_t::RIGHT);
+			costLabel->setVJustify(Field::justify_t::TOP);
+			costLabel->setSize(SDL_Rect{ 0, 0, 90, 0 });
+			costLabel->setColor(hudColors.characterSheetLightNeutral);
+
+			auto itemBgImg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
+				"*images/ui/Feather/Feather_ItemBGSurround_00.png", "item bg img");
+
+			auto slotFrame = itemDisplayTooltip->addFrame("item slot frame");
+			SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			slotFrame->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slotFrame);
+		}
+
+		{
+			auto closeBtn = bgFrame->addButton("close feather button");
+			SDL_Rect closeBtnPos{ basePos.w - 0 - 26, 0, 26, 26 };
+			closeBtn->setSize(closeBtnPos);
+			closeBtn->setColor(makeColor(255, 255, 255, 255));
+			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			closeBtn->setText("X");
+			closeBtn->setFont(itemFont);
+			closeBtn->setHideGlyphs(true);
+			closeBtn->setHideKeyboardGlyphs(true);
+			closeBtn->setHideSelectors(true);
+			closeBtn->setMenuConfirmControlType(0);
+			closeBtn->setBackground("*images/ui/Feather/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("*images/ui/Feather/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("*images/ui/Feather/Button_XPress_00.png");
+			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			closeBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].closeGUI();
+			});
+			closeBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "close feather glyph");
+			closeGlyph->disabled = true;
+			closeGlyph->ontop = true;
+		}
+
+		{
+			auto actionPromptTxt = bgFrame->addField("action prompt txt", 64);
+			actionPromptTxt->setFont(itemFont);
+			actionPromptTxt->setText("");
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			actionPromptTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptTxt->setColor(makeColor(255, 255, 255, 255));
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph");
+			actionPromptGlyph->ontop = true;
+
+			auto actionModifierGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action modifier glyph");
+			actionModifierGlyph->ontop = true;
+			actionModifierGlyph->disabled = true;
+		}
+
+		{
+			auto actionPromptUnselectedTxt = bgFrame->addField("action prompt unselected txt", 64);
+			actionPromptUnselectedTxt->setFont(itemFont);
+			actionPromptUnselectedTxt->setText("");
+			actionPromptUnselectedTxt->setHJustify(Field::justify_t::CENTER);
+			actionPromptUnselectedTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptUnselectedTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptUnselectedTxt->setColor(makeColor(255, 255, 255, 255));
+			actionPromptUnselectedTxt->setDisabled(true);
+
+			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 60, 28, 26 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_PromptCoverLeft_00.png", "action prompt lcover");
+			actionPromptCoverLeftImg->ontop = true;
+			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 28, 60, 28, 26 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_PromptCoverRight_00.png", "action prompt rcover");
+			actionPromptCoverRightImg->ontop = true;
+		}
+
+		{
+			auto itemIncrementText = bgFrame->addField("item increment txt", 64);
+			itemIncrementText->setFont(itemFont);
+			itemIncrementText->setText("");
+			itemIncrementText->setHJustify(Field::justify_t::TOP);
+			itemIncrementText->setVJustify(Field::justify_t::LEFT);
+			itemIncrementText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			itemIncrementText->setColor(hudColors.characterSheetLightNeutral);
+			itemIncrementText->setDisabled(true);
+			itemIncrementText->setOntop(true);
+		}
+
+		{
+			// filter labels
+			Button* filterBtn = bgFrame->addButton("filter inscribe btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 0));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
+			filterBtn->setText("Inscribe");
+			filterBtn->setFont(itemFont);
+			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				auto oldTab = GenericGUI[button.getOwner()].scribingFilter;
+				bool changeToDifferentTab = oldTab != GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE;
+				GenericGUI[button.getOwner()].scribingFilter = GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE;
+				onFeatherChangeTabAction(button.getOwner(), changeToDifferentTab);
+				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = true;
+			});
+			filterBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			filterBtn = bgFrame->addButton("filter repair btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 0));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
+			filterBtn->setText("Repair");
+			filterBtn->setFont(itemFont);
+			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				auto oldTab = GenericGUI[button.getOwner()].scribingFilter;
+				bool changeToDifferentTab = oldTab != GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE;
+				GenericGUI[button.getOwner()].scribingFilter = GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE;
+				onFeatherChangeTabAction(button.getOwner(), changeToDifferentTab);
+				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = false;
+			});
+			filterBtn->setTickCallback([](Widget& widget)
+			{
+				genericgui_deselect_fn(widget);
+			});
+
+			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "filter nav left");
+			filterNavLeft->disabled = true;
+			auto filterNavRight = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "filter nav right");
+			filterNavRight->disabled = true;
+		}
+
+		{
+			auto currentChargeBg = bgFrame->addImage(SDL_Rect{ 0, 0, 122, 34 },
+				0xFFFFFFFF, "*images/ui/Feather/Feather_ChargeBacking_00.png", "current charge img");
+
+			auto currentChargeLabel = bgFrame->addField("current charge label", 64);
+			currentChargeLabel->setFont(itemFont);
+			currentChargeLabel->setText("");
+			currentChargeLabel->setHJustify(Field::justify_t::RIGHT);
+			currentChargeLabel->setVJustify(Field::justify_t::TOP);
+			currentChargeLabel->setSize(SDL_Rect{ 0, 0, 90, 0 });
+			currentChargeLabel->setColor(hudColors.characterSheetLightNeutral);
+
+			auto currentChargeText = bgFrame->addField("current charge txt", 32);
+			currentChargeText->setFont(itemFont);
+			currentChargeText->setText("");
+			currentChargeText->setHJustify(Field::justify_t::RIGHT);
+			currentChargeText->setVJustify(Field::justify_t::TOP);
+			currentChargeText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			currentChargeText->setColor(hudColors.characterSheetLightNeutral);
+
+			auto changeChargeText = bgFrame->addField("change charge txt", 32);
+			changeChargeText->setFont(itemFont);
+			changeChargeText->setText("");
+			changeChargeText->setHJustify(Field::justify_t::RIGHT);
+			changeChargeText->setVJustify(Field::justify_t::TOP);
+			changeChargeText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			changeChargeText->setColor(hudColors.characterSheetRed);
+		}
+	}
+}
+
+bool GenericGUIMenu::FeatherGUI_t::featherGUIHasBeenCreated() const
+{
+	if ( featherFrame )
+	{
+		if ( !featherFrame->getFrames().empty() )
+		{
+			for ( auto f : featherFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::FeatherGUI_t::selectFeatherSlot(const int x, const int y)
+{
+	selectedFeatherSlotX = x;
+	selectedFeatherSlotY = y;
+}
+
+Frame* GenericGUIMenu::FeatherGUI_t::getFeatherSlotFrame(int x, int y) const
+{
+	if ( featherFrame )
+	{
+		int key = x + y * 100;
+		if ( featherSlotFrames.find(key) != featherSlotFrames.end() )
+		{
+			return featherSlotFrames.at(key);
+		}
+		//assert(alchemySlotFrames.find(key) == alchemySlotFrames.end());
+	}
+	return nullptr;
+}
+
+GenericGUIMenu::FeatherGUI_t::FeatherActions_t GenericGUIMenu::FeatherGUI_t::setItemDisplayNameAndPrice(Item* item, bool checkResultOnly)
+{
+	auto result = FEATHER_ACTION_NONE;
+	int featherCharge = 0;
+	if ( parentGUI.scribingToolItem )
+	{
+		featherCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+	}
+	bool isItemInscriptionNode = parentGUI.isNodeScribingCraftableItem(item->node);
+	if ( !checkResultOnly )
+	{
+		chargeCostMin = 0;
+		chargeCostMax = 0;
+	}
+	if ( item )
+	{
+		if ( parentGUI.scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+		{
+			if ( isItemInscriptionNode )
+			{
+				std::string label = item->getScrollLabel();
+				if ( !checkResultOnly )
+				{
+					currentHoveringInscriptionLabel = label;
+				}
+				bool identified = false;
+				for ( int i = 0; i < NUMLABELS; ++i )
+				{
+					if ( label == scroll_label[i] )
+					{
+						for ( auto& s : clientLearnedScrollLabels[parentGUI.getPlayer()] )
+						{
+							if ( s == i )
+							{
+								// we know this scroll's index
+								identified = true;
+								break;
+							}
+						}
+						break;
+					}
+				}
+				int chargeMin = 0;
+				int chargeMax = 0;
+				parentGUI.scribingGetChargeCost(item, chargeMin, chargeMax);
+				if ( bDrawerOpen && !parentGUI.scribingBlankScrollTarget )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					if ( !identified )
+					{
+						result = FEATHER_ACTION_NO_BLANK_SCROLL_UNKNOWN_HIGHLIGHT;
+					}
+					else
+					{
+						result = FEATHER_ACTION_NO_BLANK_SCROLL;
+					}
+				}
+				else if ( !identified )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					result = FEATHER_ACTION_OK_UNKNOWN_SCROLL;
+				}
+				else if ( featherCharge >= chargeMin )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+
+					if ( featherCharge == chargeMin )
+					{
+						result = FEATHER_ACTION_OK_AND_DESTROY;
+					}
+					else if ( featherCharge < chargeMax )
+					{
+						result = FEATHER_ACTION_MAY_SUCCEED;
+					}
+					else
+					{
+						result = FEATHER_ACTION_OK;
+					}
+				}
+				else if ( (chargeMin / 2) < featherCharge )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					result = FEATHER_ACTION_OK_AND_DESTROY;
+				}
+				else
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					result = FEATHER_ACTION_CANT_AFFORD;
+				}
+			}
+			else
+			{
+				if ( itemCategory(item) == SCROLL && !item->identified )
+				{
+					result = FEATHER_ACTION_UNIDENTIFIED;
+				}
+				else if ( item->identified && item->type == SCROLL_BLANK )
+				{
+					result = FEATHER_ACTION_OK;
+				}
+			}
+		}
+		else if ( parentGUI.scribingFilter == SCRIBING_FILTER_REPAIRABLE && itemCategory(item) == SPELLBOOK )
+		{
+			if ( !item->identified )
+			{
+				result = FEATHER_ACTION_UNIDENTIFIED;
+			}
+			else if ( item->status >= EXCELLENT )
+			{
+				result = FEATHER_ACTION_FULLY_REPAIRED;
+			}
+			else
+			{
+				int chargeMin = 0;
+				int chargeMax = 0;
+				parentGUI.scribingGetChargeCost(item, chargeMin, chargeMax);
+				if ( featherCharge >= chargeMin )
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					if ( featherCharge == chargeMin )
+					{
+						result = FEATHER_ACTION_OK_AND_DESTROY;
+					}
+					else if ( featherCharge < chargeMax )
+					{
+						result = FEATHER_ACTION_MAY_SUCCEED;
+					}
+					else
+					{
+						result = FEATHER_ACTION_OK;
+					}
+				}
+				else
+				{
+					if ( !checkResultOnly )
+					{
+						chargeCostMin = chargeMin;
+						chargeCostMax = chargeMax;
+					}
+					result = FEATHER_ACTION_CANT_AFFORD;
+				}
+			}
+		}
+	}
+
+	if ( !checkResultOnly )
+	{
+		Item* displayItem = item;
+		if ( isItemInscriptionNode )
+		{
+			displayItem = parentGUI.scribingBlankScrollTarget;
+			if ( !parentGUI.scribingBlankScrollTarget )
+			{
+				itemDesc = "  ";
+				itemRequiresTitleReflow = true;
+				if ( featherFrame )
+				{
+					if ( auto baseFrame = featherFrame->findFrame("feather base") )
+					{
+						if ( auto itemTooltipFrame = baseFrame->findFrame("feather display tooltip") )
+						{
+							auto itemSlotFrame = itemTooltipFrame->findFrame("item slot frame");
+							itemSlotFrame->setDisabled(true);
+						}
+					}
+				}
+			}
+		}
+		if ( result != FEATHER_ACTION_NONE && displayItem )
+		{
+			char buf[1024];
+			if ( !displayItem->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(displayItem->type, displayItem->status).c_str(), displayItem->getName());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(displayItem->type, displayItem->status).c_str(), displayItem->getName(), displayItem->beatitude);
+			}
+			if ( itemDesc != buf )
+			{
+				itemRequiresTitleReflow = true;
+			}
+			itemDesc = buf;
+			itemType = displayItem->type;
+
+			if ( featherFrame )
+			{
+				if ( auto baseFrame = featherFrame->findFrame("feather base") )
+				{
+					if ( auto itemTooltipFrame = baseFrame->findFrame("feather display tooltip") )
+					{
+						auto itemSlotFrame = itemTooltipFrame->findFrame("item slot frame");
+						updateSlotFrameFromItem(itemSlotFrame, displayItem);
+					}
+				}
+			}
+		}
+		itemActionType = result;
+	}
+	return result;
+}
+
+bool GenericGUIMenu::FeatherGUI_t::warpMouseToSelectedFeatherItem(Item* snapToItem, Uint32 flags)
+{
+	if ( featherGUIHasBeenCreated() )
+	{
+		int x = getSelectedFeatherSlotX();
+		int y = getSelectedFeatherSlotY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( isInteractable )
+		{
+			if ( abs(scrollAnimateX - scrollSetpoint) > 0.00001 )
+			{
+				int diff = (scrollAnimateX - scrollSetpoint) / inscriptionSlotHeight;
+				y += diff; // if we have a scroll in the works, then manipulate y to pretend where we'd be ahead of time.
+			}
+		}
+
+		if ( auto slot = getFeatherSlotFrame(x, y) )
+		{
+			int playernum = parentGUI.getPlayer();
+			auto player = players[playernum];
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select item queued");
+				player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_FEATHER;
+				player->inventoryUI.cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select item warped");
+				player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				player->inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+				slot->warpMouseToFrame(playernum, flags);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::FeatherGUI_t::clearItemDisplayed()
+{
+	itemType = -1;
+	itemActionType = FEATHER_ACTION_NONE;
+	chargeCostMin = 0;
+	chargeCostMax = 0;
+	currentHoveringInscriptionLabel = "";
+}
+
+int GenericGUIMenu::FeatherGUI_t::getNumInscriptionsToDisplayVertical() const
+{
+	return kNumInscriptionsToDisplayVertical;
+}
+
+void GenericGUIMenu::FeatherGUI_t::scrollToSlot(int x, int y, bool instantly)
+{
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + getNumInscriptionsToDisplayVertical() - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		// no work to do.
+		return;
+	}
+	int player = parentGUI.getPlayer();
+	int lowestItemY = MAX_FEATHER_Y - 1;
+	const int slotSize = inscriptionSlotHeight;
+	int maxScroll = std::max((lowestItemY + 1) - (getNumInscriptionsToDisplayVertical()), 0) * slotSize;
+
+	int scrollAmount = 0;
+	if ( y < lowerY )
+	{
+		scrollAmount = (y) * slotSize;
+		//scrollAmount += scrollSetpoint;
+	}
+	else if ( y > upperY )
+	{
+		scrollAmount = (y - upperY) * slotSize;
+		scrollAmount += scrollSetpoint;
+	}
+	scrollAmount = std::min(scrollAmount, maxScroll);
+
+	scrollSetpoint = scrollAmount;
+	if ( instantly )
+	{
+		scrollAnimateX = scrollSetpoint;
+	}
+	currentScrollRow = scrollSetpoint / slotSize;
+	if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+	{
+		isInteractable = false;
+	}
+}
+
+bool GenericGUIMenu::FeatherGUI_t::isSlotVisible(int x, int y) const
+{
+	if ( featherFrame )
+	{
+		if ( featherFrame->isDisabled() )
+		{
+			return false;
+		}
+	}
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow + getNumInscriptionsToDisplayVertical() - 1;
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::FeatherGUI_t::isItemVisible(Item* item) const
+{
+	if ( !item ) { return false; }
+	return isSlotVisible(item->x, item->y);
+}
+
+bool GenericGUIMenu::FeatherGUI_t::isInscriptionDrawerItemSelected(Item* item)
+{
+	if ( !item || itemCategory(item) == SPELL_CAT )
+	{
+		return false;
+	}
+
+	if ( !isInscriptionDrawerOpen() || !parentGUI.isNodeScribingCraftableItem(item->node) || !isItemVisible(item) )
+	{
+		return false;
+	}
+
+	if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+	{
+		if ( selectedFeatherSlotX >= 0 && selectedFeatherSlotX < MAX_FEATHER_X
+			&& selectedFeatherSlotY >= 0 && selectedFeatherSlotY < MAX_FEATHER_Y
+			&& item->x == selectedFeatherSlotX && item->y == selectedFeatherSlotY )
+		{
+			if ( auto slotFrame = getFeatherSlotFrame(item->x, item->y) )
+			{
+				return slotFrame->capturesMouse();
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::FeatherGUI_t::isItemSelectedToRepairOrInscribe(Item* item)
+{
+	if ( !item || itemCategory(item) == SPELL_CAT )
+	{
+		return false;
+	}
+
+	if ( isInscriptionDrawerOpen() || !parentGUI.isNodeFromPlayerInventory(item->node) )
+	{
+		return false;
+	}
+
+	if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+	{
+		auto& inventoryUI = players[parentGUI.getPlayer()]->inventoryUI;
+		auto& paperDoll = players[parentGUI.getPlayer()]->paperDoll;
+		if ( item->y < 0 && paperDoll.getSlotForItem(*item) != Player::PaperDoll_t::SLOT_MAX )
+		{
+			int slotx, sloty;
+			paperDoll.getCoordinatesFromSlotType(paperDoll.getSlotForItem(*item), slotx, sloty);
+			if ( slotx == inventoryUI.getSelectedSlotX() && sloty == inventoryUI.getSelectedSlotY() )
+			{
+				if ( auto slotFrame = inventoryUI.getInventorySlotFrame(slotx, sloty) )
+				{
+					return slotFrame->capturesMouse();
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		else
+		{
+			if ( inventoryUI.getSelectedSlotX() >= 0
+				&& inventoryUI.getSelectedSlotX() < inventoryUI.getSizeX()
+				&& inventoryUI.getSelectedSlotY() >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1
+				&& inventoryUI.getSelectedSlotY() < inventoryUI.getSizeY()
+				&& item->x == inventoryUI.getSelectedSlotX() && item->y == inventoryUI.getSelectedSlotY() )
+			{
+				if ( auto slotFrame = inventoryUI.getInventorySlotFrame(item->x, item->y) )
+				{
+					return slotFrame->capturesMouse();
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::FeatherGUI_t::isInscriptionDrawerOpen() const
+{
+	if ( !parentGUI.isGUIOpen() || !featherGUIHasBeenCreated() )
+	{
+		return false;
+	}
+	if ( bOpen && parentGUI.guiType == GUICurrentType::GUI_TYPE_SCRIBING
+		&& parentGUI.scribingFilter == ScribingFilter::SCRIBING_FILTER_CRAFTABLE
+		&& bDrawerOpen )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::FeatherGUI_t::isInscribeOrRepairActive() const
+{
+	if ( !parentGUI.isGUIOpen() || !featherGUIHasBeenCreated() )
+	{
+		return false;
+	}
+	if ( bOpen && parentGUI.guiType == GUICurrentType::GUI_TYPE_SCRIBING
+		&& (parentGUI.scribingFilter == ScribingFilter::SCRIBING_FILTER_CRAFTABLE
+			|| parentGUI.scribingFilter == ScribingFilter::SCRIBING_FILTER_REPAIRABLE) )
+	{
+		return true;
+	}
+	return false;
 }

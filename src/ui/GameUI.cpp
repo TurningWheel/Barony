@@ -106,6 +106,20 @@ void uppercaseString(std::string& str)
 	}
 }
 
+void camelCaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	char prevLetter = ' ';
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'a' && letter <= 'z' && prevLetter == ' ' )
+		{
+			letter = toupper(letter);
+		}
+		prevLetter = letter;
+	}
+}
+
 std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 {
 	if ( !entity ) { return "default"; }
@@ -573,8 +587,8 @@ void createHotbar(const int player)
 
 		auto itemSlot = slot->addFrame("hotbar slot item");
 		SDL_Rect itemSlotTempSize = slot->getSize();
-		itemSlotTempSize.w -= 2;
-		itemSlotTempSize.h -= 2;
+		itemSlotTempSize.w -= 4;
+		itemSlotTempSize.h -= 4;
 		itemSlot->setSize(itemSlotTempSize); // slightly shrink to align inner item elements within rect.
 		createPlayerInventorySlotFrameElements(itemSlot);
 		itemSlot->setSize(slot->getSize());
@@ -596,19 +610,22 @@ void createHotbar(const int player)
 
 	auto itemSlot = highlightFrame->addFrame("hotbar slot item");
 	SDL_Rect itemSlotTempSize = slotPos;
-	itemSlotTempSize.w -= 2;
-	itemSlotTempSize.h -= 2;
+	itemSlotTempSize.w -= 4;
+	itemSlotTempSize.h -= 4;
 	itemSlot->setSize(itemSlotTempSize);
 	createPlayerInventorySlotFrameElements(itemSlot); // slightly shrink to align inner item elements within rect.
 	itemSlot->setSize(highlightFrame->getSize());
 
 	{
 		auto oldSelectedFrame = hotbar_t.hotbarFrame->addFrame("hotbar old selected item");
-		oldSelectedFrame->setSize(slotPos);
+		SDL_Rect oldSelectedFramePos = slotPos;
+		oldSelectedFramePos.w -= 2;
+		oldSelectedFramePos.h -= 2;
+		oldSelectedFrame->setSize(oldSelectedFramePos);
 		oldSelectedFrame->setDisabled(true);
 
 		const int itemSpriteSize = players[oldSelectedFrame->getOwner()]->inventoryUI.getItemSpriteSize();
-		SDL_Rect itemSpriteBorder{ 4, 4, itemSpriteSize, itemSpriteSize };
+		SDL_Rect itemSpriteBorder{ 5, 5, itemSpriteSize, itemSpriteSize };
 
 		color = makeColor( 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
@@ -618,7 +635,7 @@ void createHotbar(const int player)
 			color, "*images/system/hotbar_slot.png", "hotbar old selected highlight");
 
 		auto oldCursorFrame = hotbar_t.hotbarFrame->addFrame("hotbar old item cursor");
-		oldCursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		oldCursorFrame->setSize(SDL_Rect{ 0, 0, oldSelectedFramePos.w + 16, oldSelectedFramePos.h + 16 });
 		oldCursorFrame->setDisabled(true);
 		color = makeColor( 255, 255, 255, oldSelectedCursorOpacity);
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -629,11 +646,9 @@ void createHotbar(const int player)
 			color, "*#images/ui/Inventory/SelectorGrey_BL.png", "hotbar old cursor bottomleft");
 		oldCursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "*#images/ui/Inventory/SelectorGrey_BR.png", "hotbar old cursor bottomright");
-	}
 
-	{
 		auto cursorFrame = hotbar_t.hotbarFrame->addFrame("shootmode selected item cursor");
-		cursorFrame->setSize(SDL_Rect{ 0, 0, slotPos.w + 16, slotPos.h + 16 });
+		cursorFrame->setSize(SDL_Rect{ 0, 0, oldSelectedFramePos.w + 16, oldSelectedFramePos.h + 16 });
 		cursorFrame->setDisabled(true);
 		color = makeColor( 255, 255, 255, selectedCursorOpacity);
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
@@ -645,6 +660,17 @@ void createHotbar(const int player)
 		cursorFrame->addImage(SDL_Rect{ 0, 0, 14, 14 },
 			color, "*#images/ui/Inventory/Selector_BR.png", "shootmode selected cursor bottomright");
 	}
+
+	auto cancelPromptTxt = hotbar_t.hotbarFrame->addField("hotbar cancel prompt", 32);
+	cancelPromptTxt->setText(language[3063]);
+	cancelPromptTxt->setSize(SDL_Rect{ 0, 0, 100, 24 });
+	cancelPromptTxt->setDisabled(true);
+	cancelPromptTxt->setFont(font);
+	cancelPromptTxt->setVJustify(Field::justify_t::TOP);
+	cancelPromptTxt->setHJustify(Field::justify_t::LEFT);
+	auto cancelPromptGlyph = hotbar_t.hotbarFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "", "hotbar cancel glyph");
+	cancelPromptGlyph->disabled = true;
 
 	auto text = highlightFrame->addField("slot num text", 4);
 	text->setText("");
@@ -1057,7 +1083,8 @@ void Player::HUD_t::updateUINavigation()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
-			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
+			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
+				&& !GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -1110,7 +1137,8 @@ void Player::HUD_t::updateUINavigation()
 			}
 
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
-				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen )
+				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
+				&& !GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
@@ -4264,22 +4292,27 @@ void Player::HUD_t::updateActionPrompts()
 			SDL_Rect promptPos = prompt->getSize();
 			promptPos.w = maxWidth;
 			promptPos.h = promptHeight;
+			int actionPromptOffsetXTotal = actionPromptOffsetX;
+			if ( !player.hotbar.useHotbarFaceMenu )
+			{
+				actionPromptOffsetXTotal += 22;
+			}
 			switch ( index )
 			{
 				case 0: // to the left of hotbar
-					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetXTotal;
 					break;
 				case 1: // to the left after the previous
-					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 - actionPromptOffsetXTotal;
 					promptPos.x -= 16;
 					promptPos.x -= promptPos.w;
 					break;
 				case 2: // to the right of hotbar
-					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetXTotal;
 					promptPos.x -= promptPos.w;
 					break;
 				case 3: // to the right after the previous
-					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetX;
+					promptPos.x = hudFrame->getSize().w / 2 + actionPromptOffsetXTotal;
 					promptPos.x += 16;
 					break;
 				default:
@@ -5025,6 +5058,7 @@ void openMapWindow(int player) {
         input.consumeBindingsSharedWithBinding("MinimapDown");
         input.consumeBindingsSharedWithBinding("MinimapUp");
         if (input.consumeBinaryToggle("MinimapClose")) {
+			input.consumeBindingsSharedWithBinding("MinimapClose");
             if (players[player]->hud.mapWindow) {
                 players[player]->hud.mapWindow->removeSelf();
                 players[player]->hud.mapWindow = nullptr;
@@ -5339,6 +5373,7 @@ void openLogWindow(int player) {
             subframe->setActualSize(subframe_size);
         }
 		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {
+			Input::inputs[player].consumeBindingsSharedWithBinding("LogClose");
 			if ( players[player]->hud.logWindow ) {
 				players[player]->hud.logWindow->removeSelf();
 				players[player]->hud.logWindow = nullptr;
@@ -5656,7 +5691,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			mapButton->setColor(makeColor(255, 255, 255, 255));
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
-			mapButton->setWidgetBack("close");
 			mapButton->setCallback([](Button& button){
 			    openMapWindow(button.getOwner());
 			    if (players[button.getOwner()]->hud.mapWindow) {
@@ -5682,7 +5716,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			logButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
 			logButton->setColor(makeColor(255, 255, 255, 255));
 			logButton->setHighlightColor(makeColor(255, 255, 255, 255));
-			logButton->setWidgetBack("close");
 			logButton->setCallback([](Button& button) {
 			    openLogWindow(button.getOwner());
 			});
@@ -6600,7 +6633,7 @@ bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
 			}
 		}
 	}
-	else if ( name == "item_interact" )
+	else if ( name == "item_interact" || name == "spell_interact" )
 	{
 		if ( player.inventoryUI.bCompactView )
 		{
@@ -7113,12 +7146,42 @@ void Player::GUIDropdown_t::process()
 		close();
 		return;
 	}
-	if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+	if ( currentName == "item_interact" || currentName == "hotbar_interact" 
+		|| currentName == "chest_interact"
+		|| currentName == "spell_interact" )
 	{
 		if ( item )
 		{
 			dropDown.options.clear();
 			contextOptions = getContextMenuOptionsForItem(player.playernum, item);
+			if ( currentName == "hotbar_interact" )
+			{
+				contextOptions.push_back(PROMPT_CLEAR_HOTBAR_SLOT);
+			}
+			if ( player.inventoryUI.useItemDropdownOnGamepad == Inventory_t::GAMEPAD_DROPDOWN_FULL )
+			{
+				for ( auto it = contextOptions.begin(); it != contextOptions.end(); )
+				{
+					if ( (*it) == PROMPT_APPRAISE )
+					{
+						it = contextOptions.erase(it);
+						continue;
+					}
+					++it;
+				}
+			}
+			else if ( player.inventoryUI.useItemDropdownOnGamepad == Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
+			{
+				for ( auto it = contextOptions.begin(); it != contextOptions.end(); )
+				{
+					if ( (*it) == PROMPT_APPRAISE || (*it) == PROMPT_DROP )
+					{
+						it = contextOptions.erase(it);
+						continue;
+					}
+					++it;
+				}
+			}
 			for ( auto option : contextOptions )
 			{
 				dropDown.options.push_back(DropdownOption_t(getContextMenuLangEntry(player.playernum, option, *item), "", "", ""));
@@ -7393,7 +7456,8 @@ void Player::GUIDropdown_t::process()
 	{
 		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
 		{
-			if ( currentName == "item_interact" || currentName == "hotbar_interact" || currentName == "chest_interact" )
+			if ( currentName == "item_interact" || currentName == "hotbar_interact" 
+				|| currentName == "chest_interact" || currentName == "spell_interact" )
 			{
 				if ( item && dropDownOptionSelected < contextOptions.size() )
 				{
@@ -12070,6 +12134,435 @@ void Player::Hotbar_t::processHotbar()
 	updateHotbar();
 }
 
+void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
+{
+	/*if ( current_item == 0 )
+	{
+		animAppraisal = 0.0;
+		return;
+	}*/
+	real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	real_t scale = PI / 40;
+	animAppraisal += fpsScale * (scale);
+	if ( animAppraisal >= 4 * PI )
+	{
+		animAppraisal -= 4 * PI;
+	}
+
+	if ( itemNotifyUpdatedThisTick == 0 )
+	{
+		itemNotifyUpdatedThisTick = ticks;
+		itemNotifyAnimState = 0;
+	}
+	if ( (itemNotifyUpdatedThisTick != ticks) && (ticks - itemNotifyUpdatedThisTick) % (TICKS_PER_SECOND / 5) == 0 )
+	{
+		if ( itemNotifyUpdatedThisTick != ticks )
+		{
+			++itemNotifyAnimState;
+			itemNotifyUpdatedThisTick = ticks;
+		}
+		if ( itemNotifyAnimState > 2 )
+		{
+			itemNotifyAnimState = 0;
+		}
+	}
+}
+
+void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rect)
+{
+	const int player = widget.getOwner();
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+	if ( appraisal.animStartTick == ticks )
+	{
+		return;
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// build a circle mesh
+	static std::vector<std::pair<real_t, real_t>> circle_mesh;
+	if ( !circle_mesh.size() ) {
+		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_circle_vertices = 32;
+		for ( int c = 0; c <= num_circle_vertices; ++c ) {
+			real_t ang = (PI / 2) - ((PI * 2.0) / num_circle_vertices) * c;
+			circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
+		}
+	}
+	static std::vector<std::pair<real_t, real_t>> square_mesh;
+	if ( !square_mesh.size() ) {
+		square_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_square_vertices = 200;
+		int increment = 25;
+		real_t x = 0.0;
+		real_t y = -0.5;
+		int dir = 0;
+		int iterations = 0;
+		for ( int c = 0; c <= num_square_vertices; ++c ) {
+			square_mesh.emplace_back(x, y);
+
+			if ( dir == 0 )
+			{
+				y = -0.5;
+				x += 1.01 / increment;
+				if ( x >= 0.5 )
+				{
+					dir = 1;
+				}
+				x = std::min(x, 0.5);
+			}
+			else if ( dir == 1 )
+			{
+				x = 0.5;
+				y += 1.01 / increment;
+				if ( y >= 0.5 )
+				{
+					dir = 2;
+				}
+				y = std::min(y, 0.5);
+			}
+			else if ( dir == 2 )
+			{
+				y = 0.5;
+				x -= 1.01 / increment;
+				if ( x <= -0.5 )
+				{
+					dir = 3;
+				}
+				x = std::max(x, -0.5);
+			}
+			else if ( dir == 3 )
+			{
+				x = -0.5;
+				y -= 1.01 / increment;
+				if ( y <= -0.5 )
+				{
+					dir = 4;
+				}
+				y = std::max(y, -0.5);
+			}
+			else if ( dir == 4 )
+			{
+				y = -0.5;
+				x += 1.01 / increment;
+				if ( x >= 0.0 )
+				{
+					square_mesh.emplace_back(0.0, y);
+					++iterations;
+					break;
+				}
+				x = std::min(x, 0.0);
+			}
+		}
+	}
+
+	const Frame* parent = static_cast<const Frame*>(widget.getParent());
+
+	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		const real_t unitX = (real_t)rect.w;
+		const real_t unitY = (real_t)rect.h;
+		Uint8 r, g, b, a;
+
+		// bind a texture to circle mesh
+		auto testImage = Image::get("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png");
+		testImage->bind();
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glFrontFace(GL_CW); // we draw clockwise so need to set this.
+		glBegin(GL_TRIANGLE_FAN);
+		auto& appraisal = players[player]->inventoryUI.appraisal;
+		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * square_mesh.size() + 1;
+		int index = 0;
+		for ( auto pair = square_mesh.begin(); pair != square_mesh.end(); ++pair ) {
+			const real_t sx = (*pair).first * unitX * size;
+			const real_t sy = (*pair).second * unitY * size;
+
+			float const tx = ((*pair).first / 1.0) + 0.5;
+			float const ty = ((*pair).second / 1.0) + 0.5;
+			glTexCoord2f(tx, ty);
+			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+			if ( index >= numVertices )
+			{
+				break;
+			}
+			++index;
+		}
+		glEnd();
+		glFrontFace(GL_CCW);
+	};
+	{
+		SDL_Rect drawRect = rect;
+		drawRect.x += 4;
+		drawRect.y += 4;
+		drawRect.w -= 6;
+		drawRect.h -= 6;
+		real_t opacity = 192;
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
+	}
+
+	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		Uint8 r, g, b, a;
+
+		// bind a texture to mesh
+		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
+		testImage->bind();
+
+		const real_t sx = rect.w * size;
+		const real_t sy = rect.h * size;
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex2f(x, Frame::virtualScreenY - y);
+		glTexCoord2f(0, 1);
+		glVertex2f(x, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 1);
+		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 0);
+		glVertex2f(x + sx, Frame::virtualScreenY - y);
+		glEnd();
+	};
+	{
+		const int imgSize = 26;
+		SDL_Rect drawRect = rect;
+		drawRect.x += 4 + (rect.w - 6) / 2 - imgSize / 2;
+		drawRect.y += 4 + (rect.h - 6) / 2 - imgSize / 2;
+		int offsetSize = 7;
+		int offsetx = offsetSize * cos(std::min(4 * PI, appraisal.animAppraisal));
+		int offsety = offsetSize * sin(std::min(4 * PI, appraisal.animAppraisal));
+
+		drawRect.w = imgSize;
+		drawRect.h = imgSize;
+
+		real_t opacity = 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2));
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		drawMesh(drawRect.x + offsetx, drawRect.y + offsety,
+			(real_t)1.0, drawRect,
+			makeColor(255, 255, 255, opacity));
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+
+void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
+{
+	const int player = widget.getOwner();
+	auto& appraisal = players[player]->inventoryUI.appraisal;
+	if ( appraisal.animStartTick == ticks )
+	{
+		return;
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// build a circle mesh
+	static std::vector<std::pair<real_t, real_t>> circle_mesh;
+	if ( !circle_mesh.size() ) {
+		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_circle_vertices = 32;
+		for ( int c = 0; c <= num_circle_vertices; ++c ) {
+			real_t ang = (PI / 2) - ((PI * 2.0) / num_circle_vertices) * c;
+			circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
+		}
+	}
+	static std::vector<std::pair<real_t, real_t>> square_mesh;
+	if ( !square_mesh.size() ) {
+		square_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_square_vertices = 200;
+		int increment = 25;
+		real_t x = 0.0;
+		real_t y = -0.5;
+		int dir = 0;
+		int iterations = 0;
+		for ( int c = 0; c <= num_square_vertices; ++c ) {
+			square_mesh.emplace_back(x, y);
+			
+			if ( dir == 0 )
+			{
+				y = -0.5;
+				x += 1.01 / increment;
+				if ( x >= 0.5 )
+				{
+					dir = 1;
+				}
+				x = std::min(x, 0.5);
+			}
+			else if ( dir == 1 )
+			{
+				x = 0.5;
+				y += 1.01 / increment;
+				if ( y >= 0.5 )
+				{
+					dir = 2;
+				}
+				y = std::min(y, 0.5);
+			}
+			else if ( dir == 2 )
+			{
+				y = 0.5;
+				x -= 1.01 / increment;
+				if ( x <= -0.5 )
+				{
+					dir = 3;
+				}
+				x = std::max(x, -0.5);
+			}
+			else if ( dir == 3 )
+			{
+				x = -0.5;
+				y -= 1.01 / increment;
+				if ( y <= -0.5 )
+				{
+					dir = 4;
+				}
+				y = std::max(y, -0.5);
+			}
+			else if ( dir == 4 )
+			{
+				y = -0.5;
+				x += 1.01 / increment;
+				if ( x >= 0.0 )
+				{
+					square_mesh.emplace_back(0.0, y);
+					++iterations;
+					break;
+				}
+				x = std::min(x, 0.0);
+			}
+		}
+	}
+
+	const Frame* parent = static_cast<const Frame*>(widget.getParent());
+
+	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		const real_t unitX = (real_t)rect.w;
+		const real_t unitY = (real_t)rect.h;
+		Uint8 r, g, b, a;
+
+		// bind a texture to circle mesh
+		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon_Outline.png");
+		testImage->bind();
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glFrontFace(GL_CW); // we draw clockwise so need to set this.
+		glBegin(GL_TRIANGLE_FAN);
+		auto& appraisal = players[player]->inventoryUI.appraisal;
+		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * square_mesh.size() + 1;
+		int index = 0;
+		for ( auto pair = square_mesh.begin(); pair != square_mesh.end(); ++pair ) {
+			const real_t sx = (*pair).first * unitX * size;
+			const real_t sy = (*pair).second * unitY * size;
+
+			float const tx = ((*pair).first / 1.0) + 0.5;
+			float const ty = ((*pair).second / 1.0) + 0.5;
+			glTexCoord2f(tx, ty);
+			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+			if ( index >= numVertices )
+			{
+				break;
+			}
+			++index;
+		}
+		glEnd();
+		glFrontFace(GL_CCW);
+	};
+	{
+		SDL_Rect drawRect = rect;
+		drawRect.x += 2;
+		drawRect.y += 2;
+		drawRect.w -= 2;
+		drawRect.h -= 2;
+		real_t opacity = 192;
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
+	}
+	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		Uint8 r, g, b, a;
+
+		// bind a texture to mesh
+		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
+		testImage->bind();
+
+		const real_t sx = rect.w * size;
+		const real_t sy = rect.h * size;
+
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex2f(x, Frame::virtualScreenY - y);
+		glTexCoord2f(0, 1);
+		glVertex2f(x, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 1);
+		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+		glTexCoord2f(1, 0);
+		glVertex2f(x + sx, Frame::virtualScreenY - y);
+		glEnd();
+	};
+	{
+		const int imgSize = 26;
+		SDL_Rect drawRect = rect;
+		drawRect.x += 4 + (rect.w - 6) / 2 - imgSize / 2;
+		drawRect.y += 4 + (rect.h - 6) / 2 - imgSize / 2;
+		int offsetSize = 7;
+		int offsetx = offsetSize * cos(std::min(4 * PI, appraisal.animAppraisal));
+		int offsety = offsetSize * sin(std::min(4 * PI, appraisal.animAppraisal));
+
+		drawRect.w = imgSize;
+		drawRect.h = imgSize;
+
+		real_t opacity = 92 + 160 * fabs(sin(std::min(2 * PI, appraisal.animAppraisal) / 2));
+		if ( parent && parent->getOpacity() < 100.0 )
+		{
+			opacity *= parent->getOpacity() / 100.0;
+		}
+		drawMesh(drawRect.x + offsetx, drawRect.y + offsety, 
+			(real_t)1.0, drawRect, 
+			makeColor(255, 255, 255, opacity));
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+
 void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 {
 	const SDL_Rect slotSize = SDL_Rect{ 0, 0, slotFrame->getSize().w, slotFrame->getSize().h };
@@ -12119,6 +12612,13 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 	unusableFrame->setHollow(true);
 	unusableFrame->setDisabled(true);
 	unusableFrame->addImage(coloredBackgroundPos, makeColor( 64, 64, 64, 144), "images/system/white.png", "unusable item bg");
+
+	auto appraisalFrame = slotFrame->addFrame("appraisal frame");
+	appraisalFrame->setSize(slotSize);
+	appraisalFrame->setHollow(true);
+	appraisalFrame->setDisabled(true);
+	appraisalFrame->addImage(SDL_Rect{ 4, 4, 6, 14 }, 0xFFFFFFFF,
+		"images/ui/Inventory/tooltips/ExclamationAnim00.png", "new notif img");
 
 	static const char* qtyfont = "fonts/pixel_maz.ttf#32#2";
 	auto quantityFrame = slotFrame->addFrame("quantity frame");
@@ -12500,7 +13000,19 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					if ( isHotbarIcon )
 					{
-						beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+						beatitudeImg->color = makeColor(255, 255, 255, 255);
+						if ( !item->identified )
+						{
+							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_App01.png";
+						}
+						else if ( item->beatitude > 0 )
+						{
+							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Bless01.png";
+						}
+						else if ( item->beatitude < 0 )
+						{
+							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Curse01.png";
+						}
 					}
 					else
 					{
@@ -12623,6 +13135,75 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		if ( broken && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT))) )
 		{
 			brokenIconFrame->setDisabled(false);
+		}
+	}
+
+	if ( auto appraisalFrame = slotFrame->findFrame("appraisal frame") )
+	{
+		appraisalFrame->setDisabled(true);
+		appraisalFrame->setDrawCallback(nullptr);
+		if ( item->notifyIcon )
+		{
+			appraisalFrame->setDisabled(false);
+		}
+		if ( !disableBackgrounds && players[player]->inventoryUI.appraisal.current_item > 0
+			&& slotFrame->getOpacity() > 0.999
+			&& !item->identified && item->node && item->node->list == &stats[player]->inventory
+			&& item->uid == players[player]->inventoryUI.appraisal.current_item )
+		{
+			if ( isHotbarIcon )
+			{
+				appraisalFrame->setDisabled(false);
+				appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+					drawUnidentifiedItemEffectHotbarCallback(widget, rect);
+				});
+			}
+			else
+			{
+				appraisalFrame->setDisabled(false);
+				appraisalFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+					drawUnidentifiedItemEffectCallback(widget, rect);
+				});
+			}
+		}
+		if ( !appraisalFrame->isDisabled() )
+		{
+			auto img = appraisalFrame->findImage("new notif img");
+			img->disabled = true;
+			if ( item->notifyIcon )
+			{
+				img->pos.x = 4;
+				img->pos.y = 4;
+				if ( isHotbarIcon && !players[player]->hotbar.useHotbarFaceMenu )
+				{
+					img->pos.x = 10;
+					img->pos.y = 2;
+					if ( players[player]->hotbar.slots()[NUM_HOTBAR_SLOTS - 1].item == item->uid )
+					{
+						if ( slotFrame && slotFrame->getParent() && !strcmp(slotFrame->getParent()->getName(), "hotbar slot 9") )
+						{
+							img->pos.x += 6;
+						}
+					}
+				}
+				img->disabled = false;
+				auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
+				switch ( animState )
+				{
+					case 0:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
+						break;
+					case 1:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim01.png";
+						break;
+					case 2:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim02.png";
+						break;
+					default:
+						img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
+						break;
+				}
+			}
 		}
 	}
 }
@@ -13129,7 +13710,7 @@ void createInventoryTooltipFrame(const int player)
 			color, "*#images/ui/Inventory/tooltips/HoverExt_BR00.png", "interact bottom right");
 
 		const int interactOptionStartX = 60;
-		const int interactOptionStartY = 8;
+		const int interactOptionStartY = 4;
 		const int glyphSizeH = 24;
 		const int glyphSizeW = 22;
 
@@ -13209,7 +13790,7 @@ void createInventoryTooltipFrame(const int player)
 		promptText->setVJustify(Field::justify_t::CENTER);
 		promptText->setColor(promptTextColor);
 
-		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 8;
+		bottomCenter->pos.y = interactGlyph4->pos.y + interactGlyph4->pos.h + 2;
 		bottomLeft->pos.y = bottomCenter->pos.y;
 		bottomRight->pos.y = bottomCenter->pos.y;
 
@@ -14167,6 +14748,10 @@ void loadHUDSettingsJSON()
 							{
 								dropdown.module = Player::GUI_t::MODULE_CHEST;
 							}
+							else if ( moduleName == "spells" )
+							{
+								dropdown.module = Player::GUI_t::MODULE_SPELLS;
+							}
 							else if ( moduleName == "hotbar" )
 							{
 								dropdown.module = Player::GUI_t::MODULE_HOTBAR;
@@ -14262,7 +14847,7 @@ void createPlayerSpellList(const int player)
 		spellSlotsFrame->setAllowScrollBinds(false);
 
 		auto gridImg = spellSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseGridOffsetY, 162, 242 * numGrids },
-			0xFFFFFFFF, "*#images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
+			0xFFFFFFFF, "*images/ui/Inventory/HUD_Magic_ScrollGrid.png", "grid img");
 		gridImg->tiled = true;
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -14432,7 +15017,13 @@ bool takeAllChestGUIAction(const int player)
 			}
 			int oldItemQty = 0;
 			int destItemQty = 0;
+			bool oldIdentify = item->identified;
+			if ( skillCapstoneUnlocked(player, PRO_APPRAISAL) )
+			{
+				item->identified = true;
+			}
 			auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+			item->identified = oldIdentify;
 			int amountToPlace = item->count - oldItemQty;
 			assert(amountToPlace > 0);
 			if ( amountToPlace <= 0 )
@@ -15229,21 +15820,25 @@ void createPlayerInventory(const int player)
 			charFrame->setSize(charSize);
 			charFrame->setTickCallback([](Widget& widget) {
 				int player = widget.getOwner();
-				if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+				if ( players[player]->GUI.bActiveModuleUsesInventory() 
+					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
-					camera_charsheet_offsetyaw -= 0.05;
-				}
-				else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
-				{
-					camera_charsheet_offsetyaw += 0.05;
-				}
-				if ( camera_charsheet_offsetyaw > 2 * PI )
-				{
-					camera_charsheet_offsetyaw -= 2 * PI;
-				}
-				if ( camera_charsheet_offsetyaw < 0.0 )
-				{
-					camera_charsheet_offsetyaw += 2 * PI;
+					if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+					{
+						camera_charsheet_offsetyaw -= 0.05;
+					}
+					else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+					{
+						camera_charsheet_offsetyaw += 0.05;
+					}
+					if ( camera_charsheet_offsetyaw > 2 * PI )
+					{
+						camera_charsheet_offsetyaw -= 2 * PI;
+					}
+					if ( camera_charsheet_offsetyaw < 0.0 )
+					{
+						camera_charsheet_offsetyaw += 2 * PI;
+					}
 				}
 				});
 			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
@@ -15310,6 +15905,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].alchemyGUI.alchFrame->setOwner(player);
 		GenericGUI[player].alchemyGUI.alchFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].alchemyGUI.alchFrame->setDisabled(true);
+
+		GenericGUI[player].featherGUI.featherFrame = frame->addFrame("feather");
+		GenericGUI[player].featherGUI.featherFrame->setHollow(true);
+		GenericGUI[player].featherGUI.featherFrame->setBorder(0);
+		GenericGUI[player].featherGUI.featherFrame->setOwner(player);
+		GenericGUI[player].featherGUI.featherFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].featherGUI.featherFrame->setDisabled(true);
 
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
@@ -15480,6 +16082,11 @@ void Player::Inventory_t::updateItemContextMenu()
 	interactFrame->setDisabled(false);
 
 	auto options = getContextMenuOptionsForItem(player.playernum, item);
+	if ( itemMenuFromHotbar )
+	{
+		options.push_back(PROMPT_CLEAR_HOTBAR_SLOT);
+		std::reverse(options.begin(), options.end());
+	}
 	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
 	auto glyph1 = interactFrame->findImage("glyph 1");
 	auto option1 = interactFrame->findField("interact option 1");
@@ -15770,7 +16377,7 @@ void Player::Inventory_t::updateItemContextMenu()
 	}
 
 	bool activateSelection = false;
-	if ( !inputs.bMouseRight(player.playernum) && !toggleclick )
+	if ( !Input::inputs[player.playernum].binary("MenuRightClick") && !toggleclick )
 	{
 		activateSelection = true;
 	}
@@ -15855,6 +16462,17 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	{
 		return;
 	}
+	if ( prompt == PROMPT_CLEAR_HOTBAR_SLOT )
+	{
+		for ( auto& slot : players[player]->hotbar.slots() )
+		{
+			if ( slot.item == item->uid )
+			{
+				slot.item = 0;
+			}
+		}
+		return;
+	}
 	if ( prompt == PROMPT_APPRAISE )
 	{
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
@@ -15891,7 +16509,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 					int destItemQty = 0;
 					int oldQty = item->count;
 					item->count = 1;
+					bool oldIdentify = item->identified;
+					if ( skillCapstoneUnlocked(player, PRO_APPRAISAL) )
+					{
+						item->identified = true;
+					}
 					auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+					item->identified = oldIdentify;
 					item->count = oldQty;
 
 					int amountToPlace = 1;
@@ -15948,7 +16572,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 					}
 					int oldItemQty = 0;
 					int destItemQty = 0;
+					bool oldIdentify = item->identified;
+					if ( skillCapstoneUnlocked(player, PRO_APPRAISAL) )
+					{
+						item->identified = true;
+					}
 					auto result = getItemStackingBehavior(player, item, nullptr, oldItemQty, destItemQty);
+					item->identified = oldIdentify;
 					int amountToPlace = item->count - oldItemQty;
 					assert(amountToPlace > 0);
 					if ( amountToPlace <= 0 )
@@ -16186,7 +16816,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		inputs.getUIInteraction(player)->selectedItem = item;
 		playSound(139, 64); // click sound
 		inputs.getUIInteraction(player)->toggleclick = true;
-		inputs.mouseClearLeft(player);
+		Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 		return;
 	}
 	else if ( prompt == PROMPT_EAT )
@@ -16491,6 +17121,14 @@ void Player::Inventory_t::ItemTooltipDisplay_t::updateItem(const int player, Ite
 		appearance = newItem->appearance;
 		identified = newItem->identified;
 
+		if ( players[player]->inventoryUI.appraisal.current_item == uid )
+		{
+			wasAppraisalTarget = true;
+		}
+		else
+		{
+			wasAppraisalTarget = false;
+		}
 		if ( stats[player] )
 		{
 			playernum = player;
@@ -16510,6 +17148,12 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 {
 	if ( newItem && player >= 0 && player < MAXPLAYERS && stats[player] )
 	{
+		bool appraisingThisItem = false;
+		if ( players[player]->inventoryUI.appraisal.current_item == uid )
+		{
+			appraisingThisItem = true;
+		}
+
 		if ( newItem->uid == uid
 			&& newItem->type == type
 			&& newItem->status == status
@@ -16517,6 +17161,7 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 			&& newItem->count == count
 			&& newItem->appearance == appearance
 			&& newItem->identified == identified
+			&& (wasAppraisalTarget == appraisingThisItem)
 			&& playernum == player
 			&& playerLVL == stats[player]->LVL
 			&& playerEXP == stats[player]->EXP
@@ -16543,7 +17188,7 @@ Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
 	count = 0;
 	appearance = 0;
 	identified = false;
-
+	wasAppraisalTarget = false;
 	playernum = -1;
 	playerLVL = 0;
 	playerEXP = 0;
@@ -16608,6 +17253,8 @@ void Player::Inventory_t::updateCursor()
 	if ( cursor.queuedModule != Player::GUI_t::MODULE_NONE
 		&& !player.shootmode && !nohud )
 	{
+		int cursorWidth = player.inventoryUI.getSlotSize();
+		int cursorHeight = player.inventoryUI.getSlotSize();
 		bool moveMouse = false;
 		auto queuedModule = cursor.queuedModule;
 		if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
@@ -16698,7 +17345,7 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
-		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_ALCHEMY )
 		{
 			auto& alchemyGUI = GenericGUI[player.playernum].alchemyGUI;
 			if ( !alchemyGUI.alchemyGUIHasBeenCreated()
@@ -16713,6 +17360,27 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			auto& featherGUI = GenericGUI[player.playernum].featherGUI;
+			if ( !featherGUI.featherGUIHasBeenCreated()
+				|| featherGUI.featherFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( featherGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			if ( cursor.queuedFrameToWarpTo )
+			{
+				cursorWidth = cursor.queuedFrameToWarpTo->getSize().w;
+				cursorHeight = cursor.queuedFrameToWarpTo->getSize().h;
+			}
+		}
+
 		if ( moveMouse && cursor.queuedFrameToWarpTo )
 		{
 			//messagePlayer(0, "Queue warp: %d", queuedModule);
@@ -16721,7 +17389,7 @@ void Player::Inventory_t::updateCursor()
 			pos.x -= player.camera_virtualx1(); // offset any splitscreen camera positioning
 			pos.y -= player.camera_virtualy1();
 			player.inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
-				player.inventoryUI.getSlotSize(), player.inventoryUI.getSlotSize(), false);
+				cursorWidth, cursorHeight, false);
 			cursor.queuedFrameToWarpTo = nullptr;
 		}
 		else if ( cursor.queuedFrameToWarpTo && cursor.queuedModule == Player::GUI_t::MODULE_NONE )
@@ -19272,6 +19940,39 @@ void Player::Hotbar_t::updateHotbar()
 		}
 	}
 
+	auto cancelPromptTxt = hotbarFrame->findField("hotbar cancel prompt");
+	cancelPromptTxt->setDisabled(true);
+	auto cancelPromptGlyph = hotbarFrame->findImage("hotbar cancel glyph");
+	cancelPromptGlyph->disabled = true;
+
+	if ( !bCompactView && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	{
+		cancelPromptTxt->setDisabled(false);
+		cancelPromptTxt->setText(language[3063]);
+		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarCancel");
+		if ( auto imgGet = Image::get(cancelPromptGlyph->path.c_str()) )
+		{
+			cancelPromptGlyph->pos.w = imgGet->getWidth();
+			cancelPromptGlyph->pos.h = imgGet->getHeight();
+			cancelPromptGlyph->disabled = false;
+		}
+		SDL_Rect promptTxtPos = cancelPromptTxt->getSize();
+		promptTxtPos.x = hotbarCentreX;
+		promptTxtPos.y = hotbarStartY1 + getSlotSize();
+		if ( auto textGet = cancelPromptTxt->getTextObject() )
+		{
+			promptTxtPos.x -= textGet->getWidth() / 2;
+			promptTxtPos.x += cancelPromptGlyph->pos.w / 2 + 2;
+			if ( promptTxtPos.x % 2 == 1 )
+			{
+				++promptTxtPos.x;
+			}
+		}
+		cancelPromptGlyph->pos.y = promptTxtPos.y;
+		cancelPromptGlyph->pos.x = promptTxtPos.x - 4 - cancelPromptGlyph->pos.w;
+		cancelPromptTxt->setSize(promptTxtPos);
+	}
+
 	// position the slots
 	for ( int num = 0; num < NUM_HOTBAR_SLOTS; ++num )
 	{
@@ -19578,7 +20279,7 @@ void Player::Hotbar_t::updateHotbar()
 							if ( players[player.playernum]->inventoryUI.selectedItemCursorFrame )
 							{
 								players[player.playernum]->inventoryUI.selectedItemCursorFrame->setDisabled(false);
-								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), 
+								player.inventoryUI.updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize() - 2, getSlotSize() - 2, 
 									inputs.getVirtualMouse(player.playernum)->draw_cursor);
 							}
 						}
@@ -19592,7 +20293,7 @@ void Player::Hotbar_t::updateHotbar()
 								{
 									snapCursor = true;
 								}
-								updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize(), getSlotSize(), snapCursor);
+								updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, getSlotSize() - 2, getSlotSize() - 2, snapCursor);
 							}
 						}
 					}
@@ -21686,7 +22387,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		}
 	}
 	bool mouseClickedOutOfBounds = false;
-	if ( inputs.bPlayerUsingKeyboardControl(player.playernum) && inputs.bMouseLeft(player.playernum) )
+	if ( inputs.bPlayerUsingKeyboardControl(player.playernum) && Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
 	{
 		mouseClickedOutOfBounds = true;
 	}
@@ -21761,10 +22462,10 @@ void Player::SkillSheet_t::processSkillSheet()
 							skillSlideDirection = -1;
 						}
 					}
-					if ( inputs.bMouseLeft(player.playernum) )
+					if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
 					{
 						selectSkill(i);
-						inputs.mouseClearLeft(player.playernum);
+						Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 					}
 				}
 			}
@@ -22493,7 +23194,8 @@ void Player::SkillSheet_t::processSkillSheet()
 	{
 		if ( mouseClickedOutOfBounds )
 		{
-			inputs.mouseClearLeft(player.playernum);
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
 		}
 		closeSkillSheet();
 		return;
@@ -22708,15 +23410,24 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
 				}
+
 				if ( Input::inputs[player.playernum].analogToggle("MenuScrollDown") )
 				{
 					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+					{
+						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
 				}
 				else if ( Input::inputs[player.playernum].analogToggle("MenuScrollUp") )
 				{
 					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+					{
+						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+					}
 				}
 			}
 		}
@@ -22727,6 +23438,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
 		{
 			isInteractable = false;
+			player.inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
 			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
 			real_t setpointDiff = 0.0;
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )

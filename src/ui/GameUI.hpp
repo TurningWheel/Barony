@@ -64,6 +64,8 @@ extern bool newui;
 extern bool bUsePreciseFieldTextReflow;
 extern bool bUseSelectedSlotCycleAnimation;
 extern ConsoleVariable<bool> shareMinimap;
+extern Frame::result_t framesProcResult;
+extern ConsoleVariable<bool> framesEatMouse;
 
 void openMinimap(int player);
 
@@ -242,3 +244,6 @@ void openLogWindow(int player);
 
 void capitalizeString(std::string& str);
 void uppercaseString(std::string& str);
+void camelCaseString(std::string& str);
+
+void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect);

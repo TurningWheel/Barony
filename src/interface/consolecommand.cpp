@@ -3422,6 +3422,27 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_vibecheck("/vibecheck", "", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				inputs.getController(i)->addRumble(GameController::Haptic_t::RUMBLE_NORMAL,
+					8000, 0, TICKS_PER_SECOND, 0);
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_vibecheck2("/vibecheck2", "", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				SDL_GameControllerRumble(inputs.getController(i)->getControllerDevice(), 8000, 0, 500);
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_tooltipoffset("/tooltipoffset", "", []CCMD{
 	    if (argc < 2)
 	    {
@@ -3928,4 +3949,21 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_itemuids("/itemuids", "prints current global itemuids", []CCMD{
 		messagePlayer(clientnum, MESSAGE_DEBUG, "itemuids: %d", itemuids);
 	});
+
+	static ConsoleCommand ccmd_gamepadDropdown("/gamepad_dropdown", "set gamepad to use dropdown mode: (values of 0, 1 or 2)", []CCMD{
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int type = atoi(argv[1]);
+		type = std::min(std::max((int)Player::Inventory_t::GAMEPAD_DROPDOWN_DISABLE, type), (int)Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				players[i]->inventoryUI.useItemDropdownOnGamepad = static_cast<Player::Inventory_t::GamepadDropdownTypes>(type);
+			}
+		}
+	});
+
 }

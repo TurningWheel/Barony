@@ -576,6 +576,7 @@ void deinitGame()
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		players[i]->messageZone.deleteAllNotificationMessages();
+		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	list_FreeAll(&removedEntities);
 	if ( title_bmp != nullptr )

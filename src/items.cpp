@@ -82,6 +82,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->isDroppable = true;
 	item->playerSoldItemToShop = false;
 	item->itemHiddenFromShop = false;
+	item->notifyIcon = false;
 	if ( inventory )
 	{
 		Player::Inventory_t* playerInventoryUI = nullptr;
@@ -746,7 +747,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1085], count, items[type].name_unidentified, this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, language[1085], items[type].name_unidentified, this->getScrollLabel());
 				}
 				else
 				{
@@ -2627,11 +2628,23 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 
 	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
-		item->identified = true;
-		if ( item->type == GEM_GLASS )
+		if ( !(player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer()) )
 		{
-			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+			if ( !item->identified )
+			{
+				item->identified = true;
+				item->notifyIcon = true;
+				if ( item->type == GEM_GLASS )
+				{
+					steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+				}
+			}
 		}
+	}
+
+	if ( item->identified && !intro )
+	{
+		item->notifyIcon = true;
 	}
 
 	if ( multiplayer != CLIENT && player >= 0 && players[player] && players[player]->entity )
@@ -2664,7 +2677,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
 		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 		SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
-		net_packet->data[28] = item->identified;
+		net_packet->data[28] = item->identified ? 1 : 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 29;
@@ -2719,7 +2732,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 						maxStack = SCRAP_MAX_STACK_QTY;
 					}
 
-					if ( item2->count == maxStack - 1 )
+					if ( item2->count >= maxStack - 1 )
 					{
 						// can't add anymore to this stack, let's skip over this.
 
@@ -2863,6 +2876,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
 		item2->ownerUid = item->ownerUid;
+		item2->notifyIcon = item->notifyIcon;
 		return item2;
 	}
 

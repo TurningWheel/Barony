@@ -242,7 +242,7 @@ Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
 bool arachnophobia_filter = false;
 
-static Frame::result_t framesProcResult{
+Frame::result_t framesProcResult{
     false,
     0,
     nullptr,
@@ -692,7 +692,7 @@ std::string TimerExperiments::render(State state)
 
 -------------------------------------------------------------------------------*/
 
-static ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
+ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 
 void gameLogic(void)
 {
@@ -3609,22 +3609,36 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERDEVICEADDED:
 			{
-				const int id = event.cdevice.which;
-				if ( !SDL_IsGameController(id) )
+				const int device_index = event.cdevice.which; // this is an index within SDL_Numjoysticks(), not to be referred to from now on.
+				if ( !SDL_IsGameController(device_index) )
 				{
-					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", id);
+					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
 					break;
 				}
 
 				bool deviceAlreadyAdded = false;
-				for ( auto& controller : game_controllers )
+				SDL_GameController* newControllerAdded = SDL_GameControllerOpen(device_index);
+				if ( newControllerAdded != nullptr )
 				{
-					if ( controller.isActive() && controller.getID() == id )
+					for ( auto& controller : game_controllers )
 					{
-						printlog("(Device %d added, but already in use as game controller.)\n", id);
-						deviceAlreadyAdded = true;
-						break;
+						if ( controller.isActive() )
+						{
+							if ( controller.getControllerDevice() == newControllerAdded )
+							{
+								// we already have this controller in our system.
+								deviceAlreadyAdded = true;
+								printlog("(Device %d added, but already in use as game controller.)\n", device_index);
+								break;
+							}
+						}
 					}
+				}
+
+				if ( newControllerAdded )
+				{
+					SDL_GameControllerClose(newControllerAdded); // we're going to re-open this below..
+					newControllerAdded = nullptr;
 				}
 
 				if ( deviceAlreadyAdded )
@@ -3633,6 +3647,7 @@ void handleEvents(void)
 				}
 
 				// now find a free controller slot.
+				int newControllerInstance = -1;
 				for ( auto& controller : game_controllers )
 				{
 					if ( controller.isActive() )
@@ -3640,20 +3655,31 @@ void handleEvents(void)
 						continue;
 					}
 
-					if ( SDL_IsGameController(id) && controller.open(id) )
+					if ( SDL_IsGameController(device_index) && controller.open(device_index) )
 					{
-						printlog("(Device %d successfully initialized as game controller.)\n", id);
+						printlog("(Device %d successfully initialized as game controller.)\n", controller.getID());
 						//inputs.addControllerIDToNextAvailableInput(id);
-						Input::gameControllers[id] = controller.getControllerDevice();
+						controller.initBindings();
+						Input::gameControllers[controller.getID()] = controller.getControllerDevice();
 						for (int c = 0; c < 4; ++c) {
 							Input::inputs[c].refresh();
 						}
+						newControllerInstance = controller.getID();
 					}
 					else
 					{
-						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", id);
+						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
 					}
 					break;
+				}
+				for ( auto& controller : game_controllers )
+				{
+					if ( controller.getID() != newControllerInstance )
+					{
+						// haptic devices are enumerated differently than joysticks
+						// reobtain haptic devices for each existing controller
+						controller.reinitHaptic();
+					}
 				}
 				break;
 			}
@@ -3666,6 +3692,7 @@ void handleEvents(void)
 				{
 					printlog("(Unknown device removed as game controller, null controller returned.)\n");
 				}
+
 				for ( auto& controller : game_controllers )
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
@@ -3679,6 +3706,12 @@ void handleEvents(void)
 							Input::inputs[c].refresh();
 						}
 					}
+				}
+				for ( auto& controller : game_controllers )
+				{
+					// haptic devices are enumerated differently than joysticks
+					// reobtain haptic devices for each existing controller
+					controller.reinitHaptic();
 				}
 				break;
 			}
@@ -4220,7 +4253,8 @@ void ingameHud()
         {
 	        // toggle minimap
 		    // player not needed to be alive
-            if ( players[player]->shootmode && input.consumeBinaryToggle("Toggle Minimap") )
+            if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE
+				&& input.consumeBinaryToggle("Toggle Minimap") )
             {
                 openMinimap(player);
             }
@@ -4257,7 +4291,7 @@ void ingameHud()
 		// if useItemDropdownOnGamepad, then 'b' will close inventory, with a 'couple' checks..
 		if ( players[player]->isLocalPlayer() 
 			&& !players[player]->shootmode
-			&& players[player]->inventoryUI.useItemDropdownOnGamepad
+			&& (players[player]->inventoryUI.useItemDropdownOnGamepad != Player::Inventory_t::GAMEPAD_DROPDOWN_DISABLE)
 			&& !inputs.getVirtualMouse(player)->draw_cursor
 			&& !players[player]->usingCommand() && input.binaryToggle("MenuCancel")
 			&& !players[player]->GUI.isDropdownActive()
@@ -4268,6 +4302,8 @@ void ingameHud()
 			&& players[player]->gui_mode == GUI_MODE_INVENTORY
 			&& players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& !players[player]->inventoryUI.chestGUI.bOpen
+			&& !players[player]->hud.mapWindow
+			&& !players[player]->hud.logWindow
 			&& !players[player]->shopGUI.bOpen
 			&& !GenericGUI[player].isGUIOpen() )
 		{
@@ -4333,19 +4369,19 @@ void ingameHud()
 			}
 			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
 			{
+				bool hotbarFaceMenuOpen = players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE;
 			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
 			    {
 				    allowCasting = true;
-				    if (tryHotbarQuickCast == false) {
-				        if ((strcmp(input.binding("Cast Spell"), "Mouse3") == 0 || strcmp(input.binding("Block"), "Mouse3") == 0)
-					        && players[player]->gui_mode >= GUI_MODE_INVENTORY
-					        && (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player)))
-				        {
-					        allowCasting = false;
-				        }
+				    if ( tryHotbarQuickCast == false ) 
+					{
+						if ( hotbarFaceMenuOpen )
+						{
+							allowCasting = false;
+						}
 				    }
 
-				    if ( input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
+				    if ( allowCasting && input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
 				    {
 					    if ( players[player]->entity->effectShapeshift != NOTHING )
 					    {
@@ -4428,9 +4464,9 @@ void ingameHud()
 						}
 					}
 				}
-				input.consumeBinaryToggle("Cast Spell");
 				input.consumeBinaryToggle("Block");
 			}
+			input.consumeBinaryToggle("Cast Spell");
 		}
 		players[player]->magic.resetQuickCastSpell();
 
@@ -4727,6 +4763,7 @@ void ingameHud()
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
+		GenericGUI[player].featherGUI.updateFeatherMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
@@ -5883,8 +5920,13 @@ int main(int argc, char** argv)
 
 						enchantedFeatherScrollSeed.seed(uniqueGameKey);
 						enchantedFeatherScrollsShuffled.clear();
-						enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
-						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+						auto scrollsToPick = enchantedFeatherScrollsFixedList;
+						while ( !scrollsToPick.empty() )
+						{
+							int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
+							enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
+							scrollsToPick.erase(scrollsToPick.begin() + index);
+						}
 						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 						//{
 						//	printlog("Sequence: %d", *it);

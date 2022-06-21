@@ -45,6 +45,7 @@ bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
 Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
 std::unordered_set<int> clientLearnedAlchemyIngredients[MAXPLAYERS];
 std::vector<std::pair<int, std::pair<int, int>>> clientLearnedAlchemyRecipes[MAXPLAYERS];
+std::unordered_set<int> clientLearnedScrollLabels[MAXPLAYERS];
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
@@ -1428,6 +1429,14 @@ int saveGame(int saveIndex)
 				fp->write(&entry.second.first, sizeof(Sint32), 1);
 				fp->write(&entry.second.second, sizeof(Sint32), 1);
 			}
+
+			// write scrolls known
+			Uint32 numscrolls = clientLearnedScrollLabels[player].size();
+			fp->write(&numscrolls, sizeof(Uint32), 1);
+			for ( auto& entry : clientLearnedScrollLabels[player] )
+			{
+				fp->write(&entry, sizeof(Sint32), 1);
+			}
 	    }
     }
     else
@@ -1461,6 +1470,14 @@ int saveGame(int saveIndex)
 			fp->write(&entry.first, sizeof(Sint32), 1);
 			fp->write(&entry.second.first, sizeof(Sint32), 1);
 			fp->write(&entry.second.second, sizeof(Sint32), 1);
+		}
+
+		// write scrolls known
+		Uint32 numscrolls = clientLearnedScrollLabels[clientnum].size();
+		fp->write(&numscrolls, sizeof(Uint32), 1);
+		for ( auto& entry : clientLearnedScrollLabels[clientnum] )
+		{
+			fp->write(&entry, sizeof(Sint32), 1);
 		}
     }
 
@@ -2208,6 +2225,20 @@ int loadGame(int player, int saveIndex)
 						clientLearnedAlchemyRecipes[c].push_back(recipeEntry);
 					}
 				}
+
+				clientLearnedScrollLabels[c].clear();
+				if ( versionNumber >= 382 )
+				{
+					// read scroll labels
+					Uint32 numscrolls = 0;
+					fp->read(&numscrolls, sizeof(Uint32), 1);
+					for ( int s = 0; s < numscrolls; ++s )
+					{
+						int scroll = 0;
+						fp->read(&scroll, sizeof(Sint32), 1);
+						clientLearnedScrollLabels[c].insert(scroll);
+					}
+				}
             }
             else
             {
@@ -2229,6 +2260,17 @@ int loadGame(int player, int saveIndex)
 					{
 						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+					}
+				}
+
+				if ( versionNumber >= 382 )
+				{
+					// read scroll labels
+					Uint32 numscrolls = 0;
+					fp->read(&numscrolls, sizeof(Uint32), 1);
+					for ( int s = 0; s < numscrolls; ++s )
+					{
 						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 					}
 				}
@@ -2272,6 +2314,20 @@ int loadGame(int player, int saveIndex)
 				fp->read(&recipeEntry.second.first, sizeof(Sint32), 1);
 				fp->read(&recipeEntry.second.second, sizeof(Sint32), 1);
 				clientLearnedAlchemyRecipes[player].push_back(recipeEntry);
+			}
+		}
+
+		clientLearnedScrollLabels[player].clear();
+		if ( versionNumber >= 382 )
+		{
+			// read scroll labels
+			Uint32 numscrolls = 0;
+			fp->read(&numscrolls, sizeof(Uint32), 1);
+			for ( int s = 0; s < numscrolls; ++s )
+			{
+				int scroll = 0;
+				fp->read(&scroll, sizeof(Sint32), 1);
+				clientLearnedScrollLabels[player].insert(scroll);
 			}
 		}
     }
@@ -2718,8 +2774,13 @@ int loadGame(int player, int saveIndex)
 
 	enchantedFeatherScrollSeed.seed(uniqueGameKey);
 	enchantedFeatherScrollsShuffled.clear();
-	enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
-	std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+	auto scrollsToPick = enchantedFeatherScrollsFixedList;
+	while ( !scrollsToPick.empty() )
+	{
+		int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
+		enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
+		scrollsToPick.erase(scrollsToPick.begin() + index);
+	}
 	for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 	{
 		//printlog("Sequence: %d", *it);
@@ -3151,6 +3212,17 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 			{
 				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
+			}
+		}
+
+		if ( versionNumber >= 382 )
+		{
+			// read alchemy recipes
+			Uint32 numscrolls = 0;
+			fp->read(&numscrolls, sizeof(Uint32), 1);
+			for ( int s = 0; s < numscrolls; ++s )
+			{
 				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
 			}
 		}
@@ -3629,6 +3701,7 @@ void setDefaultPlayerConducts()
 		playerFailedRangedOnlyConduct[c] = false;
 		clientLearnedAlchemyIngredients[c].clear();
 		clientLearnedAlchemyRecipes[c].clear();
+		clientLearnedScrollLabels[c].clear();
 	}
 	achievementObserver.clearPlayerAchievementData();
 }

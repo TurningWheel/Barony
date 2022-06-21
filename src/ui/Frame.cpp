@@ -1007,13 +1007,13 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && usable) {
 		bool mwheeldown = false;
 		bool mwheelup = false;
-	    if (input.consumeBinaryToggle("MenuMouseWheelDown")) {
-		    mwheeldown = true;
-	    }
-	    if (input.consumeBinaryToggle("MenuMouseWheelUp")) {
-		    mwheelup = true;
-	    }
 		if (allowScrolling && allowScrollBinds) {
+			if (input.consumeBinaryToggle("MenuMouseWheelDown")) {
+				mwheeldown = true;
+			}
+			if (input.consumeBinaryToggle("MenuMouseWheelUp")) {
+				mwheelup = true;
+			}
 			if (mwheeldown || mwheelup) {
 				usable = result.usable = false;
 

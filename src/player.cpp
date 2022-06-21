@@ -22,6 +22,7 @@
 #include "colors.hpp"
 #include "ui/GameUI.hpp"
 #include "ui/Frame.hpp"
+#include "ui/Slider.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -81,6 +82,7 @@ GameController::~GameController()
 
 void GameController::close()
 {
+	stopRumble();
 	if ( sdl_haptic )
 	{
 		SDL_HapticClose(sdl_haptic);
@@ -95,6 +97,38 @@ void GameController::close()
 	id = -1;
 
 	initBindings(); // clear status of all values
+}
+
+void GameController::reinitHaptic()
+{
+	return; // using SDL_GameControllerRumble instead..
+	if ( !sdl_device )
+	{
+		return;
+	}
+	if ( sdl_haptic )
+	{
+		stopRumble();
+		printlog("[INPUTS]: Stopping haptics on device: %d...", getID());
+		SDL_HapticClose(sdl_haptic);
+		sdl_haptic = nullptr;
+	}
+
+	printlog("[INPUTS]: Reinit haptics on device: %d", getID());
+	SDL_Joystick* joystick = SDL_GameControllerGetJoystick(sdl_device);
+	sdl_haptic = SDL_HapticOpenFromJoystick(joystick);
+	if ( sdl_haptic == nullptr )
+	{
+		printlog("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+	}
+	if ( sdl_haptic )
+	{
+		printlog("Controller name is \"%s\", haptics available: %d", name.c_str(), SDL_HapticQuery(sdl_haptic));
+	}
+	else
+	{
+		printlog("Controller name is \"%s\", haptics disabled", name.c_str());
+	}
 }
 
 bool GameController::open(int c)
@@ -125,20 +159,22 @@ bool GameController::open(int c)
 		id = c;
 		printlog("Successfully initialized game controller!\n");
 		name = (SDL_GameControllerNameForIndex(c));
-		sdl_haptic = SDL_HapticOpen(c);
-		if ( sdl_haptic == nullptr )
+
+		if ( SDL_GameControllerHasRumble(sdl_device) == SDL_FALSE )
 		{
-			printf("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+			printlog("Notice: Controller does not support rumble!");
+			haptics.vibrationEnabled = false;
 		}
 		else
 		{
-			//Get initialize rumble
-			/*if ( SDL_HapticRumbleInit(sdl_haptic) < 0 )
-			{
-				printf("Warning: Unable to initialize rumble! SDL Error: %s\n", SDL_GetError());
-				SDL_HapticClose(sdl_haptic);
-				sdl_haptic = nullptr;
-			}*/
+			printlog("Controller name is \"%s\", rumble enabled", name.c_str());
+			haptics.vibrationEnabled = true;
+		}
+		/*SDL_Joystick* joystick = SDL_GameControllerGetJoystick(sdl_device);
+		sdl_haptic = SDL_HapticOpenFromJoystick(joystick);
+		if ( sdl_haptic == nullptr )
+		{
+			printlog("Notice: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
 		}
 		if ( sdl_haptic )
 		{
@@ -147,7 +183,7 @@ bool GameController::open(int c)
 		else
 		{
 			printlog("Controller name is \"%s\", haptics disabled", name.c_str());
-		}
+		}*/
 	}
 
 
@@ -1118,6 +1154,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 	if ( moduleToAccess == MODULE_INVENTORY || moduleToAccess == MODULE_SPELLS
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
+		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY )
 	{
 		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
@@ -1231,14 +1268,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( GenericGUI[player.playernum].tinkerGUI.bOpen )
 			{
-				/*if ( !checkDestinationOnly )
-				{
-					activateModule(MODULE_INVENTORY);
-					warpControllerToModule(false);
-					input.consumeBinaryToggle("UINavLeftBumper");
-					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
-				}
-				return MODULE_INVENTORY;*/
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].featherGUI.bOpen )
+			{
 				return MODULE_NONE;
 			}
 			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
@@ -1374,14 +1407,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_TINKERING )
 		{
-			/*if ( !checkDestinationOnly )
-			{
-				activateModule(MODULE_TINKERING);
-				warpControllerToModule(false);
-				input.consumeBinaryToggle("UINavLeftBumper");
-				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
-			}
-			return MODULE_TINKERING;*/
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_FEATHER )
+		{
 			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
@@ -1497,14 +1526,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( GenericGUI[player.playernum].tinkerGUI.bOpen )
 			{
-				/*if ( !checkDestinationOnly )
-				{
-					activateModule(MODULE_INVENTORY);
-					warpControllerToModule(false);
-					input.consumeBinaryToggle("UINavRightBumper");
-					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
-				}
-				return MODULE_INVENTORY;*/
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].featherGUI.bOpen )
+			{
 				return MODULE_NONE;
 			}
 			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
@@ -1624,14 +1649,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_TINKERING )
 		{
-			/*if ( !checkDestinationOnly )
-			{
-				activateModule(MODULE_TINKERING);
-				warpControllerToModule(false);
-				input.consumeBinaryToggle("UINavRightBumper");
-				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
-			}
-			return MODULE_TINKERING;*/
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_FEATHER )
+		{
 			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_HOTBAR )
@@ -1782,6 +1803,7 @@ bool Player::GUI_t::handleInventoryMovement()
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -1823,8 +1845,43 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+						|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(), 
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -1838,13 +1895,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedSlotY(),
 				-1, 0);
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -1886,8 +1943,43 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
+				1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+						|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(),
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -1901,13 +1993,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedSlotY(),
 				1, 0);
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2002,8 +2094,43 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+						|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(),
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -2017,13 +2144,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				0, -1);
 			//Will handle warping to hotbar.
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
 
 		dpad_moved = true;
 	}
 
 	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
 	{
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2118,8 +2245,43 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, 1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+		{
+			if ( !GenericGUI[player].featherGUI.bFirstTimeSnapCursor
+				|| !GenericGUI[player].featherGUI.isInteractable
+				|| (abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+				|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold())) )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
+			select_feather_slot(player,
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotX(),
+				GenericGUI[player].featherGUI.getSelectedFeatherSlotY(),
+				0, 1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 		{
+			Slider* slider = nullptr;
+			bool disableDpad = false;
+			if ( players[player]->inventoryUI.spellFrame )
+			{
+				auto baseFrame = players[player]->inventoryUI.spellFrame->findFrame("spell base");
+				slider = baseFrame->findSlider("spell slider");
+				if ( slider && !slider->isDisabled() &&
+					((abs(Input::inputs[player].analog("MenuScrollDown")) > (Input::inputs[player].getAnalogToggleThreshold()))
+					|| (abs(Input::inputs[player].analog("MenuScrollUp")) > (Input::inputs[player].getAnalogToggleThreshold()))) )
+				{
+					disableDpad = true;
+				}
+			}
+			if ( !players[player]->inventoryUI.spellPanel.bFirstTimeSnapCursor
+				|| !players[player]->inventoryUI.spellPanel.isInteractable
+				|| disableDpad )
+			{
+				inputs.getVirtualMouse(player)->draw_cursor = false;
+				return false;
+			}
 			select_spell_slot(player,
 				players[player]->inventoryUI.getSelectedSpellX(),
 				players[player]->inventoryUI.getSelectedSpellY(),
@@ -2132,7 +2294,7 @@ bool Player::GUI_t::handleInventoryMovement()
 				players[player]->inventoryUI.getSelectedSlotY(),
 				0, 1);
 		}
-		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+
 		dpad_moved = true;
 	}
 
@@ -2185,57 +2347,15 @@ bool GameController::handleRepairGUIMovement(const int player)
 
 void initGameControllers()
 {
-#ifdef NINTENDO
-	SDL_GameControllerAddMappingsFromFile(GAME_CONTROLLER_DB_FILEPATH);
-#else
-	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
-#endif
-	for ( auto& controller : game_controllers )
-	{
-		controller.close();
-		controller.initBindings();
-	}
-
-	int c = 0;
-	bool found = false;
-
-	if ( c == 0 && !inputs.hasController(c) )
-	{
-		for ( auto& controller : game_controllers )
-		{
-			if ( controller.isActive() )
-			{
-				inputs.setControllerID(c, controller.getID());
-				break;
-			}
-		}
-	}
-
 	inputs.setPlayerIDAllowedKeyboard(0);
 
-	auto controller_itr = game_controllers.begin();
-	for ( c = 0; c < SDL_NumJoysticks(); ++c )
+	bool found = false;
+	for ( auto controller : game_controllers )
 	{
-		if (SDL_IsGameController(c) && controller_itr->open(c))
+		if ( controller.isActive() )
 		{
-			printlog("(Device %d successfully initialized as game controller.)\n", c);
-			//inputs.setControllerID(c, controller_itr->getID());
-			Input::gameControllers[controller_itr->getID()] = controller_itr->getControllerDevice();
-			for ( int c = 0; c < 4; ++c ) {
-				Input::inputs[c].refresh();
-			}
 			found = true;
-
-			controller_itr = std::next(controller_itr);
-			if ( controller_itr == game_controllers.end() )
-			{
-				printlog("Info: Max controller limit reached.");
-				break;
-			}
-		}
-		else
-		{
-			printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", c);
+			break;
 		}
 	}
 
@@ -2292,7 +2412,7 @@ void GameController::handleRumble()
 		++haptics.hapticTick;
 	}
 	size_t size = haptics.activeRumbles.size();
-	if ( !sdl_haptic || size == 0 )
+	if ( size == 0 )
 	{
 		return;
 	}
@@ -2356,10 +2476,6 @@ void GameController::handleRumble()
 
 void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid)
 {
-	if ( !sdl_haptic )
-	{
-		return;
-	}
 	if ( !haptics.vibrationEnabled )
 	{
 		return;
@@ -2433,7 +2549,7 @@ void Inputs::addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount)
 
 void GameController::doRumble(Haptic_t::Rumble* r)
 {
-	if ( !sdl_haptic || !r )
+	if ( !r )
 	{
 		return;
 	}
@@ -2541,27 +2657,36 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude;
 	}
 	haptics.hapticEffect.leftright.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
-	if ( haptics.hapticEffectId == -1 )
+
+	if ( sdl_haptic )
 	{
-		haptics.hapticEffectId = SDL_HapticNewEffect(sdl_haptic, &haptics.hapticEffect);
 		if ( haptics.hapticEffectId == -1 )
 		{
-			printlog("SDL_HapticNewEffect error: %s", SDL_GetError());
+			haptics.hapticEffectId = SDL_HapticNewEffect(sdl_haptic, &haptics.hapticEffect);
+			if ( haptics.hapticEffectId == -1 )
+			{
+				printlog("SDL_HapticNewEffect error: %s", SDL_GetError());
+			}
+		}
+		if ( SDL_HapticUpdateEffect(sdl_haptic, haptics.hapticEffectId, &haptics.hapticEffect) < 0 )
+		{
+			printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
+			return;
+		}
+		if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
+		{
+			printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
 		}
 	}
-	if ( SDL_HapticUpdateEffect(sdl_haptic, haptics.hapticEffectId, &haptics.hapticEffect) < 0 )
+	else
 	{
-		printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
-		return;
-	}
-	if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
-	{
-		printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
+		SDL_GameControllerRumble(getControllerDevice(), haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
 	}
 }
 void GameController::stopRumble()
 {
 	SDL_HapticStopEffect(sdl_haptic, haptics.hapticEffectId);
+	haptics.hapticEffectId = -1;
 }
 
 Player::Player(int in_playernum, bool in_local_host) : 
@@ -5384,6 +5509,9 @@ void Player::clearGUIPointers()
 	genericGUI.alchemyGUI.alchFrame = nullptr;
 	genericGUI.alchemyGUI.alchemySlotFrames.clear();
 	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
+	genericGUI.featherGUI.featherFrame = nullptr;
+	genericGUI.featherGUI.featherSlotFrames.clear();
+	genericGUI.featherGUI.itemRequiresTitleReflow = true;
 
 	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
 	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;

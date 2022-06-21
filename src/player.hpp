@@ -212,6 +212,7 @@ public:
 	void doRumble(Haptic_t::Rumble* r);
 	void stopRumble();
 	void handleRumble();
+	void reinitHaptic();
 
 	/*
 	 * Moves the player's head around.
@@ -705,6 +706,7 @@ public:
 			MODULE_IDENTIFY,
 			MODULE_TINKERING,
 			MODULE_ALCHEMY,
+			MODULE_FEATHER,
 			MODULE_FOLLOWERMENU,
 			MODULE_CHARACTERSHEET,
 			MODULE_SKILLS_LIST,
@@ -782,7 +784,13 @@ public:
 		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
 		void setCompactView(bool bCompact);
 		void resizeAndPositionInventoryElements();
-		bool useItemDropdownOnGamepad = false;
+		enum GamepadDropdownTypes : int
+		{
+			GAMEPAD_DROPDOWN_DISABLE,
+			GAMEPAD_DROPDOWN_FULL, // always open full context menu on 'A', 'B' to close inventory
+			GAMEPAD_DROPDOWN_COMPACT // 'A' opens a context menu if item has 2+ options on 'A', 'Y'. 'Y' drop, 'B' close inv
+		};
+		GamepadDropdownTypes useItemDropdownOnGamepad = GAMEPAD_DROPDOWN_COMPACT;
 
 		struct Cursor_t
 		{
@@ -874,6 +882,7 @@ public:
 			Uint32 appearance;
 			bool identified;
 			Uint32 uid;
+			bool wasAppraisalTarget = false;
 
 			int playernum;
 			Sint32 playerLVL;
@@ -1014,8 +1023,21 @@ public:
 			int timer = 0; //There is a delay after the appraisal skill is activated before the item is identified.
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
+			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
+			real_t animAppraisal = 0.0;
+			Uint32 animStartTick = 0;
+			Uint32 itemNotifyUpdatedThisTick = 0;
+			int itemNotifyAnimState = 0;
+			enum ItemNotifyHoverStates : int
+			{
+				NOTIFY_ITEM_WAITING_TO_HOVER,
+				NOTIFY_ITEM_HOVERED,
+				NOTIFY_ITEM_REMOVE
+			};
+			std::unordered_map<Uint32, ItemNotifyHoverStates> itemsToNotify;
+			void updateAppraisalAnim();
 		} appraisal;
 		bool bNewInventoryLayout = true;
 	} inventoryUI;
@@ -1738,7 +1760,7 @@ public:
 		// end temp stuff
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
-		const int getSlotSize() const { return 44; }
+		const int getSlotSize() const { return 48; }
 		const int getHotbarStartY1() const { return -106; }
 		const int getHotbarStartY2() const { return -96; }
 

@@ -755,9 +755,11 @@ void Entity::actChest()
 						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 						net_packet->data[24] = item->identified;
 						net_packet->data[25] = 1; //forceNewStack ? 1 : 0;
+						net_packet->data[26] = (char)item->x;
+						net_packet->data[27] = (char)item->y;
 						net_packet->address.host = net_clients[chestclicked - 1].host;
 						net_packet->address.port = net_clients[chestclicked - 1].port;
-						net_packet->len = 26;
+						net_packet->len = 28;
 						sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 					}
 				}
@@ -1029,7 +1031,7 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		}
 	}
 
-	item->node = list_AddNodeFirst(inventory);
+	item->node = list_AddNodeLast(inventory);
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
 
@@ -1043,9 +1045,11 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
 		net_packet->data[25] = forceNewStack ? 1 : 0;
+		net_packet->data[26] = (char)item->x;
+		net_packet->data[27] = (char)item->y;
 		net_packet->address.host = net_clients[chestOpener - 1].host;
 		net_packet->address.port = net_clients[chestOpener - 1].port;
-		net_packet->len = 26;
+		net_packet->len = 28;
 		sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
 	}
 	return item;
@@ -1092,22 +1096,7 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 	}
 	playSoundPlayer(player, 47 + rand() % 3, 64);
 
-	Item* newitem = NULL;
-	if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
-	{
-		printlog( "failed to allocate memory for new item!\n" );
-		return nullptr; //Error or something.
-	}
-	newitem->node = NULL;
-	newitem->count = amount;
-	newitem->type = item->type;
-	newitem->status = item->status;
-	newitem->beatitude = item->beatitude;
-	newitem->appearance = item->appearance;
-	newitem->identified = item->identified;
-	newitem->uid = itemuids;
-	itemuids++;
-
+	Item* newitem = newItem(item->type, item->status, item->beatitude, amount, item->appearance, item->identified, nullptr);
 	Item** slot = itemSlot(stats[player], item);
 	if ( multiplayer == CLIENT )
 	{
@@ -1199,7 +1188,14 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 		}
 	}
 
-	messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
+	if ( newitem->count > 1 )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[4197], newitem->count, newitem->getName());
+	}
+	else
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
+	}
 
 	return addItemToChest(newitem, forceNewStack, specificDestinationStack);
 }
@@ -1236,18 +1232,7 @@ Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 			return NULL;
 		}
 
-		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
-		{
-			printlog( "failed to allocate memory for new item!\n" );
-			return NULL; //Error or something.
-		}
-		newitem->node = NULL;
-		newitem->count = 1;
-		newitem->type = item->type;
-		newitem->status = item->status;
-		newitem->beatitude = item->beatitude;
-		newitem->appearance = item->appearance;
-		newitem->identified = item->identified;
+		newitem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
 
 		//Tell the server.
 		if ( !getInfoOnly )
@@ -1282,24 +1267,12 @@ Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 			return NULL;
 		}
 
-		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL)
-		{
-			printlog( "failed to allocate memory for new item!\n" );
-			return NULL; //Error or something.
-		}
-		newitem->node = NULL;
-		newitem->count = 1;
-		newitem->type = item->type;
-		newitem->status = item->status;
-		newitem->beatitude = item->beatitude;
-		newitem->appearance = item->appearance;
-		newitem->identified = item->identified;
+		newitem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
 	}
 
-	if ( !getInfoOnly )
+	if ( getInfoOnly )
 	{
-		newitem->uid = itemuids;
-		itemuids++;
+		itemuids--;
 	}
 
 	//Grab only x items from the chest.
@@ -1374,7 +1347,7 @@ Item* addItemToChestClientside(const int player, Item* item, bool forceNewStack,
 			}
 		}
 
-		item->node = list_AddNodeFirst(&chestInv[player]);
+		item->node = list_AddNodeLast(&chestInv[player]);
 		item->node->element = item;
 		item->node->deconstructor = &defaultDeconstructor;
 		return item;
@@ -1426,7 +1399,7 @@ Item* Entity::addItemToChestServer(Item* item, bool forceNewStack, Item* specifi
 		}
 	}
 
-	item->node = list_AddNodeFirst(inventory);
+	item->node = list_AddNodeLast(inventory);
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
 	return item;
