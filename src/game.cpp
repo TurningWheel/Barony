@@ -4366,19 +4366,19 @@ void ingameHud()
 			}
 			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
 			{
+				bool hotbarFaceMenuOpen = players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE;
 			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
 			    {
 				    allowCasting = true;
-				    if (tryHotbarQuickCast == false) {
-				        if ((strcmp(input.binding("Cast Spell"), "Mouse3") == 0 || strcmp(input.binding("Block"), "Mouse3") == 0)
-					        && players[player]->gui_mode >= GUI_MODE_INVENTORY
-					        && (mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player)))
-				        {
-					        allowCasting = false;
-				        }
+				    if ( tryHotbarQuickCast == false ) 
+					{
+						if ( hotbarFaceMenuOpen )
+						{
+							allowCasting = false;
+						}
 				    }
 
-				    if ( input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
+				    if ( allowCasting && input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
 				    {
 					    if ( players[player]->entity->effectShapeshift != NOTHING )
 					    {
@@ -4461,9 +4461,9 @@ void ingameHud()
 						}
 					}
 				}
-				input.consumeBinaryToggle("Cast Spell");
 				input.consumeBinaryToggle("Block");
 			}
+			input.consumeBinaryToggle("Cast Spell");
 		}
 		players[player]->magic.resetQuickCastSpell();
 
