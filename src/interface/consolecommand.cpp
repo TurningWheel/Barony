@@ -3422,6 +3422,27 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_vibecheck("/vibecheck", "", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				inputs.getController(i)->addRumble(GameController::Haptic_t::RUMBLE_NORMAL,
+					8000, 0, 500, 0);
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_vibecheck2("/vibecheck2", "", []CCMD{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.hasController(i) )
+			{
+				SDL_GameControllerRumble(inputs.getController(i)->getControllerDevice(), 8000, 0, 500);
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_tooltipoffset("/tooltipoffset", "", []CCMD{
 	    if (argc < 2)
 	    {
