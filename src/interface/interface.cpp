@@ -816,7 +816,7 @@ int loadConfig(char* filename)
 	}
 
 	// read commands from it
-	while ( fp->gets(str, 1024) != NULL )
+	while ( fp->gets2(str, 1024) != NULL )
 	{
 		if ( str[0] != '#' && str[0] != '\n' && str[0] != '\r' )   // if this line is not white space or a comment
 		{
