@@ -5023,7 +5023,7 @@ any gyrobot findings.#
 3721 Write %s on the scroll#
 3722 Inscribing a         
 %+2d %s#
-3723 clear #
+3723 Clear Slot#
 3724 Inscribed %s!#
 3725 You trace over some of the faded text...#
 3726 Select a spellbook to repair#
