@@ -6628,9 +6628,6 @@ void Player::Inventory_t::updateInventory()
 		return;
 	}
 
-	static ConsoleVariable<int> cvar_gamepadDropdown("/gamepad_dropdown", 0);
-	useItemDropdownOnGamepad = static_cast<GamepadDropdownTypes>(*cvar_gamepadDropdown);
-
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
 	openInventory();

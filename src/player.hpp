@@ -790,7 +790,7 @@ public:
 			GAMEPAD_DROPDOWN_FULL, // always open full context menu on 'A', 'B' to close inventory
 			GAMEPAD_DROPDOWN_COMPACT // 'A' opens a context menu if item has 2+ options on 'A', 'Y'. 'Y' drop, 'B' close inv
 		};
-		GamepadDropdownTypes useItemDropdownOnGamepad = GAMEPAD_DROPDOWN_DISABLE; 
+		GamepadDropdownTypes useItemDropdownOnGamepad = GAMEPAD_DROPDOWN_COMPACT;
 
 		struct Cursor_t
 		{
