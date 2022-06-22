@@ -4517,6 +4517,23 @@ void Player::HUD_t::updateActionPrompts()
 
 static Frame* createMinimap(int player);
 
+void createGameTimerFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	hud_t.gameTimerFrame = hud_t.hudFrame->addFrame("timer");
+	hud_t.gameTimerFrame->setHollow(true);
+	hud_t.gameTimerFrame->setDisabled(true);
+	hud_t.gameTimerFrame->setSize(SDL_Rect{ 0, 0, 142, 24 });
+
+	auto txt = hud_t.gameTimerFrame->addField("timer txt", 64);
+	txt->setText("00:00:00");
+	txt->setSize(SDL_Rect{ 0, 0, hud_t.gameTimerFrame->getSize().w, hud_t.gameTimerFrame->getSize().h });
+	txt->setFont("fonts/pixel_maz.ttf#32#2");
+	txt->setVJustify(Field::justify_t::TOP);
+	txt->setHJustify(Field::justify_t::LEFT);
+	txt->setColor(makeColor(255, 255, 255, 255));
+}
+
 void Player::HUD_t::processHUD()
 {
 	char name[32];
@@ -4547,6 +4564,10 @@ void Player::HUD_t::processHUD()
     {
         minimapFrame = createMinimap(player.playernum);
     }
+	if ( !gameTimerFrame )
+	{
+		createGameTimerFrame(player.playernum);
+	}
 	if ( !xpFrame )
 	{
 		createXPBar(player.playernum);
@@ -4568,6 +4589,7 @@ void Player::HUD_t::processHUD()
 		createStatusEffectQueue(player.playernum);
 	}
 
+	updateGameTimer();
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
@@ -5740,27 +5762,39 @@ void Player::CharacterSheet_t::createCharacterSheet()
 				auto timerSelector = frame->findButton("timer selector");
 				if ( timerToggleImg && timerSelector )
 				{
-					Uint8 tmpAlpha = 128;
-					Uint8 tmpRed = 128;
-					Uint8 tmpBlue = 128;
 					if ( !players[frame->getOwner()]->characterSheet.showGameTimerAlways )
 					{
-						tmpRed = 255;
-						tmpBlue = 255;
-					}
-					if ( timerSelector->isHighlighted() )
-					{
-						tmpAlpha = 192;
-						timerToggleImg->color = makeColor(tmpRed, 255, tmpBlue, tmpAlpha);
+						if ( timerSelector->isCurrentlyPressed() )
+						{
+							timerToggleImg->path = "images/ui/CharSheet/HUD_Button_Timer_PressOff00.png";
+						}
+						else if ( timerSelector->isHighlighted() || (!inputs.getVirtualMouse(widget.getOwner())->draw_cursor && timerSelector->isSelected()) )
+						{
+							timerToggleImg->path = "images/ui/CharSheet/HUD_Button_Timer_SelectOff00.png";
+						}
+						else
+						{
+							timerToggleImg->path = "images/ui/CharSheet/HUD_Button_Timer_UnselectOff00.png";
+						}
 					}
 					else
 					{
-						tmpAlpha = 255;
-						timerToggleImg->color = makeColor(tmpRed, 255, tmpBlue, tmpAlpha);
+						if ( timerSelector->isCurrentlyPressed() )
+						{
+							timerToggleImg->path = "images/ui/CharSheet/HUD_Button_Timer_PressOn00.png";
+						}
+						else if ( timerSelector->isHighlighted() || (!inputs.getVirtualMouse(widget.getOwner())->draw_cursor && timerSelector->isSelected()) )
+						{
+							timerToggleImg->path = "images/ui/CharSheet/HUD_Button_Timer_SelectOn00.png";
+						}
+						else
+						{
+							timerToggleImg->path = "images/ui/CharSheet/HUD_Button_Timer_UnselectOn00.png";
+						}
 					}
 				}
 			});
-			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_ButtonArrows_00.png", "timer icon img");
+			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_Button_Timer_SelectOff00.png.png", "timer icon img");
 			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
 			auto timerText = timerFrame->addField("timer text", 32);
 			timerText->setFont(timerFont);
@@ -8011,7 +8045,7 @@ void Player::CharacterSheet_t::updateGameTimer()
 
 	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
 	Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-	Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+	Uint32 hour = (((completionTime / TICKS_PER_SECOND) / 60) / 60) % 24;
 	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
 	snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
 	timerText->setText(buf);
@@ -17889,6 +17923,44 @@ void Player::HUD_t::resetBars()
 		MPBar.flashAnimState = -1;
 		MPBar.flashTicks = 0;
 	}
+}
+
+void Player::HUD_t::updateGameTimer()
+{
+	if ( !gameTimerFrame )
+	{
+		return;
+	}
+
+	if ( !player.shootmode || !player.characterSheet.showGameTimerAlways )
+	{
+		gameTimerFrame->setDisabled(true);
+		return;
+	}
+
+	gameTimerFrame->setDisabled(false);
+	SDL_Rect pos = gameTimerFrame->getSize();
+	pos.x = hudFrame->getSize().w - pos.w - 8 + 76;
+	pos.y = 4;
+	Field* timerText = gameTimerFrame->findField("timer txt");
+	
+	char buf[64] = "";
+	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+	Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+	Uint32 hour = (((completionTime / TICKS_PER_SECOND) / 60) / 60) % 24;
+	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
+
+	if ( day > 0 )
+	{
+		snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%02d", day, hour, min, sec);
+		pos.x -= 24;
+	}
+	else
+	{
+		snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hour, min, sec);
+	}
+	gameTimerFrame->setSize(pos);
+	timerText->setText(buf);
 }
 
 void Player::HUD_t::updateXPBar()

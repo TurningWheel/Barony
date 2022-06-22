@@ -42,6 +42,7 @@ public:
 	const Widget*		getParent() const { return parent; }
     const char*		    getName() const { return name.c_str(); }
     bool			    isPressed() const { return reallyPressed; }
+	bool				isCurrentlyPressed() const { return pressed; }
     bool			    isHighlighted() const { return highlighted; }
     bool			    isSelected() const { return selected; }
     bool			    isDisabled() const { return disabled; }
