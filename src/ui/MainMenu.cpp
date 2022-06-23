@@ -14881,6 +14881,7 @@ bind_failed:
                     SDL_Rect{x, y, w, h},
                     makeColor(255, 255, 255, 255),
                     path, name.c_str());
+
                 auto field = prompt->addField(name.c_str(), 16);
                 field->setSize(SDL_Rect{x, y, w, h});
                 field->setJustify(Field::justify_t::CENTER);

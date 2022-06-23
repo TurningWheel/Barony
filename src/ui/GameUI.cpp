@@ -4577,6 +4577,7 @@ void Player::HUD_t::processHUD()
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
 	}
+
     if ( !controllerFrame )
     {
         controllerFrame = gameUIFrame[player.playernum]->addFrame("reconnect_controller");

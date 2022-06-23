@@ -696,8 +696,6 @@ ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 
 static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
 
-static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
-
 void gameLogic(void)
 {
 	Uint32 x;
