@@ -442,6 +442,7 @@ namespace MainMenu {
 
     static void sendPlayerOverNet();
     static void sendReadyOverNet(int index, bool ready);
+    static void checkReadyStates();
     static void sendChatMessageOverNet(const char* msg);
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
@@ -8909,10 +8910,10 @@ bind_failed:
 		auto card = initCharacterCard(index, 346);
 
 		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
+		case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0); checkReadyStates();}); break;
+		case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1); checkReadyStates();}); break;
+		case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2); checkReadyStates();}); break;
+		case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3); checkReadyStates();}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -9530,7 +9531,25 @@ bind_failed:
 		    }
 
 		    // handle login button presses
-		    if (input.consumeBinaryToggle("GamepadLoginA") || input.consumeBinaryToggle("GamepadLoginStart")) {
+		    if (input.consumeBinaryToggle("GamepadLoginB") ||
+		        input.consumeBinaryToggle("GamepadLoginA") ||
+		        input.consumeBinaryToggle("GamepadLoginStart")) {
+		        if (input.binary("GamepadLoginB")) {
+	                bool nobodySignedIn = true;
+		            if (multiplayer == SINGLE) {
+		                for (int c = 0; c < MAXPLAYERS; ++c) {
+		                    if (isPlayerSignedIn(c)) {
+		                        nobodySignedIn = false;
+		                        break;
+		                    }
+		                }
+		            }
+	                if (nobodySignedIn) {
+	                    // if no one is signed in, B doesn't sign in... it leaves the lobby!
+	                    return;
+	                }
+		            input.consumeBindingsSharedWithBinding("GamepadLoginB");
+		        }
 		        if (input.binary("GamepadLoginA")) {
 		            input.consumeBindingsSharedWithBinding("GamepadLoginA");
 		        }
@@ -9718,6 +9737,55 @@ bind_failed:
 		text->setHJustify(Field::justify_t::CENTER);
 	}
 
+	static void checkReadyStates() {
+	    assert(main_menu_frame);
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+        bool atLeastOnePlayer = false;
+	    bool allReady = true;
+		for (int c = 0; c < 4; ++c) {
+			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str());
+			if (!card) {
+			    // this can happen when a player enters a lobby and not all the stones exist yet.
+			    allReady = false;
+			    break;
+			}
+			auto backdrop = card->findImage("backdrop"); assert(backdrop);
+			if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+				playersInLobby[c] = false;
+				if (multiplayer == SINGLE) {
+				    if (loadingsavegame && !playerSlotsLocked[c]) {
+				        allReady = false;
+				    }
+				} else {
+				    if (!client_disconnected[c]) {
+				        // we know a player is connected to this slot, and they're not ready
+			            allReady = false;
+			        }
+			    }
+			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
+				playersInLobby[c] = true;
+			} else {
+				playersInLobby[c] = true;
+			    allReady = false;
+			}
+		    if (isPlayerSignedIn(c)) {
+		        atLeastOnePlayer = true;
+		    }
+		}
+		if (allReady && atLeastOnePlayer) {
+		    createCountdownTimer();
+		} else {
+	        auto countdown = lobby->findFrame("countdown");
+	        if (countdown) {
+	            countdown->removeSelf();
+	        }
+	        fadeout = false;
+	        main_menu_fade_destination = FadeDestination::None;
+		}
+	}
+
 	static void createReadyStone(int index, bool local, bool ready) {
 	    if (!main_menu_frame || main_menu_frame->isToBeDeleted()) {
 	        // maybe this could happen if we got a REDY packet
@@ -9862,49 +9930,12 @@ bind_failed:
 		    status->setVJustify(Button::justify_t::TOP);
 		    status->setHJustify(Button::justify_t::CENTER);
 		}
-
-        // determine if all players are ready, and if so, create a countdown timer
-		bool allReady = true;
-		for (int c = 0; c < 4; ++c) {
-			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str());
-			if (!card) {
-			    // this can happen when a player enters a lobby and not all the stones exist yet.
-			    allReady = false;
-			    break;
-			}
-			auto backdrop = card->findImage("backdrop"); assert(backdrop);
-			if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-				playersInLobby[c] = false;
-				if (multiplayer == SINGLE) {
-				    if (loadingsavegame && !playerSlotsLocked[c]) {
-				        allReady = false;
-				    }
-				} else {
-				    if (!client_disconnected[c]) {
-				        // we know a player is connected to this slot, and they're not ready
-			            allReady = false;
-			        }
-			    }
-			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
-				playersInLobby[c] = true;
-			} else {
-				playersInLobby[c] = true;
-			    allReady = false;
-			}
-		}
         if (local) {
             sendReadyOverNet(index, ready);
         }
-		if (allReady) {
-		    createCountdownTimer();
-		} else {
-	        auto countdown = lobby->findFrame("countdown");
-	        if (countdown) {
-	            countdown->removeSelf();
-	        }
-	        fadeout = false;
-	        main_menu_fade_destination = FadeDestination::None;
-		}
+
+        // determine if all players are ready, and if so, create a countdown timer
+		checkReadyStates();
 	}
 
 	static void startGame() {
@@ -10163,12 +10194,10 @@ bind_failed:
 			    auto lobby = static_cast<Frame*>(parent->getParent()); assert(lobby);
 			    bool allCardsClosed = true;
 			    for (int c = 0; c < 4; ++c) {
-			        if (clientnum != c && multiplayer == SINGLE) {
+			        if (clientnum != c && multiplayer != SINGLE) {
 			            continue;
 			        }
-				    auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
-				    auto backdrop = card->findImage("backdrop"); assert(backdrop);
-				    if (backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+				    if (isPlayerSignedIn(c)) {
 					    allCardsClosed = false;
 					    break;
 				    }
@@ -14670,7 +14699,6 @@ bind_failed:
 				}
                 });
             restart->select();
-
             restart->setWidgetLeft("quit");
             restart->setWidgetRight("dismiss");
 
@@ -14752,6 +14780,20 @@ bind_failed:
             pauseGame(2, 0);
             destroyMainMenu();
             createDummyMainMenu();
+        }
+
+        auto old_prompt = main_menu_frame->findFrame("controller_prompt");
+        if (old_prompt) {
+            if (old_prompt->getOwner() < player) {
+                // don't open a new prompt.
+                // we're trying to deal with another player.
+                return;
+            } else {
+                // this player is gonna take over the controller when we plug it in,
+                // so give them a prompt.
+                destroyMainMenu();
+                createDummyMainMenu();
+            }
         }
 
         static real_t bounce;

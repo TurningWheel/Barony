@@ -9690,21 +9690,18 @@ void doNewGame(bool makeHighscore) {
 		// reset class loadout
 	    for ( int c = 0; c < MAXPLAYERS; ++c )
 	    {
-		    if ( players[c]->isLocalPlayer() )
-		    {
-		        if ( !client_disconnected[c] )
-		        {
-		            if ( !loadingsavegame )
-		            {
-			            stats[c]->clearStats();
-			            initClass(c);
-		            }
-		            else
-		            {
-			            loadGame(c);
-		            }
-		        }
-		    }
+	        if ( !client_disconnected[c] )
+	        {
+	            if ( !loadingsavegame )
+	            {
+		            stats[c]->clearStats();
+		            initClass(c);
+	            }
+	            else if ( players[c]->isLocalPlayer() )
+	            {
+		            loadGame(c);
+	            }
+	        }
 		}
 
 		// hack to fix these things from breaking everything...

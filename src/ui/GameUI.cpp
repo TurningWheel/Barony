@@ -4652,7 +4652,7 @@ void Player::HUD_t::processHUD()
 		}
 	}
 
-    if ( !gamePaused && MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+    if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
     {
 	    checkControllerState(player.playernum);
 	}

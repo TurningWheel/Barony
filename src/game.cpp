@@ -3540,8 +3540,9 @@ void handleEvents(void)
 				}
 				Input::lastInputOfAnyKind = buf;
 #ifndef NINTENDO
-			    //if ( event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
-			    //     event.cbutton.button == SDL_CONTROLLER_BUTTON_START )
+			    if ( event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
+			         event.cbutton.button == SDL_CONTROLLER_BUTTON_B ||
+			         event.cbutton.button == SDL_CONTROLLER_BUTTON_START )
 			    {
 				    SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
 				    if ( !pad )
@@ -3577,6 +3578,11 @@ void handleEvents(void)
 							            // controller is not already bound - bind it to the first player who does not have a controller
 							            for (int player = 0; player < MAXPLAYERS; ++player)
 							            {
+							                if (intro && multiplayer != SINGLE && player != clientnum)
+							                {
+							                    // only assign the controller to OUR player in net lobbies
+							                    continue;
+							                }
 							                if (intro && MainMenu::isPlayerSignedIn(player))
 							                {
 							                    // in the lobby, don't assign controllers to players who are already signed in...
@@ -3589,11 +3595,36 @@ void handleEvents(void)
 							                }
 							                if (!intro && inputs.bPlayerUsingKeyboardControl(player))
 							                {
-							                    // this player is using the keyboard
+							                    // this player is using a keyboard
 							                    continue;
 							                }
 		                                    bindControllerToPlayer(controller.getID(), player);
+		                                    alreadyBound = true;
 						                    break;
+							            }
+							            if (!alreadyBound) {
+							                // didn't find anybody to bind to. try again, but ignore the keyboard restriction
+							                for (int player = 0; player < MAXPLAYERS; ++player)
+							                {
+							                    if (intro && multiplayer != SINGLE && player != clientnum)
+							                    {
+							                        // only assign the controller to OUR player in net lobbies
+							                        continue;
+							                    }
+							                    if (intro && MainMenu::isPlayerSignedIn(player))
+							                    {
+							                        // in the lobby, don't assign controllers to players who are already signed in...
+							                        continue;
+							                    }
+							                    if (inputs.hasController(player))
+							                    {
+							                        // this player already has a controller
+							                        continue;
+							                    }
+		                                        bindControllerToPlayer(controller.getID(), player);
+		                                        alreadyBound = true;
+						                        break;
+							                }
 							            }
 							        }
 							    }
@@ -4099,13 +4130,20 @@ void pauseGame(int mode, int ignoreplayer)
 	{
 	    MainMenu::soundToggleMenu();
 		gamePaused = true;
+		bool noOneUsingKeyboard = true;
 		for (int c = 0; c < 4; ++c)
 		{
+		    if (inputs.bPlayerUsingKeyboardControl(c) && MainMenu::isPlayerSignedIn(c) && players[c]->isLocalPlayer()) {
+		        noOneUsingKeyboard = false;
+		    }
 		    auto& input = Input::inputs[c];
 			if (input.binary("Pause Game") || (inputs.bPlayerUsingKeyboardControl(c) && keystatus[SDL_SCANCODE_ESCAPE] && !input.isDisabled())) {
 			    MainMenu::pause_menu_owner = c;
 			    break;
 			}
+		}
+		if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
+		    MainMenu::pause_menu_owner = clientnum;
 		}
 		if ( SDL_GetRelativeMouseMode() )
 		{
@@ -6107,6 +6145,14 @@ int main(int argc, char** argv)
 				bool doPause = false;
 				if ( !fadeout )
 				{
+				    bool noOneUsingKeyboard = true;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+					    if (inputs.bPlayerUsingKeyboardControl(i) && MainMenu::isPlayerSignedIn(i) && players[i]->isLocalPlayer()) {
+					        noOneUsingKeyboard = false;
+					        break;
+					    }
+					}
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
 						if ( !players[i]->isLocalPlayer() )
@@ -6130,6 +6176,10 @@ int main(int argc, char** argv)
 							}
 							break;
 						}
+					}
+					if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
+						keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					    doPause = true;
 					}
 				}
 				if ( doPause )
