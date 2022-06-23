@@ -24,6 +24,7 @@
 #include "player.hpp"
 #include "collision.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {

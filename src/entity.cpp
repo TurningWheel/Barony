@@ -15928,10 +15928,10 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	chosenStats[0] = local_rng.getU32() % 6; // get first stat randomly.
 	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.
 
-	chosenStats[1] = local_rng.distribution(statWeights.data(), statWeights.size()); // get second stat.
+	chosenStats[1] = local_rng.discrete(statWeights.data(), statWeights.size()); // get second stat.
 	statWeights[chosenStats[1]] = 0; // remove the chance in the local stat vector.
 
-	chosenStats[2] = local_rng.distribution(statWeights.data(), statWeights.size()); // get third stat.
+	chosenStats[2] = local_rng.discrete(statWeights.data(), statWeights.size()); // get third stat.
 
 	if ( chosenStats[0] == chosenStats[1] || chosenStats[0] == chosenStats[2] || chosenStats[1] == chosenStats[2] )
 	{

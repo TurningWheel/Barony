@@ -18,6 +18,7 @@
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "prng.hpp"
 
 void initRat(Entity* my, Stat* myStats)
 {

@@ -14,6 +14,7 @@
 #include "sound.hpp"
 #include "../../entity.hpp"
 #include "../../player.hpp"
+#include "../../prng.hpp"
 #ifdef NINTENDO
  #include "../../nintendo/music.hpp"
 #else

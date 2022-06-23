@@ -18,6 +18,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "interface/interface.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

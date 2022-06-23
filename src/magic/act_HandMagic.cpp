@@ -21,6 +21,7 @@
 #include "../net.hpp"
 #include "../scores.hpp"
 #include "../ui/MainMenu.hpp"
+#include "../prng.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle

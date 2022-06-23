@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initDevil(Entity* my, Stat* myStats)
 {

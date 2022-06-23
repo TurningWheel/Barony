@@ -5933,7 +5933,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			0	//POTION_THUNDERSTORM
 		};
 		auto generatedPotion = potionStandardAppearanceMap.at(
-            local_rng.distribution(potionChances.data(), potionChances.size()));
+            local_rng.discrete(potionChances.data(), potionChances.size()));
 		result = static_cast<ItemType>(generatedPotion.first);
 	}
 

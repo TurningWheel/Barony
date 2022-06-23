@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 //Fountain functions.
 const std::vector<unsigned int> fountainPotionDropChances =
@@ -72,7 +73,7 @@ const std::vector<std::pair<int, int>> potionStandardAppearanceMap =
 std::pair<int, int> fountainGeneratePotionDrop()
 {
 	auto keyPair = potionStandardAppearanceMap.at(
-	    local_rng.distribution(fountainPotionDropChances.data(),
+	    local_rng.discrete(fountainPotionDropChances.data(),
 	        fountainPotionDropChances.size()));
 	return std::make_pair(keyPair.first, keyPair.second);
 }

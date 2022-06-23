@@ -21,6 +21,7 @@ See LICENSE for details.
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initShadow(Entity* my, Stat* myStats)
 {

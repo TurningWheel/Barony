@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "scores.hpp"
 #include "monster.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

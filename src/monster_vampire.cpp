@@ -21,6 +21,7 @@ See LICENSE for details.
 #include "classdescriptions.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initVampire(Entity* my, Stat* myStats)
 {

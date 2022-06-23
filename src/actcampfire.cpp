@@ -16,6 +16,7 @@
 #include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "shops.hpp"
 #include "mod_tools.hpp"
+#include "prng.hpp"
 
 void initShopkeeper(Entity* my, Stat* myStats)
 {

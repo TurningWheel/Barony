@@ -21,6 +21,7 @@
 #include "magic/magic.hpp"
 #include "player.hpp"
 #include "colors.hpp"
+#include "prng.hpp"
 
 void initMinotaur(Entity* my, Stat* myStats)
 {

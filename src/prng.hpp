@@ -24,6 +24,9 @@ public:
     // return the size of the seed or -1 if the buffer was not large enough
     int getSeed(void*, size_t);
 
+    // test function, print quality of the RNG seed to log
+    void testSeedHealth();
+
     uint8_t  getU8();   // get number in range [0 - 2^8)
     uint16_t getU16();  // get number in range [0 - 2^16)
     uint32_t getU32();  // get number in range [0 - 2^32)
@@ -35,8 +38,17 @@ public:
     float    getF32();  // get number in range [0.0 - 1.0)
     double   getF64();  // get number in range [0.0 - 1.0)
 
-    // pick a number using a list of chances to pick each number
-    int distribution(const unsigned int* chances, int size);
+    // uniform distribution
+    // pick a number from a to b (or b to a) inclusive
+    int uniform(int a, int b);
+
+    // sampling distribution
+    // pick a number using a list of weights to pick each number
+    int discrete(const unsigned int* chances, int size);
+
+    // normal distribution
+    // given a mean and standard deviation, pick a number
+    int normal(int mean, int deviation);
 
 private:
     bool seeded = false; // initialized or not

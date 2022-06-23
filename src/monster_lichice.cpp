@@ -21,6 +21,7 @@ See LICENSE for details.
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "paths.hpp"
+#include "prng.hpp"
 
 static const int LICH_BODY = 0;
 static const int LICH_RIGHTARM = 2;

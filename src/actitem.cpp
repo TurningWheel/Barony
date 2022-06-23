@@ -20,6 +20,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "paths.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

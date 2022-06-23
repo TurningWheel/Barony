@@ -19,6 +19,7 @@
 #include "items.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initScorpion(Entity* my, Stat* myStats)
 {

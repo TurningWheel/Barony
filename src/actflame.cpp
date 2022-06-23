@@ -13,6 +13,7 @@
 #include "game.hpp"
 #include "collision.hpp"
 #include "entity.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

@@ -22,6 +22,7 @@
 #include "../collision.hpp"
 #include "../classdescriptions.hpp"
 #include "../scores.hpp"
+#include "../prng.hpp"
 
 void freeSpells()
 {

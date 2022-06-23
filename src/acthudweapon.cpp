@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "ui/MainMenu.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

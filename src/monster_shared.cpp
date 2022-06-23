@@ -14,6 +14,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "entity.hpp"
+#include "prng.hpp"
 
 void Entity::initMonster(int mySprite)
 {

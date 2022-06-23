@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 list_t* shopInv[MAXPLAYERS] = { nullptr };
 Uint32 shopkeeper[MAXPLAYERS] = { 0 };

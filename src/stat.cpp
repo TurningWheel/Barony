@@ -18,6 +18,7 @@
 #include "magic/magic.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 Stat* stats[MAXPLAYERS];
 

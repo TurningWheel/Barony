@@ -399,7 +399,7 @@ public:
 					++index;
 				}
 
-				int result = local_rng.distribution(variantChances.data(), variantChances.size());
+				int result = local_rng.discrete(variantChances.data(), variantChances.size());
 				return followerVariants.at(result).first;
 			}
 			return "none";
@@ -1158,7 +1158,7 @@ public:
 								++index;
 							}
 
-							int result = local_rng.distribution(itemChances.data(), itemChances.size());
+							int result = local_rng.discrete(itemChances.data(), itemChances.size());
 							statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
 						}
 					}
@@ -1199,7 +1199,7 @@ public:
 							++index;
 						}
 
-						int result = local_rng.distribution(itemChances.data(), itemChances.size());
+						int result = local_rng.discrete(itemChances.data(), itemChances.size());
 						statEntry->inventory_items.push_back(itemsToChoose.at(result));
 					}
 				}
@@ -1291,7 +1291,7 @@ public:
 							++index;
 						}
 
-						std::string result = statEntry->shopkeeperStoreTypes.at(local_rng.distribution(storeChances.data(), storeChances.size())).first;
+						std::string result = statEntry->shopkeeperStoreTypes.at(local_rng.discrete(storeChances.data(), storeChances.size())).first;
 						index = 0;
 						for ( auto& lookup : shopkeeperTypeStrings )
 						{
@@ -1532,7 +1532,7 @@ public:
 						}
 					}
 				}
-				int result = local_rng.distribution(monsterCurveChances.data(), monsterCurveChances.size());
+				int result = local_rng.discrete(monsterCurveChances.data(), monsterCurveChances.size());
 				//printlog("[MonsterCurveCustomManager]: Rolled: %d", result);
 				return result;
 			}
@@ -1574,7 +1574,7 @@ public:
 				}
 				if ( !variantResults.empty() )
 				{
-					int result = local_rng.distribution(variantChances.data(), variantChances.size());
+					int result = local_rng.discrete(variantChances.data(), variantChances.size());
 					return variantResults[result];
 				}
 			}
@@ -1599,7 +1599,7 @@ public:
 							++index;
 						}
 
-						int result = local_rng.distribution(variantChances.data(), variantChances.size());
+						int result = local_rng.discrete(variantChances.data(), variantChances.size());
 						return monster.variants.at(result).first;
 					}
 				}

@@ -20,6 +20,7 @@
 #include "magic/magic.hpp"
 #include "scores.hpp"
 #include "shops.hpp"
+#include "prng.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -748,7 +749,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		if ( entity.behavior == &actFountain )
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(
-	            local_rng.distribution(potionChances.data(), potionChances.size()));
+	            local_rng.discrete(potionChances.data(), potionChances.size()));
 			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
 		}
 		else

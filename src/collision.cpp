@@ -21,6 +21,7 @@
 #include "net.hpp"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "prng.hpp"
 #include "player.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>

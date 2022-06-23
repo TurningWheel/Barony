@@ -21,8 +21,9 @@
 #include "../collision.hpp"
 #include "../paths.hpp"
 #include "../player.hpp"
-#include "magic.hpp"
 #include "../scores.hpp"
+#include "../prng.hpp"
+#include "magic.hpp"
 
 void actMagiclightBall(Entity* my)
 {

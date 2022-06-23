@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "paths.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

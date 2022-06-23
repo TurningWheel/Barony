@@ -23,6 +23,7 @@
 #include "../ui/Text.hpp"
 #include "../ui/Image.hpp"
 #include "../ui/GameUI.hpp"
+#include "../prng.hpp"
 
 void Player::BookGUI_t::createBookGUI()
 {

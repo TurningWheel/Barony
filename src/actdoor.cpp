@@ -19,6 +19,7 @@
 #include "player.hpp"
 #include "interface/interface.hpp"
 #include "items.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

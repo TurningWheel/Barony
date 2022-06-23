@@ -2870,7 +2870,7 @@ namespace ConsoleCommands {
 		for ( int i = 0; i < 10; ++i )
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(
-	            local_rng.distribution(potionChances.data(), potionChances.size()));
+	            local_rng.discrete(potionChances.data(), potionChances.size()));
 			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + local_rng.getU32() % 2),
 				0, 1, generatedPotion.second, true, nullptr);
 			itemPickup(clientnum, potion);

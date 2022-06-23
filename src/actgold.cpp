@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

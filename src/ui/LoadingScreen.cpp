@@ -7,6 +7,7 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../draw.hpp"
+#include "../prng.hpp"
 
 #include <mutex>
 #include <thread>

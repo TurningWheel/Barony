@@ -15,6 +15,7 @@ See LICENSE for details.
 #include "stat.hpp"
 #include "entity.hpp"
 #include "items.hpp"
+#include "prng.hpp"
 
 // Constructor
 Stat::Stat(Sint32 sprite) :

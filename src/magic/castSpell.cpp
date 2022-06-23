@@ -19,10 +19,11 @@
 #include "../net.hpp"
 #include "../collision.hpp"
 #include "../player.hpp"
-#include "magic.hpp"
 #include "../scores.hpp"
 #include "../colors.hpp"
 #include "../ui/MainMenu.hpp"
+#include "magic.hpp"
+#include "../prng.hpp"
 
 bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
 

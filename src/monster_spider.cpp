@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
+#include "prng.hpp"
 
 void initSpider(Entity* my, Stat* myStats)
 {

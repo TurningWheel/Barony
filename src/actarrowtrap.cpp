@@ -17,6 +17,7 @@
 #include "collision.hpp"
 #include "items.hpp"
 #include "net.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

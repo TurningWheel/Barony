@@ -19,6 +19,7 @@
 #include "draw.hpp"
 #include "items.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

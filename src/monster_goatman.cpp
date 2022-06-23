@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 const int NUM_GOATMAN_POTIONS = 4;
 const int NUM_GOATMAN_THROWN_WEAPONS = 2;

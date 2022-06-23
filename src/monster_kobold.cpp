@@ -21,6 +21,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initKobold(Entity* my, Stat* myStats)
 {

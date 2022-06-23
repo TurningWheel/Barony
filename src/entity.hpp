@@ -16,7 +16,6 @@
 #include "stat.hpp"
 #include "light.hpp"
 #include "monster.hpp"
-#include "prng.hpp"
 
 // entity flags
 #define BRIGHT 1

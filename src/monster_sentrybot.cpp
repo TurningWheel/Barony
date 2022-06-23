@@ -22,6 +22,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
+#include "prng.hpp"
 
 std::unordered_map<Uint32, int> gyroBotDetectedUids;
 

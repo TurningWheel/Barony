@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "classdescriptions.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initHuman(Entity* my, Stat* myStats)
 {

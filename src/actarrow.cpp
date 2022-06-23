@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "scores.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 

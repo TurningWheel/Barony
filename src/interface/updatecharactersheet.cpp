@@ -23,6 +23,7 @@
 #include "../net.hpp"
 #include "../scores.hpp"
 #include "../ui/GameUI.hpp"
+#include "../prng.hpp"
 
 void statsHoverText(const int player, Stat* tmpStat);
 
