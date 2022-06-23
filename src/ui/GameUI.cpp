@@ -2052,12 +2052,12 @@ int StatusEffectQueue_t::getBaseEffectPosY()
 
 int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 {
-	if ( effect == StatusEffectQueue_t::kEffectBread )
+	if ( effect == StatusEffectQueue_t::kEffectBread
+		|| effect == StatusEffectQueue_t::kEffectBloodHunger )
 	{
 		return 76;
 	}
-	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
-		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
 	}
@@ -2065,12 +2065,12 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 }
 int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 {
-	if ( effect == StatusEffectQueue_t::kEffectBread )
+	if ( effect == StatusEffectQueue_t::kEffectBread
+		|| effect == StatusEffectQueue_t::kEffectBloodHunger )
 	{
 		return 60;
 	}
-	else if ( effect == StatusEffectQueue_t::kEffectBloodHunger
-		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
 	}
