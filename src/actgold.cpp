@@ -83,7 +83,7 @@ void actGoldBag(Entity* my)
 				{
 					if (players[i] && players[i]->entity)
 					{
-						playSoundEntity(players[i]->entity, 242 + rand() % 4, 64 );
+						playSoundEntity(players[i]->entity, 242 + local_rng.getU32() % 4, 64 );
 					}
 					stats[i]->GOLD += my->goldAmount;
 					if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )

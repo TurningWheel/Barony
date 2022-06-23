@@ -91,7 +91,7 @@ void actDeathCam(Entity* my)
 	if ( DEATHCAM_TIME == 1 )
 	{
 		DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
-		DEATHCAM_IDLEROTATEDIRYAW = (rand() % 2 == 0) ? 1 : -1;
+		DEATHCAM_IDLEROTATEDIRYAW = (local_rng.getU32() % 2 == 0) ? 1 : -1;
 	}
 	else if ( DEATHCAM_TIME == deathcamGameoverPromptTicks )
 	{
@@ -1415,7 +1415,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 void statueCycleItem(Item& item, bool dirForward)
 {
 	int cat = items[item.type].item_slot;
-	item.appearance = rand();
+	item.appearance = local_rng.getU32();
 	if ( dirForward )
 	{
 		for ( int i = item.type + 1; i <= NUMITEMS && i != item.type; ++i )
@@ -1627,7 +1627,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->helmet )
 					{
-						stats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1654,7 +1654,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->breastplate )
 					{
-						stats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1681,7 +1681,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->gloves )
 					{
-						stats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1708,7 +1708,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->shoes )
 					{
-						stats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1735,7 +1735,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->weapon )
 					{
-						stats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1762,7 +1762,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->shield )
 					{
-						stats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1789,7 +1789,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->mask )
 					{
-						stats->mask = newItem(TOOL_GLASSES, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->mask = newItem(TOOL_GLASSES, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1816,7 +1816,7 @@ void doStatueEditor(int player)
 				{
 					if ( !stats->cloak )
 					{
-						stats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, rand(), true, &stats->inventory);
+						stats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, local_rng.getU32(), true, &stats->inventory);
 					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 					{
@@ -1854,7 +1854,7 @@ void actPlayer(Entity* my)
 			char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 			for ( int j = 0; j < 63; ++j ) {
-				s[j] = alphanum[rand() % (sizeof(alphanum) - 1)];
+				s[j] = alphanum[local_rng.getU32() % (sizeof(alphanum) - 1)];
 			}
 			Uint32 totalSize = 0;
 			for ( size_t c = 0; c < HASH_SIZE; ++c ) {
@@ -2497,42 +2497,42 @@ void actPlayer(Entity* my)
 					my->playerLevelEntrySpeech = 0;
 					if ( currentlevel == 0 && !secretlevel )
 					{
-						int speech = rand() % 3;
+						int speech = local_rng.getU32() % 3;
 						playSound(126 + speech, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[537]);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[77 + speech]);
 					}
 					else if ( currentlevel == 1 && !secretlevel )
 					{
-						int speech = rand() % 3;
+						int speech = local_rng.getU32() % 3;
 						playSound(117 + speech, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[537]);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[70 + speech]);
 					}
 					else if ( currentlevel == 5 && !secretlevel )
 					{
-						int speech = rand() % 2;
+						int speech = local_rng.getU32() % 2;
 						playSound(156 + speech, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[537]);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[83 + speech]);
 					}
 					else if ( currentlevel == 10 && !secretlevel )
 					{
-						int speech = rand() % 2;
+						int speech = local_rng.getU32() % 2;
 						playSound(158 + speech, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[537]);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[85 + speech]);
 					}
 					else if ( currentlevel == 15 && !secretlevel )
 					{
-						int speech = rand() % 2;
+						int speech = local_rng.getU32() % 2;
 						playSound(160 + speech, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[537]);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[87 + speech]);
 					}
 					else if ( currentlevel == 26 && !secretlevel )
 					{
-						int speech = 1 + rand() % 3;
+						int speech = 1 + local_rng.getU32() % 3;
 						switch ( speech )
 						{
 							case 1:
@@ -2555,7 +2555,7 @@ void actPlayer(Entity* my)
 					}
 					else if ( currentlevel == 28 && !secretlevel )
 					{
-						int speech = 1 + rand() % 3;
+						int speech = 1 + local_rng.getU32() % 3;
 						switch ( speech )
 						{
 							case 1:
@@ -2604,7 +2604,7 @@ void actPlayer(Entity* my)
 					}
 					else if ( currentlevel == 33 && !secretlevel )
 					{
-						int speech = 1 + rand() % 2;
+						int speech = 1 + local_rng.getU32() % 2;
 						switch ( speech )
 						{
 							case 1:
@@ -2637,14 +2637,14 @@ void actPlayer(Entity* my)
 					{
 						if ( currentlevel < 25 )
 						{
-							int speech = rand() % 3;
+							int speech = local_rng.getU32() % 3;
 							playSound(123 + speech, 128);
 							messageLocalPlayersColor(color, MESSAGE_WORLD, language[537]);
 							messageLocalPlayersColor(color, MESSAGE_WORLD, language[74 + speech]);
 						}
 						else
 						{
-							int speech = 1 + rand() % 3;
+							int speech = 1 + local_rng.getU32() % 3;
 							switch ( speech )
 							{
 								case 1:
@@ -2672,12 +2672,12 @@ void actPlayer(Entity* my)
 					// 8 seconds in, herx chimes in again (maybe)
 					if ( currentlevel == 1 && !secretlevel )
 					{
-						playSound(120 + rand() % 3, 128);
+						playSound(120 + local_rng.getU32() % 3, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[73]);
 					}
 					else if ( minotaurlevel && currentlevel < 25 )
 					{
-						int speech = rand() % 3;
+						int speech = local_rng.getU32() % 3;
 						playSound(129 + speech, 128);
 						messageLocalPlayersColor(color, MESSAGE_WORLD, language[80 + speech]);
 					}
@@ -2698,7 +2698,7 @@ void actPlayer(Entity* my)
 				{
 					if ( PLAYER_ALIVETIME % 420 == 0 )
 					{
-						messagePlayerColor(PLAYER_NUM, MESSAGE_WORLD, color, language[538 + rand() % 32]);
+						messagePlayerColor(PLAYER_NUM, MESSAGE_WORLD, color, language[538 + local_rng.getU32() % 32]);
 					}
 				}
 			}
@@ -2941,19 +2941,19 @@ void actPlayer(Entity* my)
 	//if ( keystatus[SDL_SCANCODE_F1] )
 	//{
 	//	keystatus[SDL_SCANCODE_F1] = 0;
-	//	auto potion = potionStandardAppearanceMap[rand() % 3];
-	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + rand() % 3, 1, 0, false, NULL);
+	//	auto potion = potionStandardAppearanceMap[local_rng.getU32() % 3];
+	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + local_rng.getU32() % 3, 1, 0, false, NULL);
 	//	useItem(item, PLAYER_NUM, my);
 	//}
 	//if ( keystatus[SDL_SCANCODE_F2] )
 	//{
 	//	keystatus[SDL_SCANCODE_F2] = 0;
-	//	auto potion = potionStandardAppearanceMap[rand() % potionStandardAppearanceMap.size()];
-	//	if ( potion.first >= POTION_FIRESTORM && potion.first <= POTION_ICESTORM && rand() % 10 <= 7 )
+	//	auto potion = potionStandardAppearanceMap[local_rng.getU32() % potionStandardAppearanceMap.size()];
+	//	if ( potion.first >= POTION_FIRESTORM && potion.first <= POTION_ICESTORM && local_rng.getU32() % 10 <= 7 )
 	//	{
-	//		potion = potionStandardAppearanceMap[rand() % potionStandardAppearanceMap.size() - 4];
+	//		potion = potionStandardAppearanceMap[local_rng.getU32() % potionStandardAppearanceMap.size() - 4];
 	//	}
-	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + rand() % 3, 1, 0, false, NULL);
+	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + local_rng.getU32() % 3, 1, 0, false, NULL);
 	//	useItem(item, PLAYER_NUM, my);
 	//}
 	//if ( keystatus[SDL_SCANCODE_F3] )
@@ -2973,25 +2973,25 @@ void actPlayer(Entity* my)
 	//			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * map.height * MAPLAYERS] == 0
 	//				&& map.tiles[y * MAPLAYERS + x * map.height * MAPLAYERS] != 0 )
 	//			{
-	//				if ( rand() % 20 == 0 )
+	//				if ( local_rng.getU32() % 20 == 0 )
 	//				{
 	//					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 	//					//rock->flags[INVISIBLE] = true;
 	//					rock->flags[UPDATENEEDED] = true;
-	//					rock->x = x * 16 + 4 + rand() % 8;
-	//					rock->y = y * 16 + 4 + rand() % 8;
-	//					rock->z = -20 + rand() % 12;
+	//					rock->x = x * 16 + 4 + local_rng.getU32() % 8;
+	//					rock->y = y * 16 + 4 + local_rng.getU32() % 8;
+	//					rock->z = -20 + local_rng.getU32() % 12;
 	//					rock->sizex = 4;
 	//					rock->sizey = 4;
-	//					rock->yaw = rand() % 360 * PI / 180;
-	//					rock->vel_x = (rand() % 20 - 10) / 10.0;
-	//					rock->vel_y = (rand() % 20 - 10) / 10.0;
-	//					rock->vel_z = -.25 - (rand() % 5) / 10.0;
+	//					rock->yaw = local_rng.getU32() % 360 * PI / 180;
+	//					rock->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
+	//					rock->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
+	//					rock->vel_z = -.25 - (local_rng.getU32() % 5) / 10.0;
 	//					rock->flags[PASSABLE] = true;
 	//					rock->behavior = &actItem;
 	//					rock->flags[USERFLAG1] = true; // no collision: helps performance
 	//					rock->skill[10] = POTION_BOOZE;    // type
-	//					switch ( rand() % 6 )
+	//					switch ( local_rng.getU32() % 6 )
 	//					{
 	//						case 4:
 	//							rock->skill[10] = FOOD_CHEESE;    // type
@@ -3005,13 +3005,13 @@ void actPlayer(Entity* my)
 	//					rock->skill[11] = WORN;        // status
 	//					rock->skill[12] = 0;           // beatitude
 	//					rock->skill[13] = 1;           // count
-	//					rock->skill[14] = rand();      // appearance
+	//					rock->skill[14] = local_rng.getU32();      // appearance
 	//					rock->skill[15] = 1;		   // identified
 	//				}
 	//				else
 	//				{
-	//					Entity* entity = newEntity(items[POTION_BOOZE].index + (rand() % items[POTION_BOOZE].variations), 1, map.entities, nullptr); //Particle entity.
-	//					switch ( rand() % 6 )
+	//					Entity* entity = newEntity(items[POTION_BOOZE].index + (local_rng.getU32() % items[POTION_BOOZE].variations), 1, map.entities, nullptr); //Particle entity.
+	//					switch ( local_rng.getU32() % 6 )
 	//					{
 	//						case 4:
 	//							entity->sprite = items[FOOD_CHEESE].index;    // type
@@ -3024,15 +3024,15 @@ void actPlayer(Entity* my)
 	//					}
 	//					entity->sizex = 1;
 	//					entity->sizey = 1;
-	//					entity->x = x * 16 + (-4 + rand() % 9);
-	//					entity->y = y * 16 + (-4 + rand() % 9);
-	//					entity->z = -20 + rand() % 12;
-	//					entity->yaw = (rand() % 360) * PI / 180.0;
-	//					entity->roll = (rand() % 360) * PI / 180.0;
+	//					entity->x = x * 16 + (-4 + local_rng.getU32() % 9);
+	//					entity->y = y * 16 + (-4 + local_rng.getU32() % 9);
+	//					entity->z = -20 + local_rng.getU32() % 12;
+	//					entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	//					entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
 
 	//					entity->vel_x = 0.2 * cos(entity->yaw);
 	//					entity->vel_y = 0.2 * sin(entity->yaw);
-	//					entity->vel_z = 16;// 0.25 - (rand() % 5) / 10.0;
+	//					entity->vel_z = 16;// 0.25 - (local_rng.getU32() % 5) / 10.0;
 
 	//					entity->skill[0] = 1500; // particle life
 	//					entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
@@ -3087,15 +3087,15 @@ void actPlayer(Entity* my)
 	//	}
 	//	for ( int i = 40; i > 0 && goodspots.size() > 0; --i )
 	//	{
-	//		Monster type = static_cast<Monster>(rand() % NUMMONSTERS);
+	//		Monster type = static_cast<Monster>(local_rng.getU32() % NUMMONSTERS);
 	//		while ( type == DEVIL || type == LICH || type == LICH_FIRE || type == LICH_ICE || type == COCKATRICE || type == SPIDER || type == CRYSTALGOLEM
 	//			|| type == SCARAB || type == SPELLBOT || type == SENTRYBOT
 	//			|| type == MIMIC || type == CRAB || type == OCTOPUS || type == MINOTAUR || type == GHOUL || type == DEMON || type == CREATURE_IMP
 	//			|| type == NOTHING )
 	//		{
-	//			type = static_cast<Monster>(rand() % NUMMONSTERS);
+	//			type = static_cast<Monster>(local_rng.getU32() % NUMMONSTERS);
 	//		}
-	//		int element = rand() % goodspots.size();
+	//		int element = local_rng.getU32() % goodspots.size();
 	//		auto iter = goodspots.begin();
 	//		std::advance(iter, element);
 	//		Entity* monster = summonMonster(type, iter->first, iter->second, false);
@@ -3118,11 +3118,11 @@ void actPlayer(Entity* my)
 	//			helms.push_back(PUNISHER_HOOD);
 	//			if ( !monsterStats->helmet )
 	//			{
-	//				monsterStats->helmet = newItem(static_cast<ItemType>(helms[rand() % helms.size()]), EXCELLENT, 0, 1, rand(), true, nullptr);
+	//				monsterStats->helmet = newItem(static_cast<ItemType>(helms[local_rng.getU32() % helms.size()]), EXCELLENT, 0, 1, local_rng.getU32(), true, nullptr);
 	//			}
 	//			else
 	//			{
-	//				monsterStats->helmet->type = static_cast<ItemType>(helms[rand() % helms.size()]);
+	//				monsterStats->helmet->type = static_cast<ItemType>(helms[local_rng.getU32() % helms.size()]);
 	//			}
 	//			monsterStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 0;
 
@@ -3219,22 +3219,22 @@ void actPlayer(Entity* my)
 	//	}
 	//	for ( int i = 3; i > 0; --i )
 	//	{
-	//		int element = rand() % goodspots.size();
+	//		int element = local_rng.getU32() % goodspots.size();
 	//		auto iter = goodspots.begin();
 	//		std::advance(iter, element);
 
-	//		switch ( rand() % 5 )
+	//		switch ( local_rng.getU32() % 5 )
 	//		{
 	//			case 0:
 	//			case 1:
 	//			case 2:
-	//				spawnExplosionFromSprite(145, iter->first, iter->second, -40 - (rand() % 20));
+	//				spawnExplosionFromSprite(145, iter->first, iter->second, -40 - (local_rng.getU32() % 20));
 	//				break;
 	//			case 3:
-	//				spawnExplosionFromSprite(135, iter->first, iter->second, -40 - (rand() % 20));
+	//				spawnExplosionFromSprite(135, iter->first, iter->second, -40 - (local_rng.getU32() % 20));
 	//				break;
 	//			case 4:
-	//				spawnExplosionFromSprite(49, iter->first, iter->second, -40 - (rand() % 20));
+	//				spawnExplosionFromSprite(49, iter->first, iter->second, -40 - (local_rng.getU32() % 20));
 	//				break;
 	//			default:
 	//				break;
@@ -3429,7 +3429,7 @@ void actPlayer(Entity* my)
 
 					int tries = 100;
 					// we need to find a unique appearance within the list.
-					tempItem->appearance = rand();
+					tempItem->appearance = local_rng.getU32();
 					if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
 					{
 						// we need to match the variation for the new appearance, take the difference so new varation matches
@@ -3445,7 +3445,7 @@ void actPlayer(Entity* my)
 					auto it = appearancesOfSimilarItems.find(tempItem->appearance);
 					while ( it != appearancesOfSimilarItems.end() && tries > 0 )
 					{
-						tempItem->appearance = rand();
+						tempItem->appearance = local_rng.getU32();
 						if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
 						{
 							// we need to match the variation for the new appearance, take the difference so new varation matches
@@ -3540,12 +3540,12 @@ void actPlayer(Entity* my)
 							// difficulty ranges from 1-in-1 to 1-in-6
 							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
 							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
-							if ( rand() % appraisalEaseOfDifficulty == 0 )
+							if ( local_rng.getU32() % appraisalEaseOfDifficulty == 0 )
 							{
 								my->increaseSkill(PRO_APPRAISAL);
 							}
 						}
-						else if ( rand() % 7 == 0 )
+						else if ( local_rng.getU32() % 7 == 0 )
 						{
 							my->increaseSkill(PRO_APPRAISAL);
 						}
@@ -3699,11 +3699,11 @@ void actPlayer(Entity* my)
 									|| tempItem->type == TOOL_DUMMYBOT )
 								{
 									robot = true;
-									tempItem->appearance += (rand() % 100000) * 10;
+									tempItem->appearance += (local_rng.getU32() % 100000) * 10;
 								}
 								else
 								{
-									tempItem->appearance = rand();
+									tempItem->appearance = local_rng.getU32();
 									if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
 									{
 										// we need to match the variation for the new appearance, take the difference so new varation matches
@@ -3722,11 +3722,11 @@ void actPlayer(Entity* my)
 								{
 									if ( robot )
 									{
-										tempItem->appearance += (rand() % 100000) * 10;
+										tempItem->appearance += (local_rng.getU32() % 100000) * 10;
 									}
 									else
 									{
-										tempItem->appearance = rand();
+										tempItem->appearance = local_rng.getU32();
 										if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
 										{
 											// we need to match the variation for the new appearance, take the difference so new varation matches
@@ -4146,7 +4146,7 @@ void actPlayer(Entity* my)
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
-			if ( rand() % 400 == 0 && multiplayer != CLIENT )
+			if ( local_rng.getU32() % 400 == 0 && multiplayer != CLIENT )
 			{
 				my->increaseSkill(PRO_SWIMMING);
 			}
@@ -4225,7 +4225,7 @@ void actPlayer(Entity* my)
 					{
 						if ( ticks % 10 == 0 ) // Water deals damage every 10 ticks
 						{
-							my->modHP(-2 - rand() % 2);
+							my->modHP(-2 - local_rng.getU32() % 2);
 							if ( ticks % 20 == 0 )
 							{
 								playSoundPlayer(PLAYER_NUM, 28, 92);
@@ -4251,7 +4251,7 @@ void actPlayer(Entity* my)
 				}
 				else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
 				{
-					my->modHP(-2 - rand() % 2);
+					my->modHP(-2 - local_rng.getU32() % 2);
 					if ( stats[PLAYER_NUM]->type == AUTOMATON )
 					{
 						my->modMP(2);
@@ -4981,7 +4981,7 @@ void actPlayer(Entity* my)
 					{
 						doDeathProcedure = true;
 						spawnExplosion(my->x, my->y, my->z);
-						playSoundEntity(my, 260 + rand() % 2, 128);
+						playSoundEntity(my, 260 + local_rng.getU32() % 2, 128);
 						my->attack(MONSTER_POSE_AUTOMATON_MALFUNCTION, 0, my);
 					}
 					else
@@ -5034,11 +5034,11 @@ void actPlayer(Entity* my)
 									entity = newEntity(160, 1, map.entities, nullptr); //Limb entity.
 									entity->x = my->x;
 									entity->y = my->y;
-									entity->z = 8.0 + (rand() % 20) / 100.0;
+									entity->z = 8.0 + (local_rng.getU32() % 20) / 100.0;
 									entity->parent = my->getUID();
 									entity->sizex = 2;
 									entity->sizey = 2;
-									entity->yaw = (rand() % 360) * PI / 180.0;
+									entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
 									entity->flags[UPDATENEEDED] = true;
 									entity->flags[PASSABLE] = true;
 								}
@@ -5240,9 +5240,9 @@ void actPlayer(Entity* my)
 										entity->y = my->y;
 										entity->sizex = 4;
 										entity->sizey = 4;
-										entity->yaw = (rand() % 360) * (PI / 180.f);
-										entity->vel_x = (rand() % 20 - 10) / 10.0;
-										entity->vel_y = (rand() % 20 - 10) / 10.0;
+										entity->yaw = (local_rng.getU32() % 360) * (PI / 180.f);
+										entity->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
+										entity->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
 										entity->vel_z = -.5;
 										entity->flags[PASSABLE] = true;
 										entity->flags[USERFLAG1] = true;
@@ -5309,9 +5309,9 @@ void actPlayer(Entity* my)
 											entity->y = my->y;
 											entity->sizex = 4;
 											entity->sizey = 4;
-											entity->yaw = (rand() % 360) * (PI / 180.f);
-											entity->vel_x = (rand() % 20 - 10) / 10.0;
-											entity->vel_y = (rand() % 20 - 10) / 10.0;
+											entity->yaw = (local_rng.getU32() % 360) * (PI / 180.f);
+											entity->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
+											entity->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
 											entity->vel_z = -.5;
 											entity->flags[PASSABLE] = true;
 											entity->flags[USERFLAG1] = true;
@@ -5554,7 +5554,7 @@ void actPlayer(Entity* my)
 						{
 							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
 							hit.entity->skill[4] = 1;
-							hit.entity->skill[6] = rand() % 10 + 1;
+							hit.entity->skill[6] = local_rng.getU32() % 10 + 1;
 							hit.entity->fskill[4] = tangent;
 						}
 					}
@@ -5605,7 +5605,7 @@ void actPlayer(Entity* my)
 						{
 							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
 							hit.entity->skill[4] = 1;
-							hit.entity->skill[6] = rand() % 10 + 1;
+							hit.entity->skill[6] = local_rng.getU32() % 10 + 1;
 							hit.entity->fskill[4] = tangent;
 						}
 					}
@@ -6078,7 +6078,7 @@ void actPlayer(Entity* my)
 								limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 32, false, 0);
 								if ( PLAYER_ATTACKTIME == 5 )
 								{
-									if ( playerRace == TROLL && rand() % 4 == 0 )
+									if ( playerRace == TROLL && local_rng.getU32() % 4 == 0 )
 									{
 										playSoundEntityLocal(players[PLAYER_NUM]->entity, 79, 128);
 									}

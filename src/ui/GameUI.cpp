@@ -15217,7 +15217,7 @@ bool takeAllChestGUIAction(const int player)
 	if ( pickedUpItems > 0 )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, language[4099], pickedUpItems);
-		playSound(35 + rand() % 3, 64);
+		playSound(35 + local_rng.getU32() % 3, 64);
 	}
 	else if ( pickedUpItems == 0 && numItems > 0 )
 	{

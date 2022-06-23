@@ -234,7 +234,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 	entity->x = x;
 	entity->y = y;
 	entity->z = 6;
-	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
 	entity->behavior = &actMonster;
 	entity->flags[UPDATENEEDED] = true;
 	entity->flags[INVISIBLE] = true;
@@ -1076,7 +1076,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		if ( my->getINT() > -2 && race == HUMAN )
 		{
 			//Human tells off the player.
-			messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[530 + rand() % 4], namesays);
+			messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[530 + local_rng.getU32() % 4], namesays);
 			// move aside
 			monsterMoveAside(my, players[monsterclicked]->entity);
 		}
@@ -1101,7 +1101,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 
 	if ( my->getINT() > -2 && race == HUMAN )
 	{
-		messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
+		messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[525 + local_rng.getU32() % 4], namesays, stats[monsterclicked]->name);
 	}
 	else
 	{
@@ -1432,13 +1432,13 @@ void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
 		default:
 			break;
 	}
-	if ( doSpecialNoise && rand() % 3 == 0 )
+	if ( doSpecialNoise && local_rng.getU32() % 3 == 0 )
 	{
-		MONSTER_SOUND = playSoundEntity(my, 466 + rand() % 3, 64);
+		MONSTER_SOUND = playSoundEntity(my, 466 + local_rng.getU32() % 3, 64);
 	}
 	else
 	{
-		MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+		MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128);
 	}
 }
 
@@ -1933,23 +1933,23 @@ void actMonster(Entity* my)
 		MONSTER_INIT = 2;
 		if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
-			my->monsterLookDir = (rand() % 360) * PI / 180;
+			my->monsterLookDir = (local_rng.getU32() % 360) * PI / 180;
 		}
 		else
 		{
 			my->monsterLookDir = PI;
 		}
-		my->monsterLookTime = rand() % 120;
-		my->monsterMoveTime = rand() % 10;
+		my->monsterLookTime = local_rng.getU32() % 120;
+		my->monsterMoveTime = local_rng.getU32() % 10;
 		MONSTER_SOUND = NULL;
 		if ( MONSTER_NUMBER == -1 )
 		{
 			MONSTER_NUMBER = nummonsters;
 			nummonsters++;
 		}
-		/*if( rand()%20==0 ) { // 20% chance
+		/*if( local_rng.getU32()%20==0 ) { // 20% chance
 			MONSTER_STATE = 2; // start hunting the player immediately
-			MONSTER_TARGET = rand()%numplayers;
+			MONSTER_TARGET = local_rng.getU32()%numplayers;
 			MONSTER_TARGETX = players[MONSTER_TARGET]->x;
 			MONSTER_TARGETY = players[MONSTER_TARGET]->y;
 		} else {
@@ -2067,11 +2067,11 @@ void actMonster(Entity* my)
 			}
 		}
 		// dodging away
-		if ( ( ( rand() % 4 == 0 && my->monsterState != 6 ) || ( rand() % 10 == 0 && my->monsterState == MONSTER_STATE_LICH_SUMMON) ) && myStats->OLDHP != myStats->HP )
+		if ( ( ( local_rng.getU32() % 4 == 0 && my->monsterState != 6 ) || ( local_rng.getU32() % 10 == 0 && my->monsterState == MONSTER_STATE_LICH_SUMMON) ) && myStats->OLDHP != myStats->HP )
 		{
 			playSoundEntity(my, 180, 128);
 			my->monsterState = MONSTER_STATE_LICH_DODGE; // dodge state
-			double dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+			double dir = my->yaw - (PI / 2) + PI * (local_rng.getU32() % 2);
 			MONSTER_VELX = cos(dir) * 5;
 			MONSTER_VELY = sin(dir) * 5;
 			my->monsterSpecialTimer = 0;
@@ -2170,7 +2170,7 @@ void actMonster(Entity* my)
 			if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS
 				&& my->monsterSpecialTimer < 250 )
 			{
-				if ( rand() % 8 == 0 )
+				if ( local_rng.getU32() % 8 == 0 )
 				{
 					my->monsterState = MONSTER_STATE_LICH_TELEPORT_ROAMING;
 					my->lichFireTeleport();
@@ -2216,9 +2216,9 @@ void actMonster(Entity* my)
 						break;
 				}
 				if ( my->monsterLichBattleState % 2 == 1
-					&& (rand() % 5 == 0 
-						|| (rand() % 4 == 0 && my->monsterLichTeleportTimer > 0)
-						|| (rand() % 2 == 0 && my->monsterLichAllyStatus == LICH_ALLY_DEAD))
+					&& (local_rng.getU32() % 5 == 0
+						|| (local_rng.getU32() % 4 == 0 && my->monsterLichTeleportTimer > 0)
+						|| (local_rng.getU32() % 2 == 0 && my->monsterLichAllyStatus == LICH_ALLY_DEAD))
 					)
 				{
 					// chance to change state to teleport after being hit.
@@ -2305,7 +2305,7 @@ void actMonster(Entity* my)
 						}
 						else
 						{
-							if ( rand() % 3 == 0 )
+							if ( local_rng.getU32() % 3 == 0 )
 							{
 								my->monsterLichTeleportTimer++;
 							}
@@ -2329,13 +2329,13 @@ void actMonster(Entity* my)
 				{
 					if ( (	my->monsterLichFireMeleePrev == LICH_ATK_RISING_SINGLE
 							|| my->monsterLichFireMeleePrev == LICH_ATK_HORIZONTAL_RETURN)
-							&& rand() % 4 == 0 
+							&& local_rng.getU32() % 4 == 0
 							&& ticks % 10 == 0
 						)
 					{
 						// chance to dodge immediately after the above 2 attacks
 						playSoundEntity(my, 180, 128);
-						dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+						dir = my->yaw - (PI / 2) + PI * (local_rng.getU32() % 2);
 						MONSTER_VELX = cos(dir) * 3;
 						MONSTER_VELY = sin(dir) * 3;
 						my->monsterState = MONSTER_STATE_LICHFIRE_DODGE;
@@ -2345,11 +2345,11 @@ void actMonster(Entity* my)
 					}
 					else if ( myStats->OLDHP != myStats->HP )
 					{
-						if ( rand() % 4 == 0 )
+						if ( local_rng.getU32() % 4 == 0 )
 						{
 							// chance to dodge on hp loss
 							playSoundEntity(my, 180, 128);
-							dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+							dir = my->yaw - (PI / 2) + PI * (local_rng.getU32() % 2);
 							MONSTER_VELX = cos(dir) * 3;
 							MONSTER_VELY = sin(dir) * 3;
 							my->monsterState = MONSTER_STATE_LICHFIRE_DODGE;
@@ -2358,7 +2358,7 @@ void actMonster(Entity* my)
 					}
 					else if ( lichDist > 64 )
 					{
-						if ( target && rand() % 100 == 0 )
+						if ( target && local_rng.getU32() % 100 == 0 )
 						{
 							// chance to dodge towards the target if distance is great enough.
 							playSoundEntity(my, 180, 128);
@@ -2389,16 +2389,16 @@ void actMonster(Entity* my)
 					}
 					if ( myStats->OLDHP != myStats->HP )
 					{
-						if ( rand() % 3 == 0 )
+						if ( local_rng.getU32() % 3 == 0 )
 						{
 							// chance to dodge on hp loss
 							playSoundEntity(my, 180, 128);
-							dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+							dir = my->yaw - (PI / 2) + PI * (local_rng.getU32() % 2);
 							MONSTER_VELX = cos(dir) * 3;
 							MONSTER_VELY = sin(dir) * 3;
 							my->monsterState = MONSTER_STATE_LICHICE_DODGE;
 							my->monsterSpecialTimer = 30;
-							if ( rand() % 2 == 0 )
+							if ( local_rng.getU32() % 2 == 0 )
 							{
 								// prepare off-hand spell after dodging
 								my->monsterLichIceCastPrev = 0;
@@ -2408,7 +2408,7 @@ void actMonster(Entity* my)
 					}
 					else if ( (lichDist < 32) || (enemiesInMelee > 1) )
 					{
-						if ( target && ticks % 10 == 0 && rand() % 100 == 0 || (enemiesInMelee > 1 && rand() % 8 == 0) )
+						if ( target && ticks % 10 == 0 && local_rng.getU32() % 100 == 0 || (enemiesInMelee > 1 && local_rng.getU32() % 8 == 0) )
 						{
 							// chance to dodge away from target if distance is low enough.
 							playSoundEntity(my, 180, 128);
@@ -2426,14 +2426,14 @@ void actMonster(Entity* my)
 							MONSTER_VELY = sin(dir) * 3;
 							my->monsterState = MONSTER_STATE_LICHICE_DODGE;
 							my->monsterSpecialTimer = 20;
-							if ( rand() % 2 == 0 )
+							if ( local_rng.getU32() % 2 == 0 )
 							{
 								// prepare off-hand spell after dodging
 								my->monsterLichIceCastPrev = 0;
 								my->monsterLichIceCastSeq = LICH_ATK_BASICSPELL_SINGLE;
 							}
 						}
-						else if ( (ticks % 50 == 0 && rand() % 10 == 0) || (enemiesInMelee > 1 && rand() % 4 == 0) )
+						else if ( (ticks % 50 == 0 && local_rng.getU32() % 10 == 0) || (enemiesInMelee > 1 && local_rng.getU32() % 4 == 0) )
 						{
 							my->monsterSpecialTimer = 100;
 							my->monsterLichIceCastPrev = 0;
@@ -2443,7 +2443,7 @@ void actMonster(Entity* my)
 					else if ( lichDist > 64 )
 					{
 						// chance to dodge towards the target if distance is great enough.
-						if ( rand() % 100 == 0 )
+						if ( local_rng.getU32() % 100 == 0 )
 						{
 							if ( my->monsterLichAllyUID != 0 )
 							{
@@ -2475,12 +2475,12 @@ void actMonster(Entity* my)
 							{
 								// chance to dodge sideways if not set above
 								playSoundEntity(my, 180, 128);
-								dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+								dir = my->yaw - (PI / 2) + PI * (local_rng.getU32() % 2);
 								MONSTER_VELX = cos(dir) * 3;
 								MONSTER_VELY = sin(dir) * 3;
 								my->monsterState = MONSTER_STATE_LICHICE_DODGE;
 								my->monsterSpecialTimer = 30;
-								if ( rand() % 10 == 0 )
+								if ( local_rng.getU32() % 10 == 0 )
 								{
 									// prepare off-hand spell after dodging
 									my->monsterLichIceCastPrev = 0;
@@ -2493,25 +2493,25 @@ void actMonster(Entity* my)
 					{
 						// reached x successive normal attacks, either move/teleport/dodge around the map
 						my->monsterLichMeleeSwingCount = 0;
-						if ( rand() % 10 > 0 )
+						if ( local_rng.getU32() % 10 > 0 )
 						{
-							if ( rand() % 2 == 0 )
+							if ( local_rng.getU32() % 2 == 0 )
 							{
 								my->monsterTarget = 0;
-								my->monsterTargetX = my->x - 50 + rand() % 100;
-								my->monsterTargetY = my->y - 50 + rand() % 100;
+								my->monsterTargetX = my->x - 50 + local_rng.getU32() % 100;
+								my->monsterTargetY = my->y - 50 + local_rng.getU32() % 100;
 								my->monsterState = MONSTER_STATE_PATH; // path state
 							}
 							else
 							{
 								// chance to dodge
 								playSoundEntity(my, 180, 128);
-								dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+								dir = my->yaw - (PI / 2) + PI * (local_rng.getU32() % 2);
 								MONSTER_VELX = cos(dir) * 3;
 								MONSTER_VELY = sin(dir) * 3;
 								my->monsterState = MONSTER_STATE_LICHICE_DODGE;
 								my->monsterSpecialTimer = 30;
-								if ( rand() % 2 == 0 )
+								if ( local_rng.getU32() % 2 == 0 )
 								{
 									// prepare off-hand spell after dodging
 									my->monsterLichIceCastPrev = 0;
@@ -2777,7 +2777,7 @@ void actMonster(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 6;
-				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
@@ -3268,7 +3268,7 @@ void actMonster(Entity* my)
 				switch (myStats->type)
 				{
 					case HUMAN:
-						messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + rand() % 4], namesays);
+						messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + local_rng.getU32() % 4], namesays);
 						break;
 					case SHOPKEEPER:
 						if ( stats[monsterclicked] )
@@ -3280,12 +3280,12 @@ void actMonster(Entity* my)
 							}
 							else
 							{
-								messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + rand() % 4], namesays);
+								messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + local_rng.getU32() % 4], namesays);
 							}
 						}
 						else
 						{
-							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + rand() % 4], namesays);
+							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[516 + local_rng.getU32() % 4], namesays);
 						}
 						break;
 					default:
@@ -3301,7 +3301,7 @@ void actMonster(Entity* my)
 					{
 						case SHOPKEEPER:
 						case HUMAN:
-							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[520 + rand() % 4], namesays);
+							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[520 + local_rng.getU32() % 4], namesays);
 							break;
 						default:
 							messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[524], namesays);
@@ -3360,7 +3360,7 @@ void actMonster(Entity* my)
 							{
 								case SHOPKEEPER:
 								case HUMAN:
-									messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[520 + rand() % 3], namesays);
+									messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[520 + local_rng.getU32() % 3], namesays);
 									break;
 								default:
 									messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[524], namesays);
@@ -3759,7 +3759,7 @@ void actMonster(Entity* my)
 									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 								}
 								if ( hit.entity == entity )
-									if ( rand() % 100 == 0 )
+									if ( local_rng.getU32() % 100 == 0 )
 									{
 										entity->increaseSkill(PRO_STEALTH);
 									}
@@ -3820,7 +3820,7 @@ void actMonster(Entity* my)
 											}
 											else
 											{
-												MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+												MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128);
 											}
 										}
 										else
@@ -3830,11 +3830,11 @@ void actMonster(Entity* my)
 											{
 												if ( c == 0 )
 												{
-													MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128 );
+													MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128 );
 												}
 												else
 												{
-													playSoundPlayer( c, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128 );
+													playSoundPlayer( c, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128 );
 												}
 											}
 										}
@@ -4078,16 +4078,16 @@ void actMonster(Entity* my)
 					{
 						if ( abs(my->monsterSentrybotLookDir) > 0.001 )
 						{
-							my->monsterLookDir = my->monsterSentrybotLookDir + (-30 + rand() % 61) * PI / 180;
+							my->monsterLookDir = my->monsterSentrybotLookDir + (-30 + local_rng.getU32() % 61) * PI / 180;
 						}
 						else
 						{
-							my->monsterLookDir = (rand() % 360) * PI / 180;
+							my->monsterLookDir = (local_rng.getU32() % 360) * PI / 180;
 						}
 					}
 					else
 					{
-						my->monsterLookDir = (rand() % 360) * PI / 180;
+						my->monsterLookDir = (local_rng.getU32() % 360) * PI / 180;
 					}
 				}
 				if ( !myStats->EFFECTS[EFF_FEAR] && my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT && my->monsterAllyGetPlayerLeader() )
@@ -4114,7 +4114,7 @@ void actMonster(Entity* my)
 									if ( hit.entity == target )
 									{
 										//my->monsterLookTime = 1;
-										//my->monsterMoveTime = rand() % 10 + 1;
+										//my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 										my->monsterLookDir = tangent;
 										if ( monsterIsImmobileTurret(my, myStats) )
 										{
@@ -4130,16 +4130,16 @@ void actMonster(Entity* my)
 						}
 					}
 				}
-				if ( rand() % 3 == 0 && !isIllusionTaunt )
+				if ( local_rng.getU32() % 3 == 0 && !isIllusionTaunt )
 				{
 					if ( !MONSTER_SOUND )
 					{
 						if ( myStats->type != MINOTAUR )
 						{
-							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) || myStats->type == DUMMYBOT )
+							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && local_rng.getU32() % 3 == 0) || myStats->type == DUMMYBOT )
 							{
 								// idle sounds. if player follower, reduce noise frequency by 66%.
-								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (local_rng.getU32() % MONSTER_IDLEVAR), 128);
 							}
 						}
 						else
@@ -4149,11 +4149,11 @@ void actMonster(Entity* my)
 							{
 								if ( c == 0 )
 								{
-									MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128 );
+									MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128 );
 								}
 								else
 								{
-									playSoundPlayer( c, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128 );
+									playSoundPlayer( c, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128 );
 								}
 							}
 						}
@@ -4169,7 +4169,7 @@ void actMonster(Entity* my)
 				&& myStats->type != DEVIL )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
-				my->monsterMoveTime = rand() % 30;
+				my->monsterMoveTime = local_rng.getU32() % 30;
 				int goodspots = 0;
 				int centerX = static_cast<int>(my->x / 16); // grab the coordinates in small form.
 				int centerY = static_cast<int>(my->y / 16); // grab the coordinates in small form.
@@ -4212,7 +4212,7 @@ void actMonster(Entity* my)
 				}
 				if ( goodspots )
 				{
-					int chosenspot = rand() % goodspots;
+					int chosenspot = local_rng.getU32() % goodspots;
 					int currentspot = 0;
 					bool foundit = false;
 					x = possibleCoordinates.at(chosenspot).first;
@@ -4255,7 +4255,7 @@ void actMonster(Entity* my)
 			// rotate monster
 			dir = my->monsterRotate();
 
-			if ( myStats->type == SHADOW && !uidToEntity(my->monsterTarget) && my->monsterSpecialTimer == 0 && my->monsterSpecialState == 0 && ticks%500 == 0 && rand()%5 == 0 )
+			if ( myStats->type == SHADOW && !uidToEntity(my->monsterTarget) && my->monsterSpecialTimer == 0 && my->monsterSpecialState == 0 && ticks%500 == 0 && local_rng.getU32()%5 == 0 )
 			{
 				//Random chance for a shadow to teleport around the map if it has nothing better to do.
 				//messagePlayer(0, "Shadow idle telepotty.");
@@ -4378,7 +4378,7 @@ void actMonster(Entity* my)
 						}
 						if ( hit.entity == entity )
 						{	
-							if ( rand() % 100 == 0 )
+							if ( local_rng.getU32() % 100 == 0 )
 							{
 								entity->increaseSkill(PRO_STEALTH);
 							}
@@ -4408,7 +4408,7 @@ void actMonster(Entity* my)
 
 							if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 && !hasrangedweapon )
 							{
-								if ( rand() % 10 == 0 )
+								if ( local_rng.getU32() % 10 == 0 )
 								{
 									node_t* node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 									if ( node != nullptr )
@@ -4705,7 +4705,7 @@ timeToGoAgain:
 									{
 										double strafeTangent = tangent2;
 										//messagePlayer(0, "strafe: %d", my->monsterStrafeDirection);
-										if ( ticks % 10 == 0 && my->monsterStrafeDirection != 0 && rand() % 10 == 0 )
+										if ( ticks % 10 == 0 && my->monsterStrafeDirection != 0 && local_rng.getU32() % 10 == 0 )
 										{
 											Entity* lichAlly = nullptr;
 											if ( my->monsterLichAllyUID != 0 )
@@ -4919,7 +4919,7 @@ timeToGoAgain:
 										my->monsterState = MONSTER_STATE_DEVIL_SUMMON; // devil summoning state
 										break;
 									case 73:
-										MONSTER_ATTACK = 5 + rand() % 2; // fireballs
+										MONSTER_ATTACK = 5 + local_rng.getU32() % 2; // fireballs
 										break;
 									case 74:
 										my->monsterState = MONSTER_STATE_DEVIL_BOULDER; // devil boulder drop
@@ -4929,9 +4929,9 @@ timeToGoAgain:
 							}
 							else
 							{
-								if ( rand() % 2 && devilstate == 73 )
+								if ( local_rng.getU32() % 2 && devilstate == 73 )
 								{
-									MONSTER_ATTACK = 5 + rand() % 2; // more fireballs
+									MONSTER_ATTACK = 5 + local_rng.getU32() % 2; // more fireballs
 								}
 								else
 								{
@@ -5113,7 +5113,7 @@ timeToGoAgain:
 				//Shadow has path to target, but still passive teleport if far enough away.
 				if ( !passiveTeleport )
 				{
-					int specialRoll = rand() % 50;
+					int specialRoll = local_rng.getU32() % 50;
 					//messagePlayer(0, "roll %d", specialRoll);
 					double targetdist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
 					if ( specialRoll <= (2 + (targetdist > 80 ? 4 : 0)) )
@@ -5193,7 +5193,7 @@ timeToGoAgain:
 								}
 								if ( hit.entity == entity )
 								{
-									if ( rand() % 100 == 0 )
+									if ( local_rng.getU32() % 100 == 0 )
 									{
 										entity->increaseSkill(PRO_STEALTH);
 									}
@@ -5286,7 +5286,7 @@ timeToGoAgain:
 												{
 													if ( myStats->type != MINOTAUR )
 													{
-														if ( myStats->type != LICH || rand() % 3 == 0 )
+														if ( myStats->type != LICH || local_rng.getU32() % 3 == 0 )
 														{
 															if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
 															{
@@ -5294,7 +5294,7 @@ timeToGoAgain:
 															}
 															else
 															{
-																MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+																MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128);
 															}
 														}
 													}
@@ -5305,11 +5305,11 @@ timeToGoAgain:
 														{
 															if ( c == 0 )
 															{
-																MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128 );
+																MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128 );
 															}
 															else
 															{
-																playSoundPlayer( c, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128 );
+																playSoundPlayer( c, MONSTER_SPOTSND + local_rng.getU32() % MONSTER_SPOTVAR, 128 );
 															}
 														}
 													}
@@ -5605,15 +5605,15 @@ timeToGoAgain:
 						if ( dist <= 2 )
 						{
 							list_RemoveNode(pathnode->node);
-							if ( rand() % 8 == 0 )
+							if ( local_rng.getU32() % 8 == 0 )
 							{
 								if ( !MONSTER_SOUND )
 								{
 									if ( myStats->type != MINOTAUR )
 									{
-										if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) )
+										if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && local_rng.getU32() % 3 == 0) )
 										{
-											MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+											MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (local_rng.getU32() % MONSTER_IDLEVAR), 128);
 										}
 									}
 									else
@@ -5623,11 +5623,11 @@ timeToGoAgain:
 										{
 											if ( c == 0 )
 											{
-												MONSTER_SOUND = playSoundPlayer( c, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128 );
+												MONSTER_SOUND = playSoundPlayer( c, MONSTER_IDLESND + (local_rng.getU32() % MONSTER_IDLEVAR), 128 );
 											}
 											else
 											{
-												playSoundPlayer( c, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128 );
+												playSoundPlayer( c, MONSTER_IDLESND + (local_rng.getU32() % MONSTER_IDLEVAR), 128 );
 											}
 										}
 									}
@@ -5993,7 +5993,7 @@ timeToGoAgain:
 											if ( hit.entity == target )
 											{
 												my->monsterLookTime = 1;
-												my->monsterMoveTime = rand() % 10 + 1;
+												my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 												my->monsterLookDir = tangent;
 												break;
 											}
@@ -6029,7 +6029,7 @@ timeToGoAgain:
 										if ( hit.entity == target )
 										{
 											my->monsterLookTime = 1;
-											my->monsterMoveTime = rand() % 10 + 1;
+											my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 											my->monsterLookDir = tangent;
 											break;
 										}
@@ -6046,7 +6046,7 @@ timeToGoAgain:
 					{
 						double tangent = atan2( target->y - my->y, target->x - my->x );
 						my->monsterLookTime = 1;
-						my->monsterMoveTime = rand() % 10 + 1;
+						my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 						my->monsterLookDir = tangent;
 						/*if ( myStats->type == SHADOW )
 						{
@@ -6119,7 +6119,7 @@ timeToGoAgain:
 										if ( hit.entity == target )
 										{
 											my->monsterLookTime = 1;
-											my->monsterMoveTime = rand() % 10 + 1;
+											my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 											my->monsterLookDir = tangent;
 											break;
 										}
@@ -6139,7 +6139,7 @@ timeToGoAgain:
 				{
 					double tangent = atan2( target->y - my->y, target->x - my->x );
 					my->monsterLookTime = 1;
-					my->monsterMoveTime = rand() % 10 + 1;
+					my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 					my->monsterLookDir = tangent;
 					/*if ( myStats->type == SHADOW )
 					{
@@ -6219,7 +6219,7 @@ timeToGoAgain:
 			if ( dist != sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY) )   // hit obstacle
 			{
 				my->monsterSpecialTimer = 60;
-				if ( rand() % 2 )
+				if ( local_rng.getU32() % 2 )
 				{
 					my->monsterState = MONSTER_STATE_WAIT; // wait state
 				}
@@ -6234,7 +6234,7 @@ timeToGoAgain:
 				if ( my->monsterSpecialTimer > 20 )
 				{
 					my->monsterSpecialTimer = 60;
-					if ( rand() % 2 )
+					if ( local_rng.getU32() % 2 )
 					{
 						my->monsterState = MONSTER_STATE_WAIT; // wait state
 					}
@@ -6260,7 +6260,7 @@ timeToGoAgain:
 				playSoundEntity(my, 166, 128);
 
 				Monster creature = NOTHING;
-				switch ( rand() % 5 )
+				switch ( local_rng.getU32() % 5 )
 				{
 					case 0:
 					case 1:
@@ -6300,7 +6300,7 @@ timeToGoAgain:
 			}
 			if ( my->monsterSpecialTimer % 10 == 0 )
 			{
-				spawnExplosion(my->x - 8 + rand() % 16, my->y - 8 + rand() % 16, -4 + rand() % 8);
+				spawnExplosion(my->x - 8 + local_rng.getU32() % 16, my->y - 8 + local_rng.getU32() % 16, -4 + local_rng.getU32() % 8);
 			}
 			my->monsterSpecialTimer++;
 			if ( my->monsterSpecialTimer > 180 )
@@ -6350,7 +6350,7 @@ timeToGoAgain:
 			}
 			if ( my->monsterSpecialTimer % 15 == 0 )
 			{
-				spawnExplosion(my->x - 8 + rand() % 16, my->y - 8 + rand() % 16, my->z -4 + rand() % 8);
+				spawnExplosion(my->x - 8 + local_rng.getU32() % 16, my->y - 8 + local_rng.getU32() % 16, my->z -4 + local_rng.getU32() % 8);
 			}
 			--my->monsterSpecialTimer;
 			if ( my->monsterSpecialTimer <= 0 )
@@ -6396,7 +6396,7 @@ timeToGoAgain:
 			}
 			if ( my->monsterSpecialTimer % 10 == 0 )
 			{
-				spawnExplosion(my->x - 24 + rand() % 48, my->y - 24 + rand() % 48, -16 + rand() % 32);
+				spawnExplosion(my->x - 24 + local_rng.getU32() % 48, my->y - 24 + local_rng.getU32() % 48, -16 + local_rng.getU32() % 32);
 			}
 			my->monsterSpecialTimer++;
 			if ( my->z > 96 )
@@ -6464,7 +6464,7 @@ timeToGoAgain:
 				}
 				if ( c )
 				{
-					int i = rand() % c;
+					int i = local_rng.getU32() % c;
 					c = 0;
 					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
@@ -6575,7 +6575,7 @@ timeToGoAgain:
 			{
 				if ( my->z <= -4 )
 				{
-					int j = rand() % 5;
+					int j = local_rng.getU32() % 5;
 					int c;
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
@@ -6708,7 +6708,7 @@ timeToGoAgain:
 						// let's make some shadows.
 						if ( !alivePlayers.empty() )
 						{
-							int vectorEntry = rand() % alivePlayers.size();
+							int vectorEntry = local_rng.getU32() % alivePlayers.size();
 							my->devilSummonMonster(nullptr, SHADOW, 5, alivePlayers[vectorEntry]);
 							alivePlayers.erase(alivePlayers.begin() + vectorEntry);
 						}
@@ -6720,7 +6720,7 @@ timeToGoAgain:
 					}
 					else
 					{
-						switch ( rand() % 5 )
+						switch ( local_rng.getU32() % 5 )
 						{
 							case 0:
 							case 1:
@@ -6811,7 +6811,7 @@ timeToGoAgain:
 				double oyaw = my->yaw;
 				for ( c = 0; c < 12; c++ )
 				{
-					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
+					my->yaw = ((double)c + ((local_rng.getU32() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
@@ -6863,7 +6863,7 @@ timeToGoAgain:
 							chance = 3;
 						}
 
-						if ( rand() % chance == 0 || (numLavaBoulders < 2 && rand() % 2) )
+						if ( local_rng.getU32() % chance == 0 || (numLavaBoulders < 2 && local_rng.getU32() % 2) )
 						{
 							entity->sprite = 989; // lava boulder.
 							++numLavaBoulders;
@@ -6892,7 +6892,7 @@ timeToGoAgain:
 				double oyaw = my->yaw;
 				for ( c = 0; c < 12; ++c )
 				{
-					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
+					my->yaw = ((double)c + ((local_rng.getU32() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				for ( c = 0; c < MAXPLAYERS; ++c )
@@ -6949,7 +6949,7 @@ timeToGoAgain:
 							chance = 3;
 						}
 
-						if ( rand() % chance == 0 || (numLavaBoulders < 2 && rand() % 2) )
+						if ( local_rng.getU32() % chance == 0 || (numLavaBoulders < 2 && local_rng.getU32() % 2) )
 						{
 							entity->sprite = 989; // lava boulder.
 							++numLavaBoulders;
@@ -6978,7 +6978,7 @@ timeToGoAgain:
 				double oyaw = my->yaw;
 				for ( c = 0; c < 12; ++c )
 				{
-					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
+					my->yaw = ((double)c + ((local_rng.getU32() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				for ( c = 0; c < MAXPLAYERS; ++c )
@@ -7030,7 +7030,7 @@ timeToGoAgain:
 							chance = 3;
 						}
 
-						if ( rand() % chance == 0 || (numLavaBoulders < 3 && rand() % 2) )
+						if ( local_rng.getU32() % chance == 0 || (numLavaBoulders < 3 && local_rng.getU32() % 2) )
 						{
 							entity->sprite = 989; // lava boulder.
 							++numLavaBoulders;
@@ -7089,7 +7089,7 @@ timeToGoAgain:
 			if ( target && my->monsterSpecialTimer != 0 && myStats->type == LICH_FIRE )
 			{
 				dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
-				if ( dist < STRIKERANGE && rand () % 20 == 0 )
+				if ( dist < STRIKERANGE && local_rng.getU32() % 20 == 0 )
 				{
 					my->monsterSpecialTimer = 0; // close enough to target, chance to stop early
 				}
@@ -7107,7 +7107,7 @@ timeToGoAgain:
 						my->monsterHitTime = HITRATE * 2;
 						if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < STRIKERANGE )
 						{
-							if ( rand() % 2 == 0 )
+							if ( local_rng.getU32() % 2 == 0 )
 							{
 								my->monsterLichFireMeleeSeq = LICH_ATK_RISING_RAIN;
 								my->handleMonsterAttack(myStats, target, 0.f);
@@ -7148,9 +7148,9 @@ timeToGoAgain:
 							{
 								messagePlayer(0, "sprite: %d", hit.entity->sprite);
 							}*/
-							if ( hit.entity == target && rand() % 5 > 0 )
+							if ( hit.entity == target && local_rng.getU32() % 5 > 0 )
 							{
-								switch ( rand() % 3 )
+								switch ( local_rng.getU32() % 3 )
 								{
 									case 0:
 										my->monsterLichFireMeleeSeq = LICH_ATK_BASICSPELL_SINGLE;
@@ -7215,7 +7215,7 @@ timeToGoAgain:
 				{
 					if ( my->monsterLichFireMeleeSeq == LICH_ATK_RISING_SINGLE )
 					{
-						if ( my->monsterLichMagicCastCount < 3 + rand() % 2 )
+						if ( my->monsterLichMagicCastCount < 3 + local_rng.getU32() % 2 )
 						{
 							if ( my->monsterLichMagicCastCount == 0 )
 							{
@@ -7224,7 +7224,7 @@ timeToGoAgain:
 							else
 							{
 								Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
-								spell->yaw += (PI / 64) * (-1 + rand() % 3);
+								spell->yaw += (PI / 64) * (-1 + local_rng.getU32() % 3);
 								spell->vel_x = cos(spell->yaw) * 4;
 								spell->vel_y = sin(spell->yaw) * 4;
 							}
@@ -7277,7 +7277,7 @@ timeToGoAgain:
 						{
 							tangent = atan2(target->y - my->y, target->x - my->x);
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
-							switch ( rand() % 4 )
+							switch ( local_rng.getU32() % 4 )
 							{
 								case 0:
 								case 1:
@@ -7351,7 +7351,7 @@ timeToGoAgain:
 						int castLimit = 6;
 						if ( my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
 						{
-							castLimit = 2 + rand() % 2;
+							castLimit = 2 + local_rng.getU32() % 2;
 						}
 						if ( my->monsterLichMagicCastCount < castLimit )
 						{
@@ -7374,7 +7374,7 @@ timeToGoAgain:
 									{
 										real_t spellDistance = sqrt(pow(spell->x - target->x, 2) + pow(spell->y - target->y, 2));
 										spell->vel_z = 22.0 / (spellDistance / horizontalSpeed);
-										if ( rand() % 3 >= 1 )
+										if ( local_rng.getU32() % 3 >= 1 )
 										{
 											// spells will track the velocity of the target.
 											real_t ticksToHit = (spellDistance / horizontalSpeed);
@@ -7387,14 +7387,14 @@ timeToGoAgain:
 										else
 										{
 											// do some minor variations in spell angle
-											spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+											spell->yaw += ((PI * (-4 + local_rng.getU32() % 9)) / 100);
 										}
 									}
 									else
 									{
 										spell->vel_z = 1.6;
 										// do some minor variations in spell angle
-										spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+										spell->yaw += ((PI * (-4 + local_rng.getU32() % 9)) / 100);
 									}
 									spell->vel_x = horizontalSpeed * cos(spell->yaw);
 									spell->vel_y = horizontalSpeed * sin(spell->yaw);
@@ -7644,9 +7644,9 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		{
 			hasrangedweapon = true;
 		}
-		if ( monsterStrafeDirection == 0 && rand() % 10 == 0 && ticks % 10 == 0 )
+		if ( monsterStrafeDirection == 0 && local_rng.getU32() % 10 == 0 && ticks % 10 == 0 )
 		{
-			monsterStrafeDirection = -1 + ((rand() % 2 == 0) ? 2 : 0);
+			monsterStrafeDirection = -1 + ((local_rng.getU32() % 2 == 0) ? 2 : 0);
 		}
 	}
 	else if ( myStats->type == DUMMYBOT )
@@ -7659,7 +7659,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		{
 			if ( monsterSpecialTimer == 0 && monsterSpecialState == 0 && (this->monsterHitTime >= HITRATE / 2) )
 			{
-				if ( rand() % 50 == 0 )
+				if ( local_rng.getU32() % 50 == 0 )
 				{
 					node_t* node = itemNodeInInventory(myStats, -1, SPELLBOOK);
 					if ( node != nullptr )
@@ -7761,8 +7761,8 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 				{
 					this->monsterSpecialTimer = 90;
 					this->monsterTarget = 0;
-					this->monsterTargetX = this->x - 50 + rand() % 100;
-					this->monsterTargetY = this->y - 50 + rand() % 100;
+					this->monsterTargetX = this->x - 50 + local_rng.getU32() % 100;
+					this->monsterTargetY = this->y - 50 + local_rng.getU32() % 100;
 					this->monsterState = MONSTER_STATE_PATH; // path state
 				}
 			}
@@ -8425,7 +8425,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				case KOBOLD:
 					if ( hasrangedweapon || myStats->weapon == nullptr )
 					{
-						specialRoll = rand() % 20;
+						specialRoll = local_rng.getU32() % 20;
 						//messagePlayer(0, "Rolled: %d", specialRoll);
 						if ( myStats->HP < myStats->MAXHP / 2 )
 						{
@@ -8462,7 +8462,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case CRYSTALGOLEM:
-					specialRoll = rand() % 20;
+					specialRoll = local_rng.getU32() % 20;
 					enemiesNearby = numTargetsAroundEntity(this, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
 					if ( enemiesNearby > 1 )
 					{
@@ -8474,7 +8474,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}		
 					
-					specialRoll = rand() % 20;
+					specialRoll = local_rng.getU32() % 20;
 					if ( myStats->HP > myStats->MAXHP * 0.8 )
 					{
 						if ( specialRoll < 2 ) // 10%
@@ -8512,7 +8512,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case COCKATRICE:
-					specialRoll = rand() % 20;
+					specialRoll = local_rng.getU32() % 20;
 					//specialRoll = 0;
 					// check for paralyze first
 					enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
@@ -8533,7 +8533,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 
 					// nothing selected, look for double attack.
-					specialRoll = rand() % 20;
+					specialRoll = local_rng.getU32() % 20;
 					if ( myStats->HP > myStats->MAXHP * 0.8 )
 					{
 						if ( specialRoll < 2 ) // 10%
@@ -8580,7 +8580,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					// spray acid
 					if ( dist < STRIKERANGE * 2 )
 					{
-						specialRoll = rand() % 20;
+						specialRoll = local_rng.getU32() % 20;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
 						//messagePlayer(0, "insectoid roll %d", specialRoll);
 						if ( myStats->HP <= myStats->MAXHP * 0.8 )
@@ -8869,7 +8869,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						{
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						}
-						/*Item *spellbook = newItem(static_cast<ItemType>(0), static_cast<Status>(0), 0, 1, rand(), 0, &myStats->inventory);
+						/*Item *spellbook = newItem(static_cast<ItemType>(0), static_cast<Status>(0), 0, 1, local_rng.getU32(), 0, &myStats->inventory);
 						copyItem(spellbook, myStats->weapon);
 						dropItemMonster(myStats->weapon, this, myStats, 1);*/
 						shouldAttack = false;
@@ -9063,7 +9063,7 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[6
 		else if ( !isSequential )
 		{
 			// choose randomly
-			NPClastLine = 1 + rand() % numLines;
+			NPClastLine = 1 + local_rng.getU32() % numLines;
 		}
 		messagePlayer(monsterclicked, MESSAGE_WORLD | MESSAGE_INTERACTION, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
 		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
@@ -9140,7 +9140,7 @@ void Entity::monsterMoveBackwardsAndPath()
 	bool foundplace = false;
 	for ( int tries = 0; tries < areaToTry.size() && !foundplace; ++tries )
 	{
-		std::pair<int, int> tmpPair = areaToTry[rand() % areaToTry.size()];
+		std::pair<int, int> tmpPair = areaToTry[local_rng.getU32() % areaToTry.size()];
 		u = tmpPair.first;
 		v = tmpPair.second;
 		if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
@@ -9684,7 +9684,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				real_t floaty = destY * 16 + 8;
 				double tangent = atan2(floaty - y, floatx - x);
 				monsterLookTime = 1;
-				monsterMoveTime = rand() % 10 + 1;
+				monsterMoveTime = local_rng.getU32() % 10 + 1;
 				monsterLookDir = tangent;
 				monsterSentrybotLookDir = monsterLookDir;
 				if ( monsterAllyState != ALLY_STATE_DEFEND )
@@ -9749,7 +9749,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					serverUpdateEntitySkill(this, 49);
 					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[398], language[397], MSG_COMBAT);
 					if ( players[monsterAllyIndex] && players[monsterAllyIndex]->entity 
-						&& myStats->HP < myStats->MAXHP && rand() % 3 == 0 )
+						&& myStats->HP < myStats->MAXHP && local_rng.getU32() % 3 == 0 )
 					{
 						players[monsterAllyIndex]->entity->increaseSkill(PRO_LEADERSHIP);
 					}
@@ -9771,7 +9771,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				monsterSpecialState = DUMMYBOT_RETURN_FORM;
 				serverUpdateEntitySkill(this, 33);
-				playSoundEntity(this, 469 + rand() % 3, 92);
+				playSoundEntity(this, 469 + local_rng.getU32() % 3, 92);
 			}
 			break;
 		default:
@@ -9971,14 +9971,14 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_MOVETO_BEGIN:
-				if ( rand() % 10 == 0 )
+				if ( local_rng.getU32() % 10 == 0 )
 				{
-					message = language[3079 + rand() % 2];
+					message = language[3079 + local_rng.getU32() % 2];
 				    message_type = MESSAGE_WORLD;
 				}
 				break;
 			case ALLY_EVENT_MOVETO_FAIL:
-				message = language[3077 + rand() % 2];
+				message = language[3077 + local_rng.getU32() % 2];
 			    message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
@@ -10061,18 +10061,18 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
-				message = language[3089 + rand() % 2];
+				message = language[3089 + local_rng.getU32() % 2];
 		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_INTERACT_OTHER:
 				break;
 			case ALLY_EVENT_ATTACK:
 			case ALLY_EVENT_SPOT_ENEMY:
-				message = language[516 + rand() % 3];
+				message = language[516 + local_rng.getU32() % 3];
 		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_ATTACK_FRIENDLY_FIRE:
-				message = language[3084 + rand() % 2];
+				message = language[3084 + local_rng.getU32() % 2];
 		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_DROP_HUMAN_REFUSE:
@@ -10082,37 +10082,37 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_DROP_WEAPON:
 			case ALLY_EVENT_DROP_EQUIP:
 			case ALLY_EVENT_DROP_ALL:
-				if ( rand() % 2 )
+				if ( local_rng.getU32() % 2 )
 				{
-					if ( rand() % 2 && event == ALLY_EVENT_DROP_ALL )
+					if ( local_rng.getU32() % 2 && event == ALLY_EVENT_DROP_ALL )
 					{
 						message = language[3083];
 			            message_type = MESSAGE_WORLD;
 					}
 					else
 					{
-						message = language[3072 + rand() % 2];
+						message = language[3072 + local_rng.getU32() % 2];
 			            message_type = MESSAGE_WORLD;
 					}
 				}
 				else
 				{
-					message = language[3081 + rand() % 2];
+					message = language[3081 + local_rng.getU32() % 2];
 			        message_type = MESSAGE_WORLD;
 				}
 				break;
 			case ALLY_EVENT_WAIT:
-				message = language[3069 + rand() % 2];
+				message = language[3069 + local_rng.getU32() % 2];
 		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_FOLLOW:
-				message = language[526 + rand() % 3];
+				message = language[526 + local_rng.getU32() % 3];
 		        message_type = MESSAGE_WORLD;
 				break;
 			case ALLY_EVENT_MOVETO_REPATH:
-				if ( rand() % 20 == 0 )
+				if ( local_rng.getU32() % 20 == 0 )
 				{
-					message = language[3086 + rand() % 2];
+					message = language[3086 + local_rng.getU32() % 2];
 			        message_type = MESSAGE_WORLD;
 				}
 				break;
@@ -10132,13 +10132,13 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 					myStats, language[3129], language[3130], MSG_COMBAT);
 				break;
 			case ALLY_EVENT_MOVETO_BEGIN:
-				/*if ( rand() % 10 == 0 )
+				/*if ( local_rng.getU32() % 10 == 0 )
 				{
-					message = language[3079 + rand() % 2];
+					message = language[3079 + local_rng.getU32() % 2];
 				}*/
 				break;
 			case ALLY_EVENT_MOVETO_FAIL:
-				if ( rand() % 2 == 0 )
+				if ( local_rng.getU32() % 2 == 0 )
 				{
 					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
 						myStats, language[3131], language[3132], MSG_COMBAT);
@@ -10251,10 +10251,10 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				break;
 			case ALLY_EVENT_ATTACK:
 			case ALLY_EVENT_SPOT_ENEMY:
-				//message = language[516 + rand() % 3];
+				//message = language[516 + local_rng.getU32() % 3];
 				break;
 			case ALLY_EVENT_ATTACK_FRIENDLY_FIRE:
-				//message = language[3084 + rand() % 2];
+				//message = language[3084 + local_rng.getU32() % 2];
 				break;
 			case ALLY_EVENT_DROP_WEAPON:
 				strcpy(genericStr, language[3121]);
@@ -10305,9 +10305,9 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				}
 				break;
 			case ALLY_EVENT_MOVETO_REPATH:
-				/*if ( rand() % 20 == 0 )
+				/*if ( local_rng.getU32() % 20 == 0 )
 				{
-					message = language[3086 + rand() % 2];
+					message = language[3086 + local_rng.getU32() % 2];
 				}*/
 				break;
 			default:
@@ -10415,11 +10415,11 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 		}
 	}
 
-	if ( rand() % 20 < blockChance )
+	if ( local_rng.getU32() % 20 < blockChance )
 	{
 		if ( isPlayerAlly || myStats.type == HUMAN )
 		{
-			if ( rand() % 4 == 0 )
+			if ( local_rng.getU32() % 4 == 0 )
 			{
 				return MONSTER_DEFEND_HOLD;
 			}
@@ -10493,10 +10493,10 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		}
 	}
 
-	if ( rand() % pukeChance == 0 && pukeChance < 100 )
+	if ( local_rng.getU32() % pukeChance == 0 && pukeChance < 100 )
 	{
 		buffDuration = 0;
-		this->char_gonnavomit = 40 + rand() % 10;
+		this->char_gonnavomit = 40 + local_rng.getU32() % 10;
 		puking = true;
 	}
 	else
@@ -10505,11 +10505,11 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		{
 			if ( item->status > WORN )
 			{
-				buffDuration -= rand() % ((buffDuration / 2) + 1); // 50-100% duration
+				buffDuration -= local_rng.getU32() % ((buffDuration / 2) + 1); // 50-100% duration
 			}
 			else
 			{
-				buffDuration -= rand() % ((buffDuration / 4) + 1); // 75-100% duration
+				buffDuration -= local_rng.getU32() % ((buffDuration / 4) + 1); // 75-100% duration
 			}
 		}
 		else
@@ -10580,7 +10580,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	if ( puking )
 	{
 		heal -= 5;
-		if ( rand() % 4 == 0 )
+		if ( local_rng.getU32() % 4 == 0 )
 		{
 			// angry at owner.
 			if ( leader )
@@ -10591,7 +10591,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	}
 	this->modHP(heal);
 
-	if ( !puking && leader && rand() % 2 == 0 )
+	if ( !puking && leader && local_rng.getU32() % 2 == 0 )
 	{
 		leader->increaseSkill(PRO_LEADERSHIP);
 	}
@@ -10617,7 +10617,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	free(item);
 
 	// eating sound
-	playSoundEntity(this, 50 + rand() % 2, 64);
+	playSoundEntity(this, 50 + local_rng.getU32() % 2, 64);
 
 	return foodEntityConsumed;
 }
@@ -10900,16 +10900,16 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 	int ammo = 5;
 	if ( currentlevel >= 15 )
 	{
-		ammo += 5 + rand() % 16;
+		ammo += 5 + local_rng.getU32() % 16;
 	}
 	else
 	{
-		ammo += rand() % 11;
+		ammo += local_rng.getU32() % 11;
 	}
 	switch ( myStats->type )
 	{
 		case HUMAN:
-			switch ( rand() % 5 )
+			switch ( local_rng.getU32() % 5 )
 			{
 				case 0:
 				case 1:
@@ -10922,7 +10922,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( rand() % 2 )
+						if ( local_rng.getU32() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -10941,7 +10941,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case GOBLIN:
-			switch ( rand() % 5 )
+			switch ( local_rng.getU32() % 5 )
 			{
 				case 0:
 				case 1:
@@ -10954,7 +10954,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( rand() % 2 )
+						if ( local_rng.getU32() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -10973,7 +10973,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case INSECTOID:
-			switch ( rand() % 5 )
+			switch ( local_rng.getU32() % 5 )
 			{
 				case 0:
 				case 1:
@@ -10986,7 +10986,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( rand() % 2 )
+						if ( local_rng.getU32() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11005,7 +11005,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case KOBOLD:
-			switch ( rand() % 5 )
+			switch ( local_rng.getU32() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11018,7 +11018,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 28 )
 					{
-						if ( rand() % 2 )
+						if ( local_rng.getU32() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11037,7 +11037,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case INCUBUS:
-			switch ( rand() % 5 )
+			switch ( local_rng.getU32() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11050,7 +11050,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( rand() % 2 )
+						if ( local_rng.getU32() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
@@ -11069,7 +11069,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			}
 			break;
 		case SKELETON:
-			switch ( rand() % 5 )
+			switch ( local_rng.getU32() % 5 )
 			{
 				case 0:
 				case 1:
@@ -11082,7 +11082,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 				case 4:
 					if ( currentlevel >= 18 )
 					{
-						if ( rand() % 2 )
+						if ( local_rng.getU32() % 2 )
 						{
 							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}

@@ -95,7 +95,7 @@ void actSummonTrap(Entity* my)
 							possibleTypes.push_back(mon);
 						}
 					}
-	                SUMMONTRAP_MONSTER = possibleTypes.at(rand() % possibleTypes.size());
+	                SUMMONTRAP_MONSTER = possibleTypes.at(local_rng.getU32() % possibleTypes.size());
 				}
 
 				int count = 0;
@@ -154,7 +154,7 @@ void actSummonTrap(Entity* my)
 					SUMMONTRAP_MONSTER = -1;
 				}
 
-				if ( (SUMMONTRAP_FAILURERATE != 0) && (rand() % 100 < SUMMONTRAP_FAILURERATE) )
+				if ( (SUMMONTRAP_FAILURERATE != 0) && (local_rng.getU32() % 100 < SUMMONTRAP_FAILURERATE) )
 				{
 					// trap breaks!
 					SUMMONTRAP_FIRED = 1;

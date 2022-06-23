@@ -2335,7 +2335,7 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	if ( bDoPickupMessage )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, language[374], itemCopyToTake->description());
-		playSound(35 + rand() % 3, 64);
+		playSound(35 + local_rng.getU32() % 3, 64);
 	}
 	Item* pickedUp = itemPickup(player, itemCopyToTake, addToSpecificInventoryItem, forceNewStack);
 	free(itemCopyToTake);
@@ -4466,7 +4466,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			item->beatitude += 1;
 			/*for ( int i = 0; i < 100; ++i )
 			{
-				Uint32 r = rand() % 4096;
+				Uint32 r = local_rng.getU32() % 4096;
 				printlog("%d %d %d", (r >> 8 & 0xF), (r >> 4 & 0xF), (r & 0xF));
 			}*/
 		}

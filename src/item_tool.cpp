@@ -146,11 +146,11 @@ void Item::applyLockpick(int player, Entity& entity)
 			// 60 skill is 6-11 damage
 			// 100 skill is 8-17 damage
 			int lockpickDamageToChest = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
-				+ rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+				+ local_rng.getU32() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 			entity.chestLockpickHealth = std::max(0, entity.chestLockpickHealth - lockpickDamageToChest);
 			bool unlockedFromLockpickHealth = (entity.chestLockpickHealth == 0);
 
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > local_rng.getU32() % 200
 				|| unlockedFromLockpickHealth )
 			{
 				//Unlock chest.
@@ -158,9 +158,9 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayer(player, MESSAGE_INTERACTION, language[1097]);
 				if ( capstoneUnlocked && !entity.chestPreventLockpickCapstoneExploit )
 				{
-					if ( rand() % 2 == 0 )
+					if ( local_rng.getU32() % 2 == 0 )
 					{
-						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600), static_cast<Status>(SERVICABLE + rand() % 2), 0 + rand() % 2, 1, rand(), false, nullptr);
+						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600), static_cast<Status>(SERVICABLE + local_rng.getU32() % 2), 0 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
 						entity.addItemToChest(generated, true, nullptr);
 						messagePlayer(player, MESSAGE_INTERACTION, language[3897]);
 					}
@@ -179,17 +179,17 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					else
 					{
-						if ( rand() % 20 == 0 )
+						if ( local_rng.getU32() % 20 == 0 )
 						{
 							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[675]);
 						}
 					}
 
 					// based on tinkering skill, add some bonus scrap materials inside chest. (50-150%)
-					if ( (50 + 10 * (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)) > rand() % 100 )
+					if ( (50 + 10 * (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)) > local_rng.getU32() % 100 )
 					{
-						int metalscrap = 5 + rand() % 6;
-						int magicscrap = 5 + rand() % 11;
+						int metalscrap = 5 + local_rng.getU32() % 6;
+						int magicscrap = 5 + local_rng.getU32() % 11;
 						if ( entity.children.first )
 						{
 							list_t* inventory = static_cast<list_t* >(entity.children.first->element);
@@ -213,7 +213,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
 					{
-						if ( rand() % 10 == 0 )
+						if ( local_rng.getU32() % 10 == 0 )
 						{
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 							tryDegradeLockpick = false;
@@ -221,7 +221,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					else
 					{
-						if ( rand() % 20 == 0 )
+						if ( local_rng.getU32() % 20 == 0 )
 						{
 							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[675]);
 							tryDegradeLockpick = false;
@@ -231,7 +231,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				
 				if ( tryDegradeLockpick )
 				{
-					if ( rand() % 5 == 0 )
+					if ( local_rng.getU32() % 5 == 0 )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -279,7 +279,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			// 60 skill is 6-11 damage
 			// 100 skill is 8-17 damage
 			int lockpickDamageToDoor = 3 + stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20
-				+ rand() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
+				+ local_rng.getU32() % std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 			entity.doorLockpickHealth = std::max(0, entity.doorLockpickHealth - lockpickDamageToDoor);
 			bool unlockedFromLockpickHealth = (entity.doorLockpickHealth == 0);
 
@@ -289,7 +289,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayerColor(player, MESSAGE_INTERACTION, color, language[3101]); // disabled.
 			}
 			else if ( capstoneUnlocked 
-				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200
+				|| stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > local_rng.getU32() % 200
 				|| unlockedFromLockpickHealth )
 			{
 				//Unlock door.
@@ -304,7 +304,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					else
 					{
-						if ( rand() % 20 == 0 )
+						if ( local_rng.getU32() % 20 == 0 )
 						{
 							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[674]);
 						}
@@ -322,7 +322,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
 					{
-						if ( rand() % 10 == 0 )
+						if ( local_rng.getU32() % 10 == 0 )
 						{
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 							tryDegradeLockpick = false;
@@ -330,7 +330,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					else
 					{
-						if ( rand() % 20 == 0 )
+						if ( local_rng.getU32() % 20 == 0 )
 						{
 							messagePlayer(player, MESSAGE_INTERACTION, language[3689], language[674]);
 							tryDegradeLockpick = false;
@@ -340,7 +340,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				
 				if ( tryDegradeLockpick )
 				{
-					if ( rand() % 5 == 0 )
+					if ( local_rng.getU32() % 5 == 0 )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -393,7 +393,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, language[2524], getName(), getMonsterLocalizedName(myStats->type).c_str());
 					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (rand() % chance > 0) )
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (local_rng.getU32() % chance > 0) )
 					{
 						// 100% >= 60 lockpicking. 40 = 66%, 20 = 50%, 0 = 0%
 						entity.monsterSpecialState = AUTOMATON_MALFUNCTION_START;
@@ -405,29 +405,29 @@ void Item::applyLockpick(int player, Entity& entity)
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, MESSAGE_COMBAT, language[2527], getMonsterLocalizedName(myStats->type).c_str());
 
-						if ( rand() % 3 == 0 )
+						if ( local_rng.getU32() % 3 == 0 )
 						{
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
 
-						int qtyMetalScrap = 5 + rand() % 6;
-						int qtyMagicScrap = 8 + rand() % 6;
+						int qtyMetalScrap = 5 + local_rng.getU32() % 6;
+						int qtyMagicScrap = 8 + local_rng.getU32() % 6;
 						if ( stats[player] )
 						{
 							if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_MASTER )
 							{
-								qtyMetalScrap += 5 + rand() % 6; // 10-20 total
-								qtyMagicScrap += 8 + rand() % 11; // 16-31 total
+								qtyMetalScrap += 5 + local_rng.getU32() % 6; // 10-20 total
+								qtyMagicScrap += 8 + local_rng.getU32() % 11; // 16-31 total
 							}
 							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
 							{
-								qtyMetalScrap += 3 + rand() % 4; // 8-16 total
-								qtyMagicScrap += 5 + rand() % 8; // 13-25 total
+								qtyMetalScrap += 3 + local_rng.getU32() % 4; // 8-16 total
+								qtyMagicScrap += 5 + local_rng.getU32() % 8; // 13-25 total
 							}
 							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_SKILLED )
 							{
-								qtyMetalScrap += 1 + rand() % 4; // 6-14 total
-								qtyMagicScrap += 3 + rand() % 4; // 11-19 total
+								qtyMetalScrap += 1 + local_rng.getU32() % 4; // 6-14 total
+								qtyMagicScrap += 3 + local_rng.getU32() % 4; // 11-19 total
 							}
 						}
 						Item* item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, qtyMetalScrap, 0, true, &myStats->inventory);
@@ -446,12 +446,12 @@ void Item::applyLockpick(int player, Entity& entity)
 						spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
 						entity.monsterAcquireAttackTarget(*players[player]->entity, MONSTER_STATE_PATH, true);
 
-						if ( rand() % 5 == 0 )
+						if ( local_rng.getU32() % 5 == 0 )
 						{
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
 					}
-					if ( rand() % 2 == 0 )
+					if ( local_rng.getU32() % 2 == 0 )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -578,7 +578,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 					break;
 			}
 
-			playSoundEntity(&entity, 35 + rand() % 3, 64);
+			playSoundEntity(&entity, 35 + local_rng.getU32() % 3, 64);
 
 			Item* item = stats[player]->weapon;
 			entity.addItemToMonsterInventory(newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr));
@@ -636,7 +636,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}*/
 
-		std::vector<int> potionChances =
+		std::vector<unsigned int> potionChances =
 		{
 			20,	//POTION_WATER,
 			20,	//POTION_BOOZE,
@@ -747,8 +747,8 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 
 		if ( entity.behavior == &actFountain )
 		{
-			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
-			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+			auto generatedPotion = potionStandardAppearanceMap.at(
+	            local_rng.distribution(potionChances.data(), potionChances.size()));
 			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
 		}
 		else
@@ -797,7 +797,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				--entity.skill[0];
 				// Randomly choose second usage stats.
-				int effect = rand() % 10; //4 possible effects.
+				int effect = local_rng.getU32() % 10; //4 possible effects.
 				switch ( effect )
 				{
 					case 0:
@@ -852,7 +852,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				int potionDropQuantity = 0;
 				// drop some random potions.
-				switch ( rand() % 10 )
+				switch ( local_rng.getU32() % 10 )
 				{
 					case 0:
 					case 1:
@@ -890,17 +890,17 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
 					if ( Entity* dropped = dropItemMonster(item, &entity, NULL) )
 					{
-						dropped->yaw = ((0 + rand() % 360) / 180.f) * PI;
-						dropped->vel_x = (0.75 + .025 * (rand() % 11)) * cos(dropped->yaw);
-						dropped->vel_y = (0.75 + .025 * (rand() % 11)) * sin(dropped->yaw);
-						dropped->vel_z = (-10 - rand() % 20) * .01;
+						dropped->yaw = ((0 + local_rng.getU32() % 360) / 180.f) * PI;
+						dropped->vel_x = (0.75 + .025 * (local_rng.getU32() % 11)) * cos(dropped->yaw);
+						dropped->vel_y = (0.75 + .025 * (local_rng.getU32() % 11)) * sin(dropped->yaw);
+						dropped->vel_z = (-10 - local_rng.getU32() % 20) * .01;
 						dropped->flags[USERFLAG1] = false;
 					}
 				}
 
 				if ( potionDropQuantity > 0 )
 				{
-					playSoundEntity(&entity, 47 + rand() % 3, 64);
+					playSoundEntity(&entity, 47 + local_rng.getU32() % 3, 64);
 				}
 				if ( potionDropQuantity > 1 )
 				{
@@ -912,7 +912,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				}
 			}
 		}
-		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL) == 0 ) )
+		else if ( skillLVL < 2 || (skillLVL >= 2 && local_rng.getU32() % (skillLVL) == 0 ) )
 		{
 			if ( player > 0 && !splitscreen )
 			{
@@ -1123,7 +1123,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			if ( hit.side == 0 )
 			{
 				// pick a random side to be on.
-				if ( rand() % 2 == 0 )
+				if ( local_rng.getU32() % 2 == 0 )
 				{
 					hit.side = HORIZONTAL;
 				}
@@ -1351,14 +1351,14 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 					}
 					summonedStats->EFFECTS[EFF_STUNNED] = true;
 					summonedStats->EFFECTS_TIMERS[EFF_STUNNED] = 30;
-					playSoundEntity(summon, 453 + rand() % 2, 192);
+					playSoundEntity(summon, 453 + local_rng.getU32() % 2, 192);
 				}
 				else
 				{
-					summon->yaw = thrown->yaw + ((PI / 2) * (rand() % 4));
+					summon->yaw = thrown->yaw + ((PI / 2) * (local_rng.getU32() % 4));
 					if ( summonedStats->type == DUMMYBOT )
 					{
-						playSoundEntity(summon, 417 + rand() % 3, 128);
+						playSoundEntity(summon, 417 + local_rng.getU32() % 3, 128);
 					}
 				}
 				summonedStats->monsterTinkeringStatus = static_cast<Sint32>(this->status); // store the type of item that was used to summon me.

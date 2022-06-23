@@ -331,7 +331,7 @@ void Player::BookGUI_t::updateBookGUI()
 			{
 				canAdvanceNextPage = false;
 				currentBookPage += 2;
-				playSound(83 + rand() % 6, 128);
+				playSound(83 + local_rng.getU32() % 6, 128);
 			}
 		}
 		else if ( prevPageBoundary->capturesMouse() )
@@ -341,7 +341,7 @@ void Player::BookGUI_t::updateBookGUI()
 			{
 				canAdvancePrevPage = false;
 				currentBookPage -= 2;
-				playSound(83 + rand() % 6, 128);
+				playSound(83 + local_rng.getU32() % 6, 128);
 			}
 		}
 		if ( !innerFrame->capturesMouse() )
@@ -363,7 +363,7 @@ void Player::BookGUI_t::updateBookGUI()
 			if ( canAdvanceNextPage )
 			{
 				currentBookPage += 2;
-				playSound(83 + rand() % 6, 128);
+				playSound(83 + local_rng.getU32() % 6, 128);
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuPageLeft") )
@@ -372,7 +372,7 @@ void Player::BookGUI_t::updateBookGUI()
 			if ( canAdvancePrevPage )
 			{
 				currentBookPage -= 2;
-				playSound(83 + rand() % 6, 128);
+				playSound(83 + local_rng.getU32() % 6, 128);
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )

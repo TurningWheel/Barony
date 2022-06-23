@@ -361,14 +361,7 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 			{
 				printTextFormatted(font8x8_bmp, 8, 32, "Timer debug is ON");
 				real_t diff = camera.ang - players[player]->entity->lerpRenderState.yaw.position;
-				while ( diff >= PI )
-				{
-					diff -= 2 * PI;
-				}
-				while ( diff < -PI )
-				{
-					diff += 2 * PI;
-				}
+				diff = fmod(diff, PI);
 				real_t curStateYaw = players[player]->entity->lerpCurrentState.yaw.position;
 				real_t prevStateYaw = players[player]->entity->lerpPreviousState.yaw.position;
 				if ( abs(diff) > PI / 8 )
@@ -492,6 +485,8 @@ void TimerExperiments::State::resetPosition()
 
 void TimerExperiments::State::normalize(real_t min, real_t max)
 {
+    real_t range = std::max(fabs(min), fabs(max));
+    position = fmod(position, range);
 	while ( position >= max )
 	{
 		position -= 2 * PI;
@@ -929,13 +924,13 @@ void gameLogic(void)
 				}
 	            if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
 	            {
-				    j = 1 + rand() % 4;
+				    j = 1 + local_rng.getU32() % 4;
 				    for ( c = 0; c < j; ++c )
 				    {
 					    Entity* flame = spawnFlame(entity, SPRITE_FLAME);
-					    flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
-					    flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
-					    flame->z += rand() % 5 - 2;
+					    flame->x += local_rng.getU32() % (entity->sizex * 2 + 1) - entity->sizex;
+					    flame->y += local_rng.getU32() % (entity->sizey * 2 + 1) - entity->sizey;
+					    flame->z += local_rng.getU32() % 5 - 2;
 				    }
 				}
 			}
@@ -1137,7 +1132,7 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && local_rng.getU32() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
@@ -1154,15 +1149,15 @@ void gameLogic(void)
 									// lava bubbles
 									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
-										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
+										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.getU32() % 3 == 0 )
 										{
-											int c, j = 1 + rand() % 2;
+											int c, j = 1 + local_rng.getU32() % 2;
 											for ( c = 0; c < j; ++c )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
-												entity->x = x * 16 + rand() % 16;
-												entity->y = y * 16 + rand() % 16;
+												entity->x = x * 16 + local_rng.getU32() % 16;
+												entity->y = y * 16 + local_rng.getU32() % 16;
 												entity->z = 7.5;
 												entity->flags[PASSABLE] = true;
 												entity->flags[SPRITE] = true;
@@ -1172,13 +1167,13 @@ void gameLogic(void)
 												entity->sizex = 2;
 												entity->sizey = 2;
 												entity->fskill[3] = 0.01;
-												double vel = (rand() % 10) / 20.f;
+												double vel = (local_rng.getU32() % 10) / 20.f;
 												entity->vel_x = vel * cos(entity->yaw);
 												entity->vel_y = vel * sin(entity->yaw);
-												entity->vel_z = -.15 - (rand() % 15) / 100.f;
-												entity->yaw = (rand() % 360) * PI / 180.0;
-												entity->pitch = (rand() % 360) * PI / 180.0;
-												entity->roll = (rand() % 360) * PI / 180.0;
+												entity->vel_z = -.15 - (local_rng.getU32() % 15) / 100.f;
+												entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+												entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
+												entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
 												if ( multiplayer != CLIENT )
 												{
 													--entity_uids;
@@ -1689,7 +1684,7 @@ void gameLogic(void)
 					}
 
 					// signal clients about level change
-					mapseed = rand();
+					mapseed = local_rng.getU32();
 					lastEntityUIDs = entity_uids;
 					if ( forceMapSeed > 0 )
 					{
@@ -2495,7 +2490,7 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && rand() % 3 == 0 )
+									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && local_rng.getU32() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
@@ -2512,15 +2507,15 @@ void gameLogic(void)
 									// lava bubbles
 									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
-										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
+										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.getU32() % 3 == 0 )
 										{
-											int c, j = 1 + rand() % 2;
+											int c, j = 1 + local_rng.getU32() % 2;
 											for ( c = 0; c < j; c++ )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
-												entity->x = x * 16 + rand() % 16;
-												entity->y = y * 16 + rand() % 16;
+												entity->x = x * 16 + local_rng.getU32() % 16;
+												entity->y = y * 16 + local_rng.getU32() % 16;
 												entity->z = 7.5;
 												entity->flags[PASSABLE] = true;
 												entity->flags[SPRITE] = true;
@@ -2530,13 +2525,13 @@ void gameLogic(void)
 												entity->sizex = 2;
 												entity->sizey = 2;
 												entity->fskill[3] = 0.01;
-												double vel = (rand() % 10) / 20.f;
+												double vel = (local_rng.getU32() % 10) / 20.f;
 												entity->vel_x = vel * cos(entity->yaw);
 												entity->vel_y = vel * sin(entity->yaw);
-												entity->vel_z = -.15 - (rand() % 15) / 100.f;
-												entity->yaw = (rand() % 360) * PI / 180.0;
-												entity->pitch = (rand() % 360) * PI / 180.0;
-												entity->roll = (rand() % 360) * PI / 180.0;
+												entity->vel_z = -.15 - (local_rng.getU32() % 15) / 100.f;
+												entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+												entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
+												entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
 												if ( multiplayer != CLIENT )
 												{
 													entity_uids--;
@@ -2752,14 +2747,7 @@ void gameLogic(void)
 
 									// rotate to new angles
 									double dirYaw = entity->new_yaw - entity->yaw;
-									while ( dirYaw >= PI )
-									{
-										dirYaw -= PI * 2;
-									}
-									while ( dirYaw < -PI )
-									{
-										dirYaw += PI * 2;
-									}
+									dirYaw = fmod(dirYaw, PI);
 									entity->yaw += dirYaw / 3;
 									while ( entity->yaw < 0 )
 									{
@@ -2773,14 +2761,7 @@ void gameLogic(void)
 									if ( entity->behavior != &actArrow )
 									{
 										// client handles pitch in actArrow.
-										while ( dirPitch >= PI )
-										{
-											dirPitch -= PI * 2;
-										}
-										while ( dirPitch < -PI )
-										{
-											dirPitch += PI * 2;
-										}
+										dirPitch = fmod(dirPitch, PI);
 										entity->pitch += dirPitch / 3;
 										while ( entity->pitch < 0 )
 										{
@@ -2792,14 +2773,7 @@ void gameLogic(void)
 										}
 									}
 									double dirRoll = entity->new_roll - entity->roll;
-									while ( dirRoll >= PI )
-									{
-										dirRoll -= PI * 2;
-									}
-									while ( dirRoll < -PI )
-									{
-										dirRoll += PI * 2;
-									}
+									dirRoll = fmod(dirRoll, PI);
 									entity->roll += dirRoll / 3;
 									while ( entity->roll < 0 )
 									{
@@ -5738,9 +5712,6 @@ int main(int argc, char** argv)
 		// initialize player conducts
 		setDefaultPlayerConducts();
 
-		// seed random generators
-		fountainSeed.seed(rand());
-
 		// play splash sound
 #ifdef MUSIC
 		playMusic(splashmusic, false, false, false);
@@ -5881,7 +5852,7 @@ int main(int argc, char** argv)
 					{
 						fadealpha = 255;
 						int menuMapType = 0;
-						switch ( rand() % 4 ) // STEAM VERSION INTRO
+						switch ( local_rng.getU32() % 4 ) // STEAM VERSION INTRO
 						{
 							case 0:
 							case 1:
@@ -5927,12 +5898,22 @@ int main(int argc, char** argv)
 						}
 
 						// generate unique game key
-						prng_seed_time();
-						uniqueGameKey = prng_get_uint();
-						if ( !uniqueGameKey )
-						{
-							uniqueGameKey++;
+						local_rng.seedTime();
+						local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+						net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
+                        // shuffle scroll names
+                        {
+						    enchantedFeatherScrollsShuffled.clear();
+						    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
+						    auto shuffle = enchantedFeatherScrollsFixedList;
+						    while (!shuffle.empty()) {
+	                            int index = net_rng.getU8() % shuffle.size();
+						        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
+						        shuffle.erase(shuffle.begin() + index);
+						    }
 						}
+
 						loading = true;
 
 						// hack to fix these things from breaking everything...
@@ -5945,8 +5926,9 @@ int main(int argc, char** argv)
 						}
 
 						// reset class loadout
-						stats[0]->sex = static_cast<sex_t>(rand() % 2);
-						stats[0]->appearance = rand() % NUMAPPEARANCES;
+						strcpy(stats[0]->name, "Avatar");
+						stats[0]->sex = static_cast<sex_t>(local_rng.getU32() % 2);
+						stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
 						if ( stats[0]->playerRace != RACE_HUMAN )
@@ -5954,7 +5936,6 @@ int main(int argc, char** argv)
 							stats[0]->appearance = 0;
 						}
 
-						strcpy(stats[0]->name, "Avatar");
 						multiplayer = SINGLE;
 						fadefinished = false;
 						fadeout = false;
@@ -5973,7 +5954,7 @@ int main(int argc, char** argv)
 						gameplayCustomManager.readFromFile();
 
 						// load dungeon
-						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
+						mapseed = local_rng.getU32(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
 						for ( node = map.entities->first; node != nullptr; node = node->next )
 						{
@@ -6014,7 +5995,7 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								generateDungeon(maptoload, rand());
+								generateDungeon(maptoload, local_rng.getU32());
 							}
 						}
 						assignActions(&map);
@@ -6023,20 +6004,6 @@ int main(int argc, char** argv)
 						achievementObserver.updateData();
 
 						saveGame();
-
-						enchantedFeatherScrollSeed.seed(uniqueGameKey);
-						enchantedFeatherScrollsShuffled.clear();
-						auto scrollsToPick = enchantedFeatherScrollsFixedList;
-						while ( !scrollsToPick.empty() )
-						{
-							int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
-							enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
-							scrollsToPick.erase(scrollsToPick.begin() + index);
-						}
-						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
-						//{
-						//	printlog("Sequence: %d", *it);
-						//}
 
 						// kick off the main loop!
 						strcpy(classtoquickstart, "");
@@ -6566,3 +6533,24 @@ void DebugStatsClass::storeEventStats()
 		"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\nMessagesT1: %4.5fms\nMessagesT2: %4.5fms\n",
 		out1, out2, out3, out4, out5, messages1, messages2);
 }
+
+static ConsoleCommand demo_record("/demo_record", "record a demo to a file (default demo.dat)",
+    [](int argc, const char* argv[]){
+    char path[PATH_MAX];
+    if (argc < 2) {
+	    completePath(path, "demo.dat", outputdir);
+    } else {
+	    completePath(path, argv[1], outputdir);
+    }
+    });
+
+static ConsoleCommand demo_play("/demo_play", "play a recorded demo(default demo.dat)",
+    [](int argc, const char* argv[]){
+    char path[PATH_MAX];
+    if (argc < 2) {
+	    completePath(path, "demo.dat", outputdir);
+    } else {
+	    completePath(path, argv[1], outputdir);
+    }
+
+    });

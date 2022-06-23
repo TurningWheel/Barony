@@ -307,7 +307,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				if ( stats->HP > 0 || lifeSaving )
 				{
 					// spawn several rock items
-					int i = 8 + rand() % 4;
+					int i = 8 + local_rng.getU32() % 4;
 					if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
 					{
 						i = 0;
@@ -318,15 +318,15 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 						entity->flags[INVISIBLE] = true;
 						entity->flags[UPDATENEEDED] = true;
-						entity->x = my->x - 4 + rand() % 8;
-						entity->y = my->y - 4 + rand() % 8;
-						entity->z = -6 + rand() % 12;
+						entity->x = my->x - 4 + local_rng.getU32() % 8;
+						entity->y = my->y - 4 + local_rng.getU32() % 8;
+						entity->z = -6 + local_rng.getU32() % 12;
 						entity->sizex = 4;
 						entity->sizey = 4;
-						entity->yaw = rand() % 360 * PI / 180;
-						entity->vel_x = (rand() % 20 - 10) / 10.0;
-						entity->vel_y = (rand() % 20 - 10) / 10.0;
-						entity->vel_z = -.25 - (rand() % 5) / 10.0;
+						entity->yaw = local_rng.getU32() % 360 * PI / 180;
+						entity->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
+						entity->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
+						entity->vel_z = -.25 - (local_rng.getU32() % 5) / 10.0;
 						entity->flags[PASSABLE] = true;
 						entity->behavior = &actItem;
 						entity->flags[USERFLAG1] = true; // no collision: helps performance
@@ -351,7 +351,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					if ( !strcmp(map.name, "Sokoban") )
 					{
 						Entity* monster = nullptr;
-						if ( rand() % 2 == 0 )
+						if ( local_rng.getU32() % 2 == 0 )
 						{
 							monster = summonMonster(INSECTOID, ox, oy);
 						}
@@ -517,9 +517,9 @@ void actBoulder(Entity* my)
 		BOULDER_LAVA_EXPLODE = -1;
 		if ( my->sprite == BOULDER_LAVA_SPRITE )
 		{
-			if ( rand() % 4 == 0 )
+			if ( local_rng.getU32() % 4 == 0 )
 			{
-				BOULDER_LAVA_EXPLODE = 100 + rand() % 150;
+				BOULDER_LAVA_EXPLODE = 100 + local_rng.getU32() % 150;
 			}
 		}
 		BOULDER_INIT = 1;
@@ -536,7 +536,7 @@ void actBoulder(Entity* my)
 			boulderLavaOrArcaneOnDestroy(my, my->sprite, nullptr);
 			for ( int c = 0; c < 8; ++c )
 			{
-				my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 8.f;
+				my->yaw = ((double)c + ((local_rng.getU32() % 100) / 100.f)) * (PI * 2) / 8.f;
 				castSpell(my->getUID(), &spell_fireball, true, true);
 			}
 			list_RemoveNode(my->mynode);
@@ -719,11 +719,11 @@ void actBoulder(Entity* my)
 				rock->flags[UPDATENEEDED] = true;
 				rock->x = my->x;
 				rock->y = my->y;
-				rock->z = -6 + rand() % 12;
+				rock->z = -6 + local_rng.getU32() % 12;
 				rock->sizex = 4;
 				rock->sizey = 4;
-				rock->yaw = rand() % 360 * PI / 180;
-				rock->vel_z = -.25 - (rand() % 5) / 10.0;
+				rock->yaw = local_rng.getU32() % 360 * PI / 180;
+				rock->vel_z = -.25 - (local_rng.getU32() % 5) / 10.0;
 				rock->flags[PASSABLE] = true;
 				rock->behavior = &actItem;
 				rock->flags[USERFLAG1] = true; // no collision: helps performance
@@ -809,11 +809,11 @@ void actBoulder(Entity* my)
 								rock->flags[UPDATENEEDED] = true;
 								rock->x = my->x;
 								rock->y = my->y;
-								rock->z = -6 + rand() % 12;
+								rock->z = -6 + local_rng.getU32() % 12;
 								rock->sizex = 4;
 								rock->sizey = 4;
-								rock->yaw = rand() % 360 * PI / 180;
-								rock->vel_z = -.25 - (rand() % 5) / 10.0;
+								rock->yaw = local_rng.getU32() % 360 * PI / 180;
+								rock->vel_z = -.25 - (local_rng.getU32() % 5) / 10.0;
 								rock->flags[PASSABLE] = true;
 								rock->behavior = &actItem;
 								rock->flags[USERFLAG1] = true; // no collision: helps performance
@@ -1153,21 +1153,21 @@ void actBoulder(Entity* my)
 				{
 					rate = 15;
 				}
-				if ( spawn_blood && my->ticks % (rate + rand() % 3) == 0 )
+				if ( spawn_blood && my->ticks % (rate + local_rng.getU32() % 3) == 0 )
 				{
 					Entity* blood = newEntity(BOULDER_SPAWNBLOOD, 1, map.entities, nullptr); //Gib entity.;
 					if ( blood != NULL )
 					{
-						blood->x = my->x - 4 + rand() % 9;
-						blood->y = my->y - 4 + rand() % 9;
-						blood->z = 8.0 + (rand() % 20) / 100.0;
+						blood->x = my->x - 4 + local_rng.getU32() % 9;
+						blood->y = my->y - 4 + local_rng.getU32() % 9;
+						blood->z = 8.0 + (local_rng.getU32() % 20) / 100.0;
 						blood->parent = my->getUID();
 						blood->sizex = 2;
 						blood->sizey = 2;
-						int randomScale = rand() % 10;
+						int randomScale = local_rng.getU32() % 10;
 						blood->scalex = (100 - randomScale) / 100.f;
 						blood->scaley = blood->scalex;
-						blood->yaw = (rand() % 360) * PI / 180.0;
+						blood->yaw = (local_rng.getU32() % 360) * PI / 180.0;
 						blood->flags[UPDATENEEDED] = true;
 						blood->flags[PASSABLE] = true;
 					}
@@ -1262,7 +1262,7 @@ void actBoulderTrap(Entity* my)
 								entity->sizey = 7;
 								if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 								{
-									entity->yaw += PI * (rand() % 2) - PI / 2;
+									entity->yaw += PI * (local_rng.getU32() % 2) - PI / 2;
 									if ( entity->yaw >= PI * 2 )
 									{
 										entity->yaw -= PI * 2;
@@ -1355,7 +1355,7 @@ void actBoulderTrapEast(Entity* my)
 				entity->sizey = 7;
 				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
-					entity->yaw += PI * (rand() % 2) - PI / 2;
+					entity->yaw += PI * (local_rng.getU32() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
 					{
 						entity->yaw -= PI * 2;
@@ -1446,7 +1446,7 @@ void actBoulderTrapSouth(Entity* my)
 				entity->sizey = 7;
 				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
-					entity->yaw += PI * (rand() % 2) - PI / 2;
+					entity->yaw += PI * (local_rng.getU32() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
 					{
 						entity->yaw -= PI * 2;
@@ -1538,7 +1538,7 @@ void actBoulderTrapWest(Entity* my)
 				entity->sizey = 7;
 				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
-					entity->yaw += PI * (rand() % 2) - PI / 2;
+					entity->yaw += PI * (local_rng.getU32() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
 					{
 						entity->yaw -= PI * 2;
@@ -1629,7 +1629,7 @@ void actBoulderTrapNorth(Entity* my)
 				entity->sizey = 7;
 			/*	if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
-					entity->yaw += PI * (rand() % 2) - PI / 2;
+					entity->yaw += PI * (local_rng.getU32() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
 					{
 						entity->yaw -= PI * 2;
@@ -1665,7 +1665,7 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 		return; // return for client and if map not sokoban.
 	}
 
-	int goldToDestroy = 5 + rand() % 4; // 5-8 bags destroy
+	int goldToDestroy = 5 + local_rng.getU32() % 4; // 5-8 bags destroy
 	bool bouldersAround = false;
 	node_t* node = nullptr;
 
@@ -1781,7 +1781,7 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 			}
 			else if ( sprite == BOULDER_ARCANE_SPRITE )
 			{
-				switch ( rand() % 4 )
+				switch ( local_rng.getU32() % 4 )
 				{
 					case 0:
 						spawnMagicTower(my, my->x, my->y, SPELL_LIGHTNING, nullptr);
@@ -1818,7 +1818,7 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 		else if ( sprite == BOULDER_ARCANE_SPRITE )
 		{
 		    boulderHitEntity->setObituary(language[3899]);
-			switch ( rand() % 4 )
+			switch ( local_rng.getU32() % 4 )
 			{
 				case 0:
 					spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_LIGHTNING, boulderHitEntity);

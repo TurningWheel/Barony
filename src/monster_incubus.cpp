@@ -160,7 +160,7 @@ void initIncubus(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+				if ( local_rng.getU32() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 				{
 
 				}
@@ -198,13 +198,13 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
-				if ( rand() % 4 == 0 ) // 1 in 4
+				if ( local_rng.getU32() % 4 == 0 ) // 1 in 4
 				{
-					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + local_rng.getU32() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 				else // 3 in 4
 				{
-					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + local_rng.getU32() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 
 
@@ -215,19 +215,19 @@ void initIncubus(Entity* my, Stat* myStats)
 					case 5:
 					case 4:
 					case 3:
-						if ( rand() % 2 == 0 && !lesserMonster ) // 1 in 2
+						if ( local_rng.getU32() % 2 == 0 && !lesserMonster ) // 1 in 2
 						{
-							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
+							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, local_rng.getU32(), false, &myStats->inventory);
 						}
 					case 2:
-						if ( rand() % 5 == 0 ) // 1 in 5
+						if ( local_rng.getU32() % 5 == 0 ) // 1 in 5
 						{
-							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + local_rng.getU32() % 2, local_rng.getU32(), false, &myStats->inventory);
 						}
 					case 1:
-						if ( rand() % 3 == 0 ) // 1 in 3
+						if ( local_rng.getU32() % 3 == 0 ) // 1 in 3
 						{
-							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
+							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + local_rng.getU32() % 3, local_rng.getU32(), false, &myStats->inventory);
 						}
 						break;
 					default:
@@ -239,11 +239,11 @@ void initIncubus(Entity* my, Stat* myStats)
 				{
 					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.getU32() % 10 )
 						{
 							case 0:
 							case 1:
-								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 								break;
 							case 2:
 							case 3:
@@ -252,35 +252,35 @@ void initIncubus(Entity* my, Stat* myStats)
 							case 6:
 							case 7:
 							case 8:
-								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 								break;
 							case 9:
-								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 								break;
 						}
 					}
 				}
 				else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.getU32() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 							break;
 						case 4:
 						case 5:
 						case 6:
-							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 							break;
 						case 7:
 						case 8:
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 							break;
 						case 9:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 							break;
 					}
 				}
@@ -294,7 +294,7 @@ void initIncubus(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.getU32() % 10 )
 						{
 							case 0:
 							case 1:
@@ -307,7 +307,7 @@ void initIncubus(Entity* my, Stat* myStats)
 								break;
 							case 8:
 							case 9:
-								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
 								break;
 						}
 					}
@@ -533,7 +533,7 @@ void incubusDie(Entity* my)
 		//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
 		createParticleErupt(my, 983);
 		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 983);
-		//playSoundEntity(my, 279 + rand() % 3, 128);
+		//playSoundEntity(my, 279 + local_rng.getU32() % 3, 128);
 		playSoundEntity(my, 178, 128);
 		my->removeMonsterDeathNodes();
 		list_RemoveNode(my->mynode);
@@ -548,7 +548,7 @@ void incubusDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 279 + rand() % 3, 128);
+	playSoundEntity(my, 279 + local_rng.getU32() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -821,7 +821,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// monster scream
 							if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
 							{
-								playSoundEntityLocal(my, 276 + rand() % 3, 128);
+								playSoundEntityLocal(my, 276 + local_rng.getU32() % 3, 128);
 							}
 							else
 							{
@@ -1422,7 +1422,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 	if ( ticks % 10 == 0 && monsterSpecialState != INCUBUS_TELEPORT_STEAL )
 	{
 		// teleport to target, higher chance at greater distance or lower HP
-		specialRoll = rand() % 50;
+		specialRoll = local_rng.getU32() % 50;
 		if ( specialRoll < (1 + (dist > 80 ? 4 : 0) + (myStats->HP <= myStats->MAXHP * 0.8 ? 4 : 0)) )
 		{
 			monsterSpecialState = INCUBUS_TELEPORT;
@@ -1467,7 +1467,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 
 			if ( trySteal && tryCharm )
 			{
-				if ( rand() % 8 == 0 )
+				if ( local_rng.getU32() % 8 == 0 )
 				{
 					trySteal = false; // try charm 12.5% of the time.
 				}
@@ -1481,11 +1481,11 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			{
 				// try to steal weapon if target is holding.
 				// occurs less often against fellow monsters.
-				specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+				specialRoll = local_rng.getU32() % (40 + 40 * (target->behavior == &actMonster));
 			}
 			else if ( tryCharm )
 			{
-				specialRoll = rand() % 40;
+				specialRoll = local_rng.getU32() % 40;
 			}
 
 			if ( trySteal )
@@ -1523,7 +1523,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		
 		// try new roll for alternate potion throw special.
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (30 + 30 * (target->behavior == &actMonster));
+		specialRoll = local_rng.getU32() % (30 + 30 * (target->behavior == &actMonster));
 		if ( specialRoll < (2 + bonusFromHP) ) // +5% base
 		{
 			node_t* node = nullptr;

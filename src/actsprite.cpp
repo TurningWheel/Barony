@@ -320,10 +320,10 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
 		//entity->scalez = 0.25f;
-		entity->vel_x = (-40 + rand() % 81) / 8.f;
-		entity->vel_y = (-40 + rand() % 81) / 8.f;
-		entity->vel_z = (-40 + rand() % 81) / 8.f;
-		entity->skill[0] = 15 + rand() % 10;
+		entity->vel_x = (-40 + local_rng.getU32() % 81) / 8.f;
+		entity->vel_y = (-40 + local_rng.getU32() % 81) / 8.f;
+		entity->vel_z = (-40 + local_rng.getU32() % 81) / 8.f;
+		entity->skill[0] = 15 + local_rng.getU32() % 10;
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -400,10 +400,10 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
 		//entity->scalez = 0.25f;
-		entity->vel_x = (-40 + rand() % 81) / 8.f;
-		entity->vel_y = (-40 + rand() % 81) / 8.f;
-		entity->vel_z = (-40 + rand() % 81) / 8.f;
-		entity->skill[0] = 15 + rand() % 10;
+		entity->vel_x = (-40 + local_rng.getU32() % 81) / 8.f;
+		entity->vel_y = (-40 + local_rng.getU32() % 81) / 8.f;
+		entity->vel_z = (-40 + local_rng.getU32() % 81) / 8.f;
+		entity->skill[0] = 15 + local_rng.getU32() % 10;
 	}
 	if ( multiplayer != CLIENT )
 	{

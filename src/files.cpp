@@ -1863,7 +1863,7 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			tempstr[mapName.length()] = '\0';
 			if ( useRandSeed )
 			{
-				return generateDungeon(tempstr, rand(), mapParameters);
+				return generateDungeon(tempstr, local_rng.getU32(), mapParameters);
 			}
 			else
 			{

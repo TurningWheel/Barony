@@ -50,7 +50,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.getU32() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 			}
 			else
@@ -72,10 +72,10 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rand() % 8 == 0 )
+			if ( local_rng.getU32() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.getU32() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -99,43 +99,43 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
+					if ( local_rng.getU32() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
 					{
-						newItem(static_cast<ItemType>(GEM_ROCK + rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(GEM_ROCK + local_rng.getU32() % 17), static_cast<Status>(WORN + local_rng.getU32() % 3), 0, 1, local_rng.getU32(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( rand() % 20 == 0 ) // 5% for secondary armor/weapon.
+					if ( local_rng.getU32() % 20 == 0 ) // 5% for secondary armor/weapon.
 					{
-						if ( rand() % 2 == 0 ) // 50% armor
+						if ( local_rng.getU32() % 2 == 0 ) // 50% armor
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rand() % 5), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + local_rng.getU32() % 5), static_cast<Status>(DECREPIT + local_rng.getU32() % 4), -2 + local_rng.getU32() % 5, 1, local_rng.getU32(), false, &myStats->inventory);
 						}
 						else // 50% weapon
 						{
-							if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+							if ( local_rng.getU32() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + local_rng.getU32() % 5, 1 + local_rng.getU32() % 3, local_rng.getU32(), false, &myStats->inventory);
 							}
 							else // pick 1 of 4 normal weapons.
 							{
-								newItem(static_cast<ItemType>(CRYSTAL_SWORD + rand() % 4), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+								newItem(static_cast<ItemType>(CRYSTAL_SWORD + local_rng.getU32() % 4), static_cast<Status>(DECREPIT + local_rng.getU32() % 4), -2 + local_rng.getU32() % 5, 1, local_rng.getU32(), false, &myStats->inventory);
 							}
 						}
 					}
 				case 1:
-					if ( rand() % 2 == 0 ) // 50% armor
+					if ( local_rng.getU32() % 2 == 0 ) // 50% armor
 					{
-						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rand() % 5), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + local_rng.getU32() % 5), static_cast<Status>(DECREPIT + local_rng.getU32() % 4), -2 + local_rng.getU32() % 5, 1, local_rng.getU32(), false, &myStats->inventory);
 					}
 					else // 50% weapon
 					{
-						if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+						if ( local_rng.getU32() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), EXCELLENT, -2 + local_rng.getU32() % 5, 1 + local_rng.getU32() % 3, local_rng.getU32(), false, &myStats->inventory);
 						}
 						else // pick 1 of 4 normal weapons.
 						{
-							newItem(static_cast<ItemType>(CRYSTAL_SWORD + rand() % 4), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_SWORD + local_rng.getU32() % 4), static_cast<Status>(DECREPIT + local_rng.getU32() % 4), -2 + local_rng.getU32() % 5, 1, local_rng.getU32(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -255,7 +255,7 @@ void crystalgolemDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 
-	playSoundEntity(my, 269 + rand() % 4, 128);
+	playSoundEntity(my, 269 + local_rng.getU32() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -382,7 +382,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							{
 								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
-								/*if ( rand() % 4 == 0 )
+								/*if ( local_rng.getU32() % 4 == 0 )
 								{
 									playSoundEntityLocal(my, 266, 32);
 								}*/

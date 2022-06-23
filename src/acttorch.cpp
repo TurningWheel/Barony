@@ -97,7 +97,7 @@ void actTorch(Entity* my)
 			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 174);
 		}
-		TORCH_FLICKER = 2 + rand() % 7;
+		TORCH_FLICKER = 2 + local_rng.getU32() % 7;
 	}
 
 	// using
@@ -135,7 +135,7 @@ void actTorch(Entity* my)
 						{
 							if ( players[i] != nullptr && players[i]->entity != nullptr )
 							{
-								playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+								playSoundEntity(players[i]->entity, 35 + local_rng.getU32() % 3, 64);
 							}
 							free(item);
 							/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
@@ -249,7 +249,7 @@ void actCrystalShard(Entity* my)
 			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 112);
 		}
-		TORCH_FLICKER = 2 + rand() % 7;
+		TORCH_FLICKER = 2 + local_rng.getU32() % 7;
 	}
 
 	// using
@@ -287,7 +287,7 @@ void actCrystalShard(Entity* my)
 						{
 							if ( players[i] != nullptr && players[i]->entity != nullptr )
 							{
-								playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+								playSoundEntity(players[i]->entity, 35 + local_rng.getU32() % 3, 64);
 							}
 							free(item);
 							/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
@@ -379,7 +379,7 @@ void Entity::actLightSource()
 				removeLightField();
 				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, std::max(lightSourceBrightness - 16, 0));
 			}
-			LIGHTSOURCE_FLICKER = 2 + rand() % 7;
+			LIGHTSOURCE_FLICKER = 2 + local_rng.getU32() % 7;
 		}
 
 		if ( multiplayer != CLIENT )

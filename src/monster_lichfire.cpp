@@ -100,7 +100,7 @@ void initLichFire(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->weapon = newItem(CRYSTAL_SWORD, EXCELLENT, -5, 1, rand(), false, NULL);
+				myStats->weapon = newItem(CRYSTAL_SWORD, EXCELLENT, -5, 1, local_rng.getU32(), false, NULL);
 			}
 		}
 	}
@@ -733,28 +733,28 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 										real_t targetDist = std::max(8.0, entityDist(my, target) - 48.0);
 										for ( int i = 0; i < 5; ++i )
 										{
-											my->castFallingMagicMissile(SPELL_FIREBALL, targetDist -4 + rand() % 9 + i * 16, 0.f, i * 20);
+											my->castFallingMagicMissile(SPELL_FIREBALL, targetDist -4 + local_rng.getU32() % 9 + i * 16, 0.f, i * 20);
 										}
 									}
 								}
 								else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE )
 								{
-									real_t randomAngle = (PI / 180.f) * (rand() % 360);
+									real_t randomAngle = (PI / 180.f) * (local_rng.getU32() % 360);
 									for ( int i = 0; i < 5; ++i )
 									{
-										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle, i * 20);
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + local_rng.getU32() % 9 + i * 16, randomAngle, i * 20);
 									}
 									for ( int i = 0; i < 5; ++i )
 									{
-										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle + PI / 2, i * 20);
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + local_rng.getU32() % 9 + i * 16, randomAngle + PI / 2, i * 20);
 									}
 									for ( int i = 0; i < 5; ++i )
 									{
-										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle + PI, i * 20);
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + local_rng.getU32() % 9 + i * 16, randomAngle + PI, i * 20);
 									}
 									for ( int i = 0; i < 5; ++i )
 									{
-										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle + 3 * PI / 2, i * 20);
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + local_rng.getU32() % 9 + i * 16, randomAngle + 3 * PI / 2, i * 20);
 									}
 								}
 								else
@@ -764,14 +764,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 										real_t targetDist = std::min(entityDist(my, target), 32.0);
 										for ( int i = 0; i < 8; ++i )
 										{
-											my->castFallingMagicMissile(SPELL_FIREBALL, std::max(targetDist - 8 + rand() % 8, 4.0), dir + i * PI / 4, 0);
+											my->castFallingMagicMissile(SPELL_FIREBALL, std::max(targetDist - 8 + local_rng.getU32() % 8, 4.0), dir + i * PI / 4, 0);
 										}
 									}
 									else
 									{
 										for ( int i = 0; i < 8; ++i )
 										{
-											my->castFallingMagicMissile(SPELL_FIREBALL, 16 + rand() % 8, dir + i * PI / 4, 0);
+											my->castFallingMagicMissile(SPELL_FIREBALL, 16 + local_rng.getU32() % 8, dir + i * PI / 4, 0);
 										}
 									}
 								}
@@ -934,7 +934,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						if ( multiplayer != CLIENT )
 						{
 							//my->castOrbitingMagicMissile(SPELL_FIREBALL, 16.0, 0.0);
-							if ( rand() % 2 )
+							if ( local_rng.getU32() % 2 )
 							{
 								if ( my->monsterLichAllyStatus == LICH_ALLY_DEAD
 									&& !myStats->EFFECTS[EFF_VAMPIRICAURA]
@@ -1123,7 +1123,7 @@ void Entity::lichFireSetNextAttack(Stat& myStats)
 	{
 		case LICH_ATK_VERTICAL_SINGLE:
 			++monsterLichMeleeSwingCount;
-			switch ( rand() % 8 )
+			switch ( local_rng.getU32() % 8 )
 			{
 				case 0:
 				case 1:
@@ -1165,7 +1165,7 @@ void Entity::lichFireSetNextAttack(Stat& myStats)
 			break;
 		case LICH_ATK_HORIZONTAL_SINGLE:
 			++monsterLichMeleeSwingCount;
-			switch ( rand() % 4 )
+			switch ( local_rng.getU32() % 4 )
 			{
 				case 0:
 				case 1:
@@ -1181,7 +1181,7 @@ void Entity::lichFireSetNextAttack(Stat& myStats)
 			}
 			break;
 		case LICH_ATK_RISING_RAIN:
-			switch ( rand() % 4 )
+			switch ( local_rng.getU32() % 4 )
 			{
 				case 0:
 				case 1:
@@ -1197,14 +1197,14 @@ void Entity::lichFireSetNextAttack(Stat& myStats)
 			break;
 		case LICH_ATK_BASICSPELL_SINGLE:
 			++monsterLichMagicCastCount;
-			if ( monsterLichMagicCastCount > 2 || rand() % 2 == 0 )
+			if ( monsterLichMagicCastCount > 2 || local_rng.getU32() % 2 == 0 )
 			{
 				monsterLichFireMeleeSeq = LICH_ATK_VERTICAL_SINGLE;
 				monsterLichMagicCastCount = 0;
 			}
 			break;
 		case LICH_ATK_RISING_SINGLE:
-			switch ( rand() % 4 )
+			switch ( local_rng.getU32() % 4 )
 			{
 				case 0:
 				case 1:
@@ -1222,7 +1222,7 @@ void Entity::lichFireSetNextAttack(Stat& myStats)
 			monsterLichFireMeleeSeq = LICH_ATK_HORIZONTAL_RETURN;
 			break;
 		case LICH_ATK_HORIZONTAL_RETURN:
-			switch ( rand() % 4 )
+			switch ( local_rng.getU32() % 4 )
 			{
 				case 0:
 				case 1:
@@ -1280,8 +1280,8 @@ void Entity::lichFireSummonMonster(Monster creature)
 	if ( target )
 	{
 		int tries = 25; // max iteration in while loop, fail safe.
-		long spawn_x = (target->x / 16) - 11 + rand() % 23;
-		long spawn_y = (target->y / 16) - 11 + rand() % 23;
+		long spawn_x = (target->x / 16) - 11 + local_rng.getU32() % 23;
+		long spawn_y = (target->y / 16) - 11 + local_rng.getU32() % 23;
 		int index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
 		while ( tries > 0 &&
 			(map.tiles[OBSTACLELAYER + index] == 1
@@ -1291,8 +1291,8 @@ void Entity::lichFireSummonMonster(Monster creature)
 			)
 		{
 			// find a spot that isn't wall, no floor or lava/water tiles.
-			spawn_x = (target->x / 16) - 11 + rand() % 23;
-			spawn_y = (target->y / 16) - 11 + rand() % 23;
+			spawn_x = (target->x / 16) - 11 + local_rng.getU32() % 23;
+			spawn_y = (target->y / 16) - 11 + local_rng.getU32() % 23;
 			index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
 			--tries;
 		}

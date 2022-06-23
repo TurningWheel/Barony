@@ -121,7 +121,7 @@ void actThrown(Entity* my)
 			my->focalz = 0.5;
 			if ( my->ticks > 0 && my->ticks % 7 == 0 )
 			{
-				playSoundEntityLocal(my, 434 + rand() % 10, 64);
+				playSoundEntityLocal(my, 434 + local_rng.getU32() % 10, 64);
 			}
 		}
 	}
@@ -139,7 +139,7 @@ void actThrown(Entity* my)
 				my->sprite = BOOMERANG_PARTICLE;
 				if ( my->ticks > 0 && my->ticks % 7 == 0 )
 				{
-					playSoundEntityLocal(my, 434 + rand() % 10, 64);
+					playSoundEntityLocal(my, 434 + local_rng.getU32() % 10, 64);
 				}
 			}
 			free(item);
@@ -718,7 +718,7 @@ void actThrown(Entity* my)
 						//int dex = parent->getDEX() / 4;
 						//damage += dex;
 						damage = damage * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
-						damage -= rand() % ((damage / 4) + 1);
+						damage -= local_rng.getU32() % ((damage / 4) + 1);
 					}
 					else
 					{
@@ -861,7 +861,7 @@ void actThrown(Entity* my)
 					}
 					if ( !ignorePotion )   // this makes it impossible to bork the end boss :)
 					{
-						if ( rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+						if ( local_rng.getU32() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
@@ -1221,7 +1221,7 @@ void actThrown(Entity* my)
 						doSkillIncrease = false; // no skill for killing/hurting players
 					}
 					int chance = 5;
-					if ( doSkillIncrease && (rand() % chance == 0) && parent && parent->getStats() )
+					if ( doSkillIncrease && (local_rng.getU32() % chance == 0) && parent && parent->getStats() )
 					{
 						if ( hitstats->type != DUMMYBOT 
 							|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < 20) )
@@ -1464,7 +1464,7 @@ void actThrown(Entity* my)
 					if ( hit.side == 0 )
 					{
 						// pick a random side to be on.
-						if ( rand() % 2 == 0 )
+						if ( local_rng.getU32() % 2 == 0 )
 						{
 							hit.side = HORIZONTAL;
 						}
@@ -1560,7 +1560,7 @@ void actThrown(Entity* my)
 			bool dropItem = true;
 			if ( itemCategory(item) == GEM )
 			{
-				if ( hit.entity && rand() % 2 == 0 )
+				if ( hit.entity && local_rng.getU32() % 2 == 0 )
 				{
 					dropItem = false;
 					createParticleShatteredGem(hit.entity, my->sprite);

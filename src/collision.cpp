@@ -373,35 +373,35 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					sfx = 70;
 					break;
 				case VAMPIRE:
-					if ( rand() % 4 == 0 )
+					if ( local_rng.getU32() % 4 == 0 )
 					{
 						sfx = 329;
 					}
 					else
 					{
-						sfx = 322 + rand() % 3;
+						sfx = 322 + local_rng.getU32() % 3;
 					}
 					break;
 				case GOATMAN:
-					sfx = 332 + rand() % 2;
+					sfx = 332 + local_rng.getU32() % 2;
 					break;
 				case INSECTOID:
-					sfx = 291 + rand() % 4;
+					sfx = 291 + local_rng.getU32() % 4;
 					break;
 				case GOBLIN:
-					sfx = 60 + rand() % 3;
+					sfx = 60 + local_rng.getU32() % 3;
 					break;
 				case AUTOMATON:
-					sfx = 257 + rand() % 2;
+					sfx = 257 + local_rng.getU32() % 2;
 					break;
 				case INCUBUS:
-					sfx = 276 + rand() % 3;
+					sfx = 276 + local_rng.getU32() % 3;
 					break;
 				case RAT:
 					sfx = 29;
 					break;
 				case TROLL:
-					if ( rand() % 3 == 0 )
+					if ( local_rng.getU32() % 3 == 0 )
 					{
 						sfx = 79;
 					}
@@ -409,29 +409,29 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				case SPIDER:
 				    if ( arachnophobia_filter )
 				    {
-					    if ( rand() % 3 == 2 )
+					    if ( local_rng.getU32() % 3 == 2 )
 					    {
 						    sfx = 508;
 					    }
 					    else
 					    {
-						    sfx = 503 + rand() % 2;
+						    sfx = 503 + local_rng.getU32() % 2;
 					    }
 				    }
 				    else
 				    {
-					    if ( rand() % 3 == 2 )
+					    if ( local_rng.getU32() % 3 == 2 )
 					    {
 						    sfx = 235;
 					    }
 					    else
 					    {
-						    sfx = 230 + rand() % 2;
+						    sfx = 230 + local_rng.getU32() % 2;
 					    }
 				    }
 					break;
 				case CREATURE_IMP:
-					sfx = 198 + rand() % 3;
+					sfx = 198 + local_rng.getU32() % 3;
 					break;
 				default:
 					sfx = 0;

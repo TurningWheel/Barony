@@ -107,7 +107,7 @@ void actLiquid(Entity* my)
 	if ( !LIQUID_INIT )
 	{
 		LIQUID_INIT = 1;
-		LIQUID_TIMER = 60 * (rand() % 20);
+		LIQUID_TIMER = 60 * (local_rng.getU32() % 20);
 		if ( LIQUID_LAVA )
 		{
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 2, 128);
@@ -116,7 +116,7 @@ void actLiquid(Entity* my)
 	LIQUID_TIMER--;
 	if ( LIQUID_TIMER <= 0 )
 	{
-		LIQUID_TIMER = 60 * 20 + 60 * (rand() % 20);
+		LIQUID_TIMER = 60 * 20 + 60 * (local_rng.getU32() % 20);
 		if ( !LIQUID_LAVA )
 		{
 			playSoundEntityLocal( my, 135, 32 );
@@ -128,21 +128,21 @@ void actLiquid(Entity* my)
 	}
 	if ( LIQUID_LAVA && !LIQUID_LAVANOBUBBLE )
 	{
-		if ( ticks % 40 == my->getUID() % 40 && rand() % 3 == 0 )
+		if ( ticks % 40 == my->getUID() % 40 && local_rng.getU32() % 3 == 0 )
 		{
-			int c, j = 1 + rand() % 2;
+			int c, j = 1 + local_rng.getU32() % 2;
 			for ( c = 0; c < j; c++ )
 			{
 				Entity* entity = spawnGib( my );
-				entity->x += rand() % 16 - 8;
-				entity->y += rand() % 16 - 8;
+				entity->x += local_rng.getU32() % 16 - 8;
+				entity->y += local_rng.getU32() % 16 - 8;
 				entity->flags[SPRITE] = true;
 				entity->sprite = 42;
 				entity->fskill[3] = 0.01;
-				double vel = (rand() % 10) / 20.f;
+				double vel = (local_rng.getU32() % 10) / 20.f;
 				entity->vel_x = vel * cos(entity->yaw);
 				entity->vel_y = vel * sin(entity->yaw);
-				entity->vel_z = -.15 - (rand() % 15) / 100.f;
+				entity->vel_z = -.15 - (local_rng.getU32() % 15) / 100.f;
 				entity->z = 7.5;
 			}
 		}
@@ -181,11 +181,11 @@ void Entity::actFurniture()
 		furnitureInit = 1;
 		if ( furnitureType == FURNITURE_TABLE || furnitureType == FURNITURE_BUNKBED || furnitureType == FURNITURE_BED || furnitureType == FURNITURE_PODIUM )
 		{
-			furnitureHealth = 15 + rand() % 5;
+			furnitureHealth = 15 + local_rng.getU32() % 5;
 		}
 		else
 		{
-			furnitureHealth = 4 + rand() % 4;
+			furnitureHealth = 4 + local_rng.getU32() % 4;
 		}
 		furnitureMaxHealth = furnitureHealth;
 		furnitureOldHealth = furnitureHealth;
@@ -217,14 +217,14 @@ void Entity::actFurniture()
 					entity->sprite = 187; // Splinter.vox
 					entity->x = floor(x / 16) * 16 + 8;
 					entity->y = floor(y / 16) * 16 + 8;
-					entity->y += -3 + rand() % 6;
-					entity->x += -3 + rand() % 6;
-					entity->z = -5 + rand() % 10;
-					entity->yaw = (rand() % 360) * PI / 180.0;
-					entity->pitch = (rand() % 360) * PI / 180.0;
-					entity->roll = (rand() % 360) * PI / 180.0;
-					entity->vel_x = (rand() % 10 - 5) / 10.0;
-					entity->vel_y = (rand() % 10 - 5) / 10.0;
+					entity->y += -3 + local_rng.getU32() % 6;
+					entity->x += -3 + local_rng.getU32() % 6;
+					entity->z = -5 + local_rng.getU32() % 10;
+					entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+					entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
+					entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
+					entity->vel_x = (local_rng.getU32() % 10 - 5) / 10.0;
+					entity->vel_y = (local_rng.getU32() % 10 - 5) / 10.0;
 					entity->vel_z = -.5;
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
@@ -313,7 +313,7 @@ void actMCaxe(Entity* my)
 				{
 					if (inrange[i])
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[478 + rand() % 5]);
+						messagePlayer(i, MESSAGE_INTERACTION, language[478 + local_rng.getU32() % 5]);
 						MCAXE_USED = 1;
 						serverUpdateEntitySkill(my, 0);
 					}
@@ -580,7 +580,7 @@ void Entity::actPistonCam()
 		{
 			pistonCamDir = 1; // up
 			pistonCamRotateSpeed = 0.2;
-			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+			pistonCamTimer = local_rng.getU32() % 5 * TICKS_PER_SECOND;
 		}
 	}
 	if ( pistonCamDir == 1 ) // up
@@ -589,7 +589,7 @@ void Entity::actPistonCam()
 		if ( z < -1.75 )
 		{
 			z = -1.75;
-			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamRotateSpeed *= local_rng.getU32() % 2 == 0 ? -1 : 1;
 			pistonCamDir = 2; // top
 		}
 	}
@@ -599,7 +599,7 @@ void Entity::actPistonCam()
 		{
 			pistonCamDir = 3; // down
 			pistonCamRotateSpeed = -0.2;
-			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+			pistonCamTimer = local_rng.getU32() % 5 * TICKS_PER_SECOND;
 		}
 	}
 	else if ( pistonCamDir == 3 ) // down
@@ -608,7 +608,7 @@ void Entity::actPistonCam()
 		if ( z > 1.75 )
 		{
 			z = 1.75;
-			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamRotateSpeed *= local_rng.getU32() % 2 == 0 ? -1 : 1;
 			pistonCamDir = 0; // down
 		}
 	}
@@ -1544,7 +1544,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				int effectEndRange = (result >> 8) & 0xFF;
 				int duration = (result >> 16) & 0xFF;
 				int durationEndRange = (result >> 24) & 0xFF;
-				duration = duration + rand() % (std::max(1, (durationEndRange - duration)));
+				duration = duration + local_rng.getU32() % (std::max(1, (durationEndRange - duration)));
 				if ( processOnAttachedEntity )
 				{
 					for ( auto entity : attachedEntities )
@@ -1632,7 +1632,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 										//if ( hit.entity == target )
 										//{
 											//my->monsterLookTime = 1;
-											//my->monsterMoveTime = rand() % 10 + 1;
+											//my->monsterMoveTime = local_rng.getU32() % 10 + 1;
 											entity->monsterLookDir = tangent;
 											toAttack = target;
 										//}

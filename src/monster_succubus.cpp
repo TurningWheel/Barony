@@ -50,7 +50,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.getU32() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 
 			}
@@ -95,13 +95,13 @@ void initSuccubus(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( !strcmp(myStats->name, "Lilith") && rand() % 4 > 0 )
+					if ( !strcmp(myStats->name, "Lilith") && local_rng.getU32() % 4 > 0 )
 					{
-						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + rand() % 3, 1, rand(), false, &myStats->inventory); // 75% chance
+						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, &myStats->inventory); // 75% chance
 					}
-					else if ( rand() % 10 == 0 )
+					else if ( local_rng.getU32() % 10 == 0 )
 					{
-						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory); // 10% chance
+						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, &myStats->inventory); // 10% chance
 					}
 					break;
 				default:
@@ -946,7 +946,7 @@ void Entity::succubusChooseWeapon(const Entity* target, double dist)
 		// try to charm enemy.
 		int specialRoll = -1;
 		int bonusFromHP = 0;
-		specialRoll = rand() % 40;
+		specialRoll = local_rng.getU32() % 40;
 		if ( myStats->HP <= myStats->MAXHP * 0.8 )
 		{
 			bonusFromHP += 1; // +2.5% chance if on low health

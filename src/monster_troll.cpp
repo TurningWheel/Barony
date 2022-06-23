@@ -50,7 +50,7 @@ void initTroll(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.getU32() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 			}
 			else
@@ -72,10 +72,10 @@ void initTroll(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rand() % 4 == 0 )
+			if ( local_rng.getU32() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.getU32() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -101,13 +101,13 @@ void initTroll(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 3 == 0 )
+					if ( local_rng.getU32() % 3 == 0 )
 					{
-						int i = 1 + rand() % 3;
+						int i = 1 + local_rng.getU32() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							Category cat = static_cast<Category>(rand() % (NUMCATEGORIES - 1));
-							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(local_rng.getU32() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + local_rng.getU32() % 4), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, &myStats->inventory);
 						}
 					}
 					break;

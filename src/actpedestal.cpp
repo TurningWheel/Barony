@@ -286,7 +286,7 @@ void Entity::actPedestalBase()
 						}
 						else
 						{
-							Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
+							Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + pedestalHasOrb - 1), EXCELLENT, 0, 1, local_rng.getU32(), true, nullptr);
 							itemPickup(i, itemOrb);
 							if ( pedestalHasOrb == pedestalOrbType )
 							{
@@ -313,7 +313,7 @@ void Entity::actPedestalBase()
 					{
 						if ( players[i]->entity->getINT() < 10 )
 						{
-							if ( rand() % 2 == 0 )
+							if ( local_rng.getU32() % 2 == 0 )
 							{
 								messagePlayer(i, MESSAGE_INTERACTION, language[476]);
 							}
@@ -389,7 +389,7 @@ void Entity::actPedestalOrb()
 								}
 								else
 								{
-									Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
+									Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, local_rng.getU32(), true, nullptr);
 									itemPickup(i, itemOrb);
 									if ( parent->pedestalHasOrb == parent->pedestalOrbType )
 									{
@@ -525,7 +525,7 @@ void Entity::actPedestalOrb()
 			particleSprite = -1;
 			break;
 	}
-	spawnAmbientParticles(40, particleSprite, 10 + rand() % 40, 1.0, false);
+	spawnAmbientParticles(40, particleSprite, 10 + local_rng.getU32() % 40, 1.0, false);
 }
 
 void Entity::pedestalOrbInit()
@@ -558,11 +558,11 @@ void Entity::pedestalOrbInit()
 		if ( orbStartZ != z )
 		{
 			orbStartZ = z;
-			z = orbStartZ - 0.4 + ((rand() % 8) * 0.1); // start the height randomly
+			z = orbStartZ - 0.4 + ((local_rng.getU32() % 8) * 0.1); // start the height randomly
 		}
 		orbMaxZVelocity = 0.02; //max velocity
 		orbMinZVelocity = 0.001; //min velocity
-		vel_z = crystalMaxZVelocity * ((rand() % 100) * 0.01); // start the velocity randomly
+		vel_z = crystalMaxZVelocity * ((local_rng.getU32() % 100) * 0.01); // start the velocity randomly
 		orbTurnVelocity = 0.5;
 		orbInitialised = 1;
 		if ( multiplayer != CLIENT )

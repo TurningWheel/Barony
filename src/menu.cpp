@@ -1986,7 +1986,7 @@ void handleMainMenu(bool mode)
 						if ( reloadIntroMusic )
 						{
 #ifdef SOUND
-							playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
+							playMusic(intromusic[local_rng.getU32() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 						}
 						gamemods_musicRequireReloadUnmodded = false;
@@ -2957,7 +2957,7 @@ void handleMainMenu(bool mode)
 									// appearance reset.
 									if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 									{
-										stats[0]->appearance = rand() % NUMAPPEARANCES;
+										stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
 									}
 									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 									{
@@ -3179,7 +3179,7 @@ void handleMainMenu(bool mode)
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
-						stats[0]->appearance = rand() % NUMAPPEARANCES;
+						stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 					{
@@ -3318,7 +3318,7 @@ void handleMainMenu(bool mode)
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
-						stats[0]->appearance = rand() % NUMAPPEARANCES;
+						stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 					{
@@ -9671,17 +9671,6 @@ void doNewGame(bool makeHighscore) {
 		}
 #endif
 
-		// generate a unique game key (used to identify compatible save games)
-		prng_seed_time();
-		if ( multiplayer == SINGLE )
-		{
-			uniqueGameKey = prng_get_uint();
-			if ( !uniqueGameKey )
-			{
-				uniqueGameKey++;
-			}
-		}
-
         if ( !loadingsavegame )
         {
 			mapseed = 0;
@@ -10021,7 +10010,7 @@ void doNewGame(bool makeHighscore) {
 			}
 			else
 			{
-				generateDungeon(maptoload, rand());
+				generateDungeon(maptoload, local_rng.getU32());
 			}
 		}
 		assignActions(&map);
@@ -10110,14 +10099,15 @@ void doNewGame(bool makeHighscore) {
 		loadingsavegame = 0;
 	}
 
-	enchantedFeatherScrollSeed.seed(uniqueGameKey);
-	enchantedFeatherScrollsShuffled.clear();
-	auto scrollsToPick = enchantedFeatherScrollsFixedList;
-	while ( !scrollsToPick.empty() )
-	{
-		int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
-		enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
-		scrollsToPick.erase(scrollsToPick.begin() + index);
+    {
+	    enchantedFeatherScrollsShuffled.clear();
+	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
+	    auto shuffle = enchantedFeatherScrollsFixedList;
+	    while (!shuffle.empty()) {
+	        int index = net_rng.getU8() % shuffle.size();
+	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
+	        shuffle.erase(shuffle.begin() + index);
+	    }
 	}
 	/*for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 	{
@@ -10264,7 +10254,7 @@ void doEndgame() {
 	}
 
 	// pick a new subtitle :)
-	subtitleCurrent = rand() % NUMSUBTITLES;
+	subtitleCurrent = local_rng.getU32() % NUMSUBTITLES;
 	subtitleVisible = true;
 
 	for ( c = 0; c < NUMMONSTERS; c++ )
@@ -10602,7 +10592,7 @@ void doEndgame() {
 	}
 	else
 	{
-		switch ( rand() % 2 )
+		switch ( local_rng.getU32() % 2 )
 		{
 		case 0:
 			menuMapType = loadMainMenuMap(true, false);
@@ -11080,7 +11070,7 @@ void openGameoverWindow()
 	// death hints
 	if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
 	{
-		strcat(subtext, language[1145 + rand() % 15]);
+		strcat(subtext, language[1145 + local_rng.getU32() % 15]);
 	}
 
 	// close button
@@ -12660,66 +12650,6 @@ void buttonStartServer(button_t* my)
 {
     // deprecated
 	return;
-
-	int c;
-
-	// close window
-	buttonCloseSubwindow(my);
-
-	multiplayer = SERVER;
-
-	if ( !intro )
-	{
-		// intro is true if starting from main menu, otherwise we're restarting the game.
-		// set the main menu camera to the player camera coordinates if restarting midgame.
-		menucam.x = cameras[clientnum].x;
-		menucam.y = cameras[clientnum].y;
-		menucam.z = cameras[clientnum].z;
-		menucam.ang = cameras[clientnum].ang;
-		menucam.vang = cameras[clientnum].vang;
-	}
-
-	intro = true;
-	introstage = 3;
-	numplayers = 0;
-	fadeout = true;
-
-	// send the ok to start
-	for ( c = 1; c < MAXPLAYERS; c++ )
-	{
-		if ( !client_disconnected[c] )
-		{
-			if ( !loadingsavegame || !intro )
-			{
-				stats[c]->clearStats();
-				initClass(c);
-			}
-			else
-			{
-				loadGame(c);
-			}
-		}
-	}
-	uniqueGameKey = prng_get_uint();
-	if ( !uniqueGameKey )
-	{
-		uniqueGameKey++;
-	}
-	for ( c = 1; c < MAXPLAYERS; c++ )
-	{
-		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
-		{
-			continue;
-		}
-		strcpy((char*)net_packet->data, "STRT");
-		SDLNet_Write32(svFlags, &net_packet->data[4]);
-		SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
-		net_packet->data[12] = loadingsavegame ? 1 : 0;
-		net_packet->address.host = net_clients[c - 1].host;
-		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 13;
-		sendPacketSafe(net_sock, -1, net_packet, c - 1);
-	}
 }
 
 // opens the steam dialog to invite friends
@@ -13862,8 +13792,8 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;
-	stats[0]->sex = static_cast<sex_t>(0 + rand() % 2);
-	stats[0]->appearance = 0 + rand() % NUMAPPEARANCES;
+	stats[0]->sex = static_cast<sex_t>(0 + local_rng.getU32() % 2);
+	stats[0]->appearance = 0 + local_rng.getU32() % NUMAPPEARANCES;
 	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
@@ -14225,18 +14155,18 @@ void buttonRandomCharacter(button_t* my)
 	playing_random_char = true;
 	charcreation_step = 4;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
-	stats[0]->sex = static_cast<sex_t>(rand() % 2);
-	client_classes[0] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+	stats[0]->sex = static_cast<sex_t>(local_rng.getU32() % 2);
+	client_classes[0] = local_rng.getU32() % (CLASS_MONK + 1);//NUMCLASSES;
 	stats[0]->clearStats();
 	if ( enabledDLCPack1 || enabledDLCPack2 )
 	{
-		stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+		stats[0]->playerRace = local_rng.getU32() % NUMPLAYABLERACES;
 		if ( !enabledDLCPack1 )
 		{
 			while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
 				|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
 			{
-				stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+				stats[0]->playerRace = local_rng.getU32() % NUMPLAYABLERACES;
 			}
 		}
 		else if ( !enabledDLCPack2 )
@@ -14244,7 +14174,7 @@ void buttonRandomCharacter(button_t* my)
 			while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
 				|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
 			{
-				stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+				stats[0]->playerRace = local_rng.getU32() % NUMPLAYABLERACES;
 			}
 		}
 		if ( stats[0]->playerRace == RACE_INCUBUS )
@@ -14258,13 +14188,13 @@ void buttonRandomCharacter(button_t* my)
 
 		if ( stats[0]->playerRace == RACE_HUMAN )
 		{
-			client_classes[0] = rand() % (NUMCLASSES);
+			client_classes[0] = local_rng.getU32() % (NUMCLASSES);
 			if ( !enabledDLCPack1 )
 			{
 				while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
 					|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
 				{
-					client_classes[0] = rand() % (NUMCLASSES);
+					client_classes[0] = local_rng.getU32() % (NUMCLASSES);
 				}
 			}
 			else if ( !enabledDLCPack2 )
@@ -14272,14 +14202,14 @@ void buttonRandomCharacter(button_t* my)
 				while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
 					|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
 				{
-					client_classes[0] = rand() % (NUMCLASSES);
+					client_classes[0] = local_rng.getU32() % (NUMCLASSES);
 				}
 			}
-			stats[0]->appearance = rand() % NUMAPPEARANCES;
+			stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
 		}
 		else
 		{
-			client_classes[0] = rand() % (CLASS_MONK + 2);
+			client_classes[0] = local_rng.getU32() % (CLASS_MONK + 2);
 			if ( client_classes[0] > CLASS_MONK )
 			{
 				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
@@ -14290,7 +14220,7 @@ void buttonRandomCharacter(button_t* my)
 	else
 	{
 		stats[0]->playerRace = RACE_HUMAN;
-		stats[0]->appearance = rand() % NUMAPPEARANCES;
+		stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
 	}
 	initClass(0);
 }
@@ -15574,7 +15504,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		if ( reloadIntroMusic )
 		{
 #ifdef SOUND
-			playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
+			playMusic(intromusic[local_rng.getU32() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
 		gamemods_musicRequireReloadUnmodded = true;

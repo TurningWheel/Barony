@@ -406,7 +406,7 @@ void EOS_CALL EOSFuncs::OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbac
 		EOS.CurrentLobbyData.LobbyAttributes.lobbyName = EOS.CurrentUserInfo.Name + "'s lobby";
 		strncpy(EOS.currentLobbyName, EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str(), 31);
 
-		Uint32 keygen = rand() % (1679615 + 1); // limit of 'zzzz' as base-36 string
+		Uint32 keygen = local_rng.getU32() % (1679615 + 1); // limit of 'zzzz' as base-36 string
 		EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey = EOS.getLobbyCodeFromGameKey(keygen);
 		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
 		EOS.CurrentLobbyData.LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();

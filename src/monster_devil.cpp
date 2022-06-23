@@ -676,7 +676,7 @@ bool Entity::devilSummonMonster(Entity* summonOnEntity, Monster creature, int ra
 		{
 			return false;
 		}
-		std::pair<int,int> chosen = goodspots.at(rand() % goodspots.size());
+		std::pair<int,int> chosen = goodspots.at(local_rng.getU32() % goodspots.size());
 		Entity* timer = createParticleTimer(this, 70, 174);
 		timer->x = chosen.first * 16.0 + 8;
 		timer->y = chosen.second * 16.0 + 8;
@@ -759,7 +759,7 @@ bool Entity::devilBoulderSummonIfPlayerIsHiding(int player)
 					++numPlayers;
 				}
 			}
-			if ( devilGetNumMonstersInArena(SHADOW) <= numPlayers && (rand() % 4 == 0) )
+			if ( devilGetNumMonstersInArena(SHADOW) <= numPlayers && (local_rng.getU32() % 4 == 0) )
 			{
 				if ( !devilSummonMonster(players[player]->entity, SHADOW, 5, player) )
 				{
