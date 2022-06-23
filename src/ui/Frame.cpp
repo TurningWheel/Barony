@@ -1419,7 +1419,8 @@ void Frame::postprocess() {
 		(*tickCallback)(*this);
 	}
 	if (!dontTickChildren) {
-	    for (auto frame : frames) {
+	    for (int c = 0; c < frames.size(); ++c) {
+	        auto frame = frames[c];
 	        if (!frame->disabled) {
 		        frame->postprocess();
 	        }
