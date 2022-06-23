@@ -9846,15 +9846,6 @@ bind_failed:
 		    }
 		    };
 
-		char text[1024];
-        if (multiple_players) {
-		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		        "or click here to assign only the mouse and keyboard\n\n\n\n", index + 1);
-        } else {
-		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
-		        "or click here to use only the mouse and keyboard");
-        }
-
         static real_t bounce;
         bounce = (real_t)0.0;
         auto prompt_tick_callback = [](Widget& widget){
@@ -9873,6 +9864,15 @@ bind_failed:
                 }
             }
             };
+
+		char text[1024];
+        if (multiple_players) {
+		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
+		        "or click here to assign only the mouse and keyboard\n\n\n\n", index + 1);
+        } else {
+		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
+		        "or click here to use only the mouse and keyboard\n\n\n\n");
+        }
 
         auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
         prompt->setOwner(index);
@@ -9896,40 +9896,36 @@ bind_failed:
 		button->setColor(0);
 		button->select();
 
-		if (multiple_players) {
-		    int playercount = 0;
-		    for (int c = 0; c < MAXPLAYERS; ++c) {
-		        if (isPlayerSignedIn(c)) {
-		            ++playercount;
-		        }
-		    }
+	    int playercount = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+	            ++playercount;
+	        }
+	    }
 
-		    int num = 0;
-		    for (int c = 0; c < MAXPLAYERS; ++c) {
-		        if (isPlayerSignedIn(c)) {
-	                const char* path = inputs.hasController(c) ?
-	                    "*#images/ui/Glyphs/G_Control_Xbox_01.png":
-	                    "*#images/ui/Glyphs/G_Control_Keyboard_00.png";
-	                auto image = Image::get(path);
-	                const int w = image->getWidth();
-	                const int h = image->getHeight();
-	                const int space = 100;
-	                const int x = (prompt->getSize().w - playercount * space + space - w) / 2 + num * space;
-	                const int y = prompt->getSize().h - h - 32;
-		            const std::string name = std::string("player") + std::to_string(c);
-	                prompt->addImage(
-                        SDL_Rect{x, y, w, h},
-	                    makeColor(255, 255, 255, 255),
-	                    path, name.c_str());
-                    ++num;
-		        }
-		    }
-		}
+	    int num = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
+                    "*#images/ui/Glyphs/G_Control_Keyboard_00.png":
+                    "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+                auto image = Image::get(path);
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                const int space = 100;
+                const int x = (prompt->getSize().w - playercount * space + space - w) / 2 + num * space;
+                const int y = prompt->getSize().h - h - 32;
+	            const std::string name = std::string("player") + std::to_string(c);
+                prompt->addImage(
+                    SDL_Rect{x, y, w, h},
+                    makeColor(255, 255, 255, 255),
+                    path, name.c_str());
+                ++num;
+	        }
+	    }
 
 		Input::waitingToBindControllerForPlayer = index;
 	}
-
-	static void reconnectControllerPrompt();
 
 /******************************************************************************/
 
@@ -14182,7 +14178,7 @@ bind_failed:
         }
     }
 
-	void receiveInvite() {
+	void receivedInvite() {
 	    assert(0 && "Received an invite. Behavior goes here!");
 	}
 
@@ -14234,4 +14230,98 @@ bind_failed:
 	        return !client_disconnected[index];
 	    }
 	}
+
+    void controllerDisconnected(int player) {
+        if (!gamePaused) {
+            pauseGame(2, 0);
+            destroyMainMenu();
+            createDummyMainMenu();
+        }
+
+        static real_t bounce;
+        bounce = (real_t)0.0;
+        auto prompt_tick_callback = [](Widget& widget){
+            auto frame = static_cast<Frame*>(widget.getParent());
+            const int player = frame->getOwner();
+			const real_t inc = (PI / fpsLimit) * 0.5f;
+            for (int c = 0; c < MAXPLAYERS; ++c) {
+                std::string name = std::string("player") + std::to_string(player);
+                auto image = frame->findImage(name.c_str());
+                if (image) {
+			        bounce += inc;
+			        const int h = image->pos.h;
+			        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
+	                const int y = frame->getSize().h - h - 32 - (int)bounce_height;
+	                image->pos.y = y;
+                }
+            }
+            if (inputs.getPlayerIDAllowedKeyboard() == player) {
+                destroyMainMenu();
+                pauseGame(1, 0); // unpause game
+            } else {
+                auto controller = inputs.getController(player);
+                if (controller && controller->isActive()) {
+                    destroyMainMenu();
+                    pauseGame(1, 0); // unpause game
+                }
+            }
+            };
+
+		char text[1024];
+        if (splitscreen) {
+		    snprintf(text, sizeof(text), "Reconnect the controller for Player %d\n\n\n\n", player + 1);
+        } else {
+		    snprintf(text, sizeof(text), "Please reconnect your controller.\n\n\n\n");
+        }
+
+        auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        prompt->setOwner(player);
+
+        auto back = createBackWidget(prompt, [](Button& button){
+            destroyMainMenu();
+            createMainMenu(!intro);
+            });
+        back->select();
+
+        auto dimmer = static_cast<Frame*>(prompt->getParent());
+        dimmer->setOwner(player);
+
+	    int playercount = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+	            ++playercount;
+	        }
+	    }
+
+	    int num = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
+                    "*#images/ui/Glyphs/G_Control_Keyboard_00.png":
+                    "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+                auto image = Image::get(path);
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                const int space = 100;
+                const int x = (prompt->getSize().w - playercount * space + space - w) / 2 + num * space;
+                const int y = prompt->getSize().h - h - 32;
+	            const std::string name = std::string("player") + std::to_string(c);
+                prompt->addImage(
+                    SDL_Rect{x, y, w, h},
+                    makeColor(255, 255, 255, 255),
+                    path, name.c_str());
+                ++num;
+	        }
+	    }
+
+        std::string path = Input::getGlyphPathForInput("ButtonA", false);
+        auto image = Image::get((std::string("*") + path).c_str());
+        const int w = image->getWidth();
+        const int h = image->getHeight();
+        const int x = (prompt->getSize().w - w) / 2;
+        const int y = (prompt->getSize().h - h) / 2;
+        prompt->addImage(SDL_Rect{x, y, w, h}, 0xffffffff, path.c_str(), "a_button");
+
+        soundError();
+    }
 }

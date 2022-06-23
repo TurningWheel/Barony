@@ -85,6 +85,7 @@ namespace MainMenu {
 
 	// special events:
 
+    void controllerDisconnected(int player);
     void openGameoverWindow(int player, bool tutorial = false);
     void connectionErrorPrompt(const char* str);
 	void disconnectedFromServer(const char* text);

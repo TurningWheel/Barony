@@ -4534,30 +4534,93 @@ void createGameTimerFrame(const int player)
 	txt->setColor(makeColor(255, 255, 255, 255));
 }
 
+static void checkControllerState(int player) {
+    auto& controllerFrame = players[player]->hud.controllerFrame;
+    assert(controllerFrame);
+    if (inputs.getPlayerIDAllowedKeyboard() != player) {
+        auto controller = inputs.getController(player);
+        if (!controller || (controller && !controller->isActive())) {
+            if (controllerFrame->isHollow()) {
+                controllerFrame->setHollow(false);
+                controllerFrame->setDisabled(false);
+                MainMenu::controllerDisconnected(player);
+            }
+            return;
+        }
+    }
+    controllerFrame->setDisabled(true);
+    controllerFrame->setHollow(true);
+}
+
 void Player::HUD_t::processHUD()
 {
-	char name[32];
-	snprintf(name, sizeof(name), "player hud %d", player.playernum);
+	const SDL_Rect hudSize{
+	    players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight()};
+
+    if ( !controllerFrame )
+    {
+        controllerFrame = gameUIFrame[player.playernum]->addFrame("controller prompt");
+        controllerFrame->setColor(makeColor(0, 0, 0, 191));
+        controllerFrame->setOwner(player.playernum);
+        controllerFrame->setBorder(0);
+        controllerFrame->setDisabled(true);
+        controllerFrame->setHollow(true);
+        controllerFrame->setTickCallback([](Widget& widget){
+            const int player = widget.getOwner();
+	        const SDL_Rect hudSize{
+	            players[player]->camera_virtualx1(),
+		        players[player]->camera_virtualy1(),
+		        players[player]->camera_virtualWidth(),
+		        players[player]->camera_virtualHeight()};
+            auto frame = static_cast<Frame*>(&widget); assert(frame);
+            auto image = frame->findImage("controller"); assert(image);
+            image->pos.x = (hudSize.w - image->pos.w) / 2;
+            image->pos.y = (hudSize.h - image->pos.h) / 2;
+            image->disabled = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+            });
+
+        const char* path = "*#images/ui/Glyphs/G_Control_Xbox_01.png";
+        auto image = Image::get(path);
+        const int w = image->getWidth();
+        const int h = image->getHeight();
+        const int x = (hudSize.w - w) / 2;
+        const int y = (hudSize.h - h) / 2;
+        controllerFrame->addImage(SDL_Rect{x, y, w, h}, 0xffffffff, path, "controller");
+    }
 	if ( !hudFrame )
 	{
+	    char name[32];
+	    snprintf(name, sizeof(name), "player hud %d", player.playernum);
 		hudFrame = gameUIFrame[player.playernum]->addFrame(name);
 		hudFrame->setHollow(true);
 		hudFrame->setBorder(0);
 		hudFrame->setOwner(player.playernum);
 	}
-	hudFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
-		players[player.playernum]->camera_virtualy1(),
-		players[player.playernum]->camera_virtualWidth(),
-		players[player.playernum]->camera_virtualHeight() });
+
+    controllerFrame->setSize(hudSize);
+	hudFrame->setSize(hudSize);
 
 	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
 	{
 		// hide
 		hudFrame->setDisabled(true);
+		controllerFrame->setDisabled(true);
 	}
 	else
 	{
 		hudFrame->setDisabled(false);
+		if ( !controllerFrame->isHollow() )
+		{
+		    controllerFrame->setDisabled(false);
+		}
+	}
+
+    if ( !gamePaused && MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+    {
+	    checkControllerState(player.playernum);
 	}
 
     if ( !minimapFrame )

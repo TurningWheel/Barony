@@ -5483,6 +5483,7 @@ void Player::clearGUIPointers()
 
 	skillSheet.skillFrame = nullptr;
 
+    hud.controllerFrame = nullptr;
 	hud.hudFrame = nullptr;
 	hud.xpFrame = nullptr;
 	hud.hpFrame = nullptr;

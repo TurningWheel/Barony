@@ -1326,6 +1326,7 @@ public:
 	{
 		Player& player;
 	public:
+	    Frame* controllerFrame = nullptr;
 		Frame* hudFrame = nullptr;
 		Frame* xpFrame = nullptr;
 		Frame* hpFrame = nullptr;

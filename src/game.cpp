@@ -3577,16 +3577,23 @@ void handleEvents(void)
 							            // controller is not already bound - bind it to the first player who does not have a controller
 							            for (int player = 0; player < MAXPLAYERS; ++player)
 							            {
-							                if (MainMenu::isPlayerSignedIn(player))
+							                if (intro && MainMenu::isPlayerSignedIn(player))
 							                {
-							                    // don't assign controllers to players who are already signed in...
+							                    // in the lobby, don't assign controllers to players who are already signed in...
 							                    continue;
 							                }
-							                if (inputs.getControllerID(player) == -1)
+							                if (inputs.hasController(player))
 							                {
-			                                    bindControllerToPlayer(controller.getID(), player);
-							                    break;
+							                    // this player already has a controller
+							                    continue;
 							                }
+							                if (!intro && inputs.bPlayerUsingKeyboardControl(player))
+							                {
+							                    // this player is using the keyboard
+							                    continue;
+							                }
+		                                    bindControllerToPlayer(controller.getID(), player);
+						                    break;
 							            }
 							        }
 							    }
