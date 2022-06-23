@@ -679,6 +679,88 @@ std::string TimerExperiments::render(State state)
 	return output;
 }
 
+enum DemoMode {
+    STOPPED,
+    RECORDING,
+    PLAYING
+};
+static DemoMode demo_mode = DemoMode::STOPPED;
+static File* demo_file = nullptr;
+
+static ConsoleCommand demo_stop("/demo_stop", "stop recording or playing a demo",
+    [](int argc, const char* argv[]){
+    if (demo_mode == DemoMode::STOPPED) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo is already stopped");
+        return;
+    }
+    if (demo_file) {
+        FileIO::close(demo_file);
+        demo_file = nullptr;
+    }
+    switch (demo_mode) {
+    case DemoMode::PLAYING: messagePlayer(clientnum, MESSAGE_MISC, "Stopped playback"); break;
+    case DemoMode::RECORDING: messagePlayer(clientnum, MESSAGE_MISC, "Stopped recording"); break;
+    default: messagePlayer(clientnum, MESSAGE_MISC, "Stopped playback"); break;
+    }
+    demo_mode = DemoMode::STOPPED;
+    });
+
+static ConsoleCommand demo_record("/demo_record", "record a demo to a file (default demo.dat)",
+    [](int argc, const char* argv[]){
+    if (demo_mode != DemoMode::STOPPED) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
+        return;
+    }
+
+    // create demo file for recording
+    char path[PATH_MAX];
+    if (argc < 2) {
+	    completePath(path, "demo.dat", outputdir);
+    } else {
+	    completePath(path, argv[1], outputdir);
+    }
+    demo_file = FileIO::open(path, "wb");
+    if (!demo_file) {
+        messagePlayer(clientnum, MESSAGE_MISC, "failed to open demo file '%s'", path);
+        return;
+    }
+
+    demo_file->write(&uniqueGameKey, sizeof(uniqueGameKey), 1);
+    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
+    messagePlayer(clientnum, MESSAGE_MISC, "Recording demo to '%s'", path);
+    demo_mode = DemoMode::RECORDING;
+    });
+
+static ConsoleCommand demo_play("/demo_play", "play a recorded demo(default demo.dat)",
+    [](int argc, const char* argv[]){
+    if (demo_mode != DemoMode::STOPPED) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
+        return;
+    }
+
+    // open demo file for playing
+    char path[PATH_MAX];
+    if (argc < 2) {
+	    completePath(path, "demo.dat", outputdir);
+    } else {
+	    completePath(path, argv[1], outputdir);
+    }
+    demo_file = FileIO::open(path, "rb");
+    if (!demo_file) {
+        messagePlayer(clientnum, MESSAGE_MISC, "failed to open demo file '%s'", path);
+        return;
+    }
+
+    demo_file->read(&uniqueGameKey, sizeof(uniqueGameKey), 1);
+    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
+    messagePlayer(clientnum, MESSAGE_MISC, "Playing demo in '%s'", path);
+    demo_mode = DemoMode::PLAYING;
+    });
+
 /*-------------------------------------------------------------------------------
 
 	gameLogic
@@ -3899,6 +3981,45 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
+
+	                if (demo_file) {
+	                    // demo recording
+	                    if (demo_mode == DemoMode::RECORDING) {
+	                        demo_file->write(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+	                        demo_file->write(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+	                        demo_file->write(&keystatus, sizeof(keystatus), 1);
+	                        demo_file->write(&mousex, sizeof(mousex), 1);
+	                        demo_file->write(&mousey, sizeof(mousey), 1);
+	                        demo_file->write(&mousestatus, sizeof(mousestatus), 1);
+	                        demo_file->write(&mousexrel, sizeof(mousexrel), 1);
+	                        demo_file->write(&mouseyrel, sizeof(mouseyrel), 1);
+	                        if (intro || players[clientnum]->entity == nullptr) {
+                                messagePlayer(clientnum, MESSAGE_MISC, "Stopped recording.");
+                                FileIO::close(demo_file);
+                                demo_file = nullptr;
+                                demo_mode = DemoMode::STOPPED;
+                            }
+	                    }
+
+	                    // demo playback
+	                    if (demo_mode == DemoMode::PLAYING) {
+	                        demo_file->read(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+	                        demo_file->read(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+	                        demo_file->read(&keystatus, sizeof(keystatus), 1);
+	                        demo_file->read(&mousex, sizeof(mousex), 1);
+	                        demo_file->read(&mousey, sizeof(mousey), 1);
+	                        demo_file->read(&mousestatus, sizeof(mousestatus), 1);
+	                        demo_file->read(&mousexrel, sizeof(mousexrel), 1);
+	                        demo_file->read(&mouseyrel, sizeof(mouseyrel), 1);
+                            if (demo_file->eof()) {
+                                messagePlayer(clientnum, MESSAGE_MISC, "End of demo.");
+                                FileIO::close(demo_file);
+                                demo_file = nullptr;
+                                demo_mode = DemoMode::STOPPED;
+                            }
+	                    }
+	                }
+
 					if (initialized && !loading)
 					{
 						gameLogic();
@@ -6533,24 +6654,3 @@ void DebugStatsClass::storeEventStats()
 		"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\nMessagesT1: %4.5fms\nMessagesT2: %4.5fms\n",
 		out1, out2, out3, out4, out5, messages1, messages2);
 }
-
-static ConsoleCommand demo_record("/demo_record", "record a demo to a file (default demo.dat)",
-    [](int argc, const char* argv[]){
-    char path[PATH_MAX];
-    if (argc < 2) {
-	    completePath(path, "demo.dat", outputdir);
-    } else {
-	    completePath(path, argv[1], outputdir);
-    }
-    });
-
-static ConsoleCommand demo_play("/demo_play", "play a recorded demo(default demo.dat)",
-    [](int argc, const char* argv[]){
-    char path[PATH_MAX];
-    if (argc < 2) {
-	    completePath(path, "demo.dat", outputdir);
-    } else {
-	    completePath(path, argv[1], outputdir);
-    }
-
-    });
