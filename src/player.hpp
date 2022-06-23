@@ -1326,6 +1326,9 @@ public:
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
 		Frame* minimapFrame = nullptr;
+		Frame* gameTimerFrame = nullptr;
+		Frame* allyStatusFrame = nullptr;
+		Frame* minotaurFrame = nullptr;
 		Frame* mapWindow = nullptr;
 		Frame* logWindow = nullptr;
 		Frame* enemyBarFrame = nullptr;
@@ -1452,6 +1455,7 @@ public:
 		};
 		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
+		void updateGameTimer();
 		int XP_FRAME_WIDTH = 650;
 		int XP_FRAME_START_Y = 44;
 		int XP_FRAME_HEIGHT = 34;
