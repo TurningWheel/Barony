@@ -1356,7 +1356,7 @@ namespace ConsoleCommands {
 
 		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-		File *fp = openDataFile(modelsDirectory.c_str(), "r");
+		File *fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( int c = 0; !fp->eof(); c++ )
 		{
 			fp->gets2(name2, sizeof(name2));
@@ -2373,7 +2373,7 @@ namespace ConsoleCommands {
 			strcpy(filename, "models/creatures/");
 			strcat(filename, monstertypename[c]);
 			strcat(filename, "/limbs.txt");
-			if ( (fp = openDataFile(filename, "r")) == NULL )
+			if ( (fp = openDataFile(filename, "rb")) == NULL )
 			{
 				continue;
 			}
@@ -3172,14 +3172,6 @@ namespace ConsoleCommands {
 		usecamerasmoothing = (usecamerasmoothing == false);
 		});
 
-	static ConsoleCommand ccmd_lightupdate("/lightupdate", "", []CCMD{
-		if (argc < 2)
-        {
-            return;
-        }
-		globalLightSmoothingRate = atoi(argv[1]);
-		});
-
 	static ConsoleCommand ccmd_dumpnetworkdata("/dumpnetworkdata", "", []CCMD{
 		for ( auto element : DebugStats.networkPackets )
 		{
@@ -3309,19 +3301,11 @@ namespace ConsoleCommands {
 				{
 					inputs.setPlayerIDAllowedKeyboard(0);
 					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", 0);
-					for ( int c = 0; c < MAXPLAYERS; ++c )
-					{
-						Input::inputs[c].refresh();
-					}
 				}
 				else
 				{
 					inputs.setPlayerIDAllowedKeyboard(i + 1);
 					messagePlayer(clientnum, MESSAGE_MISC, "Keyboard controlled by player %d", i + 1);
-					for ( int c = 0; c < MAXPLAYERS; ++c )
-					{
-						Input::inputs[c].refresh();
-					}
 				}
 				break;
 			}
@@ -3330,6 +3314,10 @@ namespace ConsoleCommands {
 		{
 			inputs.setPlayerIDAllowedKeyboard(0);
 		}
+        for ( int i = 0; i < MAXPLAYERS; ++i )
+        {
+	        Input::inputs[i].refresh();
+        }
 		});
 
 	static ConsoleCommand ccmd_cyclegamepad("/cyclegamepad", "", []CCMD{

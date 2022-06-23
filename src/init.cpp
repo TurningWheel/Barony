@@ -218,12 +218,14 @@ int initApp(char const * const title, int fullscreen)
 
 	window_title = title;
 	printlog("initializing SDL...\n");
+#ifdef WINDOWS
 #ifndef EDITOR
 	if ( (*cvar_sdl_disablejoystickrawinput) == true )
 	{
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
 		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
 	}
+#endif
 #endif
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER 
 		| SDL_INIT_EVENTS | SDL_INIT_JOYSTICK 
@@ -444,7 +446,7 @@ int initApp(char const * const title, int fullscreen)
 
 	// load sprites
 	printlog("loading sprites...\n");
-	fp = openDataFile("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "rb");
 	for ( numsprites = 0; !fp->eof(); numsprites++ )
 	{
 		while ( fp->getc() != '\n' ) if ( fp->eof() )
@@ -459,7 +461,7 @@ int initApp(char const * const title, int fullscreen)
 		return 6;
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
-	fp = openDataFile("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "rb");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
 		char name[128] = { '\0' };
@@ -485,7 +487,7 @@ int initApp(char const * const title, int fullscreen)
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
-	fp = openDataFile(tilesDirectory.c_str(), "r");
+	fp = openDataFile(tilesDirectory.c_str(), "rb");
 	for ( numtiles = 0; !fp->eof(); numtiles++ )
 	{
 		while ( fp->getc() != '\n' )
@@ -506,7 +508,7 @@ int initApp(char const * const title, int fullscreen)
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
-	fp = openDataFile(tilesDirectory.c_str(), "r");
+	fp = openDataFile(tilesDirectory.c_str(), "rb");
 	for ( int c = 0; !fp->eof(); c++ )
 	{
 		char name[128];
@@ -560,7 +562,7 @@ int initApp(char const * const title, int fullscreen)
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 		printlog("loading models from directory %s...\n", modelsDirectory.c_str());
 
-		fp = openDataFile(modelsDirectory.c_str(), "r");
+		fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( nummodels = 0; !fp->eof(); nummodels++ )
 		{
 			while ( fp->getc() != '\n' ) if ( fp->eof() )
@@ -576,7 +578,7 @@ int initApp(char const * const title, int fullscreen)
 			return 11;
 		}
 		models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-		fp = openDataFile(modelsDirectory.c_str(), "r");
+		fp = openDataFile(modelsDirectory.c_str(), "rb");
 		for ( int c = 0; !fp->eof(); c++ )
 		{
 			char name[128];
@@ -599,15 +601,14 @@ int initApp(char const * const title, int fullscreen)
 		FileIO::close(fp);
 		updateLoadingScreen(60);
 
-		// TODO this function now needs to call updateLoadingScreen() as well.
-		int soundStatus = loadSoundResources();
+		int soundStatus = loadSoundResources(60, 20); // start at 60% loading, progress to 80%
 		if ( 0 != soundStatus )
 		{
 		    loading_done = true;
 			return soundStatus;
 		}
 
-		updateLoadingScreen(90);
+		updateLoadingScreen(80);
 		loading_done = true;
 		return 0;
 	});
@@ -617,17 +618,17 @@ int initApp(char const * const title, int fullscreen)
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-#ifdef EDITOR
-	// Don't destroy the loading screen in the game.
-	// It will be used later.
-	destroyLoadingScreen();
-#endif
-
 	int result = loading_task.get();
 	if (result == 0)
 	{
 		generateVBOs(0, nummodels);
 	}
+
+#ifdef EDITOR
+	// Don't destroy the loading screen in the game.
+	// It will be used later.
+	destroyLoadingScreen();
+#endif
 
 	//createTestUI();
 
@@ -761,7 +762,7 @@ int loadLanguage(char const * const lang)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = openDataFile(langFilepath.c_str(), "r")) == NULL )
+	if ( (fp = openDataFile(langFilepath.c_str(), "rb")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
@@ -1946,7 +1947,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 void generateVBOs(int start, int end)
 {
-	int count = end - start;
+	const int count = end - start;
 
 	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
 	SDL_glGenVertexArrays(count, vas.get());
@@ -2032,6 +2033,10 @@ void generateVBOs(int start, int end)
 		// grayscale shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+
+        const int current = c - start;
+		updateLoadingScreen(80 + (10 * current) / count);
+		doLoadingScreen();
 	}
 }
 

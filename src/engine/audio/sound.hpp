@@ -93,7 +93,7 @@ bool FMODErrorCheck();
 void sound_update();
 bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
 void exitSoundEngine();
-int loadSoundResources();
+int loadSoundResources(real_t base_load_percent, real_t top_load_percent);
 void freeSoundResources();
 
 FMOD::Channel* playSoundPlayer(int player, Uint32 snd, int vol);

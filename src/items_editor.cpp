@@ -187,7 +187,7 @@ int loadItems()
 	char name[32];
 	// load item types
 	printlog("loading items...\n");
-	File* const fp = openDataFile("items/items.txt", "r");
+	File* const fp = openDataFile("items/items.txt", "rb");
 	for ( c = 0; !fp->eof(); c++ )
 	{
 		items[c].name_identified = language[1545 + c * 2];

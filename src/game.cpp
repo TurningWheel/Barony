@@ -694,6 +694,8 @@ std::string TimerExperiments::render(State state)
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 
+static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
+
 void gameLogic(void)
 {
 	Uint32 x;
@@ -811,60 +813,67 @@ void gameLogic(void)
 	// drunkenness
 	if ( !intro )
 	{
-		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
-		{
-			// goat/drunkards no spin!
-			if ( stats[clientnum]->type == GOATMAN )
-			{
-				// return to normal.
-				if ( drunkextend > 0 )
-				{
-					drunkextend -= .005;
-					if ( drunkextend < 0 )
-					{
-						drunkextend = 0;
-					}
-				}
-			}
-			else
-			{
-				if ( drunkextend < 0.5 )
-				{
-					drunkextend += .005;
-					if ( drunkextend > 0.5 )
-					{
-						drunkextend = 0.5;
-					}
-				}
-			}
-		}
-		else
-		{
-			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] || stats[clientnum]->EFFECTS[EFF_DISORIENTED] )
-			{
-				// special widthdrawal shakes
-				if ( drunkextend < 0.2 )
-				{
-					drunkextend += .005;
-					if ( drunkextend > 0.2 )
-					{
-						drunkextend = 0.2;
-					}
-				}
-			}
-			else
-			{
-				// return to normal.
-				if ( drunkextend > 0 )
-				{
-					drunkextend -= .005;
-					if ( drunkextend < 0 )
-					{
-						drunkextend = 0;
-					}
-				}
-			}
-		}
+	    for (int c = 0; c < MAXPLAYERS; ++c)
+	    {
+	        if (c != clientnum && !splitscreen)
+	        {
+	            continue;
+	        }
+	        if ( stats[c]->EFFECTS[EFF_DRUNK] )
+		    {
+			    // goat/drunkards no spin!
+			    if ( stats[c]->type == GOATMAN )
+			    {
+				    // return to normal.
+				    if ( drunkextend[c] > 0 )
+				    {
+					    drunkextend[c] -= .005;
+					    if ( drunkextend[c] < 0 )
+					    {
+						    drunkextend[c] = 0;
+					    }
+				    }
+			    }
+			    else
+			    {
+				    if ( drunkextend[c] < 0.5 )
+				    {
+					    drunkextend[c] += .005;
+					    if ( drunkextend[c] > 0.5 )
+					    {
+						    drunkextend[c] = 0.5;
+					    }
+				    }
+			    }
+		    }
+		    else
+		    {
+			    if ( stats[c]->EFFECTS[EFF_WITHDRAWAL] || stats[c]->EFFECTS[EFF_DISORIENTED] )
+			    {
+				    // special widthdrawal shakes
+				    if ( drunkextend[c] < 0.2 )
+				    {
+					    drunkextend[c] += .005;
+					    if ( drunkextend[c] > 0.2 )
+					    {
+						    drunkextend[c] = 0.2;
+					    }
+				    }
+			    }
+			    else
+			    {
+				    // return to normal.
+				    if ( drunkextend[c] > 0 )
+				    {
+					    drunkextend[c] -= .005;
+					    if ( drunkextend[c] < 0 )
+					    {
+						    drunkextend[c] = 0;
+					    }
+				    }
+			    }
+		    }
+	    }
 	}
 
 	// fading in/out
@@ -1814,7 +1823,9 @@ void gameLogic(void)
 		            loading = false;
 	                int result = loading_task.get();
 
-					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+					    players[c]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+					}
 
 					// clear follower menu entities.
 					for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -2115,6 +2126,7 @@ void gameLogic(void)
 						list_FreeAll(&tempFollowers[c]);
 					}
 
+                    // save at end of level change
 					saveGame();
 					break;
 				}
@@ -3157,6 +3169,31 @@ void handleButtons(void)
 
 -------------------------------------------------------------------------------*/
 
+static void bindControllerToPlayer(int id, int player) {
+    inputs.removeControllerWithDeviceID(id); // clear any other player using this
+    inputs.setControllerID(player, id);
+    inputs.getVirtualMouse(player)->draw_cursor = false;
+    inputs.getVirtualMouse(player)->lastMovementFromController = true;
+    printlog("(Device %d bound to player %d)", id, player);
+    for (int c = 0; c < 4; ++c) {
+        auto& input = Input::inputs[c];
+	    input.refresh();
+    }
+    auto& input = Input::inputs[player];
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_A)
+    {
+        input.consumeBinary("MenuConfirm");
+    }
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_B)
+    {
+        input.consumeBinary("MenuBack");
+    }
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_START)
+    {
+        input.consumeBinary("MenuStart");
+    }
+}
+
 #ifdef NINTENDO
 static real_t time_diff = (real_t)0;
 #endif
@@ -3503,37 +3540,97 @@ void handleEvents(void)
 				}
 				Input::lastInputOfAnyKind = buf;
 #ifndef NINTENDO
-				if ( Input::waitingToBindControllerForPlayer >= 0
-					&& event.cbutton.button == SDL_CONTROLLER_BUTTON_A )
-				{
-					SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
-					if ( !pad )
-					{
-						printlog("(Unknown pad pressed input (instance: %d), null controller returned.)\n", event.cbutton.which);
-					}
-					else
-					{
-						for ( auto& controller : game_controllers )
-						{
-							if ( controller.isActive() && controller.getControllerDevice() == pad )
-							{
-								const int id = controller.getID();
-							    int player = Input::waitingToBindControllerForPlayer;
-								inputs.removeControllerWithDeviceID(id); // clear any other player using this
-								inputs.setControllerID(player, id);
-								inputs.getVirtualMouse(player)->draw_cursor = false;
-								inputs.getVirtualMouse(player)->lastMovementFromController = true;
-								printlog("(Device %d added to player %d", id, player);
-								Input::waitingToBindControllerForPlayer = -1;
-								for (int c = 0; c < 4; ++c) {
-								    auto& input = Input::inputs[c];
-									input.refresh();
-								}
-								auto& input = Input::inputs[player];
-								input.consumeBinary("MenuConfirm");
-								break;
-							}
-						}
+			    if ( event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
+			         event.cbutton.button == SDL_CONTROLLER_BUTTON_B ||
+			         event.cbutton.button == SDL_CONTROLLER_BUTTON_START )
+			    {
+				    SDL_GameController* pad = SDL_GameControllerFromInstanceID(event.cbutton.which);
+				    if ( !pad )
+				    {
+					    printlog("(Unknown pad pressed input (instance: %d), null controller returned.)\n", event.cbutton.which);
+				    }
+				    else
+				    {
+					    for ( auto& controller : game_controllers )
+					    {
+						    if ( controller.isActive() && controller.getControllerDevice() == pad )
+						    {
+			                    if ( Input::waitingToBindControllerForPlayer >= 0 )
+			                    {
+			                        // we are explicitly waiting to bind a controller to a specific player
+			                        bindControllerToPlayer(controller.getID(), Input::waitingToBindControllerForPlayer);
+								    Input::waitingToBindControllerForPlayer = -1;
+							    }
+							    else
+							    {
+							        // we are not strictly waiting to bind a controller to a player, but check if this one is already bound
+							        bool alreadyBound = false;
+							        for (int player = 0; player < MAXPLAYERS; ++player)
+							        {
+							            if (inputs.getControllerID(player) == controller.getID())
+							            {
+							                alreadyBound = true;
+							                break;
+							            }
+							        }
+							        if (!alreadyBound)
+							        {
+							            // controller is not already bound - bind it to the first player who does not have a controller
+							            for (int player = 0; player < MAXPLAYERS; ++player)
+							            {
+							                if (intro && multiplayer != SINGLE && player != clientnum)
+							                {
+							                    // only assign the controller to OUR player in net lobbies
+							                    continue;
+							                }
+							                if (intro && MainMenu::isPlayerSignedIn(player))
+							                {
+							                    // in the lobby, don't assign controllers to players who are already signed in...
+							                    continue;
+							                }
+							                if (inputs.hasController(player))
+							                {
+							                    // this player already has a controller
+							                    continue;
+							                }
+							                if (!intro && inputs.bPlayerUsingKeyboardControl(player))
+							                {
+							                    // this player is using a keyboard
+							                    continue;
+							                }
+		                                    bindControllerToPlayer(controller.getID(), player);
+		                                    alreadyBound = true;
+						                    break;
+							            }
+							            if (!alreadyBound) {
+							                // didn't find anybody to bind to. try again, but ignore the keyboard restriction
+							                for (int player = 0; player < MAXPLAYERS; ++player)
+							                {
+							                    if (intro && multiplayer != SINGLE && player != clientnum)
+							                    {
+							                        // only assign the controller to OUR player in net lobbies
+							                        continue;
+							                    }
+							                    if (intro && MainMenu::isPlayerSignedIn(player))
+							                    {
+							                        // in the lobby, don't assign controllers to players who are already signed in...
+							                        continue;
+							                    }
+							                    if (inputs.hasController(player))
+							                    {
+							                        // this player already has a controller
+							                        continue;
+							                    }
+		                                        bindControllerToPlayer(controller.getID(), player);
+		                                        alreadyBound = true;
+						                        break;
+							                }
+							            }
+							        }
+							    }
+							    break;
+						    }
+					    }
 					}
 				}
 #endif
@@ -4033,13 +4130,20 @@ void pauseGame(int mode, int ignoreplayer)
 	{
 	    MainMenu::soundToggleMenu();
 		gamePaused = true;
+		bool noOneUsingKeyboard = true;
 		for (int c = 0; c < 4; ++c)
 		{
+		    if (inputs.bPlayerUsingKeyboardControl(c) && MainMenu::isPlayerSignedIn(c) && players[c]->isLocalPlayer()) {
+		        noOneUsingKeyboard = false;
+		    }
 		    auto& input = Input::inputs[c];
 			if (input.binary("Pause Game") || (inputs.bPlayerUsingKeyboardControl(c) && keystatus[SDL_SCANCODE_ESCAPE] && !input.isDisabled())) {
 			    MainMenu::pause_menu_owner = c;
 			    break;
 			}
+		}
+		if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
+		    MainMenu::pause_menu_owner = clientnum;
 		}
 		if ( SDL_GetRelativeMouseMode() )
 		{
@@ -4205,8 +4309,6 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
 
     static ConsoleVariable<bool> allowSleep("/timer_sleep_enabled", true,
         "allow main thread to sleep between ticks (saves power)");
-    static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
-    static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
 	if ( diff >= 0.f )
 	{
 	    // we have not passed a full frame, so we must delay.
@@ -4214,13 +4316,15 @@ bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator, bool sleep )
         {
             // sleep a fraction of the remaining time.
             // This saves power if you're running on battery.
-#ifdef WINDOWS
-				auto microseconds = std::chrono::microseconds((Uint64)(diff * 1000000 /** (*sleepFactor)*/));
-				preciseSleep(microseconds.count() / 1e6);
+#if 1
+			auto microseconds = std::chrono::microseconds((Uint64)(diff * 1000000));
+			preciseSleep(microseconds.count() / 1e6);
 #else
+            static ConsoleVariable<float> sleepLimit("/timer_sleep_limit", 0.001f);
+            static ConsoleVariable<float> sleepFactor("/timer_sleep_factor", 0.97f);
             if ( diff >= *sleepLimit )
             {
-				std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor)));
+				std::this_thread::sleep_for(std::chrono::microseconds((Uint64)(diff * 1000000 * (*sleepFactor))));
             }
 #endif
         }
@@ -4403,7 +4507,7 @@ void ingameHud()
 					    }
 					    else
 					    {
-						    if ( allowCasting && stats[player]->EFFECTS[EFF_BLIND] )
+						    if ( allowCasting && players[player]->entity->isBlind() )
 						    {
 							    messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, language[3863]); // prevent casting of spell.
 							    input.consumeBinaryToggle("Block");
@@ -5176,10 +5280,13 @@ void drawAllPlayerCameras() {
 				continue;
 			}
 			auto& camera = players[c]->camera();
+		    auto& globalLightModifier = players[c]->camera().globalLightModifier;
+		    auto& globalLightModifierEntities = players[c]->camera().globalLightModifierEntities;
+		    auto& globalLightModifierActive = players[c]->camera().globalLightModifierActive;
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
-				camera.ang += cosspin * drunkextend;
-				camera.vang += sinspin * drunkextend;
+				camera.ang += cosspin * drunkextend[c];
+				camera.vang += sinspin * drunkextend[c];
 			}
 
 			if ( players[c] && players[c]->entity )
@@ -5208,7 +5315,7 @@ void drawAllPlayerCameras() {
 					{
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
 						globalLightModifier = 0.f;
-						globalLightTelepathyModifier = 0.f;
+						globalLightModifierEntities = 0.f;
 						if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
 						{
 							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
@@ -5238,7 +5345,7 @@ void drawAllPlayerCameras() {
 					globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
 
 					int telepathyLimit = std::min(64, 48 + players[c]->entity->getPER());
-					globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
+					globalLightModifierEntities = std::min(telepathyLimit / 255.0, globalLightModifierEntities + (0.2 / 255.0));
 				}
 				else
 				{
@@ -5254,7 +5361,7 @@ void drawAllPlayerCameras() {
 						}
 					}
 					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
-					globalLightTelepathyModifier = 0.f;
+					globalLightModifierEntities = 0.f;
 					if ( globalLightModifier < 1.f )
 					{
 						globalLightModifier += 0.01;
@@ -5305,8 +5412,8 @@ void drawAllPlayerCameras() {
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
-				camera.ang -= cosspin * drunkextend;
-				camera.vang -= sinspin * drunkextend;
+				camera.ang -= cosspin * drunkextend[c];
+				camera.vang -= sinspin * drunkextend[c];
 			}
 
 			auto& cvars = cameravars[c];
@@ -5708,7 +5815,6 @@ int main(int argc, char** argv)
 
 			if ( intro )
 			{
-				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
 					players[i]->shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
@@ -6039,6 +6145,14 @@ int main(int argc, char** argv)
 				bool doPause = false;
 				if ( !fadeout )
 				{
+				    bool noOneUsingKeyboard = true;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+					    if (inputs.bPlayerUsingKeyboardControl(i) && MainMenu::isPlayerSignedIn(i) && players[i]->isLocalPlayer()) {
+					        noOneUsingKeyboard = false;
+					        break;
+					    }
+					}
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
 						if ( !players[i]->isLocalPlayer() )
@@ -6062,6 +6176,10 @@ int main(int argc, char** argv)
 							}
 							break;
 						}
+					}
+					if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
+						keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					    doPause = true;
 					}
 				}
 				if ( doPause )

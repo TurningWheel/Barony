@@ -246,10 +246,6 @@ list_t button_l;
 list_t light_l;
 Uint32 mapseed;
 bool* shoparea = nullptr;
-real_t globalLightModifier = 0.f;
-real_t globalLightTelepathyModifier = 0.f;
-int globalLightSmoothingRate = 1;
-int globalLightModifierActive = 0;
 
 // game variables
 Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];

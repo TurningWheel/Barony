@@ -3655,8 +3655,8 @@ void clientHandlePacket()
 		{
 			minimapPings[i].clear(); // clear minimap pings
 			enemyHPDamageBarHandler[i].HPBars.clear();
+		    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 		}
-		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 		// clear follower menu entities.
 		FollowerMenu[clientnum].closeFollowerMenuGUI(true);

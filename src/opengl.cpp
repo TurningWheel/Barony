@@ -587,9 +587,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		{
 			if ( entity->monsterEntityRenderAsTelepath == 1 )
 			{
-				if ( globalLightModifierActive )
+				if ( camera->globalLightModifierActive )
 				{
-					s = globalLightTelepathyModifier;
+					s = camera->globalLightModifierEntities;
 				}
 			}
 			else
@@ -603,9 +603,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		}
 	}
 
-	if ( globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 )
+	if ( camera->globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 )
 	{
-		s *= globalLightModifier;
+		s *= camera->globalLightModifier;
 	}
 
 	// Moved glBeign / glEnd outside the loops, to limit the number of calls (helps gl4es on Pandora)
@@ -1468,9 +1468,9 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 				s = getLightForEntity(camera->x, camera->y);
 			}
 
-			if ( globalLightModifierActive )
+			if ( camera->globalLightModifierActive )
 			{
-				s *= globalLightModifier;
+				s *= camera->globalLightModifier;
 			}
 
 			glColor4f(s, s, s, 1);
@@ -1481,13 +1481,13 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			{
 				glColor4f(1.f, 1.f, 1.f, entity->worldTooltipAlpha);
 			}
-			else if ( globalLightModifierActive )
+			else if ( camera->globalLightModifierActive )
 			{
-				glColor4f(globalLightModifier, globalLightModifier, globalLightModifier, 1);
+				glColor4f(camera->globalLightModifier, camera->globalLightModifier, camera->globalLightModifier, 1.f);
 			}
 			else
 			{
-				glColor4f(1.f, 1.f, 1.f, 1);
+				glColor4f(1.f, 1.f, 1.f, 1.f);
 			}
 		}
 	}
@@ -1632,22 +1632,22 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 				s = getLightForEntity(camera->x, camera->y);
 			}
 
-			if ( globalLightModifierActive )
+			if ( camera->globalLightModifierActive )
 			{
-				s *= globalLightModifier;
+				s *= camera->globalLightModifier;
 			}
 
 			glColor4f(s, s, s, 1);
 		}
 		else
 		{
-			if ( globalLightModifierActive )
+			if ( camera->globalLightModifierActive )
 			{
-				glColor4f(globalLightModifier, globalLightModifier, globalLightModifier, 1);
+				glColor4f(camera->globalLightModifier, camera->globalLightModifier, camera->globalLightModifier, 1.f);
 			}
 			else
 			{
-				glColor4f(1.f, 1.f, 1.f, 1);
+				glColor4f(1.f, 1.f, 1.f, 1.f);
 			}
 		}
 	}
@@ -1853,9 +1853,9 @@ void glDrawWorld(view_t* camera, int mode)
 	int cloudtile = 0;
 	int mapceilingtile = 50;
 
-	if ( globalLightModifierActive )
+	if ( camera->globalLightModifierActive )
 	{
-		getLightAtModifier = globalLightModifier;
+		getLightAtModifier = camera->globalLightModifier;
 	}
 	else
 	{
@@ -1887,7 +1887,12 @@ void glDrawWorld(view_t* camera, int mode)
 	            v = 0;
 	        }
 	        const int difference = abs(lightmapSmoothed[smoothindex] - lightmap[index]);
-	        int smoothingRate = globalLightSmoothingRate;
+#ifndef EDITOR
+	        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
+	        int smoothingRate = *cvar_smoothingRate;
+#else
+            int smoothingRate = 1;
+#endif
 	        if ( difference > 64 )
 	        {
 		        smoothingRate *= 4;
@@ -1935,7 +1940,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glEnable(GL_BLEND);
 
 		// first (higher) sky layer
-		glColor4f(1.f, 1.f, 1.f, .5);
+		glColor4f(1.f, 1.f, 1.f, getLightAtModifier);
 		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
@@ -1952,7 +1957,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glEnd();
 
 		// second (closer) sky layer
-		glColor4f(1.f, 1.f, 1.f, .5);
+		glColor4f(1.f, 1.f, 1.f, getLightAtModifier * .5);
 		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);

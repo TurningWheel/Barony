@@ -612,6 +612,7 @@ if (NOT APPLE AND UNIX)
   )
 
   install(FILES
+  	${CMAKE_SOURCE_DIR}/steam_appid.txt
   	${CMAKE_SOURCE_DIR}/gamecontrollerdb.txt
   	${CMAKE_SOURCE_DIR}/playernames-female.txt
   	${CMAKE_SOURCE_DIR}/playernames-male.txt

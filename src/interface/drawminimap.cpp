@@ -21,6 +21,7 @@
 #include "../collision.hpp"
 #include "../mod_tools.hpp"
 #include "../ui/Image.hpp"
+#include "../colors.hpp"
 #include "consolecommand.hpp"
 
 /*-------------------------------------------------------------------------------
@@ -155,7 +156,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 	    static const int num_circle_vertices = 32;
 	    for (int c = 0; c <= num_circle_vertices; ++c) {
 	        real_t ang = ((PI * 2.0) / num_circle_vertices) * c;
-	        circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
+	        circle_mesh.emplace_back((real_t)(sin(ang) / 2.0), (real_t)(cos(ang) / 2.0));
 	    }
 	}
 
@@ -340,22 +341,15 @@ void drawMinimap(const int player, SDL_Rect rect)
 		            Uint32 color;
 			        switch ( ping.player )
 			        {
-				        case 0:
-					        color = makeColor(64, 255, 64, alpha); // green
-					        break;
-				        case 1:
-					        color = makeColor(86, 180, 233, alpha); // sky blue
-					        break;
-				        case 2:
-					        color = makeColor(240, 228, 66, alpha); // yellow
-					        break;
-				        case 3:
-					        color = makeColor(204, 121, 167, alpha); // pink
-					        break;
-				        default:
-					        color = makeColor(192, 192, 192, alpha); // grey
-					        break;
+				        case 0: color = uint32ColorPlayer1; break;
+				        case 1: color = uint32ColorPlayer2; break;
+				        case 2: color = uint32ColorPlayer3; break;
+				        case 3: color = uint32ColorPlayer4; break;
+				        default: color = uint32ColorPlayerX; break;
 			        }
+			        uint8_t r, g, b, a;
+			        getColor(color, &r, &g, &b, &a);
+			        color = makeColor(r, g, b, alpha);
 
 					// draw a circle
 					if (ping.radiusPing) {
@@ -431,28 +425,18 @@ void drawMinimap(const int player, SDL_Rect rect)
 				}
 			}
 
-			// my player = green, other players = blue
 			if ( foundplayer >= 0 ) {
-				switch ( foundplayer ) {
-					case 0:
-						color = makeColor(64, 255, 64, 255); // green
-						break;
-					case 1:
-						color = makeColor(86, 180, 233, 255); // sky blue
-						break;
-					case 2:
-						color = makeColor(240, 228, 66, 255); // yellow
-						break;
-					case 3:
-						color = makeColor(204, 121, 167, 255); // pink
-						break;
-					default:
-						color = makeColor(192, 192, 192, 255); // grey
-						break;
-				}
+		        switch ( foundplayer )
+		        {
+			        case 0: color = uint32ColorPlayer1; break;
+			        case 1: color = uint32ColorPlayer2; break;
+			        case 2: color = uint32ColorPlayer3; break;
+			        case 3: color = uint32ColorPlayer4; break;
+			        default: color = uint32ColorPlayerX; break;
+		        }
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
-					color = makeColor(192, 192, 192, 255); // grey
+					color = uint32ColorPlayerX; // grey
 				}
 			} else if ( entity->sprite == 239 ) {
 				color = makeColor(255, 0, 0, 255);

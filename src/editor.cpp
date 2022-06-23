@@ -1210,7 +1210,7 @@ int loadTilePalettes()
 	}
 
 	// open palette file
-	if ( (fp = openDataFile(filename, "r")) == NULL )
+	if ( (fp = openDataFile(filename, "rb")) == NULL )
 	{
 		printlog("error: unable to load tile palette file: '%s'", filename);
 		return 1;

@@ -52,7 +52,6 @@ enum NewMovieCrawlTypes : int
 	MOVIE_WIN_DEMONS_UNDEAD,
 	MOVIE_WIN_BEASTS
 };
-extern real_t drunkextend;
 extern bool losingConnection[MAXPLAYERS];
 extern int rebindaction;
 

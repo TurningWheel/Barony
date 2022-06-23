@@ -2744,7 +2744,7 @@ void Player::cleanUpOnEntityRemoval()
 
 const bool Player::isLocalPlayer() const
 {
-	return ((splitscreen && bSplitscreen) || playernum == clientnum || intro);
+	return ((splitscreen && bSplitscreen) || playernum == clientnum || (intro && multiplayer == SINGLE));
 }
 const bool Player::isLocalPlayerAlive() const
 {
@@ -4419,7 +4419,7 @@ const bool Player::bUseCompactGUIWidth() const
 {
 	if ( splitscreen )
 	{
-		if ( camera_virtualWidth() < Frame::virtualScreenX * .8 )
+		if ( camera_virtualWidth() < Frame::virtualScreenX * .95 )
 		{
 			return true;
 		}
@@ -4430,7 +4430,7 @@ const bool Player::bUseCompactGUIHeight() const
 {
 	if ( splitscreen )
 	{
-		if ( camera_virtualHeight() < Frame::virtualScreenY * .8 )
+		if ( camera_virtualHeight() < Frame::virtualScreenY * .95 )
 		{
 			return true;
 		}
@@ -5483,6 +5483,7 @@ void Player::clearGUIPointers()
 
 	skillSheet.skillFrame = nullptr;
 
+    hud.controllerFrame = nullptr;
 	hud.hudFrame = nullptr;
 	hud.xpFrame = nullptr;
 	hud.hpFrame = nullptr;
