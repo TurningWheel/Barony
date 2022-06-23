@@ -97,7 +97,7 @@ bool initSoundEngine()
 	return !no_sound; //No double negatives pls
 }
 
-int loadSoundResources()
+int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 {
 	File* fp;
 	Uint32 c;
@@ -107,7 +107,7 @@ int loadSoundResources()
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 	printlog("loading sounds...\n");
-	fp = openDataFile(soundsDirectory.c_str(), "r");
+	fp = openDataFile(soundsDirectory.c_str(), "rb");
 	for ( numsounds = 0; !fp->eof(); ++numsounds )
 	{
 		while ( fp->getc() != '\n' )
@@ -126,7 +126,7 @@ int loadSoundResources()
 	}
 #ifdef USE_FMOD
 	sounds = (FMOD::Sound**) malloc(sizeof(FMOD::Sound*)*numsounds);
-	fp = openDataFile(soundsDirectory.c_str(), "r");
+	fp = openDataFile(soundsDirectory.c_str(), "rb");
 	char full_path[PATH_MAX];
 	for ( c = 0; !fp->eof(); ++c )
 	{
@@ -137,18 +137,18 @@ int loadSoundResources()
 		{
 			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", full_path, c + 1);
 		}
-		updateLoadingScreen(60 + (30 * c) / numsounds);
+		updateLoadingScreen(base_load_percent + (top_load_percent * c) / numsounds);
 	}
 	FileIO::close(fp);
 	fmod_system->set3DSettings(1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "r"); fp->gets2(name, 128); ++c)
+	for (c = 0, fp = openDataFile(soundsDirectory.c_str(), "rb"); fp->gets2(name, 128); ++c)
 	{
 		//TODO: Might need to malloc the sounds[c]->sound
 		OPENAL_CreateSound(name, true, &sounds[c]);
 		//TODO: set sound volume? Or otherwise handle sound volume.
-		updateLoadingScreen(60 + (30 * c) / numsounds);
+		updateLoadingScreen(base_load_percent + (top_load_percent * c) / numsounds);
 	}
 	FileIO::close(fp);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'

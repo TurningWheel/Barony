@@ -1419,7 +1419,8 @@ void Frame::postprocess() {
 		(*tickCallback)(*this);
 	}
 	if (!dontTickChildren) {
-	    for (auto frame : frames) {
+	    for (int c = 0; c < frames.size(); ++c) {
+	        auto frame = frames[c];
 	        if (!frame->disabled) {
 		        frame->postprocess();
 	        }
@@ -2439,6 +2440,19 @@ void Frame::syncScroll() {
             _size.x = actualSize.x;
             _size.y = actualSize.y;
             frame->setActualSize(_size);
+        }
+    }
+}
+
+void Frame::bringToTop() {
+    if (!parent) {
+        return;
+    }
+    auto& frames = static_cast<Frame*>(parent)->frames;
+    for (auto it = frames.begin(); it != frames.end(); ++it) {
+        if (*it == this) {
+            frames.erase(it);
+            frames.push_back(this);
         }
     }
 }

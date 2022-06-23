@@ -21,6 +21,7 @@
 #include "../lobbies.hpp"
 #include "../interface/consolecommand.hpp"
 #include "../eos.hpp"
+#include "../colors.hpp"
 
 #include <cassert>
 #include <functional>
@@ -104,7 +105,8 @@ namespace MainMenu {
 	};
 
 	static LobbyType currentLobbyType = LobbyType::None;
-	static bool playersInLobby[4];
+	static bool playersInLobby[MAXPLAYERS];
+	static bool playerSlotsLocked[MAXPLAYERS];
 
     bool story_active = false;
     bool isCutsceneActive() {
@@ -122,7 +124,7 @@ namespace MainMenu {
 	static const char* smallfont_outline = "fonts/pixel_maz_multiline.ttf#16#2";
 	static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 	static const char* menu_option_font = "fonts/kongtext.ttf#16#2";
-	static const char* banner_font = "fonts/pixel_maz.ttf#64#2";
+	static const char* banner_font = "fonts/pixelmix.ttf#16#2";
 
     // Inventory sorting options
 	struct InventorySorting {
@@ -273,6 +275,10 @@ namespace MainMenu {
 		playSound(500, 96);
 	}
 
+	static inline int getMenuOwner() {
+	    return intro ? clientnum : pause_menu_owner;
+	}
+
 	static inline void soundMove() {
 		playSound(495, 48);
 	}
@@ -294,7 +300,7 @@ namespace MainMenu {
 	}
 
 	static inline void soundSlider(bool deafen_unless_gamepad = false) {
-	    if (inputs.getVirtualMouse(clientnum)->draw_cursor && deafen_unless_gamepad) {
+	    if (inputs.getVirtualMouse(getMenuOwner())->draw_cursor && deafen_unless_gamepad) {
 	        return;
 	    }
 	    static Uint32 timeSinceLastTick = 0;
@@ -380,9 +386,9 @@ namespace MainMenu {
 #endif
 #ifdef USE_EOS
 	    EOS.bRequestingLobbies = false;
-	    EOS.bJoinLobbyWaitingForHostResponse = false;
 	    EOS.bConnectingToLobby = false;
 	    EOS.bConnectingToLobbyWindow = false;
+	    EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
 	}
 
@@ -424,6 +430,7 @@ namespace MainMenu {
 
     static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
+	static void createLockedStone(int index);
 	static void createStartButton(int index);
 	static void createInviteButton(int index);
 	static void createWaitingStone(int index);
@@ -435,6 +442,7 @@ namespace MainMenu {
 
     static void sendPlayerOverNet();
     static void sendReadyOverNet(int index, bool ready);
+    static void checkReadyStates();
     static void sendChatMessageOverNet(const char* msg);
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
@@ -525,32 +533,12 @@ namespace MainMenu {
 		}
 
 	    int playercount = 0;
-        if (intro) {
-		    clientnum = -1;
-		    for (int c = 0; c < 4; ++c) {
-			    if (playersInLobby[c]) {
-				    clientnum = clientnum == -1 ? c : clientnum;
-				    client_disconnected[c] = false;
-				    ++playercount;
-			    } else {
-				    client_disconnected[c] = true;
-				    players[c]->bSplitscreen = false;
-			    }
+	    for (int c = 0; c < 4; ++c) {
+		    if (client_disconnected[c]) {
+			    continue;
 		    }
-		    if (clientnum == -1) {
-		        // TODO loading a splitscreen game?
-		        clientnum = 0;
-		        client_disconnected[0] = false;
-		        playercount = 1;
-		    }
-		} else {
-		    for (int c = 0; c < 4; ++c) {
-			    if (client_disconnected[c]) {
-				    continue;
-			    }
-				++playercount;
-		    }
-		}
+			++playercount;
+	    }
 		splitscreen = playercount > 1;
 
 		int c, playerindex;
@@ -728,7 +716,8 @@ namespace MainMenu {
 				auto customize = "*images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png";
 				auto dropdown = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
-				// TODO more sensible ways to identify these button types...
+
+				// Maybe we need a more sensible way to identify these button types.
 				auto boolean_button_text = "Off          On";
 				if (strcmp(button->getBackground(), customize) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_customize_button") - 1) - (sizeof("setting_") - 1));
@@ -779,7 +768,8 @@ namespace MainMenu {
 		);
 
 		auto back_button = back->addButton("back_button");
-		back_button->setSize(SDL_Rect{10, 12, 48, 20});
+		back_button->setSize(SDL_Rect{0, 0, 66, 36});
+		back_button->setTextOffset(SDL_Rect{10, 12, 0, 0});
 		back_button->setColor(0);
 		back_button->setBorderColor(0);
 		back_button->setHighlightColor(0);
@@ -787,22 +777,22 @@ namespace MainMenu {
 		back_button->setText("Back");
 		back_button->setFont(smallfont_outline);
 		back_button->setHJustify(Button::justify_t::LEFT);
-		back_button->setVJustify(Button::justify_t::CENTER);
+		back_button->setVJustify(Button::justify_t::TOP);
 		back_button->setCallback(callback);
 		back_button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		back_button->setWidgetBack("back_button");
 		back_button->setTickCallback([](Widget& widget) {
 			if (widget.isSelected()) {
-			    widget.setButtonsOffset(SDL_Rect{32, 0, 0, 0,});
+			    widget.setButtonsOffset(SDL_Rect{23, 4, 0, 0,});
 			} else {
-			    widget.setButtonsOffset(SDL_Rect{8, 0, 0, 0,});
+			    widget.setButtonsOffset(SDL_Rect{1, 4, 0, 0,});
 			}
 			});
 
 		return back_button;
 	}
 
-	static Frame* createPrompt(const char* name) {
+	static Frame* createPrompt(const char* name, bool small = true) {
 		if (main_menu_frame->findFrame(name)) {
 			return nullptr;
 		}
@@ -814,16 +804,27 @@ namespace MainMenu {
 		dimmer->setBorder(0);
 
 		auto frame = dimmer->addFrame(name);
-		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
-		frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		frame->setColor(0);
 		frame->setBorder(0);
-		frame->addImage(
-			frame->getActualSize(),
-			0xffffffff,
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
-			"background"
-		);
+		if (small) {
+		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
+		    frame->setActualSize(SDL_Rect{0, 0, 364, 176});
+		    frame->addImage(
+			    frame->getActualSize(),
+			    0xffffffff,
+			    "*#images/ui/Main Menus/Disconnect/UI_Disconnect_Window00.png",
+			    "background"
+		    );
+		} else {
+		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 548) / 2, (Frame::virtualScreenY - 264) / 2, 548, 264});
+		    frame->setActualSize(SDL_Rect{0, 0, 548, 264});
+		    frame->addImage(
+			    frame->getActualSize(),
+			    0xffffffff,
+			    "*#images/ui/Main Menus/TextboxWindowL_00.png",
+			    "background"
+		    );
+		}
 
 		return frame;
 	}
@@ -1019,15 +1020,16 @@ namespace MainMenu {
 	static Frame* textPrompt(
 	    const char* name,
 	    const char* window_text,
-	    void (*tick_callback)(Widget&)
+	    void (*tick_callback)(Widget&),
+	    bool small = true
 	    ) {
 		soundActivate();
 
-	    Frame* frame = createPrompt(name);
+	    Frame* frame = createPrompt(name, small);
 	    assert(frame);
 
 		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 12, 304, 142});
+		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 34});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
@@ -1826,7 +1828,7 @@ namespace MainMenu {
 			    });
 		    back_button->setWidgetBack("back");
 		    back_button->setHideKeyboardGlyphs(false);
-		    if (inputs.hasController(clientnum)) {
+		    if (inputs.hasController(getMenuOwner())) {
 		        back_button->setGlyphPosition(Button::glyph_position_t::CENTERED_RIGHT);
 		        back_button->setButtonsOffset(SDL_Rect{16, 0, 0, 0,});
 		    } else {
@@ -3257,7 +3259,7 @@ namespace MainMenu {
 		slider->setMaxValue(maxValue);
 		slider->setBorder(16);
 		slider->setValue(value);
-		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 282 : 450, 24});
+		slider->setRailSize(SDL_Rect{field->getSize().x + field->getSize().w + 32, y + 14, _short ? 238 : 450, 24});
 		slider->setHandleSize(SDL_Rect{0, 0, 52, 42});
 		slider->setCallback(callback);
 		slider->setColor(makeColor(255,255,255,255));
@@ -3486,7 +3488,7 @@ namespace MainMenu {
 		window->setColor(0);
 
 		auto tooltip = window->addField("tooltip", 256);
-		tooltip->setSize(SDL_Rect{66, 594, 646, 22});
+		tooltip->setSize(SDL_Rect{66, 576, 646, 40});
 		tooltip->setFont(smallfont_no_outline);
 		tooltip->setJustify(Field::justify_t::CENTER);
 		tooltip->setText("");
@@ -3513,8 +3515,8 @@ namespace MainMenu {
 		banner->setJustify(Field::justify_t::CENTER);
 
 		auto subwindow = window->addFrame("subwindow");
-		subwindow->setSize(SDL_Rect{30, 64, 766, 524});
-		subwindow->setActualSize(SDL_Rect{0, 0, 766, 524});
+		subwindow->setSize(SDL_Rect{30, 64, 766, 506});
+		subwindow->setActualSize(SDL_Rect{0, 0, 766, 506});
 		subwindow->setScrollBarsEnabled(false);
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
@@ -3542,7 +3544,7 @@ namespace MainMenu {
 		auto slider = subwindow->addSlider("scroll_slider");
 		slider->setBorder(48);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{712, 0, 54, 554});
+		slider->setRailSize(SDL_Rect{712, 0, 54, 536});
 		slider->setRailImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar01.png");
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setHandleImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
@@ -3770,7 +3772,7 @@ namespace MainMenu {
 			allSettings.show_messages.combat, [](Button& button){allSettings.show_messages.combat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
-			"Enable report of player character status changes and other passive effects.",
+			"Enable report of character status changes and other passive effects.",
 			allSettings.show_messages.status, [](Button& button){allSettings.show_messages.status = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
@@ -3890,7 +3892,7 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset();
-				settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+				settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
 				    {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
@@ -3993,6 +3995,7 @@ namespace MainMenu {
 						bound_binding.c_str());
 					tooltip->setText(buf);
 					Input::inputs[bound_player].setDisabled(true);
+					Input::lastInputOfAnyKind = "";
 					for (auto button : subwindow->getButtons()) {
 						button->setDisabled(true);
 					}
@@ -4032,7 +4035,7 @@ namespace MainMenu {
 							goto bind_failed;
 						}
 						auto begin = Input::lastInputOfAnyKind.substr(0, 3);
-						std:: string newinput = begin == "Pad" || begin == "Joy" ?
+						std::string newinput = begin == "Pad" || begin == "Joy" ?
 								Input::lastInputOfAnyKind.substr(4) : Input::lastInputOfAnyKind;
 						bound_button->setText(newinput.c_str());
 		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
@@ -4364,7 +4367,7 @@ bind_failed:
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
-			    settingsBindings(clientnum, inputs.hasController(clientnum) ? 1 : 0,
+			    settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 
@@ -4388,10 +4391,13 @@ bind_failed:
 
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-		// TODO we need a special window just for Nintendo Switch joycons.
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-			"Modify controller bindings.",
-			nullptr);
+			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
+			[](Button&){
+			    allSettings.bindings = Bindings::load();
+			    settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
+			        {Setting::Type::Dropdown, "player_dropdown_button"});
+			    });
 #else
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
 #endif
@@ -5614,6 +5620,290 @@ bind_failed:
 
 /******************************************************************************/
 
+    struct LobbyChatMessage {
+        Uint32 timestamp;
+        Uint32 color;
+        std::string msg;
+    };
+
+    static const constexpr int lobby_chat_max_messages = 200;
+    static std::list<LobbyChatMessage> lobby_chat_messages;
+    static ConsoleVariable<std::string> lobby_chat_font("/chat_font",
+        "fonts/PixelMaz_monospace.ttf#32#2");
+
+    static void addLobbyChatMessage(Uint32 color, const char* msg, bool add_to_list = true) {
+        constexpr Uint32 seconds_in_day = 86400;
+        const Uint32 seconds = time(NULL) / seconds_in_day;
+
+        if (add_to_list) {
+            lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
+            if (lobby_chat_messages.size() > lobby_chat_max_messages) {
+                lobby_chat_messages.pop_front();
+            }
+        }
+
+        if (!main_menu_frame) {
+            return;
+        }
+        auto lobby = main_menu_frame->findFrame("lobby");
+        if (!lobby) {
+            return;
+        }
+        auto frame = lobby->findFrame("chat window");
+        if (!frame) {
+            return;
+        }
+
+        const int w = frame->getSize().w;
+        const int h = frame->getSize().h;
+
+        auto subframe = frame->findFrame("subframe"); assert(subframe);
+        auto subframe_size = subframe->getActualSize();
+        int y = subframe_size.h;
+
+        static ConsoleVariable<bool> timestamp_messages("/chat_timestamp", true);
+
+        char buf[1024];
+        const Uint32 hour = seconds / 3600;
+        const Uint32 min = (seconds / 60) % 60;
+        const Uint32 sec = seconds % 60;
+        const int result = *timestamp_messages ?
+            snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u] %s",
+                hour, min, sec, msg):
+            snprintf(buf, sizeof(buf), "%s", msg);
+        const int size = std::min(std::max(0, (int)sizeof(buf)), result);
+
+        auto field = subframe->addField("field", size + 1);
+        auto text = Text::get(buf, lobby_chat_font->c_str(),
+            uint32ColorWhite, uint32ColorBlack);
+        const int text_h = (int)text->getHeight() * (1) + 2; // (1) = string lines
+        const int text_w = (int)text->getWidth();
+        field->setSize(SDL_Rect{8, y, text_w, text_h});
+        field->setFont(lobby_chat_font->c_str());
+        field->setColor(color);
+        field->setText(buf);
+
+        (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
+        field->setTooltip(buf);
+
+        const int new_w = std::max(subframe_size.w, text_w + 8);
+
+        y += text_h;
+        if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
+            // advance scroll because we're already at bottom
+            const int limit = new_w > w ?
+                y - subframe->getSize().h + 16:
+                y - subframe->getSize().h;
+            subframe->setActualSize(SDL_Rect{subframe_size.x,
+                std::max(0, limit), new_w, y});
+        } else {
+            // retain scroll position because we're looking at past history
+            subframe->setActualSize(SDL_Rect{
+                subframe_size.x, subframe_size.y, new_w, y});
+        }
+    }
+
+    static void toggleLobbyChatWindow() {
+        assert(main_menu_frame);
+        auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+        auto frame = lobby->findFrame("chat window");
+        if (frame) {
+            frame->removeSelf();
+            return;
+        }
+
+        const SDL_Rect size = lobby->getSize();
+        const int w = 848;
+        const int h = 320;
+
+        static ConsoleVariable<Vector4> chatBgColor("/chat_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+
+        frame = lobby->addFrame("chat window");
+        frame->setSize(SDL_Rect{(size.w - w) - 16, 64, w, h});
+        frame->setBorderColor(makeColor(51, 33, 26, 255));
+        frame->setColor(makeColor(chatBgColor->x, chatBgColor->y, chatBgColor->z, chatBgColor->w));
+        frame->setBorder(0);
+        frame->setTickCallback([](Widget& widget){
+            const int player = clientnum;
+            auto frame = static_cast<Frame*>(&widget);
+            auto lobby = static_cast<Frame*>(frame->getParent());
+
+            const int w = frame->getSize().w;
+            const int h = frame->getSize().h;
+
+            auto subframe = frame->findFrame("subframe"); assert(subframe);
+            auto subframe_size = subframe->getActualSize();
+
+            if (Input::inputs[player].consumeBinaryToggle("LogHome")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogHome");
+                subframe_size.x = 0;
+                subframe_size.y = 0;
+                subframe->setActualSize(subframe_size);
+            }
+            if (Input::inputs[player].consumeBinaryToggle("LogEnd")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogEnd");
+                const int limit = subframe_size.w > w ?
+                    subframe_size.h - subframe->getSize().h + 16:
+                    subframe_size.h - subframe->getSize().h;
+                subframe_size.x = 0;
+                subframe_size.y = std::max(0, limit);
+                subframe->setActualSize(subframe_size);
+            }
+            if (Input::inputs[player].consumeBinaryToggle("LogPageUp")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogPageUp");
+                subframe_size.y -= subframe->getSize().h;
+                subframe_size.y = std::max(0, subframe_size.y);
+                subframe->setActualSize(subframe_size);
+            }
+            if (Input::inputs[player].consumeBinaryToggle("LogPageDown")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogPageDown");
+                subframe_size.y += subframe->getSize().h;
+                const int limit = subframe_size.w > w ?
+                    subframe_size.h - subframe->getSize().h + 16:
+                    subframe_size.h - subframe->getSize().h;
+                subframe_size.y = std::min(std::max(0, limit), subframe_size.y);
+                subframe->setActualSize(subframe_size);
+            }
+		    if (Input::inputs[player].consumeBinaryToggle("LogClose")) {
+				frame->removeSelf();
+				auto card = lobby->findFrame((std::string("card") + std::to_string(clientnum)).c_str());
+				if (!card) {
+				    return;
+				}
+				auto ready = card->findButton("ready");
+				if (!ready) {
+				    return;
+				}
+				ready->select();
+		    }
+            });
+
+        // frame images
+        {
+            frame->addImage(
+                SDL_Rect{0, 0, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_TL00.png",
+                "TL");
+            frame->addImage(
+                SDL_Rect{16, 0, w - 32, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_T00.png",
+                "T");
+            frame->addImage(
+                SDL_Rect{w - 16, 0, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_TR00.png",
+                "TR");
+            auto L = frame->addImage(
+                SDL_Rect{0, 32, 4, h - 64},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_L00.png",
+                "L");
+            L->ontop = true;
+            auto R = frame->addImage(
+                SDL_Rect{w - 4, 32, 4, h - 64},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_R00.png",
+                "R");
+            R->ontop = true;
+            frame->addImage(
+                SDL_Rect{0, h - 32, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_BL01.png",
+                "BL");
+            frame->addImage(
+                SDL_Rect{16, h - 32, w - 32, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_B01.png",
+                "B");
+            frame->addImage(
+                SDL_Rect{w - 16, h - 32, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_BR01.png",
+                "BR");
+        }
+
+        auto subframe = frame->addFrame("subframe");
+        subframe->setScrollWithLeftControls(false);
+        subframe->setSize(SDL_Rect{0, 32, w, h - 64});
+        subframe->setActualSize(SDL_Rect{0, 0, w, 4});
+        subframe->setBorderColor(makeColor(22, 24, 29, 255));
+        subframe->setSliderColor(makeColor(44, 48, 58, 255));
+        subframe->setColor(makeColor(0, 0, 0, 0));
+        subframe->setScrollBarsEnabled(true);
+        //subframe->setBorder(2);
+        subframe->setBorder(0);
+
+        for (auto& msg : lobby_chat_messages) {
+            addLobbyChatMessage(msg.color, msg.msg.c_str(), false);
+        }
+
+        auto label = frame->addField("label", 64);
+        label->setSize(SDL_Rect{16, 0, w - 40, 32});
+        label->setHJustify(Field::justify_t::LEFT);
+        label->setVJustify(Field::justify_t::CENTER);
+        label->setFont(bigfont_outline);
+        label->setText("Chat");
+
+        auto chat_buffer = frame->addField("buffer", 1024);
+        chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
+        chat_buffer->setHJustify(Field::justify_t::LEFT);
+        chat_buffer->setVJustify(Field::justify_t::CENTER);
+        chat_buffer->setFont(lobby_chat_font->c_str());
+        chat_buffer->setColor(makeColor(201, 162, 100, 255));
+        chat_buffer->setEditable(true);
+        chat_buffer->setCallback([](Field& field){
+            sendChatMessageOverNet(field.getText());
+            field.setText("");
+            });
+
+        auto chat_tooltip = frame->addField("tooltip", 128);
+        chat_tooltip->setSize(SDL_Rect{4, h - 32, w - 8, 32});
+        chat_tooltip->setHJustify(Field::justify_t::LEFT);
+        chat_tooltip->setVJustify(Field::justify_t::CENTER);
+        chat_tooltip->setFont(lobby_chat_font->c_str());
+        chat_tooltip->setColor(makeColor(201, 162, 100, 255));
+        chat_tooltip->setText("Enter message here...");
+        chat_tooltip->setTickCallback([](Widget& widget){
+            auto frame = static_cast<Frame*>(widget.getParent());
+            auto chat_buffer = frame->findField("buffer"); assert(chat_buffer);
+            const bool hidden =
+                chat_buffer->getText()[0] != '\0' ||
+                chat_buffer->isActivated();
+            widget.setDisabled(hidden);
+            });
+
+        auto close_button = frame->addButton("close");
+        close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
+	    close_button->setColor(makeColor(255, 255, 255, 255));
+	    close_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	    close_button->setText("X");
+	    close_button->setFont(smallfont_outline);
+	    close_button->setHideGlyphs(true);
+	    close_button->setHideKeyboardGlyphs(true);
+	    close_button->setHideSelectors(true);
+	    close_button->setMenuConfirmControlType(0);
+	    close_button->setBackground("*#images/ui/Shop/Button_X_00.png");
+	    close_button->setBackgroundHighlighted("*#images/ui/Shop/Button_XHigh_00.png");
+	    close_button->setBackgroundActivated("*#images/ui/Shop/Button_XPress_00.png");
+	    close_button->setTextHighlightColor(makeColor(201, 162, 100, 255));
+        close_button->setCallback([](Button& button){
+            auto frame = static_cast<Frame*>(button.getParent());
+            auto lobby = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			auto card = lobby->findFrame((std::string("card") + std::to_string(clientnum)).c_str());
+			if (!card) {
+			    return;
+			}
+			auto ready = card->findButton("ready");
+			if (!ready) {
+			    return;
+			}
+			ready->select();
+            });
+    }
+
 	static void disconnectFromLobby() {
 	    if (multiplayer == SINGLE) {
 	        return;
@@ -5712,8 +6002,10 @@ bind_failed:
 					}
 					char shortname[32] = { 0 };
 					strncpy(shortname, stats[i]->name, 22);
-					//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
-					//TODO print a message to the lobby chatbox
+
+					char buf[1024];
+					snprintf(buf, sizeof(buf), language[1376], shortname);
+					addLobbyChatMessage(0xffffffff, buf);
 					continue;
 				}
 			}
@@ -5745,7 +6037,7 @@ bind_failed:
 #elif defined(USE_EOS)
 				auto error_code = EOS.ConnectingToLobbyStatus;
 #else
-                auto error_code = -1; // TODO just so this compiles always
+                auto error_code = -1; // just so this compiles always
 #endif
 				auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
                 disconnectFromLobby();
@@ -5902,6 +6194,7 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
+	        addLobbyChatMessage(0xffffffff, msg);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
@@ -5931,7 +6224,8 @@ bind_failed:
 	        }
 	        SDLNet_Write32(numplayers, &net_packet->data[offset]);
 	        net_packet->data[offset + 4] = intro ? 0 : 1;
-	        net_packet->len = offset + 5;
+	        SDLNet_Write32(svFlags, &net_packet->data[offset + 5]);
+	        net_packet->len = offset + 9;
 	        sendPacket(net_sock, -1, net_packet, 0);
 	    }
 	}
@@ -6220,8 +6514,7 @@ bind_failed:
 					net_packet->address.port = net_clients[i - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
-				// TODO handle chat messages the new way!
-				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
+				addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
 				playSound(238, 64);
 				continue;
 			}
@@ -6252,8 +6545,9 @@ bind_failed:
 				char shortname[32] = { 0 };
 				strncpy(shortname, stats[player]->name, 22);
 
-				// TODO print the disconnect message somewhere.
-				//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
+				char buf[1024];
+				snprintf(buf, sizeof(buf), language[1376], shortname);
+				addLobbyChatMessage(0xffffffff, buf);
 				continue;
 			}
 
@@ -6569,8 +6863,8 @@ bind_failed:
 					    packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					    Uint32 bytesRead = 0;
 					    if (!SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0)) {
-					        //TODO Sometimes if a host closes a lobby, it can crash here for a client.
-					        //Are we sure about this in 2022?
+					        //Sometimes if a host closes a lobby, it can crash here for a client.
+					        //NOTE: Are we sure about this in 2022?
 						    continue;
 					    }
 					    net_packet->len = packetlen;
@@ -6610,7 +6904,8 @@ bind_failed:
 				    beginFade(FadeDestination::GameStart);
 				    numplayers = MAXPLAYERS;
 				    if (net_packet->data[12] == 0) {
-					    loadingsavegame = 0;
+				        // is this necessary? I don't think so
+					    //loadingsavegame = 0;
 				    }
 				    continue;
 			    }
@@ -6621,7 +6916,7 @@ bind_failed:
                     createDummyMainMenu();
 				    beginFade(FadeDestination::GameStart);
 
-				    // TODO we may not get a unique game key or server flags this way!!
+				    // NOTE we may not get a unique game key or server flags this way!!
 
 				    continue;
 			    }
@@ -6636,10 +6931,13 @@ bind_failed:
 				    stats[player]->playerRace = net_packet->data[8];
 				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
 
-				    //char shortname[32] = { 0 };
-				    //strncpy(shortname, stats[player]->name, 22);
-				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
-				    // TODO report player joined in message log
+				    char shortname[32] = { 0 };
+				    strncpy(shortname, stats[player]->name, 22);
+
+				    char buf[1024];
+				    snprintf(buf, sizeof(buf), language[1388], shortname);
+				    addLobbyChatMessage(0xffffffff, buf);
+
 			        if (player != clientnum) {
 			            createReadyStone((int)player, false, false);
 			        }
@@ -6689,7 +6987,9 @@ bind_failed:
 			            createMainMenu(false);
 		                connectionErrorPrompt("You have been kicked\nfrom the remote server.");
 				    } else {
-				        //TODO announce player disconnect
+				        char buf[1024];
+				        snprintf(buf, sizeof(buf), language[1120], stats[playerDisconnected]->name);
+				        addLobbyChatMessage(0xffffffff, buf);
 					    if (directConnect) {
 			                createWaitingStone(playerDisconnected);
 			            } else {
@@ -6701,8 +7001,7 @@ bind_failed:
 
 			    // got a chat message
 			    else if (packetId == 'CMSG') {
-				    //newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
-				    // TODO print lobby message
+				    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
 				    playSound(238, 64);
 				    continue;
 			    }
@@ -6815,8 +7114,10 @@ bind_failed:
 #ifdef STEAMWORKS
 	CSteamID* getLobbySteamID(const char* name) {
 	    int lobbyID = -1;
-        if (strncmp(name, "steam:", 6) == 0) {
-            lobbyID = (int)strtol(name + 6, nullptr, 10);
+        const char str[] = "steam:";
+        size_t len = sizeof(str) - 1;
+        if (strncmp(name, str, len) == 0) {
+            lobbyID = (int)strtol(name + len, nullptr, 10);
         }
         if (lobbyID >= 0 && lobbyID < numSteamLobbies) {
             return (CSteamID*)lobbyIDs[lobbyID];
@@ -6824,6 +7125,22 @@ bind_failed:
             return nullptr;
         }
 	}
+#endif
+
+#ifdef USE_EOS
+    EOSFuncs::LobbyData_t* getLobbyEpic(const char* name) {
+        int lobbyID = -1;
+        const char str[] = "epic:";
+        size_t len = sizeof(str) - 1;
+        if (strncmp(name, str, len) == 0) {
+            lobbyID = (int)strtol(name + len, nullptr, 10);
+        }
+        if (lobbyID >= 0 && lobbyID < EOS.LobbySearchResults.results.size()) {
+            return &EOS.LobbySearchResults.results[lobbyID];
+        } else {
+            return nullptr;
+        }
+    }
 #endif
 
     static void sendJoinRequest() {
@@ -6909,36 +7226,40 @@ bind_failed:
             text->setText(buf);
 
             // here is the connection polling loop for online lobbies
+            // TODO this should be moved to lobbies.cpp (actually it was largely lifted from there - put it back!)
             if (!directConnect) {
 #ifdef STEAMWORKS
-                if (joinLobbyWaitingForHostResponse) {
-		            if (connectingToLobbyStatus != EResult::k_EResultOK) {
-		                resetLobbyJoinFlowState();
-
-			            // close current window
-			            auto frame = static_cast<Frame*>(widget.getParent());
-			            auto dimmer = static_cast<Frame*>(frame->getParent());
-			            dimmer->removeSelf();
-
-			            auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
-			            connectionErrorPrompt(error_str.c_str());
-			            connectingToLobbyStatus = EResult::k_EResultOK;
-			            return;
-		            }
-		            if (!connectingToLobby) {
-		                if (connectingToLobbyWindow) {
+                if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+                    if (joinLobbyWaitingForHostResponse) {
+		                if (connectingToLobbyStatus != EResult::k_EResultOK) {
 		                    resetLobbyJoinFlowState();
 
-			                // record CSteamID of lobby owner (and everybody else)
-			                int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
-			                for (int c = 0; c < MAXPLAYERS; ++c) {
-				                if (steamIDRemote[c]) {
-					                cpp_Free_CSteamID(steamIDRemote[c]);
-					                steamIDRemote[c] = NULL;
-				                }
-			                }
-			                for (int c = 0; c < lobbyMembers; ++c) {
-				                steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+			                // close current window
+			                auto frame = static_cast<Frame*>(widget.getParent());
+			                auto dimmer = static_cast<Frame*>(frame->getParent());
+			                dimmer->removeSelf();
+
+			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
+			                connectionErrorPrompt(error_str.c_str());
+			                connectingToLobbyStatus = EResult::k_EResultOK;
+			                return;
+		                }
+		                if (!connectingToLobby) {
+		                    if (connectingToLobbyWindow) {
+		                        resetLobbyJoinFlowState();
+
+			                    // record CSteamID of lobby owner (and everybody else)
+			                    // shouldn't this be in steam.cpp?
+			                    int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
+			                    for (int c = 0; c < MAXPLAYERS; ++c) {
+				                    if (steamIDRemote[c]) {
+					                    cpp_Free_CSteamID(steamIDRemote[c]);
+					                    steamIDRemote[c] = NULL;
+				                    }
+			                    }
+			                    for (int c = 0; c < lobbyMembers; ++c) {
+				                    steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+			                    }
 			                }
 
 			                sendJoinRequest();
@@ -6950,7 +7271,32 @@ bind_failed:
 		                    auto dimmer = static_cast<Frame*>(frame->getParent());
 		                    dimmer->removeSelf();
 		                    connectionErrorPrompt("Failed to join lobby.");
-		                    // TODO localize, get error message, etc.
+			            }
+			            return;
+		            }
+                }
+#endif
+#ifdef USE_EOS
+                if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+                    if (EOS.bJoinLobbyWaitingForHostResponse) {
+		                if (EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success)) {
+		                    resetLobbyJoinFlowState();
+
+			                // close current window
+			                auto frame = static_cast<Frame*>(widget.getParent());
+			                auto dimmer = static_cast<Frame*>(frame->getParent());
+			                dimmer->removeSelf();
+
+			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(EOS.ConnectingToLobbyStatus));
+			                connectionErrorPrompt(error_str.c_str());
+			                EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
+			                return;
+		                }
+		                if (!EOS.bConnectingToLobby) {
+		                    if (EOS.bConnectingToLobbyWindow) {
+		                        resetLobbyJoinFlowState();
+			                }
+			                sendJoinRequest();
 			            }
 			            return;
 		            }
@@ -6975,7 +7321,8 @@ bind_failed:
         // initialize connection
 	    if (lobbyType == LobbyType::LobbyOnline) {
 #ifdef STEAMWORKS
-	        if (strncmp(address, "steam:", 6) == 0) {
+            const char steam_str[] = "steam:";
+	        if (strncmp(address, steam_str, sizeof(steam_str) - 1) == 0) {
 		        auto lobby = getLobbySteamID(address);
 		        if (lobby) {
 				    connectingToLobby = true;
@@ -6985,14 +7332,37 @@ bind_failed:
 	                LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 	                LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			        LobbyHandler.steamValidateAndJoinLobby(*lobby);
+				    return true;
 			    }
 	        }
 #endif
 #ifdef USE_EOS
-	        if (strncmp(address, "epic:", 5) == 0) {
-		        // TODO
+            const char epic_str[] = "epic:";
+	        if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
+		        auto lobby = getLobbyEpic(address);
+		        if (lobby) {
+	                EOS.bConnectingToLobby = true;
+			        EOS.bConnectingToLobbyWindow = true;
+	                EOS.bJoinLobbyWaitingForHostResponse = true;
+                    LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                    LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			        strncpy(EOS.currentLobbyName, lobby->LobbyAttributes.lobbyName.c_str(), 31);
+
+			        // EOS.searchLobbies() nukes the lobby list, so we need to copy this.
+			        std::string lobbyId = lobby->LobbyId.c_str();
+			        EOS.searchLobbies(
+			            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
+				        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+				        lobbyId.c_str());
+				    return true;
+				}
 	        }
 #endif
+	        closeText("connect_prompt");
+	        connectionErrorPrompt("Failed to connect to lobby.\nInvalid room code.");
+	        multiplayer = SINGLE;
+	        disconnectFromLobby();
+	        return false;
         } else if (lobbyType == LobbyType::LobbyLAN) {
             // copy address
             char address_copy[128];
@@ -7052,8 +7422,15 @@ bind_failed:
 
 		    printlog("successfully contacted server at %s.\n", address);
 		    sendJoinRequest();
+	        return true;
 	    }
-	    return true;
+
+	    // connection initiation failed for unknown reason
+	    closeText("connect_prompt");
+	    connectionErrorPrompt("Failed to connect to lobby");
+	    multiplayer = SINGLE;
+	    disconnectFromLobby();
+	    return false;
 	}
 
 /******************************************************************************/
@@ -7238,6 +7615,13 @@ bind_failed:
 		card->setClickable(true);
 		card->setHideSelectors(true);
 		card->setHideGlyphs(true);
+
+		card->setTickCallback([](Widget& widget){
+		    const int player = widget.getOwner();
+		    if (inputs.getPlayerIDAllowedKeyboard() != player && !inputs.hasController(player)) {
+                createStartButton(player);
+		    }
+		    });
 
 		return card;
 	}
@@ -8373,8 +8757,8 @@ bind_failed:
 		subframe->setScrollBarsEnabled(false);
 		subframe->setSize(SDL_Rect{34, 160, 226, 258});
 		subframe->setActualSize(SDL_Rect{0, 0, 226, std::max(258, 6 + 54 * (int)(classes.size() / 4 + ((classes.size() % 4) ? 1 : 0)))});
-		subframe->setHollow(true);
 		subframe->setBorder(0);
+		subframe->setColor(0);
 
 		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
@@ -8526,10 +8910,10 @@ bind_failed:
 		auto card = initCharacterCard(index, 346);
 
 		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3);}); break;
+		case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0); checkReadyStates();}); break;
+		case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1); checkReadyStates();}); break;
+		case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2); checkReadyStates();}); break;
+		case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3); checkReadyStates();}); break;
 		}
 
 		auto backdrop = card->addImage(
@@ -8573,10 +8957,11 @@ bind_failed:
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
 		static auto name_field_fn = [](const char* text, int index) {
-			size_t len = strlen(text) + 1;
-			len = std::min(sizeof(Stat::name), len);
-			if (memcmp(stats[index]->name, text, len)) {
-			    memcpy(stats[index]->name, text, len);
+			size_t old_len = std::min(sizeof(Stat::name), strlen(stats[index]->name) + 1);
+			size_t new_len = strlen(text) + 1;
+			size_t shortest_len = std::min(old_len, new_len);
+			if (new_len != old_len || memcmp(stats[index]->name, text, shortest_len)) {
+			    memcpy(stats[index]->name, text, new_len);
 			    sendPlayerOverNet();
 			}
 		};
@@ -8930,13 +9315,95 @@ bind_failed:
 		ready_button->select();
 	}
 
-	static void createStartButton(int index) {
+	static void createLockedStone(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
-		// release any controller assigned to this player
+		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+		if (card) {
+			card->removeSelf();
+		}
+
+		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
+		card->setColor(0);
+		card->setBorder(0);
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png",
+			"backdrop"
+		);
+
+		auto banner = card->addField("banner", 64);
+		banner->setText("LOCKED");
+		banner->setFont(banner_font);
+		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
+		banner->setVJustify(Field::justify_t::TOP);
+		banner->setHJustify(Field::justify_t::CENTER);
+		banner->setColor(uint32ColorPlayerX);
+
+		auto text = card->addField("text", 128);
+		text->setText("New players\ncannot join");
+		text->setFont(smallfont_outline);
+		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		text->setVJustify(Field::justify_t::TOP);
+		text->setHJustify(Field::justify_t::CENTER);
+		text->setColor(uint32ColorPlayerX);
+	}
+
+	static inline int countControllers() {
+        int num_controllers = 0;
+        for (auto& controller : game_controllers) {
+			if (controller.isActive()) {
+			    ++num_controllers;
+			}
+		}
+        return num_controllers;
+	}
+
+	static inline int countUnassignedControllers() {
+	    int num_controllers = countControllers();
+        for (int c = 0; c < MAXPLAYERS; ++c) {
+            if (inputs.hasController(c)) {
+                --num_controllers;
+            }
+        }
+        return num_controllers;
+	}
+
+	static bool isControllerAvailable(int player, int num_controllers) {
+        for (int c = 0; c < player; ++c) {
+            if (!isPlayerSignedIn(c)) {
+                return false;
+            }
+        }
+        if (num_controllers) {
+            return true;
+        } else {
+            return false;
+        }
+	}
+
+	static void createStartButton(int index) {
+	    if (playerSlotsLocked[index]) {
+	        createLockedStone(index);
+	        return;
+	    }
+
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+		auto countdown = lobby->findFrame("countdown");
+		if (countdown) {
+		    countdown->removeSelf();
+		}
+
 #ifndef NINTENDO
-        if (inputs.hasController(index) && index != 0) {
+		// release any controller assigned to this player
+        if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
             Input::inputs[index].refresh();
         }
@@ -8967,37 +9434,212 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
-		static auto invite_func = [](Button& button){
-		    auto controller_prompt = main_menu_frame->findWidget("controller_dimmer", false);
-		    if (!controller_prompt) {
-		        switch (button.getOwner()) {
-		        case 0: createControllerPrompt(0, true, [](){createCharacterCard(0);}); break;
-		        case 1: createControllerPrompt(1, true, [](){createCharacterCard(1);}); break;
-		        case 2: createControllerPrompt(2, true, [](){createCharacterCard(2);}); break;
-		        case 3: createControllerPrompt(3, true, [](){createCharacterCard(3);}); break;
-		        }
-		    }
+		static auto start_func = [](int index){
+		    auto controller_prompt = main_menu_frame->findFrame("controller_prompt");
+	        if (!controller_prompt) {
+                if (loadingsavegame) {
+                    createReadyStone(index, true, true);
+                } else {
+                    createCharacterCard(index);
+                }
+	        }
 		    };
 
-		auto invite = card->addButton("invite_button");
-		invite->setText("Press to Start");
-		invite->setHideSelectors(true);
-		invite->setFont(smallfont_outline);
-		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		invite->setVJustify(Button::justify_t::TOP);
-		invite->setHJustify(Button::justify_t::CENTER);
-		invite->setBorder(0);
-		invite->setColor(0);
-		invite->setBorderColor(0);
-		invite->setHighlightColor(0);
-		invite->setWidgetBack("back_button");
-		invite->setHideKeyboardGlyphs(false);
-		invite->setCallback(invite_func);
-		invite->select();
+		auto start = card->addField("start", 128);
+		start->setFont(smallfont_outline);
+		start->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		start->setVJustify(Field::justify_t::TOP);
+		start->setHJustify(Field::justify_t::CENTER);
+		start->setTickCallback([](Widget& widget){
+		    const int player = widget.getOwner();
+
+            // determine whether I should own the keyboard
+            if (inputs.getPlayerIDAllowedKeyboard() != player) {
+		        if (currentLobbyType == LobbyType::LobbyLocal) {
+		            bool shouldOwnKeyboard = true;
+		            if (isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
+		                shouldOwnKeyboard = false;
+		            } else {
+		                for (int c = 0; c < player; ++c) {
+		                    if (isPlayerSignedIn(c)) {
+		                        if (inputs.getPlayerIDAllowedKeyboard() == c) {
+		                            shouldOwnKeyboard = false;
+		                            break;
+		                        }
+		                    } else {
+	                            shouldOwnKeyboard = false;
+	                            break;
+		                    }
+		                }
+		            }
+		            if (shouldOwnKeyboard) {
+		                inputs.setPlayerIDAllowedKeyboard(player);
+		            }
+		        } else {
+		            inputs.setPlayerIDAllowedKeyboard(player);
+		        }
+		    }
+
+            // set field text
+		    auto field = static_cast<Field*>(&widget);
+		    if (inputs.getPlayerIDAllowedKeyboard() == player ||
+		        inputs.hasController(player)) {
+		        field->setText("Press to Start");
+		    } else {
+		        const int num_controllers = countUnassignedControllers();
+		        if (isControllerAvailable(player, num_controllers)) {
+		            field->setText("Press to Start");
+		        } else {
+		            if (num_controllers < player) {
+		                field->setText("Connect Controller");
+		            } else {
+		                field->setText("Please Wait");
+		            }
+		        }
+		    }
+
+		    auto& input = Input::inputs[player];
+
+		    // handle B to go back
+		    bool no_one_logged_in = true;
+		    if (currentLobbyType == LobbyType::LobbyLocal) {
+		        for (int c = 0; c < MAXPLAYERS; ++c) {
+		            if (isPlayerSignedIn(c)) {
+		                no_one_logged_in = false;
+		                break;
+		            }
+		        }
+		    } else if (isPlayerSignedIn(clientnum)) {
+		        no_one_logged_in = false;
+		    }
+		    if (no_one_logged_in) {
+		        if (input.binary("MenuCancel")) {
+		            assert(main_menu_frame);
+		            auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+		            auto back = lobby->findFrame("back"); assert(back);
+		            auto back_button = back->findButton("back_button"); assert(back_button);
+		            back_button->select();
+		        }
+		    }
+
+		    // handle login button presses
+		    if (input.consumeBinaryToggle("GamepadLoginB") ||
+		        input.consumeBinaryToggle("GamepadLoginA") ||
+		        input.consumeBinaryToggle("GamepadLoginStart")) {
+		        if (input.binary("GamepadLoginB")) {
+	                bool nobodySignedIn = true;
+		            if (multiplayer == SINGLE) {
+		                for (int c = 0; c < MAXPLAYERS; ++c) {
+		                    if (isPlayerSignedIn(c)) {
+		                        nobodySignedIn = false;
+		                        break;
+		                    }
+		                }
+		            }
+	                if (nobodySignedIn) {
+	                    // if no one is signed in, B doesn't sign in... it leaves the lobby!
+	                    return;
+	                }
+		            input.consumeBindingsSharedWithBinding("GamepadLoginB");
+		        }
+		        if (input.binary("GamepadLoginA")) {
+		            input.consumeBindingsSharedWithBinding("GamepadLoginA");
+		        }
+		        if (input.binary("GamepadLoginStart")) {
+		            input.consumeBindingsSharedWithBinding("GamepadLoginStart");
+		        }
+		        // let the next empty player slot login with the keyboard
+		        if (!isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
+		            for (int c = 0; c < MAXPLAYERS; ++c) {
+		                if (c == player) {
+		                    // skip ourselves
+		                    continue;
+		                }
+		                if (!isPlayerSignedIn(c)) {
+		                    inputs.setPlayerIDAllowedKeyboard(c);
+		                    break;
+		                }
+		            }
+		        }
+		        start_func(player);
+		        return;
+		    }
+		    if (inputs.getPlayerIDAllowedKeyboard() == player && input.consumeBinaryToggle("KeyboardLogin")) {
+		        input.consumeBindingsSharedWithBinding("KeyboardLogin");
+#ifndef NINTENDO
+		        // release any controller assigned to this player
+                if (inputs.hasController(player)) {
+                    inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
+                    Input::inputs[player].refresh();
+                }
+#endif
+		        start_func(player);
+		        return;
+		    }
+		    });
+		start->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+		    const int player = widget.getOwner();
+		    const bool controllerAvailable = inputs.hasController(player) || isControllerAvailable(player, countUnassignedControllers());
+		    const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+		    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+            if (inputs.getPlayerIDAllowedKeyboard() == player) {
+                if (controllerAvailable) {
+                    // draw spacebar and A button
+                    {
+                        std::string path = Input::getGlyphPathForInput("Space", pressed);
+		                auto image = Image::get((std::string("*") + path).c_str());
+		                const int x = pos.x + pos.w / 2 - 32;
+		                const int y = pos.y + pos.h / 2 + 16;
+		                const int w = image->getWidth();
+		                const int h = image->getHeight();
+		                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+                    }
+                    {
+                        std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+		                auto image = Image::get((std::string("*") + path).c_str());
+		                const int x = pos.x + pos.w / 2 + 32;
+		                const int y = pos.y + pos.h / 2 + 16;
+		                const int w = image->getWidth();
+		                const int h = image->getHeight();
+		                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+                    }
+                } else {
+                    // only draw spacebar
+                    std::string path = Input::getGlyphPathForInput("Space", pressed);
+		            auto image = Image::get((std::string("*") + path).c_str());
+		            const int x = pos.x + pos.w / 2;
+		            const int y = pos.y + pos.h / 2 + 16;
+		            const int w = image->getWidth();
+		            const int h = image->getHeight();
+		            image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+                }
+            } else if (controllerAvailable) {
+                // draw A button
+                std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+                auto image = Image::get((std::string("*") + path).c_str());
+                const int x = pos.x + pos.w / 2;
+                const int y = pos.y + pos.h / 2 + 16;
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+            }
+		    });
 	}
 
 	static void createInviteButton(int index) {
+	    if (playerSlotsLocked[index]) {
+	        createLockedStone(index);
+	        return;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -9025,11 +9667,18 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
 		auto invite = card->addButton("invite_button");
-		invite->setText("Press to Invite");
+		invite->setText("Click to Invite");
 		invite->setFont(smallfont_outline);
-		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		invite->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 16});
 		invite->setVJustify(Button::justify_t::TOP);
 		invite->setHJustify(Button::justify_t::CENTER);
 		invite->setBorder(0);
@@ -9040,6 +9689,11 @@ bind_failed:
 	}
 
 	static void createWaitingStone(int index) {
+	    if (playerSlotsLocked[index]) {
+	        createLockedStone(index);
+	        return;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -9067,6 +9721,13 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
 
 		auto text = card->addField("text", 128);
 		text->setText("Waiting for\nplayer to join");
@@ -9074,6 +9735,55 @@ bind_failed:
 		text->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		text->setVJustify(Field::justify_t::TOP);
 		text->setHJustify(Field::justify_t::CENTER);
+	}
+
+	static void checkReadyStates() {
+	    assert(main_menu_frame);
+		auto lobby = main_menu_frame->findFrame("lobby");
+		assert(lobby);
+
+        bool atLeastOnePlayer = false;
+	    bool allReady = true;
+		for (int c = 0; c < 4; ++c) {
+			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str());
+			if (!card) {
+			    // this can happen when a player enters a lobby and not all the stones exist yet.
+			    allReady = false;
+			    break;
+			}
+			auto backdrop = card->findImage("backdrop"); assert(backdrop);
+			if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+				playersInLobby[c] = false;
+				if (multiplayer == SINGLE) {
+				    if (loadingsavegame && !playerSlotsLocked[c]) {
+				        allReady = false;
+				    }
+				} else {
+				    if (!client_disconnected[c]) {
+				        // we know a player is connected to this slot, and they're not ready
+			            allReady = false;
+			        }
+			    }
+			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
+				playersInLobby[c] = true;
+			} else {
+				playersInLobby[c] = true;
+			    allReady = false;
+			}
+		    if (isPlayerSignedIn(c)) {
+		        atLeastOnePlayer = true;
+		    }
+		}
+		if (allReady && atLeastOnePlayer) {
+		    createCountdownTimer();
+		} else {
+	        auto countdown = lobby->findFrame("countdown");
+	        if (countdown) {
+	            countdown->removeSelf();
+	        }
+	        fadeout = false;
+	        main_menu_fade_destination = FadeDestination::None;
+		}
 	}
 
 	static void createReadyStone(int index, bool local, bool ready) {
@@ -9119,56 +9829,95 @@ bind_failed:
 			"backdrop"
 		);
 
-        // shorten the name
-        constexpr int longest_name = 12;
-		char shortname[16];
-		int len = (int)strlen(stats[index]->name);
-		if (len > longest_name) {
-		    memcpy(shortname, stats[index]->name, longest_name);
-		    memcpy(shortname + longest_name, "...", 4);
-		} else {
-		    strcpy(shortname, stats[index]->name);
-		}
-
 		auto banner = card->addField("banner", 64); assert(banner);
-		banner->setText(shortname);
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
+		switch (index) {
+		default: banner->setColor(uint32ColorPlayerX); break;
+		case 0: banner->setColor(uint32ColorPlayer1); break;
+		case 1: banner->setColor(uint32ColorPlayer2); break;
+		case 2: banner->setColor(uint32ColorPlayer3); break;
+		case 3: banner->setColor(uint32ColorPlayer4); break;
+		}
+
+		// name needs to be updated constantly in case it gets updated over the net
+		banner->setTickCallback([](Widget& widget){
+		    const int player = widget.getOwner();
+		    auto field = static_cast<Field*>(&widget);
+
+            // shorten the name
+            constexpr int longest_name = 22;
+		    char shortname[32];
+		    int len = (int)strlen(stats[player]->name);
+		    if (len > longest_name) {
+		        memcpy(shortname, stats[player]->name, longest_name);
+		        memcpy(shortname + longest_name - 2, "...", 4);
+		    } else {
+		        strcpy(shortname, stats[player]->name);
+		    }
+		    field->setText(shortname);
+		    });
 
         if (local) {
             static auto cancel_fn = [](int index){
-                if (main_menu_fade_destination == FadeDestination::GameStart) {
-                    // fix servers being able to back out on the last frame
+                if (main_menu_fade_destination == FadeDestination::GameStart ||
+                    main_menu_fade_destination == FadeDestination::GameStartDummy) {
+                    // fix being able to back out on the last frame
                     return;
+                }
+                if (loadingsavegame) {
+                    createStartButton(index);
                 } else {
                     createCharacterCard(index);
                 }
                 };
 
-		    auto cancel = card->addButton("cancel_button"); assert(cancel);
-		    cancel->setText("Ready!");
-		    cancel->setHideSelectors(true);
-		    cancel->setFont(smallfont_outline);
-		    cancel->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
-		    cancel->setVJustify(Button::justify_t::TOP);
-		    cancel->setHJustify(Button::justify_t::CENTER);
-		    cancel->setBorder(0);
-		    cancel->setColor(0);
-		    cancel->setBorderColor(0);
-		    cancel->setHighlightColor(0);
-		    cancel->setWidgetBack("cancel_button");
-		    cancel->setHideKeyboardGlyphs(false);
-		    cancel->setWidgetSearchParent(card->getName());
-		    cancel->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
-		    switch (index) {
-		    case 0: cancel->setCallback([](Button&){cancel_fn(0);}); break;
-		    case 1: cancel->setCallback([](Button&){cancel_fn(1);}); break;
-		    case 2: cancel->setCallback([](Button&){cancel_fn(2);}); break;
-		    case 3: cancel->setCallback([](Button&){cancel_fn(3);}); break;
+            static auto ready_fn = [](int index){
+                if (main_menu_fade_destination == FadeDestination::GameStart ||
+                    main_menu_fade_destination == FadeDestination::GameStartDummy) {
+                    // fix being able to back out on the last frame
+                    return;
+                }
+                createReadyStone(index, true, true);
+                };
+
+		    auto button = card->addButton("button"); assert(button);
+		    if (ready) {
+		        button->setText("Ready!");
+		    } else {
+		        button->setText("Not Ready");
 		    }
-		    cancel->select();
+		    button->setHideSelectors(true);
+		    button->setFont(smallfont_outline);
+		    button->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
+		    button->setVJustify(Button::justify_t::TOP);
+		    button->setHJustify(Button::justify_t::CENTER);
+		    button->setBorder(0);
+		    button->setColor(0);
+		    button->setBorderColor(0);
+		    button->setHighlightColor(0);
+		    button->setWidgetBack("button");
+		    button->setHideKeyboardGlyphs(false);
+		    button->setWidgetSearchParent(card->getName());
+		    button->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
+		    if (ready) {
+		        switch (index) {
+		        case 0: button->setCallback([](Button&){cancel_fn(0);}); break;
+		        case 1: button->setCallback([](Button&){cancel_fn(1);}); break;
+		        case 2: button->setCallback([](Button&){cancel_fn(2);}); break;
+		        case 3: button->setCallback([](Button&){cancel_fn(3);}); break;
+		        }
+		    } else {
+		        switch (index) {
+		        case 0: button->setCallback([](Button&){ready_fn(0);}); break;
+		        case 1: button->setCallback([](Button&){ready_fn(1);}); break;
+		        case 2: button->setCallback([](Button&){ready_fn(2);}); break;
+		        case 3: button->setCallback([](Button&){ready_fn(3);}); break;
+		        }
+		    }
+		    button->select();
 		} else {
 		    auto status = card->addField("status", 64); assert(status);
 		    if (ready) {
@@ -9181,42 +9930,12 @@ bind_failed:
 		    status->setVJustify(Button::justify_t::TOP);
 		    status->setHJustify(Button::justify_t::CENTER);
 		}
-
-        // determine if all players are ready, and if so, create a countdown timer
-		bool allReady = true;
-		for (int c = 0; c < 4; ++c) {
-			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str());
-			if (!card) {
-			    // this can happen when a player enters a lobby and not all the stones exist yet.
-			    allReady = false;
-			    break;
-			}
-			auto backdrop = card->findImage("backdrop"); assert(backdrop);
-			if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-				playersInLobby[c] = false;
-				if (multiplayer != SINGLE && !client_disconnected[c]) {
-			        allReady = false;
-			    }
-			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
-				playersInLobby[c] = true;
-			} else {
-				playersInLobby[c] = true;
-			    allReady = false;
-			}
-		}
         if (local) {
             sendReadyOverNet(index, ready);
         }
-		if (allReady) {
-		    createCountdownTimer();
-		} else {
-	        auto countdown = lobby->findFrame("countdown");
-	        if (countdown) {
-	            countdown->removeSelf();
-	        }
-	        fadeout = false;
-	        main_menu_fade_destination = FadeDestination::None;
-		}
+
+        // determine if all players are ready, and if so, create a countdown timer
+		checkReadyStates();
 	}
 
 	static void startGame() {
@@ -9282,6 +10001,8 @@ bind_failed:
 		        startGame();
 		    } else {
 		        Uint32 fourth = TICKS_PER_SECOND / 4;
+
+		        // 1
 		        if (ticks >= countdown_end - fourth) {
 		            countdown->setText("1...");
 		        }
@@ -9294,6 +10015,8 @@ bind_failed:
 		        else if (ticks >= countdown_end - fourth * 4) {
 		            countdown->setText("1");
 		        }
+
+		        // 2
 		        else if (ticks >= countdown_end - fourth * 5) {
 		            countdown->setText("2...");
 		        }
@@ -9306,6 +10029,8 @@ bind_failed:
 		        else if (ticks >= countdown_end - fourth * 8) {
 		            countdown->setText("2");
 		        }
+
+		        // 3
 		        else if (ticks >= countdown_end - fourth * 9) {
 		            countdown->setText("3...");
 		        }
@@ -9326,30 +10051,39 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
+		// just in case we're still awaiting a controller for player 1,
+		// this clears it.
+		if (type == LobbyType::LobbyLocal) {
+		    Input::waitingToBindControllerForPlayer = -1;
+		}
+
 		// reset ALL player stats
-		for (int c = 0; c < 4; ++c) {
-		    if (multiplayer != CLIENT || c == clientnum) {
-			    stats[c]->playerRace = 0;
-			    stats[c]->sex = static_cast<sex_t>(rand() % 2);
-			    stats[c]->appearance = rand() % NUMAPPEARANCES;
-			    stats[c]->clearStats();
-			    client_classes[c] = 0;
-			    initClass(c);
+        if (!loadingsavegame) {
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (multiplayer != CLIENT || c == clientnum) {
+		            playerSlotsLocked[c] = false;
 
-			    // random name
-			    auto& names = stats[c]->sex == sex_t::MALE ?
-				    randomPlayerNamesMale : randomPlayerNamesFemale;
-			    auto name = names[rand() % names.size()].c_str();
-			    size_t len = strlen(name);
-			    len = std::min(sizeof(Stat::name) - 1, len);
-			    memcpy(stats[c]->name, name, len);
-			    stats[c]->name[len] = '\0';
+			        stats[c]->playerRace = 0;
+			        stats[c]->sex = static_cast<sex_t>(rand() % 2);
+			        stats[c]->appearance = rand() % NUMAPPEARANCES;
+			        stats[c]->clearStats();
+			        client_classes[c] = 0;
+			        initClass(c);
 
-                if (multiplayer == CLIENT) {
-			        sendPlayerOverNet();
+			        // random name
+			        auto& names = stats[c]->sex == sex_t::MALE ?
+				        randomPlayerNamesMale : randomPlayerNamesFemale;
+			        auto name = names[rand() % names.size()].c_str();
+			        size_t len = strlen(name);
+			        len = std::min(sizeof(Stat::name) - 1, len);
+			        memcpy(stats[c]->name, name, len);
+			        stats[c]->name[len] = '\0';
 			    }
 			}
 		}
+        if (multiplayer == CLIENT) {
+            sendPlayerOverNet();
+        }
 
 		currentLobbyType = type;
 
@@ -9410,34 +10144,82 @@ bind_failed:
 				});
 		}
 
-		auto back_button = createBackWidget(lobby, [](Button&){
-			soundCancel();
-			disconnectFromLobby();
-			destroyMainMenu();
-			currentLobbyType = LobbyType::None;
-			createMainMenu(false);
-			});
+		auto banner = lobby->addFrame("banner");
+		banner->setBorderColor(makeColor(11, 12, 15, 255));
+		banner->setColor(makeColor(22, 25, 30, 255));
+		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 64});
+		banner->setBorder(2);
+        {
+		    auto back_button = createBackWidget(banner, [](Button&){
+			    soundCancel();
+			    disconnectFromLobby();
+			    destroyMainMenu();
+			    currentLobbyType = LobbyType::None;
+			    createMainMenu(false);
+			    });
+		    back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+		        if (currentLobbyType == LobbyType::None) {
+		            return;
+		        }
+		        bool no_one_logged_in = true;
+		        if (currentLobbyType == LobbyType::LobbyLocal) {
+		            for (int c = 0; c < MAXPLAYERS; ++c) {
+		                if (isPlayerSignedIn(c)) {
+		                    no_one_logged_in = false;
+		                    break;
+		                }
+		            }
+		        } else if (isPlayerSignedIn(clientnum)) {
+		            no_one_logged_in = false;
+		        }
+		        if (no_one_logged_in && countControllers() > 0) {
+		            const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+		            const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+                    std::string path = Input::getGlyphPathForInput("ButtonB", pressed);
+                    auto image = Image::get((std::string("*") + path).c_str());
+                    const int off_x = 1;
+                    const int off_y = 4;
+                    const int x = pos.x + pos.w + off_x;
+                    const int y = pos.y + pos.h / 2 + off_y;
+                    const int w = image->getWidth();
+                    const int h = image->getHeight();
+                    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        }
+		        });
 
-		auto back_frame = back_button->getParent();
-		back_frame->setTickCallback([](Widget& widget){
-			auto frame = static_cast<Frame*>(&widget); assert(frame);
-			auto lobby = static_cast<Frame*>(frame->getParent()); assert(lobby);
-			bool allCardsClosed = true;
-			for (int c = 0; c < 4; ++c) {
-			    if (clientnum != c && multiplayer == SINGLE) {
-			        continue;
+		    auto back_frame = back_button->getParent();
+		    back_frame->setTickCallback([](Widget& widget){
+			    auto frame = static_cast<Frame*>(&widget); assert(frame);
+			    auto parent = static_cast<Frame*>(frame->getParent()); assert(parent);
+			    auto lobby = static_cast<Frame*>(parent->getParent()); assert(lobby);
+			    bool allCardsClosed = true;
+			    for (int c = 0; c < 4; ++c) {
+			        if (clientnum != c && multiplayer != SINGLE) {
+			            continue;
+			        }
+				    if (isPlayerSignedIn(c)) {
+					    allCardsClosed = false;
+					    break;
+				    }
 			    }
-				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
-				auto backdrop = card->findImage("backdrop"); assert(backdrop);
-				if (backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-					allCardsClosed = false;
-					break;
-				}
-			}
-			frame->setInvisible(!allCardsClosed);
-			auto button = frame->findButton("back_button"); assert(button);
-			button->setDisabled(!allCardsClosed);
-			});
+			    frame->setInvisible(!allCardsClosed);
+			    auto button = frame->findButton("back_button"); assert(button);
+			    button->setDisabled(!allCardsClosed);
+			    });
+
+            if (type != LobbyType::LobbyLocal) {
+			    auto chat_button = banner->addButton("chat");
+			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 144, 16, 128, 32});
+			    chat_button->setHighlightColor(makeColor(44, 50, 60, 255));
+		        chat_button->setColor(makeColor(44, 50, 60, 255));
+		        chat_button->setText("Chat");
+		        chat_button->setFont(smallfont_outline);
+		        chat_button->setCallback([](Button& button){
+		            soundActivate();
+		            toggleLobbyChatWindow();
+		            });
+		    }
+		}
 
 		if (type == LobbyType::LobbyLocal) {
 			createStartButton(0);
@@ -9461,10 +10243,6 @@ bind_failed:
 		        if (clientnum == c) {
 		            createStartButton(c);
 		        } else {
-		            // TODO once connected, a new client needs to get ready
-		            // states for all of the already-connected players.
-		            // OR perhaps players should automatically un-ready if
-		            // a new player connects? TBD
 		            if (client_disconnected[c]) {
 		                if (directConnect) {
 		                    createWaitingStone(c);
@@ -9479,17 +10257,10 @@ bind_failed:
 		}
 	}
 
-	static void createControllerPrompt(int index, bool show_player_text, void (*after_func)()) {
-		auto dimmer = main_menu_frame->addFrame("controller_dimmer");
-		dimmer->setOwner(index);
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(0);
-		dimmer->setBorder(0);
-
-        if (inputs.hasController(index)) {
+	static void createControllerPrompt(int index, bool multiple_players, void (*after_func)()) {
+        /*if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-        }
+        }*/
 
         static void (*end_func)();
 		static bool clicked;
@@ -9501,18 +10272,18 @@ bind_failed:
 	        if (Input::waitingToBindControllerForPlayer >= 0) {
 	            // this only happens if the mouse was used to click this button
 	            Input::waitingToBindControllerForPlayer = -1;
-	            inputs.setPlayerIDAllowedKeyboard(index);
-	            inputs.getVirtualMouse(index)->draw_cursor = true;
-	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	            if (inputs.hasController(index)) {
 	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
 	            }
+	            inputs.setPlayerIDAllowedKeyboard(index);
+	            inputs.getVirtualMouse(index)->draw_cursor = true;
+	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	        } else {
 	            // this happens if a controller was bound to the player
 				inputs.getVirtualMouse(index)->draw_cursor = false;
 				inputs.getVirtualMouse(index)->lastMovementFromController = true;
-	            if (inputs.bPlayerUsingKeyboardControl(index)) {
-	                inputs.setPlayerIDAllowedKeyboard(0);
+	            if (inputs.getPlayerIDAllowedKeyboard() == index) {
+	                inputs.setPlayerIDAllowedKeyboard(-1);
 	            }
 	        }
 		    button.deselect();
@@ -9524,8 +10295,11 @@ bind_failed:
 		    int index = button->getOwner();
 		    auto& input = Input::inputs[index];
 		    if (clicked && !input.binary("MenuConfirm")) {
-                input.refresh(); // this has to be deferred because it knocks out consumed statuses.
+	            for (auto& input : Input::inputs) {
+	                input.refresh(); // this has to be deferred because it knocks out consumed statuses.
+	            }
 		        auto parent = static_cast<Frame*>(button->getParent());
+		        parent = static_cast<Frame*>(parent->getParent());
 	            parent->removeSelf();
 	            parent->setDisabled(true);
 	            soundActivate();
@@ -9533,32 +10307,104 @@ bind_failed:
 		    }
 		    };
 
+        static real_t bounce;
+        bounce = (real_t)0.0;
+        auto prompt_tick_callback = [](Widget& widget){
+            auto frame = static_cast<Frame*>(widget.getParent());
+            const int index = frame->getOwner();
+			const real_t inc = (PI / fpsLimit) * 0.5f;
+            for (int c = 0; c < MAXPLAYERS; ++c) {
+		        bounce += inc;
+		        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
+                const std::string name = std::string("player") + std::to_string(index);
+                auto image = frame->findImage(name.c_str());
+                if (image) {
+		            const int h = image->pos.h;
+                    const int y = frame->getSize().h - h - 32 - (int)bounce_height;
+	                image->pos.y = y;
+                }
+                auto field = frame->findField(name.c_str());
+                if (field) {
+                    auto size = field->getSize();
+                    size.y = frame->getSize().h - size.h - 32 - (int)bounce_height;
+                    field->setSize(size);
+                }
+            }
+            };
+
 		char text[1024];
-        if (show_player_text) {
+        if (multiple_players) {
 		    snprintf(text, sizeof(text), "Press A on a controller to assign it to Player %d,\n"
-		        "or click here to assign only the mouse and keyboard", index + 1);
+		        "or click here to assign only the mouse and keyboard\n\n\n\n", index + 1);
         } else {
 		    snprintf(text, sizeof(text), "Press A on a controller to activate it now,\n"
-		        "or click here to use only the mouse and keyboard");
+		        "or click here to use only the mouse and keyboard\n\n\n\n");
         }
 
-		auto button = dimmer->addButton("button");
-		button->setHideSelectors(true);
-		button->setBorder(0);
-		button->setColor(makeColor(0, 0, 0, 127));
-		button->setHighlightColor(makeColor(0, 0, 0, 127));
-		button->setTextColor(makeColor(255, 255, 255, 255));
-		button->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		button->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+        auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        prompt->setOwner(index);
+
+        auto header_size = prompt->getActualSize(); header_size.h = 80;
+        auto header = prompt->addField("header", 128);
+        header->setSize(header_size);
+        header->setFont(bigfont_outline);
+        header->setJustify(Field::justify_t::CENTER);
+        header->setText("ASSIGN CONTROLLER");
+
+        auto dimmer = static_cast<Frame*>(prompt->getParent());
+        dimmer->setOwner(index);
+
+		auto button = prompt->addButton("button");
+		button->setSize(prompt->getActualSize());
 		button->setJustify(Field::justify_t::CENTER);
-		button->setFont(bigfont_outline);
-		button->setText(text);
-		button->setCallback(button_func);
-		button->setTickCallback(button_tick_func);
 		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0,});
+		button->setTickCallback(button_tick_func);
+		button->setCallback(button_func);
 		button->setHideKeyboardGlyphs(false);
+		button->setHideSelectors(true);
+		button->setHighlightColor(0);
+		button->setBorder(0);
+		button->setColor(0);
 		button->select();
+
+	    int playercount = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+	            ++playercount;
+	        }
+	    }
+
+	    int num = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
+                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
+                auto image = Image::get(path);
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                const int space = 100;
+                const int x = (prompt->getSize().w - playercount * space + space - w) / 2 + num * space;
+                const int y = prompt->getSize().h - h - 32;
+	            const std::string name = std::string("player") + std::to_string(c);
+                prompt->addImage(
+                    SDL_Rect{x, y, w, h},
+                    makeColor(255, 255, 255, 255),
+                    path, name.c_str());
+                auto field = prompt->addField(name.c_str(), 16);
+                field->setSize(SDL_Rect{x, y, w, h});
+                field->setJustify(Field::justify_t::CENTER);
+                field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+                field->setFont(bigfont_outline);
+                switch (c) {
+                default: field->setColor(uint32ColorPlayerX); break;
+                case 0: field->setColor(uint32ColorPlayer1); break;
+		        case 1: field->setColor(uint32ColorPlayer2); break;
+		        case 2: field->setColor(uint32ColorPlayer3); break;
+		        case 3: field->setColor(uint32ColorPlayer4); break;
+                }
+                ++num;
+	        }
+	    }
 
 		Input::waitingToBindControllerForPlayer = index;
 	}
@@ -9570,21 +10416,35 @@ bind_failed:
 	    int players;
 	    int ping;
 	    bool locked;
+	    Uint32 flags;
 	    std::string address;
+	    int index = -1;
 	    LobbyInfo(
 	        const char* _name = "Barony",
 	        int _players = 0,
 	        int _ping = 0,
 	        bool _locked = false,
+	        Uint32 _flags = 0,
 	        const char* _address = ""):
 	        name(_name),
 	        players(_players),
 	        ping(_ping),
 	        locked(_locked),
+	        flags(_flags),
 	        address(_address)
 	    {}
 	};
 
+	enum Filter : int {
+	    UNCHECKED,
+	    OFF,
+	    ON,
+	    NUM,
+	};
+
+    static const int numFilters = NUM_SERVER_FLAGS + 3;
+    static Filter lobbyFilters[numFilters] = { Filter::UNCHECKED };
+    static bool lobbyFiltersEnabled = false;
 	static std::vector<LobbyInfo> lobbies;
 	static int selectedLobby = 0;
 
@@ -9593,6 +10453,59 @@ bind_failed:
 	        // probably the result of an out-of-date network scan
 	        return;
 	    }
+
+        if (info.index == -1) {
+            lobbies.push_back(info);
+            lobbies.back().index = lobbies.size() - 1;
+        }
+
+        if (lobbyFiltersEnabled) {
+            if (lobbyFilters[0] == Filter::ON && !info.locked) {
+                // this lobby is locked and we don't want to show those
+                printlog("skipping lobby '%s' (lobby is locked)\n", info.name.c_str());
+                return;
+            }
+            if (lobbyFilters[0] == Filter::OFF && info.locked) {
+                // this lobby isn't locked and we don't want to show those
+                printlog("skipping lobby '%s' (lobby is not locked)\n", info.name.c_str());
+                return;
+            }
+            if (lobbyFilters[1] == Filter::ON) {
+                // TODO friends-only filter
+                printlog("skipping lobby '%s' (has no friends)\n", info.name.c_str());
+                //return;
+            }
+            if (lobbyFilters[1] == Filter::OFF) {
+                // TODO friends-only filter
+                printlog("skipping lobby '%s' (has friends)\n", info.name.c_str());
+                //return;
+            }
+            if (lobbyFilters[2] == Filter::ON && (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+                // lobbies with cheats or +1 life do not count for
+                // achievements.
+                printlog("skipping lobby '%s' (achievements disabled)\n", info.name.c_str());
+                return;
+            }
+            if (lobbyFilters[2] == Filter::OFF && !(info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
+                // we're only looking for lobbies where achievements aren't enabled
+                printlog("skipping lobby '%s' (achievements enabled)\n", info.name.c_str());
+                return;
+            }
+            for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
+                const bool flag = (info.flags & (1 << c)) == 0 ? false : true;
+                const int index = (numFilters - NUM_SERVER_FLAGS) + c;
+                if (lobbyFilters[index] == Filter::ON && !flag) {
+                    // check the server flag filters
+                    printlog("skipping lobby '%s' (server flag %d is off)\n", info.name.c_str(), c);
+                    return;
+                }
+                if (lobbyFilters[index] == Filter::OFF && flag) {
+                    // check the server flag filters
+                    printlog("skipping lobby '%s' (server flag %d is on)\n", info.name.c_str(), c);
+                    return;
+                }
+            }
+        }
 
 	    assert(main_menu_frame);
 	    auto window = main_menu_frame->findFrame("lobby_browser_window");
@@ -9611,9 +10524,10 @@ bind_failed:
 	        auto names = window->findFrame("names"); assert(names);
 	        auto players = window->findFrame("players"); assert(players);
 	        auto pings = window->findFrame("pings"); assert(pings);
-	        names->setSelection(entry.parent.getSelection());
-	        players->setSelection(entry.parent.getSelection());
-	        pings->setSelection(entry.parent.getSelection());
+	        auto selection = entry.parent.getSelection();
+	        names->setSelection(selection);
+	        players->setSelection(selection);
+	        pings->setSelection(selection);
             };
 
         // function to choose a specific lobby
@@ -9627,7 +10541,7 @@ bind_failed:
             names->setActivation(names->getEntries()[selection]);
             players->setActivation(players->getEntries()[selection]);
             pings->setActivation(pings->getEntries()[selection]);
-            selectedLobby = selection;
+            selectedLobby = *(int*)entry.data;
             };
 
         // name cell
@@ -9637,7 +10551,8 @@ bind_failed:
         entry_name->highlight = selection_fn;
         entry_name->selected = selection_fn;
         entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
-        entry_name->text = info.name;
+        entry_name->text = std::string("  ") + info.name;
+        entry_name->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // players cell
         const char* players_image;
@@ -9660,6 +10575,7 @@ bind_failed:
         entry_players->selected = selection_fn;
         entry_players->color = 0xffffffff;
         entry_players->image = players_image;
+        entry_players->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // ping cell
         auto entry_ping = pings->addEntry(info.name.c_str(), true);
@@ -9668,6 +10584,7 @@ bind_failed:
         entry_ping->highlight = selection_fn;
         entry_ping->selected = selection_fn;
         entry_ping->color = 0xffffffff;
+        entry_ping->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
         if (!info.locked) {
             if (info.ping < 100) {
                 entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
@@ -9683,8 +10600,6 @@ bind_failed:
         auto slider = window->findSlider("scroll_slider");
         slider->setMaxValue(names->getActualSize().h - names->getSize().h);
 		slider->updateHandlePosition();
-
-        lobbies.push_back(info);
 	}
 
 	static void clearLobbies() {
@@ -9697,10 +10612,14 @@ bind_failed:
 	    auto players = window->findFrame("players"); assert(players);
 	    auto pings = window->findFrame("pings"); assert(pings);
 	    names->clearEntries();
+	    names->setSelection(-1);
+	    names->setActivation(nullptr);
 	    players->clearEntries();
+	    players->setSelection(-1);
+	    players->setActivation(nullptr);
 	    pings->clearEntries();
-	    lobbies.clear();
-	    selectedLobby = -1;
+	    pings->setSelection(-1);
+	    pings->setActivation(nullptr);
 	}
 
 	static void refreshOnlineLobbies() {
@@ -9757,29 +10676,46 @@ bind_failed:
 	    // create new window
 	    textPrompt("lobby_list_request", "Requesting lobby list...",
 	        [](Widget& widget){
-#ifdef STEAMWORKS
+#if defined(STEAMWORKS)
 #if defined(USE_EOS)
             if (!requestingLobbies && !EOS.bRequestingLobbies) {
 #else
             if (!requestingLobbies) {
 #endif
+#elif defined (USE_EOS)
+            if (!EOS.bRequestingLobbies) {
+#else
+            {
+#endif
                 // lobby list has returned
                 closeText("lobby_list_request");
 
+#if defined(STEAMWORKS)
 	            for (Uint32 c = 0; c < numSteamLobbies; ++c) {
 	                LobbyInfo info;
 	                info.name = lobbyText[c];
 	                info.players = lobbyPlayers[c];
 	                info.ping = 100; // TODO
 	                info.locked = false; // TODO
+	                info.flags = 0; // TODO
 	                info.address = "steam:" + std::to_string(c);
 	                addLobby(info);
 	            }
-#ifdef USE_EOS
-                //for (Uint32 c =
+#endif
+#if defined(USE_EOS)
+	            for (int c = 0; c < EOS.LobbySearchResults.results.size(); ++c) {
+	                auto& lobby = EOS.LobbySearchResults.results[c];
+	                LobbyInfo info;
+	                info.name = lobby.LobbyAttributes.lobbyName;
+	                info.players = MAXPLAYERS - lobby.FreeSlots;
+	                info.ping = 100; // TODO
+	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
+	                info.flags = lobby.LobbyAttributes.serverFlags;
+	                info.address = "epic:" + std::to_string(c);
+	                addLobby(info);
+	            }
 #endif
             }
-#endif
 	        });
 
         // request new lobbies
@@ -9832,8 +10768,13 @@ bind_failed:
 			LAN,
 		};
 		static BrowserMode mode;
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		mode = BrowserMode::Online;
 		directConnect = false;
+#else
+        mode = BrowserMode::LAN;
+		directConnect = true;
+#endif
 
         closeNetworkInterfaces();
         scan.close();
@@ -9873,7 +10814,9 @@ bind_failed:
 
 		static auto refresh_fn = [](Button& button){
 		    soundActivate();
-		    clearLobbies();
+		    clearLobbies(); // clear visible list
+	        lobbies.clear(); // clear internal list
+	        selectedLobby = -1; // select no lobby at all
 		    scan_ticks = ticks;
             if (directConnect) {
                 memcpy(scan.packet->data, "SCAN", 4);
@@ -9919,6 +10862,7 @@ bind_failed:
 				            info.players = players;
 				            info.ping = ping;
 				            info.locked = scan.packet->data[offset + 4];
+				            info.flags = SDLNet_Read32(&scan.packet->data[offset + 5]);
 
                             Uint32 host = scan.packet->address.host;
 				            char buf[16];
@@ -9938,6 +10882,7 @@ bind_failed:
 		    });
 
 		(void)createBackWidget(window, [](Button& button){
+		    loadingsavegame = 0;
 		    soundCancel();
 		    closeNetworkInterfaces();
 		    createLocalOrNetworkMenu();
@@ -9965,7 +10910,11 @@ bind_failed:
 		auto interior = window->addImage(
 			SDL_Rect{330, 70, 358, 380},
 			0xffffffff,
+#if defined(STEAMWORKS) || defined(USE_EOS)
 			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png",
+#else
+			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png",
+#endif
 			"interior"
 		);
 
@@ -9996,7 +10945,78 @@ bind_failed:
 		    label->setFont(smallfont_outline);
 		    label->setText("Filters");
 
+            const char* filter_names[] = {
+                "Show non-joinable",
+                "Show friends only",
+                "Achievements enabled",
+                "Cheats enabled",
+                "Friendly fire enabled",
+                "Minotaurs enabled",
+                "Hunger enabled",
+                "Random traps enabled",
+                "Hardcore mode",
+                "Classic mode",
+                "Keep items on death",
+                "+1 Life",
+            };
+            constexpr int num_filter_names = sizeof(filter_names) / sizeof(filter_names[0]);
+
+            for (int index = 0, c = 0; c < num_filter_names; ++c) {
+                if (directConnect && c == 1) {
+                    // skip "friends only" filter in direct connect mode.
+                    continue;
+                }
+
+		        auto label = frame_right->addField("filter_label", 128);
+		        label->setHJustify(Field::justify_t::LEFT);
+		        label->setVJustify(Field::justify_t::CENTER);
+		        label->setSize(SDL_Rect{64, 72 + 24 * index, 192, 24});
+		        label->setFont(smallfont_outline);
+		        label->setColor(makeColor(102, 69, 36, 255));
+		        label->setText(filter_names[c]);
+
+		        std::string checkbox_name = std::string("filter_checkbox") + std::to_string(index);
+
+                static const char* icons[(int)Filter::NUM] = {
+                    "",
+                    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_RedXSmall00.png",
+                    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_PickSmall00.png",
+                };
+
+		        auto checkbox = frame_right->addButton(checkbox_name.c_str());
+		        checkbox->setSize(SDL_Rect{32, 74 + index * 24, 28, 24});
+		        checkbox->setBackground("*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_Checkbox_BoxSmall00.png");
+		        checkbox->setIcon(icons[(int)lobbyFilters[c]]);
+		        checkbox->setHighlightColor(uint32ColorWhite);
+		        checkbox->setColor(uint32ColorWhite);
+		        checkbox->setUserData(&lobbyFilters[c]);
+		        checkbox->setSelectorOffset(SDL_Rect{0, 2, -6, 0});
+		        checkbox->setCallback([](Button& button){
+		            soundCheckmark();
+                    Filter* filter = (Filter*)button.getUserData();
+                    switch (*filter) {
+                    default:
+                    case Filter::UNCHECKED: *filter = Filter::ON; break;
+                    case Filter::ON: *filter = Filter::OFF; break;
+                    case Filter::OFF: *filter = Filter::UNCHECKED; break;
+                    }
+                    button.setIcon(icons[(int)*filter]);
+                    clearLobbies();
+                    for (auto& lobby : lobbies) {
+                        addLobby(lobby);
+                    }
+		            });
+		        checkbox->setWidgetBack("names");
+		        std::string next_name = std::string("filter_checkbox") + std::to_string(index + 1);
+		        std::string prev_name = std::string("filter_checkbox") + std::to_string(index - 1);
+		        checkbox->setWidgetDown(next_name.c_str());
+		        checkbox->setWidgetUp(prev_name.c_str());
+		        checkbox->setWidgetLeft("names");
+
+		        ++index;
+            }
 		}
+        lobbyFiltersEnabled = !frame_right->isInvisible();
 
 		auto frame_left = window->addFrame("frame_left");
 		frame_left->setInvisible(true);
@@ -10005,10 +11025,42 @@ bind_failed:
 		frame_left->setBorder(0);
 		frame_left->setColor(0);
 		frame_left->setTickCallback([](Widget& widget){
-		    //auto frame = static_cast<Frame*>(&widget);
 	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
-                //const auto& lobby = lobbies[selectedLobby];
                 widget.setInvisible(false);
+
+                const auto& lobby = lobbies[selectedLobby];
+		        auto frame = static_cast<Frame*>(&widget); assert(frame);
+                auto headers = frame->findField("headers"); assert(headers);
+                auto values = frame->findField("values"); assert(values);
+
+                const char* flag_names[] = {
+                    "Cheats enabled",
+                    "Friendly fire enabled",
+                    "Minotaurs enabled",
+                    "Hunger enabled",
+                    "Random traps enabled",
+                    "Hardcore mode",
+                    "Classic mode",
+                    "Keep items on death",
+                    "+1 Life",
+                };
+                constexpr int num_flag_names = sizeof(flag_names) / sizeof(flag_names[0]);
+
+                std::string flags;
+                for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
+                    if (lobby.flags & (1 << c)) {
+                        flags.append(flag_names[c]);
+                        flags.append("\n");
+                    }
+                }
+
+		        char buf[1024];
+                const char* header_fmt = "Name:\n\n\nFlags:";
+		        const char* values_fmt = "\n%s\n\n\n%s";
+		        snprintf(buf, sizeof(buf), values_fmt, lobby.name.c_str(), flags.c_str());
+
+                headers->setText(header_fmt);
+                values->setText(buf);
             } else {
                 widget.setInvisible(true);
             }
@@ -10025,7 +11077,21 @@ bind_failed:
 		    label->setJustify(Field::justify_t::CENTER);
 		    label->setSize(SDL_Rect{78, 48, 146, 22});
 		    label->setFont(smallfont_outline);
-		    label->setText("Lobby");
+		    label->setText("Lobby Info");
+
+		    auto headers = frame_left->addField("headers", 1024);
+		    headers->setHJustify(Field::justify_t::LEFT);
+		    headers->setVJustify(Field::justify_t::TOP);
+		    headers->setSize(SDL_Rect{72, 72, 210, 320});
+		    headers->setFont(smallfont_outline);
+		    headers->setColor(makeColor(180, 112, 24, 255));
+
+		    auto values = frame_left->addField("values", 1024);
+		    values->setHJustify(Field::justify_t::LEFT);
+		    values->setVJustify(Field::justify_t::TOP);
+		    values->setSize(SDL_Rect{72, 72, 210, 320});
+		    values->setFont(smallfont_outline);
+		    values->setColor(makeColor(102, 69, 36, 255));
 		}
 
 		auto online_tab = window->addButton("online_tab");
@@ -10045,6 +11111,7 @@ bind_failed:
 		online_tab->setWidgetBack("back_button");
 		online_tab->setWidgetRight("lan_tab");
 		online_tab->setWidgetDown("names");
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		online_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
@@ -10053,6 +11120,11 @@ bind_failed:
 			directConnect = false;
 			refresh_fn(button);
 			});
+#else
+		online_tab->setCallback([](Button& button){soundError();});
+		online_tab->setTextColor(makeColor(127, 127, 127, 255));
+		online_tab->setTextHighlightColor(makeColor(127, 127, 127, 255));
+#endif
 
 		auto lan_tab = window->addButton("lan_tab");
 		lan_tab->setSize(SDL_Rect{502, 70, 128, 38});
@@ -10144,7 +11216,7 @@ bind_failed:
 		enter_code->addWidgetAction("MenuAlt2", "refresh");
 		enter_code->setWidgetBack("back_button");
 		enter_code->setWidgetRight("join_lobby");
-		enter_code->setWidgetUp("names");
+		enter_code->setWidgetUp("crossplay");
 		enter_code->setTickCallback([](Widget& widget){
 		    auto button = static_cast<Button*>(&widget);
 		    if (mode == BrowserMode::Online) {
@@ -10204,6 +11276,9 @@ bind_failed:
 		    widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
 	        };
 
+	    constexpr Uint32 highlightColor = makeColor(22, 25, 30, 255);
+	    constexpr Uint32 activatedColor = makeColor(30, 25, 22, 255);
+
         // name column
         {
 		    auto name_column_header = window->addField("name_column_header", 32);
@@ -10216,14 +11291,14 @@ bind_failed:
 
 		    auto list = window->addFrame("names");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{342, 140, 168, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 168, 200});
+		    list->setSize(SDL_Rect{336, 140, 174, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 174, 200});
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setSelectedEntryColor(highlightColor);
+		    list->setActivatedEntryColor(activatedColor);
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -10253,14 +11328,14 @@ bind_failed:
 
 		    auto list = window->addFrame("players");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{516, 140, 72, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 72, 200});
+		    list->setSize(SDL_Rect{510, 140, 78, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 78, 200});
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setSelectedEntryColor(highlightColor);
+		    list->setActivatedEntryColor(activatedColor);
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -10290,14 +11365,14 @@ bind_failed:
 
 		    auto list = window->addFrame("pings");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{594, 140, 44, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 44, 200});
+		    list->setSize(SDL_Rect{588, 140, 52, 200});
+		    list->setActualSize(SDL_Rect{0, 0, 52, 200});
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
-		    list->setSelectedEntryColor(makeColor(10, 12, 15, 255));
-		    list->setActivatedEntryColor(makeColor(22, 25, 30, 255));
+		    list->setSelectedEntryColor(highlightColor);
+		    list->setActivatedEntryColor(activatedColor);
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -10313,6 +11388,13 @@ bind_failed:
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("players");
 		}
+
+		auto dividers = window->addImage(
+		    SDL_Rect{336, 138, 308, 204},
+		    0xffffffff,
+		    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
+		    "dividers");
+		dividers->ontop = true;
 
 		auto slider = window->addSlider("scroll_slider");
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
@@ -10383,6 +11465,22 @@ bind_failed:
 		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
 		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
 		    frame_right->setInvisible(frame_right->isInvisible()==false);
+		    lobbyFiltersEnabled = !frame_right->isInvisible();
+            clearLobbies();
+            for (auto& lobby : lobbies) {
+                addLobby(lobby);
+            }
+            if (lobbyFiltersEnabled) {
+                if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
+                    auto checkbox = frame_right->findButton("filter_checkbox0");
+                    if (checkbox) {
+                        checkbox->select();
+                    }
+                }
+		        soundActivate();
+            } else {
+                soundCancel();
+            }
 		    });
 
 		auto crossplay_fn = [](Button&){};
@@ -10423,12 +11521,12 @@ bind_failed:
 #else
         if (0) {
             // test lobbies
-		    addLobby(LobbyInfo("Ben", 1, 50, false));
-		    addLobby(LobbyInfo("Sheridan", 3, 50, false));
-		    addLobby(LobbyInfo("Paulie", 2, 250, false));
-		    addLobby(LobbyInfo("Fart_Face", 1, 420, false));
-		    addLobby(LobbyInfo("Tim", 3, 90, true));
-		    addLobby(LobbyInfo("Johnny", 3, 30, false));
+		    addLobby(LobbyInfo("Ben", 1, 50, false, SV_FLAG_CHEATS));
+		    addLobby(LobbyInfo("Sheridan", 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
+		    addLobby(LobbyInfo("Paulie", 2, 250, false, SV_FLAG_HARDCORE));
+		    addLobby(LobbyInfo("Fart_Face", 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
+		    addLobby(LobbyInfo("Tim", 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
+		    addLobby(LobbyInfo("Johnny", 3, 30, false, SV_FLAG_FRIENDLYFIRE));
 		    addLobby(LobbyInfo("Boaty McBoatFace", 2, 20, false));
 		    addLobby(LobbyInfo("RIP_Morgan_", 0, 120, false));
 		    addLobby(LobbyInfo("What is the longest name we can fit in a Barony lobby?", 4, 150, false));
@@ -10980,6 +12078,7 @@ bind_failed:
 		    }
 		    auto host_online_button = window->findButton("host_online"); assert(host_online_button);
 		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		    if (host_online_button->isSelected()) {
 		        tooltip->setText("Host a game with 2-4 players\nover the internet");
                 host_online_image->path =
@@ -10988,6 +12087,11 @@ bind_failed:
                 host_online_image->path =
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00B_Unselected.png";
 		    }
+#else
+		    if (host_online_button->isSelected()) {
+		        tooltip->setText("Host a game with 2-4 players\nover the internet (disabled)");
+		    }
+#endif
 		    auto join_button = window->findButton("join"); assert(join_button);
 		    auto join_image = window->findImage("join_image"); assert(join_image);
 		    if (join_button->isSelected()) {
@@ -11070,15 +12174,28 @@ bind_failed:
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_online_button->setColor(makeColor(255, 255, 255, 255));
+		host_online_button->setTextColor(makeColor(255, 255, 255, 255));
+		host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+#else
+		host_online_button->setHighlightColor(makeColor(127, 127, 127, 255));
+		host_online_button->setColor(makeColor(127, 127, 127, 255));
+		host_online_button->setTextColor(makeColor(127, 127, 127, 255));
+		host_online_button->setTextHighlightColor(makeColor(127, 127, 127, 255));
+#endif
 		host_online_button->setText("Host Online Party");
 		host_online_button->setFont(smallfont_outline);
 		host_online_button->setWidgetSearchParent(window->getName());
 		host_online_button->setWidgetBack("back_button");
 		host_online_button->setWidgetUp("host_lan");
 		host_online_button->setWidgetDown("join");
+#if defined(STEAMWORKS) || defined(USE_EOS)
 		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+#else
+		host_online_button->setCallback([](Button&){soundError();});
+#endif
 
 		(void)window->addImage(
 		    SDL_Rect{270, 234, 126, 50},
@@ -11115,6 +12232,7 @@ bind_failed:
 	}
 
 	static void playNew(Button& button) {
+	    loadingsavegame = 0;
 	    if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
 	        gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
 			gameModeManager.Tutorial.writeToDocument();
@@ -11263,19 +12381,78 @@ bind_failed:
 	    binaryPrompt(
 	        window_text, "Yes", "No",
 	        [](Button& button) { // Yes button
-	            // TODO handle multiplayer games.
                 soundActivate();
                 destroyMainMenu();
-                beginFade(MainMenu::FadeDestination::GameStart);
 
                 savegameCurrentFileIndex = load_save_index;
-                auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
-                if (info.multiplayer_type == SPLITSCREEN) {
-                    for (int c = 0; c < MAXPLAYERS; ++c) {
-                        client_disconnected[c] = info.players_connected[c];
-                    }
-                }
                 loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
+                auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
+
+                if (info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE) {
+                    multiplayer = SINGLE;
+                    clientnum = -1;
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+                        if (info.players_connected[c]) {
+                            clientnum = clientnum == -1 ? c : clientnum;
+                            playerSlotsLocked[c] = false;
+                            loadGame(c);
+                        } else {
+                            playerSlotsLocked[c] = true;
+                        }
+                    }
+                    assert(clientnum != -1);
+                    inputs.setPlayerIDAllowedKeyboard(clientnum);
+                    createLobby(LobbyType::LobbyLocal);
+                } else if (info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY) {
+                    multiplayer = SERVER;
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+                        if (info.players_connected[c]) {
+                            playerSlotsLocked[c] = false;
+                        } else {
+                            playerSlotsLocked[c] = true;
+                        }
+                    }
+                    loadGame(info.player_num);
+                    if (info.multiplayer_type == SERVERCROSSPLAY) {
+#ifdef STEAMWORKS
+			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#ifdef USE_EOS
+			            if ( LobbyHandler.crossplayEnabled )
+			            {
+				            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			            }
+#endif
+#elif defined USE_EOS
+			            // if just eos, then force hosting settings to default.
+			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+#endif
+                        createLobby(LobbyType::LobbyOnline);
+                    } else if (info.multiplayer_type == SERVER) {
+			            if ( getSaveGameVersionNum(false) <= 335 )
+			            {
+				            // legacy support for steam ver not remembering if crossplay or not. no action.
+				            // starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
+			            }
+			            else
+			            {
+#ifdef STEAMWORKS
+				            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
+				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+#endif
+			            }
+                        createLobby(LobbyType::LobbyOnline);
+                    } else if (info.multiplayer_type == DIRECTSERVER) {
+                        createLobby(LobbyType::LobbyLAN);
+                    }
+                } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
+                    multiplayer = CLIENT;
+                    loadGame(info.player_num);
+                    createDummyMainMenu();
+                    createLobbyBrowser(button);
+                }
 	        },
 	        [](Button& button) { // No button
 			    soundCancel();
@@ -11298,6 +12475,7 @@ bind_failed:
 	}
 
 	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
+	    static Uint32 timeSinceScroll = 0;
 		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
 		subwindow.setSize(SDL_Rect{90, 82, 898, 294});
 		subwindow.setColor(0);
@@ -11335,30 +12513,37 @@ bind_failed:
 		                scrolled |= input.binary("MenuMouseWheelUp");
 		                scrolled |= input.binary("MenuMouseWheelDown");
 		                if (scrolled) {
-		                    savegame_selected = nullptr;
-		                } else if (widget.isSelected() && !inputs.getVirtualMouse(clientnum)->draw_cursor) {
+		                    timeSinceScroll = ticks;
+		                } else if (widget.isSelected() && !inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
 		                    savegame_selected = button;
 		                }
 
-		                if (savegame_selected == &widget) {
-		                    auto frame_pos = frame->getActualSize();
-		                    auto button_size = button->getSize();
-		                    int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
-		                    if (diff > 0) {
-		                        frame_pos.x += std::max(1, diff / 8);
-		                    } else if (diff < 0) {
-		                        frame_pos.x += std::min(-1, diff / 8);
+	                    auto frame_pos = frame->getActualSize();
+	                    auto button_size = button->getSize();
+	                    const int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
+
+		                if (ticks - timeSinceScroll > TICKS_PER_SECOND / 2) {
+		                    if (savegame_selected == button) {
+		                        if (diff > 0) {
+		                            frame_pos.x += std::max(1, diff / 8);
+		                        } else if (diff < 0) {
+		                            frame_pos.x += std::min(-1, diff / 8);
+		                        }
+		                        frame->setActualSize(frame_pos);
 		                    }
-		                    frame->setActualSize(frame_pos);
+		                } else {
+	                        if (abs(diff) < 100) {
+	                            savegame_selected = button;
+	                        }
 		                }
 		                });
 		            savegame_book->setCallback([](Button& button){
-		                if (savegame_selected != &button && inputs.getVirtualMouse(clientnum)->draw_cursor) {
+		                if (savegame_selected != &button && inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
 		                    soundCheckmark();
 	                        savegame_selected = &button;
+	                        timeSinceScroll = 0;
 		                    return;
 		                } else {
-		                    soundActivate();
 	                        savegame_selected = &button;
 		                    int save_index = -1;
 	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
@@ -11843,7 +13028,7 @@ bind_failed:
 		};
 		Option options[] = {
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
-			{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium},
+			{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
 			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
@@ -11913,7 +13098,7 @@ bind_failed:
 	        players.clear();
 	        players.reserve(4);
 	        for (int c = 0; c < 4; ++c) {
-	            if (!client_disconnected[c]) {
+	            if (isPlayerSignedIn(c)) {
 	                players.push_back(c);
 	            }
 	        }
@@ -11929,7 +13114,7 @@ bind_failed:
                     );
 	        }
 	    } else {
-	        createControllerPrompt(clientnum, false, return_to_main_menu);
+	        createControllerPrompt(getMenuOwner(), false, return_to_main_menu);
 	    }
 	}
 
@@ -12289,8 +13474,8 @@ bind_failed:
 			        net_packet->len = 5;
 			        sendPacketSafe(net_sock, -1, net_packet, 0);
 		        } else {
-			        if (players[pause_menu_owner] && players[pause_menu_owner]->entity) {
-				        players[pause_menu_owner]->entity->setHP(0);
+			        if (players[getMenuOwner()] && players[getMenuOwner()]->entity) {
+				        players[getMenuOwner()]->entity->setHP(0);
 			        }
 		        }
 			},
@@ -12319,7 +13504,6 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				loadingsavegame = false;
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
@@ -12568,7 +13752,6 @@ bind_failed:
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
-				setupSplitscreen();
 				if (!loadingsavegame) {
 	                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
                         if (!saveGameExists(multiplayer == SINGLE, i)) {
@@ -12577,8 +13760,30 @@ bind_failed:
                         }
                     }
 				}
+
+				// set clientnum and client_disconnected[] based on the state of the lobby
+				if (currentLobbyType == LobbyType::LobbyLocal) {
+		            clientnum = -1;
+		            int playercount = 0;
+		            for (int c = 0; c < 4; ++c) {
+			            if (playersInLobby[c]) {
+				            clientnum = clientnum == -1 ? c : clientnum;
+				            client_disconnected[c] = false;
+				            ++playercount;
+			            } else {
+				            client_disconnected[c] = true;
+			            }
+		            }
+		            splitscreen = playercount >= 2; // necessary for save file to be valid
+		            assert(playercount > 0 && clientnum != -1);
+		        } else if (currentLobbyType != LobbyType::None) {
+		            // this is an online game. make SURE the splitscreen variable is false
+		            splitscreen = false;
+		        }
+
 				doNewGame(false);
 				destroyMainMenu();
+				setupSplitscreen();
 
                 // don't show the first time prompt anymore
 				if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
@@ -12596,6 +13801,7 @@ bind_failed:
 				destroyMainMenu();
 				multiplayer = SINGLE;
 				numplayers = 0;
+				loadingsavegame = 0;
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_TUTORIAL_INIT);
 
                 // don't show the first time prompt anymore
@@ -12747,8 +13953,8 @@ bind_failed:
 
         // if no controller is connected, you can always connect one just for the main menu.
         if (!ingame && currentLobbyType == LobbyType::None) {
-            if (!inputs.hasController(clientnum)) {
-                Input::waitingToBindControllerForPlayer = clientnum;
+            if (!inputs.hasController(getMenuOwner())) {
+                Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
         }
 	}
@@ -12789,7 +13995,7 @@ bind_failed:
 	void createTitleScreen() {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(clientnum);
+        main_menu_frame->setOwner(getMenuOwner());
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -12894,7 +14100,7 @@ bind_failed:
 	void createMainMenu(bool ingame) {
 		main_menu_frame = gui->addFrame("main_menu");
 
-        main_menu_frame->setOwner(ingame ? pause_menu_owner : clientnum);
+        main_menu_frame->setOwner(getMenuOwner());
 		main_menu_frame->setBorder(0);
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
@@ -12933,7 +14139,6 @@ bind_failed:
 			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
 			auto image = notification->addImage(notification->getActualSize(), 0xffffffff,
 				"*images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
-            // TODO notification!
 #if 1
             image->disabled = true;
 #endif
@@ -12951,7 +14156,7 @@ bind_failed:
 	        options.insert(options.begin(), {
 		        {"Back to Game", "BACK TO GAME", mainClose},
 		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
-		        {"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium},
+		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
 		        {"Settings", "SETTINGS", mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
@@ -12985,7 +14190,7 @@ bind_failed:
 				{"Play Game", "PLAY", mainPlayGame},
 #else
 				{"Play Game", "PLAY GAME", mainPlayGame},
-				{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame},
+				//{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame}, // TODO
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
 				{"Settings", "SETTINGS", mainSettings},
@@ -13067,7 +14272,6 @@ bind_failed:
 		);
 
 		if (!ingame) {
-		    // TODO banners!
 #if 0
 			for (int c = 0; c < 2; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
@@ -13153,7 +14357,7 @@ bind_failed:
 
 	void createDummyMainMenu() {
 		main_menu_frame = gui->addFrame("main_menu");
-        main_menu_frame->setOwner(clientnum);
+        main_menu_frame->setOwner(getMenuOwner());
 		main_menu_frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setHollow(true);
@@ -13495,7 +14699,6 @@ bind_failed:
 				}
                 });
             restart->select();
-
             restart->setWidgetLeft("quit");
             restart->setWidgetRight("dismiss");
 
@@ -13519,7 +14722,188 @@ bind_failed:
         }
     }
 
-	void receiveInvite() {
+	void receivedInvite() {
 	    assert(0 && "Received an invite. Behavior goes here!");
 	}
+
+	bool isPlayerSignedIn(int index) {
+	    if (index < 0 || index >= MAXPLAYERS) {
+	        return false;
+	    }
+	    if (intro) {
+	        switch (currentLobbyType) {
+	        default:
+	        case LobbyType::None: return false;
+	        case LobbyType::LobbyLocal: {
+	            auto lobby = main_menu_frame->findFrame("lobby");
+	            if (!lobby) {
+	                return false;
+	            }
+			    auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+			    if (!card) {
+			        return false;
+			    }
+			    auto backdrop = card->findImage("backdrop");
+			    if (!backdrop) {
+			        return false;
+			    }
+			    return backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
+			}
+			case LobbyType::LobbyLAN:
+			case LobbyType::LobbyOnline: {
+			    if (index == clientnum) {
+	                auto lobby = main_menu_frame->findFrame("lobby");
+	                if (!lobby) {
+	                    return false;
+	                }
+			        auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+			        if (!card) {
+			            return false;
+			        }
+			        auto backdrop = card->findImage("backdrop");
+			        if (!backdrop) {
+			            return false;
+			        }
+			        return backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
+			    } else {
+			        return !client_disconnected[index];
+			    }
+			}
+			}
+	    } else {
+	        return !client_disconnected[index];
+	    }
+	}
+
+    void controllerDisconnected(int player) {
+        if (!gamePaused) {
+            pauseGame(2, 0);
+            destroyMainMenu();
+            createDummyMainMenu();
+        }
+
+        auto old_prompt = main_menu_frame->findFrame("controller_prompt");
+        if (old_prompt) {
+            if (old_prompt->getOwner() < player) {
+                // don't open a new prompt.
+                // we're trying to deal with another player.
+                return;
+            } else {
+                // this player is gonna take over the controller when we plug it in,
+                // so give them a prompt.
+                destroyMainMenu();
+                createDummyMainMenu();
+            }
+        }
+
+        static real_t bounce;
+        bounce = (real_t)0.0;
+        auto prompt_tick_callback = [](Widget& widget){
+            auto frame = static_cast<Frame*>(widget.getParent());
+            const int player = frame->getOwner();
+			const real_t inc = (PI / fpsLimit) * 0.5f;
+            for (int c = 0; c < MAXPLAYERS; ++c) {
+		        bounce += inc;
+		        const real_t bounce_height = fabs(sin(bounce)) * 32.0;
+                const std::string name = std::string("player") + std::to_string(player);
+                auto image = frame->findImage(name.c_str());
+                if (image) {
+		            const int h = image->pos.h;
+                    const int y = frame->getSize().h - h - 32 - (int)bounce_height;
+	                image->pos.y = y;
+                }
+                auto field = frame->findField(name.c_str());
+                if (field) {
+                    auto size = field->getSize();
+                    size.y = frame->getSize().h - size.h - 32 - (int)bounce_height;
+                    field->setSize(size);
+                }
+            }
+            if (inputs.getPlayerIDAllowedKeyboard() == player) {
+                destroyMainMenu();
+                pauseGame(1, 0); // unpause game
+            } else {
+                auto controller = inputs.getController(player);
+                if (controller && controller->isActive()) {
+                    destroyMainMenu();
+                    pauseGame(1, 0); // unpause game
+                }
+            }
+            };
+
+		char text[1024];
+        if (splitscreen) {
+		    snprintf(text, sizeof(text), "Reconnect the controller for Player %d\n\n\n\n", player + 1);
+        } else {
+		    snprintf(text, sizeof(text), "Please reconnect your controller.\n\n\n\n");
+        }
+
+        auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        prompt->setOwner(player);
+
+        auto header_size = prompt->getActualSize(); header_size.h = 80;
+        auto header = prompt->addField("header", 128);
+        header->setSize(header_size);
+        header->setFont(bigfont_outline);
+        header->setJustify(Field::justify_t::CENTER);
+        header->setText("RECONNECT CONTROLLER");
+
+        auto back = createBackWidget(prompt, [](Button& button){
+            destroyMainMenu();
+            createMainMenu(!intro);
+            });
+        //back->select();
+
+        auto dimmer = static_cast<Frame*>(prompt->getParent());
+        dimmer->setOwner(player);
+
+	    int playercount = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+	            ++playercount;
+	        }
+	    }
+
+	    int num = 0;
+	    for (int c = 0; c < MAXPLAYERS; ++c) {
+	        if (isPlayerSignedIn(c)) {
+                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
+                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
+                auto image = Image::get(path);
+                const int w = image->getWidth();
+                const int h = image->getHeight();
+                const int space = 100;
+                const int x = (prompt->getSize().w - playercount * space + space - w) / 2 + num * space;
+                const int y = prompt->getSize().h - h - 32;
+	            const std::string name = std::string("player") + std::to_string(c);
+                prompt->addImage(
+                    SDL_Rect{x, y, w, h},
+                    makeColor(255, 255, 255, 255),
+                    path, name.c_str());
+                auto field = prompt->addField(name.c_str(), 16);
+                field->setSize(SDL_Rect{x, y, w, h});
+                field->setJustify(Field::justify_t::CENTER);
+                field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+                field->setFont(bigfont_outline);
+                switch (c) {
+                default: field->setColor(uint32ColorPlayerX); break;
+                case 0: field->setColor(uint32ColorPlayer1); break;
+		        case 1: field->setColor(uint32ColorPlayer2); break;
+		        case 2: field->setColor(uint32ColorPlayer3); break;
+		        case 3: field->setColor(uint32ColorPlayer4); break;
+                }
+                ++num;
+	        }
+	    }
+
+        std::string path = Input::getGlyphPathForInput("ButtonA", false);
+        auto image = Image::get((std::string("*") + path).c_str());
+        const int w = image->getWidth();
+        const int h = image->getHeight();
+        const int x = (prompt->getSize().w - w) / 2;
+        const int y = (prompt->getSize().h - h) / 2;
+        prompt->addImage(SDL_Rect{x, y, w, h}, 0xffffffff, path.c_str(), "a_button");
+
+        soundError();
+    }
 }

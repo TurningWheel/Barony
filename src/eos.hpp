@@ -647,7 +647,7 @@ public:
 				}
 				else
 				{
-					static char buffer[EOS_PRODUCTUSERID_MAX_LENGTH];
+					static char buffer[EOS_PRODUCTUSERID_MAX_LENGTH + 1];
 					int bufferSize = sizeof(buffer);
 					EOS_EResult result = EOS_ProductUserId_ToString(id, buffer, &bufferSize);
 					if ( result == EOS_EResult::EOS_Success )

@@ -2854,10 +2854,10 @@ void actPlayer(Entity* my)
 	    {
 		    keystatus[SDL_SCANCODE_KP_0] = 0;
 		    inputs.setPlayerIDAllowedKeyboard(-1);
-		    for ( int i = 0; i < MAXPLAYERS; ++i )
-		    {
-			    Input::inputs[i].refresh();
-		    }
+	        for ( int i = 0; i < MAXPLAYERS; ++i )
+	        {
+		        Input::inputs[i].refresh();
+	        }
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed keyboard for any player");
 	    }
 		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_7] )

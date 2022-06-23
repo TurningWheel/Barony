@@ -100,11 +100,6 @@ void Text::render() {
 	while ( strToRender.size() < 2 ) {
 		strToRender.append(" ");
 	}
-#else
-	// fixes nullptr SDL surface when string is empty.
-	if ( strToRender.size() < 1 ) {
-		strToRender.append(" ");
-	}
 #endif
 
 	Font* font = Font::get(fontName.c_str());
@@ -135,8 +130,12 @@ void Text::render() {
 		TTF_SetFontOutline(ttf, 0);
 		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
 	}
-	assert(surf);
 
+	if (!surf) {
+	    width = 4;
+	    height = font->height(true);
+	    return;
+	}
 
 	width = surf->w;
 	height = surf->h;
@@ -247,7 +246,9 @@ void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport
 }
 
 void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-	assert(surf);
+	if (!surf) {
+	    return;
+	}
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);

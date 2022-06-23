@@ -87,8 +87,9 @@ public:
 		std::string name;
 		std::string text;
 		std::string tooltip;
-		Uint32 color;
 		std::string image;
+		Uint32 color = makeColor(255, 255, 255, 255);
+		void* data = nullptr;
 
         bool clickable = true;
 		bool pressed = false;
@@ -305,6 +306,9 @@ public:
 	//! synchronizes scrolling with sync scroll targets
 	void syncScroll();
 
+	//! puts this frame on top of all others
+	void bringToTop();
+
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
 	const int						getBorder() const { return border; }
@@ -336,7 +340,7 @@ public:
 	void	setBorder(const int _border) { border = _border; }
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(SDL_Rect _size) { size = _size; }
-	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; allowScrolling = true; }
+	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; allowScrolling = true; scrollInertiaX = 0.f; scrollInertiaY = 0.f; }
 	void	setBorderStyle(int _borderStyle) { borderStyle = static_cast<border_style_t>(_borderStyle); }
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }

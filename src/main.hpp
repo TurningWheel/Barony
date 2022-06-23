@@ -332,6 +332,13 @@ static const int RIGHT_CLICK_IMPULSE = 285; // right click
 //Time in seconds before the in_dev warning disappears.
 #define indev_displaytime 7000
 
+enum LightModifierValues : int
+{
+	GLOBAL_LIGHT_MODIFIER_STOPPED,
+	GLOBAL_LIGHT_MODIFIER_INUSE,
+	GLOBAL_LIGHT_MODIFIER_DISSIPATING
+};
+
 // view structure
 typedef struct view_t
 {
@@ -339,6 +346,9 @@ typedef struct view_t
 	real_t ang;
 	real_t vang;
 	Sint32 winx, winy, winw, winh;
+    real_t globalLightModifier = 0.0;
+    real_t globalLightModifierEntities = 0.0;
+    int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 } view_t;
 
 class Entity; //TODO: Bugger?
@@ -699,16 +709,6 @@ static const int MINIMAP_MAX_DIMENSION = 512;
 extern Sint8 minimap[MINIMAP_MAX_DIMENSION][MINIMAP_MAX_DIMENSION];
 extern Uint32 mapseed;
 extern bool* shoparea;
-extern real_t globalLightModifier;
-extern real_t globalLightTelepathyModifier;
-extern int globalLightModifierActive;
-extern int globalLightSmoothingRate;
-enum LightModifierValues : int
-{
-	GLOBAL_LIGHT_MODIFIER_STOPPED,
-	GLOBAL_LIGHT_MODIFIER_INUSE,
-	GLOBAL_LIGHT_MODIFIER_DISSIPATING
-};
 
 // function prototypes for main.c:
 int sgn(real_t x);
