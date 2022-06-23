@@ -17932,7 +17932,7 @@ void Player::HUD_t::updateGameTimer()
 		return;
 	}
 
-	if ( !player.shootmode || !player.characterSheet.showGameTimerAlways )
+	if ( !player.shootmode || !player.characterSheet.showGameTimerAlways || splitscreen )
 	{
 		gameTimerFrame->setDisabled(true);
 		return;
