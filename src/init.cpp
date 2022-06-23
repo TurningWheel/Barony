@@ -218,12 +218,14 @@ int initApp(char const * const title, int fullscreen)
 
 	window_title = title;
 	printlog("initializing SDL...\n");
+#ifdef WINDOWS
 #ifndef EDITOR
 	if ( (*cvar_sdl_disablejoystickrawinput) == true )
 	{
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
 		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
 	}
+#endif
 #endif
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER 
 		| SDL_INIT_EVENTS | SDL_INIT_JOYSTICK 
