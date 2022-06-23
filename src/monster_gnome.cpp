@@ -55,10 +55,10 @@ void initGnome(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			if ( local_rng.getU32() % 8 == 0 )
+			if ( local_rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.getU32() % 1800;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 1800;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -82,9 +82,9 @@ void initGnome(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( local_rng.getU32() % 50 == 0 )
+					if ( local_rng.rand() % 50 == 0 )
 					{
-						if ( local_rng.getU32() % 2 == 0 )
+						if ( local_rng.rand() % 2 == 0 )
 						{
 							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
 						}
@@ -94,18 +94,18 @@ void initGnome(Entity* my, Stat* myStats)
 						}
 					}
 				case 2:
-					if ( local_rng.getU32() % 10 == 0 )
+					if ( local_rng.rand() % 10 == 0 )
 					{
-						int i = 1 + local_rng.getU32() % 4;
+						int i = 1 + local_rng.rand() % 4;
 						for ( c = 0; c < i; c++ )
 						{
-							newItem(static_cast<ItemType>(GEM_GARNET + local_rng.getU32() % 15), static_cast<Status>(1 + local_rng.getU32() % 4), 0, 1, local_rng.getU32(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(GEM_GARNET + local_rng.rand() % 15), static_cast<Status>(1 + local_rng.rand() % 4), 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 				case 1:
-					if ( local_rng.getU32() % 3 == 0 )
+					if ( local_rng.rand() % 3 == 0 )
 					{
-						newItem(FOOD_FISH, EXCELLENT, 0, 1, local_rng.getU32(), false, &myStats->inventory);
+						newItem(FOOD_FISH, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -115,11 +115,11 @@ void initGnome(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( local_rng.getU32() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
-						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
+						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 2:
 					case 3:
@@ -130,7 +130,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 7:
 					case 8:
 					case 9:
-						myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
+						myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -138,14 +138,14 @@ void initGnome(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( local_rng.getU32() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 					case 4:
-						myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
+						myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 5:
 					case 6:
@@ -153,7 +153,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 8:
 					case 9:
 						myStats->GOLD += 100;
-						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
+						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -161,7 +161,7 @@ void initGnome(Entity* my, Stat* myStats)
 			// give cloak
 			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
-				switch ( local_rng.getU32() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -174,7 +174,7 @@ void initGnome(Entity* my, Stat* myStats)
 					case 7:
 					case 8:
 					case 9:
-						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, nullptr);
+						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -367,7 +367,7 @@ void gnomeDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 225 + local_rng.getU32() % 4, 128);
+	playSoundEntity(my, 225 + local_rng.rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }

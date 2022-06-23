@@ -388,7 +388,7 @@ void actArrow(Entity* my)
 			{
 				Entity* parent = uidToEntity(my->parent);
 				Stat* hitstats = hit.entity->getStats();
-				playSoundEntity(my, 72 + local_rng.getU32() % 3, 64);
+				playSoundEntity(my, 72 + local_rng.rand() % 3, 64);
 				if ( hitstats != NULL && hit.entity != parent )
 				{
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -597,7 +597,7 @@ void actArrow(Entity* my)
 							doSkillIncrease = false; // no skill for killing/hurting players
 						}
 						int chance = 10;
-						if ( doSkillIncrease && (local_rng.getU32() % chance == 0) && parent && parent->getStats() )
+						if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 						{
 							if ( hitstats->type != DUMMYBOT 
 								|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < 20) )
@@ -921,7 +921,7 @@ void actArrow(Entity* my)
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{
-									if ( local_rng.getU32() % 8 == 0 && hit.entity->skill[26] == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
+									if ( local_rng.rand() % 8 == 0 && hit.entity->skill[26] == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
 									{
 										// maybe vomit
 										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, language[634]);
@@ -929,7 +929,7 @@ void actArrow(Entity* my)
 											&& hit.entity->effectShapeshift == NOTHING
 											&& hitstats->type != AUTOMATON )
 										{
-											hit.entity->skill[26] = 140 + local_rng.getU32() % 60; 
+											hit.entity->skill[26] = 140 + local_rng.rand() % 60; 
 										}
 									}
 									Uint32 color = makeColorRGB(255, 0, 0);
@@ -1005,7 +1005,7 @@ void actArrow(Entity* my)
 			}
 			else
 			{
-				playSoundEntity(my, 72 + local_rng.getU32() % 3, 64);
+				playSoundEntity(my, 72 + local_rng.rand() % 3, 64);
 			}
 		}
 	}

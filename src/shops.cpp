@@ -123,7 +123,7 @@ void startTradingServer(Entity* entity, int player)
 		shopInv[player] = &stats->inventory;
 		shopkeeper[player] = entity->getUID();
 		shoptimer[player] = ticks - 1;
-		shopspeech[player] = language[194 + local_rng.getU32() % 3];
+		shopspeech[player] = language[194 + local_rng.rand() % 3];
 		shopkeepertype[player] = entity->monsterStoreType;
 		shopkeepername[player] = stats->name;
 
@@ -199,11 +199,11 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 	{
 		if ( items[item->type].value * 1.5 >= item->buyValue(player) )
 		{
-			shopspeech[player] = language[200 + local_rng.getU32() % 3];
+			shopspeech[player] = language[200 + local_rng.rand() % 3];
 		}
 		else
 		{
-			shopspeech[player] = language[197 + local_rng.getU32() % 3];
+			shopspeech[player] = language[197 + local_rng.rand() % 3];
 		}
 		shoptimer[player] = ticks - 1;
 		Item* itemToPickup = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
@@ -268,7 +268,7 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 						players[player]->entity->increaseSkill(PRO_TRADING);
 					}
 				}
-				//if ( local_rng.getU32() % 2 )
+				//if ( local_rng.rand() % 2 )
 				//{
 				//	if ( item->buyValue(player) <= 1 )
 				//	{
@@ -285,7 +285,7 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 				//}
 				//else if ( item->buyValue(player) >= 150 )
 				//{
-				//	if ( item->buyValue(player) >= 300 || local_rng.getU32() % 2 )
+				//	if ( item->buyValue(player) >= 300 || local_rng.rand() % 2 )
 				//	{
 				//		players[player]->entity->increaseSkill(PRO_TRADING);
 				//	}
@@ -351,7 +351,7 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 	}
 	else
 	{
-		shopspeech[player] = language[203 + local_rng.getU32() % 3];
+		shopspeech[player] = language[203 + local_rng.rand() % 3];
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
 		if ( players[player]->isLocalPlayer() )
@@ -485,7 +485,7 @@ bool sellItemToShop(const int player, Item* item)
 		}
 		else
 		{
-			shopspeech[player] = language[212 + local_rng.getU32() % 3];
+			shopspeech[player] = language[212 + local_rng.rand() % 3];
 		}
 		shoptimer[player] = ticks - 1;
 		playSound(90, 64);
@@ -560,11 +560,11 @@ bool sellItemToShop(const int player, Item* item)
 
 	if ( items[item->type].value * .75 <= item->sellValue(player) )
 	{
-		shopspeech[player] = language[209 + local_rng.getU32() % 3];
+		shopspeech[player] = language[209 + local_rng.rand() % 3];
 	}
 	else
 	{
-		shopspeech[player] = language[206 + local_rng.getU32() % 3];
+		shopspeech[player] = language[206 + local_rng.rand() % 3];
 	}
 	shoptimer[player] = ticks - 1;
 
@@ -619,7 +619,7 @@ bool sellItemToShop(const int player, Item* item)
 	{
 		//if ( players[player] && players[player]->entity )
 		//{
-		//	if ( local_rng.getU32() % 2 )
+		//	if ( local_rng.rand() % 2 )
 		//	{
 		//		if ( item->sellValue(player) <= 1 )
 		//		{

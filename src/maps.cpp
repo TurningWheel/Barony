@@ -45,7 +45,7 @@ int monsterCurve(int level)
 {
 	if ( !strncmp(map.name, "The Mines", 9) )   // the mines
 	{
-		switch ( local_rng.getU32() % 10 )
+		switch ( local_rng.rand() % 10 )
 		{
 			case 0:
 			case 1:
@@ -80,7 +80,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Swamp", 9) )     // the swamp
 	{
-		switch ( local_rng.getU32() % 10 )
+		switch ( local_rng.rand() % 10 )
 		{
 			case 0:
 			case 1:
@@ -100,7 +100,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Labyrinth", 13) )     // sand labyrinth
 	{
-		switch ( local_rng.getU32() % 20 )
+		switch ( local_rng.rand() % 20 )
 		{
 			case 0:
 			case 1:
@@ -131,7 +131,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Ruins", 9) )     // blue ruins
 	{
-		switch ( local_rng.getU32() % 10 )
+		switch ( local_rng.rand() % 10 )
 		{
 			case 0:
 				return GOBLIN;
@@ -145,7 +145,7 @@ int monsterCurve(int level)
 			case 7:
 				return TROLL;
 			case 8:
-				if ( local_rng.getU32() % 10 > 0 )
+				if ( local_rng.rand() % 10 > 0 )
 				{
 					return TROLL;
 				}
@@ -159,7 +159,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Underworld", 10) )     // underworld
 	{
-		switch ( local_rng.getU32() % 10 )
+		switch ( local_rng.rand() % 10 )
 		{
 			case 0:
 				return SLIME;
@@ -180,7 +180,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Hell", 4) )     // hell
 	{
-		switch ( local_rng.getU32() % 20 )
+		switch ( local_rng.rand() % 20 )
 		{
 			case 0:
 			case 1:
@@ -221,7 +221,7 @@ int monsterCurve(int level)
 	{
 		if ( currentlevel <= 26 )
 		{
-			switch ( local_rng.getU32() % 15 )
+			switch ( local_rng.rand() % 15 )
 			{
 				case 0:
 				case 1:
@@ -241,7 +241,7 @@ int monsterCurve(int level)
 					return INSECTOID;
 				case 12:
 				case 13:
-					if ( local_rng.getU32() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						return INCUBUS;
 					}
@@ -250,7 +250,7 @@ int monsterCurve(int level)
 						return INSECTOID;
 					}
 				case 14:
-					if ( local_rng.getU32() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						return CRYSTALGOLEM;
 					}
@@ -262,7 +262,7 @@ int monsterCurve(int level)
 		}
 		else
 		{
-			switch ( local_rng.getU32() % 15 )
+			switch ( local_rng.rand() % 15 )
 			{
 				case 0:
 				case 1:
@@ -291,7 +291,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Citadel", 7) )
 	{
-		switch ( local_rng.getU32() % 15 )
+		switch ( local_rng.rand() % 15 )
 		{
 			case 0:
 				return KOBOLD;
@@ -425,7 +425,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		// function sets shop level for us.
 	}
-	else if ( map_rng.getU32() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
+	else if ( map_rng.rand() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
 	{
 		shoplevel = true;
 	}
@@ -437,7 +437,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 	else if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
 	{
-		if ( map_rng.getU32() % 100 < std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
+		if ( map_rng.rand() % 100 < std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
@@ -445,7 +445,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	else if ( (currentlevel < 25 && (currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3))
 		|| (currentlevel > 25 && (currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 4)) )
 	{
-		if ( map_rng.getU32() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
+		if ( map_rng.rand() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
@@ -464,7 +464,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		if ( std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) != -1 )
 		{
-			if ( map_rng.getU32() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
+			if ( map_rng.rand() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
 			{
 				darkmap = true;
 				messageLocalPlayers(MESSAGE_HINT, language[1108]);
@@ -476,7 +476,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 		else if ( currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
 		{
-			if ( map_rng.getU32() % 4 == 0 )
+			if ( map_rng.rand() % 4 == 0 )
 			{
 				darkmap = true;
 				messageLocalPlayers(MESSAGE_HINT, language[1108]);
@@ -489,7 +489,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) != -1 )
 		{
-			if ( map_rng.getU32() % 100 < std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) )
+			if ( map_rng.rand() % 100 < std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) )
 			{
 				secretlevelexit = 7;
 			}
@@ -498,7 +498,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				secretlevelexit = 0;
 			}
 		}
-		else if ( (currentlevel == 3 && map_rng.getU32() % 2) || currentlevel == 2 )
+		else if ( (currentlevel == 3 && map_rng.rand() % 2) || currentlevel == 2 )
 		{
 			secretlevelexit = 1;
 		}
@@ -567,7 +567,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 		if ( numlevels )
 		{
-			int shopleveltouse = map_rng.getU32() % numlevels;
+			int shopleveltouse = map_rng.rand() % numlevels;
 			strcpy(sublevelname, shopMapTitle.c_str());
 			snprintf(sublevelnum, 3, "%02d", shopleveltouse);
 			strcat(sublevelname, sublevelnum);
@@ -996,7 +996,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					break;
 				}
-				levelnum = map_rng.getU32() % (numlevels); // draw randomly from the pool
+				levelnum = map_rng.rand() % (numlevels); // draw randomly from the pool
 
 				// traverse the map list to the picked level
 				node = mapList.first;
@@ -1114,20 +1114,20 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					if ( c == 0 )
 					{
 						// 7x7, pick random location across all map.
-						x = 2 + (map_rng.getU32() % 7) * 7;
-						y = 2 + (map_rng.getU32() % 7) * 7;
+						x = 2 + (map_rng.rand() % 7) * 7;
+						y = 2 + (map_rng.rand() % 7) * 7;
 					}
 					else if ( secretlevelexit && c == 1 )
 					{
 						// 14x14, pick random location minus 1 from both edges.
-						x = 2 + (map_rng.getU32() % 6) * 7;
-						y = 2 + (map_rng.getU32() % 6) * 7;
+						x = 2 + (map_rng.rand() % 6) * 7;
+						y = 2 + (map_rng.rand() % 6) * 7;
 					}
 					else if ( c == 2 && shoplevel )
 					{
 						// 7x7, pick random location across all map.
-						x = 2 + (map_rng.getU32() % 7) * 7;
-						y = 2 + (map_rng.getU32() % 7) * 7;
+						x = 2 + (map_rng.rand() % 7) * 7;
+						y = 2 + (map_rng.rand() % 7) * 7;
 					}
 				}
 				else
@@ -1135,27 +1135,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					if ( c == 0 )
 					{
 						// pick random location across all map.
-						x = 2 + (map_rng.getU32() % tempMap->width) * tempMap->width;
-						y = 2 + (map_rng.getU32() % tempMap->height) * tempMap->height;
+						x = 2 + (map_rng.rand() % tempMap->width) * tempMap->width;
+						y = 2 + (map_rng.rand() % tempMap->height) * tempMap->height;
 					}
 					else if ( secretlevelexit && c == 1 )
 					{
-						x = 2 + (map_rng.getU32() % tempMap->width) * tempMap->width;
-						y = 2 + (map_rng.getU32() % tempMap->height) * tempMap->height;
+						x = 2 + (map_rng.rand() % tempMap->width) * tempMap->width;
+						y = 2 + (map_rng.rand() % tempMap->height) * tempMap->height;
 						while ( x + tempMap->width >= map.width )
 						{
-							x = 2 + (map_rng.getU32() % tempMap->width) * tempMap->width;
+							x = 2 + (map_rng.rand() % tempMap->width) * tempMap->width;
 						}
 						while ( y + tempMap->height >= map.height )
 						{
-							y = 2 + (map_rng.getU32() % tempMap->height) * tempMap->height;
+							y = 2 + (map_rng.rand() % tempMap->height) * tempMap->height;
 						}
 					}
 					else if ( c == 2 && shoplevel )
 					{
 						// pick random location across all map.
-						x = 2 + (map_rng.getU32() % tempMap->width) * tempMap->width;
-						y = 2 + (map_rng.getU32() % tempMap->height) * tempMap->height;
+						x = 2 + (map_rng.rand() % tempMap->width) * tempMap->width;
+						y = 2 + (map_rng.rand() % tempMap->height) * tempMap->height;
 					}
 				}
 
@@ -1184,7 +1184,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				pickedlocation = map_rng.getU32() % numpossiblelocations;
+				pickedlocation = map_rng.rand() % numpossiblelocations;
 				i = -1;
 				x = 0;
 				y = 0;
@@ -1232,7 +1232,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			bool foundSubRoom = false;
 			if ( c == 2 && shoplevel && tempMap == &shopmap && shopSubRooms.count > 0 )
 			{
-				pickSubRoom = map_rng.getU32() % shopSubRooms.count;
+				pickSubRoom = map_rng.rand() % shopSubRooms.count;
 				subRoomNode = shopSubRooms.list.first;
 				int k = 0;
 				while ( 1 )
@@ -1262,7 +1262,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( subroomCount[levelnum + 1] > 0 )
 				{
 					int jumps = 0;
-					pickSubRoom = map_rng.getU32() % subroomCount[levelnum + 1];
+					pickSubRoom = map_rng.rand() % subroomCount[levelnum + 1];
 					// traverse the map list to the picked level
 					subRoomNode = subRoomMapList.first;
 					for ( int cycleRooms = 0; (cycleRooms < levelnum + 1) && (subRoomNode != nullptr); ++cycleRooms )
@@ -1836,7 +1836,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 		}
 
-		int whatever = map_rng.getU32() % 5;
+		int whatever = map_rng.rand() % 5;
 		if ( strncmp(map.name, "Hell", 4) )
 			j = std::min(
 			        std::min(
@@ -1855,7 +1855,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		for ( c = 0; c < j; ++c )
 		{
 			// choose a random location from those available
-			pickedlocation = map_rng.getU32() % numpossiblelocations;
+			pickedlocation = map_rng.rand() % numpossiblelocations;
 			i = -1;
 			//printlog("pickedlocation: %d\n",pickedlocation);
 			//printlog("numpossiblelocations: %d\n",numpossiblelocations);
@@ -1927,7 +1927,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				if ( map_rng.getU32() % 2 && (currentlevel > 5 && currentlevel <= 25) )
+				if ( map_rng.rand() % 2 && (currentlevel > 5 && currentlevel <= 25) )
 				{
 					arrowtrapspawn = true;
 				}
@@ -1936,7 +1936,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( customTrapsForMapInUse )
 			{
 				arrowtrapspawn = customTraps.arrows;
-				if ( customTraps.boulders && map_rng.getU32() % 2 )
+				if ( customTraps.boulders && map_rng.rand() % 2 )
 				{
 					arrowtrapspawn = false;
 				}
@@ -2132,13 +2132,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		genEntityMin = std::max(genEntityMin, 2); // make sure there's room for a ladder.
 		entitiesToGenerate = genEntityMin;
 		randomEntities = std::max(genEntityMax - genEntityMin, 1); // difference between min and max is the extra chances.
-		//Needs to be 1 for map_rng.getU32() % to not divide by 0.
-		j = std::min<Uint32>(entitiesToGenerate + map_rng.getU32() % randomEntities, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
+		//Needs to be 1 for map_rng.rand() % to not divide by 0.
+		j = std::min<Uint32>(entitiesToGenerate + map_rng.rand() % randomEntities, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
 	}
 	else
 	{
 		// revert to old mechanics.
-		j = std::min<Uint32>(30 + map_rng.getU32() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
+		j = std::min<Uint32>(30 + map_rng.rand() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
 	}
 	int forcedMonsterSpawns = 0;
 	int forcedLootSpawns = 0;
@@ -2146,15 +2146,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	if ( genMonsterMin > 0 || genMonsterMax > 0 )
 	{
-		forcedMonsterSpawns = genMonsterMin + map_rng.getU32() % std::max(genMonsterMax - genMonsterMin, 1);
+		forcedMonsterSpawns = genMonsterMin + map_rng.rand() % std::max(genMonsterMax - genMonsterMin, 1);
 	}
 	if ( genLootMin > 0 || genLootMax > 0 )
 	{
-		forcedLootSpawns = genLootMin + map_rng.getU32() % std::max(genLootMax - genLootMin, 1);
+		forcedLootSpawns = genLootMin + map_rng.rand() % std::max(genLootMax - genLootMin, 1);
 	}
 	if ( genDecorationMin > 0 || genDecorationMax > 0 )
 	{
-		forcedDecorationSpawns = genDecorationMin + map_rng.getU32() % std::max(genDecorationMax - genDecorationMin, 1);
+		forcedDecorationSpawns = genDecorationMin + map_rng.rand() % std::max(genDecorationMax - genDecorationMin, 1);
 	}
 
 	//messagePlayer(0, "Num locations: %d of %d possible, force monsters: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedLootSpawns, forcedDecorationSpawns);
@@ -2168,7 +2168,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
 	{
 		// choose a random location from those available
-		pickedlocation = map_rng.getU32() % numpossiblelocations;
+		pickedlocation = map_rng.rand() % numpossiblelocations;
 		i = -1;
 		//printlog("pickedlocation: %d\n",pickedlocation);
 		//printlog("numpossiblelocations: %d\n",numpossiblelocations);
@@ -2297,14 +2297,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							// doNPC processed by function
 						}
-						else if ( map_rng.getU32() % 10 == 0 && currentlevel > 1 )
+						else if ( map_rng.rand() % 10 == 0 && currentlevel > 1 )
 						{
 							doNPC = true;
 						}
 
 						if ( doNPC )
 						{
-							if ( currentlevel > 15 && map_rng.getU32() % 4 > 0 )
+							if ( currentlevel > 15 && map_rng.rand() % 4 > 0 )
 							{
 								entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
 								if ( currentlevel < 25 )
@@ -2317,7 +2317,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								entity = newEntity(27, 1, map.entities, map.creatures);  // human
 								if ( multiplayer != CLIENT && currentlevel > 5 )
 								{
-									entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.getU32() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
+									entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
 								}
 							}
 						}
@@ -2334,7 +2334,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					--forcedLootSpawns;
 					if ( lootexcludelocations[x + y * map.width] == false )
 					{
-						if ( map_rng.getU32() % 10 == 0 )   // 10% chance
+						if ( map_rng.rand() % 10 == 0 )   // 10% chance
 						{
 							entity = newEntity(9, 1, map.entities, nullptr);  // gold
 							numGenGold++;
@@ -2351,9 +2351,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					--forcedDecorationSpawns;
 					// decorations
-					if ( (map_rng.getU32() % 4 == 0 || currentlevel <= 10 && !customTrapsForMapInUse) && strcmp(map.name, "Hell") )
+					if ( (map_rng.rand() % 4 == 0 || currentlevel <= 10 && !customTrapsForMapInUse) && strcmp(map.name, "Hell") )
 					{
-						switch ( map_rng.getU32() % 7 )
+						switch ( map_rng.rand() % 7 )
 						{
 							case 0:
 								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
@@ -2390,7 +2390,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							{
 								continue;
 							}
-							else if ( customTraps.verticalSpelltraps && map_rng.getU32() % 2 == 0 )
+							else if ( customTraps.verticalSpelltraps && map_rng.rand() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 								setSpriteAttributes(entity, nullptr, nullptr);
@@ -2408,7 +2408,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 							else
 							{
-								if ( map_rng.getU32() % 2 == 0 )
+								if ( map_rng.rand() % 2 == 0 )
 								{
 									entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 									setSpriteAttributes(entity, nullptr, nullptr);
@@ -2430,7 +2430,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			else
 			{
 				// return to normal generation
-				if ( map_rng.getU32() % 2 || nodecoration )
+				if ( map_rng.rand() % 2 || nodecoration )
 				{
 					// balance for total number of players
 					int balance = 0;
@@ -2463,11 +2463,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					// monsters/items
 					if ( balance )
 					{
-						if ( map_rng.getU32() % balance )
+						if ( map_rng.rand() % balance )
 						{
 							if ( lootexcludelocations[x + y * map.width] == false )
 							{
-								if ( map_rng.getU32() % 10 == 0 )   // 10% chance
+								if ( map_rng.rand() % 10 == 0 )   // 10% chance
 								{
 									entity = newEntity(9, 1, map.entities, nullptr);  // gold
 									numGenGold++;
@@ -2489,14 +2489,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								{
 									// doNPC processed by function
 								}
-								else if ( map_rng.getU32() % 10 == 0 && currentlevel > 1 )
+								else if ( map_rng.rand() % 10 == 0 && currentlevel > 1 )
 								{
 									doNPC = true;
 								}
 
 								if ( doNPC )
 								{
-									if ( currentlevel > 15 && map_rng.getU32() % 4 > 0 )
+									if ( currentlevel > 15 && map_rng.rand() % 4 > 0 )
 									{
 										entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
 										if ( currentlevel < 25 )
@@ -2509,7 +2509,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 										entity = newEntity(27, 1, map.entities, map.creatures);  // human
 										if ( multiplayer != CLIENT && currentlevel > 5 )
 										{
-											entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.getU32() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
+											entity->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
 										}
 									}
 								}
@@ -2526,9 +2526,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				else
 				{
 					// decorations
-					if ( (map_rng.getU32() % 4 == 0 || (currentlevel <= 10 && !customTrapsForMapInUse)) && strcmp(map.name, "Hell") )
+					if ( (map_rng.rand() % 4 == 0 || (currentlevel <= 10 && !customTrapsForMapInUse)) && strcmp(map.name, "Hell") )
 					{
-						switch ( map_rng.getU32() % 7 )
+						switch ( map_rng.rand() % 7 )
 						{
 							case 0:
 								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
@@ -2565,7 +2565,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							{
 								continue;
 							}
-							else if ( customTraps.verticalSpelltraps && map_rng.getU32() % 2 == 0 )
+							else if ( customTraps.verticalSpelltraps && map_rng.rand() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 								setSpriteAttributes(entity, nullptr, nullptr);
@@ -2583,7 +2583,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 							else
 							{
-								if ( map_rng.getU32() % 2 == 0 )
+								if ( map_rng.rand() % 2 == 0 )
 								{
 									entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 									setSpriteAttributes(entity, nullptr, nullptr);
@@ -2783,7 +2783,7 @@ void assignActions(map_t* map)
 					players[numplayers]->entity = entity;
 					if ( entity->playerStartDir == -1 )
 					{
-						entity->yaw = (map_rng.getU32() % 8) * 45 * (PI / 180.f);
+						entity->yaw = (map_rng.rand() % 8) * 45 * (PI / 180.f);
 					}
 					else
 					{
@@ -2995,7 +2995,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->roll = PI / 2.0;
-				entity->yaw = (map_rng.getU32() % 360) * PI / 180.0;
+				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actItem;
 				if ( entity->sprite == 68 )   // magic_bow.png
@@ -3023,19 +3023,19 @@ void assignActions(map_t* map)
 							switch ( balance )
 							{
 								case 2:
-									if ( map_rng.getU32() % 8 == 0 )
+									if ( map_rng.rand() % 8 == 0 )
 									{
 										extrafood = true;
 									}
 									break;
 								case 3:
-									if ( map_rng.getU32() % 6 == 0 )
+									if ( map_rng.rand() % 6 == 0 )
 									{
 										extrafood = true;
 									}
 									break;
 								case 4:
-									if ( map_rng.getU32() % 5 == 0 )
+									if ( map_rng.rand() % 5 == 0 )
 									{
 										extrafood = true;
 									}
@@ -3046,27 +3046,27 @@ void assignActions(map_t* map)
 							}
 							if ( !extrafood )
 							{
-								if ( map_rng.getU32() % 2 == 0 )
+								if ( map_rng.rand() % 2 == 0 )
 								{
 									// possible magicstaff
-									int randType = map_rng.getU32() % (NUMCATEGORIES - 1);
-									if ( randType == THROWN && map_rng.getU32() % 3 ) // THROWN items 66% to be re-roll.
+									int randType = map_rng.rand() % (NUMCATEGORIES - 1);
+									if ( randType == THROWN && map_rng.rand() % 3 ) // THROWN items 66% to be re-roll.
 									{
-										randType = map_rng.getU32() % (NUMCATEGORIES - 1);
+										randType = map_rng.rand() % (NUMCATEGORIES - 1);
 									}
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
 								}
 								else
 								{
 									// impossible magicstaff
-									int randType = map_rng.getU32() % (NUMCATEGORIES - 2);
+									int randType = map_rng.rand() % (NUMCATEGORIES - 2);
 									if ( randType >= MAGICSTAFF )
 									{
 										randType++;
 									}
-									if ( randType == THROWN && map_rng.getU32() % 3 ) // THROWN items 66% to be re-roll.
+									if ( randType == THROWN && map_rng.rand() % 3 ) // THROWN items 66% to be re-roll.
 									{
-										randType = map_rng.getU32() % (NUMCATEGORIES - 2);
+										randType = map_rng.rand() % (NUMCATEGORIES - 2);
 										if ( randType >= MAGICSTAFF )
 										{
 											randType++;
@@ -3094,7 +3094,7 @@ void assignActions(map_t* map)
 							if ( entity->skill[16] == 14 )
 							{
 								// equipment
-								randType = map_rng.getU32() % 2;
+								randType = map_rng.rand() % 2;
 								if ( randType == 0 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
@@ -3107,7 +3107,7 @@ void assignActions(map_t* map)
 							else if ( entity->skill[16] == 15 )
 							{
 								// jewelry
-								randType = map_rng.getU32() % 2;
+								randType = map_rng.rand() % 2;
 								if ( randType == 0 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
@@ -3120,7 +3120,7 @@ void assignActions(map_t* map)
 							else if ( entity->skill[16] == 16 )
 							{
 								// magical
-								randType = map_rng.getU32() % 3;
+								randType = map_rng.rand() % 3;
 								if ( randType == 0 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
@@ -3146,7 +3146,7 @@ void assignActions(map_t* map)
 				{
 					if ( entity->skill[11] == 0 ) //random
 					{
-						entity->skill[11] = 1 + map_rng.getU32() % 4; // status
+						entity->skill[11] = 1 + map_rng.rand() % 4; // status
 					}
 					else
 					{
@@ -3161,9 +3161,9 @@ void assignActions(map_t* map)
 				{
 					if ( entity->skill[12] == 10 ) //random, else the value of this variable is the curse/bless
 					{
-						if ( map_rng.getU32() % 2 == 0 )   // 50% chance of curse/bless
+						if ( map_rng.rand() % 2 == 0 )   // 50% chance of curse/bless
 						{
-							entity->skill[12] = -2 + map_rng.getU32() % 5;
+							entity->skill[12] = -2 + map_rng.rand() % 5;
 						}
 						else
 						{
@@ -3188,21 +3188,21 @@ void assignActions(map_t* map)
 							switch ( balance )
 							{
 								case 2:
-									if ( map_rng.getU32() % 3 == 0 )
+									if ( map_rng.rand() % 3 == 0 )
 									{
-										entity->skill[13] += map_rng.getU32() % 2;
+										entity->skill[13] += map_rng.rand() % 2;
 									}
 									break;
 								case 3:
-									if ( map_rng.getU32() % 3 == 0 )
+									if ( map_rng.rand() % 3 == 0 )
 									{
-										entity->skill[13] += map_rng.getU32() % 3;
+										entity->skill[13] += map_rng.rand() % 3;
 									}
 									break;
 								case 4:
-									if ( map_rng.getU32() % 2 == 0 )
+									if ( map_rng.rand() % 2 == 0 )
 									{
-										entity->skill[13] += map_rng.getU32() % 3;
+										entity->skill[13] += map_rng.rand() % 3;
 									}
 									break;
 								default:
@@ -3222,7 +3222,7 @@ void assignActions(map_t* map)
 						|| items[entity->skill[10]].variations > 1
 						|| entity->skill[10] == FOOD_TIN )
 					{
-						entity->skill[14] = map_rng.getU32();    // appearance
+						entity->skill[14] = map_rng.rand();    // appearance
 					}
 					else
 					{
@@ -3239,7 +3239,7 @@ void assignActions(map_t* map)
 				}
 				else  if ( entity->skill[15] == 2 ) // editor set as random
 				{
-					entity->skill[15] = map_rng.getU32() % 2;
+					entity->skill[15] = map_rng.rand() % 2;
 				}
 				else
 				{
@@ -3248,7 +3248,7 @@ void assignActions(map_t* map)
 
 				if ( entity->skill[10] == ENCHANTED_FEATHER )
 				{
-					entity->skill[14] = 75 + 25 * (map_rng.getU32() % 2);    // appearance
+					entity->skill[14] = 75 + 25 * (map_rng.rand() % 2);    // appearance
 				}
 				else if ( entity->skill[10] >= BRONZE_TOMAHAWK && entity->skill[10] <= CRYSTAL_SHURIKEN )
 				{
@@ -3306,10 +3306,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6.5;
-				entity->yaw = (map_rng.getU32() % 360) * PI / 180.0;
+				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = 10 + local_rng.getU32() % 100 + (currentlevel); // amount
+				entity->skill[0] = 10 + local_rng.rand() % 100 + (currentlevel); // amount
 				entity->sprite = 130; // gold bag model
 				if ( !strcmp(map->name, "Sokoban") )
 				{
@@ -3358,7 +3358,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6;
-				entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->behavior = &actMonster;
 				entity->flags[UPDATENEEDED] = true;
 				entity->skill[5] = -1;
@@ -3903,14 +3903,14 @@ void assignActions(map_t* map)
 				entity->sprite = 163; //Fountain
 				entity->skill[0] = 1; //Fountain is full.
 				//Randomly determine effect.
-				int effect = local_rng.getU32() % 10; //3 possible effects.
+				int effect = local_rng.rand() % 10; //3 possible effects.
 				entity->skill[28] = 1; //TODO: This is just for testing purposes.
 				switch (effect)
 				{
 					case 0:
 						//10% chance
 						entity->skill[1] = 3; //Will bless all equipment.
-						if ( (local_rng.getU32() % 4) != 0 )
+						if ( (local_rng.rand() % 4) != 0 )
 						{
 							entity->skill[1] = 4; //Will bless only one piece of equipment.
 						}
@@ -3933,7 +3933,7 @@ void assignActions(map_t* map)
 						//40% chance.
 						//Random potion effect.
 						entity->skill[1] = 2;
-						entity->skill[3] = local_rng.getU32() % 15; //Randomly choose from the number of potion effects there are.
+						entity->skill[3] = local_rng.rand() % 15; //Randomly choose from the number of potion effects there are.
 						break;
 					default:
 						break; //Should never happen.
@@ -3949,8 +3949,8 @@ void assignActions(map_t* map)
 				entity->z = 5;
 				entity->behavior = &actSink;
 				entity->sprite = 164;
-				entity->skill[0] = 1 + local_rng.getU32() % 4; // number of uses
-				switch ( local_rng.getU32() % 10 )
+				entity->skill[0] = 1 + local_rng.rand() % 4; // number of uses
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 						//10% chance.
@@ -4197,12 +4197,12 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
-				entity->skill[1] = QUIVER_SILVER + local_rng.getU32() % 7; // random arrow type.
+				entity->skill[1] = QUIVER_SILVER + local_rng.rand() % 7; // random arrow type.
 				if ( currentlevel <= 15 )
 				{
 					while ( entity->skill[1] == QUIVER_CRYSTAL || entity->skill[1] == QUIVER_PIERCE )
 					{
-						entity->skill[1] = QUIVER_SILVER + local_rng.getU32() % 7; // random arrow type.
+						entity->skill[1] = QUIVER_SILVER + local_rng.rand() % 7; // random arrow type.
 					}
 				}
 				entity->skill[3] = 0; // refire type.
@@ -4469,14 +4469,14 @@ void assignActions(map_t* map)
 				bool doItem = false;
 				if ( entity->furnitureTableRandomItemChance == -1 )
 				{
-					if ( map_rng.getU32() % 4 == 0 || !strcmp(map->name, "Start Map") )
+					if ( map_rng.rand() % 4 == 0 || !strcmp(map->name, "Start Map") )
 					{
 						doItem = true;
 					}
 				}
 				else if ( entity->furnitureTableRandomItemChance > 1 )
 				{
-					if ( map_rng.getU32() % 100 < entity->furnitureTableRandomItemChance )
+					if ( map_rng.rand() % 100 < entity->furnitureTableRandomItemChance )
 					{
 						doItem = true;
 					}
@@ -4500,7 +4500,7 @@ void assignActions(map_t* map)
 				int numChairs = 0;
 				if ( entity->furnitureTableSpawnChairs == -1 )
 				{
-					if ( map_rng.getU32() % 2 == 0 )
+					if ( map_rng.rand() % 2 == 0 )
 					{
 						doChairs = true;
 					}
@@ -4515,7 +4515,7 @@ void assignActions(map_t* map)
 					int c;
 					if ( entity->furnitureTableSpawnChairs == -1 )
 					{
-						numChairs = map_rng.getU32() % 4 + 1;
+						numChairs = map_rng.rand() % 4 + 1;
 					}
 					else
 					{
@@ -4528,7 +4528,7 @@ void assignActions(map_t* map)
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
 						//printlog("32 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						childEntity->yaw = ((int)(map_rng.getU32() % 80) - 40 + c * 90) * (PI / 180.f);
+						childEntity->yaw = ((int)(map_rng.rand() % 80) - 40 + c * 90) * (PI / 180.f);
 						if ( childEntity->yaw >= PI * 2 )
 						{
 							childEntity->yaw -= PI * 2;
@@ -4560,7 +4560,7 @@ void assignActions(map_t* map)
 				{
 					if ( !entity->yaw )
 					{
-						entity->yaw = (map_rng.getU32() % 360) * (PI / 180.f);
+						entity->yaw = (map_rng.rand() % 360) * (PI / 180.f);
 					}
 				}
 				else
@@ -4937,11 +4937,11 @@ void assignActions(map_t* map)
 				childEntity->sizex = 4;
 				childEntity->sizey = 4;
 				childEntity->crystalStartZ = entity->z - 10; //start position
-				childEntity->z = childEntity->crystalStartZ - 0.4 + ((map_rng.getU32() % 8) * 0.1); // start the height randomly
+				childEntity->z = childEntity->crystalStartZ - 0.4 + ((map_rng.rand() % 8) * 0.1); // start the height randomly
 				childEntity->crystalMaxZVelocity = 0.02; //max velocity
 				childEntity->crystalMinZVelocity = 0.001; //min velocity
 				childEntity->crystalTurnVelocity = 0.2; //yaw turning velocity
-				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((map_rng.getU32() % 99) * 0.01 + 0.01); // start the velocity randomly
+				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((map_rng.rand() % 99) * 0.01 + 0.01); // start the velocity randomly
 
 				childEntity->crystalNumElectricityNodes = entity->crystalNumElectricityNodes; //number of electricity nodes to generate in facing direction.
 				childEntity->crystalTurnReverse = entity->crystalTurnReverse;
@@ -4983,7 +4983,7 @@ void assignActions(map_t* map)
 				entity->flags[UPDATENEEDED] = true;
 				if ( !entity->yaw )
 				{
-					entity->yaw = (map_rng.getU32() % 360) * (PI / 180.f);
+					entity->yaw = (map_rng.rand() % 360) * (PI / 180.f);
 				}
 				entity->roll = -PI / 2; // flip the model
 
@@ -5398,7 +5398,7 @@ void assignActions(map_t* map)
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
-					entity->yaw = (map_rng.getU32() % 360) * (PI / 180.f);
+					entity->yaw = (map_rng.rand() % 360) * (PI / 180.f);
 				}
 				else
 				{
@@ -5416,7 +5416,7 @@ void assignActions(map_t* map)
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
-					entity->furnitureDir = (map_rng.getU32() % 4);
+					entity->furnitureDir = (map_rng.rand() % 4);
 					entity->furnitureDir *= 2; // create an even number
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
@@ -5451,7 +5451,7 @@ void assignActions(map_t* map)
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
-					entity->furnitureDir = (map_rng.getU32() % 4);
+					entity->furnitureDir = (map_rng.rand() % 4);
 					entity->furnitureDir *= 2; // create an even number
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
@@ -5503,7 +5503,7 @@ void assignActions(map_t* map)
 				entity->flags[BURNABLE] = true;
 				if ( entity->furnitureDir == -1 && !entity->yaw )
 				{
-					entity->furnitureDir = (map_rng.getU32() % 4);
+					entity->furnitureDir = (map_rng.rand() % 4);
 					entity->furnitureDir *= 2; // create an even number
 					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
 				}
@@ -5566,7 +5566,7 @@ void assignActions(map_t* map)
 				entity->y += entity->floorDecorationYOffset * 0.25;
 				if ( entity->floorDecorationRotation == -1 )
 				{
-					entity->yaw = (map_rng.getU32() % 8) * (PI / 4);
+					entity->yaw = (map_rng.rand() % 8) * (PI / 4);
 				}
 				else
 				{
@@ -5703,13 +5703,13 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->roll = PI / 2.0;
-				entity->yaw = (map_rng.getU32() % 360) * PI / 180.0;
+				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actItem;
 				entity->skill[10] = READABLE_BOOK;
 				if ( entity->skill[11] == 0 ) //random
 				{
-					entity->skill[11] = 1 + map_rng.getU32() % 4; // status
+					entity->skill[11] = 1 + map_rng.rand() % 4; // status
 				}
 				else
 				{
@@ -5717,9 +5717,9 @@ void assignActions(map_t* map)
 				}
 				if ( entity->skill[12] == 10 ) //random, else the value of this variable is the curse/bless
 				{
-					if ( map_rng.getU32() % 2 == 0 )   // 50% chance of curse/bless
+					if ( map_rng.rand() % 2 == 0 )   // 50% chance of curse/bless
 					{
-						entity->skill[12] = -2 + map_rng.getU32() % 5;
+						entity->skill[12] = -2 + map_rng.rand() % 5;
 					}
 					else
 					{
@@ -5772,7 +5772,7 @@ void assignActions(map_t* map)
 				}
 				else  if ( entity->skill[15] == 2 ) // editor set as random
 				{
-					entity->skill[15] = map_rng.getU32() % 2;
+					entity->skill[15] = map_rng.rand() % 2;
 				}
 				else
 				{
@@ -6016,17 +6016,17 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 
 	int selection = forcemap;
 	if (selection <= 0) {
-		if ( forceVictoryMap || (foundVictory && local_rng.getU32() % 5 == 0) )
+		if ( forceVictoryMap || (foundVictory && local_rng.rand() % 5 == 0) )
 		{
 			selection = 9;
 		}
 		else if ( blessedAdditionMaps )
 		{
-			selection = 5 + local_rng.getU32() % 4;
+			selection = 5 + local_rng.rand() % 4;
 		}
 		else
 		{
-			selection = 1 + local_rng.getU32() % 4;
+			selection = 1 + local_rng.rand() % 4;
 		}
 	}
 

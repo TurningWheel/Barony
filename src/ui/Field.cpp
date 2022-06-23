@@ -515,7 +515,7 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 	size_t offset = 0;
 	size_t findChar = 0;
 	std::vector<std::string> tokens;
-	/*switch ( local_rng.getU32() % 3 )
+	/*switch ( local_rng.rand() % 3 )
 	{
 		case 0:
 		input = " this is a test ";

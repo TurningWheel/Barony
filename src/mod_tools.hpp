@@ -173,7 +173,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(local_rng.getU32() % arr.Size())].GetString());
+			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetString());
 		}
 		int getRandomArrayInt(const rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
 		{
@@ -181,7 +181,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(local_rng.getU32() % arr.Size())].GetInt());
+			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetInt());
 		}
 
 		bool readKeyToItemEntry(rapidjson::Value::ConstMemberIterator& itr)
@@ -261,7 +261,7 @@ public:
 			{
 				if ( itr->value.IsArray() )
 				{
-					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), local_rng.getU32()));
+					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), local_rng.rand()));
 				}
 				else if ( itr->value.IsInt() )
 				{
@@ -272,7 +272,7 @@ public:
 					std::string str = itr->value.GetString();
 					if ( str.compare("random") == 0 )
 					{
-						this->appearance = local_rng.getU32();
+						this->appearance = local_rng.rand();
 					}
 				}
 				return true;
@@ -290,7 +290,7 @@ public:
 			else if ( name.compare("drop_percent_chance") == 0 )
 			{
 				this->dropChance = itr->value.GetInt();
-				if ( local_rng.getU32() % 100 >= this->dropChance )
+				if ( local_rng.rand() % 100 >= this->dropChance )
 				{
 					this->dropItemOnDeath = false;
 				}
@@ -497,7 +497,7 @@ public:
 				equippedSlots.insert(it.second);
 				if ( it.first.percentChance < 100 )
 				{
-					if ( local_rng.getU32() % 100 >= it.first.percentChance )
+					if ( local_rng.rand() % 100 >= it.first.percentChance )
 					{
 						continue;
 					}
@@ -606,7 +606,7 @@ public:
 				}
 				if ( it.percentChance < 100 )
 				{
-					if ( local_rng.getU32() % 100 >= it.percentChance )
+					if ( local_rng.rand() % 100 >= it.percentChance )
 					{
 						continue;
 					}
@@ -680,7 +680,7 @@ public:
 				{
 					if ( shopkeeperMinItems >= 0 && shopkeeperMaxItems >= 0 )
 					{
-						numItems = shopkeeperMinItems + local_rng.getU32() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
+						numItems = shopkeeperMinItems + local_rng.rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
 						myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= numItems + 1;
 					}
 					if ( shopkeeperMaxGeneratedBlessing >= 0 )
@@ -2266,7 +2266,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( map_rng.getU32() % 100 < m->minoPercent )
+			if ( map_rng.rand() % 100 < m->minoPercent )
 			{
 				minotaurlevel = 1;
 			}
@@ -2302,7 +2302,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( map_rng.getU32() % 100 < m->darkPercent )
+			if ( map_rng.rand() % 100 < m->darkPercent )
 			{
 				darkmap = true;
 			}
@@ -2338,7 +2338,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( map_rng.getU32() % 100 < m->shopPercent )
+			if ( map_rng.rand() % 100 < m->shopPercent )
 			{
 				shoplevel = true;
 			}
@@ -2389,7 +2389,7 @@ public:
 			}
 
 			// found, roll prng
-			if ( map_rng.getU32() % 100 < percentValue )
+			if ( map_rng.rand() % 100 < percentValue )
 			{
 				bOut = true;
 			}

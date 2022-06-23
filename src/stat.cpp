@@ -786,7 +786,7 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 		return -1;
 	}
 
-	int roll = local_rng.getU32() % numEquippedItems;
+	int roll = local_rng.rand() % numEquippedItems;
 
 	switch ( equipNum[roll] )
 	{

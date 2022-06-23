@@ -98,10 +98,10 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	entity->fskill[3] = parentent->z;
 	entity->sizex = 6;
 	entity->sizey = 6;
-	entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
-	entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
-	entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
-	vel = (local_rng.getU32() % 10) / 10.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+	entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+	vel = (local_rng.rand() % 10) / 10.0;
 	if (flickerLights)
 	{
 	    entity->skill[0] = 5; // life-span

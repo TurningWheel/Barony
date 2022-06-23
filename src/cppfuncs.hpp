@@ -33,5 +33,5 @@ T randomEntryFromVector(std::vector<T> vector)
 #endif
 
     static BaronyRNG rng;
-	return vector[rng.getU32() % vector.size()];
+	return vector[rng.rand() % vector.size()];
 }

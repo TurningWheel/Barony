@@ -54,7 +54,7 @@ void initScarab(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.getU32() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Xyggi");
 				myStats->HP = 70;
@@ -117,16 +117,16 @@ void initScarab(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.getU32() % 2 || playerCount > 1 )
+					if ( local_rng.rand() % 2 || playerCount > 1 )
 					{
-						if ( local_rng.getU32() % 3 > 0 )
+						if ( local_rng.rand() % 3 > 0 )
 						{
-							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.getU32() % 4), 0, 1, local_rng.getU32(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.rand() % 4), 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
 							ItemType gem = GEM_GLASS;
-							switch( local_rng.getU32() % 7 )
+							switch( local_rng.rand() % 7 )
 							{
 								case 0:
 									gem = GEM_OPAL;
@@ -150,11 +150,11 @@ void initScarab(Entity* my, Stat* myStats)
 									gem = GEM_GLASS;
 									break;
 							}
-							newItem(gem, static_cast<Status>(DECREPIT + local_rng.getU32()%2), (local_rng.getU32()%4 == 0), 1, local_rng.getU32(), false, &myStats->inventory);
+							newItem(gem, static_cast<Status>(DECREPIT + local_rng.rand()%2), (local_rng.rand()%4 == 0), 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						if ( playerCount > 2 )
 						{
-							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.getU32() % 4), 0, 1 + local_rng.getU32() % 2, local_rng.getU32(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.rand() % 4), 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -519,7 +519,7 @@ void scarabDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 308 + local_rng.getU32() % 2, 64); //TODO: Scarab death sound effect.
+	playSoundEntity(my, 308 + local_rng.rand() % 2, 64); //TODO: Scarab death sound effect.
 	list_RemoveNode(my->mynode);
 	return;
 }

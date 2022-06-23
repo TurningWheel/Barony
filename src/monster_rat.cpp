@@ -50,7 +50,7 @@ void initRat(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.getU32() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Algernon");
 				myStats->HP = 60;
@@ -63,7 +63,7 @@ void initRat(Entity* my, Stat* myStats)
 				myStats->PER = -2;
 				myStats->CHR = 5;
 				myStats->LVL = 10;
-				newItem(GEM_EMERALD, static_cast<Status>(1 + local_rng.getU32() % 4), 0, 1, local_rng.getU32(), true, &myStats->inventory);
+				newItem(GEM_EMERALD, static_cast<Status>(1 + local_rng.rand() % 4), 0, 1, local_rng.rand(), true, &myStats->inventory);
 				customItemsToGenerate = customItemsToGenerate - 1;
 				int c;
 				for ( c = 0; c < 6; c++ )
@@ -100,15 +100,15 @@ void initRat(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.getU32() % 4 )
+					if ( local_rng.rand() % 4 )
 					{
-						if ( local_rng.getU32() % 2 )
+						if ( local_rng.rand() % 2 )
 						{
-							newItem(FOOD_MEAT, EXCELLENT, 0, 1, local_rng.getU32(), false, &myStats->inventory);
+							newItem(FOOD_MEAT, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
-							newItem(FOOD_CHEESE, DECREPIT, 0, 1, local_rng.getU32(), false, &myStats->inventory);
+							newItem(FOOD_CHEESE, DECREPIT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;

@@ -110,10 +110,10 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 
 	if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)   //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
 	{
-		int chance = local_rng.getU32() % 10;
+		int chance = local_rng.rand() % 10;
 		if (chance >= stat->PROFICIENCIES[PRO_SPELLCASTING] / 15)
 		{
-			int amount = (local_rng.getU32() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster), 1);
+			int amount = (local_rng.rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
 			animation_manager->times_to_circle += amount;
 		}
@@ -441,9 +441,9 @@ void actLeftHandMagic(Entity* my)
 						entity->y -= 1.5;
 						entity->z += 1;
 					}
-					entity->yaw = ((local_rng.getU32() % 6) * 60) * PI / 180.0;
-					entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
-					entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
+					entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 					entity->vel_x = cos(entity->yaw) * .1;
 					entity->vel_y = sin(entity->yaw) * .1;
 					entity->vel_z = -.15;
@@ -794,9 +794,9 @@ void actRightHandMagic(Entity* my)
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
 					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-					entity->yaw = ((local_rng.getU32() % 6) * 60) * PI / 180.0;
-					entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
-					entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
+					entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 					entity->vel_x = cos(entity->yaw) * .1;
 					entity->vel_y = sin(entity->yaw) * .1;
 					entity->vel_z = -.15;

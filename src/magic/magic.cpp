@@ -136,7 +136,7 @@ void spell_summonFamiliar(int player)
 
 	// spawn something really nasty
 	/*numCreatures = 1;
-	switch ( local_rng.getU32() % 4 )
+	switch ( local_rng.rand() % 4 )
 	{
 		case 0:
 			creature = MINOTAUR;
@@ -152,40 +152,40 @@ void spell_summonFamiliar(int player)
 			break;
 	}*/
 	// spawn moderately nasty things
-	//switch ( local_rng.getU32() % 6 )
+	//switch ( local_rng.rand() % 6 )
 	//{
 	//	case 0:
 	//		creature = GNOME;
-	//		numCreatures = local_rng.getU32() % 3 + 1;
+	//		numCreatures = local_rng.rand() % 3 + 1;
 	//		break;
 	//	case 1:
 	//		creature = SPIDER;
-	//		numCreatures = local_rng.getU32() % 2 + 1;
+	//		numCreatures = local_rng.rand() % 2 + 1;
 	//		break;
 	//	case 2:
 	//		creature = SUCCUBUS;
-	//		numCreatures = local_rng.getU32() % 2 + 1;
+	//		numCreatures = local_rng.rand() % 2 + 1;
 	//		break;
 	//	case 3:
 	//		creature = SCORPION;
-	//		numCreatures = local_rng.getU32() % 2 + 1;
+	//		numCreatures = local_rng.rand() % 2 + 1;
 	//		break;
 	//	case 4:
 	//		creature = GHOUL;
-	//		numCreatures = local_rng.getU32() % 2 + 1;
+	//		numCreatures = local_rng.rand() % 2 + 1;
 	//		break;
 	//	case 5:
 	//		creature = GOBLIN;
-	//		numCreatures = local_rng.getU32() % 2 + 1;
+	//		numCreatures = local_rng.rand() % 2 + 1;
 	//		break;
 	//}
 
 	// spawn weak monster ally
-	switch ( local_rng.getU32() % 3 )
+	switch ( local_rng.rand() % 3 )
 	{
 		case 0:
 			creature = RAT;
-			numCreatures = local_rng.getU32() % 3 + 1;
+			numCreatures = local_rng.rand() % 3 + 1;
 			break;
 		case 1:
 			creature = GHOUL;
@@ -193,25 +193,25 @@ void spell_summonFamiliar(int player)
 			break;
 		case 2:
 			creature = SLIME;
-			numCreatures = local_rng.getU32() % 2 + 1;
+			numCreatures = local_rng.rand() % 2 + 1;
 			break;
 	}
 
 	//// spawn humans
 	//creature = HUMAN;
-	//numCreatures = local_rng.getU32() % 3 + 1;
+	//numCreatures = local_rng.rand() % 3 + 1;
 
 	////Spawn many/neat allies
-	//switch ( local_rng.getU32() % 2 )
+	//switch ( local_rng.rand() % 2 )
 	//{
 	//	case 0:
 	//		// summon zap brigadiers
-	//		numCreatures = local_rng.getU32() % 2 + 4;
+	//		numCreatures = local_rng.rand() % 2 + 4;
 	//		creature = HUMAN;
 	//		break;
 	//	case 1:
 	//		// summon demons
-	//		numCreatures = local_rng.getU32() % 2 + 4;
+	//		numCreatures = local_rng.rand() % 2 + 4;
 	//		creature = DEMON;
 	//		break;
 	//
@@ -485,11 +485,11 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				// damage armor
 				Item* armor = nullptr;
 				int armornum = -1;
-				if ( hitstats->defending && (local_rng.getU32() % (8 + resistance) == 0) ) // 1 in 8 to corrode shield
+				if ( hitstats->defending && (local_rng.rand() % (8 + resistance) == 0) ) // 1 in 8 to corrode shield
 				{
 					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, true, true);
 				}
-				else if ( !hitstats->defending && (local_rng.getU32() % (4 + resistance) == 0) ) // 1 in 4 to corrode armor
+				else if ( !hitstats->defending && (local_rng.rand() % (4 + resistance) == 0) ) // 1 in 4 to corrode armor
 				{
 					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
 				}
@@ -753,7 +753,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			{
 				if ( duration - previousDuration > 10 )
 				{
-					playSoundEntity(hit.entity, 396 + local_rng.getU32() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
+					playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
 				}
 				hit.entity->creatureWebbedSlowCount = std::min(3, hit.entity->creatureWebbedSlowCount + 1);
 				if ( hit.entity->behavior == &actPlayer )
@@ -1154,12 +1154,12 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	//if ( newbie )
 	//{
 	//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-	//	int chance = local_rng.getU32() % 10;
+	//	int chance = local_rng.rand() % 10;
 	//	// spellcasting power is 0 to 100, based on spellcasting and intelligence.
 	//	int spellcastingPower = std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats, caster)), 100);
 	//	if ( chance >= spellcastingPower / 10 )
 	//	{
-	//		duration -= local_rng.getU32() % (1000 / (spellcastingPower + 1)); // reduce the duration by 0-20 seconds
+	//		duration -= local_rng.rand() % (1000 / (spellcastingPower + 1)); // reduce the duration by 0-20 seconds
 	//	}
 	//	if ( duration < 50 )
 	//	{
@@ -1405,7 +1405,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3141]);
 				}
 			}
-			else if ( parent && local_rng.getU32() % 100 < chance
+			else if ( parent && local_rng.rand() % 100 < chance
 				&& ( (hitstats->leader_uid == 0 && hit.entity->getUID() != casterStats->leader_uid)
 					|| (allowStealFollowers 
 						&& hitstats->leader_uid != parent->getUID() // my target is not already following me
@@ -1586,7 +1586,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration)
 {
 	int effectDuration = 0;
-	effectDuration = TICKS_PER_SECOND * 60 * (4 + local_rng.getU32() % 3); // 4-6 minutes
+	effectDuration = TICKS_PER_SECOND * 60 * (4 + local_rng.rand() % 3); // 4-6 minutes
 	if ( customDuration > 0 )
 	{
 		effectDuration = customDuration;
@@ -1645,7 +1645,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					possibleTypes.push_back(mon);
 				}
 			}
-			monsterSummonType = possibleTypes.at(local_rng.getU32() % possibleTypes.size());
+			monsterSummonType = possibleTypes.at(local_rng.rand() % possibleTypes.size());
 		}
 
 		bool summonCanEquipItems = false;
@@ -2173,7 +2173,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 			if ( targetStats->playerRace == RACE_HUMAN )
 			{
-				int roll = (RACE_HUMAN + 1) + local_rng.getU32() % 8;
+				int roll = (RACE_HUMAN + 1) + local_rng.rand() % 8;
 				if ( target->effectPolymorph == 0 )
 				{
 					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
@@ -2182,14 +2182,14 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				{
 					while ( target->effectPolymorph == target->getMonsterFromPlayerRace(roll) )
 					{
-						roll = (RACE_HUMAN + 1) + local_rng.getU32() % 8; // re roll to not polymorph into the same thing
+						roll = (RACE_HUMAN + 1) + local_rng.rand() % 8; // re roll to not polymorph into the same thing
 					}
 					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
 				}
 			}
 			else if ( (targetStats->playerRace != RACE_HUMAN && targetStats->appearance == 0) )
 			{
-				target->effectPolymorph = 100 + local_rng.getU32() % NUMAPPEARANCES;
+				target->effectPolymorph = 100 + local_rng.rand() % NUMAPPEARANCES;
 			}
 			serverUpdateEntitySkill(target, 50);
 
@@ -2372,13 +2372,13 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 
 					if ( !spotsWithLineOfSight.empty() )
 					{
-						std::pair<int, int> tmpPair = spotsWithLineOfSight[local_rng.getU32() % spotsWithLineOfSight.size()];
+						std::pair<int, int> tmpPair = spotsWithLineOfSight[local_rng.rand() % spotsWithLineOfSight.size()];
 						tx = tmpPair.first;
 						ty = tmpPair.second;
 					}
 					else if ( !goodspots.empty() )
 					{
-						std::pair<int, int> tmpPair = goodspots[local_rng.getU32() % goodspots.size()];
+						std::pair<int, int> tmpPair = goodspots[local_rng.rand() % goodspots.size()];
 						tx = tmpPair.first;
 						ty = tmpPair.second;
 					}
@@ -2636,7 +2636,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					}
 					return false;
 				}
-				std::pair<int, int> tmpPair = goodspots[local_rng.getU32() % goodspots.size()];
+				std::pair<int, int> tmpPair = goodspots[local_rng.rand() % goodspots.size()];
 				tx = tmpPair.first;
 				ty = tmpPair.second;
 

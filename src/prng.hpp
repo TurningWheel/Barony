@@ -38,6 +38,9 @@ public:
     float    getF32();  // get number in range [0.0 - 1.0)
     double   getF64();  // get number in range [0.0 - 1.0)
 
+    // return number between 0 - RAND_MAX
+    int rand();
+
     // uniform distribution
     // pick a number from a to b (or b to a) inclusive
     int uniform(int a, int b);

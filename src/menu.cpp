@@ -1986,7 +1986,7 @@ void handleMainMenu(bool mode)
 						if ( reloadIntroMusic )
 						{
 #ifdef SOUND
-							playMusic(intromusic[local_rng.getU32() % (NUMINTROMUSIC - 1)], false, true, true);
+							playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 						}
 						gamemods_musicRequireReloadUnmodded = false;
@@ -2957,7 +2957,7 @@ void handleMainMenu(bool mode)
 									// appearance reset.
 									if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 									{
-										stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
+										stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 									}
 									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 									{
@@ -3179,7 +3179,7 @@ void handleMainMenu(bool mode)
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
-						stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
+						stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 					{
@@ -3318,7 +3318,7 @@ void handleMainMenu(bool mode)
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
-						stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
+						stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
 					{
@@ -10010,7 +10010,7 @@ void doNewGame(bool makeHighscore) {
 			}
 			else
 			{
-				generateDungeon(maptoload, local_rng.getU32());
+				generateDungeon(maptoload, local_rng.rand());
 			}
 		}
 		assignActions(&map);
@@ -10254,7 +10254,7 @@ void doEndgame() {
 	}
 
 	// pick a new subtitle :)
-	subtitleCurrent = local_rng.getU32() % NUMSUBTITLES;
+	subtitleCurrent = local_rng.rand() % NUMSUBTITLES;
 	subtitleVisible = true;
 
 	for ( c = 0; c < NUMMONSTERS; c++ )
@@ -10592,7 +10592,7 @@ void doEndgame() {
 	}
 	else
 	{
-		switch ( local_rng.getU32() % 2 )
+		switch ( local_rng.rand() % 2 )
 		{
 		case 0:
 			menuMapType = loadMainMenuMap(true, false);
@@ -11070,7 +11070,7 @@ void openGameoverWindow()
 	// death hints
 	if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
 	{
-		strcat(subtext, language[1145 + local_rng.getU32() % 15]);
+		strcat(subtext, language[1145 + local_rng.rand() % 15]);
 	}
 
 	// close button
@@ -13792,8 +13792,8 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;
-	stats[0]->sex = static_cast<sex_t>(0 + local_rng.getU32() % 2);
-	stats[0]->appearance = 0 + local_rng.getU32() % NUMAPPEARANCES;
+	stats[0]->sex = static_cast<sex_t>(0 + local_rng.rand() % 2);
+	stats[0]->appearance = 0 + local_rng.rand() % NUMAPPEARANCES;
 	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
@@ -14155,18 +14155,18 @@ void buttonRandomCharacter(button_t* my)
 	playing_random_char = true;
 	charcreation_step = 4;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
-	stats[0]->sex = static_cast<sex_t>(local_rng.getU32() % 2);
-	client_classes[0] = local_rng.getU32() % (CLASS_MONK + 1);//NUMCLASSES;
+	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+	client_classes[0] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 	stats[0]->clearStats();
 	if ( enabledDLCPack1 || enabledDLCPack2 )
 	{
-		stats[0]->playerRace = local_rng.getU32() % NUMPLAYABLERACES;
+		stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
 		if ( !enabledDLCPack1 )
 		{
 			while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
 				|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
 			{
-				stats[0]->playerRace = local_rng.getU32() % NUMPLAYABLERACES;
+				stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
 			}
 		}
 		else if ( !enabledDLCPack2 )
@@ -14174,7 +14174,7 @@ void buttonRandomCharacter(button_t* my)
 			while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
 				|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
 			{
-				stats[0]->playerRace = local_rng.getU32() % NUMPLAYABLERACES;
+				stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
 			}
 		}
 		if ( stats[0]->playerRace == RACE_INCUBUS )
@@ -14188,13 +14188,13 @@ void buttonRandomCharacter(button_t* my)
 
 		if ( stats[0]->playerRace == RACE_HUMAN )
 		{
-			client_classes[0] = local_rng.getU32() % (NUMCLASSES);
+			client_classes[0] = local_rng.rand() % (NUMCLASSES);
 			if ( !enabledDLCPack1 )
 			{
 				while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
 					|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
 				{
-					client_classes[0] = local_rng.getU32() % (NUMCLASSES);
+					client_classes[0] = local_rng.rand() % (NUMCLASSES);
 				}
 			}
 			else if ( !enabledDLCPack2 )
@@ -14202,14 +14202,14 @@ void buttonRandomCharacter(button_t* my)
 				while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
 					|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
 				{
-					client_classes[0] = local_rng.getU32() % (NUMCLASSES);
+					client_classes[0] = local_rng.rand() % (NUMCLASSES);
 				}
 			}
-			stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
+			stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 		}
 		else
 		{
-			client_classes[0] = local_rng.getU32() % (CLASS_MONK + 2);
+			client_classes[0] = local_rng.rand() % (CLASS_MONK + 2);
 			if ( client_classes[0] > CLASS_MONK )
 			{
 				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
@@ -14220,7 +14220,7 @@ void buttonRandomCharacter(button_t* my)
 	else
 	{
 		stats[0]->playerRace = RACE_HUMAN;
-		stats[0]->appearance = local_rng.getU32() % NUMAPPEARANCES;
+		stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 	}
 	initClass(0);
 }
@@ -15504,7 +15504,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		if ( reloadIntroMusic )
 		{
 #ifdef SOUND
-			playMusic(intromusic[local_rng.getU32() % (NUMINTROMUSIC - 1)], false, true, true);
+			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
 		gamemods_musicRequireReloadUnmodded = true;

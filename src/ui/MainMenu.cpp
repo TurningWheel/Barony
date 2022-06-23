@@ -8239,7 +8239,7 @@ bind_failed:
 						stats[index]->sex = MALE;
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
-						stats[index]->appearance = RNG.getU32() % NUMAPPEARANCES;
+						stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
 			            auto appearances = frame->findFrame("appearances"); assert(appearances);
 			            appearances->setSelection(stats[index]->appearance);
 			            appearances->scrollToSelection();
@@ -8854,7 +8854,7 @@ bind_failed:
 					client_classes[index] = c;
 				} else {
 					auto reduced_class_list = reducedClassList(index);
-					auto random_class = reduced_class_list[(RNG.getU32() % (reduced_class_list.size() - 1)) + 1];
+					auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
 					for (int c = 0; c < num_classes; ++c) {
 						if (strcmp(random_class, classes_in_order[c]) == 0) {
 							client_classes[index] = c;
@@ -9014,7 +9014,7 @@ bind_failed:
 		static auto randomize_name_fn = [](Button& button, int index) {
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto name = names[RNG.getU32() % names.size()].c_str();
+			auto name = names[RNG.rand() % names.size()].c_str();
 			name_field_fn(name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
@@ -9133,16 +9133,16 @@ bind_failed:
 			auto card = static_cast<Frame*>(button.getParent());
 
 			// select a random sex
-			stats[index]->sex = (sex_t)(RNG.getU32() % 2);
+			stats[index]->sex = (sex_t)(RNG.rand() % 2);
 
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.getU32() % NUMPLAYABLERACES;
+			    stats[index]->playerRace = RNG.rand() % NUMPLAYABLERACES;
 			} else if (enabledDLCPack1) {
-			    stats[index]->playerRace = RNG.getU32() % 5;
+			    stats[index]->playerRace = RNG.rand() % 5;
 			} else if (enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.getU32() % 5;
+			    stats[index]->playerRace = RNG.rand() % 5;
 			    if (stats[index]->playerRace > 0) {
 			        stats[index]->playerRace += 4;
 			    }
@@ -9170,9 +9170,9 @@ bind_failed:
 
 			// choose a random appearance
 			if (stats[index]->playerRace == RACE_HUMAN) {
-				stats[index]->appearance = RNG.getU32() % NUMAPPEARANCES;
+				stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
 			} else {
-				stats[index]->appearance = 0; RNG.getU32();
+				stats[index]->appearance = 0; RNG.rand();
 			}
 
 			// update sex buttons after race selection:
@@ -9195,7 +9195,7 @@ bind_failed:
 
 			// select a random class
 			auto reduced_class_list = reducedClassList(index);
-			auto random_class = reduced_class_list[(RNG.getU32() % (reduced_class_list.size() - 1)) + 1];
+			auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
 			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
 					client_classes[index] = c - 1;
@@ -10068,8 +10068,8 @@ bind_failed:
 		            playerSlotsLocked[c] = false;
 
 			        stats[c]->playerRace = 0;
-			        stats[c]->sex = static_cast<sex_t>(RNG.getU32() % 2);
-			        stats[c]->appearance = RNG.getU32() % NUMAPPEARANCES;
+			        stats[c]->sex = static_cast<sex_t>(RNG.rand() % 2);
+			        stats[c]->appearance = RNG.rand() % NUMAPPEARANCES;
 			        stats[c]->clearStats();
 			        client_classes[c] = 0;
 			        initClass(c);
@@ -10077,7 +10077,7 @@ bind_failed:
 			        // random name
 			        auto& names = stats[c]->sex == sex_t::MALE ?
 				        randomPlayerNamesMale : randomPlayerNamesFemale;
-			        auto name = names[RNG.getU32() % names.size()].c_str();
+			        auto name = names[RNG.rand() % names.size()].c_str();
 			        size_t len = strlen(name);
 			        len = std::min(sizeof(Stat::name) - 1, len);
 			        memcpy(stats[c]->name, name, len);
@@ -13633,7 +13633,7 @@ bind_failed:
 			quit_motd = 0;
 		}
 		if (quit_motd < 0) {
-			quit_motd = RNG.getU32() % num_quit_messages;
+			quit_motd = RNG.rand() % num_quit_messages;
 		}
 
 		binaryPrompt(
@@ -13680,7 +13680,7 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[RNG.getU32() % (NUMINTROMUSIC - 1)], true, false, false);
+	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
 				createTitleScreen();
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
@@ -13688,7 +13688,7 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[RNG.getU32() % (NUMINTROMUSIC - 1)], true, false, false);
+	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
 				createMainMenu(false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
@@ -14542,7 +14542,7 @@ bind_failed:
         }
 
         const char* eulogy;
-        switch (RNG.getU32() % 10) {
+        switch (RNG.rand() % 10) {
         default:
         case 0: eulogy = "We hardly knew ye."; break;
         case 1: eulogy = "Rest In Peace."; break;

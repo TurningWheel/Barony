@@ -70,11 +70,11 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->RANDOM_CHR = 0;
 				myStats->EXP = 0;
 				myStats->LVL = 18;
-				myStats->GOLD = 50 + local_rng.getU32() % 50;
+				myStats->GOLD = 50 + local_rng.rand() % 50;
 				myStats->RANDOM_GOLD = 0;
 				for ( c = 0; c < 4; ++c )
 				{
-					if ( local_rng.getU32() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						Entity* entity = summonMonster(GHOUL, my->x, my->y);
 						if ( entity )
@@ -127,14 +127,14 @@ void initVampire(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
-					if ( local_rng.getU32() % 4 == 0 ) // 1 in 4
+					if ( local_rng.rand() % 4 == 0 ) // 1 in 4
 					{
-						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, &myStats->inventory);
+						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( local_rng.getU32() % 10 == 0 ) // 1 in 10
+					if ( local_rng.rand() % 10 == 0 ) // 1 in 10
 					{
-						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + local_rng.getU32() % 2), -1 + local_rng.getU32() % 3, 1, local_rng.getU32(), false, &myStats->inventory);
+						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + local_rng.rand() % 2), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -144,23 +144,23 @@ void initVampire(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( local_rng.getU32() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
+						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 4:
 					case 5:
 					case 6:
 					case 7:
-						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
+						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 8:
 					case 9:
-						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
+						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -168,7 +168,7 @@ void initVampire(Entity* my, Stat* myStats)
 			//give helmet
 			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
-				switch ( local_rng.getU32() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -177,13 +177,13 @@ void initVampire(Entity* my, Stat* myStats)
 					case 4:
 						break;
 					case 5:
-						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.getU32() % 2, 1, 0, false, nullptr);
+						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, nullptr);
 						break;
 					case 6:
 					case 7:
 					case 8:
 					case 9:
-						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.getU32() % 2, 1, 0, false, nullptr);
+						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, 0, false, nullptr);
 						break;
 				}
 			}
@@ -191,7 +191,7 @@ void initVampire(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( local_rng.getU32() % 10 )
+				switch ( local_rng.rand() % 10 )
 				{
 					case 0:
 					case 1:
@@ -202,13 +202,13 @@ void initVampire(Entity* my, Stat* myStats)
 						break;
 					case 6:
 					case 7:
-						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
+						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 8:
-						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
+						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 9:
-						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.getU32() % 2, 1, local_rng.getU32(), false, nullptr);
+						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 						break;
 				}
 			}
@@ -438,7 +438,7 @@ void vampireDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 325 + local_rng.getU32() % 4, 128);
+	playSoundEntity(my, 325 + local_rng.rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1315,7 +1315,7 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 		}
 
 		// occurs less often against fellow monsters.
-		specialRoll = local_rng.getU32() % (20 + 50 * (target->behavior == &actMonster));
+		specialRoll = local_rng.rand() % (20 + 50 * (target->behavior == &actMonster));
 		if ( myStats->HP <= myStats->MAXHP * 0.8 )
 		{
 			bonusFromHP += 1; // +5% chance if on low health
@@ -1344,14 +1344,14 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 			{
 				if ( myStats->HP <= myStats->MAXHP * 0.4)
 				{
-					if ( local_rng.getU32() % 4 > 0 )
+					if ( local_rng.rand() % 4 > 0 )
 					{
 						chooseAura = true; // 75% chance if low HP
 					}
 				}
 				if ( !chooseAura )
 				{
-					if ( local_rng.getU32() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 )
 					{
 						chooseAura = true; // 20% chance base
 					}

@@ -334,7 +334,7 @@ void handleLevelMusic()
 
 	if ( currenttrack == -1 )
 	{
-		currenttrack = local_rng.getU32();
+		currenttrack = local_rng.rand();
 	}
 
 	if ( (!levelmusicplaying || !playing || olddarkmap != darkmap) && (!combat || !strcmp(map.name, "Hell Boss")) 
@@ -345,7 +345,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMMINESMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMMINESMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMMINESMUSIC;
 			if ( currenttrack == 0 )
@@ -358,7 +358,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMSWAMPMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMSWAMPMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMSWAMPMUSIC;
 			if ( currenttrack == 0 )
@@ -371,7 +371,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMLABYRINTHMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMLABYRINTHMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMLABYRINTHMUSIC;
 			if ( currenttrack == 0 )
@@ -384,7 +384,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMRUINSMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMRUINSMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMRUINSMUSIC;
 			if ( currenttrack == 0 )
@@ -397,7 +397,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMUNDERWORLDMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMUNDERWORLDMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMUNDERWORLDMUSIC;
 			if ( currenttrack == 0 )
@@ -485,7 +485,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMHELLMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMHELLMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMHELLMUSIC;
 			if ( currenttrack == 0 )
@@ -498,7 +498,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMCAVESMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMCAVESMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMCAVESMUSIC;
 			if ( currenttrack == 0 )
@@ -511,7 +511,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + local_rng.getU32() % (NUMCITADELMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMCITADELMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMCITADELMUSIC;
 			if ( currenttrack == 0 )

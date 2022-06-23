@@ -161,10 +161,10 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				Uint32 color = makeColorRGB(255, 128, 0);
 				messagePlayerColor(player, MESSAGE_STATUS, color, language[3700]);
 				stats->HUNGER -= 200; //Lose boiler
-				int mpAmount = 3 + local_rng.getU32() % 6;
+				int mpAmount = 3 + local_rng.rand() % 6;
 				if ( item->beatitude > 0 )
 				{
-					mpAmount += 2 + local_rng.getU32() % 4;
+					mpAmount += 2 + local_rng.rand() % 4;
 				}
 				players[player]->entity->modMP(mpAmount); //Raise temperature because steam.
 				serverUpdateHunger(player);
@@ -235,7 +235,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, MESSAGE_HINT, language[755]);
 
 		// choose a random piece of worn equipment to curse!
-		int tryIndex = local_rng.getU32() % 8;
+		int tryIndex = local_rng.rand() % 8;
 		int startIndex = tryIndex;
 		int armornum = 0;
 		bool breakloop = false;
@@ -367,7 +367,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			consumeItem(item, player);
 			return true;
 		}
-		int itemToCurse = local_rng.getU32() % items;
+		int itemToCurse = local_rng.rand() % items;
 		items = 0;
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
@@ -467,7 +467,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		if ( stats->EFFECTS[EFF_WITHDRAWAL] )
 		{
 			int hangoverReliefDuration = EFFECT_WITHDRAWAL_BASE_TIME; // 8 minutes
-			switch ( local_rng.getU32() % 3 )
+			switch ( local_rng.rand() % 3 )
 			{
 				case 0:
 					hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 8); // 8 + 8 minutes
@@ -608,7 +608,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 			if ( stats->EFFECTS[EFF_WITHDRAWAL] )
 			{
 				int hangoverReliefDuration = EFFECT_WITHDRAWAL_BASE_TIME; // 8 minutes
-				switch ( local_rng.getU32() % 3 )
+				switch ( local_rng.rand() % 3 )
 				{
 					case 0:
 						hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 8); // 8 + 8 minutes
@@ -782,7 +782,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	else
 	{
-		damage -= (local_rng.getU32() % (1 + chance));
+		damage -= (local_rng.rand() % (1 + chance));
 	}
 	messagePlayer(player, MESSAGE_HINT, language[761]);
 	entity->modHP(-damage);
@@ -1488,7 +1488,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	else
 	{
-		damage -= (local_rng.getU32() % (1 + chance));
+		damage -= (local_rng.rand() % (1 + chance));
 	}
 	messagePlayer(player, MESSAGE_HINT, language[770]);
 	entity->modHP(-damage);
@@ -1589,7 +1589,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	else
 	{
-		damage -= (local_rng.getU32() % (1 + chance));
+		damage -= (local_rng.rand() % (1 + chance));
 	}
 	if ( playerAutomatonDrink )
 	{
@@ -1628,11 +1628,11 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			{
 				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
 				entity->sprite = 16;
-				double vel = local_rng.getU32() % 10;
+				double vel = local_rng.rand() % 10;
 				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
 				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 				entity->vel_z = vel * sin(entity->pitch) * .2;
-				entity->skill[0] = 5 + local_rng.getU32() % 10;
+				entity->skill[0] = 5 + local_rng.rand() % 10;
 			}
 		}
 		else
@@ -1714,12 +1714,12 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	int effectDuration = 0;
 	if ( player >= 0 )
 	{
-		effectDuration = 420 + local_rng.getU32() % 180;
+		effectDuration = 420 + local_rng.rand() % 180;
 		effectDuration = std::max(300, effectDuration - (entity->getCON()) * 5);
 	}
 	else
 	{
-		effectDuration = 420 + local_rng.getU32() % 180;
+		effectDuration = 420 + local_rng.rand() % 180;
 	}
 	if ( item->beatitude != 0 )
 	{
@@ -2600,7 +2600,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 
 	// choose a random piece of worn equipment to curse!
-	int tryIndex = 1 + local_rng.getU32() % 7;
+	int tryIndex = 1 + local_rng.rand() % 7;
 	int startIndex = tryIndex;
 	int armornum = 0;
 	bool breakloop = false;
@@ -2779,7 +2779,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	if ( item->beatitude < 0 )
 	{
 		// choose a random piece of worn equipment to curse!
-		int tryIndex = local_rng.getU32() % 8;
+		int tryIndex = local_rng.rand() % 8;
 		int startIndex = tryIndex;
 		int armornum = 0;
 		bool breakloop = false;
@@ -2950,11 +2950,11 @@ bool item_ScrollFire(Item* item, int player)
 		{
 			Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
-			double vel = local_rng.getU32() % 10;
+			double vel = local_rng.rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_z = vel * sin(entity->pitch) * .2;
-			entity->skill[0] = 5 + local_rng.getU32() % 10;
+			entity->skill[0] = 5 + local_rng.rand() % 10;
 		}
 		return true;
 	}
@@ -2993,11 +2993,11 @@ void item_ScrollFood(Item* item, int player)
 	if ( item->beatitude >= 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, language[865]);
-		dropItem(newItem(FOOD_FISH, EXCELLENT, item->beatitude, 1, local_rng.getU32(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_BREAD, EXCELLENT, item->beatitude, 1, local_rng.getU32(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, local_rng.getU32(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, local_rng.getU32(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, local_rng.getU32(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_FISH, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_BREAD, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player);
 		return;
 	}
 	else
@@ -3008,7 +3008,7 @@ void item_ScrollFood(Item* item, int player)
 			target = (Item*)node->element;
 			if ( itemCategory(target) == FOOD )
 			{
-				if ( local_rng.getU32() % 2 == 0 )   // 50% chance of destroying that food item
+				if ( local_rng.rand() % 2 == 0 )   // 50% chance of destroying that food item
 				{
 					consumeItem(target, player);
 				}
@@ -3052,23 +3052,23 @@ void item_ScrollConjureArrow(Item* item, int player)
 	item->identified = 1;
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	messagePlayer(player, MESSAGE_HINT, language[3762]);
-	ItemType type = static_cast<ItemType>(QUIVER_SILVER + local_rng.getU32() % 7);
+	ItemType type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
 
-	int amount = 20 + local_rng.getU32() % 6;
+	int amount = 20 + local_rng.rand() % 6;
 	if ( item->beatitude < 0 )
 	{
-		amount -= (15  + local_rng.getU32() % 6);
+		amount -= (15  + local_rng.rand() % 6);
 	}
 	else if ( item->beatitude > 0 )
 	{
-		amount += 20 + local_rng.getU32() % 6;
+		amount += 20 + local_rng.rand() % 6;
 	}
 	dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
 	if ( item->beatitude >= 2 )
 	{
 		// re-roll!
-		type = static_cast<ItemType>(QUIVER_SILVER + local_rng.getU32() % 7);
-		amount = 40 + local_rng.getU32() % 11;
+		type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
+		amount = 40 + local_rng.rand() % 11;
 		dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
 	}
 }
@@ -3171,7 +3171,7 @@ void item_ScrollRepair(Item* item, int player)
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	if ( item->beatitude < 0 )
 	{
-		int tryIndex = local_rng.getU32() % 7;
+		int tryIndex = local_rng.rand() % 7;
 		int startIndex = tryIndex;
 		int armornum = 0;
 		bool breakloop = false;
@@ -3336,7 +3336,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 
 	int armornum = 0;
-	int tryIndex = 1 + local_rng.getU32() % 6;
+	int tryIndex = 1 + local_rng.rand() % 6;
 	int startIndex = tryIndex;
 	bool breakloop = false;
 	while ( !armor && !breakloop )
@@ -3487,7 +3487,7 @@ void item_ScrollTeleportation(Item* item, int player)
 	}
 	item->identified = 1;
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
-	if (item->beatitude < 0 && local_rng.getU32() % 2)
+	if (item->beatitude < 0 && local_rng.rand() % 2)
 	{
 		messagePlayer(player, MESSAGE_HINT, language[876]);
 		return;
@@ -3532,7 +3532,7 @@ void item_ScrollSummon(Item* item, int player)
 	{
 		// spawn something really nasty
 		numCreatures = 1;
-		switch (local_rng.getU32() % 4)
+		switch (local_rng.rand() % 4)
 		{
 			case 0:
 				creature = MINOTAUR;
@@ -3551,42 +3551,42 @@ void item_ScrollSummon(Item* item, int player)
 	else if (item->beatitude == -1)
 	{
 		// spawn moderately nasty things
-		switch (local_rng.getU32() % 6)
+		switch (local_rng.rand() % 6)
 		{
 			case 0:
 				creature = GNOME;
-				numCreatures = local_rng.getU32() % 3 + 1;
+				numCreatures = local_rng.rand() % 3 + 1;
 				break;
 			case 1:
 				creature = SPIDER;
-				numCreatures = local_rng.getU32() % 2 + 1;
+				numCreatures = local_rng.rand() % 2 + 1;
 				break;
 			case 2:
 				creature = SUCCUBUS;
-				numCreatures = local_rng.getU32() % 2 + 1;
+				numCreatures = local_rng.rand() % 2 + 1;
 				break;
 			case 3:
 				creature = SCORPION;
-				numCreatures = local_rng.getU32() % 2 + 1;
+				numCreatures = local_rng.rand() % 2 + 1;
 				break;
 			case 4:
 				creature = GHOUL;
-				numCreatures = local_rng.getU32() % 2 + 1;
+				numCreatures = local_rng.rand() % 2 + 1;
 				break;
 			case 5:
 				creature = GOBLIN;
-				numCreatures = local_rng.getU32() % 2 + 1;
+				numCreatures = local_rng.rand() % 2 + 1;
 				break;
 		}
 	}
 	else if (item->beatitude == 0)
 	{
 		// spawn weak monster ally
-		switch (local_rng.getU32() % 3)
+		switch (local_rng.rand() % 3)
 		{
 			case 0:
 				creature = RAT;
-				numCreatures = local_rng.getU32() % 3 + 1;
+				numCreatures = local_rng.rand() % 3 + 1;
 				break;
 			case 1:
 				creature = GHOUL;
@@ -3594,7 +3594,7 @@ void item_ScrollSummon(Item* item, int player)
 				break;
 			case 2:
 				creature = SLIME;
-				numCreatures = local_rng.getU32() % 2 + 1;
+				numCreatures = local_rng.rand() % 2 + 1;
 				break;
 		}
 	}
@@ -3602,21 +3602,21 @@ void item_ScrollSummon(Item* item, int player)
 	{
 		// spawn humans
 		creature = HUMAN;
-		numCreatures = local_rng.getU32() % 3 + 1;
+		numCreatures = local_rng.rand() % 3 + 1;
 	}
 	else if (item->beatitude >= 2)
 	{
 		//Spawn many/neat allies
-		switch (local_rng.getU32() % 2)
+		switch (local_rng.rand() % 2)
 		{
 			case 0:
 				// summon zap brigadiers
-				numCreatures = local_rng.getU32() % 2 + 4;
+				numCreatures = local_rng.rand() % 2 + 4;
 				creature = HUMAN;
 				break;
 			case 1:
 				// summon demons
-				numCreatures = local_rng.getU32() % 2 + 4;
+				numCreatures = local_rng.rand() % 2 + 4;
 				creature = DEMON;
 				break;
 		}
@@ -3922,19 +3922,19 @@ void item_ToolBeartrap(Item*& item, int player)
 	switch ( item->status )
 	{
 		case SERVICABLE:
-			if ( local_rng.getU32() % 25 == 0 )
+			if ( local_rng.rand() % 25 == 0 )
 			{
 				failed = true;
 			}
 			break;
 		case WORN:
-			if ( local_rng.getU32() % 10 == 0 )
+			if ( local_rng.rand() % 10 == 0 )
 			{
 				failed = true;
 			}
 			break;
 		case DECREPIT:
-			if ( local_rng.getU32() % 4 == 0 )
+			if ( local_rng.rand() % 4 == 0 )
 			{
 				failed = true;
 			}
@@ -4077,7 +4077,7 @@ void item_Food(Item*& item, int player)
 	}
 	else
 	{
-		playSoundEntity(players[player]->entity, 50 + local_rng.getU32() % 2, 64);
+		playSoundEntity(players[player]->entity, 50 + local_rng.rand() % 2, 64);
 	}
 
 	// chance of rottenness
@@ -4112,7 +4112,7 @@ void item_Food(Item*& item, int player)
 		pukeChance = 100; // insectoids can eat anything.
 	}
 
-	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (local_rng.getU32() % pukeChance == 0)) && pukeChance < 100)
+	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (local_rng.rand() % pukeChance == 0)) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
@@ -4137,7 +4137,7 @@ void item_Food(Item*& item, int player)
 				&& players[player]->entity->effectShapeshift == NOTHING
 				&& stats[player]->type != AUTOMATON )
 			{
-				players[player]->entity->skill[26] = 40 + local_rng.getU32() % 10;
+				players[player]->entity->skill[26] = 40 + local_rng.rand() % 10;
 			}
 		}
 		consumeItem(item, player);
@@ -4342,7 +4342,7 @@ void item_FoodTin(Item*& item, int player)
 	bool mpBuff = false;
 
 	// first word
-	int word = local_rng.getU32() % 16;
+	int word = local_rng.rand() % 16;
 	strcpy(tempstr, language[918 + word]);
 	if ( word == 6 || word == 15 )
 	{
@@ -4354,7 +4354,7 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	// second word
-	word = local_rng.getU32() % 16;
+	word = local_rng.rand() % 16;
 	strcat(tempstr, language[934 + word]);
 	if ( word == 1 || word == 7 || word == 8 || word == 12 )
 	{
@@ -4366,7 +4366,7 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	// third word
-	word = local_rng.getU32() % 16;
+	word = local_rng.rand() % 16;
 	strcat(tempstr, language[950 + word]);
 	if ( word == 1 || word == 8 )
 	{
@@ -4391,7 +4391,7 @@ void item_FoodTin(Item*& item, int player)
 	// eating sound
 	if ( players[player] )
 	{
-		playSoundEntity(players[player]->entity, 50 + local_rng.getU32() % 2, 64);
+		playSoundEntity(players[player]->entity, 50 + local_rng.rand() % 2, 64);
 	}
 
 	serverUpdatePlayerGameplayStats(player, STATISTICS_YES_WE_CAN, 1);
@@ -4399,7 +4399,7 @@ void item_FoodTin(Item*& item, int player)
 	// chance of rottenness
 	pukeChance = item->foodGetPukeChance(stats[player]);
 
-	if ((item->beatitude < 0 || local_rng.getU32() % pukeChance == 0) && pukeChance < 100)
+	if ((item->beatitude < 0 || local_rng.rand() % pukeChance == 0) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
@@ -4420,7 +4420,7 @@ void item_FoodTin(Item*& item, int player)
 				&& players[player]->entity->effectShapeshift == NOTHING
 				&& stats[player]->type != AUTOMATON )
 			{
-				players[player]->entity->skill[26] = 40 + local_rng.getU32() % 10;
+				players[player]->entity->skill[26] = 40 + local_rng.rand() % 10;
 			}
 		}
 		consumeItem(item, player);
@@ -4430,11 +4430,11 @@ void item_FoodTin(Item*& item, int player)
 	int buffDuration = item->status * TICKS_PER_SECOND * 4; // (4 - 16 seconds)
 	if ( item->status > WORN )
 	{
-		buffDuration -= local_rng.getU32() % ((buffDuration / 2) + 1); // 50-100% duration
+		buffDuration -= local_rng.rand() % ((buffDuration / 2) + 1); // 50-100% duration
 	}
 	else
 	{
-		buffDuration -= local_rng.getU32() % ((buffDuration / 4) + 1); // 75-100% duration
+		buffDuration -= local_rng.rand() % ((buffDuration / 4) + 1); // 75-100% duration
 	}
 
 	// replenish nutrition points
@@ -4467,7 +4467,7 @@ void item_FoodTin(Item*& item, int player)
 		// 1-2 minutes of greasy
 		if ( players[player] && players[player]->entity )
 		{
-			if ( players[player]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * (60 + local_rng.getU32() % 60), true) )
+			if ( players[player]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * (60 + local_rng.rand() % 60), true) )
 			{
 				messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, language[966]);
 			}
@@ -4611,7 +4611,7 @@ void item_Spellbook(Item*& item, int player)
 		if ( list_Size(&players[player]->magic.spellList) > 0 && stats[player]->type != AUTOMATON )
 		{
 			// randomly delete a spell
-			int spellToDelete = local_rng.getU32() % list_Size(&players[player]->magic.spellList);
+			int spellToDelete = local_rng.rand() % list_Size(&players[player]->magic.spellList);
 			node = list_Node(&players[player]->magic.spellList, spellToDelete);
 			spell_t* spell = (spell_t*)node->element;
 			int spellID = spell->ID;
@@ -4631,7 +4631,7 @@ void item_Spellbook(Item*& item, int player)
 					consumeItem(item, player);
 					return;
 				}
-				spellToDelete = local_rng.getU32() % (list_Size(&players[player]->magic.spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
+				spellToDelete = local_rng.rand() % (list_Size(&players[player]->magic.spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
 				spellToDelete += CLASS_SHAMAN_NUM_STARTING_SPELLS; // e.g 16 spells is 0 + 15, 15th index.
 				node = list_Node(&players[player]->magic.spellList, spellToDelete);
 				spell = (spell_t*)node->element;
@@ -4973,7 +4973,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	}
 	else
 	{
-		playSoundEntity(players[player]->entity, 50 + local_rng.getU32() % 2, 64);
+		playSoundEntity(players[player]->entity, 50 + local_rng.rand() % 2, 64);
 	}
 
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
@@ -5087,11 +5087,11 @@ void item_FoodAutomaton(Item*& item, int player)
 			{
 				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
 				entity->sprite = 16;
-				double vel = local_rng.getU32() % 10;
+				double vel = local_rng.rand() % 10;
 				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
 				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 				entity->vel_z = vel * sin(entity->pitch) * .2;
-				entity->skill[0] = 5 + local_rng.getU32() % 10;
+				entity->skill[0] = 5 + local_rng.rand() % 10;
 			}
 			break;
 		}
@@ -5287,7 +5287,7 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 			{
 				messagePlayer(my->skill[2], MESSAGE_STATUS, language[916]); // shapeshifted players don't puke
 			}
-			else if ( local_rng.getU32() % 3 )
+			else if ( local_rng.rand() % 3 )
 			{
 				messagePlayer(my->skill[2], MESSAGE_STATUS, language[916]);
 			}
@@ -5296,7 +5296,7 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 				messagePlayer(my->skill[2], MESSAGE_STATUS, language[917]);
 				if ( myStats->type != SKELETON && myStats->type != AUTOMATON )
 				{
-					my->skill[26] = 40 + local_rng.getU32() % 10;
+					my->skill[26] = 40 + local_rng.rand() % 10;
 				}
 			}
 		}

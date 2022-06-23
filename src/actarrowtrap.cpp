@@ -93,18 +93,18 @@ void actArrowTrap(Entity* my)
 			}
 			if ( !freeTiles.empty() )
 			{
-				std::pair<int, int> chosenTile = freeTiles[local_rng.getU32() % freeTiles.size()];
+				std::pair<int, int> chosenTile = freeTiles[local_rng.rand() % freeTiles.size()];
 				dropped->x += (chosenTile.first - x) * 8;
 				dropped->y += (chosenTile.second - y) * 8;
 				dropped->vel_x = (chosenTile.first - x);
 				if ( abs(dropped->vel_x) > 0.01 )
 				{
-					dropped->vel_x *= (5 + local_rng.getU32() % 11) / 10.0; //50% to 150%
+					dropped->vel_x *= (5 + local_rng.rand() % 11) / 10.0; //50% to 150%
 				}
 				dropped->vel_y = (chosenTile.second - y);
 				if ( abs(dropped->vel_y) > 0.01 )
 				{
-					dropped->vel_y *= (5 + local_rng.getU32() % 11) / 10.0; //50% to 150%
+					dropped->vel_y *= (5 + local_rng.rand() % 11) / 10.0; //50% to 150%
 				}
 			}
 		}
@@ -199,7 +199,7 @@ void actArrowTrap(Entity* my)
 				if ( !map.tiles[OBSTACLELAYER + index] )
 				{
 					Entity* entity = newEntity(166, 1, map.entities, nullptr); // arrow
-					playSoundEntity(my, 239 + local_rng.getU32() % 3, 96);
+					playSoundEntity(my, 239 + local_rng.rand() % 3, 96);
 					entity->parent = my->getUID();
 					entity->x = my->x + x;
 					entity->y = my->y + y;
@@ -260,7 +260,7 @@ void actArrowTrap(Entity* my)
 					{
 						/*entity->x = targetToAutoHit->x;
 						entity->y = targetToAutoHit->y;*/
-						if ( local_rng.getU32() % 2 == 0 )
+						if ( local_rng.rand() % 2 == 0 )
 						{
 							double tangent = atan2(entity->y - targetToAutoHit->y, entity->x - targetToAutoHit->x);
 							entity->yaw = tangent + PI;
@@ -268,9 +268,9 @@ void actArrowTrap(Entity* my)
 							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
 							targetToAutoHit = nullptr;
 						}
-						else if ( local_rng.getU32() % 2 == 0 )
+						else if ( local_rng.rand() % 2 == 0 )
 						{
-							entity->yaw = entity->yaw - PI / 12 + (0.1 * (local_rng.getU32() % 11) * (PI / 6)); // -/+ PI/12 range
+							entity->yaw = entity->yaw - PI / 12 + (0.1 * (local_rng.rand() % 11) * (PI / 6)); // -/+ PI/12 range
 							entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
 							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
 							targetToAutoHit = nullptr;

@@ -295,6 +295,12 @@ double BaronyRNG::getF64() {
 	return (double)u32 / div;
 }
 
+int BaronyRNG::rand() {
+    int i;
+	getBytes(&i, sizeof(i));
+    return i & RAND_MAX;
+}
+
 int BaronyRNG::uniform(int a, int b) {
     if (a == b) {
         return a;

@@ -46,7 +46,7 @@ void actDoor(Entity* my)
 
 		my->doorInit = 1;
 		my->doorStartAng = my->yaw;
-		my->doorHealth = 15 + local_rng.getU32() % 5;
+		my->doorHealth = 15 + local_rng.rand() % 5;
 		my->doorMaxHealth = my->doorHealth;
 		my->doorOldHealth = my->doorHealth;
 		my->doorPreventLockpickExploit = 1;
@@ -55,7 +55,7 @@ void actDoor(Entity* my)
 		{
 			my->doorLocked = 0; // force unlocked.
 		}
-		else if ( local_rng.getU32() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && local_rng.getU32() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
+		else if ( local_rng.rand() % 20 == 0 || (!strncmp(map.name, "The Great Castle", 16) && local_rng.rand() % 2 == 0) || my->doorForceLockedUnlocked == 1 )   // 5% chance
 		{
 			my->doorLocked = 1;
 			my->doorPreventLockpickExploit = 0;
@@ -92,11 +92,11 @@ void actDoor(Entity* my)
 					entity->x = floor(my->x / 16) * 16 + 8;
 					entity->y = floor(my->y / 16) * 16 + 8;
 					entity->z = 0;
-					entity->z += -7 + local_rng.getU32() % 14;
+					entity->z += -7 + local_rng.rand() % 14;
 					if ( !my->doorDir )
 					{
 						// horizontal door
-						entity->y += -4 + local_rng.getU32() % 8;
+						entity->y += -4 + local_rng.rand() % 8;
 						if ( my->doorSmacked )
 						{
 							entity->yaw = PI;
@@ -109,7 +109,7 @@ void actDoor(Entity* my)
 					else
 					{
 						// vertical door
-						entity->x += -4 + local_rng.getU32() % 8;
+						entity->x += -4 + local_rng.rand() % 8;
 						if ( my->doorSmacked )
 						{
 							entity->yaw = PI / 2;
@@ -119,10 +119,10 @@ void actDoor(Entity* my)
 							entity->yaw = 3 * PI / 2;
 						}
 					}
-					entity->pitch = (local_rng.getU32() % 360) * PI / 180.0;
-					entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
-					entity->vel_x = cos(entity->yaw) * (1.2 + (local_rng.getU32() % 10) / 50.0);
-					entity->vel_y = sin(entity->yaw) * (1.2 + (local_rng.getU32() % 10) / 50.0);
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+					entity->vel_x = cos(entity->yaw) * (1.2 + (local_rng.rand() % 10) / 50.0);
+					entity->vel_y = sin(entity->yaw) * (1.2 + (local_rng.rand() % 10) / 50.0);
 					entity->vel_z = -.25;
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);

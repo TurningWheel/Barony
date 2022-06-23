@@ -92,8 +92,8 @@ void actHeadstone(Entity* my)
 	{
 		my->createWorldUITooltip();
 		HEADSTONE_INIT = 1;
-		HEADSTONE_MESSAGE = local_rng.getU32();
-		HEADSTONE_GHOUL = (local_rng.getU32() % 4 == 0);
+		HEADSTONE_MESSAGE = local_rng.rand();
+		HEADSTONE_GHOUL = (local_rng.rand() % 4 == 0);
 	}
 
 	bool shouldspawn = false;

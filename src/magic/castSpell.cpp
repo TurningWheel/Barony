@@ -480,7 +480,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		//So This wizard is a newbie.
 
 		//First, drain some extra mana maybe.
-		int chance = local_rng.getU32() % 10;
+		int chance = local_rng.rand() % 10;
 		int spellcastingAbility = spellcasting;
 		if ( usingSpellbook )
 		{
@@ -488,13 +488,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		if (chance >= spellcastingAbility / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
-			extramagic = local_rng.getU32() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
+			extramagic = local_rng.rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
 			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
 			caster->drainMP(extramagic);
 		}
 
 		bool fizzleSpell = false;
-		chance = local_rng.getU32() % 10;
+		chance = local_rng.rand() % 10;
 		if ( chance >= spellcastingAbility / 10 )
 		{
 			fizzleSpell = true;
@@ -512,7 +512,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		//Now, there's a chance they'll fumble the spell.
 		if ( fizzleSpell )
 		{
-			if ( local_rng.getU32() % 3 == 1 )
+			if ( local_rng.rand() % 3 == 1 )
 			{
 				//Fizzle the spell.
 				//TODO: Cool effects.
@@ -600,11 +600,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if (extramagic > 0)
 		{
 			//Extra magic. Pump it in here?
-			chance = local_rng.getU32() % 5;
+			chance = local_rng.rand() % 5;
 			if (chance == 1)
 			{
 				//Use some of that extra magic in this element.
-				int amount = local_rng.getU32() % extramagic;
+				int amount = local_rng.rand() % extramagic;
 				extramagic -= amount;
 				extramagic_to_use += amount;
 			}
@@ -618,10 +618,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (newbie)
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.getU32() % 10;
+				chance = local_rng.rand() % 10;
 				if (chance >= spellcasting / 10)
 				{
-					traveltime -= local_rng.getU32() % (1000 / (spellcasting + 1));
+					traveltime -= local_rng.rand() % (1000 / (spellcasting + 1));
 				}
 				if (traveltime < 30)
 				{
@@ -642,10 +642,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if ( newbie )
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.getU32() % 10;
+				chance = local_rng.rand() % 10;
 				if ( chance >= spellcasting / 10 )
 				{
-					traveltime -= local_rng.getU32() % (1000 / (spellcasting + 1));
+					traveltime -= local_rng.rand() % (1000 / (spellcasting + 1));
 				}
 				if ( traveltime < 30 )
 				{
@@ -685,11 +685,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (newbie)
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.getU32() % 10;
+				chance = local_rng.rand() % 10;
 				if (chance >= spellcasting / 10)
 				{
 					// lifespan of the lightball
-					entity->skill[12] -= local_rng.getU32() % (2000 / (spellcasting + 1));
+					entity->skill[12] -= local_rng.rand() % (2000 / (spellcasting + 1));
 					if (entity->skill[12] < 180)
 					{
 						entity->skill[12] = 180;    //Range checking.
@@ -744,10 +744,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (newbie)
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.getU32() % 10;
+				chance = local_rng.rand() % 10;
 				if (chance >= spellcasting / 10)
 				{
-					duration -= local_rng.getU32() % (1000 / (spellcasting + 1));
+					duration -= local_rng.rand() % (1000 / (spellcasting + 1));
 				}
 				if (duration < 180)
 				{
@@ -805,10 +805,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (newbie)
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = local_rng.getU32() % 10;
+				chance = local_rng.rand() % 10;
 				if (chance >= spellcasting / 10)
 				{
-					duration -= local_rng.getU32() % (1000 / (spellcasting + 1));
+					duration -= local_rng.rand() % (1000 / (spellcasting + 1));
 				}
 				if (duration < 180)
 				{
@@ -1256,10 +1256,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					//if ( newbie )
 					//{
 					//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-					//	chance = local_rng.getU32() % 10;
+					//	chance = local_rng.rand() % 10;
 					//	if ( chance >= spellcasting / 10 )
 					//	{
-					//		duration -= local_rng.getU32() % (1000 / (spellcasting + 1));
+					//		duration -= local_rng.rand() % (1000 / (spellcasting + 1));
 					//	}
 					//	if ( duration < 100 )
 					//	{
@@ -1321,10 +1321,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if (newbie)
 					{
 						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-						chance = local_rng.getU32() % 10;
+						chance = local_rng.rand() % 10;
 						if (chance >= spellcasting / 10)
 						{
-							amount -= local_rng.getU32() % (1000 / (spellcasting + 1));
+							amount -= local_rng.rand() % (1000 / (spellcasting + 1));
 						}
 						if (amount < 8)
 						{
@@ -1676,10 +1676,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( newbie )
 				{
 					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-					chance = local_rng.getU32() % 10;
+					chance = local_rng.rand() % 10;
 					if ( chance >= spellcasting / 10 )
 					{
-						duration -= local_rng.getU32() % (1000 / (spellcasting + 1));
+						duration -= local_rng.rand() % (1000 / (spellcasting + 1));
 					}
 					if ( duration < 180 )
 					{
@@ -1725,10 +1725,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//if ( newbie )
 				//{
 				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				//	chance = local_rng.getU32() % 10;
+				//	chance = local_rng.rand() % 10;
 				//	if ( chance >= spellcasting / 10 )
 				//	{
-				//		duration -= local_rng.getU32() % (1000 / (spellcasting + 1));
+				//		duration -= local_rng.rand() % (1000 / (spellcasting + 1));
 				//	}
 				//	if ( duration < 180 )
 				//	{
@@ -2015,11 +2015,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if (extramagic > 0)
 		{
 			//Extra magic. Pump it in here?
-			chance = local_rng.getU32() % 5;
+			chance = local_rng.rand() % 5;
 			if (chance == 1)
 			{
 				//Use some of that extra magic in this element.
-				int amount = local_rng.getU32() % extramagic;
+				int amount = local_rng.rand() % extramagic;
 				extramagic -= amount;
 				extramagic_to_use += amount; //TODO: Make the elements here use this? Looks like they won't, currently. Oh well.
 			}
@@ -2042,10 +2042,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//if (newbie)
 				//{
 				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				//	chance = local_rng.getU32() % 10;
+				//	chance = local_rng.rand() % 10;
 				//	if (chance >= spellcasting / 10)
 				//	{
-				//		element->damage -= local_rng.getU32() % (100 / (spellcasting + 1));
+				//		element->damage -= local_rng.rand() % (100 / (spellcasting + 1));
 				//	}
 				//	if (element->damage < 10)
 				//	{
@@ -2060,7 +2060,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					entity->sprite = 168;
 					//entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 					//entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
-					//entity->skill[12] = (100 * stat->PROFICIENCIES[PRO_SPELLCASTING]) + (100 * stat->PROFICIENCIES[PRO_MAGIC]) + (100 * (local_rng.getU32()%10)) + (10 * (local_rng.getU32()%10)) + (local_rng.getU32()%10); //How long this thing lives.
+					//entity->skill[12] = (100 * stat->PROFICIENCIES[PRO_SPELLCASTING]) + (100 * stat->PROFICIENCIES[PRO_MAGIC]) + (100 * (local_rng.rand()%10)) + (10 * (local_rng.rand()%10)) + (local_rng.rand()%10); //How long this thing lives.
 
 					//playSoundEntity( entity, 59, 128 );
 				}
@@ -2068,10 +2068,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//if (newbie)
 				//{
 				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				//	chance = local_rng.getU32() % 10;
+				//	chance = local_rng.rand() % 10;
 				//	if (chance >= spellcasting / 10)
 				//	{
-				//		element->damage -= local_rng.getU32() % (100 / (spellcasting + 1));
+				//		element->damage -= local_rng.rand() % (100 / (spellcasting + 1));
 				//	}
 				//	if (element->damage < 10)
 				//	{
@@ -2089,10 +2089,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				//if ( newbie )
 				//{
 				//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				//	chance = local_rng.getU32() % 10;
+				//	chance = local_rng.rand() % 10;
 				//	if ( chance >= spellcasting / 10 )
 				//	{
-				//		element->damage -= local_rng.getU32() % (100 / (spellcasting + 1));
+				//		element->damage -= local_rng.rand() % (100 / (spellcasting + 1));
 				//	}
 				//	if ( element->damage < 10 )
 				//	{
@@ -2246,21 +2246,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				// spellcasting increase chances.
 				if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 60 )
 				{
-					if ( local_rng.getU32() % 6 == 0 ) //16.67%
+					if ( local_rng.rand() % 6 == 0 ) //16.67%
 					{
 						caster->increaseSkill(PRO_SPELLCASTING);
 					}
 				}
 				else if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 80 )
 				{
-					if ( local_rng.getU32() % 9 == 0 ) //11.11%
+					if ( local_rng.rand() % 9 == 0 ) //11.11%
 					{
 						caster->increaseSkill(PRO_SPELLCASTING);
 					}
 				}
 				else // greater than 80
 				{
-					if ( local_rng.getU32() % 12 == 0 ) //8.33%
+					if ( local_rng.rand() % 12 == 0 ) //8.33%
 					{
 						caster->increaseSkill(PRO_SPELLCASTING);
 					}
@@ -2269,21 +2269,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				// magic increase chances.
 				if ( stat->PROFICIENCIES[PRO_MAGIC] < 60 )
 				{
-					if ( local_rng.getU32() % 7 == 0 ) //14.2%
+					if ( local_rng.rand() % 7 == 0 ) //14.2%
 					{
 						caster->increaseSkill(PRO_MAGIC);
 					}
 				}
 				else if ( stat->PROFICIENCIES[PRO_MAGIC] < 80 )
 				{
-					if ( local_rng.getU32() % 10 == 0 ) //10.00%
+					if ( local_rng.rand() % 10 == 0 ) //10.00%
 					{
 						caster->increaseSkill(PRO_MAGIC);
 					}
 				}
 				else // greater than 80
 				{
-					if ( local_rng.getU32() % 13 == 0 ) //7.69%
+					if ( local_rng.rand() % 13 == 0 ) //7.69%
 					{
 						caster->increaseSkill(PRO_MAGIC);
 					}
@@ -2332,7 +2332,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
 				{
 					// light provides no levelling past 40 in both spellcasting and magic.
-					if ( local_rng.getU32() % 20 == 0 )
+					if ( local_rng.rand() % 20 == 0 )
 					{
 						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
@@ -2345,12 +2345,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 				else
 				{
-					if ( local_rng.getU32() % spellCastChance == 0 )
+					if ( local_rng.rand() % spellCastChance == 0 )
 					{
 						caster->increaseSkill(PRO_SPELLCASTING);
 					}
 
-					if ( local_rng.getU32() % magicChance == 0 )
+					if ( local_rng.rand() % magicChance == 0 )
 					{
 						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
 						if ( usingSpellbook && caster->behavior == &actPlayer )
@@ -2392,7 +2392,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			chance = 1; // cursed books always degrade, or blessed books in succubus/incubus
 		}
-		if ( local_rng.getU32() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		if ( local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
 			caster->degradeArmor(*stat, *(stat->shield), 4);
 			if ( stat->shield->status == BROKEN && player >= 0 )

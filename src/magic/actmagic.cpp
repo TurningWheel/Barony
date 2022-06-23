@@ -830,7 +830,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( bShouldEquipmentDegrade )
 					{
 						// Reflection of 3 does not degrade equipment
-						if ( local_rng.getU32() % 2 == 0 && hitstats && reflection < 3 )
+						if ( local_rng.rand() % 2 == 0 && hitstats && reflection < 3 )
 						{
 							// set armornum to the relevant equipment slot to send to clients
 							int armornum = 5 + reflection;
@@ -981,7 +981,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									// avoid y axis.
 									int direction = 1;
-									if ( local_rng.getU32() % 2 == 0 )
+									if ( local_rng.rand() % 2 == 0 )
 									{
 										direction = -1;
 									}
@@ -1003,7 +1003,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								else if ( static_cast<int>(parent->x / 16) == static_cast<int>(hit.entity->x / 16) )
 								{
 									int direction = 1;
-									if ( local_rng.getU32() % 2 == 0 )
+									if ( local_rng.rand() % 2 == 0 )
 									{
 										direction = -1;
 									}
@@ -1255,7 +1255,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									// cast through amplify magic effect
 									damage /= 2;
 								}
-								damage = damage - local_rng.getU32() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 
 
@@ -1441,7 +1441,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									damage = 14;
 								}
-								damage = damage - local_rng.getU32() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
 							if ( parent )
@@ -1717,7 +1717,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									damage = 18;
 								}
-								damage = damage - local_rng.getU32() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
@@ -1794,7 +1794,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							playSoundEntity(hit.entity, 396 + local_rng.getU32() % 3, 64);
+							playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
@@ -1833,11 +1833,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int effectDuration = 0;
 							if ( parent && parent->behavior == &actMagicTrapCeiling )
 							{
-								effectDuration = 200 + local_rng.getU32() % 150; // 4 seconds + 0 to 3 seconds.
+								effectDuration = 200 + local_rng.rand() % 150; // 4 seconds + 0 to 3 seconds.
 							}
 							else
 							{
-								effectDuration = 600 + local_rng.getU32() % 300; // 12 seconds + 0 to 6 seconds.
+								effectDuration = 600 + local_rng.rand() % 300; // 12 seconds + 0 to 6 seconds.
 								if ( hitstats )
 								{
 									effectDuration = std::max(0, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
@@ -1852,7 +1852,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( hitstats && hitstats->EFFECTS[EFF_ASLEEP] )
 								{
 									// check to see if we're reapplying the sleep effect.
-									int preventSleepRoll = local_rng.getU32() % 4 - resistance;
+									int preventSleepRoll = local_rng.rand() % 4 - resistance;
 									if ( hit.entity->behavior == &actPlayer || (preventSleepRoll <= 0) )
 									{
 										magicTrapReapplySleep = false;
@@ -1940,7 +1940,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									damage = 22;
 								}
-								damage = damage - local_rng.getU32() % ((damage / 8) + 1);
+								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
@@ -2768,9 +2768,9 @@ Entity* spawnMagicParticle(Entity* parentent)
 
 	entity = newEntity(parentent->sprite, 1, map.entities, nullptr); //Particle entity.
 
-	entity->x = parentent->x + (local_rng.getU32() % 50 - 25) / 20.f;
-	entity->y = parentent->y + (local_rng.getU32() % 50 - 25) / 20.f;
-	entity->z = parentent->z + (local_rng.getU32() % 50 - 25) / 20.f;
+	entity->x = parentent->x + (local_rng.rand() % 50 - 25) / 20.f;
+	entity->y = parentent->y + (local_rng.rand() % 50 - 25) / 20.f;
+	entity->z = parentent->z + (local_rng.rand() % 50 - 25) / 20.f;
 	entity->scalex = 0.7;
 	entity->scaley = 0.7;
 	entity->scalez = 0.7;
@@ -2806,9 +2806,9 @@ Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, re
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 
 	int size = 50 / spreadReduce;
-	entity->x = parentent->x + (local_rng.getU32() % size - size / 2) / 20.f;
-	entity->y = parentent->y + (local_rng.getU32() % size - size / 2) / 20.f;
-	entity->z = parentent->z + (local_rng.getU32() % size - size / 2) / 20.f;
+	entity->x = parentent->x + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->y = parentent->y + (local_rng.rand() % size - size / 2) / 20.f;
+	entity->z = parentent->z + (local_rng.rand() % size - size / 2) / 20.f;
 	entity->scalex = scale;
 	entity->scaley = scale;
 	entity->scalez = scale;
@@ -2860,15 +2860,15 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 	for ( c = 0; c < 10; c++ )
 	{
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
-		entity->x = x - 5 + local_rng.getU32() % 11;
-		entity->y = y - 5 + local_rng.getU32() % 11;
-		entity->z = z - 10 + local_rng.getU32() % 21;
+		entity->x = x - 5 + local_rng.rand() % 11;
+		entity->y = y - 5 + local_rng.rand() % 11;
+		entity->z = z - 10 + local_rng.rand() % 21;
 		entity->scalex = 0.7;
 		entity->scaley = 0.7;
 		entity->scalez = 0.7;
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->yaw = (local_rng.getU32() % 360) * PI / 180.f;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
 		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
@@ -2892,7 +2892,7 @@ void createParticle1(Entity* caster, int player)
 	entity->y = caster->y;
 	entity->z = -7;
 	entity->vel_z = 0.3;
-	entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = 50;
 	entity->skill[1] = player;
 	entity->fskill[0] = 0.03;
@@ -2919,7 +2919,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->focalx = 8;
 	entity->z = -7;
 	entity->vel_z = 0.15;
-	entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
@@ -3069,12 +3069,12 @@ void createParticleDot(Entity* parent)
 		Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + local_rng.getU32() % 9);
-		entity->y = parent->y + (-4 + local_rng.getU32() % 9);
-		entity->z = 7.5 + local_rng.getU32()%50;
+		entity->x = parent->x + (-4 + local_rng.rand() % 9);
+		entity->y = parent->y + (-4 + local_rng.rand() % 9);
+		entity->z = 7.5 + local_rng.rand()%50;
 		entity->vel_z = -1;
-		//entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
-		entity->skill[0] = 10 + local_rng.getU32()% 50;
+		//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->skill[0] = 10 + local_rng.rand()% 50;
 		entity->behavior = &actParticleDot;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
@@ -3104,7 +3104,7 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	entity->skill[1] = effectType;
 	entity->parent = parent->getUID();
 	//entity->vel_z = -1;
-	//entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
 	entity->fskill[0] = entity->x;
 	entity->fskill[1] = entity->y;
@@ -3132,15 +3132,15 @@ void createParticleRock(Entity* parent)
 		Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + local_rng.getU32() % 9);
-		entity->y = parent->y + (-4 + local_rng.getU32() % 9);
+		entity->x = parent->x + (-4 + local_rng.rand() % 9);
+		entity->y = parent->y + (-4 + local_rng.rand() % 9);
 		entity->z = 7.5;
-		entity->yaw = c * 2 * PI / 5;//(local_rng.getU32() % 360) * PI / 180.0;
-		entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
+		entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 
 		entity->vel_x = 0.2 * cos(entity->yaw);
 		entity->vel_y = 0.2 * sin(entity->yaw);
-		entity->vel_z = 3;// 0.25 - (local_rng.getU32() % 5) / 10.0;
+		entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
 
 		entity->skill[0] = 50; // particle life
 		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
@@ -3168,15 +3168,15 @@ void createParticleShatteredGem(Entity* parent, int sprite)
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + local_rng.getU32() % 9);
-		entity->y = parent->y + (-4 + local_rng.getU32() % 9);
+		entity->x = parent->x + (-4 + local_rng.rand() % 9);
+		entity->y = parent->y + (-4 + local_rng.rand() % 9);
 		entity->z = 7.5;
-		entity->yaw = c * 2 * PI / 5;//(local_rng.getU32() % 360) * PI / 180.0;
-		entity->roll = (local_rng.getU32() % 360) * PI / 180.0;
+		entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 
 		entity->vel_x = 0.2 * cos(entity->yaw);
 		entity->vel_y = 0.2 * sin(entity->yaw);
-		entity->vel_z = 3;// 0.25 - (local_rng.getU32() % 5) / 10.0;
+		entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
 
 		real_t scale = .4;
 		entity->scalex = scale;
@@ -3271,9 +3271,9 @@ void actParticleAestheticOrbit(Entity* my)
 			Entity* particle = spawnMagicParticle(my);
 			if ( particle )
 			{
-				particle->x = my->x + (-10 + local_rng.getU32() % 21) / (50.f);
-				particle->y = my->y + (-10 + local_rng.getU32() % 21) / (50.f);
-				particle->z = my->z + (-10 + local_rng.getU32() % 21) / (50.f);
+				particle->x = my->x + (-10 + local_rng.rand() % 21) / (50.f);
+				particle->y = my->y + (-10 + local_rng.rand() % 21) / (50.f);
+				particle->z = my->z + (-10 + local_rng.rand() % 21) / (50.f);
 				particle->scalex = my->scalex;
 				particle->scaley = my->scaley;
 				particle->scalez = my->scalez;
@@ -3566,12 +3566,12 @@ void createParticleDropRising(Entity* parent, int sprite, double scale)
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x - 4 + local_rng.getU32() % 9;
-		entity->y = parent->y - 4 + local_rng.getU32() % 9;
-		entity->z = 7.5 + local_rng.getU32() % 50;
+		entity->x = parent->x - 4 + local_rng.rand() % 9;
+		entity->y = parent->y - 4 + local_rng.rand() % 9;
+		entity->z = 7.5 + local_rng.rand() % 50;
 		entity->vel_z = -1;
-		//entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
-		entity->particleDuration = 10 + local_rng.getU32() % 50;
+		//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->particleDuration = 10 + local_rng.rand() % 50;
 		entity->scalex *= scale;
 		entity->scaley *= scale;
 		entity->scalez *= scale;
@@ -3736,13 +3736,13 @@ void actParticleTimer(Entity* my)
 								int numSprites = std::min(3, durationToStun / 25);
 								for ( int i = 0; i < numSprites; ++i )
 								{
-									spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.getU32() % 9) + cos(target->yaw) * 2, 
-										target->y + (-4 + local_rng.getU32() % 9) + sin(target->yaw) * 2, target->z + local_rng.getU32() % 4);
+									spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2, 
+										target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
 								}
 							}
 							target->monsterReleaseAttackTarget();
 							target->lookAtEntity(*parent);
-							target->monsterLookDir += (PI - PI / 4 + (local_rng.getU32() % 10) * PI / 40);
+							target->monsterLookDir += (PI - PI / 4 + (local_rng.rand() % 10) * PI / 40);
 						}
 						else if ( target->behavior == &actPlayer )
 						{
@@ -3751,8 +3751,8 @@ void actParticleTimer(Entity* my)
 							int numSprites = std::min(3, durationToStun / 50);
 							for ( int i = 0; i < numSprites; ++i )
 							{
-								spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.getU32() % 9) + cos(target->yaw) * 2,
-									target->y + (-4 + local_rng.getU32() % 9) + sin(target->yaw) * 2, target->z + local_rng.getU32() % 4);
+								spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2,
+									target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
 							}
 							Uint32 color = makeColorRGB(255, 255, 255);
 							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, language[3462]);
@@ -3866,7 +3866,7 @@ void actParticleTimer(Entity* my)
 			{
 				// teleport to fixed location spell.
 				node_t* node;
-				int c = 0 + local_rng.getU32() % 3;
+				int c = 0 + local_rng.rand() % 3;
 				Entity* target = nullptr;
 				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
@@ -3917,7 +3917,7 @@ void actParticleTimer(Entity* my)
 					if ( target )
 					{
 						createParticleErupt(parent, my->particleTimerEndSprite);
-						teleported = parent->teleport((target->x / 16) - 11 + local_rng.getU32() % 23, (target->y / 16) - 11 + local_rng.getU32() % 23);
+						teleported = parent->teleport((target->x / 16) - 11 + local_rng.rand() % 23, (target->y / 16) - 11 + local_rng.rand() % 23);
 
 						if ( teleported )
 						{
@@ -3979,12 +3979,12 @@ void actParticleTimer(Entity* my)
 					Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr); //Particle entity.
 					entity->sizex = 1;
 					entity->sizey = 1;
-					entity->x = parent->x - 4 + local_rng.getU32() % 9;
-					entity->y = parent->y - 4 + local_rng.getU32() % 9;
+					entity->x = parent->x - 4 + local_rng.rand() % 9;
+					entity->y = parent->y - 4 + local_rng.rand() % 9;
 					entity->z = 7.5;
 					entity->vel_z = -1;
-					entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
-					entity->particleDuration = 10 + local_rng.getU32() % 30;
+					entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+					entity->particleDuration = 10 + local_rng.rand() % 30;
 					entity->behavior = &actParticleDot;
 					entity->flags[PASSABLE] = true;
 					entity->flags[NOUPDATE] = true;
@@ -4094,7 +4094,7 @@ void actParticleSap(Entity* my)
 				z_decel = 0.9935;
 				z_accel = z_decel;
 			}
-			Entity* particle = spawnMagicParticleCustom(my, (local_rng.getU32() % 2) ? 943 : 979, 1, 10);
+			Entity* particle = spawnMagicParticleCustom(my, (local_rng.rand() % 2) ? 943 : 979, 1, 10);
 			if ( particle )
 			{
 				particle->focalx = 2;
@@ -4105,11 +4105,11 @@ void actParticleSap(Entity* my)
 			{
 				if ( PARTICLE_LIFE < 70 )
 				{
-					playSoundEntityLocal(my, 434 + local_rng.getU32() % 10, 64);
+					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 				}
 				else
 				{
-					playSoundEntityLocal(my, 434 + local_rng.getU32() % 10, 32);
+					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 32);
 				}
 			}
 			//particle->flags[SPRITE] = true;
@@ -4243,7 +4243,7 @@ void actParticleSapCenter(Entity* my)
 								if ( myStats->type == INCUBUS )
 								{
 									parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
-									parent->monsterSpecialTimer = 100 + local_rng.getU32() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+									parent->monsterSpecialTimer = 100 + local_rng.rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
 								}
 							}
 						}
@@ -4347,7 +4347,7 @@ void actParticleSapCenter(Entity* my)
 						}
 					}
 				}
-				playSoundEntity(parent, 431 + local_rng.getU32() % 3, 92);
+				playSoundEntity(parent, 431 + local_rng.rand() % 3, 92);
 				item = nullptr;
 			}
 			list_RemoveNode(my->mynode);
@@ -4531,8 +4531,8 @@ void actParticleSapCenter(Entity* my)
 			entity->sizex = 4;
 			entity->sizey = 4;
 			entity->yaw = my->yaw;
-			entity->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
-			entity->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
+			entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+			entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 			entity->vel_z = -.5;
 			entity->flags[PASSABLE] = true;
 			entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
@@ -4568,8 +4568,8 @@ void actParticleSapCenter(Entity* my)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->yaw = my->yaw;
-				entity->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
-				entity->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
+				entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+				entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 				entity->vel_z = -.5;
 				entity->flags[PASSABLE] = true;
 				entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
@@ -4623,23 +4623,23 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x - 3 + local_rng.getU32() % 7;
-		entity->y = parent->y - 3 + local_rng.getU32() % 7;
-		entity->z = 0 + local_rng.getU32() % 190;
+		entity->x = parent->x - 3 + local_rng.rand() % 7;
+		entity->y = parent->y - 3 + local_rng.rand() % 7;
+		entity->z = 0 + local_rng.rand() % 190;
 		if ( parent && parent->behavior == &actPlayer )
 		{
 			entity->z /= 2;
 		}
 		entity->vel_z = -1;
-		entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 		entity->particleDuration = entity->z + 10;
-		/*if ( local_rng.getU32() % 5 > 0 )
+		/*if ( local_rng.rand() % 5 > 0 )
 		{
 			entity->vel_x = 0.5*cos(entity->yaw);
 			entity->vel_y = 0.5*sin(entity->yaw);
 			entity->particleDuration = 6;
 			entity->z = 0;
-			entity->vel_z = 0.5 *(-1 + local_rng.getU32() % 3);
+			entity->vel_z = 0.5 *(-1 + local_rng.rand() % 3);
 		}*/
 		entity->scalex *= scale;
 		entity->scaley *= scale;
@@ -4667,16 +4667,16 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->sizey = 1;
 		entity->yaw = 0 + c * arc;
 
-		entity->x = parent->x + (radius * cos(entity->yaw));// - 2 + local_rng.getU32() % 5;
-		entity->y = parent->y + (radius * sin(entity->yaw));// - 2 + local_rng.getU32() % 5;
+		entity->x = parent->x + (radius * cos(entity->yaw));// - 2 + local_rng.rand() % 5;
+		entity->y = parent->y + (radius * sin(entity->yaw));// - 2 + local_rng.rand() % 5;
 		entity->z = radius + 150;
-		entity->particleDuration = entity->z + local_rng.getU32() % 3;
+		entity->particleDuration = entity->z + local_rng.rand() % 3;
 		entity->vel_z = -1;
 		if ( parent && parent->behavior == &actPlayer )
 		{
 			entity->z /= 2;
 		}
-		randScale = 1 + local_rng.getU32() % 3;
+		randScale = 1 + local_rng.rand() % 3;
 
 		entity->scalex *= (scale / randScale);
 		entity->scaley *= (scale / randScale);
@@ -4700,7 +4700,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 
 void actParticleExplosionCharge(Entity* my)
 {
-	if ( PARTICLE_LIFE < 0 || (my->z < -4 && local_rng.getU32() % 4 == 0) || (ticks % 14 == 0 && uidToEntity(my->parent) == nullptr) )
+	if ( PARTICLE_LIFE < 0 || (my->z < -4 && local_rng.rand() % 4 == 0) || (ticks % 14 == 0 && uidToEntity(my->parent) == nullptr) )
 	{
 		list_RemoveNode(my->mynode);
 	}
@@ -4950,7 +4950,7 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->y = centery;
 		entity->z = 15;
 		entity->vel_z = 0;
-		//entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+		//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 		entity->skill[0] = 100;
 		entity->skill[1] = 10;
 		entity->behavior = &actParticleDot;
@@ -5025,7 +5025,7 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 	entity->y = y;
 	entity->z = 7.5;
 	entity->vel_z = -0.8;
-	//entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = 50;
 	entity->behavior = &actParticleFollowerCommand;
 	entity->flags[PASSABLE] = true;
@@ -5041,15 +5041,15 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 	for ( int c = 0; c < 10; c++ )
 	{
 		entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
-		entity->x = x - 4 + local_rng.getU32() % 9;
-		entity->y = y - 4 + local_rng.getU32() % 9;
-		entity->z = z - 0 + local_rng.getU32() % 11;
+		entity->x = x - 4 + local_rng.rand() % 9;
+		entity->y = y - 4 + local_rng.rand() % 9;
+		entity->z = z - 0 + local_rng.rand() % 11;
 		entity->scalex = 0.7;
 		entity->scaley = 0.7;
 		entity->scalez = 0.7;
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->yaw = (local_rng.getU32() % 360) * PI / 180.f;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
 		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
@@ -5298,7 +5298,7 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
 	entity->scalex = 0.1;
 	entity->scaley = 0.1;
 	entity->scalez = 0.1;
-	entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
 	entity->skill[1] = 0;
 	entity->skill[2] = static_cast<Sint32>(casterUid);
@@ -5331,7 +5331,7 @@ void createParticleCharmMonster(Entity* parent)
 	entity->scalex = 0.1;
 	entity->scaley = 0.1;
 	entity->scalez = 0.1;
-	entity->yaw = (local_rng.getU32() % 360) * PI / 180.0;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = 45;
 	entity->behavior = &actParticleCharmMonster;
 	entity->flags[PASSABLE] = true;
@@ -5458,7 +5458,7 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 		}
 	}
 	spawnMagicEffectParticles(x, y, 0, 174);
-	spawnExplosion(x, y, -4 + local_rng.getU32() % 8);
+	spawnExplosion(x, y, -4 + local_rng.rand() % 8);
 }
 
 void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
@@ -5486,21 +5486,21 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				{
 					randRocks = 1;
 				}
-				int i = numRocks + local_rng.getU32() % randRocks;
+				int i = numRocks + local_rng.rand() % randRocks;
 				for ( int c = 0; c < i; c++ )
 				{
 					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 					rock->flags[INVISIBLE] = true;
 					rock->flags[UPDATENEEDED] = true;
-					rock->x = hit.mapx * 16 + 4 + local_rng.getU32() % 8;
-					rock->y = hit.mapy * 16 + 4 + local_rng.getU32() % 8;
-					rock->z = -6 + local_rng.getU32() % 12;
+					rock->x = hit.mapx * 16 + 4 + local_rng.rand() % 8;
+					rock->y = hit.mapy * 16 + 4 + local_rng.rand() % 8;
+					rock->z = -6 + local_rng.rand() % 12;
 					rock->sizex = 4;
 					rock->sizey = 4;
-					rock->yaw = local_rng.getU32() % 360 * PI / 180;
-					rock->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
-					rock->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
-					rock->vel_z = -.25 - (local_rng.getU32() % 5) / 10.0;
+					rock->yaw = local_rng.rand() % 360 * PI / 180;
+					rock->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+					rock->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+					rock->vel_z = -.25 - (local_rng.rand() % 5) / 10.0;
 					rock->flags[PASSABLE] = true;
 					rock->behavior = &actItem;
 					rock->flags[USERFLAG1] = true; // no collision: helps performance
@@ -5545,7 +5545,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 	}
 	else if ( hit.entity->behavior == &actBoulder )
 	{
-		int i = numRocks + local_rng.getU32() % 4;
+		int i = numRocks + local_rng.rand() % 4;
 
 		// spawn several rock items //TODO: This should really be its own function.
 		int c;
@@ -5554,15 +5554,15 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 			entity->flags[INVISIBLE] = true;
 			entity->flags[UPDATENEEDED] = true;
-			entity->x = hit.entity->x - 4 + local_rng.getU32() % 8;
-			entity->y = hit.entity->y - 4 + local_rng.getU32() % 8;
-			entity->z = -6 + local_rng.getU32() % 12;
+			entity->x = hit.entity->x - 4 + local_rng.rand() % 8;
+			entity->y = hit.entity->y - 4 + local_rng.rand() % 8;
+			entity->z = -6 + local_rng.rand() % 12;
 			entity->sizex = 4;
 			entity->sizey = 4;
-			entity->yaw = local_rng.getU32() % 360 * PI / 180;
-			entity->vel_x = (local_rng.getU32() % 20 - 10) / 10.0;
-			entity->vel_y = (local_rng.getU32() % 20 - 10) / 10.0;
-			entity->vel_z = -.25 - (local_rng.getU32() % 5) / 10.0;
+			entity->yaw = local_rng.rand() % 360 * PI / 180;
+			entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+			entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.25 - (local_rng.rand() % 5) / 10.0;
 			entity->flags[PASSABLE] = true;
 			entity->behavior = &actItem;
 			entity->flags[USERFLAG1] = true; // no collision: helps performance
@@ -5594,7 +5594,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		if ( !strcmp(map.name, "Sokoban") )
 		{
 			Entity* monster = nullptr;
-			if ( local_rng.getU32() % 2 == 0 )
+			if ( local_rng.rand() % 2 == 0 )
 			{
 				monster = summonMonster(INSECTOID, ox, oy);
 			}
