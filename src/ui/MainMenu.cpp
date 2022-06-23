@@ -6684,6 +6684,7 @@ bind_failed:
 				clientnum = (int)SDLNet_Read32(&net_packet->data[4]);
 				if (clientnum >= MAXPLAYERS || clientnum <= 0) {
                     int error = clientnum;
+                    clientnum = 0;
 					printlog("connection attempt denied by server, error code: %d.\n", error);
 					multiplayer = SINGLE;
 					if (!directConnect) {
@@ -12448,8 +12449,8 @@ bind_failed:
                         createLobby(LobbyType::LobbyLAN);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
-                    multiplayer = CLIENT;
                     loadGame(info.player_num);
+                    multiplayer = SINGLE;
                     createDummyMainMenu();
                     createLobbyBrowser(button);
                 }

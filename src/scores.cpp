@@ -1365,7 +1365,10 @@ int saveGame(int saveIndex)
 		    mul = SINGLE;
 		}
 	} else {
-	    if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+	    if (multiplayer == SERVER && directConnect) {
+	        mul = DIRECTSERVER;
+	    }
+	    else if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 			mul = SERVERCROSSPLAY;
 		}
 	    else if (multiplayer == SERVER || multiplayer == CLIENT) {
