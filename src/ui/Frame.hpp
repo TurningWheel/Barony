@@ -306,6 +306,9 @@ public:
 	//! synchronizes scrolling with sync scroll targets
 	void syncScroll();
 
+	//! puts this frame on top of all others
+	void bringToTop();
+
 	virtual type_t					getType() const override { return WIDGET_FRAME; }
 	const char*						getFont() const { return font.c_str(); }
 	const int						getBorder() const { return border; }

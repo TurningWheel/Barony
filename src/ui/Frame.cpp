@@ -2442,3 +2442,16 @@ void Frame::syncScroll() {
         }
     }
 }
+
+void Frame::bringToTop() {
+    if (!parent) {
+        return;
+    }
+    auto& frames = static_cast<Frame*>(parent)->frames;
+    for (auto it = frames.begin(); it != frames.end(); ++it) {
+        if (*it == this) {
+            frames.erase(it);
+            frames.push_back(this);
+        }
+    }
+}

@@ -5619,8 +5619,288 @@ bind_failed:
 
 /******************************************************************************/
 
-    static void addLobbyChatMessage(Uint32 color, const char* msg) {
-        // WIP
+    struct LobbyChatMessage {
+        Uint32 timestamp;
+        Uint32 color;
+        std::string msg;
+    };
+
+    static const constexpr int lobby_chat_max_messages = 200;
+    static std::list<LobbyChatMessage> lobby_chat_messages;
+    static ConsoleVariable<std::string> lobby_chat_font("/chat_font",
+        "fonts/PixelMaz_monospace.ttf#32#2");
+
+    static void addLobbyChatMessage(Uint32 color, const char* msg, bool add_to_list = true) {
+        constexpr Uint32 seconds_in_day = 86400;
+        const Uint32 seconds = time(NULL) / seconds_in_day;
+
+        if (add_to_list) {
+            lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
+            if (lobby_chat_messages.size() > lobby_chat_max_messages) {
+                lobby_chat_messages.pop_front();
+            }
+        }
+
+        if (!main_menu_frame) {
+            return;
+        }
+        auto lobby = main_menu_frame->findFrame("lobby");
+        if (!lobby) {
+            return;
+        }
+        auto frame = lobby->findFrame("chat window");
+        if (!frame) {
+            return;
+        }
+
+        const int w = frame->getSize().w;
+        const int h = frame->getSize().h;
+
+        auto subframe = frame->findFrame("subframe"); assert(subframe);
+        auto subframe_size = subframe->getActualSize();
+        int y = subframe_size.h;
+
+        static ConsoleVariable<bool> timestamp_messages("/chat_timestamp", true);
+
+        char buf[1024];
+        const Uint32 hour = seconds / 3600;
+        const Uint32 min = (seconds / 60) % 60;
+        const Uint32 sec = seconds % 60;
+        const int result = *timestamp_messages ?
+            snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u] %s",
+                hour, min, sec, msg):
+            snprintf(buf, sizeof(buf), "%s", msg);
+        const int size = std::min(std::max(0, (int)sizeof(buf)), result);
+
+        auto field = subframe->addField("field", size + 1);
+        auto text = Text::get(buf, lobby_chat_font->c_str(),
+            uint32ColorWhite, uint32ColorBlack);
+        const int text_h = (int)text->getHeight() * (1) + 2; // (1) = string lines
+        const int text_w = (int)text->getWidth();
+        field->setSize(SDL_Rect{8, y, text_w, text_h});
+        field->setFont(lobby_chat_font->c_str());
+        field->setColor(color);
+        field->setText(buf);
+
+        (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
+        field->setTooltip(buf);
+
+        const int new_w = std::max(subframe_size.w, text_w + 8);
+
+        y += text_h;
+        if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
+            // advance scroll because we're already at bottom
+            const int limit = new_w > w ?
+                y - subframe->getSize().h + 16:
+                y - subframe->getSize().h;
+            subframe->setActualSize(SDL_Rect{subframe_size.x,
+                std::max(0, limit), new_w, y});
+        } else {
+            // retain scroll position because we're looking at past history
+            subframe->setActualSize(SDL_Rect{
+                subframe_size.x, subframe_size.y, new_w, y});
+        }
+    }
+
+    static void toggleLobbyChatWindow() {
+        assert(main_menu_frame);
+        auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+        auto frame = lobby->findFrame("chat window");
+        if (frame) {
+            frame->removeSelf();
+            return;
+        }
+
+        const SDL_Rect size = lobby->getSize();
+        const int w = 848;
+        const int h = 320;
+
+        static ConsoleVariable<Vector4> chatBgColor("/chat_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+
+        frame = lobby->addFrame("chat window");
+        frame->setSize(SDL_Rect{(size.w - w) - 16, 64, w, h});
+        frame->setBorderColor(makeColor(51, 33, 26, 255));
+        frame->setColor(makeColor(chatBgColor->x, chatBgColor->y, chatBgColor->z, chatBgColor->w));
+        frame->setBorder(0);
+        frame->setTickCallback([](Widget& widget){
+            const int player = clientnum;
+            auto frame = static_cast<Frame*>(&widget);
+            auto lobby = static_cast<Frame*>(frame->getParent());
+
+            const int w = frame->getSize().w;
+            const int h = frame->getSize().h;
+
+            auto subframe = frame->findFrame("subframe"); assert(subframe);
+            auto subframe_size = subframe->getActualSize();
+
+            if (Input::inputs[player].consumeBinaryToggle("LogHome")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogHome");
+                subframe_size.x = 0;
+                subframe_size.y = 0;
+                subframe->setActualSize(subframe_size);
+            }
+            if (Input::inputs[player].consumeBinaryToggle("LogEnd")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogEnd");
+                const int limit = subframe_size.w > w ?
+                    subframe_size.h - subframe->getSize().h + 16:
+                    subframe_size.h - subframe->getSize().h;
+                subframe_size.x = 0;
+                subframe_size.y = std::max(0, limit);
+                subframe->setActualSize(subframe_size);
+            }
+            if (Input::inputs[player].consumeBinaryToggle("LogPageUp")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogPageUp");
+                subframe_size.y -= subframe->getSize().h;
+                subframe_size.y = std::max(0, subframe_size.y);
+                subframe->setActualSize(subframe_size);
+            }
+            if (Input::inputs[player].consumeBinaryToggle("LogPageDown")) {
+                Input::inputs[player].consumeBindingsSharedWithBinding("LogPageDown");
+                subframe_size.y += subframe->getSize().h;
+                const int limit = subframe_size.w > w ?
+                    subframe_size.h - subframe->getSize().h + 16:
+                    subframe_size.h - subframe->getSize().h;
+                subframe_size.y = std::min(std::max(0, limit), subframe_size.y);
+                subframe->setActualSize(subframe_size);
+            }
+		    if (Input::inputs[player].consumeBinaryToggle("LogClose")) {
+				frame->removeSelf();
+				auto card = lobby->findFrame((std::string("card") + std::to_string(clientnum)).c_str());
+				if (!card) {
+				    return;
+				}
+				auto ready = card->findButton("ready");
+				if (!ready) {
+				    return;
+				}
+				ready->select();
+		    }
+            });
+
+        // frame images
+        {
+            frame->addImage(
+                SDL_Rect{0, 0, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_TL00.png",
+                "TL");
+            frame->addImage(
+                SDL_Rect{16, 0, w - 32, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_T00.png",
+                "T");
+            frame->addImage(
+                SDL_Rect{w - 16, 0, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_TR00.png",
+                "TR");
+            auto L = frame->addImage(
+                SDL_Rect{0, 32, 4, h - 64},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_L00.png",
+                "L");
+            L->ontop = true;
+            auto R = frame->addImage(
+                SDL_Rect{w - 4, 32, 4, h - 64},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_R00.png",
+                "R");
+            R->ontop = true;
+            frame->addImage(
+                SDL_Rect{0, h - 32, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_BL01.png",
+                "BL");
+            frame->addImage(
+                SDL_Rect{16, h - 32, w - 32, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_B01.png",
+                "B");
+            frame->addImage(
+                SDL_Rect{w - 16, h - 32, 16, 32},
+                0xffffffff,
+                "*#images/ui/MapAndLog/Hover_BR01.png",
+                "BR");
+        }
+
+        auto subframe = frame->addFrame("subframe");
+        subframe->setScrollWithLeftControls(false);
+        subframe->setSize(SDL_Rect{0, 32, w, h - 64});
+        subframe->setActualSize(SDL_Rect{0, 0, w, 4});
+        subframe->setBorderColor(makeColor(22, 24, 29, 255));
+        subframe->setSliderColor(makeColor(44, 48, 58, 255));
+        subframe->setColor(makeColor(0, 0, 0, 0));
+        subframe->setScrollBarsEnabled(true);
+        //subframe->setBorder(2);
+        subframe->setBorder(0);
+
+        for (auto& msg : lobby_chat_messages) {
+            addLobbyChatMessage(msg.color, msg.msg.c_str(), false);
+        }
+
+        auto label = frame->addField("label", 64);
+        label->setSize(SDL_Rect{16, 0, w - 40, 32});
+        label->setHJustify(Field::justify_t::LEFT);
+        label->setVJustify(Field::justify_t::CENTER);
+        label->setFont(bigfont_outline);
+        label->setText("Chat");
+
+        auto chat_buffer = frame->addField("buffer", 1024);
+        chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
+        chat_buffer->setHJustify(Field::justify_t::LEFT);
+        chat_buffer->setVJustify(Field::justify_t::CENTER);
+        chat_buffer->setFont(lobby_chat_font->c_str());
+        chat_buffer->setColor(makeColor(201, 162, 100, 255));
+        chat_buffer->setEditable(true);
+        chat_buffer->setCallback([](Field& field){
+            sendChatMessageOverNet(field.getText());
+            field.setText("");
+            });
+
+        auto chat_tooltip = frame->addField("tooltip", 128);
+        chat_tooltip->setSize(SDL_Rect{4, h - 32, w - 8, 32});
+        chat_tooltip->setHJustify(Field::justify_t::LEFT);
+        chat_tooltip->setVJustify(Field::justify_t::CENTER);
+        chat_tooltip->setFont(lobby_chat_font->c_str());
+        chat_tooltip->setColor(makeColor(201, 162, 100, 255));
+        chat_tooltip->setText("Enter message here...");
+        chat_tooltip->setTickCallback([](Widget& widget){
+            auto frame = static_cast<Frame*>(widget.getParent());
+            auto chat_buffer = frame->findField("buffer"); assert(chat_buffer);
+            const bool hidden =
+                chat_buffer->getText()[0] != '\0' ||
+                chat_buffer->isActivated();
+            widget.setDisabled(hidden);
+            });
+
+        auto close_button = frame->addButton("close");
+        close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
+	    close_button->setColor(makeColor(255, 255, 255, 255));
+	    close_button->setHighlightColor(makeColor(255, 255, 255, 255));
+	    close_button->setText("X");
+	    close_button->setFont(smallfont_outline);
+	    close_button->setHideGlyphs(true);
+	    close_button->setHideKeyboardGlyphs(true);
+	    close_button->setHideSelectors(true);
+	    close_button->setMenuConfirmControlType(0);
+	    close_button->setBackground("*#images/ui/Shop/Button_X_00.png");
+	    close_button->setBackgroundHighlighted("*#images/ui/Shop/Button_XHigh_00.png");
+	    close_button->setBackgroundActivated("*#images/ui/Shop/Button_XPress_00.png");
+	    close_button->setTextHighlightColor(makeColor(201, 162, 100, 255));
+        close_button->setCallback([](Button& button){
+            auto frame = static_cast<Frame*>(button.getParent());
+            auto lobby = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			auto card = lobby->findFrame((std::string("card") + std::to_string(clientnum)).c_str());
+			if (!card) {
+			    return;
+			}
+			auto ready = card->findButton("ready");
+			if (!ready) {
+			    return;
+			}
+			ready->select();
+            });
     }
 
 	static void disconnectFromLobby() {
@@ -5913,6 +6193,7 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
+	        addLobbyChatMessage(0xffffffff, msg);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
@@ -9689,6 +9970,8 @@ bind_failed:
 		        startGame();
 		    } else {
 		        Uint32 fourth = TICKS_PER_SECOND / 4;
+
+		        // 1
 		        if (ticks >= countdown_end - fourth) {
 		            countdown->setText("1...");
 		        }
@@ -9701,6 +9984,8 @@ bind_failed:
 		        else if (ticks >= countdown_end - fourth * 4) {
 		            countdown->setText("1");
 		        }
+
+		        // 2
 		        else if (ticks >= countdown_end - fourth * 5) {
 		            countdown->setText("2...");
 		        }
@@ -9713,6 +9998,8 @@ bind_failed:
 		        else if (ticks >= countdown_end - fourth * 8) {
 		            countdown->setText("2");
 		        }
+
+		        // 3
 		        else if (ticks >= countdown_end - fourth * 9) {
 		            countdown->setText("3...");
 		        }
@@ -9826,63 +10113,84 @@ bind_failed:
 				});
 		}
 
-		auto back_button = createBackWidget(lobby, [](Button&){
-			soundCancel();
-			disconnectFromLobby();
-			destroyMainMenu();
-			currentLobbyType = LobbyType::None;
-			createMainMenu(false);
-			});
-		back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
-		    if (currentLobbyType == LobbyType::None) {
-		        return;
-		    }
-		    bool no_one_logged_in = true;
-		    if (currentLobbyType == LobbyType::LobbyLocal) {
-		        for (int c = 0; c < MAXPLAYERS; ++c) {
-		            if (isPlayerSignedIn(c)) {
-		                no_one_logged_in = false;
-		                break;
-		            }
+		auto banner = lobby->addFrame("banner");
+		banner->setBorderColor(makeColor(11, 12, 15, 255));
+		banner->setColor(makeColor(22, 25, 30, 255));
+		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 64});
+		banner->setBorder(2);
+        {
+		    auto back_button = createBackWidget(banner, [](Button&){
+			    soundCancel();
+			    disconnectFromLobby();
+			    destroyMainMenu();
+			    currentLobbyType = LobbyType::None;
+			    createMainMenu(false);
+			    });
+		    back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
+		        if (currentLobbyType == LobbyType::None) {
+		            return;
 		        }
-		    } else if (isPlayerSignedIn(clientnum)) {
-		        no_one_logged_in = false;
-		    }
-		    if (no_one_logged_in && countControllers() > 0) {
-		        const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-		        const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
-                std::string path = Input::getGlyphPathForInput("ButtonB", pressed);
-                auto image = Image::get((std::string("*") + path).c_str());
-                const int off_x = 1;
-                const int off_y = 4;
-                const int x = pos.x + pos.w + off_x;
-                const int y = pos.y + pos.h / 2 + off_y;
-                const int w = image->getWidth();
-                const int h = image->getHeight();
-                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
-		    }
-		    });
+		        bool no_one_logged_in = true;
+		        if (currentLobbyType == LobbyType::LobbyLocal) {
+		            for (int c = 0; c < MAXPLAYERS; ++c) {
+		                if (isPlayerSignedIn(c)) {
+		                    no_one_logged_in = false;
+		                    break;
+		                }
+		            }
+		        } else if (isPlayerSignedIn(clientnum)) {
+		            no_one_logged_in = false;
+		        }
+		        if (no_one_logged_in && countControllers() > 0) {
+		            const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+		            const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+                    std::string path = Input::getGlyphPathForInput("ButtonB", pressed);
+                    auto image = Image::get((std::string("*") + path).c_str());
+                    const int off_x = 1;
+                    const int off_y = 4;
+                    const int x = pos.x + pos.w + off_x;
+                    const int y = pos.y + pos.h / 2 + off_y;
+                    const int w = image->getWidth();
+                    const int h = image->getHeight();
+                    image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
+		        }
+		        });
 
-		auto back_frame = back_button->getParent();
-		back_frame->setTickCallback([](Widget& widget){
-			auto frame = static_cast<Frame*>(&widget); assert(frame);
-			auto lobby = static_cast<Frame*>(frame->getParent()); assert(lobby);
-			bool allCardsClosed = true;
-			for (int c = 0; c < 4; ++c) {
-			    if (clientnum != c && multiplayer == SINGLE) {
-			        continue;
+		    auto back_frame = back_button->getParent();
+		    back_frame->setTickCallback([](Widget& widget){
+			    auto frame = static_cast<Frame*>(&widget); assert(frame);
+			    auto parent = static_cast<Frame*>(frame->getParent()); assert(parent);
+			    auto lobby = static_cast<Frame*>(parent->getParent()); assert(lobby);
+			    bool allCardsClosed = true;
+			    for (int c = 0; c < 4; ++c) {
+			        if (clientnum != c && multiplayer == SINGLE) {
+			            continue;
+			        }
+				    auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
+				    auto backdrop = card->findImage("backdrop"); assert(backdrop);
+				    if (backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+					    allCardsClosed = false;
+					    break;
+				    }
 			    }
-				auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str()); assert(card);
-				auto backdrop = card->findImage("backdrop"); assert(backdrop);
-				if (backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-					allCardsClosed = false;
-					break;
-				}
-			}
-			frame->setInvisible(!allCardsClosed);
-			auto button = frame->findButton("back_button"); assert(button);
-			button->setDisabled(!allCardsClosed);
-			});
+			    frame->setInvisible(!allCardsClosed);
+			    auto button = frame->findButton("back_button"); assert(button);
+			    button->setDisabled(!allCardsClosed);
+			    });
+
+            if (type != LobbyType::LobbyLocal) {
+			    auto chat_button = banner->addButton("chat");
+			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 144, 16, 128, 32});
+			    chat_button->setHighlightColor(makeColor(44, 50, 60, 255));
+		        chat_button->setColor(makeColor(44, 50, 60, 255));
+		        chat_button->setText("Chat");
+		        chat_button->setFont(smallfont_outline);
+		        chat_button->setCallback([](Button& button){
+		            soundActivate();
+		            toggleLobbyChatWindow();
+		            });
+		    }
+		}
 
 		if (type == LobbyType::LobbyLocal) {
 			createStartButton(0);
