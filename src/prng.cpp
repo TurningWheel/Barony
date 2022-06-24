@@ -157,7 +157,7 @@ static ConsoleCommand test_rng_normal(
     });
 #endif
 
-void BaronyRNG::testSeedHealth() {
+void BaronyRNG::testSeedHealth() const {
 	std::string seed_str;
 	seed_str.reserve(2049);
 	real_t sum = 0.0;
@@ -174,6 +174,10 @@ void BaronyRNG::testSeedHealth() {
 	sum /= 2048.0;
 	printlog("rng seed bits are %.2f%% on", sum * 100.0);
 	printlog("seed: %s", seed_str.c_str());
+}
+
+size_t BaronyRNG::bytesRead() const {
+    return bytes_read;
 }
 
 static inline void swap_byte(uint8_t& a, uint8_t& b) {
@@ -199,6 +203,7 @@ void BaronyRNG::seedImpl(const void* key, size_t size) {
 	seed_size = size;
 
 	i1 = i2 = 0;
+	bytes_read = 0;
 	seeded = true;
 }
 
@@ -211,7 +216,7 @@ void BaronyRNG::seedTime() {
 	seedImpl(&t, 4); // we only want a 32-bit seed
 }
 
-int BaronyRNG::getSeed(void* out, size_t size) {
+int BaronyRNG::getSeed(void* out, size_t size) const {
     if (!seeded || size < seed_size) {
         return -1;
     }
@@ -230,6 +235,7 @@ void BaronyRNG::getBytes(void* data_, size_t size) {
 	    i2 = ((int)i2 + buf[i1]) & 255;
 	    swap_byte(buf[i1], buf[i2]);
 		*data = buf[(buf[i1] + buf[i2]) & 255];
+		++bytes_read;
 	}
 }
 

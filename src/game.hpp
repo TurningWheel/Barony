@@ -19,6 +19,8 @@
 #include "steam.hpp"
 #endif
 
+#include "interface/consolecommand.hpp"
+
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #define VERSION "v3.8.2"
 #define GAME_CODE
@@ -494,12 +496,14 @@ public:
 
 	void storeEventStats();
 };
+
 extern DebugStatsClass DebugStats;
+extern ConsoleVariable<bool> cvar_useTimerInterpolation;
 
 class TimerExperiments
 {
 public:
-	static bool bUseTimerInterpolation;
+    static constexpr bool& bUseTimerInterpolation = *cvar_useTimerInterpolation;
 	static bool bIsInit;
 	static real_t lerpFactor;
 	static int timeDivision;

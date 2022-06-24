@@ -251,6 +251,7 @@ Frame::result_t framesProcResult{
 
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 
+ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
 TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();
 TimerExperiments::duration TimerExperiments::accumulator = std::chrono::milliseconds{ 0 };
@@ -258,7 +259,6 @@ std::chrono::duration<long long, std::ratio<1, 60>> TimerExperiments::dt = std::
 TimerExperiments::EntityStates TimerExperiments::cameraPreviousState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
-bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
@@ -687,26 +687,38 @@ enum DemoMode {
 static DemoMode demo_mode = DemoMode::STOPPED;
 static File* demo_file = nullptr;
 
-static ConsoleCommand demo_stop("/demo_stop", "stop recording or playing a demo",
-    [](int argc, const char* argv[]){
+static void demo_stop() {
     if (demo_mode == DemoMode::STOPPED) {
         messagePlayer(clientnum, MESSAGE_MISC, "Demo is already stopped");
         return;
+    }
+    switch (demo_mode) {
+    case DemoMode::PLAYING:
+        if (demo_file->eof()) {
+            messagePlayer(clientnum, MESSAGE_MISC, "End of demo");
+        } else {
+            messagePlayer(clientnum, MESSAGE_MISC, "Stopped demo playback");
+        }
+        break;
+    case DemoMode::RECORDING:
+        messagePlayer(clientnum, MESSAGE_MISC, "Stopped demo recording");
+        break;
+    default:
+        messagePlayer(clientnum, MESSAGE_MISC, "Stopped demo");
+        break;
     }
     if (demo_file) {
         FileIO::close(demo_file);
         demo_file = nullptr;
     }
-    switch (demo_mode) {
-    case DemoMode::PLAYING: messagePlayer(clientnum, MESSAGE_MISC, "Stopped playback"); break;
-    case DemoMode::RECORDING: messagePlayer(clientnum, MESSAGE_MISC, "Stopped recording"); break;
-    default: messagePlayer(clientnum, MESSAGE_MISC, "Stopped playback"); break;
-    }
     demo_mode = DemoMode::STOPPED;
-    });
 
-static ConsoleCommand demo_record("/demo_record", "record a demo to a file (default demo.dat)",
-    [](int argc, const char* argv[]){
+    TimerExperiments::bUseTimerInterpolation = true;
+
+    //messagePlayer(clientnum, MESSAGE_MISC, "local_rng bytes read: %llu", local_rng.bytesRead());
+}
+
+static void demo_record(const char* filename) {
     if (demo_mode != DemoMode::STOPPED) {
         messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
         return;
@@ -714,27 +726,26 @@ static ConsoleCommand demo_record("/demo_record", "record a demo to a file (defa
 
     // create demo file for recording
     char path[PATH_MAX];
-    if (argc < 2) {
-	    completePath(path, "demo.dat", outputdir);
-    } else {
-	    completePath(path, argv[1], outputdir);
-    }
+    completePath(path, filename, outputdir);
     demo_file = FileIO::open(path, "wb");
     if (!demo_file) {
         messagePlayer(clientnum, MESSAGE_MISC, "failed to open demo file '%s'", path);
         return;
     }
 
-    demo_file->write(&uniqueGameKey, sizeof(uniqueGameKey), 1);
-    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    TimerExperiments::bUseTimerInterpolation = false; // this causes mass desyncs
+
+    local_rng.seedTime();
+    local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
     net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    demo_file->write(&uniqueGameKey, sizeof(uniqueGameKey), 1);
+    doNewGame(false);
 
     messagePlayer(clientnum, MESSAGE_MISC, "Recording demo to '%s'", path);
     demo_mode = DemoMode::RECORDING;
-    });
+}
 
-static ConsoleCommand demo_play("/demo_play", "play a recorded demo(default demo.dat)",
-    [](int argc, const char* argv[]){
+static void demo_play(const char* filename) {
     if (demo_mode != DemoMode::STOPPED) {
         messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
         return;
@@ -742,23 +753,45 @@ static ConsoleCommand demo_play("/demo_play", "play a recorded demo(default demo
 
     // open demo file for playing
     char path[PATH_MAX];
-    if (argc < 2) {
-	    completePath(path, "demo.dat", outputdir);
-    } else {
-	    completePath(path, argv[1], outputdir);
-    }
+    completePath(path, filename, outputdir);
     demo_file = FileIO::open(path, "rb");
     if (!demo_file) {
         messagePlayer(clientnum, MESSAGE_MISC, "failed to open demo file '%s'", path);
         return;
     }
 
+    TimerExperiments::bUseTimerInterpolation = false; // this causes mass desyncs
+
     demo_file->read(&uniqueGameKey, sizeof(uniqueGameKey), 1);
     local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
     net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    doNewGame(false);
 
     messagePlayer(clientnum, MESSAGE_MISC, "Playing demo in '%s'", path);
     demo_mode = DemoMode::PLAYING;
+}
+
+static ConsoleCommand ccmd_demo_stop("/demo_stop", "stop recording or playing a demo",
+    [](int argc, const char* argv[]){
+    demo_stop();
+    });
+
+static ConsoleCommand ccmd_demo_record("/demo_record", "record a demo to a file (default demo.dat)",
+    [](int argc, const char* argv[]){
+    if (argc < 2) {
+	    demo_record("demo.dat");
+    } else {
+	    demo_record(argv[1]);
+    }
+    });
+
+static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default demo.dat)",
+    [](int argc, const char* argv[]){
+    if (argc < 2) {
+	    demo_play("demo.dat");
+    } else {
+	    demo_play(argv[1]);
+    }
     });
 
 /*-------------------------------------------------------------------------------
@@ -782,6 +815,38 @@ void gameLogic(void)
 	Uint32 i = 0, j;
 	deleteent_t* deleteent;
 	bool entitydeletedself;
+
+    if (demo_file) {
+        // demo recording
+        if (demo_mode == DemoMode::RECORDING) {
+            demo_file->write(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+            demo_file->write(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+            demo_file->write(&keystatus, sizeof(keystatus), 1);
+            demo_file->write(&mousex, sizeof(mousex), 1);
+            demo_file->write(&mousey, sizeof(mousey), 1);
+            demo_file->write(&mousestatus, sizeof(mousestatus), 1);
+            demo_file->write(&mousexrel, sizeof(mousexrel), 1);
+            demo_file->write(&mouseyrel, sizeof(mouseyrel), 1);
+            if (gamePaused || intro || players[clientnum]->entity == nullptr) {
+                demo_stop();
+            }
+        }
+
+        // demo playback
+        if (demo_mode == DemoMode::PLAYING) {
+            demo_file->read(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+            demo_file->read(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+            demo_file->read(&keystatus, sizeof(keystatus), 1);
+            demo_file->read(&mousex, sizeof(mousex), 1);
+            demo_file->read(&mousey, sizeof(mousey), 1);
+            demo_file->read(&mousestatus, sizeof(mousestatus), 1);
+            demo_file->read(&mousexrel, sizeof(mousexrel), 1);
+            demo_file->read(&mouseyrel, sizeof(mouseyrel), 1);
+            if (demo_file->eof()) {
+                demo_stop();
+            }
+        }
+    }
 
 	int auto_appraise_lowest_time[MAXPLAYERS];
 	Item* auto_appraise_target[MAXPLAYERS];
@@ -3329,6 +3394,14 @@ void handleEvents(void)
 				mainloop = 0;
 				break;
 			case SDL_KEYDOWN: // if a key is pressed...
+			    if (demo_mode != DemoMode::STOPPED) {
+			        if (event.key.keysym.sym == SDLK_ESCAPE) {
+			            demo_stop();
+			        }
+			        else if (demo_mode == DemoMode::PLAYING) {
+			            break;
+			        }
+			    }
 				if ( command )
 				{
 				    static int saved_command_index = 0;
@@ -3471,6 +3544,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 #ifdef PANDORA
 				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
@@ -3498,12 +3574,18 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEBUTTONDOWN: // if a mouse button is pressed...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				mousestatus[event.button.button] = 1; // set this mouse button to 1
 				Input::mouseButtons[event.button.button] = 1;
 				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
 				lastkeypressed = 282 + event.button.button;
 				break;
 			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				Input::mouseButtons[event.button.button] = 0;
 				buttonclick = 0; // release any buttons that were being held down
@@ -3519,6 +3601,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEWHEEL:
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
@@ -3535,6 +3620,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( firstmouseevent == true )
 				{
 					firstmouseevent = false;
@@ -3575,6 +3663,9 @@ void handleEvents(void)
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
 				char buf[32] = "";
@@ -3694,6 +3785,9 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERAXISMOTION:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				char buf[32] = "";
 				float rebindingDeadzone = Input::getJoystickRebindingDeadzone() * 32768.f;
 				switch (event.caxis.axis) {
@@ -3758,10 +3852,16 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERBUTTONUP:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 			    break;
 			}
 			case SDL_CONTROLLERDEVICEADDED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				const int device_index = event.cdevice.which; // this is an index within SDL_Numjoysticks(), not to be referred to from now on.
 				if ( !SDL_IsGameController(device_index) )
 				{
@@ -3838,6 +3938,9 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERDEVICEREMOVED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				// device removed uses a 'joystick id', different to the device added event
 				const int instanceID = event.cdevice.which;
 				SDL_GameController* pad = SDL_GameControllerFromInstanceID(instanceID);
@@ -3870,6 +3973,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYDEVICEADDED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( SDL_IsGameController(event.jdevice.which) )
 				{
 					// this is supported by the SDL_GameController interface, no need to make a joystick for it
@@ -3892,6 +3998,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYBUTTONDOWN:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
 				{
 					char buf[32] = "";
@@ -3902,6 +4011,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYAXISMOTION:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
 				{
 					char buf[32] = "";
@@ -3923,6 +4035,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYHATMOTION:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
 				{
 					char buf[32] = "";
@@ -3943,6 +4058,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYDEVICEREMOVED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( SDL_IsGameController(event.jdevice.which) )
 				{
 					// this is supported by the SDL_GameController interface, no need to make a joystick for it
@@ -3981,44 +4099,6 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
-
-	                if (demo_file) {
-	                    // demo recording
-	                    if (demo_mode == DemoMode::RECORDING) {
-	                        demo_file->write(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
-	                        demo_file->write(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
-	                        demo_file->write(&keystatus, sizeof(keystatus), 1);
-	                        demo_file->write(&mousex, sizeof(mousex), 1);
-	                        demo_file->write(&mousey, sizeof(mousey), 1);
-	                        demo_file->write(&mousestatus, sizeof(mousestatus), 1);
-	                        demo_file->write(&mousexrel, sizeof(mousexrel), 1);
-	                        demo_file->write(&mouseyrel, sizeof(mouseyrel), 1);
-	                        if (intro || players[clientnum]->entity == nullptr) {
-                                messagePlayer(clientnum, MESSAGE_MISC, "Stopped recording.");
-                                FileIO::close(demo_file);
-                                demo_file = nullptr;
-                                demo_mode = DemoMode::STOPPED;
-                            }
-	                    }
-
-	                    // demo playback
-	                    if (demo_mode == DemoMode::PLAYING) {
-	                        demo_file->read(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
-	                        demo_file->read(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
-	                        demo_file->read(&keystatus, sizeof(keystatus), 1);
-	                        demo_file->read(&mousex, sizeof(mousex), 1);
-	                        demo_file->read(&mousey, sizeof(mousey), 1);
-	                        demo_file->read(&mousestatus, sizeof(mousestatus), 1);
-	                        demo_file->read(&mousexrel, sizeof(mousexrel), 1);
-	                        demo_file->read(&mouseyrel, sizeof(mouseyrel), 1);
-                            if (demo_file->eof()) {
-                                messagePlayer(clientnum, MESSAGE_MISC, "End of demo.");
-                                FileIO::close(demo_file);
-                                demo_file = nullptr;
-                                demo_mode = DemoMode::STOPPED;
-                            }
-	                    }
-	                }
 
 					if (initialized && !loading)
 					{

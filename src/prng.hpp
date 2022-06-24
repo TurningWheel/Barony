@@ -22,10 +22,13 @@ public:
 
     // fill a buffer of given size with our seed value (for instance to reseed)
     // return the size of the seed or -1 if the buffer was not large enough
-    int getSeed(void*, size_t);
+    int getSeed(void*, size_t) const;
 
     // test function, print quality of the RNG seed to log
-    void testSeedHealth();
+    void testSeedHealth() const;
+
+    // report number of bytes read since seeding
+    size_t bytesRead() const;
 
     uint8_t  getU8();   // get number in range [0 - 2^8)
     uint16_t getU16();  // get number in range [0 - 2^16)
@@ -60,6 +63,7 @@ private:
     uint8_t buf[256];    // rng buffer
     uint8_t i1;          // rng index 1
     uint8_t i2;          // rng index 2
+    size_t bytes_read;   // number of bytes read since seeding
 
     void seedImpl(const void*, size_t);
 };
