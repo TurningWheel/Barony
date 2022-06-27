@@ -1067,6 +1067,11 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.OverrideLocaleCode = nullptr;
 	PlatformOptions.bIsServer = EOS_FALSE;
 	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
+#ifdef WINDOWS
+#ifndef STEAMWORKS
+	PlatformOptions.Flags = EOS_PF_WINDOWS_ENABLE_OVERLAY_OPENGL;
+#endif
+#endif
 	static std::string EncryptionKey(64, '1');
 	PlatformOptions.EncryptionKey = EncryptionKey.c_str();
 	PlatformOptions.CacheDirectory = nullptr; // important - needs double slashes and absolute path
