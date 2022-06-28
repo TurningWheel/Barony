@@ -11071,7 +11071,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto blueprintsTitle = drawerFrame->addField("blueprints title", 128);
 		blueprintsTitle->setFont(headerFont);
-		blueprintsTitle->setText("Blueprints");
+		blueprintsTitle->setText(language[4199]);
 		blueprintsTitle->setHJustify(Field::justify_t::CENTER);
 		blueprintsTitle->setVJustify(Field::justify_t::TOP);
 		blueprintsTitle->setSize(SDL_Rect{ 60, 1, 90, 24 });
