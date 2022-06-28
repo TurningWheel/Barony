@@ -14786,6 +14786,22 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_neutral_light_text"]["b"].GetInt(),
 							d["colors"]["charsheet_neutral_light_text"]["a"].GetInt());
 					}
+					if ( d["colors"].HasMember("charsheet_neutral_lighter1_text") )
+					{
+						hudColors.characterSheetLighter1Neutral = makeColor(
+							d["colors"]["charsheet_neutral_lighter1_text"]["r"].GetInt(),
+							d["colors"]["charsheet_neutral_lighter1_text"]["g"].GetInt(),
+							d["colors"]["charsheet_neutral_lighter1_text"]["b"].GetInt(),
+							d["colors"]["charsheet_neutral_lighter1_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_neutral_darker1_text") )
+					{
+						hudColors.characterSheetDarker1Neutral = makeColor(
+							d["colors"]["charsheet_neutral_darker1_text"]["r"].GetInt(),
+							d["colors"]["charsheet_neutral_darker1_text"]["g"].GetInt(),
+							d["colors"]["charsheet_neutral_darker1_text"]["b"].GetInt(),
+							d["colors"]["charsheet_neutral_darker1_text"]["a"].GetInt());
+					}
 					if ( d["colors"].HasMember("charsheet_positive_text") )
 					{
 						hudColors.characterSheetGreen = makeColor(
@@ -17465,6 +17481,11 @@ void Player::Inventory_t::updateCursor()
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			if ( cursor.queuedFrameToWarpTo )
+			{
+				cursorWidth = cursor.queuedFrameToWarpTo->getSize().w;
+				cursorHeight = cursor.queuedFrameToWarpTo->getSize().h;
 			}
 		}
 		else if ( cursor.queuedModule == Player::GUI_t::MODULE_ALCHEMY )

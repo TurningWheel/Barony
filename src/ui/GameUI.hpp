@@ -45,6 +45,8 @@ struct CustomColors_t
 	Uint32 itemContextMenuOptionSelectedImg = 0xFFFFFFFF;
 	Uint32 characterSheetNeutral = 0xFFFFFFFF;
 	Uint32 characterSheetLightNeutral = 0xFFFFFFFF;
+	Uint32 characterSheetLighter1Neutral = 0xFFFFFFFF;
+	Uint32 characterSheetDarker1Neutral = 0xFFFFFFFF;
 	Uint32 characterSheetGreen = 0xFFFFFFFF;
 	Uint32 characterSheetRed = 0xFFFFFFFF;
 	Uint32 characterSheetFaintText = 0xFFFFFFFF;

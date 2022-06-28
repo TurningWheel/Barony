@@ -6527,54 +6527,56 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	{
 	}*/
 	std::vector<Item*> items;
-	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 0;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 1;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 2;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 3;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 4;
-	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 1;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 2;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 3;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 4;
+	items[items.size() - 1]->y = 0;
+
+	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 1;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 2;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 3;
 	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 4;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+
+	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 0;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 1;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 2;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 3;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 4;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = -1;
-	items[items.size() - 1]->y = -1;
+	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 3;
 	for ( auto it = items.begin(); it != items.end(); ++it )
 	{
 		Item* item = *it;
@@ -7908,6 +7910,7 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 	return false;
 }
 
+const int TINKER_MIN_ITEM_SKILL_REQ = 10;
 
 int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 {
@@ -7927,7 +7930,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 		case TOOL_GLASSES:
 		case POTION_EMPTY:
 		case TOOL_DECOY:
-			if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity) >= 10 ) // 10 requirement
+			if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity) >= TINKER_MIN_ITEM_SKILL_REQ ) // 10 requirement
 			{
 				return 0;
 			}
@@ -9217,7 +9220,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 }
 
 const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_X = 5;
-const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_Y = 3;
+const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_Y = 4;
 
 void GenericGUIMenu::TinkerGUI_t::openTinkerMenu()
 {
@@ -9343,7 +9346,7 @@ void onTinkerChangeTabAction(const int playernum, bool changingToNewTab = true)
 	}
 }
 
-int GenericGUIMenu::TinkerGUI_t::heightOffsetWhenNotCompact = 200;
+int GenericGUIMenu::TinkerGUI_t::heightOffsetWhenNotCompact = 190;
 const int tinkerBaseWidth = 334;
 
 bool GenericGUIMenu::TinkerGUI_t::tinkerGUIHasBeenCreated() const
@@ -9741,7 +9744,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( !player->inventoryUI.bCompactView )
 		{
-			const int fullWidth = tinkerFramePos.w + 210 + (40 * (1.0 - animFilter)); // inventory width 210
+			const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
 			tinkerFramePos.x = -tinkerFramePos.w + animx * fullWidth;
 			if ( player->bUseCompactGUIWidth() )
 			{
@@ -9769,7 +9772,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( !player->inventoryUI.bCompactView )
 		{
-			const int fullWidth = tinkerFramePos.w + 210 + (40 * (1.0 - animFilter)); // inventory width 210
+			const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
 			tinkerFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
 			if ( player->bUseCompactGUIWidth() )
 			{
@@ -9823,9 +9826,9 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		drawerFrame->setDisabled(!bConstructDrawerOpen);
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
-		const int widthDifference = animDrawer * (drawerFramePos.w - 8);
+		const int widthDifference = animDrawer * (drawerFramePos.w);
 		drawerFramePos.x = 0;
-		drawerFramePos.y = 20;
+		drawerFramePos.y = 18;
 		drawerFrame->setSize(drawerFramePos);
 
 		tinkerFramePos.x -= widthDifference;
@@ -9931,7 +9934,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			tinkerKitStatus->setText("");
 		}
 
-		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
+		SDL_Rect textPos{ 0, 27, baseFrame->getSize().w, 24 };
 		tinkerKitTitle->setSize(textPos);
 		textPos.y += 20;
 		tinkerKitStatus->setSize(textPos);
@@ -9969,10 +9972,10 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 
 		auto heldScrapBg = baseFrame->findImage("held scrap img");
 		heldScrapBg->pos.x = baseFrame->getSize().w - 18 - heldScrapBg->pos.w;
-		heldScrapBg->pos.y = baseFrame->getSize().h - 48 - 38;
+		heldScrapBg->pos.y = baseFrame->getSize().h - 48 - 32;
 
-		SDL_Rect metalPos{ heldScrapBg->pos.x, heldScrapBg->pos.y + 9, 74, 24 };
-		SDL_Rect magicPos{ heldScrapBg->pos.x, heldScrapBg->pos.y + 9, 166, 24 };
+		SDL_Rect metalPos{ heldScrapBg->pos.x - 4, heldScrapBg->pos.y + 9, 74, 24 };
+		SDL_Rect magicPos{ heldScrapBg->pos.x - 24, heldScrapBg->pos.y + 9, 166, 24 };
 		metalHeldText->setSize(metalPos);
 		metalHeldText->setColor(hudColors.characterSheetLightNeutral);
 		magicHeldText->setSize(magicPos);
@@ -9981,7 +9984,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		updateTinkerScrapHeld(metalHeldText, magicHeldText, heldMetalScrap, heldMagicScrap);
 
 		SDL_Rect heldScrapTxtPos = heldScrapText->getSize();
-		heldScrapTxtPos.w = heldScrapBg->pos.x - 4;
+		heldScrapTxtPos.w = heldScrapBg->pos.x + 2;
 		heldScrapTxtPos.x = 0;
 		heldScrapTxtPos.y = metalPos.y;
 		heldScrapTxtPos.h = 24;
@@ -10030,15 +10033,40 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3645]);
+
+		Uint32 inactiveColor = hudColors.characterSheetDarker1Neutral;
+		Uint32 activeColor = hudColors.characterSheetOffWhiteText;
+		Uint32 highlightColor = hudColors.characterSheetLighter1Neutral;
+
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Center_00.png");
+		Field* filterTxt = baseFrame->findField("filter salvage txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3645]);
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 126, 264, 82, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 116, 274, 94, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 		}
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_CenterHigh_00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -10056,17 +10084,38 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3644]);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Left_00.png");
+		filterTxt = baseFrame->findField("filter craft txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3644]);
+
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 50, 264, 70, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 44, 274, 74, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 			filterLeftSideX = btnPos.x;
 			filterStartY = btnPos.y;
 		}
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_LeftHigh_00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -10084,16 +10133,36 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3646]);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Right_00.png");
+		filterTxt = baseFrame->findField("filter repair txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3646]);
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 214, 264, 70, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 208, 274, 82, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 			filterRightSideX = btnPos.x + btnPos.w;
 		}
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_RightHigh_00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -10159,13 +10228,13 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
 	displayItemNamePos.h = 50;
 	displayItemName->setSize(displayItemNamePos);
-	SDL_Rect actionPromptTxtPos{ 0, 197, baseFrame->getSize().w - 18 - 8, 24 };
+	SDL_Rect actionPromptTxtPos{ 0, 211, baseFrame->getSize().w - 18 - 8, 24 };
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
 	tooltipPos.w = 298;
 	tooltipPos.h = baseFrame->getSize().h - 100;
-	tooltipPos.y = 88;
+	tooltipPos.y = 98;
 	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
 	itemDisplayTooltip->setSize(tooltipPos);
 
@@ -10200,7 +10269,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto costScrapText = itemDisplayTooltip->findField("item cost label");
 	{
 		costBg->pos.x = displayItemTextImgBaseX + displayItemTextImg->pos.w - costBg->pos.w;
-		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
+		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h + 4;
 		SDL_Rect metalPos{ costBg->pos.x + 12, costBg->pos.y + 9, 50, 24 };
 		SDL_Rect magicPos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
 		metalText->setSize(metalPos);
@@ -10537,7 +10606,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	else
 	{
 		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
-			|| (usingGamepad && !bConstructDrawerOpen)
+			|| (usingGamepad)
 			|| animTooltip < 0.9999 )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -10582,8 +10651,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
 	actionPromptCoverLeftImg->pos.x = 0;
 	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
-	actionPromptCoverLeftImg->pos.y = 60;
-	actionPromptCoverRightImg->pos.y = 60;
+	actionPromptCoverLeftImg->pos.y = 70;
+	actionPromptCoverRightImg->pos.y = 70;
 
 	{
 		actionPromptUnselectedTxt->setDisabled(false);
@@ -10613,7 +10682,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			{
 				pos.x += actionPromptUnselectedTxt->getSize().w * animPrompt;
 			}
-			pos.y = 63;
+			pos.y = 73;
 			actionPromptUnselectedTxt->setSize(pos);
 		}
 
@@ -10669,6 +10738,13 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	filterNavLeft->disabled = true;
 	auto filterNavRight = baseFrame->findImage("filter nav right");
 	filterNavRight->disabled = true;
+	auto filterNavLeftArrow = baseFrame->findImage("filter nav left arrow");
+	filterNavLeftArrow->disabled = true;
+	auto filterNavRightArrow = baseFrame->findImage("filter nav right arrow");
+	filterNavRightArrow->disabled = true;
+
+	static ConsoleVariable<int> cvar_tinkNavGlyphY("/tinker_glyph_nav_y", 30);
+	static ConsoleVariable<int> cvar_tinkNavGlyphX("/tinker_glyph_nav_x", 8);
 
 	if ( usingGamepad )
 	{
@@ -10678,18 +10754,35 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterNavLeft->pos.w = imgGet->getWidth();
 			filterNavLeft->pos.h = imgGet->getHeight();
 			filterNavLeft->disabled = false;
-			filterNavLeft->pos.x = filterLeftSideX - filterNavLeft->pos.w - 6;
-			filterNavLeft->pos.y = filterStartY + 10;
+
+			filterNavLeftArrow->disabled = false;
+			filterNavLeftArrow->pos.x = 12;
+			filterNavLeftArrow->pos.y = filterStartY - 6;
+
+			filterNavLeft->pos.x = filterNavLeftArrow->pos.x - 10 + *cvar_tinkNavGlyphX;
+			filterNavLeft->pos.y = filterNavLeftArrow->pos.y + filterNavLeftArrow->pos.h - 2;
+			filterNavLeft->pos.y -= filterNavLeft->pos.h;
+			filterNavLeft->pos.y -= *cvar_tinkNavGlyphY;
 		}
+
 		filterNavRight->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRight");
 		if ( auto imgGet = Image::get(filterNavRight->path.c_str()) )
 		{
 			filterNavRight->pos.w = imgGet->getWidth();
 			filterNavRight->pos.h = imgGet->getHeight();
 			filterNavRight->disabled = false;
-			filterNavRight->pos.x = filterRightSideX + 6;
-			filterNavRight->pos.y = filterStartY + 10;
+
+			filterNavRightArrow->disabled = false;
+			filterNavRightArrow->pos.x = filterRightSideX + 2;
+			filterNavRightArrow->pos.y = filterStartY - 6;
+
+			filterNavRight->pos.x = filterNavRightArrow->pos.x + filterNavRightArrow->pos.w + 10;
+			filterNavRight->pos.x -= filterNavRight->pos.w + *cvar_tinkNavGlyphX;
+			filterNavRight->pos.y = filterNavRightArrow->pos.y + filterNavRightArrow->pos.h - 2;
+			filterNavRight->pos.y -= filterNavRight->pos.h;
+			filterNavRight->pos.y -= *cvar_tinkNavGlyphY;
 		}
+
 	}
 
 	bool activateSelection = false;
@@ -10950,6 +11043,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 }
 
+const int kTinkerCraftSlotHeightOffset = 6; // slightly taller than normal slots
+
 void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 {
 	const int player = parentGUI.getPlayer();
@@ -10962,16 +11057,26 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		return;
 	}
 
-	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 304 };
+	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 312 };
 	{
 		auto drawerFrame = tinkerFrame->addFrame("tinker drawer");
-		SDL_Rect drawerPos{ 0, 0, 258, 228 };
+		SDL_Rect drawerPos{ 0, 0, 210, 256 };
 		drawerFrame->setSize(drawerPos);
 		drawerFrame->setHollow(false);
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "tinker drawer img");
+			"*images/ui/Tinkering/Tinker_Construct_Drawer_01.png", "tinker drawer img");
 		drawerFrame->setDisabled(true);
+
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto blueprintsTitle = drawerFrame->addField("blueprints title", 128);
+		blueprintsTitle->setFont(headerFont);
+		blueprintsTitle->setText("Blueprints");
+		blueprintsTitle->setHJustify(Field::justify_t::CENTER);
+		blueprintsTitle->setVJustify(Field::justify_t::TOP);
+		blueprintsTitle->setSize(SDL_Rect{ 60, 1, 90, 24 });
+		blueprintsTitle->setTextColor(hudColors.characterSheetLightNeutral);
+		blueprintsTitle->setOutlineColor(makeColor(29, 16, 11, 255));
 
 		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
@@ -10980,14 +11085,15 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		const int baseSlotOffsetX = 0;
 		const int baseSlotOffsetY = 0;
 
-		SDL_Rect tinkerSlotsPos{ 0, 38, 258, 150 };
+		SDL_Rect tinkerSlotsPos{ 0, 0, 210, 256 };
 		{
 			const auto drawerSlotsFrame = drawerFrame->addFrame("drawer slots");
 			drawerSlotsFrame->setSize(tinkerSlotsPos);
 			drawerSlotsFrame->setHollow(true);
 
-			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
-			makeColor(255, 255, 255, 255), "*images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
+			/*auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
+			makeColor(255, 255, 255, 255), "*images/ui/Tinkering/Tinker_Construct_DrawerSlots_01.png", "grid img");
+			gridImg->disabled = true;*/
 
 			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 			const int maxTinkerX = MAX_TINKER_X;
@@ -10996,23 +11102,29 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			const int slotInnerWidth = inventorySlotSize - 2;
 			std::vector<std::pair<int, int>> slotCoords =
 			{
-				std::make_pair(28 + (slotInnerWidth + 2) * 0, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 1, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 2, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 3, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 4, 0),
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 26),
 
-				std::make_pair(22, 48),
-				std::make_pair(22 + (slotInnerWidth + 6), 48),
-				std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 1, 48),
-				std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 2, 48),
-				std::make_pair(22 + (slotInnerWidth + 6) * 2 + (slotInnerWidth + 4) * 2, 48),
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 76),
 
-				std::make_pair(14, 110),
-				std::make_pair(14 + (slotInnerWidth + 10), 110),
-				std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 1, 110),
-				std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 2, 110),
-				std::make_pair(14 + (slotInnerWidth + 10) * 2 + (slotInnerWidth + 8) * 2, 110)
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 144),
+
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 194)
 			};
 			auto slotCoordsIt = slotCoords.begin();
 			for ( int y = 0; y < maxTinkerY; ++y )
@@ -11026,16 +11138,32 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 
 					auto slotFrame = drawerSlotsFrame->addFrame(slotname);
 					tinkerSlotFrames[x + y * 100] = slotFrame;
-					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y - kTinkerCraftSlotHeightOffset, 
+						inventorySlotSize, inventorySlotSize + kTinkerCraftSlotHeightOffset };
+					if ( x == 0 )
+					{
+						slotPos.x += 2; // left/right columns have slightly thinner width
+						slotPos.w -= 2;
+					}
+					if ( x == maxTinkerX - 1 )
+					{
+						slotPos.w -= 2;
+					}
 					slotFrame->setSize(slotPos);
 
 					createPlayerInventorySlotFrameElements(slotFrame);
+					if ( auto itemSprite = slotFrame->findFrame("item sprite frame") )
+					{
+						SDL_Rect pos = itemSprite->getSize();
+						pos.y += 6;
+						itemSprite->setSize(pos);
+					}
 					if ( slotCoordsIt != slotCoords.end() )
 					{
 						++slotCoordsIt;
 					}
-					//slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
-					//	"images/system/white.png", "tmp");
+					/*slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
+						"images/system/white.png", "tmp");*/
 					slotFrame->setDisabled(true);
 				}
 			}
@@ -11075,9 +11203,6 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		itemDisplayTooltip->setHollow(true);
 		itemDisplayTooltip->setInheritParentFrameOpacity(false);
 		{
-			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 108 },
-				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_Tooltip_00.png", "tooltip img");
-
 			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
 			itemNameText->setFont(itemFont);
 			itemNameText->setText("");
@@ -11128,7 +11253,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 
 		{
 			auto closeBtn = bgFrame->addButton("close tinker button");
-			SDL_Rect closeBtnPos{ basePos.w - 8 - 26, 8, 26, 26 };
+			SDL_Rect closeBtnPos{ basePos.w - 4 - 26, 14, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -11185,10 +11310,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			actionPromptUnselectedTxt->setColor(makeColor(255, 255, 255, 255));
 			actionPromptUnselectedTxt->setDisabled(true);
 
-			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 60, 56, 26 },
+			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 70, 56, 26 },
 				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_PromptCoverLeft_00.png", "action prompt lcover");
 			actionPromptCoverLeftImg->ontop = true;
-			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 60, 56, 26 },
+			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 70, 56, 26 },
 				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_PromptCoverRight_00.png", "action prompt rcover");
 			actionPromptCoverRightImg->ontop = true;
 		}
@@ -11210,9 +11335,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			Button* filterBtn = bgFrame->addButton("filter salvage btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Salvage");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Center_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -11235,13 +11361,23 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			{
 				genericgui_deselect_fn(widget);
 			});
+			Field* filterTxt = bgFrame->addField("filter salvage txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Salvage");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
 
 			filterBtn = bgFrame->addButton("filter craft btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Craft");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Left_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -11257,13 +11393,23 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			{
 				genericgui_deselect_fn(widget);
 			});
+			filterTxt = bgFrame->addField("filter craft txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Craft");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
 
 			filterBtn = bgFrame->addButton("filter repair btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Repair");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Right_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -11279,6 +11425,22 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			{
 				genericgui_deselect_fn(widget);
 			});
+			filterTxt = bgFrame->addField("filter repair txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Repair");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
+			auto filterNavLeftArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Button_ArrowL_00.png", "filter nav left arrow");
+			filterNavLeftArrow->disabled = true;
+			auto filterNavRightArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Button_ArrowR_00.png", "filter nav right arrow");
+			filterNavRightArrow->disabled = true;
 
 			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "filter nav left");
@@ -11289,7 +11451,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		}
 
 		{
-			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 34 },
+			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 36 },
 				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_ScrapBacking_00.png", "held scrap img");
 
 			auto heldScrapText = bgFrame->addField("held scrap label", 64);
@@ -11499,6 +11661,10 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 				Sint32 oldPER = stats[player]->PER;
 				stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+				if ( itemRequirement == 0 )
+				{
+					itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+				}
 				stats[player]->PER = oldPER;
 				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
 			}
@@ -11635,6 +11801,10 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 				Sint32 oldPER = stats[player]->PER;
 				stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+				if ( itemRequirement == 0 )
+				{
+					itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+				}
 				stats[player]->PER = oldPER;
 				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
 			}
@@ -11664,7 +11834,15 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 						default:
 							break;
 					}
-					itemRequirement = std::min(100, craftRequirement * 20 + diff);
+					if ( craftRequirement == 0 )
+					{
+						craftRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+					}
+					else
+					{
+						craftRequirement *= 20;
+					}
+					itemRequirement = std::min(100, craftRequirement + diff);
 				}
 				else
 				{
@@ -11673,6 +11851,10 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 					Sint32 oldPER = stats[player]->PER;
 					stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 					itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+					if ( itemRequirement == 0 )
+					{
+						itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+					}
 					stats[player]->PER = oldPER;
 					stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
 				}

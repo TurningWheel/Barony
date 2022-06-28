@@ -6835,6 +6835,7 @@ void Player::Inventory_t::updateInventory()
 							starty = slotFrame->getAbsoluteSize().y;
 							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
 							starty -= players[player]->camera_virtualy1();
+							highlightHeight = slotFrame->getSize().h;
 						}
 					}
 				}
@@ -7121,11 +7122,16 @@ void Player::Inventory_t::updateInventory()
 				{
 					width = highlightWidth;
 				}
+				int height = getSlotSize();
+				if ( highlightHeight > 0 )
+				{
+					height = highlightHeight;
+				}
 				selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 				selectedSlotFrame->setDisabled(false);
 
 				selectedSlotCursor->setDisabled(false);
-				updateSelectedSlotAnimation(startx, starty, width, getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+				updateSelectedSlotAnimation(startx, starty, width, height, inputs.getVirtualMouse(player)->draw_cursor);
 				//messagePlayer(0, "0: %d, %d", x, y);
 			}
 		}
