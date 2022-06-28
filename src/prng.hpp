@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+static uint8_t marker[256];
+
 class BaronyRNG {
 public:
     void seedTime();                      // seed according to a 32-bit time value
@@ -26,6 +28,12 @@ public:
 
     // test function, print quality of the RNG seed to log
     void testSeedHealth() const;
+
+    // test function, set rng marker
+    void setMarker() const;
+
+    // check against marker and print to log if they are equal
+    void checkMarker() const;
 
     // report number of bytes read since seeding
     size_t bytesRead() const;

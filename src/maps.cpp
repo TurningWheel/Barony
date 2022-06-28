@@ -45,7 +45,7 @@ int monsterCurve(int level)
 {
 	if ( !strncmp(map.name, "The Mines", 9) )   // the mines
 	{
-		switch ( local_rng.rand() % 10 )
+		switch ( map_rng.rand() % 10 )
 		{
 			case 0:
 			case 1:
@@ -80,7 +80,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Swamp", 9) )     // the swamp
 	{
-		switch ( local_rng.rand() % 10 )
+		switch ( map_rng.rand() % 10 )
 		{
 			case 0:
 			case 1:
@@ -100,7 +100,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Labyrinth", 13) )     // sand labyrinth
 	{
-		switch ( local_rng.rand() % 20 )
+		switch ( map_rng.rand() % 20 )
 		{
 			case 0:
 			case 1:
@@ -131,7 +131,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Ruins", 9) )     // blue ruins
 	{
-		switch ( local_rng.rand() % 10 )
+		switch ( map_rng.rand() % 10 )
 		{
 			case 0:
 				return GOBLIN;
@@ -145,7 +145,7 @@ int monsterCurve(int level)
 			case 7:
 				return TROLL;
 			case 8:
-				if ( local_rng.rand() % 10 > 0 )
+				if ( map_rng.rand() % 10 > 0 )
 				{
 					return TROLL;
 				}
@@ -159,7 +159,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Underworld", 10) )     // underworld
 	{
-		switch ( local_rng.rand() % 10 )
+		switch ( map_rng.rand() % 10 )
 		{
 			case 0:
 				return SLIME;
@@ -180,7 +180,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Hell", 4) )     // hell
 	{
-		switch ( local_rng.rand() % 20 )
+		switch ( map_rng.rand() % 20 )
 		{
 			case 0:
 			case 1:
@@ -221,7 +221,7 @@ int monsterCurve(int level)
 	{
 		if ( currentlevel <= 26 )
 		{
-			switch ( local_rng.rand() % 15 )
+			switch ( map_rng.rand() % 15 )
 			{
 				case 0:
 				case 1:
@@ -241,7 +241,7 @@ int monsterCurve(int level)
 					return INSECTOID;
 				case 12:
 				case 13:
-					if ( local_rng.rand() % 2 == 0 )
+					if ( map_rng.rand() % 2 == 0 )
 					{
 						return INCUBUS;
 					}
@@ -250,7 +250,7 @@ int monsterCurve(int level)
 						return INSECTOID;
 					}
 				case 14:
-					if ( local_rng.rand() % 2 == 0 )
+					if ( map_rng.rand() % 2 == 0 )
 					{
 						return CRYSTALGOLEM;
 					}
@@ -262,7 +262,7 @@ int monsterCurve(int level)
 		}
 		else
 		{
-			switch ( local_rng.rand() % 15 )
+			switch ( map_rng.rand() % 15 )
 			{
 				case 0:
 				case 1:
@@ -291,7 +291,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Citadel", 7) )
 	{
-		switch ( local_rng.rand() % 15 )
+		switch ( map_rng.rand() % 15 )
 		{
 			case 0:
 				return KOBOLD;
@@ -3309,7 +3309,7 @@ void assignActions(map_t* map)
 				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = 10 + local_rng.rand() % 100 + (currentlevel); // amount
+				entity->skill[0] = 10 + map_rng.rand() % 100 + (currentlevel); // amount
 				entity->sprite = 130; // gold bag model
 				if ( !strcmp(map->name, "Sokoban") )
 				{
@@ -3358,7 +3358,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6;
-				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
 				entity->behavior = &actMonster;
 				entity->flags[UPDATENEEDED] = true;
 				entity->skill[5] = -1;
@@ -3903,14 +3903,14 @@ void assignActions(map_t* map)
 				entity->sprite = 163; //Fountain
 				entity->skill[0] = 1; //Fountain is full.
 				//Randomly determine effect.
-				int effect = local_rng.rand() % 10; //3 possible effects.
+				int effect = map_rng.rand() % 10; //3 possible effects.
 				entity->skill[28] = 1; //TODO: This is just for testing purposes.
 				switch (effect)
 				{
 					case 0:
 						//10% chance
 						entity->skill[1] = 3; //Will bless all equipment.
-						if ( (local_rng.rand() % 4) != 0 )
+						if ( (map_rng.rand() % 4) != 0 )
 						{
 							entity->skill[1] = 4; //Will bless only one piece of equipment.
 						}
@@ -3933,7 +3933,7 @@ void assignActions(map_t* map)
 						//40% chance.
 						//Random potion effect.
 						entity->skill[1] = 2;
-						entity->skill[3] = local_rng.rand() % 15; //Randomly choose from the number of potion effects there are.
+						entity->skill[3] = map_rng.rand() % 15; //Randomly choose from the number of potion effects there are.
 						break;
 					default:
 						break; //Should never happen.
@@ -3949,8 +3949,8 @@ void assignActions(map_t* map)
 				entity->z = 5;
 				entity->behavior = &actSink;
 				entity->sprite = 164;
-				entity->skill[0] = 1 + local_rng.rand() % 4; // number of uses
-				switch ( local_rng.rand() % 10 )
+				entity->skill[0] = 1 + map_rng.rand() % 4; // number of uses
+				switch ( map_rng.rand() % 10 )
 				{
 					case 0:
 						//10% chance.
@@ -4197,12 +4197,12 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
-				entity->skill[1] = QUIVER_SILVER + local_rng.rand() % 7; // random arrow type.
+				entity->skill[1] = QUIVER_SILVER + map_rng.rand() % 7; // random arrow type.
 				if ( currentlevel <= 15 )
 				{
 					while ( entity->skill[1] == QUIVER_CRYSTAL || entity->skill[1] == QUIVER_PIERCE )
 					{
-						entity->skill[1] = QUIVER_SILVER + local_rng.rand() % 7; // random arrow type.
+						entity->skill[1] = QUIVER_SILVER + map_rng.rand() % 7; // random arrow type.
 					}
 				}
 				entity->skill[3] = 0; // refire type.

@@ -199,7 +199,7 @@ void BaronyRNG::seedImpl(const void* key, size_t size) {
 		swap_byte(buf[i], buf[b]);
 	}
 
-	memcpy(seed, buf, sizeof(seed));
+	memcpy(seed, key, size);
 	seed_size = size;
 
 	i1 = i2 = 0;
@@ -212,12 +212,14 @@ void BaronyRNG::seedBytes(const void* key, size_t size) {
 }
 
 void BaronyRNG::seedTime() {
-	time_t t = time(nullptr);
-	seedImpl(&t, 4); // we only want a 32-bit seed
+    // we only want a 32-bit seed
+	uint32_t t = (uint32_t)time(nullptr);
+	seedImpl(&t, sizeof(t));
 }
 
 int BaronyRNG::getSeed(void* out, size_t size) const {
     if (!seeded || size < seed_size) {
+        assert(0 && "wtf are you doin");
         return -1;
     }
     memcpy(out, seed, seed_size);
@@ -225,10 +227,14 @@ int BaronyRNG::getSeed(void* out, size_t size) const {
 }
 
 void BaronyRNG::getBytes(void* data_, size_t size) {
+#ifndef NDEBUG
+    //stackTrace();
+#endif
 	if (!seeded) {
 	    printlog("rng not seeded, seeding by unix time");
-	    time_t t = time(nullptr);
-	    seedImpl(&t, 4); // we only want a 32-bit seed
+        // we only want a 32-bit seed
+	    uint32_t t = (uint32_t)time(nullptr);
+	    seedImpl(&t, sizeof(t));
 	}
 	for (uint8_t* data = static_cast<uint8_t*>(data_); size-- > 0; ++data) {
 	    i1 = ((int)i1 + 1) & 255;
@@ -237,6 +243,9 @@ void BaronyRNG::getBytes(void* data_, size_t size) {
 		*data = buf[(buf[i1] + buf[i2]) & 255];
 		++bytes_read;
 	}
+#ifdef NDEBUG
+	//checkMarker();
+#endif
 }
 
 uint8_t BaronyRNG::getU8() {
@@ -355,4 +364,18 @@ int BaronyRNG::normal(int mean, int deviation) {
     const real_t f2 = getF64();
     const real_t norm = cos(2.0 * PI * f2) * sqrt(-2.0 * log(f1));
     return round(norm * d + m);
+}
+
+void BaronyRNG::setMarker() const {
+#ifndef NDEBUG
+    memcpy(marker, buf, sizeof(marker));
+#endif
+}
+
+void BaronyRNG::checkMarker() const {
+#ifndef NDEBUG
+    if (!memcmp(marker, buf, sizeof(marker))) {
+        printlog("reached marker");
+    }
+#endif
 }

@@ -80,24 +80,19 @@ static void continue_sigaction(int signal, siginfo_t* si, void* arg)
 	SDL_ShowCursor(SDL_MouseShowBeforeSignal);
 }
 
-const unsigned STACK_SIZE = 10;
-
 static void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
-	printf("Caught segfault at address %p\n", si->si_addr);
+	SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse.
 
-	printlog("Caught segfault at address %p\n", si->si_addr);
+	printf("Caught segfault at address %p\n", si->si_addr);
+	printf("Signal %d (dumping stack):", signal);
 
 	//Dump the stack.
+
+    constexpr unsigned int STACK_SIZE = 32;
 	void* array[STACK_SIZE];
-	size_t size;
-
-	size = backtrace(array, STACK_SIZE);
-
-	printlog("Signal %d (dumping stack):\n", signal);
+	size_t size = backtrace(array, STACK_SIZE);
 	backtrace_symbols_fd(array, size, STDERR_FILENO);
-
-	SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse.
 
 	exit(0);
 }
@@ -714,8 +709,6 @@ static void demo_stop() {
     demo_mode = DemoMode::STOPPED;
 
     TimerExperiments::bUseTimerInterpolation = true;
-
-    //messagePlayer(clientnum, MESSAGE_MISC, "local_rng bytes read: %llu", local_rng.bytesRead());
 }
 
 static void demo_record(const char* filename) {
@@ -739,6 +732,7 @@ static void demo_record(const char* filename) {
     local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
     net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
     demo_file->write(&uniqueGameKey, sizeof(uniqueGameKey), 1);
+
     doNewGame(false);
 
     messagePlayer(clientnum, MESSAGE_MISC, "Recording demo to '%s'", path);
@@ -765,6 +759,7 @@ static void demo_play(const char* filename) {
     demo_file->read(&uniqueGameKey, sizeof(uniqueGameKey), 1);
     local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
     net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
     doNewGame(false);
 
     messagePlayer(clientnum, MESSAGE_MISC, "Playing demo in '%s'", path);
@@ -816,37 +811,42 @@ void gameLogic(void)
 	deleteent_t* deleteent;
 	bool entitydeletedself;
 
-    if (demo_file) {
-        // demo recording
-        if (demo_mode == DemoMode::RECORDING) {
-            demo_file->write(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
-            demo_file->write(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
-            demo_file->write(&keystatus, sizeof(keystatus), 1);
-            demo_file->write(&mousex, sizeof(mousex), 1);
-            demo_file->write(&mousey, sizeof(mousey), 1);
-            demo_file->write(&mousestatus, sizeof(mousestatus), 1);
-            demo_file->write(&mousexrel, sizeof(mousexrel), 1);
-            demo_file->write(&mouseyrel, sizeof(mouseyrel), 1);
-            if (gamePaused || intro || players[clientnum]->entity == nullptr) {
-                demo_stop();
+    if (!gamePaused && !loading) {
+        if (demo_file) {
+            // demo recording
+            if (demo_mode == DemoMode::RECORDING) {
+                demo_file->write(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+                demo_file->write(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+                demo_file->write(&keystatus, sizeof(keystatus), 1);
+                demo_file->write(&mousex, sizeof(mousex), 1);
+                demo_file->write(&mousey, sizeof(mousey), 1);
+                demo_file->write(&mousestatus, sizeof(mousestatus), 1);
+                demo_file->write(&mousexrel, sizeof(mousexrel), 1);
+                demo_file->write(&mouseyrel, sizeof(mouseyrel), 1);
             }
-        }
 
-        // demo playback
-        if (demo_mode == DemoMode::PLAYING) {
-            demo_file->read(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
-            demo_file->read(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
-            demo_file->read(&keystatus, sizeof(keystatus), 1);
-            demo_file->read(&mousex, sizeof(mousex), 1);
-            demo_file->read(&mousey, sizeof(mousey), 1);
-            demo_file->read(&mousestatus, sizeof(mousestatus), 1);
-            demo_file->read(&mousexrel, sizeof(mousexrel), 1);
-            demo_file->read(&mouseyrel, sizeof(mouseyrel), 1);
-            if (demo_file->eof()) {
-                demo_stop();
+            // demo playback
+            if (demo_mode == DemoMode::PLAYING) {
+                demo_file->read(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+                demo_file->read(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+                demo_file->read(&keystatus, sizeof(keystatus), 1);
+                demo_file->read(&mousex, sizeof(mousex), 1);
+                demo_file->read(&mousey, sizeof(mousey), 1);
+                demo_file->read(&mousestatus, sizeof(mousestatus), 1);
+                demo_file->read(&mousexrel, sizeof(mousexrel), 1);
+                demo_file->read(&mouseyrel, sizeof(mouseyrel), 1);
+                if (demo_file->eof()) {
+                    demo_stop();
+                }
             }
         }
     }
+
+	for (auto& input : Input::inputs) {
+		input.updateReleasedBindings();
+		input.update();
+		input.consumeBindingsSharedWithFaceHotbar();
+	}
 
 	int auto_appraise_lowest_time[MAXPLAYERS];
 	Item* auto_appraise_target[MAXPLAYERS];
@@ -1831,6 +1831,7 @@ void gameLogic(void)
 					}
 
 					// signal clients about level change
+					local_rng.setMarker();
 					mapseed = local_rng.rand();
 					lastEntityUIDs = entity_uids;
 					if ( forceMapSeed > 0 )
@@ -3106,6 +3107,19 @@ void gameLogic(void)
 				}
 			}
 		}
+    }
+
+    bool playeralive = false;
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (players[c] && players[c]->entity) {
+            playeralive = true;
+        }
+    }
+
+    // increment gameplay time
+	if (!gamePaused && !intro && playeralive)
+	{
+		++completionTime;
 	}
 }
 
@@ -3362,11 +3376,6 @@ void handleEvents(void)
 	}
 
 	Input::lastInputOfAnyKind = "";
-	for (auto& input : Input::inputs) {
-		input.updateReleasedBindings();
-		input.update();
-		input.consumeBindingsSharedWithFaceHotbar();
-	}
 
     // consume mouse buttons that were eaten by GUI
 	if (!framesProcResult.usable && *framesEatMouse) {
@@ -3740,7 +3749,7 @@ void handleEvents(void)
 							                    // this player already has a controller
 							                    continue;
 							                }
-							                if (!intro && inputs.bPlayerUsingKeyboardControl(player))
+							                if (!intro && inputs.getPlayerIDAllowedKeyboard() == player && (splitscreen || multiplayer != SINGLE))
 							                {
 							                    // this player is using a keyboard
 							                    continue;
@@ -4104,6 +4113,10 @@ void handleEvents(void)
 					{
 						gameLogic();
 					}
+
+                    // increment game tick counter
+                    ++ticks;
+
 					mousexrel = 0;
 					mouseyrel = 0;
 					if (initialized)
@@ -4121,7 +4134,7 @@ void handleEvents(void)
 				}
 				else
 				{
-					//printlog("overloaded timer! %d", runtimes);
+					//printlog("dropped frame");
 				}
 				++runtimes;
 				break;
@@ -4238,20 +4251,6 @@ Uint32 timerCallback(Uint32 interval, void* param)
 
 	event.type = SDL_USEREVENT;
 	event.user = userevent;
-
-	int c;
-	bool playeralive = false;
-	for (c = 0; c < MAXPLAYERS; c++)
-		if (players[c] && players[c]->entity && !client_disconnected[c])
-		{
-			playeralive = true;
-		}
-
-	if ((!gamePaused || multiplayer) && !loading && !intro && playeralive)
-	{
-		completionTime++;
-	}
-	ticks++;
 	if (!loading)
 	{
 		SDL_PushEvent(&event);    // so the game doesn't overload itself while loading
@@ -5801,10 +5800,6 @@ int main(int argc, char** argv)
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
 
-#ifdef NINTENDO
-//		strcpy(classtoquickstart, "warrior");
-#endif
-
 		// load default language file (english)
 		if ( loadLanguage("en") )
 		{
@@ -6087,46 +6082,17 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					if (strcmp(classtoquickstart, ""))
+					if (classtoquickstart[0] != '\0')
 					{
-						for ( c = 0; c <= CLASS_MONK; c++ )
-						{
-							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) )
-							{
+						for ( c = 0; c <= CLASS_MONK; c++ ) {
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) ) {
 								client_classes[0] = c;
 								break;
 							}
 						}
+						strcpy(classtoquickstart, "");
 
-						// generate unique game key
-						local_rng.seedTime();
-						local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
-						net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-
-                        // shuffle scroll names
-                        {
-						    enchantedFeatherScrollsShuffled.clear();
-						    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
-						    auto shuffle = enchantedFeatherScrollsFixedList;
-						    while (!shuffle.empty()) {
-	                            int index = net_rng.getU8() % shuffle.size();
-						        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
-						        shuffle.erase(shuffle.begin() + index);
-						    }
-						}
-
-						loading = true;
-
-						// hack to fix these things from breaking everything...
-						for ( int i = 0; i < MAXPLAYERS; ++i )
-						{
-							players[i]->hud.arm = nullptr;
-							players[i]->hud.weapon = nullptr;
-							players[i]->hud.magicLeftHand = nullptr;
-							players[i]->hud.magicRightHand = nullptr;
-						}
-
-						// reset class loadout
+						// set class loadout
 						strcpy(stats[0]->name, "Avatar");
 						stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
 						stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
@@ -6137,79 +6103,11 @@ int main(int argc, char** argv)
 							stats[0]->appearance = 0;
 						}
 
-						multiplayer = SINGLE;
-						fadefinished = false;
-						fadeout = false;
-						numplayers = 0;
-
-						//TODO: Replace all of this with centralized startGameRoutine().
-						// setup game
-						for ( int i = 0; i < MAXPLAYERS; ++i )
-						{
-							players[i]->shootmode = true;
-						}
-						// make some messages
-						startMessages();
-
-						//gameplayCustomManager.writeAllToDocument();
-						gameplayCustomManager.readFromFile();
-
-						// load dungeon
-						mapseed = local_rng.rand(); //Use prng if decide to make a quickstart for MP...
-						lastEntityUIDs = entity_uids;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
-						{
-							entity = (Entity*)node->element;
-							entity->flags[NOUPDATE] = true;
-						}
-						if ( loadingmap == false )
-						{
-							currentlevel = startfloor;
-							int checkMapHash = -1;
-							if ( startfloor )
-							{
-								physfsLoadMapFile(currentlevel, 0, true, &checkMapHash);
-								conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
-							}
-							else
-							{
-								physfsLoadMapFile(0, 0, true, &checkMapHash);
-							}
-							if ( checkMapHash == 0 )
-							{
-								conductGameChallenges[CONDUCT_MODDED] = 1;
-						        gamemods_disableSteamAchievements = true;
-							}
-						}
-						else
-						{
-							if ( genmap == false )
-							{
-								std::string fullMapName = physfsFormatMapName(maptoload);
-								int checkMapHash = -1;
-								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
-								if ( checkMapHash == 0 )
-								{
-									conductGameChallenges[CONDUCT_MODDED] = 1;
-						            gamemods_disableSteamAchievements = true;
-								}
-							}
-							else
-							{
-								generateDungeon(maptoload, local_rng.rand());
-							}
-						}
-						assignActions(&map);
-						generatePathMaps();
-
-						achievementObserver.updateData();
-
-						saveGame();
-
-						// kick off the main loop!
-						strcpy(classtoquickstart, "");
-						intro = false;
-						loading = false;
+						// generate unique game key
+						local_rng.seedTime();
+						local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+						net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+						doNewGame(false);
 					}
 					else
 					{

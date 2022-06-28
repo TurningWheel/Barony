@@ -2059,6 +2059,8 @@ int deinitApp()
 	// close engine
 	printlog("closing engine...\n");
 
+	finishStackTraceUnique();
+
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);

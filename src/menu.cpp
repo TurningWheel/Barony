@@ -9512,7 +9512,9 @@ void doNewGame(bool makeHighscore) {
 	monsterally[SHOPKEEPER][AUTOMATON] = true;
 
 	// setup game //TODO: Move into a function startGameStuff() or something.
+	ticks = 0;
 	entity_uids = 1;
+	lastEntityUIDs = entity_uids;
 	loading = true;
 	darkmap = false;
 
@@ -10099,6 +10101,7 @@ void doNewGame(bool makeHighscore) {
 		loadingsavegame = 0;
 	}
 
+    // shuffle scroll names
     {
 	    enchantedFeatherScrollsShuffled.clear();
 	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
