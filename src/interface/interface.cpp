@@ -9940,6 +9940,13 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		tinkerKitStatus->setSize(textPos);
 	}
 
+	// drawer title
+	if ( bConstructDrawerOpen )
+	{
+		auto blueprintsTitle = drawerFrame->findField("blueprints title");
+		blueprintsTitle->setText(language[4199]);
+	}
+
 	if ( itemActionType == TINKER_ACTION_OK	|| itemActionType == TINKER_ACTION_OK_UPGRADE
 		|| itemActionType == TINKER_ACTION_OK_UNIDENTIFIED_SALVAGE )
 	{
