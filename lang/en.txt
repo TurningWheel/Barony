@@ -6168,4 +6168,6 @@ Combination!#
 4197 You put %d %s into the chest.#
 4198 %3.0f%% Appraising...#
 
-4199 end#
+4199 Blueprints#
+
+4249 end#
