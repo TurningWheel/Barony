@@ -996,7 +996,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 
 real_t Player::PlayerMovement_t::getMaximumSpeed()
 {
-	real_t maxSpeed = 18.0;
+	real_t maxSpeed = 15.0;
 	if ( gameplayCustomManager.inUse() )
 	{
 		maxSpeed = gameplayCustomManager.playerSpeedMax;
@@ -1075,15 +1075,19 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, maxSpeed);
-	if ( DEX <= 5 )
+	real_t speedFactor = std::min(((DEX - 5) * 0.1 + 11.0 - slowSpeedPenalty) * weightratio, maxSpeed);
+	if ( DEX <= 0 )
 	{
 		speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
 	}
-	else if ( DEX <= 15 )
+	else if ( DEX <= 5 )
+	{
+		speedFactor = std::min((DEX * 0.2 + 10) * weightratio, maxSpeed);
+	}
+	/*else if ( DEX <= 15 )
 	{
 		speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
-	}
+	}*/
 
 	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
 	{
@@ -1209,10 +1213,11 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
-		/*if ( ticks % 50 == 0 )
+		static ConsoleVariable<bool> cvar_debugspeedfactor("/player_showspeedfactor", false);
+		if ( *cvar_debugspeedfactor && ticks % 50 == 0 )
 		{
-		messagePlayer(0, "%f", speedFactor);
-		}*/
+			messagePlayer(0, MESSAGE_DEBUG, "%f", speedFactor);
+		}
 		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
@@ -1256,7 +1261,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	//if ( keystatus[SDL_SCANCODE_G] )
 	//{
 	//	//messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	//	//messagePlayer(0, "Vel: %5.5f", getCurrentMovementSpeed());
+	//	//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
 	//}
 
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
