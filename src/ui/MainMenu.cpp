@@ -14701,6 +14701,21 @@ bind_failed:
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
+				if (multiplayer == SERVER) {
+                    for (int c = 1; c < MAXPLAYERS; c++) {
+	                    if (client_disconnected[c]) {
+		                    continue;
+	                    }
+	                    memcpy((char*)net_packet->data, "RSTR", 4);
+	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
+	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
+	                    net_packet->data[12] = 0;
+	                    net_packet->address.host = net_clients[c - 1].host;
+	                    net_packet->address.port = net_clients[c - 1].port;
+	                    net_packet->len = 13;
+	                    sendPacketSafe(net_sock, -1, net_packet, c - 1);
+                    }
+				}
                 });
             restart->select();
             restart->setWidgetLeft("quit");
