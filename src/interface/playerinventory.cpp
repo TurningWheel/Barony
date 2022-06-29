@@ -9466,8 +9466,8 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else
 		{
-			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_INTERACT);
+			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}
