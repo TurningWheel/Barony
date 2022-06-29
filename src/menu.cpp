@@ -9505,7 +9505,7 @@ void doNewGame(bool makeHighscore) {
 	}
 	camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
 
-												   // undo shopkeeper grudge
+	// undo shopkeeper grudge
 	swornenemies[SHOPKEEPER][HUMAN] = false;
 	monsterally[SHOPKEEPER][HUMAN] = true;
 	swornenemies[SHOPKEEPER][AUTOMATON] = false;
@@ -9520,6 +9520,7 @@ void doNewGame(bool makeHighscore) {
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
+	    client_keepalive[i] = ticks; // this way nobody times out when we reset ticks!
 		players[i]->init();
 		players[i]->hud.reset();
 		deinitShapeshiftHotbar(i);

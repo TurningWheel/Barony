@@ -356,7 +356,15 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 			{
 				printTextFormatted(font8x8_bmp, 8, 32, "Timer debug is ON");
 				real_t diff = camera.ang - players[player]->entity->lerpRenderState.yaw.position;
-				diff = fmod(diff, PI);
+				diff = fmod(diff, 2 * PI);
+				while ( diff >= PI )
+				{
+					diff -= 2 * PI;
+				}
+				while ( diff < -PI )
+				{
+					diff += 2 * PI;
+				}
 				real_t curStateYaw = players[player]->entity->lerpCurrentState.yaw.position;
 				real_t prevStateYaw = players[player]->entity->lerpPreviousState.yaw.position;
 				if ( abs(diff) > PI / 8 )
@@ -2939,7 +2947,15 @@ void gameLogic(void)
 
 									// rotate to new angles
 									double dirYaw = entity->new_yaw - entity->yaw;
-									dirYaw = fmod(dirYaw, PI);
+									dirYaw = fmod(dirYaw, 2 * PI);
+									while ( dirYaw >= PI )
+									{
+										dirYaw -= PI * 2;
+									}
+									while ( dirYaw < -PI )
+									{
+										dirYaw += PI * 2;
+									}
 									entity->yaw += dirYaw / 3;
 									while ( entity->yaw < 0 )
 									{
@@ -2950,10 +2966,18 @@ void gameLogic(void)
 										entity->yaw -= 2 * PI;
 									}
 									double dirPitch = entity->new_pitch - entity->pitch;
+									dirPitch = fmod(dirPitch, 2 * PI);
+									while ( dirPitch >= PI )
+									{
+										dirPitch -= PI * 2;
+									}
+									while ( dirPitch < -PI )
+									{
+										dirPitch += PI * 2;
+									}
 									if ( entity->behavior != &actArrow )
 									{
 										// client handles pitch in actArrow.
-										dirPitch = fmod(dirPitch, PI);
 										entity->pitch += dirPitch / 3;
 										while ( entity->pitch < 0 )
 										{
@@ -2965,7 +2989,15 @@ void gameLogic(void)
 										}
 									}
 									double dirRoll = entity->new_roll - entity->roll;
-									dirRoll = fmod(dirRoll, PI);
+									dirRoll = fmod(dirRoll, 2 * PI);
+									while ( dirRoll >= PI )
+									{
+										dirRoll -= PI * 2;
+									}
+									while ( dirRoll < -PI )
+									{
+										dirRoll += PI * 2;
+									}
 									entity->roll += dirRoll / 3;
 									while ( entity->roll < 0 )
 									{

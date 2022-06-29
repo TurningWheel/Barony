@@ -313,7 +313,7 @@ double BaronyRNG::getF64() {
 int BaronyRNG::rand() {
     int i;
 	getBytes(&i, sizeof(i));
-    return i & RAND_MAX;
+    return i & 0x7fffffff;
 }
 
 int BaronyRNG::uniform(int a, int b) {
