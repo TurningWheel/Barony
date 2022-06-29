@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "ui/MainMenu.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1069,7 +1070,7 @@ void actHudWeapon(Entity* my)
 										{
 											real_t amount = 0.f;
 											real_t percent = getArtifactWeaponEffectChance(ARTIFACT_BOW, *(stats[HUDWEAPON_PLAYERNUM]), &amount);
-											if ( (rand() % 100 < static_cast<int>(percent)) )
+											if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
 											{
 												artifactBowSaveAmmo = true;
 											}
@@ -2798,8 +2799,8 @@ void actHudWeapon(Entity* my)
 			{
 				HUDWEAPON_MOVEX -= HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY -= HUDWEAPON_OLDVIBRATEY;
-				HUDWEAPON_OLDVIBRATEX = (rand() % 30 - 10) / 150.f;
-				HUDWEAPON_OLDVIBRATEY = (rand() % 30 - 10) / 150.f;
+				HUDWEAPON_OLDVIBRATEX = (local_rng.rand() % 30 - 10) / 150.f;
+				HUDWEAPON_OLDVIBRATEY = (local_rng.rand() % 30 - 10) / 150.f;
 				HUDWEAPON_MOVEX += HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY += HUDWEAPON_OLDVIBRATEY;
 			}
@@ -2809,9 +2810,9 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_MOVEX -= HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY -= HUDWEAPON_OLDVIBRATEY;
 				HUDWEAPON_MOVEZ -= HUDWEAPON_OLDVIBRATEZ;
-				HUDWEAPON_OLDVIBRATEX = (rand() % 30 - 10) / 80.f;
-				HUDWEAPON_OLDVIBRATEY = (rand() % 30 - 10) / 80.f;
-				HUDWEAPON_OLDVIBRATEZ = (rand() % 30 - 10) / 80.f;
+				HUDWEAPON_OLDVIBRATEX = (local_rng.rand() % 30 - 10) / 80.f;
+				HUDWEAPON_OLDVIBRATEY = (local_rng.rand() % 30 - 10) / 80.f;
+				HUDWEAPON_OLDVIBRATEZ = (local_rng.rand() % 30 - 10) / 80.f;
 				HUDWEAPON_MOVEX += HUDWEAPON_OLDVIBRATEX;
 				HUDWEAPON_MOVEY += HUDWEAPON_OLDVIBRATEY;
 				HUDWEAPON_MOVEZ += HUDWEAPON_OLDVIBRATEZ;
@@ -2843,9 +2844,9 @@ void actHudWeapon(Entity* my)
 			entity->scalez = 0.25f;
 			entity->z -= 3.5;
 			entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-			entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
-			entity->pitch = (rand() % 360) * PI / 180.0;
-			entity->roll = (rand() % 360) * PI / 180.0;
+			entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+			entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+			entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 			entity->vel_x = cos(entity->yaw) * .1;
 			entity->vel_y = sin(entity->yaw) * .1;
 			entity->vel_z = -.15;

@@ -14,6 +14,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "entity.hpp"
+#include "prng.hpp"
 
 void Entity::initMonster(int mySprite)
 {
@@ -424,11 +425,11 @@ void Entity::spawnBlood(int bloodSprite)
 				Entity* entity = newEntity(bloodSprite, 1, map.entities, nullptr); //Blood/gib entity.
 				entity->x = this->x;
 				entity->y = this->y;
-				entity->z = 8 + (rand() % 20) / 100.0;
+				entity->z = 8 + (local_rng.rand() % 20) / 100.0;
 				entity->parent = getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
 			}

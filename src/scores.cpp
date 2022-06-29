@@ -1365,7 +1365,10 @@ int saveGame(int saveIndex)
 		    mul = SINGLE;
 		}
 	} else {
-	    if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+	    if (multiplayer == SERVER && directConnect) {
+	        mul = DIRECTSERVER;
+	    }
+	    else if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 			mul = SERVERCROSSPLAY;
 		}
 	    else if (multiplayer == SERVER || multiplayer == CLIENT) {
@@ -2138,6 +2141,8 @@ int loadGame(int player, int saveIndex)
 
 	// read basic header info
 	fp->read(&uniqueGameKey, sizeof(Uint32), 1);
+	local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
 	Sint16 players_connected;
 	fp->read(&players_connected, sizeof(Sint16), 1);
@@ -2806,18 +2811,15 @@ int loadGame(int player, int saveIndex)
 	}
 	//printlog("%d, %d", hash, loadedHash);
 
-	enchantedFeatherScrollSeed.seed(uniqueGameKey);
-	enchantedFeatherScrollsShuffled.clear();
-	auto scrollsToPick = enchantedFeatherScrollsFixedList;
-	while ( !scrollsToPick.empty() )
-	{
-		int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
-		enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
-		scrollsToPick.erase(scrollsToPick.begin() + index);
-	}
-	for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
-	{
-		//printlog("Sequence: %d", *it);
+    {
+	    enchantedFeatherScrollsShuffled.clear();
+	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
+	    auto shuffle = enchantedFeatherScrollsFixedList;
+	    while (!shuffle.empty()) {
+	        int index = net_rng.getU8() % shuffle.size();
+	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
+	        shuffle.erase(shuffle.begin() + index);
+	    }
 	}
 
 	FileIO::close(fp);
@@ -4833,11 +4835,11 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	}
 	if ( ((tags[TAG_EQUIPMENT1] >> 16) & 0xFF) > 0 )
 	{
-		stats[0]->gloves = newItem(ItemType((tags[TAG_EQUIPMENT1] >> 16) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE1] >> 16) & 0xFF), 1, rand(), true, &stats[0]->inventory);
+		stats[0]->gloves = newItem(ItemType((tags[TAG_EQUIPMENT1] >> 16) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE1] >> 16) & 0xFF), 1, local_rng.rand(), true, &stats[0]->inventory);
 	}
 	if ( ((tags[TAG_EQUIPMENT1] >> 24) & 0xFF) > 0 )
 	{
-		stats[0]->shoes = newItem(ItemType((tags[TAG_EQUIPMENT1] >> 24) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE1] >> 24) & 0xFF), 1, rand(), true, &stats[0]->inventory);
+		stats[0]->shoes = newItem(ItemType((tags[TAG_EQUIPMENT1] >> 24) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE1] >> 24) & 0xFF), 1, local_rng.rand(), true, &stats[0]->inventory);
 	}
 
 	if ( ((tags[TAG_EQUIPMENT2] >> 0) & 0xFF) > 0 )
@@ -4847,7 +4849,7 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	}
 	if ( ((tags[TAG_EQUIPMENT2] >> 8) & 0xFF) > 0 )
 	{
-		stats[0]->weapon = newItem(ItemType((tags[TAG_EQUIPMENT2] >> 8) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE2] >> 8) & 0xFF), 1, rand(), true, &stats[0]->inventory);
+		stats[0]->weapon = newItem(ItemType((tags[TAG_EQUIPMENT2] >> 8) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE2] >> 8) & 0xFF), 1, local_rng.rand(), true, &stats[0]->inventory);
 	}
 	if ( ((tags[TAG_EQUIPMENT2] >> 16) & 0xFF) > 0 )
 	{
@@ -4856,16 +4858,16 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	}
 	if ( ((tags[TAG_EQUIPMENT2] >> 24) & 0xFF) > 0 )
 	{
-		stats[0]->amulet = newItem(ItemType((tags[TAG_EQUIPMENT2] >> 24) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE2] >> 24) & 0xFF), 1, rand(), true, &stats[0]->inventory);
+		stats[0]->amulet = newItem(ItemType((tags[TAG_EQUIPMENT2] >> 24) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE2] >> 24) & 0xFF), 1, local_rng.rand(), true, &stats[0]->inventory);
 	}
 
 	if ( ((tags[TAG_EQUIPMENT3] >> 16) & 0xFF) > 0 )
 	{
-		stats[0]->ring = newItem(ItemType((tags[TAG_EQUIPMENT3] >> 16) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE3] >> 0) & 0xFF), 1, rand(), true, &stats[0]->inventory);
+		stats[0]->ring = newItem(ItemType((tags[TAG_EQUIPMENT3] >> 16) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE3] >> 0) & 0xFF), 1, local_rng.rand(), true, &stats[0]->inventory);
 	}
 	if ( ((tags[TAG_EQUIPMENT3] >> 24) & 0xFF) > 0 )
 	{
-		stats[0]->mask = newItem(ItemType((tags[TAG_EQUIPMENT3] >> 24) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE3] >> 8) & 0xFF), 1, rand(), true, &stats[0]->inventory);
+		stats[0]->mask = newItem(ItemType((tags[TAG_EQUIPMENT3] >> 24) & 0xFF), EXCELLENT, Sint16((tags[TAG_EQUIPMENT_BEATITUDE3] >> 8) & 0xFF), 1, local_rng.rand(), true, &stats[0]->inventory);
 	}
 
 	completionTime = tags[TAG_COMPLETION_TIME] * TICKS_PER_SECOND;

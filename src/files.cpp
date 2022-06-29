@@ -1803,6 +1803,10 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			strncpy(tempstr, mapName.c_str(), mapName.length());
 			tempstr[mapName.length()] = '\0';
 			mapName = physfsFormatMapName(tempstr);
+			if ( useRandSeed )
+			{
+			    mapseed = local_rng.rand();
+			}
 			if ( checkMapHash )
 			{
 				return loadMap(mapName.c_str(), &map, map.entities, map.creatures, checkMapHash);
@@ -1863,7 +1867,7 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			tempstr[mapName.length()] = '\0';
 			if ( useRandSeed )
 			{
-				return generateDungeon(tempstr, rand(), mapParameters);
+				return generateDungeon(tempstr, local_rng.rand(), mapParameters);
 			}
 			else
 			{

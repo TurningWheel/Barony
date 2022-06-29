@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initDemon(Entity* my, Stat* myStats)
 {
@@ -50,7 +51,7 @@ void initDemon(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 			}
 			else
@@ -93,7 +94,7 @@ void initDemon(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, nullptr);
 					}
@@ -628,7 +629,7 @@ void actDemonCeilingBuster(Entity* my)
 					}
 
 					// spawn several rock particles (NOT items)
-					int c, i = 6 + rand() % 4;
+					int c, i = 6 + local_rng.rand() % 4;
 					for ( c = 0; c < i; c++ )
 					{
 						Entity* entity = nullptr;
@@ -642,19 +643,19 @@ void actDemonCeilingBuster(Entity* my)
 						}
 						if ( entity )
 						{
-							entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-							entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+							entity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+							entity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
 							entity->z = -8;
 							entity->flags[PASSABLE] = true;
 							entity->flags[INVISIBLE] = false;
 							entity->flags[NOUPDATE] = true;
 							entity->flags[UPDATENEEDED] = false;
 							entity->sprite = items[GEM_ROCK].index;
-							entity->yaw = rand() % 360 * PI / 180;
-							entity->pitch = rand() % 360 * PI / 180;
-							entity->roll = rand() % 360 * PI / 180;
-							entity->vel_x = (rand() % 20 - 10) / 10.0;
-							entity->vel_y = (rand() % 20 - 10) / 10.0;
+							entity->yaw = local_rng.rand() % 360 * PI / 180;
+							entity->pitch = local_rng.rand() % 360 * PI / 180;
+							entity->roll = local_rng.rand() % 360 * PI / 180;
+							entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+							entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 							entity->vel_z = -.25;
 							entity->fskill[3] = 0.03;
 						}

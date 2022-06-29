@@ -19,6 +19,7 @@
 #include "items.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initScorpion(Entity* my, Stat* myStats)
 {
@@ -49,7 +50,7 @@ void initScorpion(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Skrabblag");
 				myStats->HP = 100;
@@ -62,7 +63,7 @@ void initScorpion(Entity* my, Stat* myStats)
 				myStats->PER = 10;
 				myStats->CHR = 10;
 				myStats->LVL = 15;
-				newItem(GEM_RUBY, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory);
+				newItem(GEM_RUBY, static_cast<Status>(1 + local_rng.rand() % 4), 0, 1, local_rng.rand(), true, &myStats->inventory);
 				customItemsToGenerate = customItemsToGenerate - 1;
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -137,7 +138,7 @@ void scorpionDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 104 + rand() % 3, 128);
+	playSoundEntity(my, 104 + local_rng.rand() % 3, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }

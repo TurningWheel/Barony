@@ -73,9 +73,9 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 	gameModeManager.setMode(gameModeManager.GameModes::GAME_MODE_TUTORIAL);
 	stats[0]->clearStats();
 	strcpy(stats[0]->name, "Player");
-	stats[0]->sex = static_cast<sex_t>(rand() % 2);
+	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
 	stats[0]->playerRace = RACE_HUMAN;
-	stats[0]->appearance = rand() % NUMAPPEARANCES;
+	stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 	initClass(0);
 }
 
@@ -3445,7 +3445,7 @@ int StatueManager_t::processStatueExport()
 		}
 		exportDocument.SetObject();
 		CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(1));
-		CustomHelpers::addMemberToRoot(exportDocument, "statue_id", rapidjson::Value(rand()));
+		CustomHelpers::addMemberToRoot(exportDocument, "statue_id", rapidjson::Value(local_rng.rand()));
 		CustomHelpers::addMemberToRoot(exportDocument, "height_offset", rapidjson::Value(0));
 		rapidjson::Value limbsObject(rapidjson::kObjectType);
 		CustomHelpers::addMemberToRoot(exportDocument, "limbs", limbsObject);

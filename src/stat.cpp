@@ -18,6 +18,7 @@
 #include "magic/magic.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 Stat* stats[MAXPLAYERS];
 
@@ -785,7 +786,7 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 		return -1;
 	}
 
-	int roll = rand() % numEquippedItems;
+	int roll = local_rng.rand() % numEquippedItems;
 
 	switch ( equipNum[roll] )
 	{

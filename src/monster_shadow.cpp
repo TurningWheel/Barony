@@ -21,6 +21,7 @@ See LICENSE for details.
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initShadow(Entity* my, Stat* myStats)
 {
@@ -61,17 +62,17 @@ void initShadow(Entity* my, Stat* myStats)
 				strcpy(myStats->name, "Artemisia");
 				myStats->sex = FEMALE;
 				my->monsterShadowDontChangeName = 1;
-				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, rand(), false, nullptr);
+				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, local_rng.rand(), false, nullptr);
 
-				ItemType type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
-				int amount = 10 + rand() % 11;
+				ItemType type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
+				int amount = 10 + local_rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 
-				type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
-				amount = 10 + rand() % 11;
+				type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
+				amount = 10 + local_rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
-			else if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			else if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
@@ -339,7 +340,7 @@ void shadowDie(Entity* my)
 
 	my->spawnBlood(681);
 
-	playSoundEntity(my, 316 + rand() % 2, 128);
+	playSoundEntity(my, 316 + local_rng.rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1428,8 +1429,8 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		}
 
 		//On initial mimic, copy more spells & skills.
-		numSkillsToMimic += rand()%3 + 1;
-		numSpellsToMimic += rand()%3 + 1;
+		numSkillsToMimic += local_rng.rand()%3 + 1;
+		numSpellsToMimic += local_rng.rand()%3 + 1;
 
 		if ( target->behavior == actPlayer )
 		{
@@ -1459,7 +1460,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//Now choose a random skill and copy it over.
 	for ( int skillsMimicked = 0; skillsCanMimic.size() && skillsMimicked < numSkillsToMimic; ++skillsMimicked )
 	{
-		int choosen = rand()%skillsCanMimic.size();
+		int choosen = local_rng.rand()%skillsCanMimic.size();
 		myStats->PROFICIENCIES[skillsCanMimic[choosen]] = targetStats->PROFICIENCIES[skillsCanMimic[choosen]];
 
 		//messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
@@ -1506,7 +1507,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 			{
 				continue;
 			}
-			Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+			Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, local_rng.rand(), true, nullptr);
 			if ( !spellbook )
 			{
 				continue;
@@ -1538,14 +1539,14 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//Now randomly choose & copy over a spell.
 	for ( int spellsMimicked = 0; spellsCanMimic.size() && spellsMimicked < numSkillsToMimic; ++spellsMimicked )
 	{
-		int choosen = rand()%spellsCanMimic.size();
+		int choosen = local_rng.rand()%spellsCanMimic.size();
 
 		int spellbookType = getSpellbookFromSpellID(spellsCanMimic[choosen]);
 		if ( spellbookType == WOODEN_SHIELD )
 		{
 			continue;
 		}
-		Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+		Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, local_rng.rand(), true, nullptr);
 		if ( !spellbook )
 		{
 			continue;
@@ -1645,17 +1646,17 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		/* THIS NEEDS TO BE ELSEWHERE, TO BE CALLED CONSTANTLY TO ALLOW SHADOW TO TELEPORT IF NO PATH/ DISTANCE IS TOO GREAT */
 
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+		specialRoll = local_rng.rand() % (20 + 50 * (target->behavior == &actMonster));
 
 		int requiredRoll = 10;
 
 		// check the roll
 		if ( specialRoll < requiredRoll )
-		//if ( rand() % 150 )
+		//if ( local_rng.rand() % 150 )
 		{
 			//messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
-			bool telemimic  = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			bool telemimic  = (local_rng.rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
 			{
 				//If it's hunting down the player, always want it to teleport and find them.

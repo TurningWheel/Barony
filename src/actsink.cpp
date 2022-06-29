@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -58,9 +59,9 @@ void actSink(Entity* my)
 		entity->flags[UPDATENEEDED] = false;
 		entity->skill[4] = 6;
 		entity->sprite = 4;
-		entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->pitch = (rand() % 360) * PI / 180.0;
-		entity->roll = (rand() % 360) * PI / 180.0;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 		entity->vel_x = 0;
 		entity->vel_y = 0;
 		entity->vel_z = .25;
@@ -89,7 +90,7 @@ void actSink(Entity* my)
 				if (my->skill[0] == 0)
 				{
 					messagePlayer(i, MESSAGE_INTERACTION, language[580]);
-					playSoundEntity(my, 140 + rand() % 2, 64);
+					playSoundEntity(my, 140 + local_rng.rand() % 2, 64);
 				}
 				else
 				{
@@ -133,11 +134,11 @@ void actSink(Entity* my)
 							//Randomly choose a ring.
 							//88-99 are rings.
 							//So 12 rings total.
-							int ring = rand() % 12 + (int)(RING_ADORNMENT); //Generate random number between 0 & 11, then add 88 to it so that it's at the location of the rings.
+							int ring = local_rng.rand() % 12 + (int)(RING_ADORNMENT); //Generate random number between 0 & 11, then add 88 to it so that it's at the location of the rings.
 
 							//Generate a random status.
 							Status status = SERVICABLE;
-							int status_rand = rand() % 4;
+							int status_rand = local_rng.rand() % 4;
 							switch (status_rand)
 							{
 								case 0:
@@ -157,10 +158,10 @@ void actSink(Entity* my)
 									break;
 							}
 							//Random beatitude (third parameter).
-							int beatitude = rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
+							int beatitude = local_rng.rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
 
 							//Actually create the item, put it in the player's inventory, and then free the memory of the temp item.
-							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), false, NULL);
+							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, local_rng.rand(), false, NULL);
 							if (item)
 							{
 								itemPickup(i, item);
@@ -198,7 +199,7 @@ void actSink(Entity* my)
 								messagePlayerColor(i, MESSAGE_STATUS, color, language[3700]);
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER -= 200; //Lose boiler
-								players[i]->entity->modMP(5 + rand() % 6); //Raise temperature because steam.
+								players[i]->entity->modMP(5 + local_rng.rand() % 6); //Raise temperature because steam.
 								serverUpdateHunger(i);
 							}
 							else if ( stats[i]->type != VAMPIRE )
@@ -301,7 +302,7 @@ void actSink(Entity* my)
 						my->skill[0]--; //Deduct one usage.
 
 						//Randomly choose second usage stats.
-						int effect = rand() % 10; //4 possible effects.
+						int effect = local_rng.rand() % 10; //4 possible effects.
 						switch (effect)
 						{
 							case 0:

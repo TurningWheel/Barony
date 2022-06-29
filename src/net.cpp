@@ -3012,7 +3012,7 @@ void clientHandlePacket()
 		strcpy( shopkeepername_client[clientnum], (char*)(&net_packet->data[9]) );
 		shopkeepername[clientnum] = shopkeepername_client[clientnum];
 		shoptimer[clientnum] = ticks - 1;
-		shopspeech[clientnum] = language[194 + rand() % 3];
+		shopspeech[clientnum] = language[194 + local_rng.rand() % 3];
 
 		players[clientnum]->shopGUI.openShop();
 		return;
@@ -4505,6 +4505,8 @@ void clientHandlePacket()
 	{
 		svFlags = SDLNet_Read32(&net_packet->data[4]);
 		uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+		local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+		net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 	    if (net_packet->data[12] == 0) {
 		    loadingsavegame = 0;
 	    }
@@ -5188,7 +5190,7 @@ void serverHandlePacket()
 					players[client]->entity->increaseSkill(PRO_TRADING);
 				}
 			}
-			//if ( rand() % 2 )
+			//if ( local_rng.rand() % 2 )
 			//{
 			//	if ( item->buyValue(client) <= 1 )
 			//	{
@@ -5205,7 +5207,7 @@ void serverHandlePacket()
 			//}
 			//else if ( buyValue >= 150 )
 			//{
-			//	if ( buyValue >= 300 || rand() % 2 )
+			//	if ( buyValue >= 300 || local_rng.rand() % 2 )
 			//	{
 			//		players[client]->entity->increaseSkill(PRO_TRADING);
 			//	}
@@ -5292,7 +5294,7 @@ void serverHandlePacket()
 		entitystats->GOLD -= goldValue;
 		//if ( players[client] && players[client]->entity )
 		//{
-		//	if ( rand() % 2 )
+		//	if ( local_rng.rand() % 2 )
 		//	{
 		//		if ( goldValue <= 1 )
 		//		{
@@ -5687,14 +5689,14 @@ void serverHandlePacket()
 		if ( players[player] && players[player]->entity )
 		{
 			//Drop gold.
-			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+			playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
 			entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
 			entity->sizex = 4;
 			entity->sizey = 4;
 			entity->x = players[player]->entity->x;
 			entity->y = players[player]->entity->y;
 			entity->z = 6;
-			entity->yaw = (rand() % 360) * PI / 180.0;
+			entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->behavior = &actGoldBag;

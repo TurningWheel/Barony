@@ -242,7 +242,7 @@ enum DamageTableType : int
 };
 static const int numDamageTableTypes = 7;
 
-static std::vector<std::vector<int>> classStatGrowth =
+static std::vector<std::vector<unsigned int>> classStatGrowth =
 {
 	// stat weightings for classes on level up
 	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.

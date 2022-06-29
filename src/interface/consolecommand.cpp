@@ -443,7 +443,7 @@ namespace ConsoleCommands {
 		{
 			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
 			{
-				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
@@ -453,7 +453,7 @@ namespace ConsoleCommands {
 			{
 				if ( strstr(items[c].name_identified, name.c_str()) )
 				{
-					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 					break;
 				}
 			}
@@ -485,7 +485,7 @@ namespace ConsoleCommands {
 		{
 			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
 			{
-				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
@@ -495,7 +495,7 @@ namespace ConsoleCommands {
 			{
 				if ( strstr(items[c].name_identified, name.c_str()) )
 				{
-					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 					break;
 				}
 			}
@@ -527,7 +527,7 @@ namespace ConsoleCommands {
 		{
 			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
 			{
-				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
@@ -537,7 +537,7 @@ namespace ConsoleCommands {
 			{
 				if ( strstr(items[c].name_identified, name.c_str()) )
 				{
-					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 					break;
 				}
 			}
@@ -1048,15 +1048,15 @@ namespace ConsoleCommands {
 				auto& hotbar = players[clientnum]->hotbar.slots();
 				hotbar[c].item = 0;
 			}
-			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			newItem(CROSSBOW, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			newItem(CROSSBOW, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			myStats->helmet = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, &myStats->inventory);
-			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 		}
 		else
 		{
@@ -1106,15 +1106,15 @@ namespace ConsoleCommands {
 				auto& hotbar = players[clientnum]->hotbar.slots();
 				hotbar[c].item = 0;
 			}
-			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			newItem(CROSSBOW, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			newItem(CROSSBOW, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			myStats->helmet = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, &myStats->inventory);
-			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			consoleCommand("/levelskill 9");
 			//consoleCommand("/nextlevel");
 			while ( myStats->PROFICIENCIES[PRO_APPRAISAL] < 50 )
@@ -1148,15 +1148,15 @@ namespace ConsoleCommands {
 				auto& hotbar = players[clientnum]->hotbar.slots();
 				hotbar[c].item = 0;
 			}
-			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			newItem(CROSSBOW, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			newItem(CROSSBOW, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			myStats->helmet = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, &myStats->inventory);
-			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
+			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, local_rng.rand(), true, &myStats->inventory);
 			//consoleCommand("/nextlevel");
 			for ( c = 0; c < NUMPROFICIENCIES; c++ )
 			{
@@ -1501,11 +1501,11 @@ namespace ConsoleCommands {
 		{
 			auto entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
-			double vel = rand() % 10;
+			double vel = local_rng.rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_z = vel * sin(entity->pitch) * .2;
-			entity->skill[0] = 5 + rand() % 10;
+			entity->skill[0] = 5 + local_rng.rand() % 10;
 		}
 		});
 
@@ -1905,20 +1905,20 @@ namespace ConsoleCommands {
 
 			if ( i > 0 )
 			{
-				stats[i]->sex = static_cast<sex_t>(rand() % 2);
-				stats[i]->appearance = rand() % 18;
+				stats[i]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+				stats[i]->appearance = local_rng.rand() % 18;
 				stats[i]->clearStats();
-				client_classes[i] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+				client_classes[i] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 				stats[i]->playerRace = RACE_HUMAN;
 				if ( enabledDLCPack1 || enabledDLCPack2 )
 				{
-					stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+					stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
 					if ( !enabledDLCPack1 )
 					{
 						while ( stats[i]->playerRace == RACE_SKELETON || stats[i]->playerRace == RACE_VAMPIRE
 							|| stats[i]->playerRace == RACE_SUCCUBUS || stats[i]->playerRace == RACE_GOATMAN )
 						{
-							stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+							stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
 						}
 					}
 					else if ( !enabledDLCPack2 )
@@ -1926,7 +1926,7 @@ namespace ConsoleCommands {
 						while ( stats[i]->playerRace == RACE_AUTOMATON || stats[i]->playerRace == RACE_GOBLIN
 							|| stats[i]->playerRace == RACE_INCUBUS || stats[i]->playerRace == RACE_INSECTOID )
 						{
-							stats[i]->playerRace = rand() % NUMPLAYABLERACES;
+							stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
 						}
 					}
 					if ( stats[i]->playerRace == RACE_INCUBUS )
@@ -1940,13 +1940,13 @@ namespace ConsoleCommands {
 
 					if ( stats[i]->playerRace == RACE_HUMAN )
 					{
-						client_classes[i] = rand() % (NUMCLASSES);
+						client_classes[i] = local_rng.rand() % (NUMCLASSES);
 						if ( !enabledDLCPack1 )
 						{
 							while ( client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
 								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER )
 							{
-								client_classes[i] = rand() % (NUMCLASSES);
+								client_classes[i] = local_rng.rand() % (NUMCLASSES);
 							}
 						}
 						else if ( !enabledDLCPack2 )
@@ -1954,14 +1954,14 @@ namespace ConsoleCommands {
 							while ( client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
 								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST )
 							{
-								client_classes[i] = rand() % (NUMCLASSES);
+								client_classes[i] = local_rng.rand() % (NUMCLASSES);
 							}
 						}
-						stats[i]->appearance = rand() % 18;
+						stats[i]->appearance = local_rng.rand() % 18;
 					}
 					else
 					{
-						client_classes[i] = rand() % (CLASS_MONK + 2);
+						client_classes[i] = local_rng.rand() % (CLASS_MONK + 2);
 						if ( client_classes[i] > CLASS_MONK )
 						{
 							client_classes[i] = CLASS_MONK + stats[i]->playerRace; // monster specific classes.
@@ -1972,9 +1972,9 @@ namespace ConsoleCommands {
 				else
 				{
 					stats[i]->playerRace = RACE_HUMAN;
-					stats[i]->appearance = rand() % 18;
+					stats[i]->appearance = local_rng.rand() % 18;
 				}
-				strcpy(stats[i]->name, randomPlayerNamesFemale[rand() % randomPlayerNamesFemale.size()].c_str());
+				strcpy(stats[i]->name, randomPlayerNamesFemale[local_rng.rand() % randomPlayerNamesFemale.size()].c_str());
 				bool oldIntro = intro;
 				intro = true; // so initClass doesn't add items to hotbar.
 				initClass(i);
@@ -2179,14 +2179,14 @@ namespace ConsoleCommands {
 			}
 			else
 			{
-				playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+				playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
 				auto entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x = players[player]->entity->x;
 				entity->y = players[player]->entity->y;
 				entity->z = 6;
-				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
@@ -2840,14 +2840,14 @@ namespace ConsoleCommands {
 			for ( int i = 0; i < 17; ++i )
 			{
 				auto generatedPotion = potionStandardAppearanceMap.at(i);
-				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + local_rng.rand() % 2),
 					0, count, generatedPotion.second, true, nullptr);
 				itemPickup(clientnum, potion);
 			}
 			return;
 		}
 
-		std::vector<int> potionChances =
+		std::vector<unsigned int> potionChances =
 		{
 			1,	//POTION_WATER,
 			1,	//POTION_BOOZE,
@@ -2867,11 +2867,11 @@ namespace ConsoleCommands {
 			1,	//POTION_POLYMORPH
 		};
 
-		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
 		for ( int i = 0; i < 10; ++i )
 		{
-			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
-			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+			auto generatedPotion = potionStandardAppearanceMap.at(
+	            local_rng.discrete(potionChances.data(), potionChances.size()));
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + local_rng.rand() % 2),
 				0, 1, generatedPotion.second, true, nullptr);
 			itemPickup(clientnum, potion);
 			//free(potion);
@@ -2987,7 +2987,7 @@ namespace ConsoleCommands {
 		}
 		for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 		{
-			dropItem(newItem(static_cast<ItemType>(i), EXCELLENT, 0, 25 + rand() % 26, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(static_cast<ItemType>(i), EXCELLENT, 0, 25 + local_rng.rand() % 26, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 		}
 		});
 
@@ -2997,9 +2997,9 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 		});
 
 	static ConsoleCommand ccmd_gimmerobots("/gimmerobots", "give the player some robots (cheat)", []CCMD{
@@ -3008,10 +3008,10 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 		});
 
 	static ConsoleCommand ccmd_toggletinkeringlimits("/toggletinkeringlimits", "", []CCMD{
@@ -3059,7 +3059,7 @@ namespace ConsoleCommands {
 		for ( int i = 0; i < NUM_SPELLS; ++i )
 		{
 			int spellbook = getSpellbookFromSpellID(i);
-			dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 		}
 		});
 
@@ -3149,10 +3149,10 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
-		dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 		});
 
 	static ConsoleCommand ccmd_showhunger("/showhunger", "show the player's hunger value (cheat)", []CCMD{
@@ -3625,7 +3625,7 @@ namespace ConsoleCommands {
 		for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(i);
-			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + local_rng.rand() % 2),
 				0, 1, generatedPotion.second, true, nullptr);
 			itemPickup(clientnum, potion);
 			//free(potion);
@@ -3647,8 +3647,8 @@ namespace ConsoleCommands {
 		for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(i);
-			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
-				1 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + local_rng.rand() % 2),
+				1 + local_rng.rand() % 2, 1, generatedPotion.second, true, nullptr);
 			itemPickup(clientnum, potion);
 			//free(potion);
 		}
@@ -3669,8 +3669,8 @@ namespace ConsoleCommands {
 		for ( int i = 0; i < potionStandardAppearanceMap.size(); ++i )
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(i);
-			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
-				-2 + rand() % 2, 1, generatedPotion.second, true, nullptr);
+			Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + local_rng.rand() % 2),
+				-2 + local_rng.rand() % 2, 1, generatedPotion.second, true, nullptr);
 			itemPickup(clientnum, potion);
 			//free(potion);
 		}
@@ -3715,7 +3715,7 @@ namespace ConsoleCommands {
 
 		if ( players[clientnum] && players[clientnum]->entity )
 		{
-			players[clientnum]->entity->getStats()->EXP += 1 + rand() % 50;
+			players[clientnum]->entity->getStats()->EXP += 1 + local_rng.rand() % 50;
 		}
 		});
 
@@ -3784,7 +3784,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		client_classes[clientnum] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
+		client_classes[clientnum] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 		});
 
 	static ConsoleCommand ccmd_unpoly("/unpoly", "unpolymorph the player (cheat)", []CCMD{
@@ -3882,7 +3882,7 @@ namespace ConsoleCommands {
 		entity->x = players[player]->entity->x;
 		entity->y = players[player]->entity->y;
 		entity->z = -64;
-		entity->yaw = (PI / 2) * (rand() % 4);
+		entity->yaw = (PI / 2) * (local_rng.rand() % 4);
 		entity->sizex = 7;
 		entity->sizey = 7;
 		entity->behavior = &actBoulder;

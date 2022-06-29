@@ -80,7 +80,10 @@ int initApp(char const * const title, int fullscreen)
 	File* fp;
 	Uint32 x, c;
 
-	srand(time(nullptr));
+	Uint32 seed;
+	local_rng.seedTime();
+    local_rng.getSeed(&seed, sizeof(seed));
+    net_rng.seedBytes(&seed, sizeof(seed));
 
 	// open log file
 	if ( !logfile )
@@ -2055,6 +2058,8 @@ int deinitApp()
 #endif
 	// close engine
 	printlog("closing engine...\n");
+
+	finishStackTraceUnique();
 
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);

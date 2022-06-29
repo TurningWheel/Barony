@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initGhoul(Entity* my, Stat* myStats)
 {
@@ -65,7 +66,7 @@ void initGhoul(Entity* my, Stat* myStats)
 						myStats->LVL = 15;
 					}
 					myStats->PER = 10;
-					if ( rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 						myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
@@ -81,7 +82,7 @@ void initGhoul(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				if ( !strncmp(map.name, "Bram's Castle", 13) )
 				{
@@ -106,7 +107,7 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->LVL = 15;
 				myStats->DEX = 2;
 				myStats->STR = 13;
-				newItem(GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+				newItem(GEM_GARNET, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 1;
 			}
 
@@ -134,19 +135,19 @@ void initGhoul(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 20 == 0 )
+					if ( local_rng.rand() % 20 == 0 )
 					{
-						newItem(POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory);
+						newItem(POTION_WATER, SERVICABLE, 2, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( rand() % 10 == 0 )
+					if ( local_rng.rand() % 10 == 0 )
 					{
-						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( rand() % 4 == 0 )
+					if ( local_rng.rand() % 4 == 0 )
 					{
-						newItem(FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory);
+						newItem(FOOD_MEAT, DECREPIT, -1, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:

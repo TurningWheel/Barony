@@ -233,7 +233,7 @@ void updateShopWindow(const int player)
 	// chitchat
 	if ( (ticks - shoptimer[player]) % 600 == 0 && !mysteriousShopkeeper )
 	{
-		shopspeech[player] = language[216 + rand() % NUMCHITCHAT];
+		shopspeech[player] = language[216 + local_rng.rand() % NUMCHITCHAT];
 		shoptimer[player]--;
 	}
 
@@ -258,7 +258,7 @@ void updateShopWindow(const int player)
 		{
 			if ( mysteriousShopkeeper )
 			{
-				shopspeech[player] = language[3893 + rand() % 3];
+				shopspeech[player] = language[3893 + local_rng.rand() % 3];
 				if ( players[player]->shopGUI.chatStrFull != shopspeech[player] )
 				{
 					players[player]->shopGUI.chatTicks = ticks;

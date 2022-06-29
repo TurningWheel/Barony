@@ -23,6 +23,7 @@
 #include "../net.hpp"
 #include "../scores.hpp"
 #include "../ui/GameUI.hpp"
+#include "../prng.hpp"
 
 void statsHoverText(const int player, Stat* tmpStat);
 
@@ -360,13 +361,13 @@ void updateCharacterSheet(const int player)
 				entity->x = players[player]->entity->x;
 				entity->y = players[player]->entity->y;
 				entity->z = 6;
-				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
 				entity->goldAmount = amount; // amount
 			}
-			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+			playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
 		}
 		messagePlayer(player, MESSAGE_INVENTORY, language[2594], amount);
 	}

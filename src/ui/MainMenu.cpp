@@ -322,6 +322,8 @@ namespace MainMenu {
 		playSound(153, 48);
 	}
 
+	static BaronyRNG RNG;
+
 /******************************************************************************/
 
 	static ConsoleCommand ccmd_testFontDel("/testfont_del", "delete test font window",
@@ -487,7 +489,7 @@ namespace MainMenu {
 
     static inline void fireUpdate(Uint32* p) {
         int w = Frame::virtualScreenX / firePixelSize;
-	    const int diff = std::max(0, rand() % 5 - 3);
+	    const int diff = std::max(0, RNG.getI32() % 5 - 3);
 	    const int below = (p[w] & 0xff000000) >> 24;
 	    const int intensity = std::max(below - diff, 0);
 	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
@@ -6684,6 +6686,7 @@ bind_failed:
 				clientnum = (int)SDLNet_Read32(&net_packet->data[4]);
 				if (clientnum >= MAXPLAYERS || clientnum <= 0) {
                     int error = clientnum;
+                    clientnum = 0;
 					printlog("connection attempt denied by server, error code: %d.\n", error);
 					multiplayer = SINGLE;
 					if (!directConnect) {
@@ -6901,6 +6904,8 @@ bind_failed:
                     createDummyMainMenu();
 				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
 				    uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+				    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+				    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 				    beginFade(FadeDestination::GameStart);
 				    numplayers = MAXPLAYERS;
 				    if (net_packet->data[12] == 0) {
@@ -8234,7 +8239,7 @@ bind_failed:
 						stats[index]->sex = MALE;
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
-						stats[index]->appearance = rand() % NUMAPPEARANCES;
+						stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
 			            auto appearances = frame->findFrame("appearances"); assert(appearances);
 			            appearances->setSelection(stats[index]->appearance);
 			            appearances->scrollToSelection();
@@ -8849,7 +8854,7 @@ bind_failed:
 					client_classes[index] = c;
 				} else {
 					auto reduced_class_list = reducedClassList(index);
-					auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
+					auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
 					for (int c = 0; c < num_classes; ++c) {
 						if (strcmp(random_class, classes_in_order[c]) == 0) {
 							client_classes[index] = c;
@@ -9009,7 +9014,7 @@ bind_failed:
 		static auto randomize_name_fn = [](Button& button, int index) {
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto name = names[rand() % names.size()].c_str();
+			auto name = names[RNG.rand() % names.size()].c_str();
 			name_field_fn(name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
@@ -9128,16 +9133,16 @@ bind_failed:
 			auto card = static_cast<Frame*>(button.getParent());
 
 			// select a random sex
-			stats[index]->sex = (sex_t)(rand() % 2);
+			stats[index]->sex = (sex_t)(RNG.rand() % 2);
 
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
-			    stats[index]->playerRace = rand() % NUMPLAYABLERACES;
+			    stats[index]->playerRace = RNG.rand() % NUMPLAYABLERACES;
 			} else if (enabledDLCPack1) {
-			    stats[index]->playerRace = rand() % 5;
+			    stats[index]->playerRace = RNG.rand() % 5;
 			} else if (enabledDLCPack2) {
-			    stats[index]->playerRace = rand() % 5;
+			    stats[index]->playerRace = RNG.rand() % 5;
 			    if (stats[index]->playerRace > 0) {
 			        stats[index]->playerRace += 4;
 			    }
@@ -9165,9 +9170,9 @@ bind_failed:
 
 			// choose a random appearance
 			if (stats[index]->playerRace == RACE_HUMAN) {
-				stats[index]->appearance = rand() % NUMAPPEARANCES;
+				stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
 			} else {
-				stats[index]->appearance = 0; rand();
+				stats[index]->appearance = 0; RNG.rand();
 			}
 
 			// update sex buttons after race selection:
@@ -9190,7 +9195,7 @@ bind_failed:
 
 			// select a random class
 			auto reduced_class_list = reducedClassList(index);
-			auto random_class = reduced_class_list[(rand() % (reduced_class_list.size() - 1)) + 1];
+			auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
 			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
 					client_classes[index] = c - 1;
@@ -9949,10 +9954,9 @@ bind_failed:
             beginFade(MainMenu::FadeDestination::GameStart);
 
 	        // set unique game key
-	        uniqueGameKey = prng_get_uint();
-	        if (!uniqueGameKey) {
-		        uniqueGameKey++;
-	        }
+	        local_rng.seedTime();
+	        local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
 	        // send start signal to each player
 	        if (multiplayer == SERVER) {
@@ -10063,9 +10067,9 @@ bind_failed:
 		        if (multiplayer != CLIENT || c == clientnum) {
 		            playerSlotsLocked[c] = false;
 
-			        stats[c]->playerRace = 0;
-			        stats[c]->sex = static_cast<sex_t>(rand() % 2);
-			        stats[c]->appearance = rand() % NUMAPPEARANCES;
+			        stats[c]->playerRace = RACE_HUMAN;
+			        stats[c]->sex = static_cast<sex_t>(RNG.rand() % 2);
+			        stats[c]->appearance = RNG.rand() % NUMAPPEARANCES;
 			        stats[c]->clearStats();
 			        client_classes[c] = 0;
 			        initClass(c);
@@ -10073,7 +10077,7 @@ bind_failed:
 			        // random name
 			        auto& names = stats[c]->sex == sex_t::MALE ?
 				        randomPlayerNamesMale : randomPlayerNamesFemale;
-			        auto name = names[rand() % names.size()].c_str();
+			        auto name = names[RNG.rand() % names.size()].c_str();
 			        size_t len = strlen(name);
 			        len = std::min(sizeof(Stat::name) - 1, len);
 			        memcpy(stats[c]->name, name, len);
@@ -12448,8 +12452,8 @@ bind_failed:
                         createLobby(LobbyType::LobbyLAN);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
-                    multiplayer = CLIENT;
                     loadGame(info.player_num);
+                    multiplayer = SINGLE;
                     createDummyMainMenu();
                     createLobbyBrowser(button);
                 }
@@ -13629,7 +13633,7 @@ bind_failed:
 			quit_motd = 0;
 		}
 		if (quit_motd < 0) {
-			quit_motd = rand() % num_quit_messages;
+			quit_motd = RNG.rand() % num_quit_messages;
 		}
 
 		binaryPrompt(
@@ -13676,7 +13680,7 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
+	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
 				createTitleScreen();
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
@@ -13684,7 +13688,7 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[rand() % (NUMINTROMUSIC - 1)], true, false, false);
+	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
 				createMainMenu(false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
@@ -14538,7 +14542,7 @@ bind_failed:
         }
 
         const char* eulogy;
-        switch (rand() % 10) {
+        switch (RNG.rand() % 10) {
         default:
         case 0: eulogy = "We hardly knew ye."; break;
         case 1: eulogy = "Rest In Peace."; break;
@@ -14696,6 +14700,21 @@ bind_failed:
 				} else {
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
+				}
+				if (multiplayer == SERVER) {
+                    for (int c = 1; c < MAXPLAYERS; c++) {
+	                    if (client_disconnected[c]) {
+		                    continue;
+	                    }
+	                    memcpy((char*)net_packet->data, "RSTR", 4);
+	                    SDLNet_Write32(svFlags, &net_packet->data[4]);
+	                    SDLNet_Write32(uniqueGameKey, &net_packet->data[8]);
+	                    net_packet->data[12] = 0;
+	                    net_packet->address.host = net_clients[c - 1].host;
+	                    net_packet->address.port = net_clients[c - 1].port;
+	                    net_packet->len = 13;
+	                    sendPacketSafe(net_sock, -1, net_packet, c - 1);
+                    }
 				}
                 });
             restart->select();
@@ -14880,6 +14899,7 @@ bind_failed:
                     SDL_Rect{x, y, w, h},
                     makeColor(255, 255, 255, 255),
                     path, name.c_str());
+
                 auto field = prompt->addField(name.c_str(), 16);
                 field->setSize(SDL_Rect{x, y, w, h});
                 field->setJustify(Field::justify_t::CENTER);

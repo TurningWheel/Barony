@@ -21,6 +21,7 @@ See LICENSE for details.
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "paths.hpp"
+#include "prng.hpp"
 
 static const int LICH_BODY = 0;
 static const int LICH_RIGHTARM = 2;
@@ -101,7 +102,7 @@ void initLichIce(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -5, 1, rand(), false, NULL);
+				myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -5, 1, local_rng.rand(), false, NULL);
 			}
 		}
 	}
@@ -725,7 +726,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 								real_t dir = 0.f;
 								for ( int i = 0; i < 8; ++i )
 								{
-									my->castFallingMagicMissile(SPELL_COLD, 16 + rand() % 8, dir + i * PI / 4, 0);
+									my->castFallingMagicMissile(SPELL_COLD, 16 + local_rng.rand() % 8, dir + i * PI / 4, 0);
 								}
 							}
 						}
@@ -841,7 +842,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 									{
 										Entity* spell = castSpell(my->getUID(), getSpellFromID(spellID), true, false);
 										// do some minor variations in spell angle
-										spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
+										spell->yaw += i * PI / 4 + ((PI * (-4 + local_rng.rand() % 9)) / 64);
 										spell->vel_x = 4 * cos(spell->yaw);
 										spell->vel_y = 4 * sin(spell->yaw);
 										spell->skill[5] = 50; // travel time
@@ -850,7 +851,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 								else
 								{
 									int spellID = SPELL_COLD;
-									if ( rand() % 5 == 0 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && rand() % 2 == 0) )
+									if ( local_rng.rand() % 5 == 0 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && local_rng.rand() % 2 == 0) )
 									{
 										spellID = SPELL_DRAIN_SOUL;
 									}
@@ -858,7 +859,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 									{
 										Entity* spell = castSpell(my->getUID(), getSpellFromID(spellID), true, false);
 										// do some minor variations in spell angle
-										spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
+										spell->yaw += i * PI / 4 + ((PI * (-4 + local_rng.rand() % 9)) / 64);
 										spell->vel_x = 4 * cos(spell->yaw);
 										spell->vel_y = 4 * sin(spell->yaw);
 										spell->skill[5] = 50; // travel time
@@ -905,7 +906,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 									if ( i != 0 )
 									{
 										// do some minor variations in spell angle
-										spell->yaw += ((PI * (-4 + rand() % 9)) / 40);
+										spell->yaw += ((PI * (-4 + local_rng.rand() % 9)) / 40);
 									}
 									Entity* target = uidToEntity(my->monsterTarget);
 									if ( target )
@@ -1057,7 +1058,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						spellarm->skill[1] = 1;
 						if ( multiplayer != CLIENT )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								castSpell(my->getUID(), getSpellFromID(SPELL_SLOW), true, false);
 							}
@@ -1234,14 +1235,14 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 	{
 		case LICH_ATK_VERTICAL_SINGLE:
 			if ( monsterSpecialState == 0 && monsterState != MONSTER_STATE_LICH_CASTSPELLS
-				&& monsterSpecialTimer == 0 && rand() % 4 > 0 )
+				&& monsterSpecialTimer == 0 && local_rng.rand() % 4 > 0 )
 			{
 				monsterLichMeleeSwingCount = 0;
 				monsterSpecialState = LICH_ICE_ATTACK_COMBO;
 				//createParticleDot(this);
 			}
 			++monsterLichMeleeSwingCount;
-			switch ( rand() % 3 )
+			switch ( local_rng.rand() % 3 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
@@ -1272,14 +1273,14 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			break;
 		case LICH_ATK_HORIZONTAL_SINGLE:
 			if ( monsterSpecialState == 0
-				&& monsterSpecialTimer == 0 && rand() % 4 > 0 )
+				&& monsterSpecialTimer == 0 && local_rng.rand() % 4 > 0 )
 			{
 				monsterLichMeleeSwingCount = 0;
 				monsterSpecialState = LICH_ICE_ATTACK_COMBO;
 				//createParticleDot(this);
 			}
 			++monsterLichMeleeSwingCount;
-			switch ( rand() % 3 )
+			switch ( local_rng.rand() % 3 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
@@ -1305,7 +1306,7 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			break;
 		case LICH_ATK_RISING_RAIN:
 			monsterLichMeleeSwingCount = 0;
-			switch ( rand() % 4 )
+			switch ( local_rng.rand() % 4 )
 			{
 				case 0:
 				case 1:
@@ -1321,7 +1322,7 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			break;
 		case LICH_ATK_BASICSPELL_SINGLE:
 			++monsterLichMagicCastCount;
-			if ( monsterLichMagicCastCount > 2 || rand() % 2 == 0 )
+			if ( monsterLichMagicCastCount > 2 || local_rng.rand() % 2 == 0 )
 			{
 				monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
 				monsterLichMagicCastCount = 0;
@@ -1329,7 +1330,7 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			break;
 		case LICH_ATK_CHARGE_AOE:
 			//monsterLichMeleeSwingCount = 0;
-			switch ( rand() % 2 )
+			switch ( local_rng.rand() % 2 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
@@ -1342,7 +1343,7 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			}
 			break;
 		case LICH_ATK_FALLING_DIAGONAL:
-			switch ( rand() % 2 )
+			switch ( local_rng.rand() % 2 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
@@ -1355,7 +1356,7 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			}
 			break;
 		case LICH_ATK_SUMMON:
-			switch ( rand() % 2 )
+			switch ( local_rng.rand() % 2 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
@@ -1452,8 +1453,8 @@ void Entity::lichIceSummonMonster(Monster creature)
 	if ( target )
 	{
 		int tries = 25; // max iteration in while loop, fail safe.
-		long spawn_x = (target->x / 16) - 11 + rand() % 23;
-		long spawn_y = (target->y / 16) - 11 + rand() % 23;
+		long spawn_x = (target->x / 16) - 11 + local_rng.rand() % 23;
+		long spawn_y = (target->y / 16) - 11 + local_rng.rand() % 23;
 		int index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
 		while ( tries > 0 &&
 				(map.tiles[OBSTACLELAYER + index] == 1
@@ -1463,8 +1464,8 @@ void Entity::lichIceSummonMonster(Monster creature)
 			)
 		{
 			// find a spot that isn't wall, no floor or lava/water tiles.
-			spawn_x = (target->x / 16) - 11 + rand() % 23;
-			spawn_y = (target->y / 16) - 11 + rand() % 23;
+			spawn_x = (target->x / 16) - 11 + local_rng.rand() % 23;
+			spawn_y = (target->y / 16) - 11 + local_rng.rand() % 23;
 			index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
 			--tries;
 		}
