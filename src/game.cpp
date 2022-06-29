@@ -684,7 +684,7 @@ static File* demo_file = nullptr;
 
 static void demo_stop() {
     if (demo_mode == DemoMode::STOPPED) {
-        messagePlayer(clientnum, MESSAGE_MISC, "Demo is already stopped");
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo is not running");
         return;
     }
     switch (demo_mode) {
@@ -717,6 +717,11 @@ static void demo_record(const char* filename) {
         return;
     }
 
+    if (multiplayer != SINGLE || splitscreen) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demos not permitted in multiplayer");
+        return;
+    }
+
     // create demo file for recording
     char path[PATH_MAX];
     completePath(path, filename, outputdir);
@@ -728,11 +733,28 @@ static void demo_record(const char* filename) {
 
     TimerExperiments::bUseTimerInterpolation = false; // this causes mass desyncs
 
+    // seed RNG
     local_rng.seedTime();
     local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
     net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
     demo_file->write(&uniqueGameKey, sizeof(uniqueGameKey), 1);
 
+    // write player stats
+    demo_file->write(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
+    demo_file->write(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
+    demo_file->write(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->write(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
+
+    // write player name
+    Uint32 name_len = (Uint32)strlen(stats[clientnum]->name);
+    demo_file->write(&name_len, sizeof(name_len), 1);
+    demo_file->write(stats[clientnum]->name, sizeof(char), name_len);
+
+    // reset player
+    stats[clientnum]->clearStats();
+	initClass(clientnum);
+
+    // start game
     doNewGame(false);
 
     messagePlayer(clientnum, MESSAGE_MISC, "Recording demo to '%s'", path);
@@ -742,6 +764,11 @@ static void demo_record(const char* filename) {
 static void demo_play(const char* filename) {
     if (demo_mode != DemoMode::STOPPED) {
         messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
+        return;
+    }
+
+    if (multiplayer != SINGLE || splitscreen) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demos not permitted in multiplayer");
         return;
     }
 
@@ -756,10 +783,28 @@ static void demo_play(const char* filename) {
 
     TimerExperiments::bUseTimerInterpolation = false; // this causes mass desyncs
 
+    // seed RNG
     demo_file->read(&uniqueGameKey, sizeof(uniqueGameKey), 1);
     local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
     net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
+    // read player stats
+    demo_file->read(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
+    demo_file->read(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
+    demo_file->read(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->read(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
+
+    // read player name
+    Uint32 name_len;
+    demo_file->read(&name_len, sizeof(name_len), 1);
+    demo_file->read(stats[clientnum]->name, sizeof(char), name_len);
+    stats[clientnum]->name[name_len] = '\0';
+
+    // reset player
+    stats[clientnum]->clearStats();
+	initClass(clientnum);
+
+    // start game
     doNewGame(false);
 
     messagePlayer(clientnum, MESSAGE_MISC, "Playing demo in '%s'", path);
@@ -1831,7 +1876,6 @@ void gameLogic(void)
 					}
 
 					// signal clients about level change
-					local_rng.setMarker();
 					mapseed = local_rng.rand();
 					lastEntityUIDs = entity_uids;
 					if ( forceMapSeed > 0 )
@@ -4109,13 +4153,16 @@ void handleEvents(void)
 #endif
 					}
 
-					if (initialized && !loading)
-					{
-						gameLogic();
-					}
+				    if (!loading)
+				    {
+					    if (initialized)
+					    {
+						    gameLogic();
+						}
 
-                    // increment game tick counter
-                    ++ticks;
+                        // increment game tick counter
+                        ++ticks;
+					}
 
 					mousexrel = 0;
 					mouseyrel = 0;

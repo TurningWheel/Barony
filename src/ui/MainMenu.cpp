@@ -10067,7 +10067,7 @@ bind_failed:
 		        if (multiplayer != CLIENT || c == clientnum) {
 		            playerSlotsLocked[c] = false;
 
-			        stats[c]->playerRace = 0;
+			        stats[c]->playerRace = RACE_HUMAN;
 			        stats[c]->sex = static_cast<sex_t>(RNG.rand() % 2);
 			        stats[c]->appearance = RNG.rand() % NUMAPPEARANCES;
 			        stats[c]->clearStats();
