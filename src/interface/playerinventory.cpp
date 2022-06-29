@@ -8544,9 +8544,39 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems() )
 						{
-							if ( dropItem(item, player) ) // Quick item drop
+							if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
 							{
-								item = nullptr;
+								// drop all.
+								int qty = item->count;
+								bool droppedAll = false;
+								bool unableToDropAll = false;
+								while ( item && item->count > 1 )
+								{
+									droppedAll = dropItem(item, player);
+									if ( droppedAll )
+									{
+										item = nullptr;
+									}
+									else if ( item->count == qty ) // couldn't drop
+									{
+										unableToDropAll = true;
+										break;
+									}
+								}
+								if ( !droppedAll && !unableToDropAll )
+								{
+									if ( dropItem(item, player) ) // Quick item drop
+									{
+										item = nullptr;
+									}
+								}
+							}
+							else 
+							{
+								if ( dropItem(item, player) ) // Quick item drop
+								{
+									item = nullptr;
+								}
 							}
 						}
 					}
