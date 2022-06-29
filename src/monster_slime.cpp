@@ -18,6 +18,7 @@
 #include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "prng.hpp"
 
 void initSlime(Entity* my, Stat* myStats)
 {

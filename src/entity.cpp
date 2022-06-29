@@ -1459,7 +1459,7 @@ void Entity::effectTimes()
 									myStats->EFFECTS_TIMERS[c] = vampiricAura_hijacked->channel_duration;
 
 									// monsters have a chance to un-sustain the spell each MP consume.
-									if ( caster->behavior == &actMonster && rand() % 20 == 0 )
+									if ( caster->behavior == &actMonster && local_rng.rand() % 20 == 0 )
 									{
 										sustained = false;
 										list_RemoveNode(vampiricAura_hijacked->magic_effects_node);
@@ -1537,7 +1537,7 @@ void Entity::effectTimes()
 							else
 							{
 								playSoundPlayer(player, 32, 128);
-								messagePlayer(player, MESSAGE_STATUS, language[3247 + rand() % 3]);
+								messagePlayer(player, MESSAGE_STATUS, language[3247 + local_rng.rand() % 3]);
 								messagePlayer(player, MESSAGE_STATUS, language[3222]);
 								this->setEffect(EFF_WITHDRAWAL, true, -2, true); // set effect as "active"
 							}
@@ -2894,15 +2894,15 @@ void Entity::handleEffects(Stat* myStats)
 		else
 		{
 			// monsters use this.
-			increasestat[0] = rand() % 6;
-			int r = rand() % 6;
+			increasestat[0] = local_rng.rand() % 6;
+			int r = local_rng.rand() % 6;
 			while ( r == increasestat[0] ) {
-				r = rand() % 6;
+				r = local_rng.rand() % 6;
 			}
 			increasestat[1] = r;
-			r = rand() % 6;
+			r = local_rng.rand() % 6;
 			while ( r == increasestat[0] || r == increasestat[1] ) {
-				r = rand() % 6;
+				r = local_rng.rand() % 6;
 			}
 			increasestat[2] = r;
 
@@ -2973,7 +2973,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								myStats->STR++;
 								rolledBonusStat = true;
@@ -2987,7 +2987,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								myStats->DEX++;
 								rolledBonusStat = true;
@@ -3001,7 +3001,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								myStats->CON++;
 								rolledBonusStat = true;
@@ -3015,7 +3015,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								myStats->INT++;
 								rolledBonusStat = true;
@@ -3029,7 +3029,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								myStats->PER++;
 								rolledBonusStat = true;
@@ -3043,7 +3043,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								myStats->CHR++;
 								rolledBonusStat = true;
@@ -3395,7 +3395,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] 
 		&& myStats->type != SKELETON && effectShapeshift == NOTHING && myStats->type != AUTOMATON )
 	{
-		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
+		if ( myStats->HUNGER > 1500 && local_rng.rand() % 1000 == 0 )
 		{
 			// oversatiation
 			if ( !(svFlags & SV_FLAG_HUNGER) || MFLAG_DISABLEHUNGER )
@@ -3405,14 +3405,14 @@ void Entity::handleEffects(Stat* myStats)
 			else
 			{
 				messagePlayer(player, MESSAGE_STATUS, language[634]);
-				this->char_gonnavomit = 140 + rand() % 60;
+				this->char_gonnavomit = 140 + local_rng.rand() % 60;
 			}
 		}
-		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
+		else if ( ticks % 60 == 0 && local_rng.rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
 		{
 			// drunkenness
 			messagePlayer(player, MESSAGE_STATUS, language[634]);
-			this->char_gonnavomit = 140 + rand() % 60;
+			this->char_gonnavomit = 140 + local_rng.rand() % 60;
 		}
 	}
 	if ( this->char_gonnavomit > 0 )
@@ -3422,7 +3422,7 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			messagePlayer(player, MESSAGE_STATUS, language[635]);
 			myStats->EFFECTS[EFF_VOMITING] = true;
-			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + rand() % 20;
+			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
 			serverUpdateEffects(player);
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -3458,10 +3458,10 @@ void Entity::handleEffects(Stat* myStats)
 			entity->flags[SPRITE] = true;
 			entity->flags[GENIUS] = true;
 			entity->flags[INVISIBLE] = false;
-			entity->yaw = this->yaw - 0.1 + (rand() % 20) * 0.01;
-			entity->pitch = (rand() % 360) * PI / 180.0;
-			entity->roll = (rand() % 360) * PI / 180.0;
-			double vel = (rand() % 15) / 10.f;
+			entity->yaw = this->yaw - 0.1 + (local_rng.rand() % 20) * 0.01;
+			entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+			entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+			double vel = (local_rng.rand() % 15) / 10.f;
 			entity->vel_x = vel * cos(entity->yaw);
 			entity->vel_y = vel * sin(entity->yaw);
 			entity->vel_z = -.5;
@@ -3516,7 +3516,7 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( myStats->ring->type == RING_TELEPORTATION )
 		{
-			if ( rand() % 1000 == 0 )   // .1% chance every frame
+			if ( local_rng.rand() % 1000 == 0 )   // .1% chance every frame
 			{
 				teleportRandom();
 			}
@@ -3552,7 +3552,7 @@ void Entity::handleEffects(Stat* myStats)
 
 		if ( this->char_energize >= manaRegenInterval && myStats->HUNGER <= 300 )
 		{
-			/*if ( rand() % 5 == 0 )
+			/*if ( local_rng.rand() % 5 == 0 )
 			{
 				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
 			}*/
@@ -3575,7 +3575,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( this->char_energize >= manaRegenInterval )
 		{
-			/*if ( rand() % 5 == 0 )
+			/*if ( local_rng.rand() % 5 == 0 )
 			{
 				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
 			}*/
@@ -3831,7 +3831,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( poisonhurt > 3 )
 			{
-				poisonhurt -= rand() % (std::max(1, poisonhurt / 4));
+				poisonhurt -= local_rng.rand() % (std::max(1, poisonhurt / 4));
 			}
 			this->modHP(-poisonhurt);
 			for ( int tmp = 0; tmp < 3; ++tmp )
@@ -3885,7 +3885,7 @@ void Entity::handleEffects(Stat* myStats)
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			if ( rand() % 5 == 0 && getCON() >= -3 )
+			if ( local_rng.rand() % 5 == 0 && getCON() >= -3 )
 			{
 				messagePlayer(player, MESSAGE_STATUS, language[641]);
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
@@ -3922,7 +3922,7 @@ void Entity::handleEffects(Stat* myStats)
 				int bleedhurt = 1 + myStats->MAXHP / 30;
 				if ( bleedhurt > 1 )
 				{
-					bleedhurt -= rand() % (std::max(1, bleedhurt / 2));
+					bleedhurt -= local_rng.rand() % (std::max(1, bleedhurt / 2));
 				}
 				if ( getCON() > 0 )
 				{
@@ -3976,11 +3976,11 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						entity->x = this->x;
 						entity->y = this->y;
-						entity->z = 8.0 + (rand() % 20) / 100.0;
+						entity->z = 8.0 + (local_rng.rand() % 20) / 100.0;
 						entity->parent = this->uid;
 						entity->sizex = 2;
 						entity->sizey = 2;
-						entity->yaw = (rand() % 360) * PI / 180.0;
+						entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 						entity->flags[UPDATENEEDED] = true;
 						entity->flags[PASSABLE] = true;
 					}
@@ -4030,12 +4030,12 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				entity->x = this->x;
 				entity->y = this->y;
-				entity->z = 8.0 + (rand() % 20) / 100.0;
+				entity->z = 8.0 + (local_rng.rand() % 20) / 100.0;
 				entity->parent = this->uid;
 				entity->sizex = 2;
 				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				real_t scale = 0.75 + 0.25 * (rand() % 100) / 100.f;
+				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+				real_t scale = 0.75 + 0.25 * (local_rng.rand() % 100) / 100.f;
 				entity->scalex = scale;
 				entity->scaley = scale;
 				entity->flags[UPDATENEEDED] = true;
@@ -4054,39 +4054,39 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
 	{
-		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
+		spawnAmbientParticles(80, 579, 10 + local_rng.rand() % 40, 1.0, false);
 	}
 
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
-		spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
+		spawnAmbientParticles(40, 600, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_FEAR] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 864, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 864, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
 	if ( myStats->EFFECTS[EFF_TROLLS_BLOOD] )
 	{
-		spawnAmbientParticles(80, 169, 20 + rand() % 10, 0.5, true);
+		spawnAmbientParticles(80, 169, 20 + local_rng.rand() % 10, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_PACIFY] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 685, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 685, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 	else if ( myStats->monsterIsCharmed == 1 )
 	{
 		if ( ticks % 80 == 0 || ticks % 100 == 0 )
 		{
-			spawnAmbientParticles(1, 685, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 685, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
@@ -4094,7 +4094,7 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 871, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 871, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
@@ -4102,13 +4102,13 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 593, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 593, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && myStats->type == SHADOW )
 	{
-		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
+		spawnAmbientParticles(20, 175, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
 	// Process Burning Status Effect
@@ -4131,7 +4131,7 @@ void Entity::handleEffects(Stat* myStats)
 				// Buddha should not die to fire
 				if ( buddhamode )
 				{
-					Sint32 fireDamage = (-2 - rand() % 3); // Deal between -2 to -5 damage
+					Sint32 fireDamage = (-2 - local_rng.rand() % 3); // Deal between -2 to -5 damage
 
 					// Fire damage is negative, so it needs to be added
 					if ( myStats->HP + fireDamage > 0 )
@@ -4146,7 +4146,7 @@ void Entity::handleEffects(Stat* myStats)
 				else
 				{
 					// Player is not Buddha, process fire damage normally
-					this->modHP(-2 - rand() % 3); // Deal between -2 to -5 damage
+					this->modHP(-2 - local_rng.rand() % 3); // Deal between -2 to -5 damage
 
 					Entity* killer = uidToEntity(static_cast<Uint32>(myStats->burningInflictedBy));
 					// If the Entity died, handle experience
@@ -4207,7 +4207,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->cloak != nullptr )
 				{
 					// 1 in 10 chance of dealing damage to Entity's cloak
-					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK && myStats->cloak->type != CLOAK_BACKPACK )
+					if ( local_rng.rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK && myStats->cloak->type != CLOAK_BACKPACK )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -4240,7 +4240,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				
 				// Check to see if the fire is put out
-				if ( (rand() % this->chanceToPutOutFire) == 0 )
+				if ( (local_rng.rand() % this->chanceToPutOutFire) == 0 )
 				{
 					this->flags[BURNING] = false;
 					messagePlayer(player, MESSAGE_STATUS, language[647]); // "The flames go out."
@@ -4386,20 +4386,20 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			if ( ticks % 60 == 0 )
 			{
-				if ( rand() % 25 )
+				if ( local_rng.rand() % 25 )
 				{
 					messagePlayer(player, MESSAGE_STATUS, language[648]);
-					this->modHP(-(2 + rand() % 3));
+					this->modHP(-(2 + local_rng.rand() % 3));
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
 					if ( player >= 0 )
 					{
 						if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
 						{
-							if ( rand() % 3 > 0 && myStats->MP < myStats->MAXMP )
+							if ( local_rng.rand() % 3 > 0 && myStats->MP < myStats->MAXMP )
 							{
 								Uint32 color = makeColorRGB(0, 255, 0);
 								messagePlayerColor(player, MESSAGE_HINT, color, language[3358]);
-								int amount = 2 + rand() % 2;
+								int amount = 2 + local_rng.rand() % 2;
 								int oldMP = myStats->MP;
 								this->modMP(amount);
 								if ( player >= 0 && stats[player]->appearance == 0 )
@@ -6136,7 +6136,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Stat* tmpStats = tmpEntity->getStats();
 						if ( tmpStats )
 						{
-							int explodeDmg = (10 + rand() % 10 + myStats->LVL) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
+							int explodeDmg = (10 + local_rng.rand() % 10 + myStats->LVL) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 							Entity* gib = spawnGib(tmpEntity);
 							serverSpawnGibForClient(gib);
 							if ( tmpEntity->behavior == &actPlayer )
@@ -6303,8 +6303,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( (rand() % 3 == 0 && degradeWeapon && !(svFlags & SV_FLAG_HARDCORE)) || forceDegrade
-						|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 6 == 0 && degradeWeapon) )
+					if ( (local_rng.rand() % 3 == 0 && degradeWeapon && !(svFlags & SV_FLAG_HARDCORE)) || forceDegrade
+						|| ((svFlags & SV_FLAG_HARDCORE) && local_rng.rand() % 6 == 0 && degradeWeapon) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -6517,7 +6517,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						bowDegradeChance = std::min(bowDegradeChance, 90);
 					}
 				}
-				if ( bowDegradeChance < 100 && rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW )
+				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW )
 				{
 					if ( myStats->weapon != NULL )
 					{
@@ -6555,14 +6555,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( myStats->weapon->type == SLING )
 				{
 					entity = newEntity(78, 1, map.entities, nullptr); // rock
-					playSoundEntity(this, 239 + rand() % 3, 96);
+					playSoundEntity(this, 239 + local_rng.rand() % 3, 96);
 				}
 				else if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
 				{
 					entity = newEntity(167, 1, map.entities, nullptr); // bolt
 					if ( myStats->weapon->type == HEAVY_CROSSBOW )
 					{
-						playSoundEntity(this, 411 + rand() % 3, 128);
+						playSoundEntity(this, 411 + local_rng.rand() % 3, 128);
 						if ( this->behavior == &actPlayer && this->skill[2] > 0 )
 						{
 							this->setEffect(EFF_KNOCKBACK, true, 30, false);
@@ -6570,13 +6570,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						playSoundEntity(this, 239 + rand() % 3, 96);
+						playSoundEntity(this, 239 + local_rng.rand() % 3, 96);
 					}
 				}
 				else
 				{
 					entity = newEntity(166, 1, map.entities, nullptr); // arrow
-					playSoundEntity(this, 239 + rand() % 3, 96);
+					playSoundEntity(this, 239 + local_rng.rand() % 3, 96);
 				}
 				if ( !entity )
 				{
@@ -6600,7 +6600,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// set properties of the arrow.
 				if ( pose == MONSTER_POSE_RANGED_SHOOT2 && myStats->weapon->type == ARTIFACT_BOW )
 				{
-					entity->setRangedProjectileAttack(*this, *myStats, QUIVER_SILVER + rand() % 7);
+					entity->setRangedProjectileAttack(*this, *myStats, QUIVER_SILVER + local_rng.rand() % 7);
 				}
 				else
 				{
@@ -6661,7 +6661,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( myStats->weapon->type == BOOMERANG )
 				{
 					playSoundEntity(this, 75, 64);
-					//playSoundEntity(this, 427 + rand() % 4, 128);
+					//playSoundEntity(this, 427 + local_rng.rand() % 4, 128);
 
 				}
 				else
@@ -6798,7 +6798,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
 					}
 					entity->vel_z = -.3;
-					entity->roll -= (PI / 2 - 0.1 + (rand() % 10) * 0.02);
+					entity->roll -= (PI / 2 - 0.1 + (local_rng.rand() % 10) * 0.02);
 					if ( myStats->type == GYROBOT )
 					{
 						entity->vel_x = 0.0;
@@ -6860,11 +6860,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( whip )
 			{
 				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, 0, false);
-				playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
+				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 			}
 			else
 			{
-				playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
+				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 				dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
 			}
 		}
@@ -6909,22 +6909,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							int i = 8 + rand() % 4;
+							int i = 8 + local_rng.rand() % 4;
 							int c;
 							for ( c = 0; c < i; c++ )
 							{
 								Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 								entity->flags[INVISIBLE] = true;
 								entity->flags[UPDATENEEDED] = true;
-								entity->x = hit.entity->x - 4 + rand() % 8;
-								entity->y = hit.entity->y - 4 + rand() % 8;
-								entity->z = -6 + rand() % 12;
+								entity->x = hit.entity->x - 4 + local_rng.rand() % 8;
+								entity->y = hit.entity->y - 4 + local_rng.rand() % 8;
+								entity->z = -6 + local_rng.rand() % 12;
 								entity->sizex = 4;
 								entity->sizey = 4;
-								entity->yaw = rand() % 360 * PI / 180;
-								entity->vel_x = (rand() % 20 - 10) / 10.0;
-								entity->vel_y = (rand() % 20 - 10) / 10.0;
-								entity->vel_z = -.25 - (rand() % 5) / 10.0;
+								entity->yaw = local_rng.rand() % 360 * PI / 180;
+								entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+								entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+								entity->vel_z = -.25 - (local_rng.rand() % 5) / 10.0;
 								entity->flags[PASSABLE] = true;
 								entity->behavior = &actItem;
 								entity->flags[USERFLAG1] = true; // no collision: helps performance
@@ -7003,7 +7003,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
 						messagePlayer(player, MESSAGE_COMBAT, language[663]);
-						if ( myStats->weapon && rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
+						if ( myStats->weapon && local_rng.rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 							if ( myStats->weapon->status < BROKEN )
@@ -7035,7 +7035,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( !strcmp(map.name, "Sokoban") )
 						{
 							Entity* monster = nullptr;
-							if ( rand() % 2 == 0 )
+							if ( local_rng.rand() % 2 == 0 )
 							{
 								monster = summonMonster(INSECTOID, ox, oy);
 							}
@@ -7244,7 +7244,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( whip )
 				{
-					playSoundEntity(hit.entity, 407 + rand() % 3, 64);
+					playSoundEntity(hit.entity, 407 + local_rng.rand() % 3, 64);
 				}
 				else
 				{
@@ -7363,20 +7363,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				if ( whip )
 				{
-					playSoundEntity(hit.entity, 407 + rand() % 3, 64);
+					playSoundEntity(hit.entity, 407 + local_rng.rand() % 3, 64);
 				}
 				else
 				{
 					playSoundEntity(hit.entity, 28, 64);
 				}
-				playSoundEntity(hit.entity, 140 + rand(), 64);
+				playSoundEntity(hit.entity, 140 + local_rng.rand(), 64);
 				messagePlayer(player, MESSAGE_COMBAT, language[678]);
 				if ( hit.entity->skill[0] > 0 )
 				{
 					hit.entity->skill[0]--; //Deplete one usage.
 
 											//50% chance spawn a slime.
-					if ( rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 )
 					{
 						// spawn slime
 						Entity* monster = summonMonster(SLIME, x, y);
@@ -7494,7 +7494,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// smite these creatures
 							real_t amount = 0.0;
 							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
-							if ( rand() % 100 < static_cast<int>(percent) )
+							if ( local_rng.rand() % 100 < static_cast<int>(percent) )
 							{
 								weaponMultipliers += amount;
 								dyrnwynSmite = true;
@@ -7509,7 +7509,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				/*if( weaponskill>=0 )
 				hitskill = myStats->PROFICIENCIES[weaponskill]/5;
-				c = rand()%20 + hitskill + (weaponskill==PRO_POLEARM);
+				c = local_rng.rand()%20 + hitskill + (weaponskill==PRO_POLEARM);
 				bool hitsuccess=false;
 				if( myStats->weapon ) {
 				if( myStats->weapon->type == ARTIFACT_SPEAR ) {
@@ -7550,7 +7550,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							real_t amount = 0.f;
 							real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
-							if ( (rand() % 100 < static_cast<int>(percent)) )
+							if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
 							{
 								enemyAC *= amount;
 								gugnirProc = true;
@@ -7570,7 +7570,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( damage <= 8 )
 						{
-							damage += (8 - damage) + rand() % 9; // 8 - 16 minimum damage.
+							damage += (8 - damage) + local_rng.rand() % 9; // 8 - 16 minimum damage.
 						}
 					}
 					if ( behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA] )
@@ -7598,18 +7598,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// unaware monster, get backstab damage.
 								backstab = true;
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
-								if ( rand() % 4 > 0 )
+								if ( local_rng.rand() % 4 > 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
 							}
-							else if ( rand() % 2 == 0 )
+							else if ( local_rng.rand() % 2 == 0 )
 							{
 								// monster currently engaged in some form of combat maneuver
 								// 1 in 2 chance to flank defenses.
 								flanking = true;
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
-								if ( rand() % 20 == 0 )
+								if ( local_rng.rand() % 20 == 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -7638,7 +7638,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						if ( chance > 0 )
 						{
-							damage = (damage - chance) + (rand() % chance) + 1;
+							damage = (damage - chance) + (local_rng.rand() % chance) + 1;
 						}
 					}
 
@@ -7652,7 +7652,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							real_t amount = 0.0;
 							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
 
-							if ( rand() % 100 < static_cast<int>(percent) )
+							if ( local_rng.rand() % 100 < static_cast<int>(percent) )
 							{
 								damage *= amount; // Parashu sometimes multiplier damage
 								parashuProc = true;
@@ -7713,7 +7713,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								notify = false;
 							}
 
-							if ( rand() % chance == 0 )
+							if ( local_rng.rand() % chance == 0 )
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
 								{
@@ -7737,7 +7737,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								chance = 12;
 								notify = false;
 							}
-							if ( rand() % chance == 0 )
+							if ( local_rng.rand() % chance == 0 )
 							{
 								this->increaseSkill(weaponskill, notify);
 								skillIncreased = true;
@@ -7752,7 +7752,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								chance = 14;
 								notify = false;
 							}
-							if ( rand() % chance == 0 )
+							if ( local_rng.rand() % chance == 0 )
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
 								{
@@ -7886,8 +7886,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeOnNormalDMG *= 2;
 							}
 
-							if	( (rand() % degradeOnZeroDMG == 0 && damage == 0)
-									|| (rand() % degradeOnNormalDMG == 0 && damage > 0)
+							if	( (local_rng.rand() % degradeOnZeroDMG == 0 && damage == 0)
+									|| (local_rng.rand() % degradeOnNormalDMG == 0 && damage > 0)
 								)
 							{
 								degradeWeapon = true;
@@ -8025,7 +8025,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( isWeakArmor )
 							{
 								// 66% chance to be deselected from degrading.
-								if ( rand() % 3 > 0 )
+								if ( local_rng.rand() % 3 > 0 )
 								{
 									armor = NULL;
 									armornum = 0;
@@ -8034,7 +8034,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								// 75% chance to be deselected from degrading.
-								if ( rand() % 4 > 0 )
+								if ( local_rng.rand() % 4 > 0 )
 								{
 									armor = NULL;
 									armornum = 0;
@@ -8043,7 +8043,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							if ( armorDegradeChance == 100 || (rand() % armorDegradeChance > 0) )
+							if ( armorDegradeChance == 100 || (local_rng.rand() % armorDegradeChance > 0) )
 							{
 								armor = NULL;
 								armornum = 0;
@@ -8073,7 +8073,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// if no armor piece was chosen to break, grant chance to improve shield skill.
 							if ( itemCategory(hitstats->shield) == ARMOR )
 							{
-								if ( (rand() % 15 == 0 && damage > 0) || (damage == 0 && rand() % 8 == 0) )
+								if ( (local_rng.rand() % 15 == 0 && damage > 0) || (damage == 0 && local_rng.rand() % 8 == 0) )
 								{
 									bool increaseSkill = true;
 									if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
@@ -8112,8 +8112,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							if ( shieldDegradeChance < 100 && armor == NULL &&
-								(	(hitstats->defending && rand() % shieldDegradeChance == 0)
-									|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
+								(	(hitstats->defending && local_rng.rand() % shieldDegradeChance == 0)
+									|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && local_rng.rand() % 3 == 0)
 								)
 								)
 							{
@@ -8150,7 +8150,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							real_t amount = 0.0;
 							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
-							if ( dyrnwynSmite || (rand() % 100 < static_cast<int>(percent)) )
+							if ( dyrnwynSmite || (local_rng.rand() % 100 < static_cast<int>(percent)) )
 							{
 								if ( hit.entity->flags[BURNABLE] )
 								{
@@ -8184,7 +8184,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) )
 							{
 								slowStatusInflicted = true;
-								playSoundEntity(hit.entity, 396 + rand() % 3, 64);
+								playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
 							}
 						}
@@ -8419,7 +8419,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// paralyze.
 							if ( chance > 0 ) // chance based paralyze
 							{
-								if ( rand() % chance == 0 && !hitstats->EFFECTS[EFF_PARALYZED] )
+								if ( local_rng.rand() % chance == 0 && !hitstats->EFFECTS[EFF_PARALYZED] )
 								{
 									int duration = 75; // 1.5 seconds
 									if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, duration, true) )
@@ -8441,7 +8441,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) && !slowStatusInflicted )
 								{
 									slowStatusInflicted = true;
-									playSoundEntity(hit.entity, 396 + rand() % 3, 64);
+									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
 								}
 								hit.entity->modHP(-capstoneDamage); // do the damage
@@ -8501,11 +8501,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY] || hitstats->EFFECTS[EFF_FEAR]) && rand() % 4 == 0 )
+					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY] || hitstats->EFFECTS[EFF_FEAR]) && local_rng.rand() % 4 == 0 )
 					{
 						int armornum = 0;
 						Item* armor = nullptr;
-						int armorstolen = rand() % 9;
+						int armorstolen = local_rng.rand() % 9;
 						switch ( myStats->type )
 						{
 							case SCORPION:
@@ -8644,7 +8644,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( damage == 0 && !(hitstats->defending) )
 					{
 						// special chance effects when damage is 0.
-						if ( rand() % 20 == 0 )
+						if ( local_rng.rand() % 20 == 0 )
 						{
 							switch ( myStats->type )
 							{
@@ -9054,8 +9054,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else if ( whip && (hitstats->EFFECTS[EFF_DISORIENTED] 
 							|| !hit.entity->isMobile()
-							|| (hitstats->EFFECTS[EFF_DRUNK] && rand() % 3 == 0)
-							|| (hitstats->EFFECTS[EFF_CONFUSED] && rand() % 3 == 0))
+							|| (hitstats->EFFECTS[EFF_DRUNK] && local_rng.rand() % 3 == 0)
+							|| (hitstats->EFFECTS[EFF_CONFUSED] && local_rng.rand() % 3 == 0))
 							)
 						{
 							if ( hit.entity->behavior == &actMonster && !hit.entity->isBossMonster() )
@@ -9075,9 +9075,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
 										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent + PI;
-										dropped->vel_x = (1.5 + .025 * (rand() % 11)) * cos(tangent);
-										dropped->vel_y = (1.5 + .025 * (rand() % 11)) * sin(tangent);
-										dropped->vel_z = (-10 - rand() % 20) * .01;
+										dropped->vel_x = (1.5 + .025 * (local_rng.rand() % 11)) * cos(tangent);
+										dropped->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(tangent);
+										dropped->vel_z = (-10 - local_rng.rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3454], language[3455], MSG_COMBAT);
 										disarmed = true;
@@ -9102,9 +9102,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
 										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent;
-										dropped->vel_x = (1.5 + .025 * (rand() % 11)) * cos(tangent);
-										dropped->vel_y = (1.5 + .025 * (rand() % 11)) * sin(tangent);
-										dropped->vel_z = (-10 - rand() % 20) * .01;
+										dropped->vel_x = (1.5 + .025 * (local_rng.rand() % 11)) * cos(tangent);
+										dropped->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(tangent);
+										dropped->vel_z = (-10 - local_rng.rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
 										disarmed = true;
@@ -9342,7 +9342,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( whip )
 						{
-							playSoundEntity(hit.entity, 407 + rand() % 3, 64);
+							playSoundEntity(hit.entity, 407 + local_rng.rand() % 3, 64);
 						}
 						else
 						{
@@ -9356,13 +9356,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( bleedStatusInflicted || (hitstats->HP > 5 && damage > 0) )
 						{
-							if ( bleedStatusInflicted || (rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
-								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
-								|| (whip && ( (flanking && rand() % 5 == 0) || (backstab && rand() % 2 == 0) || disarmed) )
-								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
-								|| (rand() % 4 == 0 && pose == PLAYER_POSE_GOLEM_SMASH)
-								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
-								|| (rand() % 8 == 0 && myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
+							if ( bleedStatusInflicted || (local_rng.rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
+								|| (local_rng.rand() % 10 == 0 && weaponskill == PRO_SWORD)
+								|| (whip && ( (flanking && local_rng.rand() % 5 == 0) || (backstab && local_rng.rand() % 2 == 0) || disarmed) )
+								|| (local_rng.rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
+								|| (local_rng.rand() % 4 == 0 && pose == PLAYER_POSE_GOLEM_SMASH)
+								|| (local_rng.rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
+								|| (local_rng.rand() % 8 == 0 && myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
 							)
 							{
 								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
@@ -9376,7 +9376,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								else if ( (myStats->type == VAMPIRE && this->behavior == &actMonster) || myStats->EFFECTS[EFF_VAMPIRICAURA] )
 								{
-									if ( rand() % 2 == 0 ) // 50% for heavy bleed effect.
+									if ( local_rng.rand() % 2 == 0 ) // 50% for heavy bleed effect.
 									{
 										heavyBleedEffect = true;
 									}
@@ -9406,7 +9406,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									else
 									{
-										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120); // 2.4-16.8 seconds
+										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + (int)local_rng.rand() % 360 - hit.entity->getCON() * 100, 120); // 2.4-16.8 seconds
 									}
 									hitstats->EFFECTS[EFF_BLEEDING] = true;
 									strcpy(playerHitMessage, language[701]);
@@ -9423,7 +9423,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									if ( !wasBleeding )
 									{
-										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(500 + rand() % 500 - hit.entity->getCON() * 10, 250); // 5-20 seconds
+										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(500 + (int)local_rng.rand() % 500 - hit.entity->getCON() * 10, 250); // 5-20 seconds
 										hitstats->EFFECTS[EFF_BLEEDING] = true;
 										strcpy(playerHitMessage, language[2451]);
 										if ( !strcmp(hitstats->name, "") )
@@ -9437,7 +9437,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									else
 									{
-										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] += std::max(rand() % 350 - hit.entity->getCON() * 5, 100); // 2-7 seconds in addition
+										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] += std::max((int)local_rng.rand() % 350 - hit.entity->getCON() * 5, 100); // 2-7 seconds in addition
 										hitstats->EFFECTS[EFF_BLEEDING] = true;
 										strcpy(playerHitMessage, language[2454]);
 										if ( !strcmp(hitstats->name, "") )
@@ -9486,7 +9486,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									// energize if wearing punisher hood!
 									if ( myStats->helmet && myStats->helmet->type == PUNISHER_HOOD )
 									{
-										this->modMP(1 + rand() % 2);
+										this->modMP(1 + local_rng.rand() % 2);
 										Uint32 color = makeColorRGB(0, 255, 0);
 										this->setEffect(EFF_MP_REGEN, true, 250, true);
 										if ( behavior == &actPlayer )
@@ -9673,7 +9673,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
 						}
-						else if ( (rand() % 4 == 0) && (myStats->type == VAMPIRE && behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA]) )
+						else if ( (local_rng.rand() % 4 == 0) && (myStats->type == VAMPIRE && behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA]) )
 						{
 							// vampires under aura have higher chance.
 							this->modHP(lifeStealAmount);
@@ -9681,7 +9681,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
 						}
-						else if ( rand() % 8 == 0 )
+						else if ( local_rng.rand() % 8 == 0 )
 						{
 							// else low chance for lifesteal.
 							this->modHP(lifeStealAmount);
@@ -9746,25 +9746,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 250 )
 							{
-								spawnBloodVial = (rand() % 2 == 0);
+								spawnBloodVial = (local_rng.rand() % 2 == 0);
 							}
 							else if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 150 )
 							{
-								spawnBloodVial = (rand() % 4 == 0);
+								spawnBloodVial = (local_rng.rand() % 4 == 0);
 							}
 							else
 							{
-								spawnBloodVial = (rand() % 8 == 0);
+								spawnBloodVial = (local_rng.rand() % 8 == 0);
 							}
 
-							if ( rand() % 5 == 0 )
+							if ( local_rng.rand() % 5 == 0 )
 							{
 								spawnSecondVial = true;
 							}
 						}
 						else
 						{
-							spawnBloodVial = (rand() % 10 == 0);
+							spawnBloodVial = (local_rng.rand() % 10 == 0);
 						}
 
 						if ( spawnBloodVial )
@@ -9799,15 +9799,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 							Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
 							entity->sizex = 1;
 							entity->sizey = 1;
-							entity->x = hit.x + (-4 + rand() % 9);
-							entity->y = hit.y + (-4 + rand() % 9);
+							entity->x = hit.x + (-4 + local_rng.rand() % 9);
+							entity->y = hit.y + (-4 + local_rng.rand() % 9);
 							entity->z = 7.5;
-							entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
-							entity->roll = (rand() % 360) * PI / 180.0;
+							entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+							entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 
 							entity->vel_x = 0.2 * cos(entity->yaw);
 							entity->vel_y = 0.2 * sin(entity->yaw);
-							entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+							entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
 
 							entity->skill[0] = 50; // particle life
 							entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
@@ -9853,21 +9853,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								playSoundPos(hit.x, hit.y, 67, 128); // bust wall
 								// spawn several rock items
-								i = 8 + rand() % 4;
+								i = 8 + local_rng.rand() % 4;
 								for ( c = 0; c < i; c++ )
 								{
 									Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 									entity->flags[INVISIBLE] = true;
 									entity->flags[UPDATENEEDED] = true;
-									entity->x = hit.mapx * 16 + 4 + rand() % 8;
-									entity->y = hit.mapy * 16 + 4 + rand() % 8;
-									entity->z = -6 + rand() % 12;
+									entity->x = hit.mapx * 16 + 4 + local_rng.rand() % 8;
+									entity->y = hit.mapy * 16 + 4 + local_rng.rand() % 8;
+									entity->z = -6 + local_rng.rand() % 12;
 									entity->sizex = 4;
 									entity->sizey = 4;
-									entity->yaw = rand() % 360 * PI / 180;
-									entity->vel_x = (rand() % 20 - 10) / 10.0;
-									entity->vel_y = (rand() % 20 - 10) / 10.0;
-									entity->vel_z = -.25 - (rand() % 5) / 10.0;
+									entity->yaw = local_rng.rand() % 360 * PI / 180;
+									entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+									entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+									entity->vel_z = -.25 - (local_rng.rand() % 5) / 10.0;
 									entity->flags[PASSABLE] = true;
 									entity->behavior = &actItem;
 									entity->flags[USERFLAG1] = true; // no collision: helps performance
@@ -9908,7 +9908,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								generatePathMaps();
 							}
 							int chance = 2 + (myStats->type == GOBLIN ? 2 : 0);
-							if ( rand() % chance && degradePickaxe )
+							if ( local_rng.rand() % chance && degradePickaxe )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
@@ -10223,7 +10223,7 @@ bool Entity::teleportRandom()
 		messagePlayer(player, MESSAGE_HINT, language[708]);
 		return false;
 	}
-	pickedlocation = rand() % numlocations;
+	pickedlocation = local_rng.rand() % numlocations;
 	numlocations = 0;
 	for ( int iy = 1; iy < map.height; iy++ )
 	{
@@ -10379,11 +10379,11 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	std::pair<int, int> tmpPair;
 	if ( behavior == &actMonster || spotsBehindMonster.empty() )
 	{
-		tmpPair = goodspots[rand() % goodspots.size()];
+		tmpPair = goodspots[local_rng.rand() % goodspots.size()];
 	}
 	else
 	{
-		tmpPair = spotsBehindMonster[rand() % spotsBehindMonster.size()];
+		tmpPair = spotsBehindMonster[local_rng.rand() % spotsBehindMonster.size()];
 	}
 	tx = tmpPair.first;
 	ty = tmpPair.second;
@@ -10522,7 +10522,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 	// calculate XP gain
 	int baseXp = 10;
-	int xpGain = baseXp + rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
+	int xpGain = baseXp + local_rng.rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
 	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
 	{
 		int value = srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] - 1; // offset by 1 since 0 is nothing
@@ -10770,7 +10770,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			if ( guerillaRadio )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_GUERILLA_RADIO, STEAM_STAT_INT, 1);
-				if ( rand() % 5 == 0 || (uidToEntity(src->monsterTarget) != this && rand() % 3 == 0) )
+				if ( local_rng.rand() % 5 == 0 || (uidToEntity(src->monsterTarget) != this && local_rng.rand() % 3 == 0) )
 				{
 					this->increaseSkill(PRO_LOCKPICKING);
 				}
@@ -10844,7 +10844,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		{
 			if ( this->monsterIsTinkeringCreation() )
 			{
-				if ( rand() % 10 == 0 )
+				if ( local_rng.rand() % 10 == 0 )
 				{
 					leader->increaseSkill(PRO_LOCKPICKING);
 				}
@@ -11687,7 +11687,7 @@ void createMonsterEquipment(Stat* stats)
 	ItemType itemId;
 	Status itemStatus;
 	int itemBless;
-	int itemAppearance = rand();
+	int itemAppearance = local_rng.rand();
 	int itemCount;
 	int chance = 1;
 	int category = 0;
@@ -11710,7 +11710,7 @@ void createMonsterEquipment(Stat* stats)
 					if ( category == 14 )
 					{
 						// equipment
-						randType = rand() % 2;
+						randType = local_rng.rand() % 2;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
@@ -11723,7 +11723,7 @@ void createMonsterEquipment(Stat* stats)
 					else if ( category == 15 )
 					{
 						// jewelry
-						randType = rand() % 2;
+						randType = local_rng.rand() % 2;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
@@ -11736,7 +11736,7 @@ void createMonsterEquipment(Stat* stats)
 					else if ( category == 16 )
 					{
 						// magical
-						randType = rand() % 3;
+						randType = local_rng.rand() % 3;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
@@ -11770,7 +11770,7 @@ void createMonsterEquipment(Stat* stats)
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 1]);
 				if ( itemStatus == 0 )
 				{
-					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+					itemStatus = static_cast<Status>(DECREPIT + local_rng.rand() % 4);
 				}
 				else if ( itemStatus > BROKEN )
 				{
@@ -11779,7 +11779,7 @@ void createMonsterEquipment(Stat* stats)
 				itemBless = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 2];
 				if ( itemBless == 10 )
 				{
-					itemBless = -2 + rand() % 5;
+					itemBless = -2 + local_rng.rand() % 5;
 				}
 				itemCount = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 3];
 				if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 1 )
@@ -11788,16 +11788,16 @@ void createMonsterEquipment(Stat* stats)
 				}
 				else if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 2 )
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = local_rng.rand() % 2;
 				}
 				else
 				{
 					itemIdentified = false;
 				}
-				itemAppearance = rand();
+				itemAppearance = local_rng.rand();
 				chance = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 5];
 
-				if ( rand() % 100 < chance )
+				if ( local_rng.rand() % 100 < chance )
 				{
 					switch ( itemIndex ) {
 						case 0:
@@ -11881,7 +11881,7 @@ void setRandomMonsterStats(Stat* stats)
 
 		if ( stats->MAXHP == stats->HP )
 		{
-			stats->MAXHP += rand() % (stats->RANDOM_MAXHP + 1);
+			stats->MAXHP += local_rng.rand() % (stats->RANDOM_MAXHP + 1);
 
 			if ( stats->RANDOM_MAXHP == stats->RANDOM_HP )
 			{
@@ -11891,14 +11891,14 @@ void setRandomMonsterStats(Stat* stats)
 			else
 			{
 				// roll the current hp
-				stats->HP += rand() % (stats->RANDOM_HP + 1);
+				stats->HP += local_rng.rand() % (stats->RANDOM_HP + 1);
 			}
 		}
 		else
 		{
 			// roll both ranges independently
-			stats->MAXHP += rand() % (stats->RANDOM_MAXHP + 1);
-			stats->HP += rand() % (stats->RANDOM_HP + 1);
+			stats->MAXHP += local_rng.rand() % (stats->RANDOM_MAXHP + 1);
+			stats->HP += local_rng.rand() % (stats->RANDOM_HP + 1);
 		}
 
 		if ( stats->HP > stats->MAXHP )
@@ -11914,7 +11914,7 @@ void setRandomMonsterStats(Stat* stats)
 
 		if ( stats->MAXMP == stats->MP )
 		{
-			stats->MAXMP += rand() % (stats->RANDOM_MAXMP + 1);
+			stats->MAXMP += local_rng.rand() % (stats->RANDOM_MAXMP + 1);
 
 			if ( stats->RANDOM_MAXMP == stats->RANDOM_MP )
 			{
@@ -11924,14 +11924,14 @@ void setRandomMonsterStats(Stat* stats)
 			else
 			{
 				// roll the current mp
-				stats->MP += rand() % (stats->RANDOM_MP + 1);
+				stats->MP += local_rng.rand() % (stats->RANDOM_MP + 1);
 			}
 		}
 		else
 		{
 			// roll both ranges independently
-			stats->MAXMP += rand() % (stats->RANDOM_MAXMP + 1);
-			stats->MP += rand() % (stats->RANDOM_MP + 1);
+			stats->MAXMP += local_rng.rand() % (stats->RANDOM_MAXMP + 1);
+			stats->MP += local_rng.rand() % (stats->RANDOM_MP + 1);
 		}
 
 		if ( stats->MP > stats->MAXMP )
@@ -11944,15 +11944,15 @@ void setRandomMonsterStats(Stat* stats)
 		// REST OF STATS
 		//**************************************
 
-		stats->STR += rand() % (stats->RANDOM_STR + 1);
-		stats->DEX += rand() % (stats->RANDOM_DEX + 1);
-		stats->CON += rand() % (stats->RANDOM_CON + 1);
-		stats->INT += rand() % (stats->RANDOM_INT + 1);
-		stats->PER += rand() % (stats->RANDOM_PER + 1);
-		stats->CHR += rand() % (stats->RANDOM_CHR + 1);
+		stats->STR += local_rng.rand() % (stats->RANDOM_STR + 1);
+		stats->DEX += local_rng.rand() % (stats->RANDOM_DEX + 1);
+		stats->CON += local_rng.rand() % (stats->RANDOM_CON + 1);
+		stats->INT += local_rng.rand() % (stats->RANDOM_INT + 1);
+		stats->PER += local_rng.rand() % (stats->RANDOM_PER + 1);
+		stats->CHR += local_rng.rand() % (stats->RANDOM_CHR + 1);
 
-		stats->LVL += rand() % (stats->RANDOM_LVL + 1);
-		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
+		stats->LVL += local_rng.rand() % (stats->RANDOM_LVL + 1);
+		stats->GOLD += local_rng.rand() % (stats->RANDOM_GOLD + 1);
 	}
 
 	// debug print out each monster spawned
@@ -12721,16 +12721,16 @@ int Entity::getAttackPose() const
 					|| myStats->weapon->type == TOOL_WHIP )
 				{
 					// axes and maces don't stab
-					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+					pose = MONSTER_POSE_MELEE_WINDUP1 + local_rng.rand() % 2;
 				}
 				else
 				{
-					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+					pose = MONSTER_POSE_MELEE_WINDUP1 + local_rng.rand() % 3;
 				}
 			}
 			else
 			{
-				pose = rand() % 3 + 1;
+				pose = local_rng.rand() % 3 + 1;
 			}
 		}
 	}
@@ -12757,7 +12757,7 @@ int Entity::getAttackPose() const
 			}
 			else
 			{
-				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+				pose = MONSTER_POSE_MELEE_WINDUP1 + local_rng.rand() % 2;
 			}
 		}
 		else if ( myStats->type == COCKATRICE )
@@ -12768,7 +12768,7 @@ int Entity::getAttackPose() const
 			}
 			else
 			{
-				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+				pose = MONSTER_POSE_MELEE_WINDUP1 + local_rng.rand() % 2;
 			}
 		}
 		else if ( myStats->type == TROLL )
@@ -13441,28 +13441,28 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 			sound = 115;
 			break;
 		case MONSTER_FOOTSTEP_LEATHER:
-			sound = rand() % 7;
+			sound = local_rng.rand() % 7;
 			break;
 		case MONSTER_FOOTSTEP_USE_BOOTS:
 			if ( bootSprite >= 152 && bootSprite <= 155 ) // iron boots
 			{
-				sound = 7 + rand() % 7;
+				sound = 7 + local_rng.rand() % 7;
 			}
 			else if ( bootSprite >= 156 && bootSprite <= 159 ) // steel boots
 			{
-				sound = 14 + rand() % 7;
+				sound = 14 + local_rng.rand() % 7;
 			}
 			else if ( bootSprite >= 499 && bootSprite <= 502 ) // crystal boots
 			{
-				sound = 14 + rand() % 7;
+				sound = 14 + local_rng.rand() % 7;
 			}
 			else if ( bootSprite >= 521 && bootSprite <= 524 ) // artifact boots
 			{
-				sound = 14 + rand() % 7;
+				sound = 14 + local_rng.rand() % 7;
 			}
 			else
 			{
-				sound = rand() % 7;
+				sound = local_rng.rand() % 7;
 			}
 			break;
 		case MONSTER_FOOTSTEP_NONE:
@@ -14038,7 +14038,7 @@ void Entity::lookAtEntity(Entity& target)
 {
 	double tangent = atan2(target.y - y, target.x - x);
 	monsterLookTime = 1;
-	monsterMoveTime = rand() % 10 + 1;
+	monsterMoveTime = local_rng.rand() % 10 + 1;
 	monsterLookDir = tangent;
 }
 
@@ -14101,13 +14101,13 @@ void actAmbientParticleEffectIdle(Entity* my)
 
 void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)
 {
-	if ( rand() % chance == 0 )
+	if ( local_rng.rand() % chance == 0 )
 	{
 		Entity* spawnParticle = newEntity(particleSprite, 1, map.entities, nullptr); //Particle entity.
 		spawnParticle->sizex = 1;
 		spawnParticle->sizey = 1;
-		spawnParticle->x = x + (-2 + rand() % 5);
-		spawnParticle->y = y + (-2 + rand() % 5);
+		spawnParticle->x = x + (-2 + local_rng.rand() % 5);
+		spawnParticle->y = y + (-2 + local_rng.rand() % 5);
 		spawnParticle->z = 7.5;
 		spawnParticle->scalex *= particleScale;
 		spawnParticle->scaley *= particleScale;
@@ -14139,37 +14139,37 @@ void Entity::handleEffectsClient()
 
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
 	{
-		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
+		spawnAmbientParticles(80, 579, 10 + local_rng.rand() % 40, 1.0, false);
 	}
 
 	if ( myStats->EFFECTS[EFF_FEAR] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 864, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 864, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
 	if ( myStats->EFFECTS[EFF_TROLLS_BLOOD] )
 	{
-		spawnAmbientParticles(80, 169, 20 + rand() % 10, 0.5, true);
+		spawnAmbientParticles(80, 169, 20 + local_rng.rand() % 10, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
 	{
-		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
+		spawnAmbientParticles(30, 600, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_PACIFY] )
 	{
-		spawnAmbientParticles(30, 685, 20 + rand() % 30, 0.5, true);
+		spawnAmbientParticles(30, 685, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_SHADOW_TAGGED] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 871, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 871, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
@@ -14177,13 +14177,13 @@ void Entity::handleEffectsClient()
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
-			spawnAmbientParticles(1, 593, 20 + rand() % 10, 0.5, true);
+			spawnAmbientParticles(1, 593, 20 + local_rng.rand() % 10, 0.5, true);
 		}
 	}
 
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && getMonsterTypeFromSprite() == SHADOW )
 	{
-		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
+		spawnAmbientParticles(20, 175, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 }
 
@@ -14524,7 +14524,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			else
 			{
-				messagePlayer(target.skill[2], MESSAGE_WORLD, language[516 + rand() % 4], namesays);
+				messagePlayer(target.skill[2], MESSAGE_WORLD, language[516 + local_rng.rand() % 4], namesays);
 			}
 
 			if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
@@ -14898,7 +14898,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 								break;
 						}
 					}
-					playSoundEntity(this, 35 + rand() % 3, 64);
+					playSoundEntity(this, 35 + local_rng.rand() % 3, 64);
 					addItemToMonsterInventory(item);
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
@@ -14963,15 +14963,15 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					{
 						if ( itemCategory(item) == AMULET || itemCategory(item) == RING )
 						{
-							playSoundEntity(this, 33 + rand() % 2, 64);
+							playSoundEntity(this, 33 + local_rng.rand() % 2, 64);
 						}
 						else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 						{
-							playSoundEntity(this, 40 + rand() % 4, 64);
+							playSoundEntity(this, 40 + local_rng.rand() % 4, 64);
 						}
 						else if ( itemCategory(item) == ARMOR )
 						{
-							playSoundEntity(this, 44 + rand() % 3, 64);
+							playSoundEntity(this, 44 + local_rng.rand() % 3, 64);
 						}
 						else if ( item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
 						{
@@ -15894,9 +15894,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 
 void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 {
-	std::mt19937 seed(rand()); // seed of distribution.
-	
-	std::vector<int> statWeights = classStatGrowth[playerClass];
+	std::vector<unsigned int> statWeights = classStatGrowth[playerClass];
 
 	// debug to print which vector values are being used.
 	//for ( std::vector<int>::const_iterator i = statWeights.begin(); i != statWeights.end(); ++i )
@@ -15927,15 +15925,13 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 		}
 	}
 
-	chosenStats[0] = rand() % 6; // get first stat randomly.
+	chosenStats[0] = local_rng.rand() % 6; // get first stat randomly.
 	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.
 
-	std::discrete_distribution<> distr2(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
-	chosenStats[1] = distr2(seed); // get second stat.
+	chosenStats[1] = local_rng.discrete(statWeights.data(), statWeights.size()); // get second stat.
 	statWeights[chosenStats[1]] = 0; // remove the chance in the local stat vector.
 
-	std::discrete_distribution<> distr3(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
-	chosenStats[2] = distr3(seed); // get third stat.
+	chosenStats[2] = local_rng.discrete(statWeights.data(), statWeights.size()); // get third stat.
 
 	if ( chosenStats[0] == chosenStats[1] || chosenStats[0] == chosenStats[2] || chosenStats[1] == chosenStats[2] )
 	{
@@ -16191,7 +16187,7 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 		return nullptr;
 	}
 
-	spellbook = spellbookNodeInInventory(myStats, spellbooks[rand()%spellbooks.size()]); //Choose a random spell and return it.
+	spellbook = spellbookNodeInInventory(myStats, spellbooks[local_rng.rand()%spellbooks.size()]); //Choose a random spell and return it.
 	if (!spellbook )
 	{
 		//messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
@@ -16542,7 +16538,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 			{
 				statChance += 50;
 			}
-			int chance = rand() % 100;
+			int chance = local_rng.rand() % 100;
 			if ( chance < statChance )
 			{
 				this->arrowArmorPierce = 1; // pierce half of armor in damage calc.
@@ -16631,7 +16627,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
 	if ( chance > 0 )
 	{
-		attack = (attack - chance) + (rand() % chance) + 1;
+		attack = (attack - chance) + (local_rng.rand() % chance) + 1;
 	}
 	this->arrowPower = attack;
 }
@@ -17605,26 +17601,26 @@ void Entity::setHardcoreStats(Stat& stats)
 	{
 		// spice up some stats...
 		int statIncrease = ((abs(stats.HP) / 20 + 1) * 20); // each 20 HP add 20 random HP
-		stats.HP += statIncrease - (rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
+		stats.HP += statIncrease - (local_rng.rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
 		stats.MAXHP = stats.HP;
 		stats.OLDHP = stats.HP;
 
 		statIncrease = (abs(stats.STR) / 5 + 1) * 5; // each 5 STR add 5 more STR.
-		stats.STR += (statIncrease - (rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
+		stats.STR += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
 		statIncrease = (abs(stats.PER) / 5 + 1) * 5; // each 5 PER add 5 more PER.
-		stats.PER += (statIncrease - (rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
+		stats.PER += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
 		statIncrease = std::min((abs(stats.DEX) / 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
-		stats.DEX += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+		stats.DEX += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
 		statIncrease = (abs(stats.CON) / 5 + 1) * 1; // each 5 CON add 1 more CON.
-		stats.CON += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+		stats.CON += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
 		statIncrease = (abs(stats.INT) / 5 + 1) * 5; // each 5 INT add 5 more INT.
-		stats.INT += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+		stats.INT += (statIncrease - (local_rng.rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
-		int lvlIncrease = rand() % 4;
+		int lvlIncrease = local_rng.rand() % 4;
 		lvlIncrease = std::max(0, lvlIncrease - 1);
 		stats.LVL += std::max(0, lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
 	}
@@ -18678,7 +18674,7 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 {
 	if ( knockedInto != NULL && myStats.EFFECTS[EFF_KNOCKBACK] && myStats.HP > 0 )
 	{
-		int damageOnHit = 5 + rand() % 6;
+		int damageOnHit = 5 + local_rng.rand() % 6;
 		if ( knockedInto->behavior == &actDoor )
 		{
 			playSoundEntity(this, 28, 64);
@@ -18946,7 +18942,7 @@ int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
 			return myStats->MAXHP;
 		}
 		int randomHP = std::max(1, myStats->MAXHP / 8);
-		randomHP = randomHP + rand() % randomHP;
+		randomHP = randomHP + local_rng.rand() % randomHP;
 		int convertedAppearance = appearance % 10;
 		return std::min(myStats->MAXHP, ((convertedAppearance * myStats->HP) / 4) + randomHP);
 	}

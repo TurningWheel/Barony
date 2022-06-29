@@ -80,24 +80,19 @@ static void continue_sigaction(int signal, siginfo_t* si, void* arg)
 	SDL_ShowCursor(SDL_MouseShowBeforeSignal);
 }
 
-const unsigned STACK_SIZE = 10;
-
 static void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
-	printf("Caught segfault at address %p\n", si->si_addr);
+	SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse.
 
-	printlog("Caught segfault at address %p\n", si->si_addr);
+	printf("Caught segfault at address %p\n", si->si_addr);
+	printf("Signal %d (dumping stack):", signal);
 
 	//Dump the stack.
+
+    constexpr unsigned int STACK_SIZE = 32;
 	void* array[STACK_SIZE];
-	size_t size;
-
-	size = backtrace(array, STACK_SIZE);
-
-	printlog("Signal %d (dumping stack):\n", signal);
+	size_t size = backtrace(array, STACK_SIZE);
 	backtrace_symbols_fd(array, size, STDERR_FILENO);
-
-	SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse.
 
 	exit(0);
 }
@@ -251,6 +246,7 @@ Frame::result_t framesProcResult{
 
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 
+//ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
 TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();
 TimerExperiments::duration TimerExperiments::accumulator = std::chrono::milliseconds{ 0 };
@@ -361,6 +357,7 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 			{
 				printTextFormatted(font8x8_bmp, 8, 32, "Timer debug is ON");
 				real_t diff = camera.ang - players[player]->entity->lerpRenderState.yaw.position;
+				diff = fmod(diff, 2 * PI);
 				while ( diff >= PI )
 				{
 					diff -= 2 * PI;
@@ -492,6 +489,8 @@ void TimerExperiments::State::resetPosition()
 
 void TimerExperiments::State::normalize(real_t min, real_t max)
 {
+    real_t range = std::max(fabs(min), fabs(max));
+    position = fmod(position, range);
 	while ( position >= max )
 	{
 		position -= 2 * PI;
@@ -684,6 +683,166 @@ std::string TimerExperiments::render(State state)
 	return output;
 }
 
+enum DemoMode {
+    STOPPED,
+    RECORDING,
+    PLAYING
+};
+static DemoMode demo_mode = DemoMode::STOPPED;
+static File* demo_file = nullptr;
+
+static void demo_stop() {
+    if (demo_mode == DemoMode::STOPPED) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo is not running");
+        return;
+    }
+    switch (demo_mode) {
+    case DemoMode::PLAYING:
+        if (demo_file->eof()) {
+            messagePlayer(clientnum, MESSAGE_MISC, "End of demo");
+        } else {
+            messagePlayer(clientnum, MESSAGE_MISC, "Stopped demo playback");
+        }
+        break;
+    case DemoMode::RECORDING:
+        messagePlayer(clientnum, MESSAGE_MISC, "Stopped demo recording");
+        break;
+    default:
+        messagePlayer(clientnum, MESSAGE_MISC, "Stopped demo");
+        break;
+    }
+    if (demo_file) {
+        FileIO::close(demo_file);
+        demo_file = nullptr;
+    }
+    demo_mode = DemoMode::STOPPED;
+
+    TimerExperiments::bUseTimerInterpolation = true;
+}
+
+static void demo_record(const char* filename) {
+    if (demo_mode != DemoMode::STOPPED) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
+        return;
+    }
+
+    if (multiplayer != SINGLE || splitscreen) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demos not permitted in multiplayer");
+        return;
+    }
+
+    // create demo file for recording
+    char path[PATH_MAX];
+    completePath(path, filename, outputdir);
+    demo_file = FileIO::open(path, "wb");
+    if (!demo_file) {
+        messagePlayer(clientnum, MESSAGE_MISC, "failed to open demo file '%s'", path);
+        return;
+    }
+
+    TimerExperiments::bUseTimerInterpolation = false; // this causes mass desyncs
+
+    // seed RNG
+    local_rng.seedTime();
+    local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    demo_file->write(&uniqueGameKey, sizeof(uniqueGameKey), 1);
+
+    // write player stats
+    demo_file->write(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
+    demo_file->write(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
+    demo_file->write(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->write(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
+
+    // write player name
+    Uint32 name_len = (Uint32)strlen(stats[clientnum]->name);
+    demo_file->write(&name_len, sizeof(name_len), 1);
+    demo_file->write(stats[clientnum]->name, sizeof(char), name_len);
+
+    // reset player
+    stats[clientnum]->clearStats();
+	initClass(clientnum);
+
+    // start game
+    doNewGame(false);
+
+    messagePlayer(clientnum, MESSAGE_MISC, "Recording demo to '%s'", path);
+    demo_mode = DemoMode::RECORDING;
+}
+
+static void demo_play(const char* filename) {
+    if (demo_mode != DemoMode::STOPPED) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demo must be stopped first (/demo_stop)");
+        return;
+    }
+
+    if (multiplayer != SINGLE || splitscreen) {
+        messagePlayer(clientnum, MESSAGE_MISC, "Demos not permitted in multiplayer");
+        return;
+    }
+
+    // open demo file for playing
+    char path[PATH_MAX];
+    completePath(path, filename, outputdir);
+    demo_file = FileIO::open(path, "rb");
+    if (!demo_file) {
+        messagePlayer(clientnum, MESSAGE_MISC, "failed to open demo file '%s'", path);
+        return;
+    }
+
+    TimerExperiments::bUseTimerInterpolation = false; // this causes mass desyncs
+
+    // seed RNG
+    demo_file->read(&uniqueGameKey, sizeof(uniqueGameKey), 1);
+    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
+    // read player stats
+    demo_file->read(&stats[clientnum]->playerRace, sizeof(Stat::playerRace), 1);
+    demo_file->read(&stats[clientnum]->sex, sizeof(Stat::sex), 1);
+    demo_file->read(&stats[clientnum]->appearance, sizeof(Stat::appearance), 1);
+    demo_file->read(&client_classes[clientnum], sizeof(client_classes[clientnum]), 1);
+
+    // read player name
+    Uint32 name_len;
+    demo_file->read(&name_len, sizeof(name_len), 1);
+    demo_file->read(stats[clientnum]->name, sizeof(char), name_len);
+    stats[clientnum]->name[name_len] = '\0';
+
+    // reset player
+    stats[clientnum]->clearStats();
+	initClass(clientnum);
+
+    // start game
+    doNewGame(false);
+
+    messagePlayer(clientnum, MESSAGE_MISC, "Playing demo in '%s'", path);
+    demo_mode = DemoMode::PLAYING;
+}
+
+static ConsoleCommand ccmd_demo_stop("/demo_stop", "stop recording or playing a demo",
+    [](int argc, const char* argv[]){
+    demo_stop();
+    });
+
+static ConsoleCommand ccmd_demo_record("/demo_record", "record a demo to a file (default demo.dat)",
+    [](int argc, const char* argv[]){
+    if (argc < 2) {
+	    demo_record("demo.dat");
+    } else {
+	    demo_record(argv[1]);
+    }
+    });
+
+static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default demo.dat)",
+    [](int argc, const char* argv[]){
+    if (argc < 2) {
+	    demo_play("demo.dat");
+    } else {
+	    demo_play(argv[1]);
+    }
+    });
+
 /*-------------------------------------------------------------------------------
 
 	gameLogic
@@ -705,6 +864,43 @@ void gameLogic(void)
 	Uint32 i = 0, j;
 	deleteent_t* deleteent;
 	bool entitydeletedself;
+
+    if (!gamePaused && !loading) {
+        if (demo_file) {
+            // demo recording
+            if (demo_mode == DemoMode::RECORDING) {
+                demo_file->write(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+                demo_file->write(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+                demo_file->write(&keystatus, sizeof(keystatus), 1);
+                demo_file->write(&mousex, sizeof(mousex), 1);
+                demo_file->write(&mousey, sizeof(mousey), 1);
+                demo_file->write(&mousestatus, sizeof(mousestatus), 1);
+                demo_file->write(&mousexrel, sizeof(mousexrel), 1);
+                demo_file->write(&mouseyrel, sizeof(mouseyrel), 1);
+            }
+
+            // demo playback
+            if (demo_mode == DemoMode::PLAYING) {
+                demo_file->read(&Input::inputs[clientnum].keys, sizeof(Input::keys), 1);
+                demo_file->read(&Input::inputs[clientnum].mouseButtons, sizeof(Input::mouseButtons), 1);
+                demo_file->read(&keystatus, sizeof(keystatus), 1);
+                demo_file->read(&mousex, sizeof(mousex), 1);
+                demo_file->read(&mousey, sizeof(mousey), 1);
+                demo_file->read(&mousestatus, sizeof(mousestatus), 1);
+                demo_file->read(&mousexrel, sizeof(mousexrel), 1);
+                demo_file->read(&mouseyrel, sizeof(mouseyrel), 1);
+                if (demo_file->eof()) {
+                    demo_stop();
+                }
+            }
+        }
+    }
+
+	for (auto& input : Input::inputs) {
+		input.updateReleasedBindings();
+		input.update();
+		input.consumeBindingsSharedWithFaceHotbar();
+	}
 
 	int auto_appraise_lowest_time[MAXPLAYERS];
 	Item* auto_appraise_target[MAXPLAYERS];
@@ -929,13 +1125,13 @@ void gameLogic(void)
 				}
 	            if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
 	            {
-				    j = 1 + rand() % 4;
+				    j = 1 + local_rng.rand() % 4;
 				    for ( c = 0; c < j; ++c )
 				    {
 					    Entity* flame = spawnFlame(entity, SPRITE_FLAME);
-					    flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
-					    flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
-					    flame->z += rand() % 5 - 2;
+					    flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
+					    flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
+					    flame->z += local_rng.rand() % 5 - 2;
 				    }
 				}
 			}
@@ -1137,7 +1333,7 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && local_rng.rand() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
@@ -1154,15 +1350,15 @@ void gameLogic(void)
 									// lava bubbles
 									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
-										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
+										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
-											int c, j = 1 + rand() % 2;
+											int c, j = 1 + local_rng.rand() % 2;
 											for ( c = 0; c < j; ++c )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
-												entity->x = x * 16 + rand() % 16;
-												entity->y = y * 16 + rand() % 16;
+												entity->x = x * 16 + local_rng.rand() % 16;
+												entity->y = y * 16 + local_rng.rand() % 16;
 												entity->z = 7.5;
 												entity->flags[PASSABLE] = true;
 												entity->flags[SPRITE] = true;
@@ -1172,13 +1368,13 @@ void gameLogic(void)
 												entity->sizex = 2;
 												entity->sizey = 2;
 												entity->fskill[3] = 0.01;
-												double vel = (rand() % 10) / 20.f;
+												double vel = (local_rng.rand() % 10) / 20.f;
 												entity->vel_x = vel * cos(entity->yaw);
 												entity->vel_y = vel * sin(entity->yaw);
-												entity->vel_z = -.15 - (rand() % 15) / 100.f;
-												entity->yaw = (rand() % 360) * PI / 180.0;
-												entity->pitch = (rand() % 360) * PI / 180.0;
-												entity->roll = (rand() % 360) * PI / 180.0;
+												entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
+												entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+												entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+												entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 												if ( multiplayer != CLIENT )
 												{
 													--entity_uids;
@@ -1689,7 +1885,7 @@ void gameLogic(void)
 					}
 
 					// signal clients about level change
-					mapseed = rand();
+					mapseed = local_rng.rand();
 					lastEntityUIDs = entity_uids;
 					if ( forceMapSeed > 0 )
 					{
@@ -2495,7 +2691,7 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && rand() % 3 == 0 )
+									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && local_rng.rand() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
@@ -2512,15 +2708,15 @@ void gameLogic(void)
 									// lava bubbles
 									if ( lavatiles[map.tiles[index]] && !gameloopFreezeEntities )
 									{
-										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
+										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
-											int c, j = 1 + rand() % 2;
+											int c, j = 1 + local_rng.rand() % 2;
 											for ( c = 0; c < j; c++ )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
-												entity->x = x * 16 + rand() % 16;
-												entity->y = y * 16 + rand() % 16;
+												entity->x = x * 16 + local_rng.rand() % 16;
+												entity->y = y * 16 + local_rng.rand() % 16;
 												entity->z = 7.5;
 												entity->flags[PASSABLE] = true;
 												entity->flags[SPRITE] = true;
@@ -2530,13 +2726,13 @@ void gameLogic(void)
 												entity->sizex = 2;
 												entity->sizey = 2;
 												entity->fskill[3] = 0.01;
-												double vel = (rand() % 10) / 20.f;
+												double vel = (local_rng.rand() % 10) / 20.f;
 												entity->vel_x = vel * cos(entity->yaw);
 												entity->vel_y = vel * sin(entity->yaw);
-												entity->vel_z = -.15 - (rand() % 15) / 100.f;
-												entity->yaw = (rand() % 360) * PI / 180.0;
-												entity->pitch = (rand() % 360) * PI / 180.0;
-												entity->roll = (rand() % 360) * PI / 180.0;
+												entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
+												entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+												entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+												entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 												if ( multiplayer != CLIENT )
 												{
 													entity_uids--;
@@ -2752,6 +2948,7 @@ void gameLogic(void)
 
 									// rotate to new angles
 									double dirYaw = entity->new_yaw - entity->yaw;
+									dirYaw = fmod(dirYaw, 2 * PI);
 									while ( dirYaw >= PI )
 									{
 										dirYaw -= PI * 2;
@@ -2770,17 +2967,18 @@ void gameLogic(void)
 										entity->yaw -= 2 * PI;
 									}
 									double dirPitch = entity->new_pitch - entity->pitch;
+									dirPitch = fmod(dirPitch, 2 * PI);
+									while ( dirPitch >= PI )
+									{
+										dirPitch -= PI * 2;
+									}
+									while ( dirPitch < -PI )
+									{
+										dirPitch += PI * 2;
+									}
 									if ( entity->behavior != &actArrow )
 									{
 										// client handles pitch in actArrow.
-										while ( dirPitch >= PI )
-										{
-											dirPitch -= PI * 2;
-										}
-										while ( dirPitch < -PI )
-										{
-											dirPitch += PI * 2;
-										}
 										entity->pitch += dirPitch / 3;
 										while ( entity->pitch < 0 )
 										{
@@ -2792,6 +2990,7 @@ void gameLogic(void)
 										}
 									}
 									double dirRoll = entity->new_roll - entity->roll;
+									dirRoll = fmod(dirRoll, 2 * PI);
 									while ( dirRoll >= PI )
 									{
 										dirRoll -= PI * 2;
@@ -2985,6 +3184,19 @@ void gameLogic(void)
 				}
 			}
 		}
+    }
+
+    bool playeralive = false;
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (players[c] && players[c]->entity) {
+            playeralive = true;
+        }
+    }
+
+    // increment gameplay time
+	if (!gamePaused && !intro && playeralive)
+	{
+		++completionTime;
 	}
 }
 
@@ -3241,11 +3453,6 @@ void handleEvents(void)
 	}
 
 	Input::lastInputOfAnyKind = "";
-	for (auto& input : Input::inputs) {
-		input.updateReleasedBindings();
-		input.update();
-		input.consumeBindingsSharedWithFaceHotbar();
-	}
 
     // consume mouse buttons that were eaten by GUI
 	if (!framesProcResult.usable && *framesEatMouse) {
@@ -3273,6 +3480,14 @@ void handleEvents(void)
 				mainloop = 0;
 				break;
 			case SDL_KEYDOWN: // if a key is pressed...
+			    if (demo_mode != DemoMode::STOPPED) {
+			        if (event.key.keysym.sym == SDLK_ESCAPE) {
+			            demo_stop();
+			        }
+			        else if (demo_mode == DemoMode::PLAYING) {
+			            break;
+			        }
+			    }
 				if ( command )
 				{
 				    static int saved_command_index = 0;
@@ -3415,6 +3630,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 #ifdef PANDORA
 				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
@@ -3442,12 +3660,18 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEBUTTONDOWN: // if a mouse button is pressed...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				mousestatus[event.button.button] = 1; // set this mouse button to 1
 				Input::mouseButtons[event.button.button] = 1;
 				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
 				lastkeypressed = 282 + event.button.button;
 				break;
 			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				Input::mouseButtons[event.button.button] = 0;
 				buttonclick = 0; // release any buttons that were being held down
@@ -3463,6 +3687,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEWHEEL:
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
@@ -3479,6 +3706,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( firstmouseevent == true )
 				{
 					firstmouseevent = false;
@@ -3519,6 +3749,9 @@ void handleEvents(void)
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				//joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
 				char buf[32] = "";
@@ -3593,7 +3826,7 @@ void handleEvents(void)
 							                    // this player already has a controller
 							                    continue;
 							                }
-							                if (!intro && inputs.bPlayerUsingKeyboardControl(player))
+							                if (!intro && inputs.getPlayerIDAllowedKeyboard() == player && (splitscreen || multiplayer != SINGLE))
 							                {
 							                    // this player is using a keyboard
 							                    continue;
@@ -3638,6 +3871,9 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERAXISMOTION:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				char buf[32] = "";
 				float rebindingDeadzone = Input::getJoystickRebindingDeadzone() * 32768.f;
 				switch (event.caxis.axis) {
@@ -3702,10 +3938,16 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERBUTTONUP:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 			    break;
 			}
 			case SDL_CONTROLLERDEVICEADDED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				const int device_index = event.cdevice.which; // this is an index within SDL_Numjoysticks(), not to be referred to from now on.
 				if ( !SDL_IsGameController(device_index) )
 				{
@@ -3782,6 +4024,9 @@ void handleEvents(void)
 			}
 			case SDL_CONTROLLERDEVICEREMOVED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				// device removed uses a 'joystick id', different to the device added event
 				const int instanceID = event.cdevice.which;
 				SDL_GameController* pad = SDL_GameControllerFromInstanceID(instanceID);
@@ -3814,6 +4059,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYDEVICEADDED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( SDL_IsGameController(event.jdevice.which) )
 				{
 					// this is supported by the SDL_GameController interface, no need to make a joystick for it
@@ -3836,6 +4084,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYBUTTONDOWN:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
 				{
 					char buf[32] = "";
@@ -3846,6 +4097,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYAXISMOTION:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
 				{
 					char buf[32] = "";
@@ -3867,6 +4121,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYHATMOTION:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( Input::joysticks.find(event.jdevice.which) != Input::joysticks.end() )
 				{
 					char buf[32] = "";
@@ -3887,6 +4144,9 @@ void handleEvents(void)
 			}
 			case SDL_JOYDEVICEREMOVED:
 			{
+			    if (demo_mode == DemoMode::PLAYING) {
+			        break;
+			    }
 				if ( SDL_IsGameController(event.jdevice.which) )
 				{
 					// this is supported by the SDL_GameController interface, no need to make a joystick for it
@@ -3925,10 +4185,18 @@ void handleEvents(void)
 						sound_update(); //Update FMOD and whatnot.
 #endif
 					}
-					if (initialized && !loading)
-					{
-						gameLogic();
+
+				    if (!loading)
+				    {
+					    if (initialized)
+					    {
+						    gameLogic();
+						}
+
+                        // increment game tick counter
+                        ++ticks;
 					}
+
 					mousexrel = 0;
 					mouseyrel = 0;
 					if (initialized)
@@ -3946,7 +4214,7 @@ void handleEvents(void)
 				}
 				else
 				{
-					//printlog("overloaded timer! %d", runtimes);
+					//printlog("dropped frame");
 				}
 				++runtimes;
 				break;
@@ -4063,20 +4331,6 @@ Uint32 timerCallback(Uint32 interval, void* param)
 
 	event.type = SDL_USEREVENT;
 	event.user = userevent;
-
-	int c;
-	bool playeralive = false;
-	for (c = 0; c < MAXPLAYERS; c++)
-		if (players[c] && players[c]->entity && !client_disconnected[c])
-		{
-			playeralive = true;
-		}
-
-	if ((!gamePaused || multiplayer) && !loading && !intro && playeralive)
-	{
-		completionTime++;
-	}
-	ticks++;
 	if (!loading)
 	{
 		SDL_PushEvent(&event);    // so the game doesn't overload itself while loading
@@ -5626,10 +5880,6 @@ int main(int argc, char** argv)
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
 
-#ifdef NINTENDO
-//		strcpy(classtoquickstart, "warrior");
-#endif
-
 		// load default language file (english)
 		if ( loadLanguage("en") )
 		{
@@ -5737,9 +5987,6 @@ int main(int argc, char** argv)
 
 		// initialize player conducts
 		setDefaultPlayerConducts();
-
-		// seed random generators
-		fountainSeed.seed(rand());
 
 		// play splash sound
 #ifdef MUSIC
@@ -5881,7 +6128,7 @@ int main(int argc, char** argv)
 					{
 						fadealpha = 255;
 						int menuMapType = 0;
-						switch ( rand() % 4 ) // STEAM VERSION INTRO
+						switch ( local_rng.rand() % 4 ) // STEAM VERSION INTRO
 						{
 							case 0:
 							case 1:
@@ -5915,38 +6162,20 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					if (strcmp(classtoquickstart, ""))
+					if (classtoquickstart[0] != '\0')
 					{
-						for ( c = 0; c <= CLASS_MONK; c++ )
-						{
-							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) )
-							{
+						for ( c = 0; c <= CLASS_MONK; c++ ) {
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) ) {
 								client_classes[0] = c;
 								break;
 							}
 						}
+						strcpy(classtoquickstart, "");
 
-						// generate unique game key
-						prng_seed_time();
-						uniqueGameKey = prng_get_uint();
-						if ( !uniqueGameKey )
-						{
-							uniqueGameKey++;
-						}
-						loading = true;
-
-						// hack to fix these things from breaking everything...
-						for ( int i = 0; i < MAXPLAYERS; ++i )
-						{
-							players[i]->hud.arm = nullptr;
-							players[i]->hud.weapon = nullptr;
-							players[i]->hud.magicLeftHand = nullptr;
-							players[i]->hud.magicRightHand = nullptr;
-						}
-
-						// reset class loadout
-						stats[0]->sex = static_cast<sex_t>(rand() % 2);
-						stats[0]->appearance = rand() % NUMAPPEARANCES;
+						// set class loadout
+						strcpy(stats[0]->name, "Avatar");
+						stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+						stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
 						if ( stats[0]->playerRace != RACE_HUMAN )
@@ -5954,94 +6183,11 @@ int main(int argc, char** argv)
 							stats[0]->appearance = 0;
 						}
 
-						strcpy(stats[0]->name, "Avatar");
-						multiplayer = SINGLE;
-						fadefinished = false;
-						fadeout = false;
-						numplayers = 0;
-
-						//TODO: Replace all of this with centralized startGameRoutine().
-						// setup game
-						for ( int i = 0; i < MAXPLAYERS; ++i )
-						{
-							players[i]->shootmode = true;
-						}
-						// make some messages
-						startMessages();
-
-						//gameplayCustomManager.writeAllToDocument();
-						gameplayCustomManager.readFromFile();
-
-						// load dungeon
-						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
-						lastEntityUIDs = entity_uids;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
-						{
-							entity = (Entity*)node->element;
-							entity->flags[NOUPDATE] = true;
-						}
-						if ( loadingmap == false )
-						{
-							currentlevel = startfloor;
-							int checkMapHash = -1;
-							if ( startfloor )
-							{
-								physfsLoadMapFile(currentlevel, 0, true, &checkMapHash);
-								conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
-							}
-							else
-							{
-								physfsLoadMapFile(0, 0, true, &checkMapHash);
-							}
-							if ( checkMapHash == 0 )
-							{
-								conductGameChallenges[CONDUCT_MODDED] = 1;
-						        gamemods_disableSteamAchievements = true;
-							}
-						}
-						else
-						{
-							if ( genmap == false )
-							{
-								std::string fullMapName = physfsFormatMapName(maptoload);
-								int checkMapHash = -1;
-								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
-								if ( checkMapHash == 0 )
-								{
-									conductGameChallenges[CONDUCT_MODDED] = 1;
-						            gamemods_disableSteamAchievements = true;
-								}
-							}
-							else
-							{
-								generateDungeon(maptoload, rand());
-							}
-						}
-						assignActions(&map);
-						generatePathMaps();
-
-						achievementObserver.updateData();
-
-						saveGame();
-
-						enchantedFeatherScrollSeed.seed(uniqueGameKey);
-						enchantedFeatherScrollsShuffled.clear();
-						auto scrollsToPick = enchantedFeatherScrollsFixedList;
-						while ( !scrollsToPick.empty() )
-						{
-							int index = enchantedFeatherScrollSeed() % scrollsToPick.size();
-							enchantedFeatherScrollsShuffled.push_back(scrollsToPick[index]);
-							scrollsToPick.erase(scrollsToPick.begin() + index);
-						}
-						//for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
-						//{
-						//	printlog("Sequence: %d", *it);
-						//}
-
-						// kick off the main loop!
-						strcpy(classtoquickstart, "");
-						intro = false;
-						loading = false;
+						// generate unique game key
+						local_rng.seedTime();
+						local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+						net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+						doNewGame(false);
 					}
 					else
 					{

@@ -20,6 +20,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "paths.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -257,7 +258,7 @@ void actItem(Entity* my)
 					}
 					if ( !trySalvage )
 					{
-						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
+						playSoundEntity( players[i]->entity, 35 + local_rng.rand() % 3, 64 );
 					}
 					Item* item2 = newItemFromEntity(my);
 					if ( my->itemStolen == 1 && item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID()) )
@@ -355,7 +356,7 @@ void actItem(Entity* my)
 			case 611:
 			case 612:
 			case 613:
-				my->spawnAmbientParticles(80, my->sprite - 4, 10 + rand() % 40, 1.0, false);
+				my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
 				if ( !my->light )
 				{
 					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);

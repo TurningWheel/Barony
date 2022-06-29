@@ -21,6 +21,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initKobold(Entity* my, Stat* myStats)
 {
@@ -54,10 +55,10 @@ void initKobold(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			if ( rand() % 8 == 0 )
+			if ( local_rng.rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 1800;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -76,7 +77,7 @@ void initKobold(Entity* my, Stat* myStats)
 
 			if ( !strncmp(myStats->name, "kobold cultist", 14) )
 			{
-				cultist = 1 + rand() % 2;
+				cultist = 1 + local_rng.rand() % 2;
 			}
 
 			my->setHardcoreStats(*myStats);
@@ -89,65 +90,65 @@ void initKobold(Entity* my, Stat* myStats)
 					if ( cultist == 1 )
 					{
 						// mage
-						switch ( rand() % 5 )
+						switch ( local_rng.rand() % 5 )
 						{
 							case 0:
-								myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 								break;
 							case 1:
-								myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 								break;
 							case 2:
-								myStats->weapon = newItem(SPELLBOOK_BLEED, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								myStats->weapon = newItem(SPELLBOOK_BLEED, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 								break;
 							case 3:
-								newItem(SPELLBOOK_STONEBLOOD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+								newItem(SPELLBOOK_STONEBLOOD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 								break;
 							case 4:
-								myStats->weapon = newItem(MAGICSTAFF_BLEED, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								myStats->weapon = newItem(MAGICSTAFF_BLEED, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 								break;
 						}
 					}
 					else
 					{
 						// ranged
-						switch ( rand() % 5 )
+						switch ( local_rng.rand() % 5 )
 						{
 							case 0:
 							case 1:
-								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 								break;
 							case 2:
-								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 3:
 							case 4:
-								myStats->weapon = newItem(SHORTBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->weapon = newItem(SHORTBOW, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 						}
 					}
 				}
 				else
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
-							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 3:
 						case 4:
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 5:
 						case 6:
 						case 7:
 						case 8:
-							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -161,25 +162,25 @@ void initKobold(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
-					if ( rand() % 20 == 0 )
+					if ( local_rng.rand() % 20 == 0 )
 					{
 						newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
 					}
-					else if ( rand() % 5 == 0 ) // 20% chance
+					else if ( local_rng.rand() % 5 == 0 ) // 20% chance
 					{
-						if ( rand() % 2 )
+						if ( local_rng.rand() % 2 )
 						{
-							newItem(TOOL_TINOPENER, WORN, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							newItem(TOOL_TINOPENER, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
-							newItem(TOOL_TOWEL, WORN, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							newItem(TOOL_TOWEL, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 						}
 					}
 				case 1:
 					if ( my->hasRangedWeapon() )
 					{
-						if ( rand() % 5 > 0 ) // 80% chance
+						if ( local_rng.rand() % 5 > 0 ) // 80% chance
 						{
 							newItem(SPELLBOOK_SLOW, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 						}
@@ -202,33 +203,33 @@ void initKobold(Entity* my, Stat* myStats)
 					{
 						if ( cultist == 1 )
 						{
-							myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						}
 						else
 						{
-							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						}
 					}
 					else
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
-								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + local_rng.rand() % 2), -2 + local_rng.rand() % 5, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 2:
 							case 3:
 							case 4:
 							case 5:
-								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 6:
 							case 7:
-								myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 8:
-								myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+								myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 9:
 								// nothing
@@ -243,11 +244,11 @@ void initKobold(Entity* my, Stat* myStats)
 			{
 				if ( cultist > 0 )
 				{
-					myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, cultist - 1, false, nullptr);
+					myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, cultist - 1, false, nullptr);
 				}
 				else
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -260,7 +261,7 @@ void initKobold(Entity* my, Stat* myStats)
 						case 7:
 						case 8:
 						case 9:
-							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -269,7 +270,7 @@ void initKobold(Entity* my, Stat* myStats)
 			// give helm
 			if ( cultist > 0 && myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
-				myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, cultist - 1, false, nullptr);
+				myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, cultist - 1, false, nullptr);
 			}
 		}
 	}
@@ -482,7 +483,7 @@ void koboldDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 298 + rand() % 4, 128);
+	playSoundEntity(my, 298 + local_rng.rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }

@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initImp(Entity* my, Stat* myStats)
 {
@@ -54,10 +55,10 @@ void initImp(Entity* my, Stat* myStats)
 			myStats->EFFECTS[EFF_LEVITATING] = true;
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
+			if ( local_rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -83,9 +84,9 @@ void initImp(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 4 == 0 )
+					if ( local_rng.rand() % 4 == 0 )
 					{
-						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + local_rng.rand() % 21), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:

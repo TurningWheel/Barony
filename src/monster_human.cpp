@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "classdescriptions.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 void initHuman(Entity* my, Stat* myStats)
 {
@@ -61,19 +62,19 @@ void initHuman(Entity* my, Stat* myStats)
 			// generate special loadout
 			if ( my->monsterSpecialTimer == 0 )
 			{
-				if ( rand() % 25 == 0 && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] 
+				if ( local_rng.rand() % 25 == 0 && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] 
 					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 				{
 					specialMonsterVariant = 1;
-					int specialMonsterType = rand() % 10;
+					int specialMonsterType = local_rng.rand() % 10;
 					if ( !strncmp(map.name, "Mages Guild", 11) )
 					{
 						while ( specialMonsterType == 6 ) // 2 spiders that spawn cause aggro issues in Hamlet.
 						{
-							specialMonsterType = rand() % 10;
+							specialMonsterType = local_rng.rand() % 10;
 						}
 					}
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 							// red riding hood
@@ -91,9 +92,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = -2;
 							myStats->PER = -2;
 							myStats->CHR = 4;
-							myStats->helmet = newItem(HAT_HOOD_RED, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_HOOD_RED, EXCELLENT, 1, 1, local_rng.rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, nullptr);
-							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 1:
 						{
@@ -117,7 +118,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, nullptr);
 							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-							myStats->weapon = newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
+							myStats->weapon = newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
 							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, nullptr);
 							break;
 						}
@@ -180,9 +181,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 3;
 							myStats->PER = 3;
 							myStats->CHR = 20;
-							myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, rand(), false, nullptr);
-							myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, rand(), false, nullptr);
-							myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, local_rng.rand(), false, nullptr);
+							myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 5:
 							// othello
@@ -200,9 +201,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 3;
 							myStats->PER = 0;
 							myStats->CHR = 30;
-							myStats->gloves = newItem(BRACERS, EXCELLENT, -1, 1, rand(), false, nullptr);
-							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, rand(), false, nullptr);
-							myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, rand(), false, nullptr);
+							myStats->gloves = newItem(BRACERS, EXCELLENT, -1, 1, local_rng.rand(), false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, local_rng.rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
 							break;
 						case 6:
@@ -222,9 +223,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 20;
 							myStats->PER = 20;
 							myStats->CHR = 10;
-							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, local_rng.rand(), false, nullptr);
 							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-							myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, local_rng.rand(), false, nullptr);
 							int c;
 							for ( c = 0; c < 2; c++ )
 							{
@@ -274,11 +275,11 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->PER = 5;
 							myStats->CHR = 10;
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
-							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, nullptr);
-							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, local_rng.rand(), false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, local_rng.rand(), false, nullptr);
 							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-							myStats->weapon = newItem(ARTIFACT_SPEAR, static_cast<Status>(status), 1, 1, rand(), false, nullptr);
-							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(ARTIFACT_SPEAR, static_cast<Status>(status), 1, 1, local_rng.rand(), false, nullptr);
+							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, local_rng.rand(), false, nullptr);
 							break;
 						}
 						case 9:
@@ -298,8 +299,8 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->PER = 20;
 							myStats->CHR = 20;
 							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, nullptr);
-							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, rand(), false, nullptr);
-							myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, local_rng.rand(), false, nullptr);
+							myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, local_rng.rand(), false, nullptr);
 							break;
 						default:
 							break;
@@ -312,7 +313,7 @@ void initHuman(Entity* my, Stat* myStats)
 				// zap brigadier
 				strcpy(myStats->name, "ZAP Brigadier");
 				myStats->appearance = 1;
-				myStats->sex = static_cast<sex_t>(rand() % 2);
+				myStats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 				myStats->LVL = 10;
 				myStats->HP = 100;
 				myStats->MAXHP = myStats->HP;
@@ -334,10 +335,10 @@ void initHuman(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rand() % 10 == 0 && strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+			if ( local_rng.rand() % 10 == 0 && strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 1800;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -357,7 +358,7 @@ void initHuman(Entity* my, Stat* myStats)
 			{
 				if ( my->monsterStoreType == 0 && currentlevel > 5 )
 				{
-					my->monsterStoreType = (currentlevel / 5) * 3 + (rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
+					my->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
 				}
 				myStats->EXP += 100 * my->monsterStoreType; // apply experience to level up the humans with floor depth.
 			}
@@ -384,31 +385,31 @@ void initHuman(Entity* my, Stat* myStats)
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 2:
 						case 3:
-							myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
-							myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 6:
-							myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 7:
-							myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
-							myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -422,26 +423,26 @@ void initHuman(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
 							case 2:
-								myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, nullptr);
+								myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 3:
 							case 4:
 								break;
 							case 5:
 							case 6:
-								myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, nullptr);
+								myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 7:
 							case 8:
-								myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, nullptr);
+								myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 9:
-								myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, local_rng.rand(), false, nullptr);
 								break;
 						}
 					}
@@ -450,28 +451,28 @@ void initHuman(Entity* my, Stat* myStats)
 				// give helmet
 				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 							break;
 						case 3:
-							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, nullptr);
+							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, local_rng.rand() % 4, false, nullptr);
 							break;
 						case 4:
-							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 5:
-							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 6:
 						case 7:
-							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -479,7 +480,7 @@ void initHuman(Entity* my, Stat* myStats)
 				// give cloak
 				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -491,10 +492,10 @@ void initHuman(Entity* my, Stat* myStats)
 						case 6:
 						case 7:
 						case 8:
-							myStats->cloak = newItem(CLOAK, WORN, 0, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -502,7 +503,7 @@ void initHuman(Entity* my, Stat* myStats)
 				// give armor
 				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -513,11 +514,11 @@ void initHuman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -525,7 +526,7 @@ void initHuman(Entity* my, Stat* myStats)
 				// give gloves
 				if ( myStats->gloves == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -536,11 +537,11 @@ void initHuman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->gloves = newItem(GLOVES, WORN, 0, 1, rand(), false, nullptr);
+							myStats->gloves = newItem(GLOVES, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, rand(), false, nullptr);
+							myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -548,7 +549,7 @@ void initHuman(Entity* my, Stat* myStats)
 				// give boots
 				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -559,11 +560,11 @@ void initHuman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}

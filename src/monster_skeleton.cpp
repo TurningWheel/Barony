@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 void initSkeleton(Entity* my, Stat* myStats)
 {
@@ -224,7 +225,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, "") || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+				if ( local_rng.rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, "") || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 				{
 					// not boss if a follower, or name has already been set to something other than blank.
 					if ( strncmp(map.name, "Underworld", 10) )
@@ -232,27 +233,27 @@ void initSkeleton(Entity* my, Stat* myStats)
 						//give weapon
 						if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 						{
-							switch ( rand() % 10 )
+							switch ( local_rng.rand() % 10 )
 							{
 								case 0:
 								case 1:
-									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 2:
 								case 3:
-									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 4:
 								case 5:
-									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 6:
 								case 7:
-									myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 								case 8:
 								case 9:
-									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 									break;
 							}
 						}
@@ -265,7 +266,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 					strcpy(myStats->name, "Funny Bones");
 					myStats->STR += 6;
 					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
 					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 				}
 
@@ -302,23 +303,23 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
 						case 6:
 						case 7:
-							myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(CROSSBOW, WORN, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -326,7 +327,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give helmet
 				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
@@ -335,13 +336,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 						case 4:
 							break;
 						case 5:
-							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 6:
 						case 7:
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -355,7 +356,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 					}
 					else
 					{
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -366,13 +367,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 								break;
 							case 6:
 							case 7:
-								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 8:
-								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 								break;
 							case 9:
-								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 2, 1, local_rng.rand(), false, nullptr);
 								break;
 						}
 					}
@@ -632,7 +633,7 @@ void skeletonDie(Entity* my)
 				int manaToRefund = std::min(spellCost, static_cast<int>(myStats->MP / static_cast<float>(myStats->MAXMP) * spellCost)); // MP to restore
 				if ( manaToRefund > 0 )
 				{
-					manaToRefund -= rand() % (std::max(1, manaToRefund / 3));
+					manaToRefund -= local_rng.rand() % (std::max(1, manaToRefund / 3));
 					if ( leaderStats->HP <= 0 )
 					{
 						manaToRefund = 0;

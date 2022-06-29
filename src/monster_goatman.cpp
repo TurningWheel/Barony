@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 const int NUM_GOATMAN_POTIONS = 4;
 const int NUM_GOATMAN_THROWN_WEAPONS = 2;
@@ -86,7 +87,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Gharbad");
 				myStats->STR += 10;
@@ -99,9 +100,10 @@ void initGoatman(Entity* my, Stat* myStats)
 				//TODO: Boss stats
 
 				//Spawn in potions.
-				for ( int i = 0; i < rand()%NUM_GOATMAN_BOSS_GHARBAD_POTIONS + 5; ++i )
+				int end = local_rng.rand()%NUM_GOATMAN_BOSS_GHARBAD_POTIONS + 5;
+				for ( int i = 0; i < end; ++i )
 				{
-					switch ( rand()%10 )
+					switch ( local_rng.rand()%10 )
 					{
 						case 0:
 						case 1:
@@ -115,7 +117,7 @@ void initGoatman(Entity* my, Stat* myStats)
 							newItem(POTION_BOOZE, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 							break;
 						case 9:
-							newItem(POTION_HEALING, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+							newItem(POTION_HEALING, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 							break;
 						default:
 							printlog("Tried to spawn goatman boss \"Gharbad\" invalid potion.");
@@ -123,13 +125,13 @@ void initGoatman(Entity* my, Stat* myStats)
 					}
 				}
 
-				newItem(CRYSTAL_SHURIKEN, EXCELLENT, 1 + rand()%1, rand()%NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS + 2, rand(), true, &myStats->inventory);
+				newItem(CRYSTAL_SHURIKEN, EXCELLENT, 1 + local_rng.rand()%1, local_rng.rand()%NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS + 2, local_rng.rand(), true, &myStats->inventory);
 			}
 
 			// random effects
-			if ( rand() % 8 == 0 )
+			if ( local_rng.rand() % 8 == 0 )
 			{
-				my->setEffect(EFF_ASLEEP, true, 1800 + rand() % 1800, false);
+				my->setEffect(EFF_ASLEEP, true, 1800 + local_rng.rand() % 1800, false);
 			}
 
 			// generates equipment and weapons if available from editor
@@ -147,17 +149,17 @@ void initGoatman(Entity* my, Stat* myStats)
 			my->setHardcoreStats(*myStats);
 
 			bool isShaman = false;
-			if ( rand() % 2 && boss == 0 && !minion )
+			if ( local_rng.rand() % 2 && boss == 0 && !minion )
 			{
 				isShaman = true;
-				if ( myStats->leader_uid == 0 && !my->flags[USERFLAG2] && rand() % 2 == 0 )
+				if ( myStats->leader_uid == 0 && !my->flags[USERFLAG2] && local_rng.rand() % 2 == 0 )
 				{
 					Entity* entity = summonMonster(GOATMAN, my->x, my->y);
 					if ( entity )
 					{
 						entity->parent = my->getUID();
 					}
-					if ( rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 )
 					{
 						// summon second ally randomly.
 						entity = summonMonster(GOATMAN, my->x, my->y);
@@ -182,21 +184,21 @@ void initGoatman(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( isShaman && rand() % 10 == 0 )
+					if ( isShaman && local_rng.rand() % 10 == 0 )
 					{
-						switch ( rand() % 4 )
+						switch ( local_rng.rand() % 4 )
 						{
 							case 0:
-								newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								newItem(SPELLBOOK_SLOW, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 								break;
 							case 1:
-								newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								newItem(SPELLBOOK_FIREBALL, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 								break;
 							case 2:
-								newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								newItem(SPELLBOOK_COLD, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 								break;
 							case 3:
-								newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
 								break;
 						}
 					}
@@ -209,21 +211,21 @@ void initGoatman(Entity* my, Stat* myStats)
 			//Give weapons.
 			if ( !boss )
 			{
-				if ( !isShaman && rand() % 3 > 0 )
+				if ( !isShaman && local_rng.rand() % 3 > 0 )
 				{
-					newItem(STEEL_CHAKRAM, SERVICABLE, 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+					newItem(STEEL_CHAKRAM, SERVICABLE, 0, local_rng.rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, local_rng.rand(), false, &myStats->inventory);
 				}
-				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
-				if ( rand() % 3 == 0 )
+				int numpotions = local_rng.rand() % NUM_GOATMAN_POTIONS + 2;
+				if ( local_rng.rand() % 3 == 0 )
 				{
-					int numhealpotion = rand() % 2 + 1;
-					newItem(POTION_HEALING, static_cast<Status>(rand() % 3 + DECREPIT), 0, numhealpotion, rand(), false, &myStats->inventory);
+					int numhealpotion = local_rng.rand() % 2 + 1;
+					newItem(POTION_HEALING, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), 0, numhealpotion, local_rng.rand(), false, &myStats->inventory);
 					numpotions -= numhealpotion;
 				}
-				if ( rand() % 4 > 0 )
+				if ( local_rng.rand() % 4 > 0 )
 				{
 					// undroppable
-					newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(POTION_BOOZE, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 			}
 
@@ -233,7 +235,7 @@ void initGoatman(Entity* my, Stat* myStats)
 				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
 					// give shield
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 						case 0:
 						case 1:
@@ -243,54 +245,54 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 8:
-							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(local_rng.rand() % 4 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						default:
-							myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
 				// give cloak
 				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
 							break;
 						default:
-							myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
 				// give helmet
 				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							myStats->helmet = newItem(HAT_HOOD, WORN, -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 							break;
 						default:
-							myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
 				// give armor
 				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 2:
-							myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						default:
 							break;
@@ -299,59 +301,59 @@ void initGoatman(Entity* my, Stat* myStats)
 				// give booties
 				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
-							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 19:
-							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(local_rng.rand() % 4 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						default:
-							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
 				// give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 12 )
+					switch ( local_rng.rand() % 12 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
 						case 4:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 2 + SERVICABLE), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(local_rng.rand() % 2 + SERVICABLE), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 5:
 						case 6:
 						case 7:
 						case 8:
-							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 2 + SERVICABLE), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(local_rng.rand() % 2 + SERVICABLE), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 						case 9:
-							switch ( rand() % 4 )
+							switch ( local_rng.rand() % 4 )
 							{
 								case 0:
-									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 2 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(local_rng.rand() % 2 + DECREPIT), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 1:
-									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 2:
-									myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 3:
-									myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 							}
 							break;
 						default:
-							myStats->weapon = newItem(MAGICSTAFF_SLOW, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_SLOW, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 							break;
 					}
 				}
@@ -361,7 +363,7 @@ void initGoatman(Entity* my, Stat* myStats)
 				////give shield
 				//if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				//{
-				//	switch ( rand() % 20 )
+				//	switch ( local_rng.rand() % 20 )
 				//	{
 				//	case 0:
 				//	case 1:
@@ -371,63 +373,63 @@ void initGoatman(Entity* my, Stat* myStats)
 				//	case 5:
 				//	case 6:
 				//	case 7:
-				//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+				//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 				//		break;
 				//	case 8:
-				//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+				//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(local_rng.rand() % 4 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 				//		break;
 				//	default:
-				//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+				//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 				//		break;
 				//	}
 				//}
 				// give cloak
 				/*if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
-					switch ( rand() % 10 )
+					switch ( local_rng.rand() % 10 )
 					{
 					case 0:
 					case 1:
 						break;
 					default:
-						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->cloak = newItem(CLOAK, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					}
 				}*/
 				//// give helmet
 				//if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				//{
-				//	switch ( rand() % 10 )
+				//	switch ( local_rng.rand() % 10 )
 				//	{
 				//	case 0:
 				//	case 1:
-				//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+				//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 				//		break;
 				//	default:
-				//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
+				//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, 0, false, nullptr);
 				//		break;
 				//	}
 				//}
 				// give armor
 				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 					case 0:
 					case 1:
 					case 2:
-						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(local_rng.rand() % 4 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 3:
 					case 4:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 5:
 					case 6:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 19:
-						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					default:
 						break;
@@ -436,26 +438,26 @@ void initGoatman(Entity* my, Stat* myStats)
 				// give booties
 				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(local_rng.rand() % 3 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 19:
-						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(local_rng.rand() % 4 + DECREPIT), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					default:
-						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					}
 				}
 				// give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( local_rng.rand() % 20 )
 					{
 					case 0:
 					case 1:
@@ -465,16 +467,16 @@ void initGoatman(Entity* my, Stat* myStats)
 					case 5:
 					case 6:
 					case 7:
-						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 18:
-						myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					case 19:
-						myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					default:
-						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(local_rng.rand() % 3 + WORN), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 						break;
 					}
 				}
@@ -701,7 +703,7 @@ void goatmanDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 338 + rand() % 2, 128);
+	playSoundEntity(my, 338 + local_rng.rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1399,7 +1401,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
 		//messagePlayer(clientnum, "Cooldown done!");
-		specialRoll = rand()%10;
+		specialRoll = local_rng.rand()%10;
 
 		if ( specialRoll == 0 )
 		{
@@ -1476,7 +1478,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && specialRoll == 0 )
 		{
 			bool tryChakram = true;
-			if ( hasPotion && rand()%10 )
+			if ( hasPotion && local_rng.rand()%10 )
 			{
 				tryChakram = false;
 			}
@@ -1552,7 +1554,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	{
 		//First search the inventory for a THROWN weapon.
 		node_t *weaponNode = nullptr;
-		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && rand() % 10 == 0 )
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
 		{
 			weaponNode = itemNodeInInventory(myStats, -1, THROWN);
 			if ( weaponNode )

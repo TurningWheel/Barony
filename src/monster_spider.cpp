@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
+#include "prng.hpp"
 
 void initSpider(Entity* my, Stat* myStats)
 {
@@ -62,7 +63,7 @@ void initSpider(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
 			{
 				strcpy(myStats->name, "Shelob");
 				myStats->HP = 150;
@@ -75,9 +76,9 @@ void initSpider(Entity* my, Stat* myStats)
 				myStats->PER = 10;
 				myStats->CHR = 10;
 				myStats->LVL = 15;
-				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), false, &myStats->inventory);
+				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, local_rng.rand(), false, &myStats->inventory);
 				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-				newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, rand(), false, &myStats->inventory);
+				newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, local_rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 2;
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -262,11 +263,11 @@ void spiderDie(Entity* my)
 
     if (arachnophobia_filter)
     {
-	    playSoundEntity(my, 509 + rand() % 2, 128);
+	    playSoundEntity(my, 509 + local_rng.rand() % 2, 128);
     }
     else
     {
-	    playSoundEntity(my, 236 + rand() % 2, 128);
+	    playSoundEntity(my, 236 + local_rng.rand() % 2, 128);
     }
 	list_RemoveNode(my->mynode);
 	return;

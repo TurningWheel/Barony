@@ -13,8 +13,6 @@
 
 #include "main.hpp"
 
-#include <random>
-
 class Entity; // forward declare
 class Stat; // forward declare
 
@@ -657,7 +655,7 @@ bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];
-extern std::mt19937 enchantedFeatherScrollSeed;
+extern Uint32 enchantedFeatherScrollSeed;
 extern std::vector<int> enchantedFeatherScrollsShuffled;
 static const std::vector<int> enchantedFeatherScrollsFixedList =
 {

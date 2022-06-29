@@ -14,6 +14,7 @@
 #include "sound.hpp"
 #include "../../entity.hpp"
 #include "../../player.hpp"
+#include "../../prng.hpp"
 #ifdef NINTENDO
  #include "../../nintendo/music.hpp"
 #else
@@ -333,7 +334,7 @@ void handleLevelMusic()
 
 	if ( currenttrack == -1 )
 	{
-		currenttrack = rand();
+		currenttrack = local_rng.rand();
 	}
 
 	if ( (!levelmusicplaying || !playing || olddarkmap != darkmap) && (!combat || !strcmp(map.name, "Hell Boss")) 
@@ -344,7 +345,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMMINESMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMMINESMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMMINESMUSIC;
 			if ( currenttrack == 0 )
@@ -357,7 +358,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMSWAMPMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMSWAMPMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMSWAMPMUSIC;
 			if ( currenttrack == 0 )
@@ -370,7 +371,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMLABYRINTHMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMLABYRINTHMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMLABYRINTHMUSIC;
 			if ( currenttrack == 0 )
@@ -383,7 +384,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMRUINSMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMRUINSMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMRUINSMUSIC;
 			if ( currenttrack == 0 )
@@ -396,7 +397,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMUNDERWORLDMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMUNDERWORLDMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMUNDERWORLDMUSIC;
 			if ( currenttrack == 0 )
@@ -484,7 +485,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMHELLMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMHELLMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMHELLMUSIC;
 			if ( currenttrack == 0 )
@@ -497,7 +498,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMCAVESMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMCAVESMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMCAVESMUSIC;
 			if ( currenttrack == 0 )
@@ -510,7 +511,7 @@ void handleLevelMusic()
 		{
 			if ( !playing )
 			{
-				currenttrack = 1 + rand() % (NUMCITADELMUSIC - 1);
+				currenttrack = 1 + local_rng.rand() % (NUMCITADELMUSIC - 1);
 			}
 			currenttrack = currenttrack % NUMCITADELMUSIC;
 			if ( currenttrack == 0 )

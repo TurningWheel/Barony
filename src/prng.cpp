@@ -1,293 +1,381 @@
-/*
- * prng.cpp - Portable, ISO C90 and C99 compliant high-quality
- * pseudo-random number generator based on the alleged RC4
- * cipher.  This PRNG should be suitable for most general-purpose
- * uses.  Not recommended for cryptographic or financial
- * purposes.  Not thread-safe.
- */
-
-/*
- * Copyright (c) 2004 Ben Pfaff <blp@cs.stanford.edu>.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or
- * without modification, are permitted provided that the
- * following conditions are met:
- *
- * 1. Redistributions of source code must retain the above
- * copyright notice, this list of conditions and the following
- * disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following
- * disclaimer in the documentation and/or other materials
- * provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS
- * IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT
- * SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
- * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
- * OF SUCH DAMAGE.
- *
- */
-
 #include "prng.hpp"
-#include "SDL.h"
+#include "main.hpp"
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
-#include <math.h>
 #include <time.h>
+#include <string.h>
 
-/* RC4-based pseudo-random state. */
-static unsigned char s[256];
-static Sint32 s_i, s_j;
+BaronyRNG local_rng;
+BaronyRNG net_rng;
 
-/* Nonzero if PRNG has been seeded. */
-static int seeded;
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+#include "net.hpp"
+static BaronyRNG test_rng;
 
-/* Swap bytes that A and B point to. */
-#define SWAP_BYTE(A, B)                         \
-        do {                                    \
-                unsigned char swap_temp = *(A); \
-                *(A) = *(B);                    \
-                *(B) = swap_temp;               \
-        } while (0)
+static ConsoleCommand test_rng_seed(
+    "/test_rng_seed",
+    "seed test rng",
+    [](int argc, const char* argv[]){
+    if (argc < 2) {
+        test_rng.seedTime();
+    } else {
+        auto seed = strtol(argv[1], nullptr, 10);
+        test_rng.seedBytes(&seed, sizeof(seed));
+    }
+    });
 
-/* Seeds the pseudo-random number generator based on the current
-   time.
+static ConsoleCommand test_rng_seed_health(
+    "/test_rng_seed_health",
+    "test rng seed health",
+    [](int argc, const char* argv[]){
+    test_rng.testSeedHealth();
+    });
 
-   If the user calls neither this function nor prng_seed_bytes()
-   before any prng_get*() function, this function is called
-   automatically to obtain a time-based seed. */
-void
-prng_seed_time (void)
-{
-	static time_t t;
-	if (t == 0)
-	{
-		t = time (NULL);
+static ConsoleCommand test_rng_u8(
+    "/test_rng_u8",
+    "test rng u8",
+    [](int argc, const char* argv[]){
+    const int i = argc > 1 ? (int)strtol(argv[1], nullptr, 10) : 100000;
+    real_t sum = 0.0;
+    for (int c = 0; c < i; ++c) {
+        auto result = test_rng.getU8();
+        sum += result;
+        //messagePlayer(clientnum, MESSAGE_MISC, "%d", (int)result);
+    }
+    sum /= i;
+    messagePlayer(clientnum, MESSAGE_MISC, "mean: %.2f", sum);
+    });
+
+static ConsoleCommand test_rng_i8(
+    "/test_rng_i8",
+    "test rng i8",
+    [](int argc, const char* argv[]){
+    const int i = argc > 1 ? (int)strtol(argv[1], nullptr, 10) : 100000;
+    real_t sum = 0.0;
+    for (int c = 0; c < i; ++c) {
+        auto result = test_rng.getI8();
+        sum += result;
+        //messagePlayer(clientnum, MESSAGE_MISC, "%d", (int)result);
+    }
+    sum /= i;
+    messagePlayer(clientnum, MESSAGE_MISC, "mean: %.2f", sum);
+    });
+
+static ConsoleCommand test_rng_f32(
+    "/test_rng_f32",
+    "test rng f32",
+    [](int argc, const char* argv[]){
+    const int i = argc > 1 ? (int)strtol(argv[1], nullptr, 10) : 100000;
+    real_t sum = 0.0;
+    for (int c = 0; c < i; ++c) {
+        auto result = test_rng.getF32();
+        sum += result;
+        //messagePlayer(clientnum, MESSAGE_MISC, "%.2f", result);
+    }
+    sum /= i;
+    messagePlayer(clientnum, MESSAGE_MISC, "mean: %.2f", sum);
+    });
+
+static ConsoleCommand test_rng_f64(
+    "/test_rng_f64",
+    "test rng f64",
+    [](int argc, const char* argv[]){
+    const int i = argc > 1 ? (int)strtol(argv[1], nullptr, 10) : 100000;
+    real_t sum = 0.0;
+    for (int c = 0; c < i; ++c) {
+        auto result = test_rng.getF64();
+        sum += result;
+        //messagePlayer(clientnum, MESSAGE_MISC, "%.2f", result);
+    }
+    sum /= i;
+    messagePlayer(clientnum, MESSAGE_MISC, "mean: %.2f", sum);
+    });
+
+static ConsoleCommand test_rng_uniform(
+    "/test_rng_uniform",
+    "test rng with uniform(a, b, iterations)",
+    [](int argc, const char* argv[]){
+    const int a = argc > 1 ? (int)strtol(argv[1], nullptr, 10) : -10;
+    const int b = argc > 2 ? (int)strtol(argv[2], nullptr, 10) : 10;
+    const int i = argc > 3 ? (int)strtol(argv[3], nullptr, 10) : 100000;
+    real_t sum = 0.0;
+    for (int c = 0; c < i; ++c) {
+        int result = test_rng.uniform(a, b);
+        sum += result;
+        //messagePlayer(clientnum, MESSAGE_MISC, "%d", result);
+    }
+    sum /= i;
+    messagePlayer(clientnum, MESSAGE_MISC, "mean: %.2f", sum);
+    });
+
+static ConsoleCommand test_rng_discrete(
+    "/test_rng_discrete",
+    "test rng with discrete({chances}, iterations)",
+    [](int argc, const char* argv[]){
+    if (argc < 3) {
+        messagePlayer(clientnum, MESSAGE_MISC, "args: {chances} iterations");
+        return;
+    }
+    std::vector<unsigned int> chances;
+    for (int c = 1; c < argc - 1; ++c) {
+        unsigned int chance = (int)strtol(argv[c], nullptr, 10);
+        chances.push_back(chance);
+    }
+    const int i = (int)strtol(argv[argc - 1], nullptr, 10);
+    real_t sum = 0.0;
+    for (int c = 0; c < i; ++c) {
+        int result = test_rng.discrete(chances.data(), chances.size());
+        sum += result;
+        //messagePlayer(clientnum, MESSAGE_MISC, "%d", result);
+    }
+    sum /= i;
+    messagePlayer(clientnum, MESSAGE_MISC, "mean: %.2f", sum);
+    });
+
+static ConsoleCommand test_rng_normal(
+    "/test_rng_normal",
+    "test rng with normal(mean, deviation, iterations)",
+    [](int argc, const char* argv[]){
+    const int m = argc > 1 ? (int)strtol(argv[1], nullptr, 10) : 0;
+    const int d = argc > 2 ? (int)strtol(argv[2], nullptr, 10) : 5;
+    const int i = argc > 3 ? (int)strtol(argv[3], nullptr, 10) : 100000;
+    std::map<int, int> hist{};
+    for (int c = 0; c < i; ++c) {
+        int result = test_rng.normal(m, d);
+        ++hist[result];
+        //messagePlayer(clientnum, MESSAGE_MISC, "%d", result);
+    }
+    for (auto p : hist) {
+        int value = p.second / 200;
+        if (value) {
+            std::string s(value, '*');
+            messagePlayer(clientnum, MESSAGE_MISC, "%5d %s", p.first, s.c_str());
+        }
+    }
+    });
+#endif
+
+void BaronyRNG::testSeedHealth() const {
+	std::string seed_str;
+	seed_str.reserve(2049);
+	real_t sum = 0.0;
+	for (int c = 0; c < 256; ++c) {
+	    for (int b = 0; b < 8; ++b) {
+	        if (buf[c] & (1 << b)) {
+	            sum += 1.0;
+	            seed_str.append("1");
+	        } else {
+	            seed_str.append("0");
+	        }
+	    }
 	}
-	else
-	{
-		t++;
-	}
-
-	prng_seed_bytes (&t, sizeof t);
+	sum /= 2048.0;
+	printlog("rng seed bits are %.2f%% on", sum * 100.0);
+	printlog("seed: %s", seed_str.c_str());
 }
 
-/* Retrieves one octet from the array BYTES, which is N_BYTES in
-   size, starting at an offset of OCTET_IDX octets.  BYTES is
-   treated as a circular array, so that accesses past the first
-   N_BYTES bytes wrap around to the beginning. */
-static unsigned char
-get_octet (const void* bytes_, size_t n_bytes, size_t octet_idx)
-{
-	const unsigned char* bytes = static_cast<const unsigned char* >(bytes_);
-	if (CHAR_BIT == 8)
-	{
-		return bytes[octet_idx % n_bytes];
-	}
-	else
-	{
-		size_t first_byte = octet_idx * 8 / CHAR_BIT % n_bytes;
-		size_t start_bit = octet_idx * 8 % CHAR_BIT;
-		unsigned char c = (bytes[first_byte] >> start_bit) & 255;
-
-		size_t bits_filled = CHAR_BIT - start_bit;
-		if (CHAR_BIT % 8 != 0 && bits_filled < 8)
-		{
-			size_t bits_left = 8 - bits_filled;
-			unsigned char bits_left_mask = (1u << bits_left) - 1;
-			size_t second_byte = first_byte + 1 < n_bytes ? first_byte + 1 : 0;
-
-			c |= (bytes[second_byte] & bits_left_mask) << bits_filled;
-		}
-
-		return c;
-	}
+size_t BaronyRNG::bytesRead() const {
+    return bytes_read;
 }
 
-/* Seeds the pseudo-random number based on the SIZE bytes in
-   KEY.  At most the first 2048 bits in KEY are used. */
-void
-prng_seed_bytes (const void* key, size_t size)
-{
-	Sint32 i, j;
-
-	assert (key != NULL && size > 0);
-
-	for (i = 0; i < 256; i++)
-	{
-		s[i] = i;
-	}
-	for (i = j = 0; i < 256; i++)
-	{
-		j = (j + s[i] + get_octet (key, size, i)) & 255;
-		SWAP_BYTE (s + i, s + j);
-	}
-
-	s_i = s_j = 0;
-	seeded = 1;
+static inline void swap_byte(uint8_t& a, uint8_t& b) {
+    uint8_t t = a;
+    a = b;
+    b = t;
 }
 
-/* Returns a pseudo-random integer in the range [0, 255]. */
-unsigned char
-prng_get_octet (void)
-{
-	if (!seeded)
-	{
-		prng_seed_time ();
+void BaronyRNG::seedImpl(const void* key, size_t size) {
+	assert(key != nullptr && size > 0);
+	for (int i = 0; i < 256; ++i) {
+		buf[i] = i;
 	}
 
-	s_i = (s_i + 1) & 255;
-	s_j = (s_j + s[s_i]) & 255;
-	SWAP_BYTE (s + s_i, s + s_j);
-
-	return s[(s[s_i] + s[s_j]) & 255];
-}
-
-/* Returns a pseudo-random integer in the range [0, UCHAR_MAX]. */
-unsigned char
-prng_get_byte (void)
-{
-	unsigned char byte;
-	Sint32 bits;
-
-	byte = prng_get_octet ();
-	for (bits = 8; bits < CHAR_BIT; bits += 8)
-	{
-		byte = (byte << 8) | prng_get_octet ();
-	}
-	return byte;
-}
-
-/* Fills BUF with SIZE pseudo-random bytes. */
-void
-prng_get_bytes (void* buf_, size_t size)
-{
-	unsigned char* buf;
-
-	for (buf = static_cast<unsigned char* >(buf_); size-- > 0; buf++)
-	{
-		*buf = prng_get_byte ();
-	}
-}
-
-/* Returns a pseudo-random unsigned long in the range [0,
-   ULONG_MAX]. */
-unsigned long
-prng_get_ulong (void)
-{
-	unsigned long ulng;
-	size_t bits;
-
-	ulng = prng_get_octet ();
-	for (bits = 8; bits < CHAR_BIT * sizeof ulng; bits += 8)
-	{
-		ulng = (ulng << 8) | prng_get_octet ();
-	}
-	return ulng;
-}
-
-/* Returns a pseudo-random long in the range [0, LONG_MAX]. */
-long
-prng_get_long (void)
-{
-	return prng_get_ulong () & LONG_MAX;
-}
-
-/* Returns a pseudo-random unsigned int in the range [0,
-   UINT_MAX]. */
-Uint32
-prng_get_uint (void)
-{
-	Uint32 uint;
-	size_t bits;
-
-	uint = prng_get_octet ();
-	for (bits = 8; bits < CHAR_BIT * sizeof uint; bits += 8)
-	{
-		uint = (uint << 8) | prng_get_octet ();
-	}
-	return uint;
-}
-
-/* Returns a pseudo-random int in the range [0, INT_MAX]. */
-int
-prng_get_int (void)
-{
-	return prng_get_uint () & INT_MAX;
-}
-
-/* Returns a pseudo-random floating-point number from the uniform
-   distribution with range [0,1). */
-double
-prng_get_double (void)
-{
-	for (;;)
-	{
-		double dbl = prng_get_ulong () / (ULONG_MAX + 1.0);
-		if (dbl >= 0.0 && dbl < 1.0)
-		{
-			return dbl;
-		}
-	}
-}
-
-/* Returns a pseudo-random floating-point number from the
-   distribution with mean 0 and standard deviation 1.  (Multiply
-   the result by the desired standard deviation, then add the
-   desired mean.) */
-double
-prng_get_double_normal (void)
-{
-	/* Knuth, _The Art of Computer Programming_, Vol. 2, 3.4.1C,
-	   Algorithm P. */
-	static Sint32 has_next = 0;
-	static double next_normal;
-	double this_normal;
-
-	if (has_next)
-	{
-		this_normal = next_normal;
-		has_next = 0;
-	}
-	else
-	{
-		static double limit;
-		double v1, v2, s;
-
-		if (limit == 0.0)
-		{
-			limit = log (DBL_MAX / 2) / (DBL_MAX / 2);
-		}
-
-		for (;;)
-		{
-			double u1 = prng_get_double ();
-			double u2 = prng_get_double ();
-			v1 = 2.0 * u1 - 1.0;
-			v2 = 2.0 * u2 - 1.0;
-			s = v1 * v1 + v2 * v2;
-			if (s > limit && s < 1)
-			{
-				break;
-			}
-		}
-
-		this_normal = v1 * sqrt (-2. * log (s) / s);
-		next_normal = v2 * sqrt (-2. * log (s) / s);
-		has_next = 1;
+	uint8_t b = 0;
+	auto bytes = static_cast<const uint8_t*>(key);
+	for (int i = 0; i < 256; ++i) {
+		b = b + buf[i] + bytes[i % size];
+		swap_byte(buf[i], buf[b]);
 	}
 
-	return this_normal;
+	memcpy(seed, key, size);
+	seed_size = size;
+
+	i1 = i2 = 0;
+	bytes_read = 0;
+	seeded = true;
+}
+
+void BaronyRNG::seedBytes(const void* key, size_t size) {
+    seedImpl(key, size);
+}
+
+void BaronyRNG::seedTime() {
+    // we only want a 32-bit seed
+	uint32_t t = (uint32_t)time(nullptr);
+	seedImpl(&t, sizeof(t));
+}
+
+int BaronyRNG::getSeed(void* out, size_t size) const {
+    if (!seeded || size < seed_size) {
+        assert(0 && "wtf are you doin");
+        return -1;
+    }
+    memcpy(out, seed, seed_size);
+    return seed_size;
+}
+
+void BaronyRNG::getBytes(void* data_, size_t size) {
+#ifndef NDEBUG
+    //stackTrace();
+#endif
+	if (!seeded) {
+	    printlog("rng not seeded, seeding by unix time");
+        // we only want a 32-bit seed
+	    uint32_t t = (uint32_t)time(nullptr);
+	    seedImpl(&t, sizeof(t));
+	}
+	for (uint8_t* data = static_cast<uint8_t*>(data_); size-- > 0; ++data) {
+	    i1 = ((int)i1 + 1) & 255;
+	    i2 = ((int)i2 + buf[i1]) & 255;
+	    swap_byte(buf[i1], buf[i2]);
+		*data = buf[(buf[i1] + buf[i2]) & 255];
+		++bytes_read;
+	}
+#ifdef NDEBUG
+	//checkMarker();
+#endif
+}
+
+uint8_t BaronyRNG::getU8() {
+    uint8_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+uint16_t BaronyRNG::getU16() {
+    uint16_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+uint32_t BaronyRNG::getU32() {
+    uint32_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+uint64_t BaronyRNG::getU64() {
+    uint64_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+int8_t BaronyRNG::getI8() {
+    int8_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+int16_t BaronyRNG::getI16() {
+    int16_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+int32_t BaronyRNG::getI32() {
+    int32_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+int64_t BaronyRNG::getI64() {
+    int64_t result;
+	getBytes(&result, sizeof(result));
+	return result;
+}
+
+float BaronyRNG::getF32() {
+    uint32_t u32;
+	getBytes(&u32, sizeof(u32));
+	constexpr uint64_t div = (uint64_t)1 << 32;
+	return (float)u32 / div;
+}
+
+double BaronyRNG::getF64() {
+    uint32_t u32;
+	getBytes(&u32, sizeof(u32));
+	constexpr uint64_t div = (uint64_t)1 << 32;
+	return (double)u32 / div;
+}
+
+int BaronyRNG::rand() {
+    int i;
+	getBytes(&i, sizeof(i));
+    return i & 0x7fffffff;
+}
+
+int BaronyRNG::uniform(int a, int b) {
+    if (a == b) {
+        return a;
+    }
+    int min = std::min(a, b);
+    int max = std::max(a, b);
+    int diff = (max - min) + 1;
+    int choice = getF64() * diff;
+    return min + choice;
+}
+
+int BaronyRNG::discrete(const unsigned int* chances, int size) {
+    if (size <= 0) {
+        // list is smaller than 0
+        assert(0 && "BaronyRNG::discrete() list is less-or-equal than 0");
+        return 0;
+    }
+
+    unsigned int total = 0;
+    for (int c = 0; c < size; ++c) {
+        total += chances[c];
+    }
+    if (total == 0) {
+        // nothing has a chance to be picked
+        assert(0 && "BaronyRNG::discrete() chances of picking anything are 0");
+        return 0;
+    }
+
+    unsigned int choice = getF64() * total;
+    for (int c = 0; c < size; ++c) {
+        if (chances[c] > choice) {
+            return c;
+        } else {
+            choice -= chances[c];
+        }
+    }
+
+    assert(0 && "BaronyRNG::discrete() nothing was picked. this should never happen");
+    return 0;
+}
+
+int BaronyRNG::normal(int mean, int deviation) {
+    const real_t m = mean;
+    const real_t d = deviation;
+    const real_t f1 = getF64();
+    const real_t f2 = getF64();
+    const real_t norm = cos(2.0 * PI * f2) * sqrt(-2.0 * log(f1));
+    return round(norm * d + m);
+}
+
+void BaronyRNG::setMarker() const {
+#ifndef NDEBUG
+    memcpy(marker, buf, sizeof(marker));
+#endif
+}
+
+void BaronyRNG::checkMarker() const {
+#ifndef NDEBUG
+    if (!memcmp(marker, buf, sizeof(marker))) {
+        printlog("reached marker");
+    }
+#endif
 }

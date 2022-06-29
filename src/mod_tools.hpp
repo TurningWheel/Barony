@@ -67,13 +67,9 @@ public:
 class MonsterStatCustomManager
 {
 public:
-	std::mt19937 monsterStatSeed;
 	static const std::vector<std::string> itemStatusStrings;
 	static const std::vector<std::string> shopkeeperTypeStrings;
-	MonsterStatCustomManager() :
-		monsterStatSeed(rand())
-	{
-	};
+	MonsterStatCustomManager() = default;
 
 	int getSlotFromKeyName(std::string keyName)
 	{
@@ -177,7 +173,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetString());
+			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetString());
 		}
 		int getRandomArrayInt(const rapidjson::GenericArray<true, rapidjson::GenericValue<rapidjson::UTF8<>>>& arr, int invalidEntry)
 		{
@@ -185,7 +181,7 @@ public:
 			{
 				return invalidEntry;
 			}
-			return (arr[rapidjson::SizeType(rand() % arr.Size())].GetInt());
+			return (arr[rapidjson::SizeType(local_rng.rand() % arr.Size())].GetInt());
 		}
 
 		bool readKeyToItemEntry(rapidjson::Value::ConstMemberIterator& itr)
@@ -265,7 +261,7 @@ public:
 			{
 				if ( itr->value.IsArray() )
 				{
-					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), rand()));
+					this->appearance = static_cast<Uint32>(getRandomArrayInt(itr->value.GetArray(), local_rng.rand()));
 				}
 				else if ( itr->value.IsInt() )
 				{
@@ -276,7 +272,7 @@ public:
 					std::string str = itr->value.GetString();
 					if ( str.compare("random") == 0 )
 					{
-						this->appearance = rand();
+						this->appearance = local_rng.rand();
 					}
 				}
 				return true;
@@ -294,7 +290,7 @@ public:
 			else if ( name.compare("drop_percent_chance") == 0 )
 			{
 				this->dropChance = itr->value.GetInt();
-				if ( rand() % 100 >= this->dropChance )
+				if ( local_rng.rand() % 100 >= this->dropChance )
 				{
 					this->dropItemOnDeath = false;
 				}
@@ -314,7 +310,6 @@ public:
 
 	class StatEntry
 	{
-		std::mt19937 StatEntrySeed;
 	public:
 		char name[128];
 		int type = NOTHING;
@@ -378,14 +373,12 @@ public:
 		bool castSpellbooksFromInventory = false;
 		int spellbookCastCooldown = 250;
 
-		StatEntry(const Stat* myStats) :
-			StatEntrySeed(rand())
+		StatEntry(const Stat* myStats)
 		{
 			readFromStats(myStats);
 			strcpy(name, "");
 		}
-		StatEntry() :
-			StatEntrySeed(rand())
+		StatEntry()
 		{
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 			{
@@ -398,7 +391,7 @@ public:
 		{
 			if ( followerVariants.size() > 0 )
 			{
-				std::vector<int> variantChances(followerVariants.size(), 0);
+				std::vector<unsigned int> variantChances(followerVariants.size(), 0);
 				int index = 0;
 				for ( auto& pair : followerVariants )
 				{
@@ -406,8 +399,7 @@ public:
 					++index;
 				}
 
-				std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-				int result = variantWeightedDistribution(StatEntrySeed);
+				int result = local_rng.discrete(variantChances.data(), variantChances.size());
 				return followerVariants.at(result).first;
 			}
 			return "none";
@@ -505,7 +497,7 @@ public:
 				equippedSlots.insert(it.second);
 				if ( it.first.percentChance < 100 )
 				{
-					if ( rand() % 100 >= it.first.percentChance )
+					if ( local_rng.rand() % 100 >= it.first.percentChance )
 					{
 						continue;
 					}
@@ -614,7 +606,7 @@ public:
 				}
 				if ( it.percentChance < 100 )
 				{
-					if ( rand() % 100 >= it.percentChance )
+					if ( local_rng.rand() % 100 >= it.percentChance )
 					{
 						continue;
 					}
@@ -688,7 +680,7 @@ public:
 				{
 					if ( shopkeeperMinItems >= 0 && shopkeeperMaxItems >= 0 )
 					{
-						numItems = shopkeeperMinItems + rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
+						numItems = shopkeeperMinItems + local_rng.rand() % std::max(1, (shopkeeperMaxItems - shopkeeperMinItems + 1));
 						myStats->MISC_FLAGS[STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES] |= numItems + 1;
 					}
 					if ( shopkeeperMaxGeneratedBlessing >= 0 )
@@ -1158,7 +1150,7 @@ public:
 						}
 						if ( itemsToChoose.size() > 0 )
 						{
-							std::vector<int> itemChances(itemsToChoose.size(), 0);
+							std::vector<unsigned int> itemChances(itemsToChoose.size(), 0);
 							int index = 0;
 							for ( auto& pair : itemsToChoose )
 							{
@@ -1166,8 +1158,7 @@ public:
 								++index;
 							}
 
-							std::discrete_distribution<> itemWeightedDistribution(itemChances.begin(), itemChances.end());
-							int result = itemWeightedDistribution(monsterStatSeed);
+							int result = local_rng.discrete(itemChances.data(), itemChances.size());
 							statEntry->equipped_items.push_back(std::make_pair(itemsToChoose.at(result).first, itemsToChoose.at(result).second));
 						}
 					}
@@ -1200,7 +1191,7 @@ public:
 					}
 					if ( itemsToChoose.size() > 0 )
 					{
-						std::vector<int> itemChances(itemsToChoose.size(), 0);
+						std::vector<unsigned int> itemChances(itemsToChoose.size(), 0);
 						int index = 0;
 						for ( auto& i : itemsToChoose )
 						{
@@ -1208,8 +1199,7 @@ public:
 							++index;
 						}
 
-						std::discrete_distribution<> itemWeightedDistribution(itemChances.begin(), itemChances.end());
-						int result = itemWeightedDistribution(monsterStatSeed);
+						int result = local_rng.discrete(itemChances.data(), itemChances.size());
 						statEntry->inventory_items.push_back(itemsToChoose.at(result));
 					}
 				}
@@ -1293,7 +1283,7 @@ public:
 					}
 					if ( !statEntry->shopkeeperStoreTypes.empty() )
 					{
-						std::vector<int> storeChances(statEntry->shopkeeperStoreTypes.size(), 0);
+						std::vector<unsigned int> storeChances(statEntry->shopkeeperStoreTypes.size(), 0);
 						int index = 0;
 						for ( auto& chance : storeChances )
 						{
@@ -1301,8 +1291,7 @@ public:
 							++index;
 						}
 
-						std::discrete_distribution<> storeTypeWeightedDistribution(storeChances.begin(), storeChances.end());
-						std::string result = statEntry->shopkeeperStoreTypes.at(storeTypeWeightedDistribution(monsterStatSeed)).first;
+						std::string result = statEntry->shopkeeperStoreTypes.at(local_rng.discrete(storeChances.data(), storeChances.size())).first;
 						index = 0;
 						for ( auto& lookup : shopkeeperTypeStrings )
 						{
@@ -1348,10 +1337,7 @@ class MonsterCurveCustomManager
 {
 	bool usingCustomManager = false;
 public:
-	std::mt19937 curveSeed;
-	MonsterCurveCustomManager() :
-		curveSeed(rand())
-	{};
+	MonsterCurveCustomManager() = default;
 
 	class MonsterCurveEntry
 	{
@@ -1523,7 +1509,7 @@ public:
 	}
 	int rollMonsterFromCurve(std::string currentMap)
 	{
-		std::vector<int> monsterCurveChances(NUMMONSTERS, 0);
+		std::vector<unsigned int> monsterCurveChances(NUMMONSTERS, 0);
 
 		for ( LevelCurve curve : allLevelCurves )
 		{
@@ -1546,8 +1532,7 @@ public:
 						}
 					}
 				}
-				std::discrete_distribution<> monsterWeightedDistribution(monsterCurveChances.begin(), monsterCurveChances.end());
-				int result = monsterWeightedDistribution(curveSeed);
+				int result = local_rng.discrete(monsterCurveChances.data(), monsterCurveChances.size());
 				//printlog("[MonsterCurveCustomManager]: Rolled: %d", result);
 				return result;
 			}
@@ -1562,7 +1547,7 @@ public:
 			if ( curve.mapName.compare(currentMap) == 0 )
 			{
 				std::vector<std::string> variantResults;
-				std::vector<int> variantChances;
+				std::vector<unsigned int> variantChances;
 				for ( MonsterCurveEntry& monster : curve.monsterCurve )
 				{
 					if ( currentlevel >= monster.levelmin && currentlevel <= monster.levelmax )
@@ -1589,8 +1574,7 @@ public:
 				}
 				if ( !variantResults.empty() )
 				{
-					std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-					int result = variantWeightedDistribution(curveSeed);
+					int result = local_rng.discrete(variantChances.data(), variantChances.size());
 					return variantResults[result];
 				}
 			}
@@ -1607,7 +1591,7 @@ public:
 				{
 					if ( monster.monsterType == monsterType && monster.variants.size() > 0 )
 					{
-						std::vector<int> variantChances(monster.variants.size(), 0);
+						std::vector<unsigned int> variantChances(monster.variants.size(), 0);
 						int index = 0;
 						for ( auto& pair : monster.variants )
 						{
@@ -1615,8 +1599,7 @@ public:
 							++index;
 						}
 
-						std::discrete_distribution<> variantWeightedDistribution(variantChances.begin(), variantChances.end());
-						int result = variantWeightedDistribution(curveSeed);
+						int result = local_rng.discrete(variantChances.data(), variantChances.size());
 						return monster.variants.at(result).first;
 					}
 				}
@@ -2283,7 +2266,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( prng_get_uint() % 100 < m->minoPercent )
+			if ( map_rng.rand() % 100 < m->minoPercent )
 			{
 				minotaurlevel = 1;
 			}
@@ -2319,7 +2302,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( prng_get_uint() % 100 < m->darkPercent )
+			if ( map_rng.rand() % 100 < m->darkPercent )
 			{
 				darkmap = true;
 			}
@@ -2355,7 +2338,7 @@ public:
 				return true;
 			}
 			// found, roll prng
-			if ( prng_get_uint() % 100 < m->shopPercent )
+			if ( map_rng.rand() % 100 < m->shopPercent )
 			{
 				shoplevel = true;
 			}
@@ -2406,7 +2389,7 @@ public:
 			}
 
 			// found, roll prng
-			if ( prng_get_uint() % 100 < percentValue )
+			if ( map_rng.rand() % 100 < percentValue )
 			{
 				bOut = true;
 			}

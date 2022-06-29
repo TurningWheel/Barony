@@ -16,6 +16,7 @@
 #include "engine/audio/sound.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -61,8 +62,8 @@ void actCampfire(Entity* my)
 		    for ( i = 0; i < 3; i++ )
 		    {
 			    entity = spawnFlame(my, SPRITE_FLAME);
-			    entity->x += ((rand() % 30) - 10) / 10.f;
-			    entity->y += ((rand() % 30) - 10) / 10.f;
+			    entity->x += ((local_rng.rand() % 30) - 10) / 10.f;
+			    entity->y += ((local_rng.rand() % 30) - 10) / 10.f;
 			    entity->z -= 1;
 		    }
 		    entity = spawnFlame(my, SPRITE_FLAME);
@@ -102,7 +103,7 @@ void actCampfire(Entity* my)
 				my->removeLightField();
 				my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 152);
 			}
-			CAMPFIRE_FLICKER = 2 + rand() % 7;
+			CAMPFIRE_FLICKER = 2 + local_rng.rand() % 7;
 		}
 	}
 	else

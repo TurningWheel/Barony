@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -243,10 +244,10 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	entity->parent = parentent->getUID();
 	entity->sizex = 2;
 	entity->sizey = 2;
-	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->pitch = (rand() % 360) * PI / 180.0;
-	entity->roll = (rand() % 360) * PI / 180.0;
-	vel = (rand() % 10) / 10.f;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+	entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+	vel = (local_rng.rand() % 10) / 10.f;
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);
 	entity->vel_z = -.5;
@@ -286,7 +287,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	entity->parent = parentent->getUID();
 	entity->sizex = 1;
 	entity->sizey = 1;
-	real_t vel = (rand() % 10) / 10.f;
+	real_t vel = (local_rng.rand() % 10) / 10.f;
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);
 	entity->vel_z = -.5;
@@ -320,10 +321,10 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 	entity->z = z;
 	entity->sizex = 2;
 	entity->sizey = 2;
-	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->pitch = (rand() % 360) * PI / 180.0;
-	entity->roll = (rand() % 360) * PI / 180.0;
-	vel = (rand() % 10) / 10.f;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+	entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+	vel = (local_rng.rand() % 10) / 10.f;
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);
 	entity->vel_z = -.5;

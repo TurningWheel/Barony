@@ -22,9 +22,10 @@
 #include "player.hpp"
 #include "colors.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 //Fountain functions.
-const std::vector<int> fountainPotionDropChances =
+const std::vector<unsigned int> fountainPotionDropChances =
 {
 	5,	//POTION_WATER,
 	20,	//POTION_BOOZE,
@@ -69,12 +70,11 @@ const std::vector<std::pair<int, int>> potionStandardAppearanceMap =
 	{ POTION_STRENGTH, 0 }
 };
 
-std::mt19937 fountainSeed(rand());
-std::discrete_distribution<> fountainDistribution(fountainPotionDropChances.begin(), fountainPotionDropChances.end());
-
 std::pair<int, int> fountainGeneratePotionDrop()
 {
-	auto keyPair = potionStandardAppearanceMap.at(fountainDistribution(fountainSeed));
+	auto keyPair = potionStandardAppearanceMap.at(
+	    local_rng.discrete(fountainPotionDropChances.data(),
+	        fountainPotionDropChances.size()));
 	return std::make_pair(keyPair.first, keyPair.second);
 }
 
@@ -133,9 +133,9 @@ void actFountain(Entity* my)
 		entity->flags[UPDATENEEDED] = false;
 		entity->skill[4] = 7;
 		entity->sprite = 4;
-		entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->pitch = (rand() % 360) * PI / 180.0;
-		entity->roll = (rand() % 360) * PI / 180.0;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 		entity->vel_x = 0;
 		entity->vel_y = 0;
 		entity->vel_z = .25;
@@ -180,7 +180,7 @@ void actFountain(Entity* my)
 					if ( stats[i] && (stats[i]->type == GOATMAN || (stats[i]->playerRace == RACE_GOATMAN && stats[i]->appearance == 0)) )
 					{
 						// drop some random potions.
-						switch ( rand() % 10 )
+						switch ( local_rng.rand() % 10 )
 						{
 							case 0:
 							case 1:
@@ -218,10 +218,10 @@ void actFountain(Entity* my)
 							Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
 							if ( Entity* dropped = dropItemMonster(item, my, NULL) )
 							{
-								dropped->yaw = ((0 + rand() % 360) / 180.f) * PI;
-								dropped->vel_x = (0.75 + .025 * (rand() % 11)) * cos(dropped->yaw);
-								dropped->vel_y = (0.75 + .025 * (rand() % 11)) * sin(dropped->yaw);
-								dropped->vel_z = (-10 - rand() % 20) * .01;
+								dropped->yaw = ((0 + local_rng.rand() % 360) / 180.f) * PI;
+								dropped->vel_x = (0.75 + .025 * (local_rng.rand() % 11)) * cos(dropped->yaw);
+								dropped->vel_y = (0.75 + .025 * (local_rng.rand() % 11)) * sin(dropped->yaw);
+								dropped->vel_z = (-10 - local_rng.rand() % 20) * .01;
 								dropped->flags[USERFLAG1] = false;
 							}
 						}
@@ -238,7 +238,7 @@ void actFountain(Entity* my)
 							if ( !strncmp(map.name, "Underworld", 10) )
 							{
 								Monster creature = SUCCUBUS;
-								if ( rand() % 2 )
+								if ( local_rng.rand() % 2 )
 								{
 									creature = INCUBUS;
 								}
@@ -287,7 +287,7 @@ void actFountain(Entity* my)
 							}
 							else if ( currentlevel < 20 )
 							{
-								if ( rand() % 2 )
+								if ( local_rng.rand() % 2 )
 								{
 									spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
 									Stat* tmpStats = spawnedMonster->getStats();
@@ -528,7 +528,7 @@ void actFountain(Entity* my)
 							{
 								messagePlayerColor(i, MESSAGE_STATUS, textcolor, language[2592]); //"The fountain blesses a piece of equipment"
 								//Randomly choose a piece of equipment.
-								std::pair<Item*, Uint32> chosen = items[rand()%items.size()];
+								std::pair<Item*, Uint32> chosen = items[local_rng.rand()%items.size()];
 								if ( chosen.first->beatitude == 0 )
 								{
 									if ( stats[i]->type == SUCCUBUS )
@@ -556,7 +556,7 @@ void actFountain(Entity* my)
 					}
 					if ( potionDropQuantity > 0 )
 					{
-						playSoundEntity(my, 47 + rand() % 3, 64);
+						playSoundEntity(my, 47 + local_rng.rand() % 3, 64);
 					}
 					if ( potionDropQuantity > 1 )
 					{

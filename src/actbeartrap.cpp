@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "scores.hpp"
 #include "monster.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -201,11 +202,11 @@ void actBeartrap(Entity* my)
 								{
 									messagePlayer(player, MESSAGE_HINT, language[2522]);
 								}
-								if ( rand() % 10 == 0 )
+								if ( local_rng.rand() % 10 == 0 )
 								{
 									parent->increaseSkill(PRO_LOCKPICKING);
 								}
-								if ( rand() % 5 == 0 )
+								if ( local_rng.rand() % 5 == 0 )
 								{
 									parent->increaseSkill(PRO_RANGED);
 								}
@@ -404,12 +405,12 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 
 		if ( !parentgoodspots.empty() )
 		{
-			Entity* targetLocation = parentgoodspots[rand() % parentgoodspots.size()];
+			Entity* targetLocation = parentgoodspots[local_rng.rand() % parentgoodspots.size()];
 			teleported = triggered->teleportAroundEntity(targetLocation, 2);
 		}
 		else if ( !goodspots.empty() )
 		{
-			Entity* targetLocation = goodspots[rand() % goodspots.size()];
+			Entity* targetLocation = goodspots[local_rng.rand() % goodspots.size()];
 			teleported = triggered->teleportAroundEntity(targetLocation, 2);
 		}
 		else
@@ -579,19 +580,19 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( oldHP > 0 && stat->HP == 0 ) // got a kill
 				{
-					if ( rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 )
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
 				}
 				else if ( oldHP > stat->HP )
 				{
-					if ( rand() % 20 == 0 ) // wounded
+					if ( local_rng.rand() % 20 == 0 ) // wounded
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
 				}
-				else if( rand() % 20 == 0) // any other effect
+				else if( local_rng.rand() % 20 == 0) // any other effect
 				{
 					parent->increaseSkill(PRO_LOCKPICKING);
 				}
@@ -642,7 +643,7 @@ void actBomb(Entity* my)
 	{
 		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 		{
-			my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
+			my->spawnAmbientParticles(25, 576, 10 + local_rng.rand() % 40, 1.0, false);
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
 		}
 		return;
@@ -718,7 +719,7 @@ void actBomb(Entity* my)
 
 	if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB && BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 	{
-		my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
+		my->spawnAmbientParticles(25, 576, 10 + local_rng.rand() % 40, 1.0, false);
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
 		my->sprite = 899;
 		return;
@@ -884,7 +885,7 @@ void actBomb(Entity* my)
 						entityDistance = entityDist(my, entity);
 						if ( entityDistance < 6.5 )
 						{
-							spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y + rand() % 9, my->z - 2);
+							spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z - 2);
 							triggered = entity;
 						}
 					}
@@ -923,7 +924,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - rand() % 9, my->y - 4 + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_WEST:
@@ -932,7 +933,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x + rand() % 9, my->y - 4 + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x + local_rng.rand() % 9, my->y - 4 + local_rng.rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_SOUTH:
@@ -941,7 +942,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y - rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y - local_rng.rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_NORTH:
@@ -950,7 +951,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - 4 + local_rng.rand() % 9, my->y + local_rng.rand() % 9, my->z);
 								}
 								break;
 							default:
@@ -1083,13 +1084,13 @@ void actDecoyBox(Entity* my)
 	else
 	{
 		// let's make some noise.
-		if ( my->ticks % 5 == 0 && rand() % 3 == 0 )
+		if ( my->ticks % 5 == 0 && local_rng.rand() % 3 == 0 )
 		{
-			playSoundEntityLocal(my, 472 + rand() % 13, 192);
+			playSoundEntityLocal(my, 472 + local_rng.rand() % 13, 192);
 		}
-		if ( my->ticks % 20 == 0 && rand() % 3 > 0 )
+		if ( my->ticks % 20 == 0 && local_rng.rand() % 3 > 0 )
 		{
-			playSoundEntityLocal(my, 475 + rand() % 10, 192);
+			playSoundEntityLocal(my, 475 + local_rng.rand() % 10, 192);
 		}
 	}
 	if ( multiplayer == CLIENT )
@@ -1186,8 +1187,8 @@ void actDecoyBox(Entity* my)
 											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
 											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
 										}
-										spawnFloatingSpriteMisc(134, entity->x + (-4 + rand() % 9) + cos(entity->yaw) * 2,
-											entity->y + (-4 + rand() % 9) + sin(entity->yaw) * 2, entity->z + rand() % 4);
+										spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+											entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
 									}
 								}
 								break;
@@ -1229,8 +1230,8 @@ void actDecoyBox(Entity* my)
 											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
 											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
 										}
-										spawnFloatingSpriteMisc(134, entity->x + (-4 + rand() % 9) + cos(entity->yaw) * 2,
-											entity->y + (-4 + rand() % 9) + sin(entity->yaw) * 2, entity->z + rand() % 4);
+										spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+											entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
 									}
 								}
 
@@ -1278,9 +1279,9 @@ void actDecoyBox(Entity* my)
 	if ( my->ticks > TICKS_PER_SECOND * 7 )
 	{
 		// stop working.
-		bool decoyBreak = (rand() % 5 == 0);
+		bool decoyBreak = (local_rng.rand() % 5 == 0);
 		Entity* parent = uidToEntity(my->parent);
-		playSoundEntity(my, 485 + rand() % 3, 192);
+		playSoundEntity(my, 485 + local_rng.rand() % 3, 192);
 		if ( !decoyBreak )
 		{
 			playSoundEntity(my, 176, 128);

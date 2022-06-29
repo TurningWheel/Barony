@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "scores.hpp"
+#include "prng.hpp"
 
 void initLich(Entity* my, Stat* myStats)
 {

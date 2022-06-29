@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -65,7 +66,7 @@ void Entity::actMagicTrapCeiling()
 		spellTrapInit = 1;
 		if ( spellTrapType == -1 )
 		{
-			switch ( rand() % 8 )
+			switch ( local_rng.rand() % 8 )
 			{
 				case 0:
 					spellTrapType = SPELL_FORCEBOLT;
@@ -174,7 +175,7 @@ void actMagicTrap(Entity* my)
 	if ( !MAGICTRAP_INIT )
 	{
 		MAGICTRAP_INIT = 1;
-		switch ( rand() % 8 )
+		switch ( local_rng.rand() % 8 )
 		{
 			case 0:
 				MAGICTRAP_SPELL = SPELL_FORCEBOLT;

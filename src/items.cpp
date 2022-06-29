@@ -31,7 +31,7 @@ Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
-std::mt19937 enchantedFeatherScrollSeed(0);
+Uint32 enchantedFeatherScrollSeed;
 std::vector<int> enchantedFeatherScrollsShuffled;
 bool overrideTinkeringLimit = false;
 int decoyBoxRange = 15;
@@ -253,13 +253,13 @@ ItemType itemCurve(const Category cat)
 				switch ( static_cast<ItemType>(c) )
 				{
 					case TOOL_TINOPENER:
-						if ( prng_get_uint() % 2 )   // 50% chance
+						if ( map_rng.rand() % 2 )   // 50% chance
 						{
 							chances[c] = true;
 						}
 						break;
 					case TOOL_LANTERN:
-						if ( prng_get_uint() % 4 )   // 75% chance
+						if ( map_rng.rand() % 4 )   // 75% chance
 						{
 							chances[c] = true;
 						}
@@ -305,14 +305,14 @@ ItemType itemCurve(const Category cat)
 	// most gems are worthless pieces of glass
 	if ( cat == GEM )
 	{
-		if ( prng_get_uint() % 10 )
+		if ( map_rng.rand() % 10 )
 		{
 			return GEM_GLASS;
 		}
 	}
 
 	// pick the item
-	Uint32 pick = prng_get_uint() % numleft;
+	Uint32 pick = map_rng.rand() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -370,13 +370,13 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					switch ( static_cast<ItemType>(c) )
 					{
 						case TOOL_TINOPENER:
-							if ( prng_get_uint() % 2 )   // 50% chance
+							if ( map_rng.rand() % 2 )   // 50% chance
 							{
 								chances[c] = false;
 							}
 							break;
 						case TOOL_LANTERN:
-							if ( prng_get_uint() % 4 == 0 )   // 25% chance
+							if ( map_rng.rand() % 4 == 0 )   // 25% chance
 							{
 								chances[c] = false;
 							}
@@ -390,7 +390,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 					switch ( static_cast<ItemType>(c) )
 					{
 						case CLOAK_BACKPACK:
-							if ( prng_get_uint() % 4 )   // 25% chance
+							if ( map_rng.rand() % 4 )   // 25% chance
 							{
 								chances[c] = false;
 							}
@@ -425,14 +425,14 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	// most gems are worthless pieces of glass
 	if ( cat == GEM )
 	{
-		if ( prng_get_uint() % 10 )
+		if ( map_rng.rand() % 10 )
 		{
 			return GEM_GLASS;
 		}
 	}
 
 	// pick the item
-	Uint32 pick = prng_get_uint() % numleft;
+	Uint32 pick = map_rng.rand() % numleft;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( items[c].category == cat )
@@ -1147,9 +1147,9 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->yaw = players[player]->entity->yaw;
-		entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
-		entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
-		entity->vel_z = (-10 - rand() % 20) * .01;
+		entity->vel_x = (1.5 + .025 * (local_rng.rand() % 11)) * cos(players[player]->entity->yaw);
+		entity->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(players[player]->entity->yaw);
+		entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
 		entity->flags[PASSABLE] = true;
 		entity->behavior = &actItem;
 		entity->skill[10] = item->type;
@@ -1162,7 +1162,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		entity->itemOriginalOwner = entity->parent;
 
 		// play sound
-		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
+		playSoundEntity( players[player]->entity, 47 + local_rng.rand() % 3, 64 );
 
 		// unequip the item
 		Item** slot = itemSlot(stats[player], item);
@@ -1371,8 +1371,8 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->yaw = monster->yaw;
-		entity->vel_x = (rand() % 20 - 10) / 10.0;
-		entity->vel_y = (rand() % 20 - 10) / 10.0;
+		entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+		entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
 		entity->vel_z = -.5;
 		entity->flags[PASSABLE] = true;
 		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
@@ -1577,20 +1577,20 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 				{
 					if ( itemCategory(item) == AMULET || itemCategory(item) == RING )
 					{
-						playSoundEntity(players[player]->entity, 33 + rand() % 2, 64);
+						playSoundEntity(players[player]->entity, 33 + local_rng.rand() % 2, 64);
 					}
 					else if ( item->type == BOOMERANG )
 					{
 					}
 					else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 					{
-						playSoundEntity(players[player]->entity, 40 + rand() % 4, 64);
+						playSoundEntity(players[player]->entity, 40 + local_rng.rand() % 4, 64);
 					}
 					else if ( itemCategory(item) == ARMOR 
 						|| item->type == TOOL_TINKERING_KIT 
 						|| itemTypeIsQuiver(item->type) )
 					{
-						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+						playSoundEntity(players[player]->entity, 44 + local_rng.rand() % 3, 64);
 					}
 					else if ( item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
 					{
@@ -1706,7 +1706,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 				{
 					if (itemCategory(item) == ARMOR )
 					{
-						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
+						playSoundEntity(players[player]->entity, 44 + local_rng.rand() % 3, 64);
 					}
 				}
 			}
@@ -2453,7 +2453,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				GenericGUI[player].alchemyLearnRecipe(potionType, true);
 			}
 			const int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
-			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
+			if ( tryEmptyBottle && local_rng.rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(player, emptyBottle);
@@ -2828,11 +2828,11 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				|| item->type == TOOL_DUMMYBOT )
 			{
 				robot = true;
-				item->appearance += (rand() % 100000) * 10;
+				item->appearance += (local_rng.rand() % 100000) * 10;
 			}
 			else
 			{
-				item->appearance = rand();
+				item->appearance = local_rng.rand();
 				if ( item->appearance % items[item->type].variations != originalVariation )
 				{
 					// we need to match the variation for the new appearance, take the difference so new varation matches
@@ -2851,11 +2851,11 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 			{
 				if ( robot )
 				{
-					item->appearance += (rand() % 100000) * 10;
+					item->appearance += (local_rng.rand() % 100000) * 10;
 				}
 				else
 				{
-					item->appearance = rand();
+					item->appearance = local_rng.rand();
 					if ( item->appearance % items[item->type].variations != originalVariation )
 					{
 						// we need to match the variation for the new appearance, take the difference so new varation matches
@@ -3827,7 +3827,7 @@ Sint32 Item::potionGetEffectDurationMaximum() const
 Sint32 Item::potionGetEffectDurationRandom() const
 {
 	Sint32 range = std::max(1, potionGetEffectDurationMaximum() - potionGetEffectDurationMinimum());
-	return potionGetEffectDurationMinimum() + (rand() % (range));
+	return potionGetEffectDurationMinimum() + (local_rng.rand() % (range));
 }
 
 Sint32 Item::potionGetCursedEffectDurationMinimum() const
@@ -3961,7 +3961,7 @@ Sint32 Item::potionGetCursedEffectDurationMaximum() const
 Sint32 Item::potionGetCursedEffectDurationRandom() const
 {
 	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum() - potionGetCursedEffectDurationMinimum());
-	return potionGetCursedEffectDurationMinimum() + (rand() % (range));
+	return potionGetCursedEffectDurationMinimum() + (local_rng.rand() % (range));
 }
 
 Sint32 Item::getWeight() const
@@ -4488,7 +4488,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 				{
 					const int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 					bool failed = false;
-					if ( skill < 2 || rand() % skill == 0 ) // 20 skill requirement.
+					if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
 					{
 						// failed.
 						const Uint32 color = makeColorRGB(255, 0, 0);
@@ -4515,7 +4515,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 
 					// degrade lockpick.
-					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (rand() % 10 == 0 || (failed && rand() % 4 == 0)) )
+					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (local_rng.rand() % 10 == 0 || (failed && local_rng.rand() % 4 == 0)) )
 					{
 						if ( players[player]->isLocalPlayer() )
 						{
@@ -4546,7 +4546,7 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					if ( !failed && rand() % 5 == 0 )
+					if ( !failed && local_rng.rand() % 5 == 0 )
 					{
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					}
@@ -4605,7 +4605,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;
 	Sint32 itemId = -1;
-	int itemAppearance = rand();
+	int itemAppearance = local_rng.rand();
 	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
@@ -4628,7 +4628,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					if ( category == 14 )
 					{
 						// equipment
-						randType = rand() % 2;
+						randType = local_rng.rand() % 2;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
@@ -4641,7 +4641,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					else if ( category == 15 )
 					{
 						// jewelry
-						randType = rand() % 2;
+						randType = local_rng.rand() % 2;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
@@ -4654,7 +4654,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 					else if ( category == 16 )
 					{
 						// magical
-						randType = rand() % 3;
+						randType = local_rng.rand() % 3;
 						if ( randType == 0 )
 						{
 							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
@@ -4680,7 +4680,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				Status itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
 				if ( itemStatus == 0 )
 				{
-					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+					itemStatus = static_cast<Status>(DECREPIT + local_rng.rand() % 4);
 				}
 				else if ( itemStatus > BROKEN )
 				{
@@ -4689,7 +4689,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				int itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{
-					itemBless = -1 + rand() % 3;
+					itemBless = -1 + local_rng.rand() % 3;
 				}
 				const int itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
 				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
@@ -4698,15 +4698,15 @@ void createCustomInventory(Stat* const stats, const int itemLimit)
 				}
 				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
 				{
-					itemIdentified = rand() % 2;
+					itemIdentified = local_rng.rand() % 2;
 				}
 				else
 				{
 					itemIdentified = false;
 				}
-				itemAppearance = rand();
+				itemAppearance = local_rng.rand();
 				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
-				if ( rand() % 100 < chance )
+				if ( local_rng.rand() % 100 < chance )
 				{
 					newItem(static_cast<ItemType>(itemId), itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
 				}
@@ -4898,7 +4898,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 			copyItem(myStats->weapon, tmpItem);
 			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
-				playSoundEntity(my, 40 + rand() % 4, 64);
+				playSoundEntity(my, 40 + local_rng.rand() % 4, 64);
 			}
 			free(tmpItem);
 		}
@@ -4934,7 +4934,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 			myStats->weapon = tmpItem;
 			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
-				playSoundEntity(my, 40 + rand() % 4, 64);
+				playSoundEntity(my, 40 + local_rng.rand() % 4, 64);
 			}
 		}
 		else
@@ -5064,7 +5064,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	}
 
 	// pick the item
-	int pick = rand() % numoftype;// prng_get_uint() % numoftype;
+	int pick = local_rng.rand() % numoftype;// map_rng.rand() % numoftype;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( chances[c] == true )

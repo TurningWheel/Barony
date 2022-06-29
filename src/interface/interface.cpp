@@ -5876,7 +5876,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 	if ( tryDuplicatePotion && !explodeSelf && !randomResult )
 	{
 		// do duplicate.
-		if ( rand() % 100 < (50 + skillLVL * 10) ) // 50 - 100% chance
+		if ( local_rng.rand() % 100 < (50 + skillLVL * 10) ) // 50 - 100% chance
 		{
 			duplicateSucceed = true;
 			if ( basePotion->type == POTION_WATER )
@@ -5910,7 +5910,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( randomResult )
 	{
-		std::vector<int> potionChances =
+		std::vector<unsigned int> potionChances =
 		{
 			0,	//POTION_WATER,
 			1,	//POTION_BOOZE,
@@ -5932,8 +5932,8 @@ void GenericGUIMenu::alchemyCombinePotions()
 			0,	//POTION_ICESTORM
 			0	//POTION_THUNDERSTORM
 		};
-		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
-		auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+		auto generatedPotion = potionStandardAppearanceMap.at(
+            local_rng.discrete(potionChances.data(), potionChances.size()));
 		result = static_cast<ItemType>(generatedPotion.first);
 	}
 
@@ -5977,14 +5977,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( (basePotion->type == POTION_ACID || secondaryPotion->type == POTION_ACID) && !samePotion )
 		{
-			if ( rand() % 5 == 0 )
+			if ( local_rng.rand() % 5 == 0 )
 			{
 				degradeAlembic = true;
 			}
 		}
 		else
 		{
-			if ( rand() % 20 == 0 )
+			if ( local_rng.rand() % 20 == 0 )
 			{
 				degradeAlembic = true;
 			}
@@ -6099,7 +6099,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				consumeItem(secondaryPotion, gui_player);
 			}
 		}
-		if ( rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+		if ( local_rng.rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
 		{
 			emptyBottle = true;
 		}
@@ -6194,9 +6194,9 @@ void GenericGUIMenu::alchemyCombinePotions()
 			{
 				if ( !samePotion )
 				{
-					appearance = 0 + rand() % items[POTION_SICKNESS].variations;
+					appearance = 0 + local_rng.rand() % items[POTION_SICKNESS].variations;
 				}
-				if ( rand() % 10 > 0 )
+				if ( local_rng.rand() % 10 > 0 )
 				{
 					raiseSkill = false;
 				}
@@ -6207,7 +6207,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			}
 			else if ( duplicateSucceed )
 			{
-				if ( rand() % 10 > 0 )
+				if ( local_rng.rand() % 10 > 0 )
 				{
 					raiseSkill = false;
 				}
@@ -6312,7 +6312,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 				messagePlayer(gui_player, MESSAGE_MISC, language[3351], items[POTION_EMPTY].name_identified);
 				free(emptyBottle);
 			}
-			if ( raiseSkill && rand() % 2 == 0 )
+			if ( raiseSkill && local_rng.rand() % 2 == 0 )
 			{
 				if ( multiplayer == CLIENT )
 				{
@@ -6416,7 +6416,7 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 			{
 				// store the potion index into here for game saves, just in case we don't have it set the element in anyway.
 				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index); 
-				if ( increaseskill && rand() % 6 == 0 )
+				if ( increaseskill && local_rng.rand() % 6 == 0 )
 				{
 					if ( multiplayer == CLIENT )
 					{
@@ -6722,24 +6722,24 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		switch ( skillLVL )
 		{
 			case 5:
-				bonusMetalScrap = (1 + ((rand() % 2 == 0) ? 1 : 0)) * metal; // 2x or 50% 3x extra scrap
-				bonusMagicScrap = (1 + ((rand() % 2 == 0) ? 1 : 0)) * magic; // 2x or 50% 3x extra scrap
+				bonusMetalScrap = (1 + ((local_rng.rand() % 2 == 0) ? 1 : 0)) * metal; // 2x or 50% 3x extra scrap
+				bonusMagicScrap = (1 + ((local_rng.rand() % 2 == 0) ? 1 : 0)) * magic; // 2x or 50% 3x extra scrap
 				break;
 			case 4:
-				bonusMetalScrap = (1 + ((rand() % 4 == 0) ? 1 : 0)) * metal; // 2x or 25% 3x extra scrap
-				bonusMagicScrap = (1 + ((rand() % 4 == 0) ? 1 : 0)) * magic; // 2x or 25% 3x extra scrap
+				bonusMetalScrap = (1 + ((local_rng.rand() % 4 == 0) ? 1 : 0)) * metal; // 2x or 25% 3x extra scrap
+				bonusMagicScrap = (1 + ((local_rng.rand() % 4 == 0) ? 1 : 0)) * magic; // 2x or 25% 3x extra scrap
 				break;
 			case 3:
-				bonusMetalScrap = ((rand() % 2 == 0) ? 1 : 0) * metal; // 50% 2x scrap value
-				bonusMagicScrap = ((rand() % 2 == 0) ? 1 : 0) * magic; // 50% 2x scrap value
+				bonusMetalScrap = ((local_rng.rand() % 2 == 0) ? 1 : 0) * metal; // 50% 2x scrap value
+				bonusMagicScrap = ((local_rng.rand() % 2 == 0) ? 1 : 0) * magic; // 50% 2x scrap value
 				break;
 			case 2:
-				bonusMetalScrap = ((rand() % 4 == 0) ? 1 : 0) * metal; // 25% 2x scrap value
-				bonusMagicScrap = ((rand() % 4 == 0) ? 1 : 0) * magic; // 25% 2x scrap value
+				bonusMetalScrap = ((local_rng.rand() % 4 == 0) ? 1 : 0) * metal; // 25% 2x scrap value
+				bonusMagicScrap = ((local_rng.rand() % 4 == 0) ? 1 : 0) * magic; // 25% 2x scrap value
 				break;
 			case 1:
-				bonusMetalScrap = ((rand() % 8 == 0) ? 1 : 0) * metal; // 12.5% 2x scrap value
-				bonusMagicScrap = ((rand() % 8 == 0) ? 1 : 0) * magic; // 12.5% 2x scrap value
+				bonusMetalScrap = ((local_rng.rand() % 8 == 0) ? 1 : 0) * metal; // 12.5% 2x scrap value
+				bonusMagicScrap = ((local_rng.rand() % 8 == 0) ? 1 : 0) * magic; // 12.5% 2x scrap value
 				break;
 			default:
 				break;
@@ -6835,13 +6835,13 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 	{
 		if ( metal >= 4 || magic >= 4 )
 		{
-			if ( rand() % 2 == 0 ) // 50%
+			if ( local_rng.rand() % 2 == 0 ) // 50%
 			{
 				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
 				{
 					increaseSkill = true;
 				}
-				else if ( rand() % 20 == 0 && !tinkeringBulkSalvage )
+				else if ( local_rng.rand() % 20 == 0 && !tinkeringBulkSalvage )
 				{
 					messagePlayer(player, MESSAGE_MISC, language[3666]); // nothing left to learn from salvaging.
 				}
@@ -6849,13 +6849,13 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		}
 		else if ( metal >= 2 || magic >= 2 )
 		{
-			if ( rand() % 5 == 0 ) // 20%
+			if ( local_rng.rand() % 5 == 0 ) // 20%
 			{
 				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
 				{
 					increaseSkill = true;
 				}
-				else if ( rand() % 20 == 0 && !tinkeringBulkSalvage )
+				else if ( local_rng.rand() % 20 == 0 && !tinkeringBulkSalvage )
 				{
 					messagePlayer(player, MESSAGE_MISC, language[3666]); // nothing left to learn from salvaging.
 				}
@@ -6880,20 +6880,20 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 		if ( players[player] && players[player]->entity && !tinkeringBulkSalvage )
 		{
-			if ( (ticks - tinkeringSfxLastTicks) > 200 && ((metal >= 4 || magic >= 4) || rand() % 5 == 0) )
+			if ( (ticks - tinkeringSfxLastTicks) > 200 && ((metal >= 4 || magic >= 4) || local_rng.rand() % 5 == 0) )
 			{
 				tinkeringSfxLastTicks = ticks;
-				playSoundEntity(players[player]->entity, 421 + (rand() % 2) * 3, 64);
+				playSoundEntity(players[player]->entity, 421 + (local_rng.rand() % 2) * 3, 64);
 			}
 			else
 			{
-				if ( rand() % 4 == 0 )
+				if ( local_rng.rand() % 4 == 0 )
 				{
-					playSoundEntity(players[player]->entity, 35 + rand() % 3, 64);
+					playSoundEntity(players[player]->entity, 35 + local_rng.rand() % 3, 64);
 				}
 				else
 				{
-					playSoundEntity(players[player]->entity, 462 + rand() % 2, 64);
+					playSoundEntity(players[player]->entity, 462 + local_rng.rand() % 2, 64);
 				}
 			}
 		}
@@ -7071,7 +7071,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 		{
 			if ( metal > 4 || magic > 4 )
 			{
-				if ( rand() % 10 == 0 )
+				if ( local_rng.rand() % 10 == 0 )
 				{
 					increaseSkill = true;
 				}
@@ -7080,7 +7080,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			{
 				if ( metal > 2 || magic > 2 )
 				{
-					if ( rand() % 20 == 0 )
+					if ( local_rng.rand() % 20 == 0 )
 					{
 						increaseSkill = true;
 					}
@@ -7089,12 +7089,12 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 				{
 					if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
 					{
-						if ( rand() % 10 == 0 )
+						if ( local_rng.rand() % 10 == 0 )
 						{
 							increaseSkill = true;
 						}
 					}
-					else if ( rand() % 20 == 0 )
+					else if ( local_rng.rand() % 20 == 0 )
 					{
 						messagePlayer(gui_player, MESSAGE_MISC, language[3667], items[item->type].name_identified);
 					}
@@ -7129,23 +7129,23 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			tinkeringSfxLastTicks = ticks;
 			if ( itemIsThrowableTinkerTool(item) )
 			{
-				playSoundEntity(players[gui_player]->entity, 459 + (rand() % 3), 92);
+				playSoundEntity(players[gui_player]->entity, 459 + (local_rng.rand() % 3), 92);
 			}
 			else
 			{
-				if ( rand() % 3 == 0 )
+				if ( local_rng.rand() % 3 == 0 )
 				{
-					playSoundEntity(players[gui_player]->entity, 422 + (rand() % 2), 92);
+					playSoundEntity(players[gui_player]->entity, 422 + (local_rng.rand() % 2), 92);
 				}
 				else
 				{
-					playSoundEntity(players[gui_player]->entity, 35 + rand() % 3, 64);
+					playSoundEntity(players[gui_player]->entity, 35 + local_rng.rand() % 3, 64);
 				}
 			}
 		}
 		else
 		{
-			playSoundEntity(players[gui_player]->entity, 35 + rand() % 3, 64);
+			playSoundEntity(players[gui_player]->entity, 35 + local_rng.rand() % 3, 64);
 		}
 
 		for ( int c = 0; c < metal; ++c )
@@ -8044,7 +8044,7 @@ Item* GenericGUIMenu::tinkeringKitFindInInventory()
 
 bool GenericGUIMenu::tinkeringKitRollIfShouldBreak()
 {
-	if ( rand() % 20 == 10 )
+	if ( local_rng.rand() % 20 == 10 )
 	{
 		return true;
 	}
@@ -8348,14 +8348,14 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 		{
 			if ( !upgradingItem )
 			{
-				if ( rand() % 40 == 0 )
+				if ( local_rng.rand() % 40 == 0 )
 				{
 					increaseSkill = true;
 				}
 			}
 			else
 			{
-				if ( rand() % 10 == 0 )
+				if ( local_rng.rand() % 10 == 0 )
 				{
 					increaseSkill = true;
 				}
@@ -8506,7 +8506,7 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	int randomValue = usageCostMax - usageCostMin;
 	if ( randomValue > 0 )
 	{
-		usageCost += rand() % (randomValue + 1);
+		usageCost += local_rng.rand() % (randomValue + 1);
 	}
 
 	if ( durability - usageCost < 0 )
@@ -8695,7 +8695,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		bool increaseSkill = false;
 		if ( stats[gui_player] )
 		{
-			if ( rand() % 5 == 0 )
+			if ( local_rng.rand() % 5 == 0 )
 			{
 				increaseSkill = true;
 			}
@@ -8730,7 +8730,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			if ( crafted->type == SCROLL_MAIL )
 			{
 				// mail uses the appearance to generate the text, so randomise it here.
-				crafted->appearance = rand(); 
+				crafted->appearance = local_rng.rand();
 			}
 			Item* pickedUp = itemPickup(gui_player, crafted);
 			//messagePlayerColor(gui_player, uint32ColorGreen, language[3724]);
@@ -8783,7 +8783,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		bool increaseSkill = false;
 		if ( stats[gui_player] )
 		{
-			if ( rand() % 10 == 0 )
+			if ( local_rng.rand() % 10 == 0 )
 			{
 				increaseSkill = true;
 			}

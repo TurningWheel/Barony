@@ -19,6 +19,7 @@ See LICENSE for details.
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "prng.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -145,7 +146,7 @@ void Entity::actPowerCrystal()
 			this->vel_z = this->fskill[1]; // reset velocity at the mid point of animation
 		}
 
-		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
+		spawnAmbientParticles(80, 579, 10 + local_rng.rand() % 40, 1.0, false);
 
 		if ( crystalTurning == 1 )
 		{

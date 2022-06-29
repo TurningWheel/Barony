@@ -514,8 +514,115 @@ void printlog(const char* str, ...)
 		newstr[c] = '\n';
 		newstr[c + 1] = 0;
 	}
-	fprintf( stderr, "[%s] %s", buffer, newstr );
+	fprintf( stderr, "%s", newstr );
+	//fprintf( stderr, "[%s] %s", buffer, newstr );
 	fflush( stderr );
-	fprintf( stdout, "[%s] %s", buffer, newstr );
+	fprintf( stdout, "%s", newstr );
+	//fprintf( stdout, "[%s] %s", buffer, newstr );
 	fflush( stdout );
 }
+
+#ifdef NDEBUG
+bool ENABLE_STACK_TRACES = false;
+#else
+bool ENABLE_STACK_TRACES = false;
+#endif
+static std::unordered_map<std::string, size_t> unique_traces;
+
+#ifdef LINUX
+#include <execinfo.h>
+#endif
+
+void stackTrace() {
+#ifndef NDEBUG
+    if (!ENABLE_STACK_TRACES) {
+        return;
+    }
+#ifdef LINUX
+
+    // perform stack trace
+    constexpr unsigned int STACK_SIZE = 8;
+	void* array[STACK_SIZE];
+	size_t size = backtrace(array, STACK_SIZE);
+	if (size < 4) {
+	    return;
+	}
+	char** symbols = backtrace_symbols(array, size);
+
+    // build string
+    std::string trace;
+	for (auto c = 3; c < size; ++c) {
+	    trace += "\n";
+	    symbols[c] = strrchr(symbols[c], (int)'(');
+	    trace += symbols[c];
+	}
+
+	// free backtrace table
+	free(symbols);
+
+	printlog("STACK TRACE: %s", trace.c_str());
+#endif
+#endif
+}
+
+void stackTraceUnique() {
+#ifndef NDEBUG
+    if (!ENABLE_STACK_TRACES) {
+        return;
+    }
+#ifdef LINUX
+
+    // perform stack trace
+    constexpr unsigned int STACK_SIZE = 8;
+	void* array[STACK_SIZE];
+	size_t size = backtrace(array, STACK_SIZE);
+	if (size < 4) {
+	    return;
+	}
+	char** symbols = backtrace_symbols(array, size);
+
+    // build string
+    std::string trace;
+	for (auto c = 3; c < size; ++c) {
+	    trace += "\n";
+	    //symbols[c] = strrchr(symbols[c], (int)'(');
+	    trace += symbols[c];
+	}
+
+	// free backtrace table
+	free(symbols);
+
+    // attempt to place in map, or increment if it already exists
+	auto result = unique_traces.emplace(trace, 1);
+	if (result.second) {
+	    // haven't seen this trace before
+	    printlog(trace.c_str());
+	} else {
+	    // have seen this trace, simply increment counter
+	    ++result.first->second;
+	}
+#endif
+#endif
+}
+
+void finishStackTraceUnique() {
+#ifndef NDEBUG
+    if (!ENABLE_STACK_TRACES) {
+        return;
+    }
+    printlog("Unique stack trace tally:");
+    for (auto it = unique_traces.begin(); it != unique_traces.end(); ++it) {
+        printlog(it->first.c_str());
+        printlog("%llu", it->second);
+    }
+    unique_traces.clear();
+#endif
+}
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+static ConsoleCommand purgeStackTraces("/purge_stack_traces", "purge stack traces",
+    [](int argc, const char* argv[]){
+    finishStackTraceUnique();
+    });
+#endif
