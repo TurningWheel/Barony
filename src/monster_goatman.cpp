@@ -100,7 +100,8 @@ void initGoatman(Entity* my, Stat* myStats)
 				//TODO: Boss stats
 
 				//Spawn in potions.
-				for ( int i = 0; i < local_rng.rand()%NUM_GOATMAN_BOSS_GHARBAD_POTIONS + 5; ++i )
+				int end = local_rng.rand()%NUM_GOATMAN_BOSS_GHARBAD_POTIONS + 5;
+				for ( int i = 0; i < end; ++i )
 				{
 					switch ( local_rng.rand()%10 )
 					{
