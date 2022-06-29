@@ -18415,10 +18415,13 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			else
 			{
-				if ( shieldLimb->sprite != items[TOOL_TINKERING_KIT].index )
+				// automaton arm clips through shield. extend shield out more.
+				if ( race == AUTOMATON )
 				{
-					// automaton arm clips through shield. extend shield out more.
-					if ( race == AUTOMATON )
+					if ( shieldLimb->sprite != items[TOOL_TINKERING_KIT].index
+						&& shieldLimb->sprite != items[TOOL_TORCH].index
+						&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index
+						&& shieldLimb->sprite != items[TOOL_LANTERN].index )
 					{
 						shieldLimb->focalx += 0.75;
 						shieldLimb->focaly += 1.25;
