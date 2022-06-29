@@ -92,10 +92,10 @@ public:
     }
 
     void operator=(const char* arg);
-    constexpr T& operator*() {
+    T& operator*() {
         return data;
     }
-    constexpr T* operator->() {
+    T* operator->() {
         return &data;
     }
 

@@ -26,6 +26,7 @@
 #include "interface/interface.hpp"
 #include "interface/ui.hpp"
 #include "lobbies.hpp"
+#include "prng.hpp"
 
 EOSFuncs EOS;
 

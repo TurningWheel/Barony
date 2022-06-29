@@ -246,7 +246,7 @@ Frame::result_t framesProcResult{
 
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 
-ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
+//ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
 TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();
 TimerExperiments::duration TimerExperiments::accumulator = std::chrono::milliseconds{ 0 };
@@ -254,6 +254,7 @@ std::chrono::duration<long long, std::ratio<1, 60>> TimerExperiments::dt = std::
 TimerExperiments::EntityStates TimerExperiments::cameraPreviousState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraCurrentState[MAXPLAYERS];
 TimerExperiments::EntityStates TimerExperiments::cameraRenderState[MAXPLAYERS];
+bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;

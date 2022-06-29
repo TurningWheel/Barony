@@ -498,12 +498,13 @@ public:
 };
 
 extern DebugStatsClass DebugStats;
-extern ConsoleVariable<bool> cvar_useTimerInterpolation;
+//extern ConsoleVariable<bool> cvar_useTimerInterpolation;
 
 class TimerExperiments
 {
 public:
-    static constexpr bool& bUseTimerInterpolation = *cvar_useTimerInterpolation;
+    //static constexpr bool& bUseTimerInterpolation = *cvar_useTimerInterpolation;
+    static bool bUseTimerInterpolation;
 	static bool bIsInit;
 	static real_t lerpFactor;
 	static int timeDivision;
