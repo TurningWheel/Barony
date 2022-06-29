@@ -527,7 +527,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	if ( player.shootmode && !player.usingCommand()
 		&& !gamePaused
-		&& player.bControlEnabled )
+		&& player.bControlEnabled
+		&& player.hotbar.faceMenuButtonHeld == Hotbar_t::FaceMenuGroup::GROUP_NONE )
 	{
 		if ( Input::inputs[playernum].consumeBinaryToggle("Quick Turn") )
 		{
