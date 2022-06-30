@@ -853,7 +853,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt("text_field_prompt");
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text_box = frame->addImage(
 			SDL_Rect{(364 - 246) / 2, 32, 246, 36},
@@ -866,6 +868,8 @@ namespace MainMenu {
 
 		auto field = frame->addField("field", field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(guide_text);
@@ -936,7 +940,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt("binary_prompt");
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
@@ -992,7 +998,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt("mono_prompt");
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
@@ -1028,7 +1036,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt(name, small);
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 34});
@@ -3026,6 +3036,8 @@ namespace MainMenu {
 
 		auto field = frame.addField((fullname + "_text_field").c_str(), field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(tip);
@@ -3035,6 +3047,10 @@ namespace MainMenu {
 		field->setHJustify(Field::justify_t::LEFT);
 		field->setVJustify(Field::justify_t::CENTER);
 		field->setCallback(callback);
+		field->setTickCallback([](Widget& widget){
+		    auto field = static_cast<Field*>(&widget);
+		    (*field->getCallback())(*field);
+		    });
 		field->setColor(makeColor(166, 123, 81, 255));
 		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
@@ -4451,7 +4467,7 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "lan", "LAN");
 		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
 		    "The port number to use when hosting a LAN lobby.",
-		    buf, [](Field& field){soundActivate(); allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
+		    buf, [](Field& field){allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
 		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
@@ -5622,6 +5638,8 @@ bind_failed:
 
 /******************************************************************************/
 
+    static Frame* toggleLobbyChatWindow();
+
     struct LobbyChatMessage {
         Uint32 timestamp;
         Uint32 color;
@@ -5651,9 +5669,15 @@ bind_failed:
         if (!lobby) {
             return;
         }
+
         auto frame = lobby->findFrame("chat window");
         if (!frame) {
-            return;
+            frame = toggleLobbyChatWindow();
+            assert(frame);
+        }
+
+        if (add_to_list) {
+            playSound(238, 64);
         }
 
         const int w = frame->getSize().w;
@@ -5705,13 +5729,13 @@ bind_failed:
         }
     }
 
-    static void toggleLobbyChatWindow() {
+    static Frame* toggleLobbyChatWindow() {
         assert(main_menu_frame);
         auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
         auto frame = lobby->findFrame("chat window");
         if (frame) {
             frame->removeSelf();
-            return;
+            return nullptr;
         }
 
         const SDL_Rect size = lobby->getSize();
@@ -5852,13 +5876,24 @@ bind_failed:
         chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
         chat_buffer->setHJustify(Field::justify_t::LEFT);
         chat_buffer->setVJustify(Field::justify_t::CENTER);
+		chat_buffer->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		chat_buffer->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
         chat_buffer->setFont(lobby_chat_font->c_str());
         chat_buffer->setColor(makeColor(201, 162, 100, 255));
         chat_buffer->setEditable(true);
         chat_buffer->setCallback([](Field& field){
             sendChatMessageOverNet(field.getText());
             field.setText("");
+            field.activate();
             });
+        chat_buffer->setTickCallback([](Widget& widget){
+            auto field = static_cast<Field*>(&widget);
+            if (!field->isActivated()) {
+                field->setText("");
+            }
+            });
+        chat_buffer->setWidgetSearchParent(frame->getName());
+        chat_buffer->setWidgetBack("close");
 
         auto chat_tooltip = frame->addField("tooltip", 128);
         chat_tooltip->setSize(SDL_Rect{4, h - 32, w - 8, 32});
@@ -5904,6 +5939,11 @@ bind_failed:
 			}
 			ready->select();
             });
+        close_button->setWidgetSearchParent(frame->getName());
+        close_button->setWidgetDown("buffer");
+	    close_button->setWidgetBack("close");
+
+        return frame;
     }
 
 	static void disconnectFromLobby() {
@@ -6517,7 +6557,6 @@ bind_failed:
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
 				addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				playSound(238, 64);
 				continue;
 			}
 
@@ -7007,7 +7046,6 @@ bind_failed:
 			    // got a chat message
 			    else if (packetId == 'CMSG') {
 				    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				    playSound(238, 64);
 				    continue;
 			    }
 
@@ -8945,6 +8983,8 @@ bind_failed:
 
 		auto name_field = card->addField("name", 128);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		name_field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		name_field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
@@ -9526,9 +9566,12 @@ bind_failed:
 		        no_one_logged_in = false;
 		    }
 		    if (no_one_logged_in) {
-		        if (input.binary("MenuCancel")) {
-		            assert(main_menu_frame);
-		            auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+                assert(main_menu_frame);
+		        if (player == clientnum &&
+		            input.binary("MenuCancel") &&
+		            !inputstr &&
+		            !main_menu_frame->findSelectedWidget(player)) {
+	                auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 		            auto back = lobby->findFrame("back"); assert(back);
 		            auto back_button = back->findButton("back_button"); assert(back_button);
 		            back_button->select();
@@ -9577,7 +9620,7 @@ bind_failed:
 		        start_func(player);
 		        return;
 		    }
-		    if (inputs.getPlayerIDAllowedKeyboard() == player && input.consumeBinaryToggle("KeyboardLogin")) {
+		    if (inputs.getPlayerIDAllowedKeyboard() == player && !inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
 		        input.consumeBindingsSharedWithBinding("KeyboardLogin");
 #ifndef NINTENDO
 		        // release any controller assigned to this player
@@ -10155,11 +10198,36 @@ bind_failed:
 		banner->setBorder(2);
         {
 		    auto back_button = createBackWidget(banner, [](Button&){
-			    soundCancel();
-			    disconnectFromLobby();
-			    destroyMainMenu();
-			    currentLobbyType = LobbyType::None;
-			    createMainMenu(false);
+		        if (currentLobbyType == LobbyType::LobbyLocal) {
+			        soundCancel();
+			        disconnectFromLobby();
+			        destroyMainMenu();
+			        currentLobbyType = LobbyType::None;
+			        createMainMenu(false);
+			    } else {
+			        binaryPrompt(
+	                    "Are you sure you want to leave\nthis lobby?",
+	                    "Yes", "No",
+	                    [](Button&){ // yes
+			                soundActivate();
+			                disconnectFromLobby();
+			                destroyMainMenu();
+			                currentLobbyType = LobbyType::None;
+			                createMainMenu(false);
+	                    },
+	                    [](Button& button){ // no
+			                soundCancel();
+			                closeBinary();
+#ifndef NINTENDO
+                            // release any controller assigned to this player
+                            const int index = button.getOwner();
+                            if (inputs.hasController(index)) {
+                                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+                                Input::inputs[index].refresh();
+                            }
+#endif
+	                    });
+			    }
 			    });
 		    back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 		        if (currentLobbyType == LobbyType::None) {
@@ -10220,8 +10288,9 @@ bind_failed:
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
-		            toggleLobbyChatWindow();
+		            (void)toggleLobbyChatWindow();
 		            });
+		        chat_button->setWidgetBack("back");
 		    }
 		}
 
@@ -11010,12 +11079,11 @@ bind_failed:
                         addLobby(lobby);
                     }
 		            });
-		        checkbox->setWidgetBack("names");
+		        checkbox->setWidgetBack("filter_settings");
 		        std::string next_name = std::string("filter_checkbox") + std::to_string(index + 1);
 		        std::string prev_name = std::string("filter_checkbox") + std::to_string(index - 1);
 		        checkbox->setWidgetDown(next_name.c_str());
 		        checkbox->setWidgetUp(prev_name.c_str());
-		        checkbox->setWidgetLeft("names");
 
 		        ++index;
             }
@@ -13032,7 +13100,7 @@ bind_failed:
 		};
 		Option options[] = {
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
-			{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
+			//{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
 			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
@@ -13886,20 +13954,22 @@ bind_failed:
                 }, false, false); // yellow buttons
 
             // prompt timeout
-            prompt->setTickCallback([](Widget& widget){
-                const int seconds = (resolution_timeout - ticks) / TICKS_PER_SECOND;
-                if ((int)resolution_timeout - (int)ticks > 0) {
-                    auto prompt = static_cast<Frame*>(&widget);
-                    auto text = prompt->findField("text");
-                    char buf[256];
-                    snprintf(buf, sizeof(buf), fmt, seconds + 1);
-                    text->setText(buf);
-                } else {
-                    soundCancel();
-                    closeBinary();
-                    resetResolution();
-                }
-                });
+            if (prompt) {
+                prompt->setTickCallback([](Widget& widget){
+                    const int seconds = (resolution_timeout - ticks) / TICKS_PER_SECOND;
+                    if ((int)resolution_timeout - (int)ticks > 0) {
+                        auto prompt = static_cast<Frame*>(&widget);
+                        auto text = prompt->findField("text");
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), fmt, seconds + 1);
+                        text->setText(buf);
+                    } else {
+                        soundCancel();
+                        closeBinary();
+                        resetResolution();
+                    }
+                    });
+            }
 
             // at the end so that old_video is not overwritten
             resolution_changed = false;
@@ -14857,7 +14927,12 @@ bind_failed:
 		    snprintf(text, sizeof(text), "Please reconnect your controller.\n\n\n\n");
         }
 
+        // at this point the prompt should ALWAYS open
+        // because we already handled the case where one exists above.
+
         auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        assert(prompt);
+
         prompt->setOwner(player);
 
         auto header_size = prompt->getActualSize(); header_size.h = 80;

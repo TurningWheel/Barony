@@ -127,7 +127,7 @@ Widget* Widget::handleInput() {
 		// move to another widget and activate it
 		for (auto& action : widgetActions) {
 			if (!action.second.empty()) {
-				if (input.consumeBinaryToggle(action.first.c_str())) {
+				if (input.consumeBinaryToggle(action.first.c_str()) && !inputstr) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (result && !result->disabled) {

@@ -1340,7 +1340,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				}
 			}
 
-			if (fieldResult.entered || (destWidget && field->isSelected())) {
+			if (fieldResult.entered) {
 				result.usable = usable = false;
 				if (field->getCallback()) {
 					(*field->getCallback())(*field);

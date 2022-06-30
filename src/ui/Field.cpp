@@ -72,6 +72,7 @@ void Field::activate() {
     if (activated) {
         deactivate();
     } else {
+        cursorflash = ticks;
 	    activated = true;
 	    inputstr = text;
 	    inputlen = textlen;
@@ -347,11 +348,21 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	result.highlighted = false;
 	result.highlightTime = SDL_GetTicks();
 	result.entered = false;
-	if (!editable) {
-		if (activated) {
-			result.entered = true;
+	if (activated) {
+	    if (!editable || inputstr != text) {
 			deactivate();
-		}
+		} else if (editable) {
+		    if (Input::keys[SDL_SCANCODE_RETURN] || Input::keys[SDL_SCANCODE_KP_ENTER]) {
+			    Input::keys[SDL_SCANCODE_RETURN] = 0;
+			    Input::keys[SDL_SCANCODE_KP_ENTER] = 0;
+			    result.entered = true;
+			    deactivate();
+		    }
+		    if (Input::keys[SDL_SCANCODE_ESCAPE]) {
+			    Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+			    deactivate();
+		    }
+	    }
 	}
 	if (disabled) {
 		highlightTime = result.highlightTime;
@@ -361,7 +372,14 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	if (!usable) {
 		highlightTime = result.highlightTime;
 		highlighted = false;
-		return result;
+		if (!activated) {
+		    return result;
+		} else if (mousestatus[SDL_BUTTON_LEFT]) {
+	        //mousestatus[SDL_BUTTON_LEFT] = 0;
+		    if (activated) {
+			    deactivate();
+		    }
+	    }
 	}
 
 	_size.x += std::max(0, size.x - _actualSize.x);
@@ -370,6 +388,12 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	_size.h = std::min(size.h, _size.h - size.y + _actualSize.y) + std::min(0, size.y - _actualSize.y);
 	if (_size.w <= 0 || _size.h <= 0) {
 	    highlightTime = result.highlightTime;
+	    if (mousestatus[SDL_BUTTON_LEFT]) {
+	        //mousestatus[SDL_BUTTON_LEFT] = 0;
+		    if (activated) {
+			    deactivate();
+		    }
+	    }
 		return result;
 	}
 
@@ -397,37 +421,6 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
-	if (activated && editable) {
-		if (inputstr != text) {
-			result.entered = true;
-			deactivate();
-			if (inputstr == nullptr) {
-				SDL_StopTextInput();
-			}
-		}
-		if (Input::keys[SDL_SCANCODE_RETURN] || Input::keys[SDL_SCANCODE_KP_ENTER]) {
-			Input::keys[SDL_SCANCODE_RETURN] = 0;
-			Input::keys[SDL_SCANCODE_KP_ENTER] = 0;
-			result.entered = true;
-			deactivate();
-		}
-		if (Input::keys[SDL_SCANCODE_ESCAPE]) {
-			Input::keys[SDL_SCANCODE_ESCAPE] = 0;
-			result.entered = true;
-			deactivate();
-		}
-
-		/*if (selectAll) {
-			if (mainEngine->getAnyKeyStatus()) {
-				const char* keys = lastkeypressed;
-				if (keys) {
-					text = keys;
-					selectAll = false;
-				}
-			}
-		}*/
-	}
-
 #if !defined(NINTENDO) && !defined(EDITOR)
 	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(mouseowner)->draw_cursor) {
 		result.highlighted = highlighted = true;
@@ -443,15 +436,11 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	    if (!result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
 	        //mousestatus[SDL_BUTTON_LEFT] = 0;
 		    if (activated) {
-			    result.entered = true;
 			    deactivate();
 		    }
 	    } else if (result.highlighted && mousestatus[SDL_BUTTON_LEFT]) {
 	        mousestatus[SDL_BUTTON_LEFT] = 0;
 		    activate();
-		    /*if (doubleclick_mousestatus[SDL_BUTTON_LEFT]) {
-			    selectAll = true;
-		    }*/
 	    }
 	}
 #else
