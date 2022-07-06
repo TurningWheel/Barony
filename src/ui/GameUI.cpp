@@ -15082,6 +15082,12 @@ void createPlayerSpellList(const int player)
 			}
 			players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 		});
+
+		/*auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"*#images/ui/Glyphs/Button_Xbox_DarkB_00.png", "close spell glyph");
+		closeGlyph->pos.x = 154 + 10;
+		closeGlyph->pos.y = 60 + 26;*/
 	}
 }
 
