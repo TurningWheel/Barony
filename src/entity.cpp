@@ -7622,10 +7622,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					damage = std::max(0, damage);
-					/*if ( weaponskill >= 0 && (damage == (std::max(0, (myAttack - enemyAC)) * weaponMultipliers)) )
-					{
-						messagePlayer(0, MESSAGE_DEBUG, "Same damage");
-					}*/
 
 					if ( weaponskill == PRO_AXE )
 					{
@@ -7690,22 +7686,66 @@ void Entity::attack(int pose, int charge, Entity* target)
 							gungnir = true;
 						}
 					}
-					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || (weaponskill == PRO_UNARMED && behavior != &actMonster) || weaponskill == PRO_RANGED )
+
+					static ConsoleVariable<bool> cvar_atkonhit("/enemy_debugatkonhit", false);
+					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD) || (weaponskill == PRO_UNARMED && behavior != &actMonster) || weaponskill == PRO_RANGED )
 					{
-						int chance = 0;
-						if ( weaponskill == PRO_POLEARM )
+						if ( *cvar_atkonhit )
 						{
-							chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+							int chance = 0;
+							if ( weaponskill == PRO_POLEARM )
+							{
+								chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+							}
+							else
+							{
+								chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+							}
+							messagePlayer(0, MESSAGE_DEBUG, "Old range minmax: %d-%d", damage - chance, damage);
 						}
-						else
-						{
-							chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
-						}
-						if ( chance > 0 )
+						/*if ( chance > 0 )
 						{
 							damage = (damage - chance) + (local_rng.rand() % chance) + 1;
+						}*/
+						 real_t variance = 20;
+						 real_t baseSkillModifier = 50.0; // 40-60 base
+						if ( weaponskill == PRO_UNARMED )
+						{
+							variance = 30.0;
+							baseSkillModifier = 45.0; // 30-60 base
+						}
+						else if ( weaponskill == PRO_POLEARM )
+						{
+							if ( gungnir )
+							{
+								variance = 0.0;
+								baseSkillModifier = 60.0;
+							}
+							else
+							{
+								variance = 10.0;
+								baseSkillModifier = 55.0; // 50-60 base
+							}
+						}
+						real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->PROFICIENCIES[weaponskill] / 2.0);
+						skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
+						skillModifier /= 100.0;
+						skillModifier = std::min(skillModifier, 1.0);
+						damage *= skillModifier;
+						if ( *cvar_atkonhit )
+						{
+							messagePlayer(0, MESSAGE_DEBUG, "New Dmg: %.f%%: %d", 100.0 * skillModifier, damage);
 						}
 					}
+
+					if ( *cvar_atkonhit )
+					{
+						if ( weaponskill >= 0 )
+						{
+							messagePlayer(0, MESSAGE_DEBUG, "Old damage max: %d", (int)((std::max(0, (myAttack - enemyAC)) * weaponMultipliers)));
+						}
+					}
+
 
 					int olddamage = damage;
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
@@ -16689,11 +16729,13 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 
 	// get arrow power.
 	attack += marksman.getRangedAttack();
-	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
-	if ( chance > 0 )
-	{
-		attack = (attack - chance) + (local_rng.rand() % chance) + 1;
-	}
+	real_t variance = 20;
+	real_t baseSkillModifier = 50.0; // 40-60 base
+	real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats.PROFICIENCIES[PRO_RANGED] / 2.0);
+	skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
+	skillModifier /= 100.0;
+	skillModifier = std::min(skillModifier, 1.0);
+	attack *= skillModifier;
 	this->arrowPower = attack;
 }
 
