@@ -996,7 +996,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 
 real_t Player::PlayerMovement_t::getMaximumSpeed()
 {
-	real_t maxSpeed = 15.0;
+	real_t maxSpeed = 12.5;
 	if ( gameplayCustomManager.inUse() )
 	{
 		maxSpeed = gameplayCustomManager.playerSpeedMax;
@@ -1061,8 +1061,19 @@ int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
 
 real_t Player::PlayerMovement_t::getWeightRatio(int weight, Sint32 STR)
 {
+	real_t weightratio_zero = (1000 - weight) / (double)(1000);
+	weightratio_zero = fmin(fmax(0, weightratio_zero), 1);
+	real_t curveExponentFactor = 2.0;
+	int curveYoffset = 1;
+	weightratio_zero = -pow(1.0 - weightratio_zero, curveExponentFactor) + curveYoffset;
+
 	real_t weightratio = (1000 + STR * 100 - weight) / (double)(1000 + STR * 100);
 	weightratio = fmin(fmax(0, weightratio), 1);
+
+	if ( weight <= 1000 )
+	{
+		weightratio = std::max(weightratio, weightratio_zero);
+	}
 	return weightratio;
 }
 
@@ -1075,18 +1086,10 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	real_t speedFactor = std::min(((DEX - 5) * 0.1 + 11.0 - slowSpeedPenalty) * weightratio, maxSpeed);
-	if ( DEX <= 0 )
+	real_t speedFactor = std::min((((DEX) * 0.25) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
+	/*if ( DEX <= 5 )
 	{
-		speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
-	}
-	else if ( DEX <= 5 )
-	{
-		speedFactor = std::min((DEX * 0.2 + 10) * weightratio, maxSpeed);
-	}
-	/*else if ( DEX <= 15 )
-	{
-		speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
+		speedFactor = std::min(((DEX * 0.5) + 8.5) * weightratio, maxSpeed);
 	}*/
 
 	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
@@ -1216,7 +1219,21 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		static ConsoleVariable<bool> cvar_debugspeedfactor("/player_showspeedfactor", false);
 		if ( *cvar_debugspeedfactor && ticks % 50 == 0 )
 		{
-			messagePlayer(0, MESSAGE_DEBUG, "%f", speedFactor);
+			Sint32 STR = statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity);
+			real_t weightratioOld = (1000 + STR * 100 - weight) / (double)(1000 + STR * 100);
+			weightratioOld = fmin(fmax(0, weightratioOld), 1);
+			real_t maxSpeed = getMaximumSpeed();
+			Sint32 DEX = statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity);
+			real_t speedFactorOld = std::min((DEX * 0.1 + 15.5) * weightratioOld, maxSpeed);
+			if ( DEX <= 5 )
+			{
+				speedFactorOld = std::min((DEX + 10) * weightratioOld, maxSpeed);
+			}
+			else if ( DEX <= 15 )
+			{
+				speedFactorOld = std::min((DEX * 0.2 + 14) * weightratioOld, maxSpeed);
+			}
+			messagePlayer(0, MESSAGE_DEBUG, "New: %.3f | Old: %.3f | (%+.3f)", speedFactor, speedFactorOld, 100.0 * ((speedFactor / speedFactorOld) - 1.0));
 		}
 		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
 		{
