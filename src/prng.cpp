@@ -228,7 +228,12 @@ int BaronyRNG::getSeed(void* out, size_t size) const {
 
 void BaronyRNG::getBytes(void* data_, size_t size) {
 #ifndef NDEBUG
-    //stackTrace();
+    /*if (this == &local_rng) {
+        std::string str = stackTrace();
+        if (!str.empty() && str.find("gameLogic") == std::string::npos) {
+            printlog(str.c_str());
+        }
+    }*/
 #endif
 	if (!seeded) {
 	    printlog("rng not seeded, seeding by unix time");

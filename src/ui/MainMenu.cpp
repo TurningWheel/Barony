@@ -868,7 +868,7 @@ namespace MainMenu {
 
 		auto field = frame->addField("field", field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
@@ -879,6 +879,7 @@ namespace MainMenu {
 		field->setHJustify(Field::justify_t::LEFT);
 		field->setVJustify(Field::justify_t::CENTER);
 		field->setColor(makeColor(166, 123, 81, 255));
+		field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		field->setWidgetSearchParent(field->getParent()->getName());
@@ -3036,7 +3037,7 @@ namespace MainMenu {
 
 		auto field = frame.addField((fullname + "_text_field").c_str(), field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
@@ -3052,6 +3053,7 @@ namespace MainMenu {
 		    (*field->getCallback())(*field);
 		    });
 		field->setColor(makeColor(166, 123, 81, 255));
+		field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		field->setWidgetSearchParent(frame.getParent()->getName());
@@ -5876,7 +5878,7 @@ bind_failed:
         chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
         chat_buffer->setHJustify(Field::justify_t::LEFT);
         chat_buffer->setVJustify(Field::justify_t::CENTER);
-		chat_buffer->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		chat_buffer->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		chat_buffer->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
         chat_buffer->setFont(lobby_chat_font->c_str());
         chat_buffer->setColor(makeColor(201, 162, 100, 255));
@@ -8983,7 +8985,7 @@ bind_failed:
 
 		auto name_field = card->addField("name", 128);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		name_field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		name_field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		name_field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
@@ -8991,6 +8993,7 @@ bind_failed:
 		name_field->setText(stats[index]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
 		name_field->setColor(makeColor(166, 123, 81, 255));
+		name_field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		name_field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		name_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
@@ -9045,7 +9048,7 @@ bind_failed:
 		randomize_name->setColor(makeColor(255, 255, 255, 255));
 		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_name->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
-		randomize_name->setSize(SDL_Rect{244, 26, 40, 44});
+		randomize_name->setSize(SDL_Rect{236, 22, 54, 54});
 		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
 		randomize_name->setWidgetBack("back_button");
@@ -9252,7 +9255,7 @@ bind_failed:
 		randomize_class->setColor(makeColor(255, 255, 255, 255));
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_class->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
-		randomize_class->setSize(SDL_Rect{244, 230, 40, 44});
+		randomize_class->setSize(SDL_Rect{236, 226, 54, 54});
 		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
 		randomize_class->setWidgetBack("back_button");
@@ -9814,13 +9817,12 @@ bind_failed:
 			    }
 			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
 				playersInLobby[c] = true;
+			    atLeastOnePlayer = true;
 			} else {
 				playersInLobby[c] = true;
+			    atLeastOnePlayer = true;
 			    allReady = false;
 			}
-		    if (isPlayerSignedIn(c)) {
-		        atLeastOnePlayer = true;
-		    }
 		}
 		if (allReady && atLeastOnePlayer) {
 		    createCountdownTimer();
@@ -10041,7 +10043,7 @@ bind_failed:
 		countdown->setHJustify(Field::justify_t::LEFT);
 		countdown->setVJustify(Field::justify_t::TOP);
 		countdown->setFont(timer_font);
-		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 0, 300, 200});
+		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 64, 300, 200});
 		countdown->setTickCallback([](Widget& widget){
 		    auto countdown = static_cast<Field*>(&widget);
 		    if (ticks >= countdown_end) {
@@ -10258,6 +10260,7 @@ bind_failed:
                     image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 		        }
 		        });
+	        back_button->setWidgetRight("lobby_name");
 
 		    auto back_frame = back_button->getParent();
 		    back_frame->setTickCallback([](Widget& widget){
@@ -10279,6 +10282,57 @@ bind_failed:
 			    button->setDisabled(!allCardsClosed);
 			    });
 
+			// lobby type
+			const char* type_str;
+			switch (type) {
+			default:
+			case LobbyType::LobbyLocal: type_str = "Local Lobby"; break;
+			case LobbyType::LobbyLAN: type_str = "LAN Lobby (Host)"; break;
+			case LobbyType::LobbyOnline: type_str = "Online Lobby (Host)"; break;
+			case LobbyType::LobbyJoined: type_str = directConnect ?
+			    "LAN Lobby (Joined)" : "Online Lobby (Joined)"; break;
+			}
+			auto label = banner->addField("label", 128);
+			label->setHJustify(Field::justify_t::LEFT);
+			label->setVJustify(Field::justify_t::CENTER);
+			label->setSize(SDL_Rect{96, 8, 256, 48});
+		    label->setFont(bigfont_outline);
+		    label->setText(type_str);
+
+            // lobby name
+            if (type != LobbyType::LobbyLocal) {
+		        auto text_box = banner->addImage(
+			        SDL_Rect{(Frame::virtualScreenX - 246) / 2, 16, 246, 36},
+			        0xffffffff,
+			        "*images/ui/Main Menus/TextField_00.png",
+			        "text_box"
+		        );
+
+		        constexpr int field_buffer_size = 64;
+
+		        auto field = banner->addField("lobby_name", field_buffer_size);
+		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		        field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+		        field->setEditable(type != LobbyType::LobbyJoined);
+		        field->setScroll(true);
+		        field->setGuide("Set a public name for this lobby.");
+		        field->setSize(SDL_Rect{(Frame::virtualScreenX - 246) / 2, 20, 242, 28});
+		        field->setFont(smallfont_outline);
+		        field->setHJustify(Field::justify_t::LEFT);
+		        field->setVJustify(Field::justify_t::CENTER);
+		        field->setColor(makeColor(166, 123, 81, 255));
+		        field->setBackgroundColor(makeColor(52, 30, 22, 255));
+		        field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+		        field->setWidgetSearchParent(field->getParent()->getName());
+		        field->setWidgetBack("back");
+		        field->setWidgetRight("chat");
+		        field->setWidgetLeft("back");
+		        //field->setText(currentLobbyName); // TODO epic lobby name EOS.currentLobbyName
+		    }
+
+            // chat button
             if (type != LobbyType::LobbyLocal) {
 			    auto chat_button = banner->addButton("chat");
 			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 144, 16, 128, 32});
@@ -10291,6 +10345,7 @@ bind_failed:
 		            (void)toggleLobbyChatWindow();
 		            });
 		        chat_button->setWidgetBack("back");
+		        chat_button->setWidgetLeft("lobby_name");
 		    }
 		}
 
