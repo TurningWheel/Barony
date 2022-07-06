@@ -1086,7 +1086,7 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	real_t speedFactor = std::min((((DEX) * 0.25) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
+	real_t speedFactor = std::min((((DEX) * .4) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
 	/*if ( DEX <= 5 )
 	{
 		speedFactor = std::min(((DEX * 0.5) + 8.5) * weightratio, maxSpeed);
