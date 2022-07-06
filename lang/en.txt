@@ -376,11 +376,10 @@ steel is very strong.#
 223 The effects of potions wear
 off over time.#
 
-224 Beware of picture books. I
-knew someone who touched
-one: the next thing they knew,
-they were all alone on a tiny
-island.#
+224 Beware of picture books.
+I knew a person who touched
+one and, suddenly, they were
+all alone on a tiny island.#
 
 225 Thy skills shall improve as
 thou makest use of them.#
