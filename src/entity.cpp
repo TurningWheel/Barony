@@ -4675,6 +4675,61 @@ void Entity::handleEffects(Stat* myStats)
 	myStats->OLDHP = myStats->HP;
 }
 
+real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats)
+{
+	if ( !myStats || !my )
+	{
+		return 1.0;
+	}
+
+	if ( myStats->defending )
+	{
+		return 1.0;
+	}
+
+	int blessings = 0;
+	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(myStats);
+
+	if ( myStats->helmet && myStats->helmet->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->helmet->beatitude) : myStats->helmet->beatitude;
+	}
+	if ( myStats->breastplate && myStats->breastplate->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->breastplate->beatitude) : myStats->breastplate->beatitude;
+	}
+	if ( myStats->gloves && myStats->gloves->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->gloves->beatitude) : myStats->gloves->beatitude;
+	}
+	if ( myStats->shoes && myStats->shoes->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->shoes->beatitude) : myStats->shoes->beatitude;
+	}
+	if ( myStats->shield && myStats->shield->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->shield->beatitude) : myStats->shield->beatitude;
+	}
+	if ( myStats->cloak && myStats->cloak->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->cloak->beatitude) : myStats->cloak->beatitude;
+	}
+	if ( myStats->ring && myStats->ring->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->ring->beatitude) : myStats->ring->beatitude;
+	}
+	if ( myStats->mask && myStats->mask->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->mask->beatitude) : myStats->mask->beatitude;
+	}
+	if ( myStats->amulet && myStats->amulet->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude;
+	}
+
+	return std::max(0.0, std::min(1.0, .75 + 0.025 * blessings));
+}
+
 /*-------------------------------------------------------------------------------
 
 Entity::getAttack
@@ -7535,33 +7590,43 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damagePreMultiplier = 2;
 					}
 
+					int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
+					int enemyAC = AC(hitstats);
+					if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
+					{
+						real_t amount = 0.f;
+						real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
+						if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
+						{
+							enemyAC *= amount;
+							gugnirProc = true;
+						}
+					}
+					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, this, myStats);
+					int attackAfterReductions = static_cast<int>(std::max(0.0, ((myAttack * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * myAttack);
 					if ( weaponskill == PRO_UNARMED )
 					{
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						damage = attackAfterReductions * weaponMultipliers;
 					}
 					else if ( weaponskill == PRO_RANGED )
 					{
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						damage = attackAfterReductions * weaponMultipliers;
 					}
 					else if ( weaponskill >= 0 )
 					{
-						int enemyAC = AC(hitstats);
-						if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
-						{
-							real_t amount = 0.f;
-							real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
-							if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
-							{
-								enemyAC *= amount;
-								gugnirProc = true;
-							}
-						}
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - enemyAC) * weaponMultipliers;
+						damage = attackAfterReductions * weaponMultipliers;
 					}
 					else
 					{
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
+						damage = attackAfterReductions;
 					}
+
+					damage = std::max(0, damage);
+					/*if ( weaponskill >= 0 && (damage == (std::max(0, (myAttack - enemyAC)) * weaponMultipliers)) )
+					{
+						messagePlayer(0, MESSAGE_DEBUG, "Same damage");
+					}*/
+
 					if ( weaponskill == PRO_AXE )
 					{
 						damage++;

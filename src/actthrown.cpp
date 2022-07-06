@@ -725,6 +725,7 @@ void actThrown(Entity* my)
 					{
 						if ( itemCategory(item) == THROWN )
 						{
+							int enemyAC = AC(hitstats);
 							damage = my->thrownProjectilePower;
 							if ( my->thrownProjectileCharge >= 1 )
 							{
@@ -734,7 +735,7 @@ void actThrown(Entity* my)
 								{
 									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
 								}
-								damage -= (AC(hit.entity->getStats()) * bypassArmor);
+								enemyAC *= bypassArmor;
 							}
 							else
 							{
@@ -742,8 +743,12 @@ void actThrown(Entity* my)
 								{
 									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
 								}
-								damage -= (AC(hit.entity->getStats()) * .5);
+								enemyAC *= .5;
 							}
+
+							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats);
+							int attackAfterReductions = static_cast<int>(std::max(0.0, ((damage * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * damage);
+							damage = attackAfterReductions;
 						}
 						else
 						{
