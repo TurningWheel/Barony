@@ -427,8 +427,8 @@ namespace MainMenu {
 
 	static void characterCardGameSettingsMenu(int index);
 	static void characterCardLobbySettingsMenu(int index);
-	static void characterCardRaceMenu(int index);
-	static void characterCardClassMenu(int index);
+	static void characterCardRaceMenu(int index, bool details);
+	static void characterCardClassMenu(int index, bool details);
 
     static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
@@ -869,7 +869,7 @@ namespace MainMenu {
 		auto field = frame->addField("field", field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
-		field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+		field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(guide_text);
@@ -3038,7 +3038,7 @@ namespace MainMenu {
 		auto field = frame.addField((fullname + "_text_field").c_str(), field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
-		field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+		field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(tip);
@@ -5879,7 +5879,7 @@ bind_failed:
         chat_buffer->setHJustify(Field::justify_t::LEFT);
         chat_buffer->setVJustify(Field::justify_t::CENTER);
 		chat_buffer->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
-		chat_buffer->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+		chat_buffer->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
         chat_buffer->setFont(lobby_chat_font->c_str());
         chat_buffer->setColor(makeColor(201, 162, 100, 255));
         chat_buffer->setEditable(true);
@@ -8216,8 +8216,8 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardRaceMenu(int index) {
-		auto card = initCharacterCard(index, 488);
+	static void characterCardRaceMenu(int index, bool details) {
+		auto card = initCharacterCard(index, details ? 664 : 488);
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -8237,7 +8237,9 @@ bind_failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_Window_01.png",
+			details ?
+			    "*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/RaceSelect_ScrollList_Details.png":
+			    "*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/RaceSelect_ScrollList.png",
 			"backdrop"
 		);
 
@@ -8247,27 +8249,23 @@ bind_failed:
 		header->setText("RACE SELECTION");
 		header->setJustify(Field::justify_t::CENTER);
 
-		static const char* dlcRaces1[] = {
+		static const char* races[] = {
+		    "Human",
 			"Skeleton",
 			"Vampire",
 			"Succubus",
-			"Goatman"
-		};
-
-		static const char* dlcRaces2[] = {
+			"Goatman",
 			"Automaton",
 			"Incubus",
 			"Goblin",
-			"Insectoid"
+			"Insectoid",
 		};
+		static constexpr int num_races = sizeof(races) / sizeof(races[0]);
 
 		static auto race_fn = [](Button& button, int index){
 			Frame* frame = static_cast<Frame*>(button.getParent());
-			std::vector<const char*> allRaces = { "Human" };
-			allRaces.insert(allRaces.end(), std::begin(dlcRaces1), std::end(dlcRaces1));
-			allRaces.insert(allRaces.end(), std::begin(dlcRaces2), std::end(dlcRaces2));
-			for (int c = 0; c < allRaces.size(); ++c) {
-				auto race = allRaces[c];
+			for (int c = 0; c < num_races; ++c) {
+				auto race = races[c];
 				if (strcmp(button.getName(), race) == 0) {
 					stats[index]->playerRace = c;
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
@@ -8303,48 +8301,67 @@ bind_failed:
 			sendPlayerOverNet();
 		};
 
-		auto human = card->addButton("Human");
-		human->setSize(SDL_Rect{54, 80, 30, 30});
-		human->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
-		human->setStyle(Button::style_t::STYLE_RADIO);
-		human->setBorder(0);
-		human->setColor(0);
-		human->setBorderColor(0);
-		human->setHighlightColor(0);
-		human->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-		human->addWidgetAction("MenuStart", "confirm");
-		human->setWidgetBack("back_button");
-		human->setWidgetRight("appearances");
-		if (enabledDLCPack1) {
-			human->setWidgetDown(dlcRaces1[0]);
-		}
-		else if (enabledDLCPack2) {
-			human->setWidgetDown(dlcRaces2[0]);
-		}
-		else {
-			human->setWidgetDown("disable_abilities");
-		}
-		switch (index) {
-		case 0: human->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-		case 1: human->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-		case 2: human->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-		case 3: human->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
-		}
-		if (stats[index]->playerRace == RACE_HUMAN) {
-			human->setPressed(true);
-			human->select();
+		auto subframe = card->addFrame("subframe");
+		subframe->setSize(details ?
+		    SDL_Rect{38, 382, 234, 106}:
+		    SDL_Rect{38, 68, 234, 208});
+		subframe->setActualSize(SDL_Rect{0, 0, 234, 36 * num_races});
+		subframe->setBorder(0);
+		subframe->setColor(0);
+
+        for (int c = 0; c < num_races; ++c) {
+		    auto race = subframe->addButton(races[c]);
+		    race->setSize(SDL_Rect{0, c * 36 + 3, 30, 30});
+		    race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
+		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
+		        race->setIcon("*#images/ui/Main Menus/sublist_item-locked.png");
+		        race->setDisabled(true);
+		    }
+		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
+		        race->setIcon("*#images/ui/Main Menus/sublist_item-locked.png");
+		        race->setDisabled(true);
+		    }
+		    else {
+		        race->setIcon("*#images/ui/Main Menus/sublist_item-picked.png");
+		        race->setDisabled(false);
+		    }
+		    race->setStyle(Button::style_t::STYLE_RADIO);
+		    race->setBorder(0);
+		    race->setColor(0);
+		    race->setBorderColor(0);
+		    race->setHighlightColor(0);
+		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+		    race->addWidgetAction("MenuStart", "confirm");
+		    race->setWidgetBack("back_button");
+		    race->setWidgetRight("appearances");
+		    if (c < num_races - 1) {
+		        race->setWidgetDown(races[c + 1]);
+		    }
+		    if (c > 0) {
+		        race->setWidgetUp(races[c - 1]);
+		    }
+		    switch (index) {
+		    case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
+		    case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
+		    case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
+		    case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
+		    }
+		    if (stats[index]->playerRace == c) {
+			    race->setPressed(true);
+			    race->select();
+		    }
+
+		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
+		    label->setColor(makeColor(166, 123, 81, 255));
+		    label->setText(races[c]);
+		    label->setFont(smallfont_outline);
+		    label->setSize(SDL_Rect{32, c * 36, 64, 36});
+		    label->setHJustify(Field::justify_t::LEFT);
+		    label->setVJustify(Field::justify_t::CENTER);
 		}
 
-		auto human_label = card->addField("human_label", 32);
-		human_label->setColor(makeColor(166, 123, 81, 255));
-		human_label->setText("Human");
-		human_label->setFont(smallfont_outline);
-		human_label->setSize(SDL_Rect{86, 78, 66, 36});
-		human_label->setHJustify(Button::justify_t::LEFT);
-		human_label->setVJustify(Button::justify_t::CENTER);
-
-		auto appearances = card->addFrame("appearances");
-		appearances->setSize(SDL_Rect{152, 78, 122, 36});
+		auto appearances = subframe->addFrame("appearances");
+		appearances->setSize(SDL_Rect{128, 0, 122, 36});
 		appearances->setActualSize(SDL_Rect{0, 4, 122, 36});
 		appearances->setFont("fonts/pixel_maz.ttf#32#2");
 		appearances->setBorder(0);
@@ -8357,16 +8374,8 @@ bind_failed:
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
 		appearances->setWidgetBack("back_button");
-		appearances->setWidgetLeft("Human");
-		if (enabledDLCPack2) {
-			appearances->setWidgetDown(dlcRaces2[0]);
-		}
-		else if (enabledDLCPack1) {
-			appearances->setWidgetDown(dlcRaces1[0]);
-		}
-		else {
-			appearances->setWidgetDown("disable_abilities");
-		}
+		appearances->setWidgetLeft(races[0]);
+		appearances->setWidgetDown(races[1]);
 		appearances->setTickCallback([](Widget& widget){
 			auto frame = static_cast<Frame*>(&widget);
 			auto card = static_cast<Frame*>(frame->getParent());
@@ -8408,9 +8417,9 @@ bind_failed:
 		appearance_selected->disabled = true;
 		appearance_selected->ontop = true;
 
-		auto appearance_uparrow = card->addButton("appearance_uparrow");
-		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
-		appearance_uparrow->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonUp_00.png");
+		auto appearance_uparrow = subframe->addButton("appearance_uparrow");
+		appearance_uparrow->setSize(SDL_Rect{96, 0, 20, 32});
+		appearance_uparrow->setBackground("*images/ui/Main Menus/sublist_item-pickleft.png");
 		appearance_uparrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setDisabled(true);
@@ -8425,9 +8434,9 @@ bind_failed:
 			button.select();
 			});
 
-		auto appearance_downarrow = card->addButton("appearance_downarrow");
-		appearance_downarrow->setSize(SDL_Rect{198, 114, 32, 20});
-		appearance_downarrow->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDown_00.png");
+		auto appearance_downarrow = subframe->addButton("appearance_downarrow");
+		appearance_downarrow->setSize(SDL_Rect{214, 0, 20, 32});
+		appearance_downarrow->setBackground("*images/ui/Main Menus/sublist_item-pickright.png");
 		appearance_downarrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setDisabled(true);
@@ -8478,144 +8487,23 @@ bind_failed:
 			}
 		}
 
-		if (enabledDLCPack1) {
-			for (int c = 0; c < 4; ++c) {
-				auto race = card->addButton(dlcRaces1[c]);
-				race->setSize(SDL_Rect{38, 130 + 38 * c, 30, 30});
-				race->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
-				race->setStyle(Button::style_t::STYLE_RADIO);
-				race->setBorder(0);
-				race->setColor(0);
-				race->setBorderColor(0);
-				race->setHighlightColor(0);
-				race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-				race->addWidgetAction("MenuStart", "confirm");
-				race->setWidgetBack("back_button");
-				if (enabledDLCPack2) {
-					race->setWidgetRight(dlcRaces2[c]);
-				}
-				if (c > 0) {
-					race->setWidgetUp(dlcRaces1[c - 1]);
-				} else {
-					race->setWidgetUp("Human");
-				}
-				if (c < 3) {
-					race->setWidgetDown(dlcRaces1[c + 1]);
-				} else {
-					race->setWidgetDown("disable_abilities");
-				}
-				switch (index) {
-				case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-				case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-				case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-				case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
-				}
+		auto bottom = card->addFrame("bottom");
+		bottom->setSize(details ?
+		    SDL_Rect{0, 494, 324, 170}:
+		    SDL_Rect{0, 282, 324, 170});
+		bottom->setBorder(0);
+		bottom->setColor(0);
 
-				if (stats[index]->playerRace == RACE_SKELETON + c) {
-					race->setPressed(true);
-					race->select();
-				}
-
-				auto label = card->addField((std::string(dlcRaces1[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{70, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(180, 133, 13, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces1[c]);
-			}
-		} else {
-			auto blockers = card->addImage(
-				SDL_Rect{40, 132, 26, 140},
-				0xffffffff,
-				"*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_Blocker_00.png",
-				"blockers"
-			);
-			for (int c = 0; c < 4; ++c) {
-				auto label = card->addField((std::string(dlcRaces1[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{70, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(70, 62, 59, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces1[c]);
-			}
-		}
-
-		if (enabledDLCPack2) {
-			for (int c = 0; c < 4; ++c) {
-				auto race = card->addButton(dlcRaces2[c]);
-				race->setSize(SDL_Rect{172, 130 + 38 * c, 30, 30});
-				race->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
-				race->setStyle(Button::style_t::STYLE_RADIO);
-				race->setBorder(0);
-				race->setColor(0);
-				race->setBorderColor(0);
-				race->setHighlightColor(0);
-				race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-				race->addWidgetAction("MenuStart", "confirm");
-				race->setWidgetBack("back_button");
-				if (enabledDLCPack1) {
-					race->setWidgetLeft(dlcRaces1[c]);
-				}
-				if (c > 0) {
-					race->setWidgetUp(dlcRaces2[c - 1]);
-				} else {
-					race->setWidgetUp("appearances");
-				}
-				if (c < 3) {
-					race->setWidgetDown(dlcRaces2[c + 1]);
-				} else {
-					race->setWidgetDown("disable_abilities");
-				}
-				switch (index) {
-				case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-				case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-				case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-				case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
-				}
-
-				if (stats[index]->playerRace == RACE_AUTOMATON + c) {
-					race->setPressed(true);
-					race->select();
-				}
-
-				auto label = card->addField((std::string(dlcRaces2[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{202, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(223, 44, 149, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces2[c]);
-			}
-		} else {
-			auto blockers = card->addImage(
-				SDL_Rect{174, 132, 26, 140},
-				0xffffffff,
-				"*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_Blocker_00.png",
-				"blockers"
-			);
-			for (int c = 0; c < 4; ++c) {
-				auto label = card->addField((std::string(dlcRaces2[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{202, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(70, 62, 59, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces2[c]);
-			}
-		}
-
-		auto disable_abilities_text = card->addField("disable_abilities_text", 256);
-		disable_abilities_text->setSize(SDL_Rect{44, 274, 154, 64});
+		auto disable_abilities_text = bottom->addField("disable_abilities_text", 256);
+		disable_abilities_text->setSize(SDL_Rect{44, 0, 154, 48});
 		disable_abilities_text->setFont(smallfont_outline);
 		disable_abilities_text->setColor(makeColor(166, 123, 81, 255));
 		disable_abilities_text->setText("Disable monster\nrace abilities");
 		disable_abilities_text->setHJustify(Field::justify_t::LEFT);
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
 
-		auto disable_abilities = card->addButton("disable_abilities");
-		disable_abilities->setSize(SDL_Rect{194, 284, 44, 44});
+		auto disable_abilities = bottom->addButton("disable_abilities");
+		disable_abilities->setSize(SDL_Rect{194, 2, 44, 44});
 		disable_abilities->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Checked_00.png");
 		disable_abilities->setColor(0);
 		disable_abilities->setBorderColor(0);
@@ -8626,15 +8514,7 @@ bind_failed:
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
-		if (enabledDLCPack2) {
-			disable_abilities->setWidgetUp(dlcRaces2[sizeof(dlcRaces2) / sizeof(dlcRaces2[0]) - 1]);
-		}
-		else if (enabledDLCPack1) {
-			disable_abilities->setWidgetUp(dlcRaces1[sizeof(dlcRaces1) / sizeof(dlcRaces1[0]) - 1]);
-		}
-		else {
-			disable_abilities->setWidgetUp("appearances");
-		}
+		disable_abilities->setWidgetUp(races[num_races - 1]);
 		if (stats[index]->playerRace != RACE_HUMAN) {
 			disable_abilities->setPressed(stats[index]->appearance != 0);
 		}
@@ -8651,7 +8531,7 @@ bind_failed:
 		case 3: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 3);}); break;
 		}
 
-		auto male_button = card->addButton("male");
+		auto male_button = bottom->addButton("male");
 		if (stats[index]->sex == MALE) {
 			male_button->setColor(makeColor(255, 255, 255, 255));
 			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -8660,7 +8540,7 @@ bind_failed:
 			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
-		male_button->setSize(SDL_Rect{44, 344, 58, 52});
+		male_button->setSize(SDL_Rect{44, details ? 48 : 60, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
 		male_button->setWidgetBack("back_button");
@@ -8674,7 +8554,7 @@ bind_failed:
 		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
 		}
 
-		auto female_button = card->addButton("female");
+		auto female_button = bottom->addButton("female");
 		if (stats[index]->sex == FEMALE) {
 			female_button->setColor(makeColor(255, 255, 255, 255));
 			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -8683,7 +8563,7 @@ bind_failed:
 			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
-		female_button->setSize(SDL_Rect{106, 344, 58, 52});
+		female_button->setSize(SDL_Rect{106, details ? 48 : 60, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
 		female_button->setWidgetBack("back_button");
@@ -8698,19 +8578,25 @@ bind_failed:
 		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
 		}
 
-		auto show_race_info = card->addButton("show_race_info");
+		auto show_race_info = bottom->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
 		show_race_info->setText("Show Race\nInfo");
 		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
-		show_race_info->setSize(SDL_Rect{168, 344, 110, 52});
+		show_race_info->setSize(SDL_Rect{168, details ? 48 : 60, 110, 52});
 		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
 		show_race_info->setWidgetBack("back_button");
 		show_race_info->setWidgetUp("disable_abilities");
 		show_race_info->setWidgetDown("confirm");
 		show_race_info->setWidgetLeft("female");
+		switch (index) {
+		case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true);}); break;
+		case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true);}); break;
+		case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true);}); break;
+		case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true);}); break;
+	    }
 
 		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
@@ -8731,7 +8617,7 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardClassMenu(int index) {
+	static void characterCardClassMenu(int index, bool details) {
 		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, 488);
 
@@ -8986,7 +8872,7 @@ bind_failed:
 		auto name_field = card->addField("name", 128);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		name_field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
-		name_field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+		name_field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
@@ -9164,10 +9050,10 @@ bind_failed:
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
 		switch (index) {
-		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0);}); break;
-		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1);}); break;
-		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2);}); break;
-		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3);}); break;
+		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false);}); break;
+		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false);}); break;
+		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false);}); break;
+		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false);}); break;
 		}
 
 		static auto randomize_class_fn = [](Button& button, int index){
@@ -9322,19 +9208,19 @@ bind_failed:
 		switch (index) {
 		case 0:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0, false);});
 			break;
 		case 1:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1, false);});
 			break;
 		case 2:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2, false);});
 			break;
 		case 3:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3, false);});
 			break;
 		}
 		(*class_button->getTickCallback())(*class_button);
@@ -10312,12 +10198,12 @@ bind_failed:
 
 		        auto field = banner->addField("lobby_name", field_buffer_size);
 		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		        field->setSelectorOffset(SDL_Rect{-4, -4, 4, 4});
+		        field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
 		        field->setEditable(type != LobbyType::LobbyJoined);
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
-		        field->setSize(SDL_Rect{(Frame::virtualScreenX - 246) / 2, 20, 242, 28});
+		        field->setSize(SDL_Rect{(Frame::virtualScreenX - 242) / 2, 20, 242, 28});
 		        field->setFont(smallfont_outline);
 		        field->setHJustify(Field::justify_t::LEFT);
 		        field->setVJustify(Field::justify_t::CENTER);

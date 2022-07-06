@@ -910,8 +910,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			if (selection == -1) {
 				if (input.consumeBinaryToggle("MenuUp") || 
 					input.consumeBinaryToggle("MenuDown") ||
+					input.consumeBinaryToggle("MenuRight") ||
+					input.consumeBinaryToggle("MenuLeft") ||
 					input.consumeBinaryToggle("AltMenuUp") ||
-					input.consumeBinaryToggle("AltMenuUDown")) {
+					input.consumeBinaryToggle("AltMenuDown") ||
+					input.consumeBinaryToggle("AltMenuRight") ||
+					input.consumeBinaryToggle("AltMenuLeft")) {
 					selection = 0;
 					scrollToSelection();
 					auto entry = list[selection];
@@ -920,7 +924,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					}
 				}
 			} else {
-				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp")) {
+				if (input.consumeBinaryToggle("MenuUp") || input.consumeBinaryToggle("AltMenuUp") ||
+				    input.consumeBinaryToggle("MenuLeft") || input.consumeBinaryToggle("AltMenuLeft")) {
 					selection = std::max(0, selection - 1);
 					scrollToSelection();
 					auto entry = list[selection];
@@ -928,7 +933,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 						(*entry->selected)(*entry);
 					}
 				}
-				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown")) {
+				if (input.consumeBinaryToggle("MenuDown") || input.consumeBinaryToggle("AltMenuDown") ||
+				    input.consumeBinaryToggle("MenuRight") || input.consumeBinaryToggle("AltMenuRight")) {
 					selection = std::min((int)list.size() - 1, selection + 1);
 					scrollToSelection();
 					auto entry = list[selection];
