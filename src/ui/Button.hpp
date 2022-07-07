@@ -97,6 +97,7 @@ public:
 	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
 	SDL_Rect                    getTextOffset() const { return textOffset; }
 	Uint32						getColor() const { return color; }
+	const bool					isOntop() const { return ontop; }
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }
@@ -119,6 +120,7 @@ public:
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
 	void    setTextOffset(const SDL_Rect& offset) { textOffset = offset; }
+	void	setOntop(const bool _ontop) { ontop = _ontop; }
 
 private:
 	void (*callback)(Button&) = nullptr;			//!< native callback for clicking
@@ -140,4 +142,5 @@ private:
 	justify_t hjustify = CENTER;					//!< horizontal text justification
 	justify_t vjustify = CENTER;					//!< vertical text justification
 	SDL_Rect textOffset{0, 0, 0, 0};                //!< offset used by label test
+	bool ontop = false;								//!< whether the button is drawn ontop of others
 };

@@ -37,3 +37,9 @@ constexpr Uint32 uint32ColorPlayer2 = makeColorRGB(86, 180, 233);
 constexpr Uint32 uint32ColorPlayer3 = makeColorRGB(240, 228, 66);
 constexpr Uint32 uint32ColorPlayer4 = makeColorRGB(204, 121, 167);
 constexpr Uint32 uint32ColorPlayerX = makeColorRGB(191, 191, 191);
+
+constexpr Uint32 uint32ColorPlayer1_Ally = makeColorRGB(32, 127, 32);
+constexpr Uint32 uint32ColorPlayer2_Ally = makeColorRGB(43, 90, 116);
+constexpr Uint32 uint32ColorPlayer3_Ally = makeColorRGB(120, 114, 33);
+constexpr Uint32 uint32ColorPlayer4_Ally = makeColorRGB(102, 60, 83);
+constexpr Uint32 uint32ColorPlayerX_Ally = makeColorRGB(95, 95, 95);

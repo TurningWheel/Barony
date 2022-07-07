@@ -1506,7 +1506,7 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 		    if ( !entity->flags[OVERDRAW] )
 		    {
-		        if ( !map.vismap[y + x * map.height] )
+		        if ( !map.vismap[y + x * map.height] && !entity->monsterEntityRenderAsTelepath )
 		        {
 		            continue;
 		        }
@@ -2845,12 +2845,16 @@ void occlusionCulling(map_t& map, const view_t& camera)
 
 #if !defined(EDITOR) && !defined(NDEBUG)
     static ConsoleVariable<bool> cvar("/skipculling", false);
-    if (*cvar)
+    const bool disabled = *cvar;
+#else
+    const bool disabled = false;
+#endif
+
+    if (disabled)
     {
         memset(map.vismap, 1, sizeof(bool) * size);
         return;
     }
-#endif
 
     // clear vismap
     const int camx = std::min(std::max(0, (int)camera.x), (int)map.width - 1);

@@ -795,6 +795,9 @@ namespace MainMenu {
 	}
 
 	static Frame* createPrompt(const char* name, bool small = true) {
+	    if (!main_menu_frame) {
+	        return nullptr;
+	    }
 		if (main_menu_frame->findFrame(name)) {
 			return nullptr;
 		}
@@ -8262,8 +8265,45 @@ bind_failed:
 		};
 		static constexpr int num_races = sizeof(races) / sizeof(races[0]);
 
+		static const char* race_descs[] = {
+		    "Human\n"
+            "Traits\n"
+            "None\n\n"
+
+            "Resistances Weaknesses\n"
+            "None        None\n\n"
+
+            "Friendly With:\n"
+            "Humans, Automatons",
+
+		    "Skeleton\n"
+            "Traits\n"
+            "\x1E Does not Hunger or Starve\n"
+            "\x1E HP and MP Regeneration\n"
+            "    reduced by 75%\n"
+            "\x1E Self-Resurrects for 75MP\n"
+            "\x1E Immune to Burning\n"
+            "\x1E Swim speed reduced by 50%\n\n"
+
+            "Resistances Weaknesses\n"
+            "\x1E Swords      \x1E Maces\n"
+            "\x1E Ranged      \x1E Polearms\n"
+            "\x1E Axes            \x1E Smite\n"
+            "\x1E Magic\n\n"
+
+            "Friendly With\n"
+            "\x1E Ghouls, Automatons",
+		};
+
+		if (details) {
+		    auto details_text = card->addField("details", 1024);
+		    details_text->setFont(smallfont_no_outline);
+		    details_text->setSize(SDL_Rect{40, 68, 242, 298});
+		    details_text->setText(race_descs[stats[index]->playerRace]);
+		}
+
 		static auto race_fn = [](Button& button, int index){
-			Frame* frame = static_cast<Frame*>(button.getParent());
+			auto frame = static_cast<Frame*>(button.getParent());
 			for (int c = 0; c < num_races; ++c) {
 				auto race = races[c];
 				if (strcmp(button.getName(), race) == 0) {
@@ -8299,6 +8339,12 @@ bind_failed:
 			stats[index]->clearStats();
 			initClass(index);
 			sendPlayerOverNet();
+
+			auto card = static_cast<Frame*>(frame->getParent());
+		    auto details_text = card->findField("details");
+		    if (details_text) {
+		        details_text->setText(race_descs[stats[index]->playerRace]);
+		    }
 		};
 
 		auto subframe = card->addFrame("subframe");
@@ -8311,7 +8357,7 @@ bind_failed:
 
         for (int c = 0; c < num_races; ++c) {
 		    auto race = subframe->addButton(races[c]);
-		    race->setSize(SDL_Rect{0, c * 36 + 3, 30, 30});
+		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
 		    race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
 		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
 		        race->setIcon("*#images/ui/Main Menus/sublist_item-locked.png");
@@ -8327,13 +8373,15 @@ bind_failed:
 		    }
 		    race->setStyle(Button::style_t::STYLE_RADIO);
 		    race->setBorder(0);
-		    race->setColor(0);
+		    race->setColor(0xffffffff);
 		    race->setBorderColor(0);
-		    race->setHighlightColor(0);
+		    race->setHighlightColor(0xffffffff);
 		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		    race->addWidgetAction("MenuStart", "confirm");
 		    race->setWidgetBack("back_button");
-		    race->setWidgetRight("appearances");
+		    if (c == 0) {
+		        race->setWidgetRight("appearances");
+		    }
 		    if (c < num_races - 1) {
 		        race->setWidgetDown(races[c + 1]);
 		    }
@@ -8355,13 +8403,13 @@ bind_failed:
 		    label->setColor(makeColor(166, 123, 81, 255));
 		    label->setText(races[c]);
 		    label->setFont(smallfont_outline);
-		    label->setSize(SDL_Rect{32, c * 36, 64, 36});
+		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
 		    label->setHJustify(Field::justify_t::LEFT);
 		    label->setVJustify(Field::justify_t::CENTER);
 		}
 
 		auto appearances = subframe->addFrame("appearances");
-		appearances->setSize(SDL_Rect{128, 0, 122, 36});
+		appearances->setSize(SDL_Rect{102, 0, 122, 36});
 		appearances->setActualSize(SDL_Rect{0, 4, 122, 36});
 		appearances->setFont("fonts/pixel_maz.ttf#32#2");
 		appearances->setBorder(0);
@@ -8415,15 +8463,15 @@ bind_failed:
 			"selection_box"
 		);
 		appearance_selected->disabled = true;
-		appearance_selected->ontop = true;
 
 		auto appearance_uparrow = subframe->addButton("appearance_uparrow");
-		appearance_uparrow->setSize(SDL_Rect{96, 0, 20, 32});
+		appearance_uparrow->setSize(SDL_Rect{92, 2, 20, 32});
 		appearance_uparrow->setBackground("*images/ui/Main Menus/sublist_item-pickleft.png");
 		appearance_uparrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setDisabled(true);
 		appearance_uparrow->setInvisible(true);
+		appearance_uparrow->setOntop(true);
 		appearance_uparrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
@@ -8435,12 +8483,13 @@ bind_failed:
 			});
 
 		auto appearance_downarrow = subframe->addButton("appearance_downarrow");
-		appearance_downarrow->setSize(SDL_Rect{214, 0, 20, 32});
+		appearance_downarrow->setSize(SDL_Rect{214, 2, 20, 32});
 		appearance_downarrow->setBackground("*images/ui/Main Menus/sublist_item-pickright.png");
 		appearance_downarrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setDisabled(true);
 		appearance_downarrow->setInvisible(true);
+		appearance_downarrow->setOntop(true);
 		appearance_downarrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
@@ -8580,7 +8629,11 @@ bind_failed:
 
 		auto show_race_info = bottom->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
-		show_race_info->setText("Show Race\nInfo");
+		if (details) {
+		    show_race_info->setText("Hide Race\nInfo");
+		} else {
+		    show_race_info->setText("Show Race\nInfo");
+		}
 		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
@@ -8591,11 +8644,20 @@ bind_failed:
 		show_race_info->setWidgetUp("disable_abilities");
 		show_race_info->setWidgetDown("confirm");
 		show_race_info->setWidgetLeft("female");
-		switch (index) {
-		case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true);}); break;
-		case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true);}); break;
-		case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true);}); break;
-		case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true);}); break;
+		if (details) {
+		    switch (index) {
+		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false);}); break;
+		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false);}); break;
+		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false);}); break;
+		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false);}); break;
+	        }
+	    } else {
+		    switch (index) {
+		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true);}); break;
+		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true);}); break;
+		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true);}); break;
+		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true);}); break;
+	        }
 	    }
 
 		/*auto confirm = card->addButton("confirm");
@@ -11323,7 +11385,7 @@ bind_failed:
 		    list->setWidgetBack("back_button");
 		    list->setWidgetUp("online_tab");
 		    list->setWidgetRight("players");
-		    list->setWidgetDown("enter_code");
+		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("players");
 		    list->addSyncScrollTarget("pings");
 		    list->select();
@@ -11361,7 +11423,7 @@ bind_failed:
 		    list->setWidgetUp("online_tab");
 		    list->setWidgetRight("pings");
 		    list->setWidgetLeft("names");
-		    list->setWidgetDown("enter_code");
+		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("pings");
 		}
@@ -11397,7 +11459,7 @@ bind_failed:
 		    list->setWidgetBack("back_button");
 		    list->setWidgetUp("online_tab");
 		    list->setWidgetLeft("players");
-		    list->setWidgetDown("enter_code");
+		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("players");
 		}
@@ -11493,6 +11555,7 @@ bind_failed:
 		        soundActivate();
             } else {
                 soundCancel();
+                button.select();
             }
 		    });
 
@@ -13625,14 +13688,18 @@ bind_failed:
 	static void mainQuitToDesktop(Button& button) {
 		static const char* quit_messages[][3] {
 			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
+			{"Did the wittle gobwins\nhurt your feewings?", "Yes", "No"},
 			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
 			{"You couldn't kill the lich anyway.", "You're right", "Oh yeah?"},
+			{"Mad cuz bad!\nGit gud!", "I am anger", "Okay"},
 			{"The gnomes are laughing at you!\nAre you really gonna take that?", "Yeah :(", "No way!"},
 			{"Don't go now! There's a\nboulder trap around the corner!", "Kill me", "Oh thanks"},
 			{"I'll tell your parents\nyou said a bad word.", "Poop", "Please no"},
 			{"Please don't leave!\nThere's more treasure to loot!", "Don't care", "More loot!"},
 			{"Just be glad I can't summon\nthe minotaur in real life.", "Too bad", "Point taken"},
-			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"}
+			{"Off to leave a salty review I see?", "... yeah", "No way!"},
+			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"},
+			{"Okay, I see how it is.\nSee if I'm still here tomorrow.", "Whatever", "I love you!"},
 		};
 		constexpr int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
 

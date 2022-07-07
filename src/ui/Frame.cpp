@@ -24,6 +24,19 @@ static const int _virtualScreenDefaultWidth = 1280;
 int Frame::_virtualScreenX = 0;
 int Frame::_virtualScreenY = 0;
 
+static int getMouseOwnerPauseMenu() {
+#ifndef EDITOR
+	if (gamePaused) {
+		for (int i = 0; i < MAXPLAYERS; ++i) {
+			if (inputs.bPlayerUsingKeyboardControl(i)) {
+				return i;
+			}
+		}
+	}
+#endif
+    return clientnum;
+}
+
 #ifndef EDITOR
 #include "../net.hpp"
 ConsoleCommand myCmd("/resizegui", "change gui size",
@@ -409,21 +422,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
-	int mouseowner_pausemenu = clientnum;
-#ifndef EDITOR
-	if ( gamePaused )
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				mouseowner_pausemenu = i;
-				break;
-			}
-		}
-	}
-#endif
-	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -657,21 +656,23 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	// draw fields
 	for (auto field : fields) {
-		if ( field->isOntop() )
-		{
-			continue;
+		if ( !field->isOntop() ) {
+		    field->draw(_size, scroll, selectedWidgets);
 		}
-		field->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw buttons
 	for (auto button : buttons) {
-		button->draw(_size, scroll, selectedWidgets);
+		if ( !button->isOntop() ) {
+		    button->draw(_size, scroll, selectedWidgets);
+		}
 	}
 
 	// draw sliders
 	for (auto slider : sliders) {
-		slider->draw(_size, scroll, selectedWidgets);
+		if ( !slider->isOntop() ) {
+		    slider->draw(_size, scroll, selectedWidgets);
+		}
 	}
 
 	// draw subframes
@@ -679,13 +680,25 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		frame->draw(_size, scroll, selectedWidgets);
 	}
 
+	// draw "on top" sliders
+	for (auto slider : sliders) {
+		if ( slider->isOntop() ) {
+		    slider->draw(_size, scroll, selectedWidgets);
+		}
+	}
+
+	// draw "on top" buttons
+	for (auto button : buttons) {
+		if ( button->isOntop() ) {
+		    button->draw(_size, scroll, selectedWidgets);
+		}
+	}
+
 	// draw "on top" fields
 	for ( auto field : fields ) {
-		if ( !field->isOntop() )
-		{
-			continue;
+		if ( field->isOntop() ) {
+		    field->draw(_size, scroll, selectedWidgets);
 		}
-		field->draw(_size, scroll, selectedWidgets);
 	}
 
 	// draw "on top" images
@@ -822,21 +835,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	int mouseowner_pausemenu = clientnum;
-#ifndef EDITOR
-	if ( gamePaused )
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				mouseowner_pausemenu = i;
-				break;
-			}
-		}
-	}
-#endif
-	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
 
 #ifdef EDITOR
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -953,12 +952,36 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
+	// process "ontop" fields
+	for (int i = fields.size() - 1; i >= 0; --i) {
+		Field* field = fields[i];
+		if (field->isOntop()) {
+            processField(_size, *field, destWidget, result);
+        }
+	}
+
+	// process "ontop" buttons
+	for (int i = buttons.size() - 1; i >= 0; --i) {
+		Button* button = buttons[i];
+		if (button->isOntop()) {
+		    processButton(_size, *button, destWidget, result);
+	    }
+	}
+
+	// process "ontop" (widget) sliders
+	for (int i = sliders.size() - 1; i >= 0; --i) {
+		Slider* slider = sliders[i];
+		if (slider->isOntop()) {
+		    processSlider(_size, *slider, destWidget, result);
+		}
+	}
+
 	// process frames
 	{
 		for (int i = frames.size() - 1; i >= 0; --i) {
 			Frame* frame = frames[i];
-			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, usable);
-			usable = result.usable = frameResult.usable;
+			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, result.usable);
+			result.usable = frameResult.usable;
 			if (!frameResult.removed) {
 				if (frameResult.tooltip != nullptr) {
 					result = frameResult;
@@ -971,19 +994,19 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// scroll with right stick
-	if (usable && allowScrolling && allowScrollBinds) {
+	if (result.usable && allowScrolling && allowScrollBinds) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
 		if (this->actualSize.w > size.w) {
 			if (input.binary("MenuScrollRight")) {
 				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
-				usable = result.usable = false;
+				result.usable = false;
 		        syncScroll();
 			}
 			else if (input.binary("MenuScrollLeft")) {
 				this->actualSize.x -= std::max(this->actualSize.x - 5, 0);
-				usable = result.usable = false;
+				result.usable = false;
 		        syncScroll();
 			}
 		}
@@ -992,12 +1015,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (this->actualSize.h > size.h) {
 			if (input.binary("MenuScrollDown")) {
 				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
-				usable = result.usable = false;
+				result.usable = false;
 		        syncScroll();
 			}
 			else if (input.binary("MenuScrollUp")) {
 				this->actualSize.y = std::max(this->actualSize.y - 5, 0);
-				usable = result.usable = false;
+				result.usable = false;
 		        syncScroll();
 			}
 		}
@@ -1010,7 +1033,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 #endif
 
 	// scroll with mouse wheel
-	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && usable) {
+	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && result.usable) {
 		bool mwheeldown = false;
 		bool mwheelup = false;
 		if (allowScrolling && allowScrollBinds) {
@@ -1021,7 +1044,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				mwheelup = true;
 			}
 			if (mwheeldown || mwheelup) {
-				usable = result.usable = false;
+				result.usable = false;
 
 				// x scroll with mouse wheel
 				if (this->actualSize.w > size.w) {
@@ -1125,7 +1148,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - _size.w));
 					syncScroll();
 				}
-				usable = result.usable = false;
+				result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
 			} else {
 				if ( mouseActive && rectContainsPoint(handleRect, omousex, omousey) ) {
@@ -1133,7 +1156,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 						draggingHSlider = true;
 						oldSliderX = this->actualSize.x;
 					}
-					usable = result.usable = false;
+					result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
@@ -1142,7 +1165,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					    syncScroll();
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
-					usable = result.usable = false;
+					result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
 				}
 			}
@@ -1179,7 +1202,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - _size.h));
 					syncScroll();
 				}
-				usable = result.usable = false;
+				result.usable = false;
 				ticks = -1; // hack to fix sliders in drop downs
 			} else {
 				if ( mouseActive && rectContainsPoint(handleRect, omousex, omousey) ) {
@@ -1187,7 +1210,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 						draggingVSlider = true;
 						oldSliderY = this->actualSize.y;
 					}
-					usable = result.usable = false;
+					result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
@@ -1196,72 +1219,39 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					    syncScroll();
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
-					usable = result.usable = false;
+					result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
 				}
 			}
 		}
 	}
 
-	// process buttons
-	{
-		for (int i = buttons.size() - 1; i >= 0; --i) {
-			Button* button = buttons[i];
-			if (!destWidget) {
-				destWidget = button->handleInput();
-			}
-
-			Button::result_t buttonResult = button->process(_size, actualSize, usable);
-			if (usable && buttonResult.highlighted) {
-				result.highlightTime = buttonResult.highlightTime;
-				result.tooltip = buttonResult.tooltip;
-				if (mouseActive) {
-					button->select();
-				}
-				if (buttonResult.clicked) {
-					button->activate();
-				}
-				result.usable = usable = false;
-			}
-
-			if (destWidget && button->isSelected()) {
-				button->deselect();
-			}
+	// process (widget) sliders
+	for (int i = sliders.size() - 1; i >= 0; --i) {
+		Slider* slider = sliders[i];
+		if (!slider->isOntop()) {
+		    processSlider(_size, *slider, destWidget, result);
 		}
 	}
 
-	// process (widget) sliders
-	{
-		for (int i = sliders.size() - 1; i >= 0; --i) {
-			Slider* slider = sliders[i];
+	// process buttons
+	for (int i = buttons.size() - 1; i >= 0; --i) {
+		Button* button = buttons[i];
+		if (!button->isOntop()) {
+		    processButton(_size, *button, destWidget, result);
+	    }
+	}
 
-			if (!destWidget && !slider->isActivated()) {
-				destWidget = slider->handleInput();
-			} else {
-				result.usable = usable = slider->control() ? usable : false;
-			}
-
-			Slider::result_t sliderResult = slider->process(_size, actualSize, usable);
-			if (usable && sliderResult.highlighted) {
-				result.highlightTime = sliderResult.highlightTime;
-				result.tooltip = sliderResult.tooltip;
-				if (mouseActive) {
-					slider->select();
-				}
-				if (sliderResult.clicked) {
-					slider->fireCallback();
-				}
-				result.usable = usable = false;
-			}
-
-			if (destWidget && slider->isSelected()) {
-				slider->deselect();
-			}
-		}
+	// process fields
+	for (int i = fields.size() - 1; i >= 0; --i) {
+		Field* field = fields[i];
+		if (!field->isOntop()) {
+            processField(_size, *field, destWidget, result);
+        }
 	}
 
 	// process the frame's list entries
-	if (usable && list.size() > 0) {
+	if (result.usable && list.size() > 0) {
 		for (int i = 0; i < list.size(); ++i) {
 			entry_t* entry = list[i];
 			if (entry->suicide) {
@@ -1305,7 +1295,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 						}
 					}
 				}
-				result.usable = usable = false;
+				result.usable = false;
 			} else {
 				entry->highlightTime = SDL_GetTicks();
 				entry->highlighted = false;
@@ -1314,66 +1304,19 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	// process fields
-	{
-		for (int i = fields.size() - 1; i >= 0; --i) {
-			Field* field = fields[i];
-
-			// widget capture input
-			if (field->isActivated()) {
-#ifndef EDITOR
-			    if (inputs.hasController(field->getOwner())) {
-			        if (input.consumeBinaryToggle("MenuConfirm") ||
-			            input.consumeBinaryToggle("MenuCancel")) {
-			            field->deactivate();
-		            }
-		        }
-#endif
-			}
-			else if (!destWidget) {
-				destWidget = field->handleInput();
-			}
-
-			Field::result_t fieldResult = field->process(_size, actualSize, usable);
-			if (usable && fieldResult.highlighted) {
-				result.highlightTime = fieldResult.highlightTime;
-			    result.tooltip = fieldResult.tooltip;
-				if (mouseActive && field->isEditable()) {
-					field->select();
-				}
-				if (field->isSelected()) {
-					result.usable = usable = false;
-				}
-			}
-
-			if (fieldResult.entered) {
-				result.usable = usable = false;
-				if (field->getCallback()) {
-					(*field->getCallback())(*field);
-				} else {
-					printlog("modified field with no callback");
-				}
-			}
-
-			if (destWidget && field->isSelected()) {
-				field->deselect();
-			}
-		}
-	}
-
 	// scroll with arrows or left stick
-	if (usable && allowScrolling && allowScrollBinds && scrollWithLeftControls) {
+	if (result.usable && allowScrolling && allowScrollBinds && scrollWithLeftControls) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
 		if (this->actualSize.w > size.w) {
 			if (input.binaryToggle("MenuRight") || input.binaryToggle("AltMenuRight")) {
 				scrollInertiaX += .15;
-				usable = result.usable = false;
+				result.usable = false;
 			}
 			else if (input.binaryToggle("MenuLeft") || input.binaryToggle("AltMenuLeft")) {
 				scrollInertiaX -= .15;
-				usable = result.usable = false;
+				result.usable = false;
 			}
 		}
 
@@ -1381,24 +1324,24 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (this->actualSize.h > size.h) {
 			if (input.binaryToggle("MenuDown") || input.binaryToggle("AltMenuDown")) {
 				scrollInertiaY += .15;
-				usable = result.usable = false;
+				result.usable = false;
 			}
 			else if (input.binaryToggle("MenuUp") || input.binaryToggle("AltMenuUp")) {
 				scrollInertiaY -= .15;
-				usable = result.usable = false;
+				result.usable = false;
 			}
 		}
 	}
 
 	if ( mouseActive && rectContainsPoint(_size, omousex, omousey) && !hollow ) {
 		//messagePlayer(0, "%d: %s", getOwner(), getName());
-		if (clickable && usable) {
+		if (clickable && result.usable) {
 			if (mousestatus[SDL_BUTTON_LEFT]) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				activate();
 			}
 		}
-		result.usable = usable = false;
+		result.usable = false;
 	}
 
 	if (toBeDeleted) {
@@ -1411,6 +1354,123 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	return result;
+}
+
+void Frame::processField(const SDL_Rect& _size, Field& field, Widget*& destWidget, result_t& result) {
+	Input& input = Input::inputs[owner];
+
+#ifdef EDITOR
+	const bool mouseActive = true;
+#else
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
+#endif
+
+	// widget capture input
+	if (field.isActivated()) {
+#ifndef EDITOR
+	    if (inputs.hasController(field.getOwner())) {
+	        if (input.consumeBinaryToggle("MenuConfirm") ||
+	            input.consumeBinaryToggle("MenuCancel")) {
+	            field.deactivate();
+            }
+        }
+#endif
+	}
+	else if (!destWidget) {
+		destWidget = field.handleInput();
+	}
+
+	Field::result_t fieldResult = field.process(_size, actualSize, result.usable);
+	if (result.usable && fieldResult.highlighted) {
+		result.highlightTime = fieldResult.highlightTime;
+	    result.tooltip = fieldResult.tooltip;
+		if (mouseActive && field.isEditable()) {
+			field.select();
+		}
+		if (field.isSelected()) {
+			result.usable = false;
+		}
+	}
+
+	if (fieldResult.entered) {
+		result.usable = false;
+		if (field.getCallback()) {
+			(*field.getCallback())(field);
+		} else {
+			printlog("modified field with no callback");
+		}
+	}
+
+	if (destWidget && field.isSelected()) {
+		field.deselect();
+	}
+}
+
+void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWidget, result_t& result) {
+	Input& input = Input::inputs[owner];
+
+#ifdef EDITOR
+	const bool mouseActive = true;
+#else
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
+#endif
+
+	if (!destWidget) {
+		destWidget = button.handleInput();
+	}
+
+	Button::result_t buttonResult = button.process(_size, actualSize, result.usable);
+	if (result.usable && buttonResult.highlighted) {
+		result.highlightTime = buttonResult.highlightTime;
+		result.tooltip = buttonResult.tooltip;
+		if (mouseActive) {
+			button.select();
+		}
+		if (buttonResult.clicked) {
+			button.activate();
+		}
+		result.usable = false;
+	}
+
+	if (destWidget && button.isSelected()) {
+		button.deselect();
+	}
+}
+
+void Frame::processSlider(const SDL_Rect& _size, Slider& slider, Widget*& destWidget, result_t& result) {
+	Input& input = Input::inputs[owner];
+
+#ifdef EDITOR
+	const bool mouseActive = true;
+#else
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
+#endif
+
+	if (!destWidget && !slider.isActivated()) {
+		destWidget = slider.handleInput();
+	} else {
+		result.usable = slider.control() ? result.usable : false;
+	}
+
+	Slider::result_t sliderResult = slider.process(_size, actualSize, result.usable);
+	if (result.usable && sliderResult.highlighted) {
+		result.highlightTime = sliderResult.highlightTime;
+		result.tooltip = sliderResult.tooltip;
+		if (mouseActive) {
+			slider.select();
+		}
+		if (sliderResult.clicked) {
+			slider.fireCallback();
+		}
+		result.usable = false;
+	}
+
+	if (destWidget && slider.isSelected()) {
+		slider.deselect();
+	}
 }
 
 void Frame::postprocess() {
