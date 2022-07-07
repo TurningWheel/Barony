@@ -4107,9 +4107,13 @@ void item_Food(Item*& item, int player)
 	{
 		pukeChance = 100; // shapeshifted players don't puke
 	}
-	if ( player >= 0 && stats[player]->type == INSECTOID )
+	else if ( player >= 0 && stats[player]->type == INSECTOID )
 	{
 		pukeChance = 100; // insectoids can eat anything.
+	}
+	else if ( item->beatitude < 0 && item->type != FOOD_CREAMPIE && pukeChance == 100 )
+	{
+		pukeChance = 99; // make it so you will vomit
 	}
 
 	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (local_rng.rand() % pukeChance == 0)) && pukeChance < 100)
