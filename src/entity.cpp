@@ -7731,7 +7731,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
 						skillModifier /= 100.0;
 						skillModifier = std::min(skillModifier, 1.0);
-						damage *= skillModifier;
+						damage = damage - static_cast<int>((1.0 - skillModifier) * damage);
 						if ( *cvar_atkonhit )
 						{
 							messagePlayer(0, MESSAGE_DEBUG, "New Dmg: %.f%%: %d", 100.0 * skillModifier, damage);
@@ -16735,7 +16735,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 	skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
 	skillModifier /= 100.0;
 	skillModifier = std::min(skillModifier, 1.0);
-	attack *= skillModifier;
+	attack = attack - static_cast<int>((1.0 - skillModifier) * attack);
 	this->arrowPower = attack;
 }
 
