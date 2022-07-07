@@ -1270,6 +1270,8 @@ public:
 				int skillId = -1;
 				std::string skillIconPath;
 				std::string skillIconPathLegend;
+				std::string skillIconPath32px;
+				std::string skillIconPathLegend32px;
 				std::string statIconPath;
 				std::string description;
 				std::string legendaryDescription;

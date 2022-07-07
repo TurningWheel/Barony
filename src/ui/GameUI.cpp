@@ -4406,11 +4406,11 @@ void Player::HUD_t::updateActionPrompts()
 					{
 						if ( skillCapstoneUnlocked(player.playernum, skillForPrompt) )
 						{
-							skillImg = skill.skillIconPathLegend;
+							skillImg = skill.skillIconPathLegend32px;
 						}
 						else
 						{
-							skillImg = skill.skillIconPath;
+							skillImg = skill.skillIconPath32px;
 						}
 						break;
 					}
@@ -14074,6 +14074,14 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 						if ( (*itr).HasMember("icon_legend_path") )
 						{
 							entry.skillIconPathLegend = (*itr)["icon_legend_path"].GetString();
+						}
+						if ( (*itr).HasMember("icon_base_path_32px") )
+						{
+							entry.skillIconPath32px = (*itr)["icon_base_path_32px"].GetString();
+						}
+						if ( (*itr).HasMember("icon_legend_path_32px") )
+						{
+							entry.skillIconPathLegend32px = (*itr)["icon_legend_path_32px"].GetString();
 						}
 						if ( (*itr).HasMember("icon_stat_path") )
 						{
