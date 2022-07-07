@@ -6639,6 +6639,11 @@ int main(int argc, char** argv)
 				players[i]->GUI.clearHoveringOverModuleButton();
 			}
 
+			Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
+			Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
+			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
