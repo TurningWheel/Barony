@@ -53,7 +53,7 @@ namespace MainMenu {
 		{"Use", "Mouse3", "ButtonA", emptyBinding},
 		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
 		{"Block", "Space", "LeftTrigger", emptyBinding},
-		{"Sneak", "Left Shift", "LeftTrigger", emptyBinding},
+		{"Sneak", "Space", "LeftTrigger", emptyBinding},
 		{"Character Status", "Tab", "ButtonBack", emptyBinding},
 		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
 		{"Spell List", "B", hiddenBinding, emptyBinding},
