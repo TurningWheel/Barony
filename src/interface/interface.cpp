@@ -758,7 +758,7 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"GAME_FOLLOWERMENU_CYCLENEXT"
 };
 
-static auto genericgui_deselect_fn = [](Widget& widget) {
+static void genericgui_deselect_fn(Widget& widget) {
 	if ( widget.isSelected() )
 	{
 		if ( !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
@@ -766,7 +766,7 @@ static auto genericgui_deselect_fn = [](Widget& widget) {
 			widget.deselect();
 		}
 	}
-};
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -11277,10 +11277,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
 			});
-			closeBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			closeBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "close tinker glyph");
@@ -11364,10 +11361,8 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 					GenericGUI[button.getOwner()].tinkerGUI.animPromptMoveLeft = true;
 				}
 			});
-			filterBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
+
 			Field* filterTxt = bgFrame->addField("filter salvage txt", 64);
 			filterTxt->setFont(itemFont);
 			filterTxt->setText("Salvage");
@@ -11396,10 +11391,8 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 				onTinkerChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].tinkerGUI.animPromptMoveLeft = true;
 			});
-			filterBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
+
 			filterTxt = bgFrame->addField("filter craft txt", 64);
 			filterTxt->setFont(itemFont);
 			filterTxt->setText("Craft");
@@ -11428,10 +11421,8 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 				onTinkerChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].tinkerGUI.animPromptMoveLeft = false;
 			});
-			filterBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
+
 			filterTxt = bgFrame->addField("filter repair txt", 64);
 			filterTxt->setFont(itemFont);
 			filterTxt->setText("Repair");
@@ -14011,10 +14002,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
 			playSound(139, 64); // click sound
 		});
-		clearRecipeBtn->setTickCallback([](Widget& widget)
-		{
-			genericgui_deselect_fn(widget);
-		});
+		clearRecipeBtn->setTickCallback(genericgui_deselect_fn);
 		clearRecipeBtn->setDisabled(true);
 
 		auto clearRecipeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
@@ -14155,10 +14143,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 					playSound(139, 64); // click sound
 				}
 			});
-			recipeBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			recipeBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto openRecipesGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "recipe glyph");
@@ -14183,10 +14168,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
 			});
-			closeBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			closeBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "close alchemy glyph");
@@ -14222,10 +14204,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 				alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
 				alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
 			});
-			brewBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			brewBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto brewGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "brew glyph");
@@ -17422,10 +17401,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
 				}
 			});
-			sortBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			sortBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto closeBtn = drawerFrame->addButton("close drawer button");
 			SDL_Rect closeBtnPos{ drawerPos.w - 0 - 26, 2, 26, 26 };
@@ -17447,10 +17423,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				GenericGUI[button.getOwner()].featherGUI.bDrawerOpen = false;
 				onFeatherChangeTabAction(button.getOwner(), true);
 			});
-			closeBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			closeBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto sortGlyph = drawerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "sort glyph");
@@ -17567,10 +17540,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
 			});
-			closeBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			closeBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "close feather glyph");
@@ -17646,10 +17616,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				onFeatherChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = true;
 			});
-			filterBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
 
 			filterBtn = bgFrame->addButton("filter repair btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
@@ -17668,10 +17635,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				onFeatherChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = false;
 			});
-			filterBtn->setTickCallback([](Widget& widget)
-			{
-				genericgui_deselect_fn(widget);
-			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "filter nav left");
