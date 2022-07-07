@@ -23392,6 +23392,10 @@ void Player::SkillSheet_t::processSkillSheet()
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
+			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+			}
 		}
 		closeSkillSheet();
 		return;
