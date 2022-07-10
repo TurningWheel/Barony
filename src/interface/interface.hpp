@@ -1245,13 +1245,14 @@ public:
 	enum PanelDirections : int
 	{
 		NORTH,
-		NORTHEAST,
-		EAST,
-		SOUTHEAST,
-		SOUTH,
-		SOUTHWEST,
+		NORTHWEST,
 		WEST,
-		NORTHWEST
+		SOUTHWEST,
+		SOUTH,
+		SOUTHEAST,
+		EAST,
+		NORTHEAST,
+		PANEL_DIRECTION_END
 	};
 	struct PanelEntry
 	{
@@ -1260,6 +1261,8 @@ public:
 		std::string path = "";
 		std::string path_locked = "";
 		std::string path_hover = "";
+		int icon_offsetx = 0;
+		int icon_offsety = 0;
 	};
 	static std::vector<PanelEntry> panelEntries;
 	struct IconEntry
@@ -1270,6 +1273,8 @@ public:
 		std::string path_hover = "";
 		std::string path_active = "";
 		std::string path_active_hover = "";
+		int icon_offsetx = 0;
+		int icon_offsety = 0;
 	};
 	static std::map<std::string, IconEntry> iconEntries;
 

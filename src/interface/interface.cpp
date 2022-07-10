@@ -1662,6 +1662,14 @@ void FollowerRadialMenu::loadFollowerJSON()
 						{
 							entry.path_hover = (*itr)["path_hover"].GetString();
 						}
+						if ( (*itr).HasMember("icon_offset_x") )
+						{
+							entry.icon_offsetx = (*itr)["icon_offset_x"].GetInt();
+						}
+						if ( (*itr).HasMember("icon_offset_y") )
+						{
+							entry.icon_offsety = (*itr)["icon_offset_y"].GetInt();
+						}
 					}
 				}
 				if ( d.HasMember("icons") )
@@ -1837,7 +1845,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		const int midy = followerFrame->getSize().h / 2;
 		for ( auto img : bgFrame->getImages() )
 		{
-			if ( direction <= NORTHWEST )
+			if ( direction < PANEL_DIRECTION_END )
 			{
 				panelImages[direction] = img;
 				img->pos.x = panelEntries[direction].x + midx;
@@ -1848,9 +1856,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				img->disabled = true;
 				img->path = "";
-				panelIcons[direction - NORTHWEST - 1] = img;
-				panelIcons[direction - NORTHWEST - 1]->pos.x = panelImages[direction - NORTHWEST - 1]->pos.x + panelImages[direction - NORTHWEST - 1]->pos.w / 2;
-				panelIcons[direction - NORTHWEST - 1]->pos.y = panelImages[direction - NORTHWEST - 1]->pos.y + panelImages[direction - NORTHWEST - 1]->pos.h / 2;
+				int direction2 = direction - PANEL_DIRECTION_END;
+				panelIcons[direction2] = img;
+				panelIcons[direction2]->pos.x = panelImages[direction2]->pos.x + panelEntries[direction2].icon_offsetx;
+				panelIcons[direction2]->pos.y = panelImages[direction2]->pos.y + panelEntries[direction2].icon_offsety;
 			}
 			++direction;
 		}
@@ -2272,13 +2281,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					getSizeOfText(ttf12, language[3037 + i + 8], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+					// "follow"
 					if ( i == highlight )
 					{
-						panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
+						panelIcons[i]->path = iconEntries["leader_wait"].path_active_hover;
 					}
 					else
 					{
-						panelIcons[i]->path = iconEntries["leader_wait"].path;
+						panelIcons[i]->path = iconEntries["leader_wait"].path_active;
 					}
 				}
 			}
@@ -2313,6 +2323,40 @@ void FollowerRadialMenu::drawFollowerMenu()
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
 						getSizeOfText(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+						switch ( followerToCommand->monsterAllyClass )
+						{
+							case ALLY_CLASS_MELEE:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_class_melee"].path_active_hover;
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_class_melee"].path_active;
+								}
+								break;
+							case ALLY_CLASS_RANGED:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_class_ranged"].path_active_hover;
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_class_ranged"].path_active;
+								}
+								break;
+							case ALLY_CLASS_MIXED:
+							default:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_class_mixed"].path_active_hover;
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_class_mixed"].path_active;
+								}
+								break;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
@@ -2343,6 +2387,40 @@ void FollowerRadialMenu::drawFollowerMenu()
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
 						getSizeOfText(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
+						switch ( followerToCommand->monsterAllyPickupItems )
+						{
+							case ALLY_PICKUP_ALL:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_all"].path_active_hover;
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_all"].path_active;
+								}
+								break;
+							case ALLY_PICKUP_NONPLAYER:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_active_hover;
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_active;
+								}
+								break;
+							case ALLY_PICKUP_NONE:
+							default:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_hover;
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path;
+								}
+								break;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_DROP_EQUIP )
@@ -2372,6 +2450,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 							getSizeOfText(ttf12, language[3059], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
 						}
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_drop"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_drop"].path;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_SPECIAL )
@@ -2397,6 +2483,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						// rest
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_rest"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_rest"].path;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_ATTACK_SELECT )
@@ -2407,17 +2502,41 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							getSizeOfText(ttf12, "Interact / ", &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_attack_or_interact"].path_hover;
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_attack_or_interact"].path;
+							}
 						}
 						else
 						{
 							getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]);
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_interact"].path_hover;
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_interact"].path;
+							}
 						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3104], &width, nullptr); // print just attack if no world interaction.
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]);
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_attack"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_attack"].path;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_MOVETO_SELECT )
@@ -2431,12 +2550,43 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_moveto"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_moveto"].path;
+						}
 					}
 				}
 				else
 				{
 					getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					if ( i == ALLY_CMD_DEFEND )
+					{
+						// "wait"
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_wait"].path;
+						}
+					}
+					else if ( i == ALLY_CMD_MOVEASIDE )
+					{
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_moveaside"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_moveaside"].path;
+						}
+					}
 				}
 			}
 
@@ -2449,7 +2599,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				panelImages[i]->path = panelEntries[i].path_hover;
 			}
 
-			if ( panelIcons[i]->path != "" )
+			if ( !lockedOption && panelIcons[i]->path != "" )
 			{
 				if ( auto imgGet = Image::get(panelIcons[i]->path.c_str()) )
 				{

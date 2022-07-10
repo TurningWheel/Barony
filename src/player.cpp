@@ -5536,4 +5536,6 @@ void Player::clearGUIPointers()
 		skillSheetEntryFrames[playernum].effectFrames[i] = nullptr;
 	}
 	skillSheetEntryFrames[playernum].legendFrame = nullptr;
+
+	FollowerMenu[playernum].followerFrame = nullptr;
 }
