@@ -1582,6 +1582,14 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 		}
 	}
 	optionSelected = -1;
+	if ( followerFrame )
+	{
+		followerFrame->setDisabled(true);
+		for ( auto f : followerFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+	}
 }
 
 bool FollowerRadialMenu::followerMenuIsOpen()
@@ -1593,16 +1601,217 @@ bool FollowerRadialMenu::followerMenuIsOpen()
 	return false;
 }
 
+std::vector<FollowerRadialMenu::PanelEntry> FollowerRadialMenu::panelEntries;
+std::map<std::string, FollowerRadialMenu::IconEntry> FollowerRadialMenu::iconEntries;
+void FollowerRadialMenu::loadFollowerJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/follower_wheel.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/follower_wheel.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/follower_wheel.json");
+		inputPath.append("/data/follower_wheel.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("panels") )
+				{
+					FollowerRadialMenu::panelEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["panels"].Begin();
+						itr != d["panels"].End(); ++itr )
+					{
+						FollowerRadialMenu::panelEntries.push_back(FollowerRadialMenu::PanelEntry());
+						auto& entry = FollowerRadialMenu::panelEntries[FollowerRadialMenu::panelEntries.size() - 1];
+						if ( (*itr).HasMember("x") )
+						{
+							entry.x = (*itr)["x"].GetInt();
+						}
+						if ( (*itr).HasMember("y") )
+						{
+							entry.y = (*itr)["y"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							entry.path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked") )
+						{
+							entry.path_locked = (*itr)["path_locked"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+					}
+				}
+				if ( d.HasMember("icons") )
+				{
+					FollowerRadialMenu::iconEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["icons"].Begin();
+						itr != d["icons"].End(); ++itr )
+					{
+						std::string actionName = "";
+						if ( (*itr).HasMember("action") )
+						{
+							actionName = (*itr)["action"].GetString();
+						}
+						if ( actionName == "" )
+						{
+							continue;
+						}
+						FollowerRadialMenu::iconEntries[actionName] = FollowerRadialMenu::IconEntry();
+						FollowerRadialMenu::iconEntries[actionName].name = actionName;
+						if ( (*itr).HasMember("id") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].id = (*itr)["id"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_active") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path_active = (*itr)["path_active"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_active_hover") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path_active_hover = (*itr)["path_active_hover"].GetString();
+						}
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
+}
+
+bool FollowerRadialMenu::followerGUIHasBeenCreated() const
+{
+	if ( followerFrame )
+	{
+		if ( !followerFrame->getFrames().empty() )
+		{
+			for ( auto f : followerFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void FollowerRadialMenu::createFollowerMenuGUI()
+{
+	const int player = getPlayer();
+	if ( !gui || !followerFrame )
+	{
+		return;
+	}
+	if ( followerGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	const int midx = followerFrame->getSize().w / 2;
+	const int midy = followerFrame->getSize().h / 2;
+
+	auto bgFrame = followerFrame->addFrame("wheel base");
+	bgFrame->setSize(SDL_Rect{0, 0, followerFrame->getSize().w, followerFrame->getSize().h});
+	bgFrame->setHollow(false);
+	bgFrame->setDisabled(false);
+
+	int panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+		char buf[32] = "";
+		snprintf(buf, sizeof(buf), "panel %d", panelIndex);
+		Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
+		if ( auto imgGet = Image::get(img->path.c_str()) )
+		{
+			img->pos.w = imgGet->getWidth();
+			img->pos.h = imgGet->getHeight();
+		}
+		++panelIndex;
+
+	}
+
+	panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+		char buf[32] = "";
+		snprintf(buf, sizeof(buf), "icon %d", panelIndex);
+		Frame::image_t* imgIcon = bgFrame->addImage(pos, 0xFFFFFFFF, "", buf);
+		imgIcon->disabled = true;
+		++panelIndex;
+	}
+}
+
 void FollowerRadialMenu::drawFollowerMenu()
 {
+	auto player = players[gui_player];
+	if ( !player->isLocalPlayer() )
+	{
+		closeFollowerMenuGUI();
+		return;
+	}
+
 	if ( selectMoveTo )
 	{
 		if ( !followerToCommand )
 		{
 			selectMoveTo = false;
+			closeFollowerMenuGUI();
+		}
+		else if ( followerFrame )
+		{
+			followerFrame->setDisabled(true);
 		}
 		return;
 	}
+
+	if ( !followerFrame )
+	{
+		return;
+	}
+
+	followerFrame->setSize(SDL_Rect{ players[gui_player]->camera_virtualx1(),
+		players[gui_player]->camera_virtualy1(),
+		players[gui_player]->camera_virtualWidth(),
+		players[gui_player]->camera_virtualHeight() });
 
 	int disableOption = 0;
 	bool keepWheelOpen = false;
@@ -1611,6 +1820,50 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
 	Input& input = Input::inputs[gui_player];
+	std::map<int, Frame::image_t*> panelImages;
+	std::map<int, Frame::image_t*> panelIcons;
+
+	if ( followerToCommand )
+	{
+		if ( !followerGUIHasBeenCreated() )
+		{
+			createFollowerMenuGUI();
+		}
+		followerFrame->setDisabled(false);
+
+		auto bgFrame = followerFrame->findFrame("wheel base");
+		int direction = NORTH;
+		const int midx = followerFrame->getSize().w / 2 + 360;
+		const int midy = followerFrame->getSize().h / 2;
+		for ( auto img : bgFrame->getImages() )
+		{
+			if ( direction <= NORTHWEST )
+			{
+				panelImages[direction] = img;
+				img->pos.x = panelEntries[direction].x + midx;
+				img->pos.y = panelEntries[direction].y + midy;
+				img->path = panelEntries[direction].path;
+			}
+			else
+			{
+				img->disabled = true;
+				img->path = "";
+				panelIcons[direction - NORTHWEST - 1] = img;
+				panelIcons[direction - NORTHWEST - 1]->pos.x = panelImages[direction - NORTHWEST - 1]->pos.x + panelImages[direction - NORTHWEST - 1]->pos.w / 2;
+				panelIcons[direction - NORTHWEST - 1]->pos.y = panelImages[direction - NORTHWEST - 1]->pos.y + panelImages[direction - NORTHWEST - 1]->pos.h / 2;
+			}
+			++direction;
+		}
+	}
+	else if ( !followerFrame->isDisabled() )
+	{
+		closeFollowerMenuGUI();
+	}
+
+	if ( ticks % 50 == 0 )
+	{
+		consoleCommand("/loadfollowerwheel");
+	}
 
 	if ( followerToCommand )
 	{
@@ -1920,106 +2173,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 					inputs.setMouse(gui_player, Inputs::X, omousex);
 					inputs.setMouse(gui_player, Inputs::Y, omousey);
 				}
-				/*
-				real_t magnitude = sqrt(pow(controller->getRightYPercent(), 2) + pow(controller->getRightXPercent(), 2));
-				if ( magnitude > 1 )
-				{
-					real_t stickAngle = atan2(controller->getRightYPercent(), controller->getRightXPercent());
-					while ( stickAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
-					{
-						stickAngle -= PI * 2;
-					}
-					while ( stickAngle < (PI / 2 - (PI / numoptions)))
-					{
-						stickAngle += PI * 2;
-					}
-					real_t currentCursorAngle = atan2(omousey - menuY, omousex - menuX);
-					while ( currentCursorAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
-					{
-						currentCursorAngle -= PI * 2;
-					}
-					while ( currentCursorAngle < (PI / 2 - (PI / numoptions)) )
-					{
-						currentCursorAngle += PI * 2;
-					}
-
-					angleStart = PI / 2 - (PI / numoptions);
-					angleMiddle = angleStart + PI / numoptions;
-					angleEnd = angleMiddle + PI / numoptions;
-
-					int newOption = -1;
-					int currentOption = -1;
-					for ( i = 0; i < numoptions; ++i )
-					{
-						if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
-						{
-							newOption = i;
-						}
-						if ( (currentCursorAngle >= angleStart && stickAngle < angleEnd) )
-						{
-							currentOption = (mouseInCenterButton ? -1 : i); // disregard if mouse in center
-						}
-						angleStart += 2 * PI / numoptions;
-						angleMiddle = angleStart + PI / numoptions;
-						angleEnd = angleMiddle + PI / numoptions;
-					}
-
-					real_t angleMiddleForOption = PI / 2 + newOption * (2 * PI / numoptions);
-					if ( mouseInCenterButton && newOption >= 0 )
-					{
-						omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
-						omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
-					}
-					else
-					{
-						switch ( newOption )
-						{
-							case UP: // up
-							case UPLEFT:
-							case UPRIGHT:
-								if ( currentOption == DOWN || currentOption == DOWNLEFT || currentOption == DOWNRIGHT )
-								{
-									newOption = -1;
-								}
-								break;
-							case LEFT:
-								break;
-							case DOWNLEFT:
-							case DOWN:
-							case DOWNRIGHT:
-								if ( currentOption == UP || currentOption == UPLEFT || currentOption == UPRIGHT )
-								{
-									newOption = -1;
-								}
-								break;
-							case RIGHT:
-								break;
-							default:
-								break;
-						}
-						if ( newOption != -1 )
-						{
-							angleMiddleForOption = PI / 2 + newOption * (2 * PI / numoptions);
-							omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
-							omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
-						}
-						else
-						{
-							omousex = centerx;
-							omousey = centery;
-						}
-					}
-				}
-				else
-				{
-					//omousex = centerx;
-					//omousey = centery;
-				}
-				inputs.setMouse(gui_player, Inputs::OX, omousex);
-				inputs.setMouse(gui_player, Inputs::OY, omousey);
-				inputs.setMouse(gui_player, Inputs::X, omousex);
-				inputs.setMouse(gui_player, Inputs::Y, omousey);
-				*/
 			}
 		}
 
@@ -2101,9 +2254,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			// draw the text for the menu wheel.
 
+			bool lockedOption = false;
 			if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
 			{
 				drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+				lockedOption = true;
 			}
 			else if ( i == ALLY_CMD_DEFEND
 				&& (followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
@@ -2117,6 +2272,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					getSizeOfText(ttf12, language[3037 + i + 8], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["leader_wait"].path;
+					}
 				}
 			}
 			else
@@ -2274,6 +2437,27 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+				}
+			}
+
+			if ( lockedOption )
+			{
+				panelImages[i]->path = panelEntries[i].path_locked;
+			}
+			else if ( highlight == i )
+			{
+				panelImages[i]->path = panelEntries[i].path_hover;
+			}
+
+			if ( panelIcons[i]->path != "" )
+			{
+				if ( auto imgGet = Image::get(panelIcons[i]->path.c_str()) )
+				{
+					panelIcons[i]->disabled = false;
+					panelIcons[i]->pos.w = imgGet->getWidth();
+					panelIcons[i]->pos.h = imgGet->getHeight();
+					panelIcons[i]->pos.x -= panelIcons[i]->pos.w / 2;
+					panelIcons[i]->pos.y -= panelIcons[i]->pos.h / 2;
 				}
 			}
 

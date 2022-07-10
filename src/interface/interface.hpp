@@ -1213,8 +1213,10 @@ public:
 	int sidebarScrollIndex; // entries scrolled in the sidebar list if overflowed with followers.
 	int maxMonstersToDraw;
 	int gui_player = 0;
+	Frame* followerFrame;
 
 	FollowerRadialMenu() :
+		followerFrame(nullptr),
 		followerToCommand(nullptr),
 		recentEntity(nullptr),
 		entityToInteractWith(nullptr),
@@ -1235,6 +1237,41 @@ public:
 	{
 		memset(interactText, 0, 128);
 	}
+
+	void createFollowerMenuGUI();
+	void updateFollowerMenuGUI();
+	bool followerGUIHasBeenCreated() const;
+	static void loadFollowerJSON();
+	enum PanelDirections : int
+	{
+		NORTH,
+		NORTHEAST,
+		EAST,
+		SOUTHEAST,
+		SOUTH,
+		SOUTHWEST,
+		WEST,
+		NORTHWEST
+	};
+	struct PanelEntry
+	{
+		int x = 0;
+		int y = 0;
+		std::string path = "";
+		std::string path_locked = "";
+		std::string path_hover = "";
+	};
+	static std::vector<PanelEntry> panelEntries;
+	struct IconEntry
+	{
+		std::string name = "";
+		int id = -1;
+		std::string path = "";
+		std::string path_hover = "";
+		std::string path_active = "";
+		std::string path_active_hover = "";
+	};
+	static std::map<std::string, IconEntry> iconEntries;
 
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();

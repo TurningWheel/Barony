@@ -22,6 +22,7 @@
 #include "interface.hpp"
 #include "../colors.hpp"
 #include "../mod_tools.hpp"
+#include "../ui/GameUI.hpp"
 
 //Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 //Uint32 enemy_timer = 0, enemy_lastuid = 0;
@@ -2291,10 +2292,10 @@ void drawStatusNew(const int player)
 	int playerStatusBarWidth = 38 * uiscale_playerbars;
 	int playerStatusBarHeight = 156 * uiscale_playerbars;
 
-	if ( !players[player]->hud.hpFrame )
+	/*if ( !players[player]->hud.hpFrame )
 	{
 		drawHPMPBars(player);
-	}
+	}*/
 
 	// hunger icon
 	//if ( stats[player] && stats[player]->type != AUTOMATON
@@ -3376,8 +3377,25 @@ void drawStatusNew(const int player)
 		}
 	}
 
+	if ( !FollowerMenu[player].followerFrame )
+	{
+		auto frame = gameUIFrame[player]->findFrame("follower");
+		if ( !frame )
+		{
+			FollowerMenu[player].followerFrame = gameUIFrame[player]->addFrame("follower");
+		}
+		else
+		{
+			FollowerMenu[player].followerFrame = frame;
+		}
+		FollowerMenu[player].followerFrame->setHollow(true);
+		FollowerMenu[player].followerFrame->setBorder(0);
+		FollowerMenu[player].followerFrame->setOwner(player);
+		FollowerMenu[player].followerFrame->setInheritParentFrameOpacity(false);
+		FollowerMenu[player].followerFrame->setDisabled(true);
+	}
 	FollowerMenu[player].drawFollowerMenu();
-
+	
 	// stat increase icons
 
 	SDL_Rect pos;

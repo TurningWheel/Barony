@@ -3734,6 +3734,11 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded charsheet_settings.json");
 		});
 
+	static ConsoleCommand ccmd_loadfollowerwheel("/loadfollowerwheel", "", []CCMD{
+		FollowerRadialMenu::loadFollowerJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded follower_wheel.json");
+	});
+
 	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
