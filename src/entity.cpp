@@ -4163,7 +4163,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							if ( achievementObserver.checkUidIsFromPlayer(static_cast<Uint32>(myStats->burningInflictedBy)) >= 0 )
 							{
-								steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller), "BARONY_ACH_TAKING_WITH");
+								steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->burningInflictedBy), "BARONY_ACH_TAKING_WITH");
 							}
 						}
 					}
@@ -8639,6 +8639,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									playerPoisonedTarget = true;
 									hitstats->EFFECTS[EFF_POISONED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+									hitstats->poisonKiller = getUID();
 									if (arachnophobia_filter) {
 									    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
 									} else {
