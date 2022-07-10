@@ -2551,7 +2551,7 @@ void gameLogic(void)
 							break;
 					}
 
-					if ( item->type == FOOD_BLOOD )
+					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
 					{
 						bloodCount += item->count;
 						if ( bloodCount >= 20 )
@@ -3078,6 +3078,7 @@ void gameLogic(void)
 				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY);
 			}
 
+			int bloodCount = 0;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -3113,9 +3114,13 @@ void gameLogic(void)
 					}
 				}
 
-				if ( item->type == FOOD_BLOOD && item->count >= 20 )
+				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == VAMPIRE && stats[clientnum]->appearance == 0 )
 				{
-					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					bloodCount += item->count;
+					if ( bloodCount >= 20 )
+					{
+						steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					}
 				}
 
 				if ( item->status == BROKEN && itemCategory(item) != SPELL_CAT
