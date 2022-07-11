@@ -4849,6 +4849,15 @@ void ingameHud()
 			&& !gamePaused
 			&& bControlEnabled )
 		{
+			if ( worldUIBlocksFollowerCycle )
+			{
+				std::string cycleNPCbinding = input.binding("Cycle NPCs");
+				if ( cycleNPCbinding != input.binding("CycleWorldTooltipNext")
+					&& cycleNPCbinding != input.binding("CycleWorldTooltipPrev") )
+				{
+					worldUIBlocksFollowerCycle = false;
+				}
+			}
 			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
 				//(players[player]->shootmode && !worldUIBlocksFollowerCycle) || FollowerMenu[player].followerMenuIsOpen())) ) -- todo needed?
