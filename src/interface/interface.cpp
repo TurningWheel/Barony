@@ -1602,7 +1602,12 @@ bool FollowerRadialMenu::followerMenuIsOpen()
 }
 
 std::vector<FollowerRadialMenu::PanelEntry> FollowerRadialMenu::panelEntries;
+std::vector<FollowerRadialMenu::PanelEntry> FollowerRadialMenu::panelEntriesAlternate;
 std::map<std::string, FollowerRadialMenu::IconEntry> FollowerRadialMenu::iconEntries;
+int FollowerRadialMenu::followerWheelButtonThickness = 70;
+int FollowerRadialMenu::followerWheelRadius = 140;
+int FollowerRadialMenu::followerWheelFrameOffsetX = 0;
+int FollowerRadialMenu::followerWheelFrameOffsetY = 0;
 void FollowerRadialMenu::loadFollowerJSON()
 {
 	if ( !PHYSFS_getRealDir("/data/follower_wheel.json") )
@@ -1634,6 +1639,22 @@ void FollowerRadialMenu::loadFollowerJSON()
 			}
 			else
 			{
+				if ( d.HasMember("panel_center_x_offset") )
+				{
+					FollowerRadialMenu::followerWheelFrameOffsetX = d["panel_center_x_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_center_y_offset") )
+				{
+					FollowerRadialMenu::followerWheelFrameOffsetY = d["panel_center_y_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_radius") )
+				{
+					FollowerRadialMenu::followerWheelRadius = d["panel_radius"].GetInt();
+				}
+				if ( d.HasMember("panel_button_thickness") )
+				{
+					FollowerRadialMenu::followerWheelButtonThickness = d["panel_button_thickness"].GetInt();
+				}
 				if ( d.HasMember("panels") )
 				{
 					FollowerRadialMenu::panelEntries.clear();
@@ -1642,6 +1663,44 @@ void FollowerRadialMenu::loadFollowerJSON()
 					{
 						FollowerRadialMenu::panelEntries.push_back(FollowerRadialMenu::PanelEntry());
 						auto& entry = FollowerRadialMenu::panelEntries[FollowerRadialMenu::panelEntries.size() - 1];
+						if ( (*itr).HasMember("x") )
+						{
+							entry.x = (*itr)["x"].GetInt();
+						}
+						if ( (*itr).HasMember("y") )
+						{
+							entry.y = (*itr)["y"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							entry.path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked") )
+						{
+							entry.path_locked = (*itr)["path_locked"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("icon_offset_x") )
+						{
+							entry.icon_offsetx = (*itr)["icon_offset_x"].GetInt();
+						}
+						if ( (*itr).HasMember("icon_offset_y") )
+						{
+							entry.icon_offsety = (*itr)["icon_offset_y"].GetInt();
+						}
+					}
+				}
+				if ( d.HasMember("panels_alternate") )
+				{
+					FollowerRadialMenu::panelEntriesAlternate.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["panels_alternate"].Begin();
+						itr != d["panels_alternate"].End(); ++itr )
+					{
+						FollowerRadialMenu::panelEntriesAlternate.push_back(FollowerRadialMenu::PanelEntry());
+						auto& entry = FollowerRadialMenu::panelEntriesAlternate[FollowerRadialMenu::panelEntriesAlternate.size() - 1];
 						if ( (*itr).HasMember("x") )
 						{
 							entry.x = (*itr)["x"].GetInt();
@@ -1709,6 +1768,26 @@ void FollowerRadialMenu::loadFollowerJSON()
 						{
 							FollowerRadialMenu::iconEntries[actionName].path_active_hover = (*itr)["path_active_hover"].GetString();
 						}
+						if ( (*itr).HasMember("text_maps") )
+						{
+							for ( rapidjson::Value::ConstValueIterator itr2 = (*itr)["text_maps"].Begin();
+								itr2 != (*itr)["text_maps"].End(); ++itr2 )
+							{
+								for ( rapidjson::Value::ConstMemberIterator itr3 = itr2->MemberBegin();
+									itr3 != itr2->MemberEnd(); ++itr3 )
+								{
+									std::string mapKey = itr3->name.GetString();
+									std::string mapText = itr3->value["text"].GetString();
+									std::set<int> mapHighlights;
+									for ( rapidjson::Value::ConstValueIterator highlightItr = itr3->value["word_highlights"].Begin();
+										highlightItr != itr3->value["word_highlights"].End(); ++highlightItr )
+									{
+										mapHighlights.insert(highlightItr->GetInt());
+									}
+									FollowerRadialMenu::iconEntries[actionName].text_map[mapKey] = std::make_pair(mapText, mapHighlights);
+								}
+							}
+						}
 					}
 				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
@@ -1760,31 +1839,96 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bgFrame->setHollow(false);
 	bgFrame->setDisabled(false);
 
+	char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+
 	int panelIndex = 0;
 	for ( auto& entry : panelEntries )
 	{
+		if ( panelIndex < PANEL_DIRECTION_END )
+		{
+			SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "panel %d", panelIndex);
+			Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
+			if ( auto imgGet = Image::get(img->path.c_str()) )
+			{
+				img->pos.w = imgGet->getWidth();
+				img->pos.h = imgGet->getHeight();
+			}
+		}
+		++panelIndex;
+	}
+
+	panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		if ( panelIndex < PANEL_DIRECTION_END )
+		{
+			SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "icon %d", panelIndex);
+			Frame::image_t* imgIcon = bgFrame->addImage(pos, 0xFFFFFFFF, "", buf);
+			imgIcon->disabled = true;
+		}
+		++panelIndex;
+	}
+
+	{
+		// do center panel
+		auto& entry = panelEntries[panelEntries.size() - 1];
 		SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
 		char buf[32] = "";
-		snprintf(buf, sizeof(buf), "panel %d", panelIndex);
+		snprintf(buf, sizeof(buf), "panel %d", PANEL_DIRECTION_END);
 		Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
 		if ( auto imgGet = Image::get(img->path.c_str()) )
 		{
 			img->pos.w = imgGet->getWidth();
 			img->pos.h = imgGet->getHeight();
 		}
-		++panelIndex;
-
 	}
 
-	panelIndex = 0;
-	for ( auto& entry : panelEntries )
+	auto bannerFrame = followerFrame->addFrame("banner frame");
+	bannerFrame->setSize(SDL_Rect{ 0, 0, 0, 40 });
+	bannerFrame->setHollow(false);
+	bannerFrame->setDisabled(false);
+	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_l.png", "banner left");
+	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_r.png", "banner right");
+	bannerFrame->addImage(SDL_Rect{ 0, 40 - 28, 0, 28 }, 0xFFFFFFFF, "*images/ui/FollowerWheel/banner-cmd_c.png", "banner center");
+	auto bannerText = bannerFrame->addField("banner txt", 128);
+	bannerText->setFont(font);
+	bannerText->setText("");
+	bannerText->setHJustify(Field::justify_t::LEFT);
+	bannerText->setVJustify(Field::justify_t::TOP);
+	bannerText->setSize(SDL_Rect{ 0, 0, 0, 24 });
+	bannerText->setTextColor(hudColors.characterSheetLightNeutral);
+	bannerText->setOutlineColor(makeColor(29, 16, 11, 255));
+}
+
+void setFollowerBannerText(const int player, Field* field, char* iconName, char* textKey, Uint32 color)
+{
+	if ( !field ) { return; }
+	if ( FollowerMenu[player].iconEntries.find(iconName) == FollowerMenu[player].iconEntries.end() )
 	{
-		SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
-		char buf[32] = "";
-		snprintf(buf, sizeof(buf), "icon %d", panelIndex);
-		Frame::image_t* imgIcon = bgFrame->addImage(pos, 0xFFFFFFFF, "", buf);
-		imgIcon->disabled = true;
-		++panelIndex;
+		return;
+	}
+	auto& textMap = FollowerMenu[player].iconEntries[iconName].text_map[textKey];
+	field->setText(textMap.first.c_str());
+	field->clearWordsToHighlight();
+	for ( auto v : textMap.second )
+	{
+		field->addWordToHighlight(v, color);
+	}
+}
+
+std::vector<FollowerRadialMenu::PanelEntry>& getPanelEntriesForFollower(bool isTinkeringCreation)
+{
+	if ( isTinkeringCreation )
+	{
+		return FollowerRadialMenu::panelEntries;
+	}
+	else
+	{
+		return FollowerRadialMenu::panelEntriesAlternate;
 	}
 }
 
@@ -1830,43 +1974,18 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Input& input = Input::inputs[gui_player];
 	std::map<int, Frame::image_t*> panelImages;
 	std::map<int, Frame::image_t*> panelIcons;
+	Frame* bannerFrame = nullptr;
+	Field* bannerTxt = nullptr;
+	Frame::image_t* bannerImgLeft = nullptr;
+	Frame::image_t* bannerImgRight = nullptr;
+	Frame::image_t* bannerImgCenter = nullptr;
+	Uint32 textHighlightColor = makeColor(255, 0, 0, 255);
+	bool tinkeringFollower = false;
 
-	if ( followerToCommand )
-	{
-		if ( !followerGUIHasBeenCreated() )
-		{
-			createFollowerMenuGUI();
-		}
-		followerFrame->setDisabled(false);
-
-		auto bgFrame = followerFrame->findFrame("wheel base");
-		int direction = NORTH;
-		const int midx = followerFrame->getSize().w / 2 + 360;
-		const int midy = followerFrame->getSize().h / 2;
-		for ( auto img : bgFrame->getImages() )
-		{
-			if ( direction < PANEL_DIRECTION_END )
-			{
-				panelImages[direction] = img;
-				img->pos.x = panelEntries[direction].x + midx;
-				img->pos.y = panelEntries[direction].y + midy;
-				img->path = panelEntries[direction].path;
-			}
-			else
-			{
-				img->disabled = true;
-				img->path = "";
-				int direction2 = direction - PANEL_DIRECTION_END;
-				panelIcons[direction2] = img;
-				panelIcons[direction2]->pos.x = panelImages[direction2]->pos.x + panelEntries[direction2].icon_offsetx;
-				panelIcons[direction2]->pos.y = panelImages[direction2]->pos.y + panelEntries[direction2].icon_offsety;
-			}
-			++direction;
-		}
-	}
-	else if ( !followerFrame->isDisabled() )
+	if ( !followerToCommand && !followerFrame->isDisabled() )
 	{
 		closeFollowerMenuGUI();
+		return;
 	}
 
 	if ( ticks % 50 == 0 )
@@ -1886,9 +2005,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 		Stat* followerStats = followerToCommand->getStats();
 		if ( !followerStats )
 		{
+			closeFollowerMenuGUI();
 			return;
 		}
-		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
+		tinkeringFollower = isTinkeringFollower(followerStats->type);
+
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity
 			&& players[gui_player]->bControlEnabled && !gamePaused
@@ -2104,8 +2225,55 @@ void FollowerRadialMenu::drawFollowerMenu()
 		}
 	}
 
+	static ConsoleVariable<bool> cvar_showoldwheel("/followerwheel_old_enable", false);
+
 	if ( followerToCommand )
 	{
+		if ( !followerGUIHasBeenCreated() )
+		{
+			createFollowerMenuGUI();
+		}
+		followerFrame->setDisabled(false);
+
+		auto bgFrame = followerFrame->findFrame("wheel base");
+		bannerFrame = followerFrame->findFrame("banner frame");
+		bannerImgLeft = bannerFrame->findImage("banner left");
+		bannerImgRight = bannerFrame->findImage("banner right");
+		bannerImgCenter = bannerFrame->findImage("banner center");
+		bannerTxt = bannerFrame->findField("banner txt");
+		bannerTxt->setText("");
+
+		int direction = NORTH;
+		const int midx = followerFrame->getSize().w / 2;
+		const int midy = followerFrame->getSize().h / 2;
+		for ( auto img : bgFrame->getImages() )
+		{
+			if ( direction < PANEL_DIRECTION_END )
+			{
+				panelImages[direction] = img;
+				img->pos.x = getPanelEntriesForFollower(tinkeringFollower)[direction].x + midx + FollowerRadialMenu::followerWheelFrameOffsetX;
+				img->pos.y = getPanelEntriesForFollower(tinkeringFollower)[direction].y + midy + FollowerRadialMenu::followerWheelFrameOffsetY;
+				img->path = getPanelEntriesForFollower(tinkeringFollower)[direction].path;
+			}
+			else if ( direction < 2 * PANEL_DIRECTION_END )
+			{
+				img->disabled = true;
+				img->path = "";
+				int direction2 = direction - PANEL_DIRECTION_END;
+				panelIcons[direction2] = img;
+				panelIcons[direction2]->pos.x = panelImages[direction2]->pos.x + getPanelEntriesForFollower(tinkeringFollower)[direction2].icon_offsetx;
+				panelIcons[direction2]->pos.y = panelImages[direction2]->pos.y + getPanelEntriesForFollower(tinkeringFollower)[direction2].icon_offsety;
+			}
+			else if ( direction == 2 * PANEL_DIRECTION_END ) // center img
+			{
+				panelImages[PANEL_DIRECTION_END] = img;
+				img->pos.x = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].x + midx + FollowerRadialMenu::followerWheelFrameOffsetX;
+				img->pos.y = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].y + midy + FollowerRadialMenu::followerWheelFrameOffsetY;
+				img->path = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].path;
+			}
+			++direction;
+		}
+
 		int skillLVL = 0;
 		Stat* followerStats = followerToCommand->getStats();
 		if ( !followerStats )
@@ -2148,18 +2316,25 @@ void FollowerRadialMenu::drawFollowerMenu()
 			src.h = 125;
 			src.w = 125;
 		}
+
+		radius = FollowerRadialMenu::followerWheelRadius;
+		thickness = FollowerRadialMenu::followerWheelButtonThickness;
+
 		int highlight = -1;
 		int i = 0;
 
 		int width = 0;
-		getSizeOfText(ttf12, language[3036], &width, nullptr);
-		if ( players[gui_player]->camera_height() < 768 )
+		if ( *cvar_showoldwheel )
 		{
-			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
-		}
-		else
-		{
-			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
+			getSizeOfText(ttf12, language[3036], &width, nullptr);
+			if ( players[gui_player]->camera_height() < 768 )
+			{
+				ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
+			}
+			else
+			{
+				ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
+			}
 		}
 
 		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
@@ -2189,22 +2364,25 @@ void FollowerRadialMenu::drawFollowerMenu()
 		angleMiddle = angleStart + PI / numoptions;
 		angleEnd = angleMiddle + PI / numoptions;
 
-		drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
-
-		for ( i = 0; i < numoptions; ++i )
+		if ( *cvar_showoldwheel )
 		{
-			// draw borders around ring.
-			drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
-				centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray, 192);
-			drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
-				centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray, 192);
+			drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
 
-			drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray, 192);
-			drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray, 192);
+			for ( i = 0; i < numoptions; ++i )
+			{
+				// draw borders around ring.
+				drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
+					centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray, 192);
+				drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
+					centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray, 192);
 
-			angleStart += 2 * PI / numoptions;
-			angleMiddle = angleStart + PI / numoptions;
-			angleEnd = angleMiddle + PI / numoptions;
+				drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray, 192);
+				drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray, 192);
+
+				angleStart += 2 * PI / numoptions;
+				angleMiddle = angleStart + PI / numoptions;
+				angleEnd = angleMiddle + PI / numoptions;
+			}
 		}
 
 		angleStart = PI / 2 - (PI / numoptions);
@@ -2231,21 +2409,24 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						//barycentric calc for figuring if mouse point is within triangle.
 						highlight = i;
-						drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
-
-						// draw borders around highlighted item.
-						Uint32 borderColor = uint32ColorBaronyBlue;
-						if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+						if ( *cvar_showoldwheel )
 						{
-							borderColor = uint32ColorOrange;
-						}
-						drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
-							centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), borderColor, 192);
-						drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
-							centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
+							drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
 
-						drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
-						drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
+							// draw borders around highlighted item.
+							Uint32 borderColor = uint32ColorBaronyBlue;
+							if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+							{
+								borderColor = uint32ColorOrange;
+							}
+							drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
+								centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), borderColor, 192);
+							drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
+								centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
+
+							drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
+							drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
+						}
 					}
 				}
 			}
@@ -2266,7 +2447,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 			bool lockedOption = false;
 			if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
 			{
-				drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+				if ( *cvar_showoldwheel )
+				{
+					drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+				}
 				lockedOption = true;
 			}
 			else if ( i == ALLY_CMD_DEFEND
@@ -2275,16 +2459,26 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 				{
 					getSizeOfText(ttf12, language[3675], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]) : SDL_Rect{};
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_active_hover;
+						setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "free_look", textHighlightColor);
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_active;
+					}
 				}
 				else
 				{
 					getSizeOfText(ttf12, language[3037 + i + 8], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]) : SDL_Rect{};
 					// "follow"
 					if ( i == highlight )
 					{
 						panelIcons[i]->path = iconEntries["leader_wait"].path_active_hover;
+						setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "follow", textHighlightColor);
 					}
 					else
 					{
@@ -2300,7 +2494,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 					&& (followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
 				{
 					getSizeOfText(ttf12, language[3674], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]) : SDL_Rect{};
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_hover;
+						setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "hold_aim", textHighlightColor);
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path;
+					}
 				}
 				else if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
@@ -2308,27 +2511,74 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						// draw higher.
 						getSizeOfText(ttf12, language[3619], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3620 + followerToCommand->monsterAllyClass], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]) : SDL_Rect{};
+						switch ( followerToCommand->monsterAllyClass )
+						{
+							case ALLY_GYRO_LIGHT_FAINT:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_faint"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_light_faint", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_faint"].path_active;
+								}
+								break;
+							case ALLY_GYRO_LIGHT_BRIGHT:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_bright"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_light_bright", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_bright"].path_active;
+								}
+								break;
+							case ALLY_GYRO_LIGHT_NONE:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_none"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_light_none", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_none"].path_active;
+								}
+							default:
+								break;
+						}
 					}
 					else if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 					{
 						getSizeOfText(ttf12, "Relinquish ", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_relinquish_soul"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "leader_relinquish_soul", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_relinquish_soul"].path;
+						}
 					}
 					else
 					{
 						// draw higher.
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]) : SDL_Rect{};
 						switch ( followerToCommand->monsterAllyClass )
 						{
 							case ALLY_CLASS_MELEE:
 								if ( i == highlight )
 								{
 									panelIcons[i]->path = iconEntries["leader_class_melee"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_class_melee", "default", textHighlightColor);
 								}
 								else
 								{
@@ -2339,6 +2589,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 								if ( i == highlight )
 								{
 									panelIcons[i]->path = iconEntries["leader_class_ranged"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_class_ranged", "default", textHighlightColor);
 								}
 								else
 								{
@@ -2350,6 +2601,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 								if ( i == highlight )
 								{
 									panelIcons[i]->path = iconEntries["leader_class_mixed"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_class_mixed", "default", textHighlightColor);
 								}
 								else
 								{
@@ -2368,31 +2620,113 @@ void FollowerRadialMenu::drawFollowerMenu()
 							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
 						{
 							getSizeOfText(ttf12, "Detect", &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]) : SDL_Rect{};
 							getSizeOfText(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]) : SDL_Rect{};
 						}
 						else
 						{
 							getSizeOfText(ttf12, language[3623], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]) : SDL_Rect{};
 							getSizeOfText(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]) : SDL_Rect{};
+						}
+						switch ( followerToCommand->monsterAllyPickupItems )
+						{
+							case ALLY_GYRO_DETECT_ITEMS_METAL:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_metal"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_metal", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_metal"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_ITEMS_MAGIC:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_magic"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_magic", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_magic"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_ITEMS_VALUABLE:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_valuable"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_valuable", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_valuable"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_MONSTERS:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_monsters"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_monsters", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_monsters"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_EXITS:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_exits"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_exits", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_exits"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_TRAPS:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_traps"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_traps", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_traps"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_NONE:
+							default:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_off"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_off", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_off"].path;
+								}
+								break;
 						}
 					}
 					else
 					{
 						// draw higher.
 						getSizeOfText(ttf12, "Pickup", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]) : SDL_Rect{};
 						switch ( followerToCommand->monsterAllyPickupItems )
 						{
 							case ALLY_PICKUP_ALL:
 								if ( i == highlight )
 								{
 									panelIcons[i]->path = iconEntries["leader_pickup_all"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_pickup_all", "default", textHighlightColor);
 								}
 								else
 								{
@@ -2403,6 +2737,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 								if ( i == highlight )
 								{
 									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_pickup_unowned", "default", textHighlightColor);
 								}
 								else
 								{
@@ -2414,6 +2749,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 								if ( i == highlight )
 								{
 									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_pickup_unowned", "leader_pickup_none", textHighlightColor);
 								}
 								else
 								{
@@ -2428,27 +2764,48 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == GYROBOT )
 					{
 						getSizeOfText(ttf12, language[3633], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3634], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_drop"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_drop", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_drop"].path;
+						}
 					}
 					else
 					{
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]) : SDL_Rect{};
 						if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
 						{
 							getSizeOfText(ttf12, language[3061], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_drop", "leader_drop_all", textHighlightColor);
+							}
 						}
 						else if ( skillLVL >= SKILL_LEVEL_MASTER )
 						{
 							getSizeOfText(ttf12, language[3060], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_drop", "leader_drop_equipment", textHighlightColor);
+							}
 						}
 						else
 						{
 							getSizeOfText(ttf12, language[3059], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_drop", "leader_drop_weapon", textHighlightColor);
+							}
 						}
 						if ( i == highlight )
 						{
@@ -2465,28 +2822,56 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == GYROBOT )
 					{
 						getSizeOfText(ttf12, "Return &", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_return_and_land"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_return_and_land", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_return_and_land"].path;
+						}
 					}
 					else if ( followerStats->type == DUMMYBOT )
 					{
 						getSizeOfText(ttf12, language[3641], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3642], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_deactivate", "dummybot_deactivate", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path;
+						}
 					}
 					else if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 					{
 						getSizeOfText(ttf12, language[3649], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_deactivate", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path;
+						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]) : SDL_Rect{};
 						// rest
 						if ( i == highlight )
 						{
 							panelIcons[i]->path = iconEntries["leader_rest"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "leader_rest", "default", textHighlightColor);
 						}
 						else
 						{
@@ -2501,10 +2886,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0 )
 						{
 							getSizeOfText(ttf12, "Interact / ", &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]) : SDL_Rect{};
 							if ( i == highlight )
 							{
 								panelIcons[i]->path = iconEntries["leader_attack_or_interact"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_attack_or_interact", "default", textHighlightColor);
 							}
 							else
 							{
@@ -2514,28 +2900,60 @@ void FollowerRadialMenu::drawFollowerMenu()
 						else
 						{
 							getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]);
-							if ( i == highlight )
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]) : SDL_Rect{};
+							if ( tinkeringFollower )
 							{
-								panelIcons[i]->path = iconEntries["leader_interact"].path_hover;
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_interact"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_interact", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_interact"].path;
+								}
 							}
 							else
 							{
-								panelIcons[i]->path = iconEntries["leader_interact"].path;
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_interact"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_interact", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_interact"].path;
+								}
 							}
 						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3104], &width, nullptr); // print just attack if no world interaction.
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]);
-						if ( i == highlight )
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]) : SDL_Rect{};
+						if ( tinkeringFollower )
 						{
-							panelIcons[i]->path = iconEntries["leader_attack"].path_hover;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_attack"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_attack", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_attack"].path;
+							}
 						}
 						else
 						{
-							panelIcons[i]->path = iconEntries["leader_attack"].path;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_attack"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_attack", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_attack"].path;
+							}
 						}
 					}
 				}
@@ -2544,47 +2962,104 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 					{
 						getSizeOfText(ttf12, language[3650], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_lookat"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_lookat", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_lookat"].path;
+						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
-						if ( i == highlight )
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]) : SDL_Rect{};
+						if ( tinkeringFollower )
 						{
-							panelIcons[i]->path = iconEntries["leader_moveto"].path_hover;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveto"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_moveto", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveto"].path;
+							}
 						}
 						else
 						{
-							panelIcons[i]->path = iconEntries["leader_moveto"].path;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_moveto"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_moveto", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_moveto"].path;
+							}
 						}
 					}
 				}
 				else
 				{
 					getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]) : SDL_Rect{};
 					if ( i == ALLY_CMD_DEFEND )
 					{
 						// "wait"
-						if ( i == highlight )
+						if ( tinkeringFollower )
 						{
-							panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_wait"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "wait_here", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_wait"].path;
+							}
 						}
 						else
 						{
-							panelIcons[i]->path = iconEntries["leader_wait"].path;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "wait_here", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_wait"].path;
+							}
 						}
 					}
 					else if ( i == ALLY_CMD_MOVEASIDE )
 					{
-						if ( i == highlight )
+						if ( tinkeringFollower )
 						{
-							panelIcons[i]->path = iconEntries["leader_moveaside"].path_hover;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveaside"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_moveaside", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveaside"].path;
+							}
 						}
 						else
 						{
-							panelIcons[i]->path = iconEntries["leader_moveaside"].path;
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_moveaside"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_moveaside", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_moveaside"].path;
+							}
 						}
 					}
 				}
@@ -2592,11 +3067,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			if ( lockedOption )
 			{
-				panelImages[i]->path = panelEntries[i].path_locked;
+				panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_locked;
 			}
-			else if ( highlight == i )
+			else if ( highlight == i && !mouseInCenterButton )
 			{
-				panelImages[i]->path = panelEntries[i].path_hover;
+				panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_hover;
 			}
 
 			if ( !lockedOption && panelIcons[i]->path != "" )
@@ -2615,12 +3090,18 @@ void FollowerRadialMenu::drawFollowerMenu()
 			angleMiddle = angleStart + PI / numoptions;
 			angleEnd = angleMiddle + PI / numoptions;
 		}
+
 		// draw center text.
 		if ( mouseInCenterButton )
 		{
+			panelImages[PANEL_DIRECTION_END]->path = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].path_hover;
+
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
-			drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue, 192);
+			if ( *cvar_showoldwheel )
+			{
+				drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue, 192);
+			}
 			//getSizeOfText(ttf12, language[3063], &width, nullptr);
 			//ttfPrintText(ttf12, centerx - width / 2, centery - 8, language[3063]);
 		}
@@ -2644,6 +3125,43 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
 			}
+		}
+
+		bannerFrame->setDisabled(false);
+		if ( auto textGet = bannerTxt->getTextObject() )
+		{
+			SDL_Rect txtPos = bannerTxt->getSize();
+			if ( !strcmp(bannerTxt->getText(), "") && txtPos.w == 0 )
+			{
+				txtPos.w = 82;
+			}
+			else if ( strcmp(bannerTxt->getText(), "") )
+			{
+				txtPos.w = textGet->getWidth();
+			}
+
+			bannerImgCenter->pos.w = txtPos.w + 8 + 8;
+			const int totalWidth = bannerImgLeft->pos.w + bannerImgRight->pos.w + bannerImgCenter->pos.w;
+
+			const int midx = followerFrame->getSize().w / 2;
+			const int midy = followerFrame->getSize().h / 2;
+
+			SDL_Rect bannerSize = bannerFrame->getSize();
+			bannerSize.w = totalWidth;
+			bannerSize.x = midx - (totalWidth / 2);
+			bannerSize.y = midy + FollowerRadialMenu::followerWheelRadius + FollowerRadialMenu::followerWheelButtonThickness + 4;
+			bannerFrame->setSize(bannerSize);
+			bannerImgLeft->pos.x = 0;
+			bannerImgCenter->pos.x = bannerImgLeft->pos.x + bannerImgLeft->pos.w;
+			bannerImgRight->pos.x = bannerImgCenter->pos.x + bannerImgCenter->pos.w;
+
+			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
+			if ( txtPos.x % 2 == 1 )
+			{
+				++txtPos.x;
+			}
+			txtPos.y = 17;
+			bannerTxt->setSize(txtPos);
 		}
 
 		if ( disableOption != 0 )

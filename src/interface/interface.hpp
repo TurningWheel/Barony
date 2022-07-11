@@ -1265,6 +1265,7 @@ public:
 		int icon_offsety = 0;
 	};
 	static std::vector<PanelEntry> panelEntries;
+	static std::vector<PanelEntry> panelEntriesAlternate;
 	struct IconEntry
 	{
 		std::string name = "";
@@ -1275,8 +1276,13 @@ public:
 		std::string path_active_hover = "";
 		int icon_offsetx = 0;
 		int icon_offsety = 0;
+		std::map<std::string, std::pair<std::string, std::set<int>>> text_map;
 	};
 	static std::map<std::string, IconEntry> iconEntries;
+	static int followerWheelRadius;
+	static int followerWheelButtonThickness;
+	static int followerWheelFrameOffsetX;
+	static int followerWheelFrameOffsetY;
 
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();
