@@ -196,10 +196,11 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	memcpy(buf, text ? text : "\0", textlen + 1);
 
 	int yoff = 0;
-	int currentLine = 0;
+	int currentLine = -1;
 	char* nexttoken;
 	char* token = buf;
 	do {
+	    ++currentLine;
 		nexttoken = tokenize(token, "\n");
 
 		Text* text = Text::get(token, font.c_str(), textColor, outlineColor);
@@ -294,25 +295,26 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		scaledDest.w = dest.w;
 		scaledDest.h = dest.h;
 
+		auto find = linesToColor.find(currentLine);
+		Uint32 blendColor = find == linesToColor.end() ? color : find->second;
+
 		if (parent && static_cast<Frame*>(parent)->getOpacity() < 100.0) {
 			Uint8 r, g, b, a;
-			::getColor(color, &r, &g, &b, &a);
+			::getColor(blendColor, &r, &g, &b, &a);
 			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
-			if ( a > 0 )
+			if( a > 0 )
 			{
-				text->drawColor(src, scaledDest, viewport, makeColor( r, g, b, a));
+				text->drawColor(src, scaledDest, viewport, makeColor(r, g, b, a));
 			}
 		} else {
-			text->drawColor(src, scaledDest, viewport, color);
+			text->drawColor(src, scaledDest, viewport, blendColor);
 		}
 
 		// draw cursor
 		if (!nexttoken && showCursor && activated) {
 			SDL_Rect cursorSize{scaledDest.x + scaledDest.w - 2, scaledDest.y, 2, scaledDest.h};
-			white->drawColor(nullptr, cursorSize, viewport, color);
+			white->drawColor(nullptr, cursorSize, viewport, blendColor);
 		}
-
-		++currentLine;
 	} while ((token = nexttoken) != NULL);
 
 	free(buf);

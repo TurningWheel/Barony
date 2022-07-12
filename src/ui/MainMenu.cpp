@@ -8266,44 +8266,439 @@ bind_failed:
 		static constexpr int num_races = sizeof(races) / sizeof(races[0]);
 
 		static const char* race_descs[] = {
-		    "Human\n"
+		    // Human
+		    "\n"
             "Traits\n"
-            "None\n\n"
-
-            "Resistances Weaknesses\n"
-            "None        None\n\n"
-
-            "Friendly With:\n"
+            "None\n"
+            "\n"
+            "Resistances\n"
+            "None\n"
+            "\n"
+            "Friendly With\n"
             "Humans, Automatons",
 
-		    "Skeleton\n"
+            // Skeleton
+		    "\n"
             "Traits\n"
             "\x1E Does not Hunger or Starve\n"
             "\x1E HP and MP Regeneration\n"
             "    reduced by 75%\n"
             "\x1E Self-Resurrects for 75MP\n"
             "\x1E Immune to Burning\n"
-            "\x1E Swim speed reduced by 50%\n\n"
-
-            "Resistances Weaknesses\n"
-            "\x1E Swords      \x1E Maces\n"
-            "\x1E Ranged      \x1E Polearms\n"
-            "\x1E Axes            \x1E Smite\n"
-            "\x1E Magic\n\n"
-
+            "\x1E Swim speed reduced by 50%\n"
+            "\n"
+            "Resistances\n"
+            "\x1E Swords\n"
+            "\x1E Ranged\n"
+            "\x1E Axes\n"
+            "\x1E Magic\n"
+            "\n"
             "Friendly With\n"
             "\x1E Ghouls, Automatons",
+
+            // Vampire
+		    "\n"
+            "Racial Spells\n"
+            "\x1E Bloodletting, Levitation\n"
+            "Traits\n"
+            "\x1E Uses HP when out of MP to\n"
+            "    cast and sustain spells\n"
+            "\x1E Can only sustain hunger\n"
+            "    with Blood Vials\n"
+            "\x1E Kills may drop Blood Vials\n"
+            "\x1E Bloodletting / Assassinate\n"
+            "    kills drop Blood Vials\n"
+            "Resistances\n"
+            "\x1E Swords\n"
+            "\x1E Ranged\n"
+            "\x1E Axes\n"
+            "\x1E Magic\n"
+            "Friendly With\n"
+            "\x1E Vampires, Automatons",
+
+            // Succubus
+            "\n"
+            "Racial Spells\n"
+            "\x1E Teleport, Polymorph\n"
+            "Traits\n"
+            "\x1E Cursed equipment can be\n"
+            "    removed; gives bonuses\n"
+            "\x1E Blessed equipment is not\n"
+            "    removable; gives bonuses\n"
+            "\x1E +MP from Strangulation\n"
+            "\n"
+            "Resistances\n"
+            "\x1E Swords\n"
+            "\n"
+            "\n"
+            "\n"
+            "Friendly With\n"
+            "\x1E Succubi, Incubi,\n"
+            "    Automatons",
+
+            // Goatman
+            "\n"
+            "Traits\n"
+            "\x1E Afflicted with Alcoholism,\n"
+            "    causing Hangovers\n"
+            "\x1E Immune to Drunk dizziness\n"
+            "\x1E +STR +CHR while Drunk\n"
+            "\x1E Can recruit fellow Drunks\n"
+            "\x1E Eats Tins without an Opener\n"
+            "\x1E Immune to Greasy effect\n"
+            "\n"
+            "Resistances\n"
+            "\x1E Swords\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Friendly With\n"
+            "\x1E Goatmen, Automatons",
+
+            // Automaton
+            "\n"
+            "Racial Spells\n"
+            "\x1E Salvage\n"
+            "Traits\n"
+            "\x1E Requires Heat (HT) to\n"
+            "    survive and cast spells\n"
+            "\x1E Regen HT with a hot boiler\n"
+
+            "    fueled by gems and paper\n"
+            "\x1E Can remove cursed items\n"
+            "\x1E Immune to Burning\n"
+            "\x1E +20 to Tinkering Repairs\n"
+            "\x1E Welcomed by Shopkeepers\n"
+            "Resistances\n"
+            "\x1E Ranged\n"
+            "\x1E Unarmed\n"
+            "\n"
+            "Friendly With\n"
+            "\x1E Automatons, Humans",
+
+            // Incubus
+            "\n"
+            "Racial Spells\n"
+            "\x1E Teleport, Arcane Mark\n"
+            "Traits\n"
+            "\x1E Cursed equipment can be\n"
+            "    removed; gives bonuses\n"
+            "\x1E Blessed equipment is not\n"
+            "    removable; gives bonuses\n"
+            "\x1E +MP from Strangulation\n"
+            "\n"
+            "Resistances\n"
+            "\x1E Magic\n"
+            "\x1E Polearms\n"
+            "\n"
+            "\n"
+            "Friendly With\n"
+            "\x1E Succubi, Incubi,\n"
+            "    Automatons",
+
+            // Goblin
+            "\n"
+            "Traits\n"
+            "\x1E Worn Equipment has lower\n"
+            "    chance to degrade\n"
+            "\x1E Raising any Melee Weapon\n"
+            "    Skill raises all of them\n"
+            "\x1E Weapon Skills raise slower\n"
+            "\x1E Cannot Memorize new spells\n"
+            "\n"
+            "Resistances\n"
+            "\x1E Swords\n"
+            "\x1E Unarmed\n"
+            "\n"
+            "\n"
+            "Friendly With\n"
+            "\x1E Goblins, Automatons",
+
+            // Insectoid
+            "\n"
+            "Racial Spells\n"
+            "\x1E Flutter, Dash, Spray Acid\n"
+            "Traits\n"
+            "\x1E Requires Energy (EN) to\n"
+            "    survive and cast spells\n"
+            "\x1E Regain EN by consuming\n"
+            "    food and sweet liquids\n"
+            "\x1E Immune to Poison\n"
+            "\x1E Immune to rotten food\n"
+            "Resistances\n"
+            "\x1E Maces\n"
+            "\x1E Unarmed\n"
+            "\n"
+            "Friendly With\n"
+            "\x1E Insectoids, Scarabs\n"
+            "    Scorpions, Automatons\n",
 		};
 
+		static const char* race_descs_right[] = {
+		    // Human
+		    "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "None",
+
+            // Skeleton
+		    "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Maces\n"
+            "\x1E Polearms\n"
+            "\x1E Smite",
+
+            // Vampire
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Maces\n"
+            "\x1E Polearms\n"
+            "\x1E Water\n"
+            "\x1E Smite",
+
+            // Succubus
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Magic\n"
+            "\x1E Polearms\n"
+            "\x1E Smite",
+
+            // Goatman
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Polearms\n"
+            "\x1E Axes\n"
+            "\x1E Ranged\n"
+            "\x1E Magic",
+
+            // Automaton
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Axes\n"
+            "\x1E Maces\n"
+            "\x1E Magic",
+
+            // Incubus
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Ranged\n"
+            "\x1E Swords\n"
+            "\x1E Smite",
+
+            // Goblin
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Axes\n"
+            "\x1E Polearms\n"
+            "\x1E Ranged",
+
+            // Insectoid
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "Weaknesses\n"
+            "\x1E Axes\n"
+            "\x1E Polearms\n"
+            "\x1E Ranged",
+		};
+
+        constexpr Uint32 color_human = makeColorRGB(169, 185, 212);
+        constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
+        constexpr Uint32 color_dlc2 = makeColorRGB(255, 53, 206);
+		constexpr Uint32 color_traits = makeColorRGB(184, 146, 109);
+		constexpr Uint32 color_pro = makeColorRGB(88, 203, 255);
+		constexpr Uint32 color_con = makeColorRGB(255, 56, 56);
+		constexpr Uint32 color_energy = makeColorRGB(21, 255, 0);
+		constexpr Uint32 color_heat = makeColorRGB(241, 129, 78);
+
+		static auto update_details_text = [](Frame& card){
+		    const int index = card.getOwner();
+            const int race = stats[index]->playerRace;
+
+		    // color title
+		    Uint32 color_race;
+		    if (race >= RACE_SKELETON && race <= RACE_GOATMAN) {
+		        color_race = color_dlc1;
+		    }
+		    else if (race >= RACE_AUTOMATON && race <= RACE_INSECTOID) {
+		        color_race = color_dlc2;
+		    }
+		    else {
+		        color_race = color_human;
+		    }
+
+		    auto details_title = card.findField("details_title");
+		    if (details_title) {
+		        details_title->clearLinesToColor();
+		        details_title->setText(races[race]);
+	            details_title->setColor(color_race);
+		    }
+		    auto details_text = card.findField("details");
+		    if (details_text) {
+		        details_text->clearLinesToColor();
+		        details_text->setText(race_descs[race]);
+
+		    switch (race) {
+		    default: return;
+		    case RACE_HUMAN:
+	            details_text->addColorToLine(1, color_traits);
+	            details_text->addColorToLine(4, color_pro);
+	            details_text->addColorToLine(7, color_pro);
+	            break;
+		    case RACE_SKELETON:
+	            details_text->addColorToLine(1, color_traits);
+	            details_text->addColorToLine(9, color_pro);
+	            details_text->addColorToLine(15, color_pro);
+	            break;
+		    case RACE_VAMPIRE:
+	            details_text->addColorToLine(1, color_pro);
+	            details_text->addColorToLine(3, color_traits);
+	            details_text->addColorToLine(11, color_pro);
+	            details_text->addColorToLine(16, color_pro);
+		        break;
+		    case RACE_SUCCUBUS:
+	            details_text->addColorToLine(1, color_pro);
+	            details_text->addColorToLine(3, color_traits);
+	            details_text->addColorToLine(10, color_pro);
+	            details_text->addColorToLine(15, color_pro);
+		        break;
+		    case RACE_GOATMAN:
+	            details_text->addColorToLine(1, color_traits);
+	            details_text->addColorToLine(10, color_pro);
+	            details_text->addColorToLine(16, color_pro);
+		        break;
+		    case RACE_AUTOMATON:
+	            details_text->addColorToLine(1, color_pro);
+	            details_text->addColorToLine(3, color_traits);
+	            details_text->addColorToLine(12, color_pro);
+	            details_text->addColorToLine(16, color_pro);
+		        break;
+		    case RACE_INCUBUS:
+	            details_text->addColorToLine(1, color_pro);
+	            details_text->addColorToLine(3, color_traits);
+	            details_text->addColorToLine(10, color_pro);
+	            details_text->addColorToLine(15, color_pro);
+		        break;
+		    case RACE_GOBLIN:
+	            details_text->addColorToLine(1, color_traits);
+	            details_text->addColorToLine(9, color_pro);
+	            details_text->addColorToLine(14, color_pro);
+		        break;
+		    case RACE_INSECTOID:
+	            details_text->addColorToLine(1, color_pro);
+	            details_text->addColorToLine(3, color_traits);
+	            details_text->addColorToLine(10, color_pro);
+	            details_text->addColorToLine(14, color_pro);
+		        break;
+		    }
+		    }
+		    auto details_text_right = card.findField("details_right");
+		    if (details_text_right) {
+		        details_text_right->clearLinesToColor();
+		        details_text_right->setText(race_descs_right[race]);
+
+                // we expect first word in the right column to always be "Weaknesses"
+                int c;
+	            for (c = 0; race_descs_right[race][c] == '\n'; ++c);
+	            details_text_right->addColorToLine(c, color_con);
+		    }
+		    };
+
 		if (details) {
+		    const auto font = smallfont_no_outline;
+
+		    auto details_title = card->addField("details_title", 1024);
+		    details_title->setFont(font);
+		    details_title->setSize(SDL_Rect{40, 68, 242, 298});
+		    details_title->setHJustify(Field::justify_t::CENTER);
+
 		    auto details_text = card->addField("details", 1024);
-		    details_text->setFont(smallfont_no_outline);
+		    details_text->setFont(font);
 		    details_text->setSize(SDL_Rect{40, 68, 242, 298});
-		    details_text->setText(race_descs[stats[index]->playerRace]);
+
+		    auto details_text_right = card->addField("details_right", 1024);
+		    details_text_right->setFont(font);
+		    details_text_right->setSize(SDL_Rect{161, 68, 121, 298});
+
+		    update_details_text(*card);
 		}
 
 		static auto race_fn = [](Button& button, int index){
-			auto frame = static_cast<Frame*>(button.getParent());
+			auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
 			for (int c = 0; c < num_races; ++c) {
 				auto race = races[c];
 				if (strcmp(button.getName(), race) == 0) {
@@ -8340,12 +8735,9 @@ bind_failed:
 			initClass(index);
 			sendPlayerOverNet();
 
-			auto card = static_cast<Frame*>(frame->getParent());
-		    auto details_text = card->findField("details");
-		    if (details_text) {
-		        details_text->setText(race_descs[stats[index]->playerRace]);
-		    }
-		};
+			auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+			update_details_text(*card);
+		    };
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setSize(details ?
@@ -8384,10 +8776,17 @@ bind_failed:
 		    }
 		    if (c < num_races - 1) {
 		        race->setWidgetDown(races[c + 1]);
+		    } else {
+		        race->setWidgetDown("disable_abilities");
 		    }
 		    if (c > 0) {
 		        race->setWidgetUp(races[c - 1]);
 		    }
+		    race->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		    race->addWidgetAction("MenuPageLeft", "male");
+		    race->addWidgetAction("MenuPageRight", "female");
+		    race->addWidgetAction("MenuAlt1", "disable_abilities");
+		    race->addWidgetAction("MenuAlt2", "show_race_info");
 		    switch (index) {
 		    case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
 		    case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
@@ -8400,7 +8799,13 @@ bind_failed:
 		    }
 
 		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
-		    label->setColor(makeColor(166, 123, 81, 255));
+		    if (c >= 1 && c <= 4) {
+		        label->setColor(color_dlc1);
+		    } else if (c >= 5 && c <= 8) {
+		        label->setColor(color_dlc2);
+		    } else {
+		        label->setColor(color_human);
+		    }
 		    label->setText(races[c]);
 		    label->setFont(smallfont_outline);
 		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
@@ -8422,6 +8827,10 @@ bind_failed:
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
 		appearances->setWidgetBack("back_button");
+	    appearances->addWidgetAction("MenuPageLeft", "male");
+	    appearances->addWidgetAction("MenuPageRight", "female");
+	    appearances->addWidgetAction("MenuAlt1", "disable_abilities");
+	    appearances->addWidgetAction("MenuAlt2", "show_race_info");
 		appearances->setWidgetLeft(races[0]);
 		appearances->setWidgetDown(races[1]);
 		appearances->setTickCallback([](Widget& widget){
@@ -8481,6 +8890,12 @@ bind_failed:
 			appearances->activateSelection();
 			button.select();
 			});
+		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
+		appearance_uparrow->setWidgetBack("back_button");
+	    appearance_uparrow->addWidgetAction("MenuPageLeft", "male");
+	    appearance_uparrow->addWidgetAction("MenuPageRight", "female");
+	    appearance_uparrow->addWidgetAction("MenuAlt1", "disable_abilities");
+	    appearance_uparrow->addWidgetAction("MenuAlt2", "show_race_info");
 
 		auto appearance_downarrow = subframe->addButton("appearance_downarrow");
 		appearance_downarrow->setSize(SDL_Rect{214, 2, 20, 32});
@@ -8500,6 +8915,12 @@ bind_failed:
 			appearances->activateSelection();
 			button.select();
 			});
+		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
+		appearance_downarrow->setWidgetBack("back_button");
+	    appearance_downarrow->addWidgetAction("MenuPageLeft", "male");
+	    appearance_downarrow->addWidgetAction("MenuPageRight", "female");
+	    appearance_downarrow->addWidgetAction("MenuAlt1", "disable_abilities");
+	    appearance_downarrow->addWidgetAction("MenuAlt2", "show_race_info");
 
 		static const char* appearance_names[] = {
 			"Landguard", "Northborn", "Firebrand", "Hardbred",
@@ -8521,7 +8942,7 @@ bind_failed:
 		for (int c = 0; c < num_appearances; ++c) {
 			auto name = appearance_names[c];
 			auto entry = appearances->addEntry(std::to_string(c).c_str(), true);
-			entry->color = makeColor(166, 123, 81, 255);
+			entry->color = color_human;
 			entry->text = name;
 			switch (index) {
 			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0); entry.parent.activate();}; break;
@@ -8579,6 +9000,10 @@ bind_failed:
 		case 2: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 2);}); break;
 		case 3: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 3);}); break;
 		}
+	    disable_abilities->addWidgetAction("MenuPageLeft", "male");
+	    disable_abilities->addWidgetAction("MenuPageRight", "female");
+	    disable_abilities->addWidgetAction("MenuAlt1", "disable_abilities");
+	    disable_abilities->addWidgetAction("MenuAlt2", "show_race_info");
 
 		auto male_button = bottom->addButton("male");
 		if (stats[index]->sex == MALE) {
@@ -8602,6 +9027,10 @@ bind_failed:
 		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
 		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
 		}
+	    male_button->addWidgetAction("MenuPageLeft", "male");
+	    male_button->addWidgetAction("MenuPageRight", "female");
+	    male_button->addWidgetAction("MenuAlt1", "disable_abilities");
+	    male_button->addWidgetAction("MenuAlt2", "show_race_info");
 
 		auto female_button = bottom->addButton("female");
 		if (stats[index]->sex == FEMALE) {
@@ -8626,6 +9055,10 @@ bind_failed:
 		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
 		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
 		}
+	    female_button->addWidgetAction("MenuPageLeft", "male");
+	    female_button->addWidgetAction("MenuPageRight", "female");
+	    female_button->addWidgetAction("MenuAlt1", "disable_abilities");
+	    female_button->addWidgetAction("MenuAlt2", "show_race_info");
 
 		auto show_race_info = bottom->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
@@ -8659,6 +9092,10 @@ bind_failed:
 		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true);}); break;
 	        }
 	    }
+	    show_race_info->addWidgetAction("MenuPageLeft", "male");
+	    show_race_info->addWidgetAction("MenuPageRight", "female");
+	    show_race_info->addWidgetAction("MenuAlt1", "disable_abilities");
+	    show_race_info->addWidgetAction("MenuAlt2", "show_race_info");
 
 		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
@@ -8887,7 +9324,9 @@ bind_failed:
 
 	static void createCharacterCard(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		if (!lobby) {
+		    return;
+		}
 
 		if (multiplayer == CLIENT) {
 			sendSvFlagsOverNet();
@@ -10241,16 +10680,16 @@ bind_failed:
 			    "LAN Lobby (Joined)" : "Online Lobby (Joined)"; break;
 			}
 			auto label = banner->addField("label", 128);
-			label->setHJustify(Field::justify_t::LEFT);
+			label->setHJustify(Field::justify_t::CENTER);
 			label->setVJustify(Field::justify_t::CENTER);
-			label->setSize(SDL_Rect{96, 8, 256, 48});
+			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 8, 256, 48});
 		    label->setFont(bigfont_outline);
 		    label->setText(type_str);
 
             // lobby name
             if (type != LobbyType::LobbyLocal) {
 		        auto text_box = banner->addImage(
-			        SDL_Rect{(Frame::virtualScreenX - 246) / 2, 16, 246, 36},
+			        SDL_Rect{96, 16, 246, 36},
 			        0xffffffff,
 			        "*images/ui/Main Menus/TextField_00.png",
 			        "text_box"
@@ -10265,7 +10704,7 @@ bind_failed:
 		        field->setEditable(type != LobbyType::LobbyJoined);
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
-		        field->setSize(SDL_Rect{(Frame::virtualScreenX - 242) / 2, 20, 242, 28});
+		        field->setSize(SDL_Rect{98, 20, 242, 28});
 		        field->setFont(smallfont_outline);
 		        field->setHJustify(Field::justify_t::LEFT);
 		        field->setVJustify(Field::justify_t::CENTER);
@@ -13700,6 +14139,12 @@ bind_failed:
 			{"Off to leave a salty review I see?", "... yeah", "No way!"},
 			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"},
 			{"Okay, I see how it is.\nSee if I'm still here tomorrow.", "Whatever", "I love you!"},
+			{"Don't quit now, you were\ngoing to win the next run.", "Don't lie", "Really?"},
+			{"A wimpy adventurer\nwould quit right now.", "Wimp time", "Am not!"},
+			{"An adventurer is trapped\nand they need your help!", "Who cares", "I'll do it!"},
+			{"A quitter says what?", "What?", "Not today"},
+			{"You won't quit.\nYou're just bluffing.", "Bet", "Ya got me."},
+			{"Say one more thing and\nI'm kicking you out of this game.", "Thing", "..."},
 		};
 		constexpr int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
 
@@ -13954,11 +14399,21 @@ bind_failed:
                 [](Button&){ // yes
                     soundActivate();
                     closeBinary();
+
+                    assert(main_menu_frame);
+			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
                 },
                 [](Button&){ // no
                     soundCancel();
                     closeBinary();
                     resetResolution();
+
+                    assert(main_menu_frame);
+			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
                 }, false, false); // yellow buttons
 
             // prompt timeout

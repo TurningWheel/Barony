@@ -21,6 +21,7 @@
 const Sint32 Frame::sliderSize = 16;
 
 static const int _virtualScreenDefaultWidth = 1280;
+static const int _virtualScreenMinHeight = 720;
 int Frame::_virtualScreenX = 0;
 int Frame::_virtualScreenY = 0;
 
@@ -128,7 +129,7 @@ void Frame::guiInit() {
 		const int defaultWidth = _virtualScreenDefaultWidth;
 		const int vsize = (yres * defaultWidth) / xres;
 		_virtualScreenX = defaultWidth;
-		_virtualScreenY = vsize;
+		_virtualScreenY = std::max(vsize, _virtualScreenMinHeight);
 	}
 	fboInit();
 
