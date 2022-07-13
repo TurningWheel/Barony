@@ -428,7 +428,7 @@ namespace MainMenu {
 	static void characterCardGameSettingsMenu(int index);
 	static void characterCardLobbySettingsMenu(int index);
 	static void characterCardRaceMenu(int index, bool details);
-	static void characterCardClassMenu(int index, bool details);
+	static void characterCardClassMenu(int index);
 
     static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
@@ -7529,7 +7529,340 @@ bind_failed:
 		"shaman", "hunter"
 	};
 
+	static const char* races[] = {
+	    "Human",
+		"Skeleton",
+		"Vampire",
+		"Succubus",
+		"Goatman",
+		"Automaton",
+		"Incubus",
+		"Goblin",
+		"Insectoid",
+	};
+	static constexpr int num_races = sizeof(races) / sizeof(races[0]);
+
+	static const char* race_descs[] = {
+	    // Human
+	    "\n"
+        "Traits\n"
+        "None\n"
+        "\n"
+        "Resistances\n"
+        "None\n"
+        "\n"
+        "Friendly With\n"
+        "Humans, Automatons",
+
+        // Skeleton
+	    "\n"
+        "Traits\n"
+        "\x1E Does not Hunger or Starve\n"
+        "\x1E HP and MP Regeneration\n"
+        "    reduced by 75%\n"
+        "\x1E Self-Resurrects for 75MP\n"
+        "\x1E Immune to Burning\n"
+        "\x1E Swim speed reduced by 50%\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\x1E Ranged\n"
+        "\x1E Axes\n"
+        "\x1E Magic\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Ghouls, Automatons",
+
+        // Vampire
+	    "\n"
+        "Racial Spells\n"
+        "\x1E Bloodletting, Levitation\n"
+        "Traits\n"
+        "\x1E Uses HP when out of MP to\n"
+        "    cast and sustain spells\n"
+        "\x1E Can only sustain hunger\n"
+        "    with Blood Vials\n"
+        "\x1E Kills may drop Blood Vials\n"
+        "\x1E Bloodletting / Assassinate\n"
+        "    kills drop Blood Vials\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\x1E Ranged\n"
+        "\x1E Axes\n"
+        "\x1E Magic\n"
+        "Friendly With\n"
+        "\x1E Vampires, Automatons",
+
+        // Succubus
+        "\n"
+        "Racial Spells\n"
+        "\x1E Teleport, Polymorph\n"
+        "Traits\n"
+        "\x1E Cursed equipment can be\n"
+        "    removed; gives bonuses\n"
+        "\x1E Blessed equipment is not\n"
+        "    removable; gives bonuses\n"
+        "\x1E +MP from Strangulation\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Succubi, Incubi,\n"
+        "    Automatons",
+
+        // Goatman
+        "\n"
+        "Traits\n"
+        "\x1E Afflicted with Alcoholism,\n"
+        "    causing Hangovers\n"
+        "\x1E Immune to Drunk dizziness\n"
+        "\x1E +STR +CHR while Drunk\n"
+        "\x1E Can recruit fellow Drunks\n"
+        "\x1E Eats Tins without an Opener\n"
+        "\x1E Immune to Greasy effect\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Goatmen, Automatons",
+
+        // Automaton
+        "\n"
+        "Racial Spells\n"
+        "\x1E Salvage\n"
+        "Traits\n"
+        "\x1E Requires Heat (HT) to\n"
+        "    survive and cast spells\n"
+        "\x1E Regen HT with a hot boiler\n"
+
+        "    fueled by gems and paper\n"
+        "\x1E Can remove cursed items\n"
+        "\x1E Immune to Burning\n"
+        "\x1E +20 to Tinkering Repairs\n"
+        "\x1E Welcomed by Shopkeepers\n"
+        "Resistances\n"
+        "\x1E Ranged\n"
+        "\x1E Unarmed\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Automatons, Humans",
+
+        // Incubus
+        "\n"
+        "Racial Spells\n"
+        "\x1E Teleport, Arcane Mark\n"
+        "Traits\n"
+        "\x1E Cursed equipment can be\n"
+        "    removed; gives bonuses\n"
+        "\x1E Blessed equipment is not\n"
+        "    removable; gives bonuses\n"
+        "\x1E +MP from Strangulation\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Magic\n"
+        "\x1E Polearms\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Succubi, Incubi,\n"
+        "    Automatons",
+
+        // Goblin
+        "\n"
+        "Traits\n"
+        "\x1E Worn Equipment has lower\n"
+        "    chance to degrade\n"
+        "\x1E Raising any Melee Weapon\n"
+        "    Skill raises all of them\n"
+        "\x1E Weapon Skills raise slower\n"
+        "\x1E Cannot Memorize new spells\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\x1E Unarmed\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Goblins, Automatons",
+
+        // Insectoid
+        "\n"
+        "Racial Spells\n"
+        "\x1E Flutter, Dash, Spray Acid\n"
+        "Traits\n"
+        "\x1E Requires Energy (EN) to\n"
+        "    survive and cast spells\n"
+        "\x1E Regain EN by consuming\n"
+        "    food and sweet liquids\n"
+        "\x1E Immune to Poison\n"
+        "\x1E Immune to rotten food\n"
+        "Resistances\n"
+        "\x1E Maces\n"
+        "\x1E Unarmed\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Insectoids, Scarabs\n"
+        "    Scorpions, Automatons\n",
+	};
+
+	static const char* race_descs_right[] = {
+	    // Human
+	    "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "None",
+
+        // Skeleton
+	    "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Maces\n"
+        "\x1E Polearms\n"
+        "\x1E Smite",
+
+        // Vampire
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Maces\n"
+        "\x1E Polearms\n"
+        "\x1E Water\n"
+        "\x1E Smite",
+
+        // Succubus
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Magic\n"
+        "\x1E Polearms\n"
+        "\x1E Smite",
+
+        // Goatman
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Polearms\n"
+        "\x1E Axes\n"
+        "\x1E Ranged\n"
+        "\x1E Magic",
+
+        // Automaton
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Axes\n"
+        "\x1E Maces\n"
+        "\x1E Magic",
+
+        // Incubus
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Ranged\n"
+        "\x1E Swords\n"
+        "\x1E Smite",
+
+        // Goblin
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Axes\n"
+        "\x1E Polearms\n"
+        "\x1E Ranged",
+
+        // Insectoid
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Axes\n"
+        "\x1E Polearms\n"
+        "\x1E Ranged",
+	};
+
 	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
+
+    constexpr Uint32 color_human = makeColorRGB(169, 185, 212);
+    constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
+    constexpr Uint32 color_dlc2 = makeColorRGB(255, 53, 206);
+	constexpr Uint32 color_traits = makeColorRGB(184, 146, 109);
+	constexpr Uint32 color_pro = makeColorRGB(88, 203, 255);
+	constexpr Uint32 color_con = makeColorRGB(255, 56, 56);
+	constexpr Uint32 color_energy = makeColorRGB(21, 255, 0);
+	constexpr Uint32 color_heat = makeColorRGB(241, 129, 78);
 
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
@@ -7543,69 +7876,229 @@ bind_failed:
 		return result;
 	}
 
-	static auto male_button_fn = [](Button& button, int index) {
+	static void update_details_text(Frame& card) {
+	    const int index = card.getOwner();
+        const int race = stats[index]->playerRace;
+
+	    // color title
+	    Uint32 color_race;
+	    if (race >= RACE_SKELETON && race <= RACE_GOATMAN) {
+	        color_race = color_dlc1;
+	    }
+	    else if (race >= RACE_AUTOMATON && race <= RACE_INSECTOID) {
+	        color_race = color_dlc2;
+	    }
+	    else {
+	        color_race = color_human;
+	    }
+
+	    auto details_title = card.findField("details_title");
+	    if (details_title) {
+	        details_title->clearLinesToColor();
+	        details_title->setText(races[race]);
+            details_title->setColor(color_race);
+	    }
+	    auto details_text = card.findField("details");
+	    if (details_text) {
+	        details_text->clearLinesToColor();
+	        details_text->setText(race_descs[race]);
+
+	    switch (race) {
+	    default: return;
+	    case RACE_HUMAN:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(4, color_pro);
+            details_text->addColorToLine(7, color_pro);
+            break;
+	    case RACE_SKELETON:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(9, color_pro);
+            details_text->addColorToLine(15, color_pro);
+            break;
+	    case RACE_VAMPIRE:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(11, color_pro);
+            details_text->addColorToLine(16, color_pro);
+	        break;
+	    case RACE_SUCCUBUS:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(15, color_pro);
+	        break;
+	    case RACE_GOATMAN:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(16, color_pro);
+	        break;
+	    case RACE_AUTOMATON:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(12, color_pro);
+            details_text->addColorToLine(16, color_pro);
+	        break;
+	    case RACE_INCUBUS:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(15, color_pro);
+	        break;
+	    case RACE_GOBLIN:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(9, color_pro);
+            details_text->addColorToLine(14, color_pro);
+	        break;
+	    case RACE_INSECTOID:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(14, color_pro);
+	        break;
+	    }
+	    }
+	    auto details_text_right = card.findField("details_right");
+	    if (details_text_right) {
+	        details_text_right->clearLinesToColor();
+	        details_text_right->setText(race_descs_right[race]);
+
+            // we expect first word in the right column to always be "Weaknesses"
+            int c;
+            for (c = 0; race_descs_right[race][c] == '\n'; ++c);
+            details_text_right->addColorToLine(c, color_con);
+	    }
+    }
+
+	static void race_button_fn(Button& button, int index) {
+		auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+		for (int c = 0; c < num_races; ++c) {
+			auto race = races[c];
+			if (strcmp(button.getName(), race) == 0) {
+				stats[index]->playerRace = c;
+				if (stats[index]->playerRace == RACE_SUCCUBUS) {
+					stats[index]->appearance = 0;
+					stats[index]->sex = FEMALE;
+					auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+					auto bottom = card->findFrame("bottom"); assert(bottom);
+					auto female = bottom->findButton("female");
+					auto male = bottom->findButton("male");
+			        female->setColor(makeColor(255, 255, 255, 255));
+			        female->setHighlightColor(makeColor(255, 255, 255, 255));
+			        male->setColor(makeColor(127, 127, 127, 255));
+			        male->setHighlightColor(makeColor(127, 127, 127, 255));
+				}
+				else if (stats[index]->playerRace == RACE_INCUBUS) {
+					stats[index]->appearance = 0;
+					stats[index]->sex = MALE;
+					auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+					auto bottom = card->findFrame("bottom"); assert(bottom);
+					auto female = bottom->findButton("female");
+					auto male = bottom->findButton("male");
+			        female->setColor(makeColor(127, 127, 127, 255));
+			        female->setHighlightColor(makeColor(127, 127, 127, 255));
+			        male->setColor(makeColor(255, 255, 255, 255));
+			        male->setHighlightColor(makeColor(255, 255, 255, 255));
+				}
+				else if (stats[index]->playerRace == RACE_HUMAN) {
+					stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+		            auto appearances = frame->findFrame("appearances");
+		            if (appearances) {
+		                appearances->setSelection(stats[index]->appearance);
+		                appearances->scrollToSelection();
+		            }
+				}
+				else {
+					stats[index]->appearance = 0;
+				}
+			} else {
+				auto other_button = frame->findButton(race);
+				if (other_button) {
+				    other_button->setPressed(false);
+				}
+			}
+		}
+		auto disable_abilities = frame->findButton("disable_abilities");
+		if (disable_abilities) {
+			disable_abilities->setPressed(false);
+		}
+		stats[index]->clearStats();
+		initClass(index);
+		sendPlayerOverNet();
+
+		auto card = static_cast<Frame*>(frame->getParent());
+		if (card) {
+		    update_details_text(*card);
+		}
+	}
+
+	static void male_button_fn(Button& button, int index) {
 		button.setColor(makeColor(255, 255, 255, 255));
 		button.setHighlightColor(makeColor(255, 255, 255, 255));
-		auto card = static_cast<Frame*>(button.getParent());
-		auto female = card->findButton("female");
+		auto bottom = static_cast<Frame*>(button.getParent()); assert(bottom);
+		auto card = static_cast<Frame*>(bottom->getParent()); assert(card);
+		auto female = bottom->findButton("female");
 		if (female) {
 			female->setColor(makeColor(127, 127, 127, 255));
 			female->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		stats[index]->sex = MALE;
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
-			auto succubus = card->findButton("Succubus");
-			if (succubus) {
-				succubus->setPressed(false);
-			}
-			if (enabledDLCPack2) {
-				stats[index]->playerRace = RACE_INCUBUS;
-				auto race = card->findButton("race");
-				if (race) {
-					race->setText("Incubus");
-				}
-				auto incubus = card->findButton("Incubus");
-				if (incubus) {
-					incubus->setPressed(true);
-				}
-				if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
-					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
-						client_classes[index] = CLASS_PUNISHER;
-						auto class_button = card->findButton("class");
-						if (class_button) {
-							class_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
-						}
-					}
-				}
-			} else {
-				stats[index]->playerRace = RACE_HUMAN;
-				auto race = card->findButton("race");
-				if (race) {
-					race->setText("Human");
-				}
-				auto human = card->findButton("Human");
-				if (human) {
-					human->setPressed(true);
-				}
-			}
+		    auto subframe = card->findFrame("subframe");
+		    auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
+		    if (succubus) {
+			    succubus->setPressed(false);
+		    }
+		    if (enabledDLCPack2) {
+			    stats[index]->playerRace = RACE_INCUBUS;
+			    auto race = card->findButton("race");
+			    if (race) {
+				    race->setText("Incubus");
+			    }
+			    auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
+			    if (incubus) {
+				    incubus->setPressed(true);
+			    }
+			    if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
+				    if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+					    client_classes[index] = CLASS_PUNISHER;
+					    auto class_button = card->findButton("class");
+					    if (class_button) {
+						    class_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
+					    }
+				    }
+			    }
+		    } else {
+			    stats[index]->playerRace = RACE_HUMAN;
+			    auto race = card->findButton("race");
+			    if (race) {
+				    race->setText("Human");
+			    }
+			    auto human = subframe ? subframe->findButton("Human") : nullptr;
+			    if (human) {
+				    human->setPressed(true);
+			    }
+		    }
 		}
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
-	};
+		update_details_text(*card);
+	}
 
-	static auto female_button_fn = [](Button& button, int index) {
+	static void female_button_fn(Button& button, int index) {
 		button.setColor(makeColor(255, 255, 255, 255));
 		button.setHighlightColor(makeColor(255, 255, 255, 255));
-		auto card = static_cast<Frame*>(button.getParent());
-		auto male = card->findButton("male");
+		auto bottom = static_cast<Frame*>(button.getParent()); assert(bottom);
+		auto card = static_cast<Frame*>(bottom->getParent()); assert(card);
+		auto male = bottom->findButton("male");
 		if (male) {
 			male->setColor(makeColor(127, 127, 127, 255));
 			male->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		stats[index]->sex = FEMALE;
 		if (stats[index]->playerRace == RACE_INCUBUS) {
-			auto incubus = card->findButton("Incubus");
+		    auto subframe = card->findFrame("subframe");
+			auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
 			if (incubus) {
 				incubus->setPressed(false);
 			}
@@ -7615,7 +8108,7 @@ bind_failed:
 				if (race) {
 					race->setText("Succubus");
 				}
-				auto succubus = card->findButton("Succubus");
+				auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
 				if (succubus) {
 					succubus->setPressed(true);
 				}
@@ -7634,7 +8127,7 @@ bind_failed:
 				if (race) {
 					race->setText("Human");
 				}
-				auto human = card->findButton("Human");
+				auto human = subframe ? subframe->findButton("Human") : nullptr;
 				if (human) {
 					human->setPressed(true);
 				}
@@ -7643,7 +8136,8 @@ bind_failed:
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
-	};
+		update_details_text(*card);
+	}
 
 	static Frame* initCharacterCard(int index, int height) {
 		auto lobby = main_menu_frame->findFrame("lobby");
@@ -8252,432 +8746,6 @@ bind_failed:
 		header->setText("RACE SELECTION");
 		header->setJustify(Field::justify_t::CENTER);
 
-		static const char* races[] = {
-		    "Human",
-			"Skeleton",
-			"Vampire",
-			"Succubus",
-			"Goatman",
-			"Automaton",
-			"Incubus",
-			"Goblin",
-			"Insectoid",
-		};
-		static constexpr int num_races = sizeof(races) / sizeof(races[0]);
-
-		static const char* race_descs[] = {
-		    // Human
-		    "\n"
-            "Traits\n"
-            "None\n"
-            "\n"
-            "Resistances\n"
-            "None\n"
-            "\n"
-            "Friendly With\n"
-            "Humans, Automatons",
-
-            // Skeleton
-		    "\n"
-            "Traits\n"
-            "\x1E Does not Hunger or Starve\n"
-            "\x1E HP and MP Regeneration\n"
-            "    reduced by 75%\n"
-            "\x1E Self-Resurrects for 75MP\n"
-            "\x1E Immune to Burning\n"
-            "\x1E Swim speed reduced by 50%\n"
-            "\n"
-            "Resistances\n"
-            "\x1E Swords\n"
-            "\x1E Ranged\n"
-            "\x1E Axes\n"
-            "\x1E Magic\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Ghouls, Automatons",
-
-            // Vampire
-		    "\n"
-            "Racial Spells\n"
-            "\x1E Bloodletting, Levitation\n"
-            "Traits\n"
-            "\x1E Uses HP when out of MP to\n"
-            "    cast and sustain spells\n"
-            "\x1E Can only sustain hunger\n"
-            "    with Blood Vials\n"
-            "\x1E Kills may drop Blood Vials\n"
-            "\x1E Bloodletting / Assassinate\n"
-            "    kills drop Blood Vials\n"
-            "Resistances\n"
-            "\x1E Swords\n"
-            "\x1E Ranged\n"
-            "\x1E Axes\n"
-            "\x1E Magic\n"
-            "Friendly With\n"
-            "\x1E Vampires, Automatons",
-
-            // Succubus
-            "\n"
-            "Racial Spells\n"
-            "\x1E Teleport, Polymorph\n"
-            "Traits\n"
-            "\x1E Cursed equipment can be\n"
-            "    removed; gives bonuses\n"
-            "\x1E Blessed equipment is not\n"
-            "    removable; gives bonuses\n"
-            "\x1E +MP from Strangulation\n"
-            "\n"
-            "Resistances\n"
-            "\x1E Swords\n"
-            "\n"
-            "\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Succubi, Incubi,\n"
-            "    Automatons",
-
-            // Goatman
-            "\n"
-            "Traits\n"
-            "\x1E Afflicted with Alcoholism,\n"
-            "    causing Hangovers\n"
-            "\x1E Immune to Drunk dizziness\n"
-            "\x1E +STR +CHR while Drunk\n"
-            "\x1E Can recruit fellow Drunks\n"
-            "\x1E Eats Tins without an Opener\n"
-            "\x1E Immune to Greasy effect\n"
-            "\n"
-            "Resistances\n"
-            "\x1E Swords\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Goatmen, Automatons",
-
-            // Automaton
-            "\n"
-            "Racial Spells\n"
-            "\x1E Salvage\n"
-            "Traits\n"
-            "\x1E Requires Heat (HT) to\n"
-            "    survive and cast spells\n"
-            "\x1E Regen HT with a hot boiler\n"
-
-            "    fueled by gems and paper\n"
-            "\x1E Can remove cursed items\n"
-            "\x1E Immune to Burning\n"
-            "\x1E +20 to Tinkering Repairs\n"
-            "\x1E Welcomed by Shopkeepers\n"
-            "Resistances\n"
-            "\x1E Ranged\n"
-            "\x1E Unarmed\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Automatons, Humans",
-
-            // Incubus
-            "\n"
-            "Racial Spells\n"
-            "\x1E Teleport, Arcane Mark\n"
-            "Traits\n"
-            "\x1E Cursed equipment can be\n"
-            "    removed; gives bonuses\n"
-            "\x1E Blessed equipment is not\n"
-            "    removable; gives bonuses\n"
-            "\x1E +MP from Strangulation\n"
-            "\n"
-            "Resistances\n"
-            "\x1E Magic\n"
-            "\x1E Polearms\n"
-            "\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Succubi, Incubi,\n"
-            "    Automatons",
-
-            // Goblin
-            "\n"
-            "Traits\n"
-            "\x1E Worn Equipment has lower\n"
-            "    chance to degrade\n"
-            "\x1E Raising any Melee Weapon\n"
-            "    Skill raises all of them\n"
-            "\x1E Weapon Skills raise slower\n"
-            "\x1E Cannot Memorize new spells\n"
-            "\n"
-            "Resistances\n"
-            "\x1E Swords\n"
-            "\x1E Unarmed\n"
-            "\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Goblins, Automatons",
-
-            // Insectoid
-            "\n"
-            "Racial Spells\n"
-            "\x1E Flutter, Dash, Spray Acid\n"
-            "Traits\n"
-            "\x1E Requires Energy (EN) to\n"
-            "    survive and cast spells\n"
-            "\x1E Regain EN by consuming\n"
-            "    food and sweet liquids\n"
-            "\x1E Immune to Poison\n"
-            "\x1E Immune to rotten food\n"
-            "Resistances\n"
-            "\x1E Maces\n"
-            "\x1E Unarmed\n"
-            "\n"
-            "Friendly With\n"
-            "\x1E Insectoids, Scarabs\n"
-            "    Scorpions, Automatons\n",
-		};
-
-		static const char* race_descs_right[] = {
-		    // Human
-		    "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "None",
-
-            // Skeleton
-		    "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Maces\n"
-            "\x1E Polearms\n"
-            "\x1E Smite",
-
-            // Vampire
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Maces\n"
-            "\x1E Polearms\n"
-            "\x1E Water\n"
-            "\x1E Smite",
-
-            // Succubus
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Magic\n"
-            "\x1E Polearms\n"
-            "\x1E Smite",
-
-            // Goatman
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Polearms\n"
-            "\x1E Axes\n"
-            "\x1E Ranged\n"
-            "\x1E Magic",
-
-            // Automaton
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Axes\n"
-            "\x1E Maces\n"
-            "\x1E Magic",
-
-            // Incubus
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Ranged\n"
-            "\x1E Swords\n"
-            "\x1E Smite",
-
-            // Goblin
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Axes\n"
-            "\x1E Polearms\n"
-            "\x1E Ranged",
-
-            // Insectoid
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "Weaknesses\n"
-            "\x1E Axes\n"
-            "\x1E Polearms\n"
-            "\x1E Ranged",
-		};
-
-        constexpr Uint32 color_human = makeColorRGB(169, 185, 212);
-        constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
-        constexpr Uint32 color_dlc2 = makeColorRGB(255, 53, 206);
-		constexpr Uint32 color_traits = makeColorRGB(184, 146, 109);
-		constexpr Uint32 color_pro = makeColorRGB(88, 203, 255);
-		constexpr Uint32 color_con = makeColorRGB(255, 56, 56);
-		constexpr Uint32 color_energy = makeColorRGB(21, 255, 0);
-		constexpr Uint32 color_heat = makeColorRGB(241, 129, 78);
-
-		static auto update_details_text = [](Frame& card){
-		    const int index = card.getOwner();
-            const int race = stats[index]->playerRace;
-
-		    // color title
-		    Uint32 color_race;
-		    if (race >= RACE_SKELETON && race <= RACE_GOATMAN) {
-		        color_race = color_dlc1;
-		    }
-		    else if (race >= RACE_AUTOMATON && race <= RACE_INSECTOID) {
-		        color_race = color_dlc2;
-		    }
-		    else {
-		        color_race = color_human;
-		    }
-
-		    auto details_title = card.findField("details_title");
-		    if (details_title) {
-		        details_title->clearLinesToColor();
-		        details_title->setText(races[race]);
-	            details_title->setColor(color_race);
-		    }
-		    auto details_text = card.findField("details");
-		    if (details_text) {
-		        details_text->clearLinesToColor();
-		        details_text->setText(race_descs[race]);
-
-		    switch (race) {
-		    default: return;
-		    case RACE_HUMAN:
-	            details_text->addColorToLine(1, color_traits);
-	            details_text->addColorToLine(4, color_pro);
-	            details_text->addColorToLine(7, color_pro);
-	            break;
-		    case RACE_SKELETON:
-	            details_text->addColorToLine(1, color_traits);
-	            details_text->addColorToLine(9, color_pro);
-	            details_text->addColorToLine(15, color_pro);
-	            break;
-		    case RACE_VAMPIRE:
-	            details_text->addColorToLine(1, color_pro);
-	            details_text->addColorToLine(3, color_traits);
-	            details_text->addColorToLine(11, color_pro);
-	            details_text->addColorToLine(16, color_pro);
-		        break;
-		    case RACE_SUCCUBUS:
-	            details_text->addColorToLine(1, color_pro);
-	            details_text->addColorToLine(3, color_traits);
-	            details_text->addColorToLine(10, color_pro);
-	            details_text->addColorToLine(15, color_pro);
-		        break;
-		    case RACE_GOATMAN:
-	            details_text->addColorToLine(1, color_traits);
-	            details_text->addColorToLine(10, color_pro);
-	            details_text->addColorToLine(16, color_pro);
-		        break;
-		    case RACE_AUTOMATON:
-	            details_text->addColorToLine(1, color_pro);
-	            details_text->addColorToLine(3, color_traits);
-	            details_text->addColorToLine(12, color_pro);
-	            details_text->addColorToLine(16, color_pro);
-		        break;
-		    case RACE_INCUBUS:
-	            details_text->addColorToLine(1, color_pro);
-	            details_text->addColorToLine(3, color_traits);
-	            details_text->addColorToLine(10, color_pro);
-	            details_text->addColorToLine(15, color_pro);
-		        break;
-		    case RACE_GOBLIN:
-	            details_text->addColorToLine(1, color_traits);
-	            details_text->addColorToLine(9, color_pro);
-	            details_text->addColorToLine(14, color_pro);
-		        break;
-		    case RACE_INSECTOID:
-	            details_text->addColorToLine(1, color_pro);
-	            details_text->addColorToLine(3, color_traits);
-	            details_text->addColorToLine(10, color_pro);
-	            details_text->addColorToLine(14, color_pro);
-		        break;
-		    }
-		    }
-		    auto details_text_right = card.findField("details_right");
-		    if (details_text_right) {
-		        details_text_right->clearLinesToColor();
-		        details_text_right->setText(race_descs_right[race]);
-
-                // we expect first word in the right column to always be "Weaknesses"
-                int c;
-	            for (c = 0; race_descs_right[race][c] == '\n'; ++c);
-	            details_text_right->addColorToLine(c, color_con);
-		    }
-		    };
-
 		if (details) {
 		    const auto font = smallfont_no_outline;
 
@@ -8696,48 +8764,6 @@ bind_failed:
 
 		    update_details_text(*card);
 		}
-
-		static auto race_fn = [](Button& button, int index){
-			auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
-			for (int c = 0; c < num_races; ++c) {
-				auto race = races[c];
-				if (strcmp(button.getName(), race) == 0) {
-					stats[index]->playerRace = c;
-					if (stats[index]->playerRace == RACE_SUCCUBUS) {
-						stats[index]->appearance = 0;
-						stats[index]->sex = FEMALE;
-					}
-					else if (stats[index]->playerRace == RACE_INCUBUS) {
-						stats[index]->appearance = 0;
-						stats[index]->sex = MALE;
-					}
-					else if (stats[index]->playerRace == RACE_HUMAN) {
-						stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
-			            auto appearances = frame->findFrame("appearances"); assert(appearances);
-			            appearances->setSelection(stats[index]->appearance);
-			            appearances->scrollToSelection();
-					}
-					else {
-						stats[index]->appearance = 0;
-					}
-				} else {
-					auto other_button = frame->findButton(race);
-					if (other_button) {
-					    other_button->setPressed(false);
-					}
-				}
-			}
-			auto disable_abilities = frame->findButton("disable_abilities");
-			if (disable_abilities) {
-				disable_abilities->setPressed(false);
-			}
-			stats[index]->clearStats();
-			initClass(index);
-			sendPlayerOverNet();
-
-			auto card = static_cast<Frame*>(frame->getParent()); assert(card);
-			update_details_text(*card);
-		    };
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setSize(details ?
@@ -8788,10 +8814,10 @@ bind_failed:
 		    race->addWidgetAction("MenuAlt1", "disable_abilities");
 		    race->addWidgetAction("MenuAlt2", "show_race_info");
 		    switch (index) {
-		    case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-		    case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-		    case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-		    case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
+		    case 0: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 0);}); break;
+		    case 1: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 1);}); break;
+		    case 2: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 2);}); break;
+		    case 3: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 3);}); break;
 		    }
 		    if (stats[index]->playerRace == c) {
 			    race->setPressed(true);
@@ -9116,9 +9142,9 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardClassMenu(int index, bool details) {
+	static void characterCardClassMenu(int index) {
 		auto reduced_class_list = reducedClassList(index);
-		auto card = initCharacterCard(index, 488);
+		auto card = initCharacterCard(index, 446);
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -9138,7 +9164,7 @@ bind_failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_01.png",
+			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_04.png",
 			"backdrop"
 		);
 
@@ -9156,9 +9182,9 @@ bind_failed:
 		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
 		auto textbox = card->addImage(
-			SDL_Rect{46, 116, 186, 36},
+			SDL_Rect{42, 68, 192, 46},
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_SearchBar_00.png",
+			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Box_ClassName_04.png",
 			"textbox"
 		);
 
@@ -9171,8 +9197,8 @@ bind_failed:
 		};
 
 		auto class_name = card->addField("class_name", 64);
-		class_name->setSize(SDL_Rect{48, 120, 182, 28});
-		class_name->setHJustify(Field::justify_t::LEFT);
+		class_name->setSize(SDL_Rect{42, 68, 192, 46});
+		class_name->setHJustify(Field::justify_t::CENTER);
 		class_name->setVJustify(Field::justify_t::CENTER);
 		class_name->setFont(smallfont_outline);
 		switch (index) {
@@ -9185,14 +9211,14 @@ bind_failed:
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
-		subframe->setSize(SDL_Rect{34, 160, 226, 258});
+		subframe->setSize(SDL_Rect{34, 124, 226, 254});
 		subframe->setActualSize(SDL_Rect{0, 0, 226, std::max(258, 6 + 54 * (int)(classes.size() / 4 + ((classes.size() % 4) ? 1 : 0)))});
 		subframe->setBorder(0);
 		subframe->setColor(0);
 
 		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
-			slider->setRailSize(SDL_Rect{260, 160, 30, 266});
+			slider->setRailSize(SDL_Rect{260, 118, 30, 266});
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 			slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
 			slider->setHandleImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_SliderB_00.png");
@@ -9222,12 +9248,15 @@ bind_failed:
 		auto class_info = card->addButton("class_info");
 		class_info->setColor(makeColor(255, 255, 255, 255));
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
-		class_info->setSize(SDL_Rect{236, 110, 48, 48});
-		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_MagnifyingGlass_00.png");
+		class_info->setSize(SDL_Rect{238, 68, 46, 46});
+		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
 		class_info->addWidgetAction("MenuAlt1", "class_info");
 		class_info->setWidgetBack("back_button");
+
+		const int current_class = std::min(std::max(0, client_classes[index]), num_classes - 1);
+		auto current_class_name = classes_in_order[current_class + 1];
 
 		const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
 		for (int c = reduced_class_list.size() - 1; c >= 0; --c) {
@@ -9243,7 +9272,11 @@ bind_failed:
 			}
 			button->setIcon((prefix + full_class.image).c_str());
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
-			button->setColor(makeColor(255, 255, 255, 255));
+			if (strcmp(name, current_class_name)) {
+			    button->setColor(makeColor(127, 127, 127, 255));
+			} else {
+			    button->setColor(makeColor(255, 255, 255, 255));
+			}
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
@@ -9268,25 +9301,45 @@ bind_failed:
 
 			static auto button_fn = [](Button& button, int index){
 				soundActivate();
+
+				// figure out which class button we clicked based on name
 				int c = 0;
 				for (; c < num_classes; ++c) {
 					if (strcmp(button.getName(), classes_in_order[c]) == 0) {
 						break;
 					}
 				}
-				if (c >= 1) {
-					--c; // exclude the random "class"
+
+			    // dim all buttons
+			    auto frame = static_cast<Frame*>(button.getParent());
+			    for (auto button : frame->getButtons()) {
+			        button->setColor(makeColor(127, 127, 127, 255));
+			    }
+
+				if (c > 0) {
+				    // when selecting anything but random class...
+					--c; // discount the "random class" option
 					client_classes[index] = c;
+				    button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
 				} else {
+				    // when selecting random class...
 					auto reduced_class_list = reducedClassList(index);
-					auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
-					for (int c = 0; c < num_classes; ++c) {
+					auto random_class = reduced_class_list[RNG.uniform(1, reduced_class_list.size() - 1)];
+					for (int c = 1; c < num_classes; ++c) {
 						if (strcmp(random_class, classes_in_order[c]) == 0) {
-							client_classes[index] = c;
+							client_classes[index] = c - 1;
+
+				            // highlight selected class button
+				            auto frame = static_cast<Frame*>(button.getParent());
+				            auto button = frame->findButton(random_class);
+				            if (button) {
+				                button->setColor(makeColor(255, 255, 255, 255));
+				            }
 							break;
 						}
 					}
 				}
+
 				stats[index]->clearStats();
 				initClass(index);
 				sendPlayerOverNet();
@@ -9444,7 +9497,8 @@ bind_failed:
 		static auto randomize_name_fn = [](Button& button, int index) {
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto name = names[RNG.rand() % names.size()].c_str();
+			auto choice = RNG.uniform(0, names.size() - 1);
+			auto name = names[choice].c_str();
 			name_field_fn(name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
@@ -9476,7 +9530,12 @@ bind_failed:
 		case 3: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(3);}); break;
 		}
 
-		auto male_button = card->addButton("male");
+		auto bottom = card->addFrame("bottom");
+		bottom->setSize(SDL_Rect{42, 166, 120, 52});
+		bottom->setBorder(0);
+		bottom->setColor(0);
+
+		auto male_button = bottom->addButton("male");
 		if (stats[index]->sex == MALE) {
 			male_button->setColor(makeColor(255, 255, 255, 255));
 			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -9485,7 +9544,7 @@ bind_failed:
 			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
-		male_button->setSize(SDL_Rect{42, 166, 58, 52});
+		male_button->setSize(SDL_Rect{0, 0, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
 		male_button->setWidgetBack("back_button");
@@ -9499,7 +9558,7 @@ bind_failed:
 		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
 		}
 
-		auto female_button = card->addButton("female");
+		auto female_button = bottom->addButton("female");
 		if (stats[index]->sex == FEMALE) {
 			female_button->setColor(makeColor(255, 255, 255, 255));
 			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -9508,7 +9567,7 @@ bind_failed:
 			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
-		female_button->setSize(SDL_Rect{104, 166, 58, 52});
+		female_button->setSize(SDL_Rect{62, 0, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
 		female_button->setWidgetBack("back_button");
@@ -9563,16 +9622,16 @@ bind_failed:
 			auto card = static_cast<Frame*>(button.getParent());
 
 			// select a random sex
-			stats[index]->sex = (sex_t)(RNG.rand() % 2);
+			stats[index]->sex = (sex_t)(RNG.getU8() % 2);
 
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.rand() % NUMPLAYABLERACES;
+			    stats[index]->playerRace = RNG.uniform(0, NUMPLAYABLERACES - 1);
 			} else if (enabledDLCPack1) {
-			    stats[index]->playerRace = RNG.rand() % 5;
+			    stats[index]->playerRace = RNG.uniform(0, 4);
 			} else if (enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.rand() % 5;
+			    stats[index]->playerRace = RNG.uniform(0, 4);
 			    if (stats[index]->playerRace > 0) {
 			        stats[index]->playerRace += 4;
 			    }
@@ -9599,33 +9658,38 @@ bind_failed:
 			}
 
 			// choose a random appearance
+			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
 			if (stats[index]->playerRace == RACE_HUMAN) {
-				stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
+				stats[index]->appearance = appearance_choice;
 			} else {
-				stats[index]->appearance = 0; RNG.rand();
+				stats[index]->appearance = 0;
 			}
 
 			// update sex buttons after race selection:
 			// we might have chosen a succubus or incubus
-			auto male_button = card->findButton("male");
-			auto female_button = card->findButton("female");
-			if (male_button && female_button) {
-				if (stats[index]->sex == MALE) {
-					male_button->setColor(makeColor(255, 255, 255, 255));
-					male_button->setHighlightColor(makeColor(255, 255, 255, 255));
-					female_button->setColor(makeColor(127, 127, 127, 255));
-					female_button->setHighlightColor(makeColor(127, 127, 127, 255));
-				} else {
-					female_button->setColor(makeColor(255, 255, 255, 255));
-					female_button->setHighlightColor(makeColor(255, 255, 255, 255));
-					male_button->setColor(makeColor(127, 127, 127, 255));
-					male_button->setHighlightColor(makeColor(127, 127, 127, 255));
-				}
+			auto bottom = card->findFrame("bottom");
+			if (bottom) {
+			    auto male_button = bottom->findButton("male");
+			    auto female_button = bottom->findButton("female");
+			    if (male_button && female_button) {
+				    if (stats[index]->sex == MALE) {
+					    male_button->setColor(makeColor(255, 255, 255, 255));
+					    male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					    female_button->setColor(makeColor(127, 127, 127, 255));
+					    female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				    } else {
+					    female_button->setColor(makeColor(255, 255, 255, 255));
+					    female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					    male_button->setColor(makeColor(127, 127, 127, 255));
+					    male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				    }
+			    }
 			}
 
 			// select a random class
-			auto reduced_class_list = reducedClassList(index);
-			auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
+			const auto reduced_class_list = reducedClassList(index);
+			const auto class_choice = RNG.uniform(1, reduced_class_list.size() - 1);
+			const auto random_class = reduced_class_list[class_choice];
 			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
 					client_classes[index] = c - 1;
@@ -9709,19 +9773,19 @@ bind_failed:
 		switch (index) {
 		case 0:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0, false);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);});
 			break;
 		case 1:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1, false);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);});
 			break;
 		case 2:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2, false);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);});
 			break;
 		case 3:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3, false);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);});
 			break;
 		}
 		(*class_button->getTickCallback())(*class_button);
@@ -10500,8 +10564,8 @@ bind_failed:
 		            playerSlotsLocked[c] = false;
 
 			        stats[c]->playerRace = RACE_HUMAN;
-			        stats[c]->sex = static_cast<sex_t>(RNG.rand() % 2);
-			        stats[c]->appearance = RNG.rand() % NUMAPPEARANCES;
+			        stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
+			        stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
 			        stats[c]->clearStats();
 			        client_classes[c] = 0;
 			        initClass(c);
@@ -10509,7 +10573,8 @@ bind_failed:
 			        // random name
 			        auto& names = stats[c]->sex == sex_t::MALE ?
 				        randomPlayerNamesMale : randomPlayerNamesFemale;
-			        auto name = names[RNG.rand() % names.size()].c_str();
+				    const int choice = RNG.uniform(0, names.size() - 1);
+			        auto name = names[choice].c_str();
 			        size_t len = strlen(name);
 			        len = std::min(sizeof(Stat::name) - 1, len);
 			        memcpy(stats[c]->name, name, len);
@@ -14154,7 +14219,7 @@ bind_failed:
 			quit_motd = 0;
 		}
 		if (quit_motd < 0) {
-			quit_motd = RNG.rand() % num_quit_messages;
+			quit_motd = RNG.uniform(0, num_quit_messages - 1);
 		}
 
 		binaryPrompt(
@@ -14201,7 +14266,8 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
@@ -14209,7 +14275,8 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+	            playMusic(intromusic[music], true, false, false);
 				createMainMenu(false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
@@ -15075,7 +15142,7 @@ bind_failed:
         }
 
         const char* eulogy;
-        switch (RNG.rand() % 10) {
+        switch (RNG.uniform(0, 9)) {
         default:
         case 0: eulogy = "We hardly knew ye."; break;
         case 1: eulogy = "Rest In Peace."; break;
