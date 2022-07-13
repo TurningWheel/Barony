@@ -17778,7 +17778,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "inner")
 		|| strstr(monsterStats.name, "training")
 		|| strstr(monsterStats.name, "Training")
-		|| strstr(monsterStats.name, "Mysterious") )
+		|| strstr(monsterStats.name, "Mysterious")
+		|| strstr(monsterStats.name, "shaman") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		return true;
