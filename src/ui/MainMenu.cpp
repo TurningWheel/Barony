@@ -8772,6 +8772,59 @@ bind_failed:
 		subframe->setActualSize(SDL_Rect{0, 0, 234, 36 * num_races});
 		subframe->setBorder(0);
 		subframe->setColor(0);
+		subframe->setTickCallback([](Widget& widget){
+		    auto subframe = static_cast<Frame*>(&widget); assert(subframe);
+		    auto card = static_cast<Frame*>(widget.getParent()); assert(card);
+		    auto gradient = card->findImage("gradient"); assert(gradient);
+
+            const auto grad_size = gradient->pos.h / 2;
+            const auto size = subframe->getSize();
+		    const auto asize = subframe->getActualSize();
+		    const float fade = ((asize.h - grad_size) - (asize.y + size.h)) / (float)grad_size;
+		    const float b_fade = std::min(std::max(0.f, fade), 1.f);
+		    gradient->color = makeColor(255, 255, 255, 127 * b_fade);
+		    });
+
+		auto slider = card->addSlider("scroll_slider");
+		slider->setRailSize(details ? SDL_Rect{278, 376, 12, 118} : SDL_Rect{278, 62, 12, 220});
+		slider->setHandleSize(SDL_Rect{0, 0, 20, 28});
+		slider->setHandleImage("*images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
+		slider->setBorder(14);
+		slider->setMinValue(0.f);
+		slider->setMaxValue(subframe->getActualSize().h - subframe->getSize().h);
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			Frame* subframe = frame->findFrame("subframe"); assert(subframe);
+			auto actualSize = subframe->getActualSize();
+			actualSize.y = slider.getValue();
+			subframe->setActualSize(actualSize);
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			Frame* subframe = frame->findFrame("subframe"); assert(subframe);
+			auto actualSize = subframe->getActualSize();
+			slider->setValue(actualSize.y);
+			});
+		slider->setWidgetSearchParent(card->getName());
+		slider->setWidgetLeft(races[0]);
+	    slider->setWidgetBack("back_button");
+	    slider->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+	    slider->setHideSelectors(true);
+
+		auto hover_image = subframe->addImage(
+			SDL_Rect{0, 4 + 36 * stats[index]->playerRace, 234, 30},
+			0xffffffff,
+			"*#images/ui/Main Menus/Play/PlayerCreation/RaceSelection/sublist_item-hover.png",
+		    "hover");
+
+		auto gradient = card->addImage(
+		    SDL_Rect{38, details ? 446 : 234, 234, 42},
+		    0xffffffff,
+			"*#images/ui/Main Menus/Play/PlayerCreation/RaceSelection/sublist_gradient.png",
+		    "gradient");
+		gradient->ontop = true;
 
         for (int c = 0; c < num_races; ++c) {
 		    auto race = subframe->addButton(races[c]);
@@ -8802,9 +8855,10 @@ bind_failed:
 		    }
 		    if (c < num_races - 1) {
 		        race->setWidgetDown(races[c + 1]);
-		    } else {
-		        race->setWidgetDown("disable_abilities");
 		    }
+		    /*else {
+		        race->setWidgetDown("disable_abilities");
+		    }*/
 		    if (c > 0) {
 		        race->setWidgetUp(races[c - 1]);
 		    }
@@ -8823,6 +8877,14 @@ bind_failed:
 			    race->setPressed(true);
 			    race->select();
 		    }
+		    race->setTickCallback([](Widget& widget){
+		        if (widget.isSelected()) {
+		            auto button = static_cast<Button*>(&widget); assert(button);
+		            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
+		            auto hover = subframe->findImage("hover"); assert(hover);
+		            hover->pos.y = button->getSize().y;
+		        }
+		        });
 
 		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
 		    if (c >= 1 && c <= 4) {
@@ -8861,14 +8923,14 @@ bind_failed:
 		appearances->setWidgetDown(races[1]);
 		appearances->setTickCallback([](Widget& widget){
 			auto frame = static_cast<Frame*>(&widget);
-			auto card = static_cast<Frame*>(frame->getParent());
+			auto parent = static_cast<Frame*>(frame->getParent());
 			auto backdrop = frame->findImage("background"); assert(backdrop);
 			auto box = frame->findImage("selection_box"); assert(box);
 			box->disabled = !frame->isSelected();
 			box->pos.y = frame->getActualSize().y;
 			backdrop->pos.y = frame->getActualSize().y + 4;
-			auto appearance_uparrow = card->findButton("appearance_uparrow");
-			auto appearance_downarrow = card->findButton("appearance_downarrow");
+			auto appearance_uparrow = parent->findButton("appearance_uparrow");
+			auto appearance_downarrow = parent->findButton("appearance_downarrow");
 			if (frame->isActivated()) {
 				appearance_uparrow->setDisabled(false);
 				appearance_uparrow->setInvisible(false);
@@ -8882,6 +8944,10 @@ bind_failed:
 				appearance_downarrow->setDisabled(true);
 				appearance_downarrow->setInvisible(true);
 			}
+	        if (widget.isSelected()) {
+	            auto hover = parent->findImage("hover"); assert(hover);
+	            hover->pos.y = frame->getSize().y + 2;
+	        }
 			});
 
 		auto appearance_backdrop = appearances->addImage(
@@ -8916,6 +8982,14 @@ bind_failed:
 			appearances->activateSelection();
 			button.select();
 			});
+	    appearance_uparrow->setTickCallback([](Widget& widget){
+	        if (widget.isSelected()) {
+	            auto button = static_cast<Button*>(&widget); assert(button);
+	            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
+	            auto hover = subframe->findImage("hover"); assert(hover);
+	            hover->pos.y = button->getSize().y;
+	        }
+	        });
 		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
 		appearance_uparrow->setWidgetBack("back_button");
 	    appearance_uparrow->addWidgetAction("MenuPageLeft", "male");
@@ -8941,6 +9015,14 @@ bind_failed:
 			appearances->activateSelection();
 			button.select();
 			});
+	    appearance_downarrow->setTickCallback([](Widget& widget){
+	        if (widget.isSelected()) {
+	            auto button = static_cast<Button*>(&widget); assert(button);
+	            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
+	            auto hover = subframe->findImage("hover"); assert(hover);
+	            hover->pos.y = button->getSize().y;
+	        }
+	        });
 		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
 		appearance_downarrow->setWidgetBack("back_button");
 	    appearance_downarrow->addWidgetAction("MenuPageLeft", "male");
@@ -10622,7 +10704,7 @@ bind_failed:
 						index * Frame::virtualScreenX / 4,
 						0,
 						Frame::virtualScreenX / 4,
-						Frame::virtualScreenY - card->getSize().h / 2
+						Frame::virtualScreenY * 3 / 4
 						});
 				    auto backdrop = card->findImage("backdrop");
 				    const char* invite_window = "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
