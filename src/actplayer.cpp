@@ -810,7 +810,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( !gamePaused 
+		else if ( !gamePaused
 			&& ((!inputs.hasController(PLAYER_NUM) 
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
@@ -843,6 +843,12 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 						PLAYER_BOBMOVE -= .025 * refreshRateDelta;
 					}
 				}
+			}
+			else if ( !swimming )
+			{
+				PLAYER_BOBMOVE = 0;
+				PLAYER_BOB = 0;
+				PLAYER_BOBMODE = 0;
 			}
 		}
 		else if ( !swimming )
@@ -1277,8 +1283,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	//if ( keystatus[SDL_SCANCODE_G] )
 	//{
-	//	//messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	//	//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
+		//messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+		//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
 	//}
 
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
@@ -4595,7 +4601,7 @@ void actPlayer(Entity* my)
 					{
 						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
 						followerMenu.holdWheel = true;
-						if ( inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
+						if ( showNPCCommandsOnGamepad )
 						{
 							followerMenu.holdWheel = false;
 						}
