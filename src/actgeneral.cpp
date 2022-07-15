@@ -717,7 +717,7 @@ void actFloorDecoration(Entity* my)
 					found = output.find("\\n");
 				}
 				strcpy(buf, output.c_str());
-				messagePlayer(i, MESSAGE_INTERACTION, buf);
+				messagePlayer(i, MESSAGE_INSPECTION, buf);
 			}
 		}
 	}
