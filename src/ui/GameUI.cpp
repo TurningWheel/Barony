@@ -5884,7 +5884,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 					}
 				}
 			});
-			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_Button_Timer_SelectOff00.png.png", "timer icon img");
+			auto timerToggleImg = timerFrame->addImage(SDL_Rect{0, 0, 26, 26}, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_Button_Timer_SelectOff00.png", "timer icon img");
 			auto timerImg = timerFrame->addImage(SDL_Rect{ 30, 0, 112, 26 }, 0xFFFFFFFF, "*#images/ui/CharSheet/HUD_CharSheet_Timer_Backing_00.png", "timer bg img");
 			auto timerText = timerFrame->addField("timer text", 32);
 			timerText->setFont(timerFont);
@@ -18111,7 +18111,7 @@ void Player::HUD_t::updateXPBar()
 	}
 	else
 	{
-		pos.y = hudFrame->getSize().h - XP_FRAME_START_Y + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+		pos.y = 8 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
 	}
 	xpFrame->setSize(pos);
 
