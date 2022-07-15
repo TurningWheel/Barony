@@ -763,9 +763,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			node->deconstructor = &mapDeconstructor;
 
 			// more nodes are created to record the exit points on the sublevel
-			/*for ( y = 0; y < subRoomMap->height; y++ )
+			for ( int y = 0; y < subRoomMap->height; y++ )
 			{
-				for ( x = 0; x < subRoomMap->width; x++ )
+				for ( int x = 0; x < subRoomMap->width; x++ )
 				{
 					if ( x == 0 || y == 0 || x == subRoomMap->width - 1 || y == subRoomMap->height - 1 )
 					{
@@ -796,7 +796,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 				}
-			}*/
+			}
 		}
 	}
 
@@ -1245,7 +1245,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					k++;
 				}
 				subRoomMap = (map_t*)subRoomNode->element;
-				subRoomDoorNode = nullptr;
+				subRoomDoorNode = subRoomNode->next;
 			}
 			else
 			{
@@ -1288,7 +1288,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 					subRoomNode = ((list_t*)subRoomNode->element)->first;
 					subRoomMap = (map_t*)subRoomNode->element;
-					subRoomDoorNode = nullptr;
+					subRoomDoorNode = subRoomNode->next;
 				}
 			}
 
