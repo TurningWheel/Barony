@@ -427,8 +427,8 @@ namespace MainMenu {
 
 	static void characterCardGameSettingsMenu(int index);
 	static void characterCardLobbySettingsMenu(int index);
-	static void characterCardRaceMenu(int index, bool details);
-	static void characterCardClassMenu(int index);
+	static void characterCardRaceMenu(int index, bool details, int selection);
+	static void characterCardClassMenu(int index, bool details, int selection);
 
     static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
@@ -7855,7 +7855,7 @@ bind_failed:
 
 	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
 
-    constexpr Uint32 color_human = makeColorRGB(169, 185, 212);
+    constexpr Uint32 color_dlc0 = makeColorRGB(169, 185, 212);
     constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
     constexpr Uint32 color_dlc2 = makeColorRGB(255, 53, 206);
 	constexpr Uint32 color_traits = makeColorRGB(184, 146, 109);
@@ -7889,7 +7889,7 @@ bind_failed:
 	        color_race = color_dlc2;
 	    }
 	    else {
-	        color_race = color_human;
+	        color_race = color_dlc0;
 	    }
 
 	    auto details_title = card.findField("details_title");
@@ -8713,8 +8713,10 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardRaceMenu(int index, bool details) {
+	static void characterCardRaceMenu(int index, bool details, int selection) {
 		auto card = initCharacterCard(index, details ? 664 : 488);
+
+		static int race_selection[MAXPLAYERS];
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -8875,7 +8877,11 @@ bind_failed:
 		    }
 		    if (stats[index]->playerRace == c) {
 			    race->setPressed(true);
+		    }
+		    if ((stats[index]->playerRace == c && selection == -1) ||
+		        (selection >= 0 && selection == c)) {
 			    race->select();
+			    race->scrollParent();
 		    }
 		    race->setTickCallback([](Widget& widget){
 		        if (widget.isSelected()) {
@@ -8883,6 +8889,7 @@ bind_failed:
 		            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
 		            auto hover = subframe->findImage("hover"); assert(hover);
 		            hover->pos.y = button->getSize().y;
+		            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
 		        }
 		        });
 
@@ -8892,7 +8899,7 @@ bind_failed:
 		    } else if (c >= 5 && c <= 8) {
 		        label->setColor(color_dlc2);
 		    } else {
-		        label->setColor(color_human);
+		        label->setColor(color_dlc0);
 		    }
 		    label->setText(races[c]);
 		    label->setFont(smallfont_outline);
@@ -8947,6 +8954,7 @@ bind_failed:
 	        if (widget.isSelected()) {
 	            auto hover = parent->findImage("hover"); assert(hover);
 	            hover->pos.y = frame->getSize().y + 2;
+	            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
 	        }
 			});
 
@@ -8988,6 +8996,7 @@ bind_failed:
 	            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
 	            auto hover = subframe->findImage("hover"); assert(hover);
 	            hover->pos.y = button->getSize().y;
+	            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
 	        }
 	        });
 		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
@@ -9021,6 +9030,7 @@ bind_failed:
 	            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
 	            auto hover = subframe->findImage("hover"); assert(hover);
 	            hover->pos.y = button->getSize().y;
+	            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
 	        }
 	        });
 		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
@@ -9050,7 +9060,7 @@ bind_failed:
 		for (int c = 0; c < num_appearances; ++c) {
 			auto name = appearance_names[c];
 			auto entry = appearances->addEntry(std::to_string(c).c_str(), true);
-			entry->color = color_human;
+			entry->color = color_dlc0;
 			entry->text = name;
 			switch (index) {
 			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0); entry.parent.activate();}; break;
@@ -9187,17 +9197,17 @@ bind_failed:
 		show_race_info->setWidgetLeft("female");
 		if (details) {
 		    switch (index) {
-		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false);}); break;
-		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false);}); break;
-		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false);}); break;
-		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false);}); break;
+		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false, race_selection[0]);}); break;
+		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false, race_selection[1]);}); break;
+		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false, race_selection[2]);}); break;
+		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false, race_selection[3]);}); break;
 	        }
 	    } else {
 		    switch (index) {
-		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true);}); break;
-		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true);}); break;
-		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true);}); break;
-		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true);}); break;
+		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true, race_selection[0]);}); break;
+		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true, race_selection[1]);}); break;
+		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true, race_selection[2]);}); break;
+		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true, race_selection[3]);}); break;
 	        }
 	    }
 	    show_race_info->addWidgetAction("MenuPageLeft", "male");
@@ -9224,9 +9234,11 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardClassMenu(int index) {
+	static void characterCardClassMenu(int index, bool details, int selection) {
 		auto reduced_class_list = reducedClassList(index);
-		auto card = initCharacterCard(index, 446);
+		auto card = initCharacterCard(index, details? 664 : 446);
+
+		static int class_selection[MAXPLAYERS];
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -9246,7 +9258,9 @@ bind_failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_04.png",
+			details ?
+			    "*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Details.png":
+			    "*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_04.png",
 			"backdrop"
 		);
 
@@ -9263,46 +9277,536 @@ bind_failed:
 		class_name_header->setHJustify(Field::justify_t::CENTER);
 		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
-		auto textbox = card->addImage(
-			SDL_Rect{42, 68, 192, 46},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Box_ClassName_04.png",
-			"textbox"
-		);
-
-		static auto class_name_fn = [](Field& field, int index){
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
-			auto find = classes.find(classes_in_order[i]);
-			if (find != classes.end()) {
-				field.setText(find->second.name);
-			}
-		};
-
-		auto class_name = card->addField("class_name", 64);
-		class_name->setSize(SDL_Rect{42, 68, 192, 46});
-		class_name->setHJustify(Field::justify_t::CENTER);
-		class_name->setVJustify(Field::justify_t::CENTER);
-		class_name->setFont(smallfont_outline);
-		switch (index) {
-		case 0: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 0);}); break;
-		case 1: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 1);}); break;
-		case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
-		case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
+        if (!details) {
+		    auto textbox = card->addImage(
+			    SDL_Rect{42, 68, 192, 46},
+			    0xffffffff,
+			    "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Box_ClassName_04.png",
+			    "textbox"
+		    );
 		}
-		(*class_name->getTickCallback())(*class_name);
+
+        if (details) {
+            static const char* class_descs[] = {
+                "Barbarian\n"
+                "A skilled combatant. What\n"
+                "they lack in armor they make\n"
+                "up for in strength and\n"
+                "fighting prowess.\n"
+                "Barbarians can quickly\n"
+                "dispatch lesser foes before\n"
+                "taking any hits by using the\n"
+                "right weapon for the job. A\n"
+                "surprise assault is the key\n"
+                "to a swift victory. Staying\n"
+                "light-footed will allow a\n"
+                "Barbarian to avoid damage.",
+
+
+                "Warrior\n"
+                "The trained soldier. They\n"
+                "are heavily armored and\n"
+                "make capable leaders.\n"
+                "Warriors are well equipped\n"
+                "for most fights, assuming\n"
+                "they know when to use each\n"
+                "of their weapons. But hubris\n"
+                "is the downfall of many\n"
+                "Warriors, whether they\n"
+                "waddle too slowly near\n"
+                "traps, or allowing magic to\n"
+                "strike through their armor.",
+
+
+                "Healer\n"
+                "A talented physician. Though\n"
+                "they are poor fighters, they\n"
+                "come stocked with medical\n"
+                "supplies and other healing\n"
+                "abilities.\n"
+                "Compared to other magic\n"
+                "users, the Healer is a more\n"
+                "durable and well-rounded\n"
+                "hero as they grow in\n"
+                "experience. With care, they\n"
+                "may become a very tough\n"
+                "spellcaster.",
+
+
+                "Rogue\n"
+                "The professional hooligan.\n"
+                "Dextrous and skilled thieves,\n"
+                "though lacking in power and\n"
+                "equipment.\n"
+                "Even skilled Rogues succumb\n"
+                "trying to live by the blade.\n"
+                "But their deft hand can pick\n"
+                "ammo from traps, and using\n"
+                "stealth, a patient Rogue\n"
+                "survives by picking off tough\n"
+                "foes from afar, practicing\n"
+                "ambushes against soft foes.",
+
+
+                "Wanderer\n"
+                "The hardened traveler. Low\n"
+                "in armor and combat ability,\n"
+                "but well-equipped for the\n"
+                "dungeon.\n"
+                "A Wanderer's ample food\n"
+                "supply provides a patient\n"
+                "start to their adventure,\n"
+                "allowing them to play it\n"
+                "safe. But their hardy\n"
+                "nature transforms them\n"
+                "into very durable fighters\n"
+                "as their quest labors on.",
+
+
+                "Cleric\n"
+                "Students of the church.\n"
+                "Fairly well equipped and\n"
+                "able in many ways, they are\n"
+                "well-rounded adventurers.\n"
+                "While Clerics start with no\n"
+                "spells, their training has\n"
+                "prepared them to learn\n"
+                "quickly. A wise Cleric will\n"
+                "make use of magic as it\n"
+                "becomes available without\n"
+                "forsaking their martial\n"
+                "training.",
+
+
+                "Merchant\n"
+                "A seasoned trader. They\n"
+                "are skilled in the market\n"
+                "and adept at identifying\n"
+                "foreign artifacts.\n"
+                "While decently equipped for\n"
+                "a fight, Merchant explorers\n"
+                "will survive longer if they\n"
+                "develop skills which keep foes\n"
+                "at a distance, especially\n"
+                "adopting followers and\n"
+                "crafting skills to which they\n"
+                "are naturally inclined.",
+
+
+                "Wizard\n"
+                "The wise magician. Though\n"
+                "frail, they are extremely\n"
+                "well-versed in magic.\n"
+                "Many young adventurers\n"
+                "find early success with\n"
+                "powerful spells. However,\n"
+                "most mighty magic users\n"
+                "cannot cast indefinitely. To\n"
+                "succeed as a Wizard, one\n"
+                "must learn when it is enough\n"
+                "to finish foes off with a stiff\n"
+                "whack from a polearm.",
+
+
+                "Arcanist\n"
+                "A cunning spellcaster. Less\n"
+                "magically adept than the\n"
+                "Wizard, but hardier and\n"
+                "better equipped.\n"
+                "Due to having mundane and\n"
+                "magical ranged attacks at\n"
+                "their disposal, successful\n"
+                "Arcanists rely on mobility to\n"
+                "defeat threats from a\n"
+                "distance. Adding special\n"
+                "ammo or spells will allow the\n"
+                "Arcanist to improve in power.",
+
+
+                "Joker\n"
+                "The wild card. Jokers come\n"
+                "with very little equipment,\n"
+                "but they have a few tricks\n"
+                "up their sleeves,\n"
+                "nonetheless.\n"
+                "Jokers tend to gravitate\n"
+                "toward magical trickery\n"
+                "and commanding followers,\n"
+                "but their chaotic nature\n"
+                "results in a lack of focus.\n"
+                "Best to improvise and stay\n"
+                "flexible.",
+
+
+                "Sexton\n"
+                "A temple officer who serves\n"
+                "unseen, using stealth and\n"
+                "magic to slip their way\n"
+                "through the dungeon with\n"
+                "the aid of a few rare tools.\n"
+                "Sextons are fastidious\n"
+                "planners, and their diverse\n"
+                "talents bring success when\n"
+                "they make time to approach\n"
+                "each problem thoughtfully.\n"
+                "Sextons who panic fail to use\n"
+                "the tools at their disposal.",
+
+
+                "Ninja\n"
+                "A highly specialized assassin.\n"
+                "They ambush foes with\n"
+                "swords or ranged weapons,\n"
+                "using a few other tricks to\n"
+                "get out of bad situations.\n"
+                "Ninjas do well to find backup\n"
+                "blades. Their fragile sword\n"
+                "is sharp, but a break at the\n"
+                "wrong time can be fatal.\n"
+                "To improve their chances, a\n"
+                "Ninja must remain in control\n"
+                "of how a fight begins.",
+
+
+                "Monk\n"
+                "Disciplined and hardy. They\n"
+                "have little in the way of\n"
+                "offensive training and\n"
+                "material goods, but can rely\n"
+                "on their excellent fortitude\n"
+                "and adaptability.\n"
+                "The Monk is exceptional at\n"
+                "blocking attacks, and is very\n"
+                "slow to hunger. Approaching\n"
+                "challenges patiently plays\n"
+                "to the Monk's strengths. Keep\n"
+                "a torch or shield at hand.",
+
+
+                "Conjurer\n"
+                "A frail but adept magic\n"
+                "user, able to conjure allies\n"
+                "with a reliable spell.\n"
+                "Unavailable to any other\n"
+                "class, the Conjure Skeleton\n"
+                "spell provides a persistent\n"
+                "companion, even if it is killed.\n"
+                "The Conjured allies grow in\n"
+                "power, so long as they are\n"
+                "permitted to kill foes and\n"
+                "grow in experience. Nurture\n"
+                "these allies to succeed.",
+
+
+                "Accursed\n"
+                "The Accursed suffer from\n"
+                "bestial hunger, but gain\n"
+                "supernatural magic power\n"
+                "and speed. An arcane\n"
+                "library found deep within\n"
+                "the dungeon may have a\n"
+                "cure.\n"
+                "While afflicted, the Accursed\n"
+                "must move quickly and reap\n"
+                "blood to evade starvation.\n"
+                "Very powerful, but those\n"
+                "lacking expertise will fail.",
+
+
+                "Mesmer\n"
+                "The Mesmer uses the Charm\n"
+                "spell and leadership ability\n"
+                "to enlist powerful allies.\n"
+                "Mesmers may only Charm one\n"
+                "at a time, so they should\n"
+                "be strategic with recruiting.\n"
+                "Charmed allies get stronger\n"
+                "with experience, so nurturing\n"
+                "them can be wise. The Charm\n"
+                "spell is difficult to learn;\n"
+                "Successful Mesmers must\n"
+                "practice other kinds of magic.",
+
+
+                "Brewer\n"
+                "A talented alchemist who is\n"
+                "also comfortable with the\n"
+                "relationships and bar-room\n"
+                "brawls that a good brew will\n"
+                "bring.\n"
+                "Successful Brewers make it\n"
+                "a priority to collect, brew,\n"
+                "and duplicate potions so\n"
+                "they are never short on\n"
+                "supplies. A backpack full of\n"
+                "bottles allows the Brewer to\n"
+                "adapt with short notice.",
+
+
+                "Mechanist\n"
+                "A skilled craftsman, the\n"
+                "Mechanist uses a toolkit to\n"
+                "make and maintain\n"
+                "mechanical weapons, letting\n"
+                "contraptions do the dirty\n"
+                "work.\n"
+                "Successful Mechanists use\n"
+                "foresight to plan ahead and\n"
+                "are prepared with the right\n"
+                "tool for any problem. Those\n"
+                "who try to rely on strength\n"
+                "and speed may struggle.",
+
+
+                "Punisher\n"
+                "The Punisher picks unfair\n"
+                "fights, toying with foes using\n"
+                "dark magic and a whip\n"
+                "before making the execution,\n"
+                "or releasing one's inner\n"
+                "demons to do the job.\n"
+                "Punishers are not durable\n"
+                "and must maintain control\n"
+                "in combat. Staying mobile is\n"
+                "the key to exploiting their\n"
+                "unique whip's longer attack\n"
+                "range.",
+
+
+                "Shaman\n"
+                "The Shaman is a mystic whose\n"
+                "connection to nature spirits\n"
+                "allows them to shapeshift\n"
+                "into bestial forms. Each\n"
+                "form's talents provide\n"
+                "diverse advantages in the\n"
+                "dungeon.\n"
+                "While transformed, Shamans\n"
+                "make different friends, and\n"
+                "can tolerate different food.\n"
+                "Being a beast will influence\n"
+                "how the Shaman grows.",
+
+
+                "Hunter\n"
+                "Equipped to track and bring\n"
+                "down foes from afar, the\n"
+                "Hunter uses special arrows\n"
+                "and a magic boomerang to\n"
+                "ensure they never have to\n"
+                "fight toe-to-toe.\n"
+                "Hunters are frail and\n"
+                "must avoid being backed into\n"
+                "a corner. Staying hidden\n"
+                "and using ammo wisely is the\n"
+                "key to their survival.",
+            };
+            static constexpr int num_class_descs = sizeof(class_descs) / sizeof(class_descs[0]);
+
+		    static auto class_desc_fn = [](Field& field, int index){
+			    const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+			    field.setText(class_descs[i]);
+			    if (i < CLASS_CONJURER) {
+			        field.addColorToLine(0, color_dlc0);
+			    } else if (i < CLASS_MACHINIST) {
+			        field.addColorToLine(0, color_dlc1);
+			    } else {
+			        field.addColorToLine(0, color_dlc2);
+			    }
+		    };
+
+		    auto class_desc = card->addField("class_desc", 1024);
+		    class_desc->setSize(SDL_Rect{42, 68, 240, 218});
+		    class_desc->setFont(smallfont_no_outline);
+		    switch (index) {
+		    case 0: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 0);}); break;
+		    case 1: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 1);}); break;
+		    case 2: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 2);}); break;
+		    case 3: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 3);}); break;
+		    }
+		    (*class_desc->getTickCallback())(*class_desc);
+
+            // stats definitions
+		    const char* class_stats_text[] = {
+		        "STR", "DEX", "CON", "INT", "PER", "CHR"
+		    };
+		    constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
+		    constexpr SDL_Rect bottom{44, 306, 236, 68};
+		    constexpr int column = bottom.w / num_class_stats;
+
+            // character attribute ratings
+		    constexpr Uint32 good = makeColorRGB(0, 193, 255);
+		    constexpr Uint32 decent = makeColorRGB(158, 208, 223);
+		    constexpr Uint32 average = makeColorRGB(192, 192, 192);
+		    constexpr Uint32 poor = makeColorRGB(255, 159, 56);
+		    constexpr Uint32 bad = makeColorRGB(255, 56, 56);
+		    static constexpr Uint32 class_stat_colors[][num_class_stats] = {
+		        {good, decent, bad, bad, decent, decent},               // barbarian
+		        {good, bad, good, bad, bad, good},                      // warrior
+		        {average, average, decent, good, decent, average},      // healer
+		        {bad, good, bad, bad, good, decent},                    // rogue
+		        {decent, average, decent, average, decent, bad},        // wanderer
+		        {average, bad, decent, decent, average, average},       // cleric
+		        {average, bad, decent, average, decent, good},          // merchant
+		        {bad, average, bad, good, good, decent},                // wizard
+		        {bad, decent, bad, decent, decent, bad},                // arcanist
+		        {average, average, average, average, average, average}, // joker
+		        {good, good, average, good, average, average},          // sexton
+		        {good, good, decent, average, average, bad},            // ninja
+		        {decent, bad, good, average, bad, bad},                 // monk
+		        {bad, bad, decent, good, decent, decent},               // conjurer
+		        {average, average, bad, good, good, average},           // accursed
+		        {average, average, bad, good, decent, good},            // mesmer
+		        {average, average, bad, decent, bad, decent},           // brewer
+		        {bad, decent, bad, average, good, average},             // mechanist
+		        {decent, average, bad, average, decent, decent},        // punisher
+		        {average, average, average, average, average, average}, // shaman
+		        {bad, good, bad, average, good, average},               // hunter
+		    };
+
+		    // difficulty star ratings
+		    static constexpr int difficulty[][2] = {
+		        {3, 1}, // barbarian
+		        {4, 2}, // warrior
+		        {4, 2}, // healer
+		        {2, 2}, // rogue
+		        {4, 1}, // wanderer
+		        {3, 2}, // cleric
+		        {3, 2}, // merchant
+		        {3, 2}, // wizard
+		        {2, 2}, // arcanist
+		        {1, 3}, // joker
+		        {3, 4}, // sexton
+		        {2, 2}, // ninja
+		        {5, 1}, // monk
+		        {3, 3}, // conjurer
+		        {1, 3}, // accursed
+		        {3, 3}, // mesmer
+		        {2, 5}, // brewer
+		        {2, 5}, // mechanist
+		        {2, 4}, // punisher
+		        {2, 4}, // shaman
+		        {2, 2}, // hunter
+		    };
+
+		    for (int c = 0; c < num_class_stats; ++c) {
+		        static auto class_stat_fn = [](Field& field, int index){
+			        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+			        const int s = (int)strtol(field.getName(), nullptr, 10);
+			        field.setColor(class_stat_colors[i][s]);
+		        };
+		        static char buf[16];
+		        snprintf(buf, sizeof(buf), "%d", c);
+		        auto class_stat = card->addField(buf, 16);
+		        class_stat->setSize(SDL_Rect{
+		            bottom.x + column * c, bottom.y, column, bottom.h});
+		        class_stat->setHJustify(Field::justify_t::CENTER);
+		        class_stat->setVJustify(Field::justify_t::TOP);
+		        class_stat->setFont(smallfont_outline);
+		        class_stat->setText(class_stats_text[c]);
+		        switch (index) {
+		        case 0: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 0);}); break;
+		        case 1: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 1);}); break;
+		        case 2: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 2);}); break;
+		        case 3: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 3);}); break;
+		        }
+		        (*class_stat->getTickCallback())(*class_stat);
+		    }
+
+		    // difficulty header
+		    constexpr SDL_Rect difficulty_size{76, 306, 172, 64};
+		    auto difficulty_header = card->addField("difficulty_header", 128);
+		    difficulty_header->setFont(smallfont_outline);
+		    difficulty_header->setColor(makeColorRGB(209, 166, 161));
+		    difficulty_header->setText("Survival\nComplexity");
+		    difficulty_header->setHJustify(Field::justify_t::LEFT);
+		    difficulty_header->setVJustify(Field::justify_t::BOTTOM);
+		    difficulty_header->setSize(difficulty_size);
+
+		    // difficulty stars
+		    static constexpr int star_buf_size = 32;
+	        static auto stars_fn = [](Field& field, int index){
+		        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+		        const char* lines[2];
+		        for (int c = 0; c < 2; ++c) {
+		            switch (difficulty[i][c]) {
+		            default:
+		            case 1: lines[c] = "*"; field.addColorToLine(c, c == 0 ? bad : good); break;
+		            case 2: lines[c] = "**"; field.addColorToLine(c, c == 0 ? poor : decent); break;
+		            case 3: lines[c] = "***"; field.addColorToLine(c, c == 0 ? average : average); break;
+		            case 4: lines[c] = "****"; field.addColorToLine(c, c == 0 ? decent : decent); break;
+		            case 5: lines[c] = "*****"; field.addColorToLine(c, c == 0 ? good : bad); break;
+		            }
+		        }
+		        char buf[star_buf_size];
+		        snprintf(buf, sizeof(buf), "%s\n%s", lines[0], lines[1]);
+		        field.setText(buf);
+	        };
+		    auto difficulty_stars = card->addField("difficulty_stars", star_buf_size);
+		    difficulty_stars->setFont(smallfont_outline);
+		    difficulty_stars->setHJustify(Field::justify_t::RIGHT);
+		    difficulty_stars->setVJustify(Field::justify_t::BOTTOM);
+		    difficulty_stars->setSize(difficulty_size);
+	        switch (index) {
+	        case 0: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 0);}); break;
+	        case 1: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 1);}); break;
+	        case 2: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 2);}); break;
+	        case 3: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 3);}); break;
+	        }
+	        (*difficulty_stars->getTickCallback())(*difficulty_stars);
+        } else {
+		    static auto class_name_fn = [](Field& field, int index){
+			    const int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			    auto find = classes.find(classes_in_order[i]);
+			    if (find != classes.end()) {
+				    field.setText(find->second.name);
+			    }
+			    if (i - 1 < CLASS_CONJURER) {
+			        field.setColor(color_dlc0);
+			    } else if (i - 1 < CLASS_MACHINIST) {
+			        field.setColor(color_dlc1);
+			    } else {
+			        field.setColor(color_dlc2);
+			    }
+		    };
+
+		    auto class_name = card->addField("class_name", 64);
+		    class_name->setSize(SDL_Rect{42, 68, 192, 46});
+		    class_name->setHJustify(Field::justify_t::CENTER);
+		    class_name->setVJustify(Field::justify_t::CENTER);
+		    class_name->setFont(smallfont_outline);
+		    switch (index) {
+		    case 0: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 0);}); break;
+		    case 1: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 1);}); break;
+		    case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
+		    case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
+		    }
+		    (*class_name->getTickCallback())(*class_name);
+		}
+
+		const int height = std::max(254, 6 + 54 * (int)(reduced_class_list.size() / 4 + ((reduced_class_list.size() % 4) ? 1 : 0)));
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
-		subframe->setSize(SDL_Rect{34, 124, 226, 254});
-		subframe->setActualSize(SDL_Rect{0, 0, 226, std::max(258, 6 + 54 * (int)(classes.size() / 4 + ((classes.size() % 4) ? 1 : 0)))});
+		if (details) {
+		    subframe->setSize(SDL_Rect{34, 382, 226, 214});
+		} else {
+		    subframe->setSize(SDL_Rect{34, 124, 226, 254});
+		}
+		subframe->setActualSize(SDL_Rect{0, 0, 226, height});
 		subframe->setBorder(0);
 		subframe->setColor(0);
 
 		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
-			slider->setRailSize(SDL_Rect{260, 118, 30, 266});
+			if (details) {
+			    slider->setRailSize(SDL_Rect{260, 382, 30, 214});
+			    slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_01.png");
+			} else {
+			    slider->setRailSize(SDL_Rect{260, 118, 30, 266});
+			    slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
+			}
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
-			slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
 			slider->setHandleImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_SliderB_00.png");
 			slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
 			slider->setBorder(24);
@@ -9330,16 +9834,37 @@ bind_failed:
 		auto class_info = card->addButton("class_info");
 		class_info->setColor(makeColor(255, 255, 255, 255));
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
-		class_info->setSize(SDL_Rect{238, 68, 46, 46});
+		if (details) {
+		    class_info->setSize(SDL_Rect{266, 38, 46, 46});
+		} else {
+		    class_info->setSize(SDL_Rect{238, 68, 46, 46});
+		}
 		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
-		class_info->addWidgetAction("MenuAlt1", "class_info");
+		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
+		class_info->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+		if (details) {
+		    switch (index) {
+		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, false, class_selection[0]);}); break;
+		    case 1: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(1, false, class_selection[1]);}); break;
+		    case 2: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(2, false, class_selection[2]);}); break;
+		    case 3: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(3, false, class_selection[3]);}); break;
+		    }
+		} else {
+		    switch (index) {
+		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, true, class_selection[0]);}); break;
+		    case 1: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(1, true, class_selection[1]);}); break;
+		    case 2: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(2, true, class_selection[2]);}); break;
+		    case 3: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(3, true, class_selection[3]);}); break;
+		    }
+		}
 
 		const int current_class = std::min(std::max(0, client_classes[index]), num_classes - 1);
 		auto current_class_name = classes_in_order[current_class + 1];
 
+        bool selected_button = false;
 		const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
 		for (int c = reduced_class_list.size() - 1; c >= 0; --c) {
 			auto name = reduced_class_list[c];
@@ -9354,10 +9879,16 @@ bind_failed:
 			}
 			button->setIcon((prefix + full_class.image).c_str());
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
-			if (strcmp(name, current_class_name)) {
-			    button->setColor(makeColor(127, 127, 127, 255));
-			} else {
+			if (!strcmp(name, current_class_name)) {
 			    button->setColor(makeColor(255, 255, 255, 255));
+			} else {
+			    button->setColor(makeColor(127, 127, 127, 255));
+			}
+			if ((!selection && !strcmp(name, current_class_name)) ||
+			    (selection && c == selection)) {
+			    button->select();
+			    button->scrollParent();
+			    selected_button = true;
 			}
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -9378,7 +9909,7 @@ bind_failed:
 				button->setWidgetDown(reduced_class_list[reduced_class_list.size() - 1]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
-			button->addWidgetAction("MenuAlt1", "class_info");
+			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
 			static auto button_fn = [](Button& button, int index){
@@ -9433,10 +9964,25 @@ bind_failed:
 			case 2: button->setCallback([](Button& button){button_fn(button, 2);}); break;
 			case 3: button->setCallback([](Button& button){button_fn(button, 3);}); break;
 			}
+
+			button->setTickCallback([](Widget& widget){
+			    auto button = static_cast<Button*>(&widget);
+			    if (button->isSelected()) {
+				    for (int c = 0; c < num_classes; ++c) {
+					    if (strcmp(button->getName(), classes_in_order[c]) == 0) {
+			                class_selection[widget.getOwner()] = c;
+						    break;
+					    }
+				    }
+			    }
+			    });
 		}
 
-		auto first_button = subframe->findButton(reduced_class_list[0]); assert(first_button);
-		first_button->select();
+        if (!selected_button) {
+		    auto first_button = subframe->findButton(reduced_class_list[0]);
+		    assert(first_button);
+		    first_button->select();
+		}
 
 		/*auto confirm = card->addButton("confirm");
 		confirm->setColor(makeColor(255, 255, 255, 255));
@@ -9447,7 +9993,7 @@ bind_failed:
 		confirm->setFont(bigfont_outline);
 		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
-		confirm->addWidgetAction("MenuAlt1", "class_info");
+		confirm->addWidgetAction("MenuAlt2", "class_info");
 		confirm->setWidgetBack("back_button");
 		switch (index) {
 		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
@@ -9692,10 +10238,10 @@ bind_failed:
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
 		switch (index) {
-		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false);}); break;
-		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false);}); break;
-		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false);}); break;
-		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false);}); break;
+		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false, -1);}); break;
+		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false, -1);}); break;
+		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false, -1);}); break;
+		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false, -1);}); break;
 		}
 
 		static auto randomize_class_fn = [](Button& button, int index){
@@ -9855,19 +10401,19 @@ bind_failed:
 		switch (index) {
 		case 0:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0, false, 0);});
 			break;
 		case 1:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1, false, 0);});
 			break;
 		case 2:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2, false, 0);});
 			break;
 		case 3:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3, false, 0);});
 			break;
 		}
 		(*class_button->getTickCallback())(*class_button);

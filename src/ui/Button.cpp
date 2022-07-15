@@ -178,7 +178,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 				scaledPos.y = pos.y;
 				scaledPos.w = pos.w;
 				scaledPos.h = pos.h;
-				iconImg->draw(&section, scaledPos, viewport);
+				iconImg->drawColor(&section, scaledPos, viewport, focused ? highlightColor : color);
 			}
 		} else if (!text.empty()) {
 			Font* _font = Font::get(font.c_str());
