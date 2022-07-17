@@ -897,7 +897,7 @@ void Player::HUD_t::updateUINavigation()
 		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
 
 	bShowUINavigation = false;
-	if ( player.gui_mode != GUI_MODE_NONE && player.isLocalPlayer() && !player.shootmode )
+	if ( player.gui_mode != GUI_MODE_NONE && player.gui_mode != GUI_MODE_FOLLOWERMENU && player.isLocalPlayer() && !player.shootmode )
 	{
 		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
@@ -4377,7 +4377,7 @@ void Player::HUD_t::updateActionPrompts()
 				continue;
 			}
 
-			if ( player.shootmode )
+			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU )
 			{
 				promptText->setDisabled(true);
 			}
@@ -4466,7 +4466,7 @@ void Player::HUD_t::updateActionPrompts()
 				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str(), pressed);
 			}
 			glyph->disabled = prompt->isDisabled();
-			if ( !player.shootmode )
+			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU )
 			{
 				glyph->disabled = true;
 			}
@@ -7238,13 +7238,16 @@ void Player::GUIDropdown_t::process()
 	if ( currentName == "chest_interact" )
 	{
 		list_t* chest_inventory = nullptr;
-		if ( multiplayer == CLIENT )
+		if ( openedChest[player.playernum] )
 		{
-			chest_inventory = &chestInv[player.playernum];
-		}
-		else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
-		{
-			chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+			if ( multiplayer == CLIENT )
+			{
+				chest_inventory = &chestInv[player.playernum];
+			}
+			else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+			{
+				chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+			}
 		}
 
 		if ( chest_inventory )
@@ -12243,7 +12246,7 @@ void Player::Hotbar_t::processHotbar()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
+	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() || (player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight()) )
 	{
 		// hide
 		hotbarFrame->setDisabled(true);
@@ -18261,6 +18264,15 @@ void Player::HUD_t::updateXPBar()
 	xpProgressClipFrame->setSize(clipFramePos);
 	auto xpProgressClipFrameImg = xpProgressClipFrame->findImage("xp img progress clipped");
 	xpProgressClipFrameImg->pos.x = -(xpProgressClipFrameImg->pos.w - pos.w) / 2;
+
+	if ( player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight() )
+	{
+		xpFrame->setDisabled(true);
+	}
+	else
+	{
+		xpFrame->setDisabled(false);
+	}
 }
 
 SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
@@ -23836,6 +23848,10 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 		inputs.getUIInteraction(player.playernum)->toggleclick = false;
 	}
 	inputs.getUIInteraction(player.playernum)->selectedItemFromChest = 0;
+	if ( player.GUI.dropdownMenu.currentName == "chest_interact" )
+	{
+		player.GUI.dropdownMenu.close();
+	}
 	if ( players[player.playernum]->GUI.activeModule == Player::GUI_t::MODULE_CHEST
 		&& !players[player.playernum]->shootmode )
 	{
