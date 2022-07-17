@@ -4408,7 +4408,11 @@ void actPlayer(Entity* my)
 				bool skipUse = false;
 				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
-					if ( !players[PLAYER_NUM]->shootmode && inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+					if ( !players[PLAYER_NUM]->shootmode && input.input("Use").isBindingUsingGamepad() )
+					{
+						skipUse = true;
+					}
+					else if ( !players[PLAYER_NUM]->shootmode && inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
 					{
 						tempDisableWorldUI = true;
 					}
@@ -4419,7 +4423,7 @@ void actPlayer(Entity* my)
 						skipUse = true;
 					}
 				}
-				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && inputs.hasController(PLAYER_NUM) 
+				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && input.input("Use").isBindingUsingGamepad()
 					&& !players[PLAYER_NUM]->shootmode )
 				{
 					skipUse = true;
