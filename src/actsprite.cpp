@@ -426,7 +426,7 @@ void actSleepZ(Entity* my)
 
 	// go up
 	my->z -= .2;
-	if ( my->z < -128 )
+	if ( my->z < -16 )
 	{
 		list_RemoveNode(my->mynode);
 		return;
