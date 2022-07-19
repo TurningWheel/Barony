@@ -112,14 +112,14 @@ public:
 	{
 		INVALID = -2,
 		CENTERED = -1,
-		UP,
-		UPLEFT,
-		LEFT,
-		DOWNLEFT,
 		DOWN,
-		DOWNRIGHT,
+		DOWNLEFT,
+		LEFT,
+		UPLEFT,
+		UP,
+		UPRIGHT,
 		RIGHT,
-		UPRIGHT
+		DOWNRIGHT
 	};
 
 	enum RadialSelection : int

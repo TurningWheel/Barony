@@ -316,12 +316,17 @@ void GameController::handleAnalog(int player)
 
 		if ( radialMenuOpen )
 		{
-			real_t floatx = getRightXPercent();
-			real_t floaty = getRightYPercent();
+			const real_t floatx = getRawRightXMove();
+			const real_t floaty = getRawRightYMove();
+
+			const real_t maxInputVector = 32767;
+			const real_t magnitude = sqrt(pow(floatx, 2) + pow(floaty, 2));
+			const real_t normalised = magnitude / (maxInputVector);
+			real_t deadzone = 0.8;
+
 			const int numoptions = 8;
-			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
 			DpadDirection dir = DpadDirection::CENTERED;
-			if ( magnitude > 1 )
+			if ( normalised >= deadzone )
 			{
 				real_t stickAngle = atan2(floaty, floatx);
 				while ( stickAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
@@ -354,6 +359,7 @@ void GameController::handleAnalog(int player)
 					virtualDpad.consumed = false;
 					//messagePlayer(0, "%d", virtualDpad.padVirtualDpad);
 				}
+				inputs.getVirtualMouse(player)->lastMovementFromController = true;
 			}
 			rightx = 0;
 			righty = 0;
@@ -3474,13 +3480,14 @@ void Player::WorldUI_t::handleTooltips()
 			// follower menu can be "open" but selectMoveTo == true means the GUI is closed and selecting move or interact.
 			if ( FollowerMenu[player].selectMoveTo == false )
 			{
-				continue;
+				radialMenuOpen = true;
 			}
+			radialMenuOpen = false;
 			followerSelectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( !players[player]->shootmode )
+		if ( !players[player]->shootmode || radialMenuOpen )
 		{
 			bDoingActionHideTooltips = true;
 		}
