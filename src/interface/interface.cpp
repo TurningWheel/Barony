@@ -1520,22 +1520,25 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 
 void FollowerRadialMenu::initfollowerMenuGUICursor(bool openInventory)
 {
+	bool oldshootmode = players[gui_player]->shootmode;
 	if ( openInventory )
 	{
 		//players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[gui_player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 		players[gui_player]->openStatusScreen(GUI_MODE_FOLLOWERMENU, INVENTORY_MODE_ITEM);
 	}
 
-	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
-	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
-	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	if ( !oldshootmode )
+	{
+		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+		inputs.warpMouse(gui_player, 
+			players[gui_player]->camera_x1() + (players[gui_player]->camera_width() / 2),
+			players[gui_player]->camera_y1() + (players[gui_player]->camera_height() / 2), flags);
+	}
 
 	inputs.setMouse(gui_player, Inputs::OX, inputs.getMouse(gui_player, Inputs::X));
 	inputs.setMouse(gui_player, Inputs::OY, inputs.getMouse(gui_player, Inputs::Y));
-
-	//omousex = mousex;
-	//omousey = mousey;
+	
 	if ( menuX == -1 )
 	{
 		menuX = inputs.getMouse(gui_player, Inputs::X);
@@ -1590,6 +1593,9 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 			f->removeSelf();
 		}
 	}
+	animTitle = 0.0;
+	animWheel = 0.0;
+	openedThisTick = 0;
 }
 
 bool FollowerRadialMenu::followerMenuIsOpen()
@@ -1608,6 +1614,8 @@ int FollowerRadialMenu::followerWheelButtonThickness = 70;
 int FollowerRadialMenu::followerWheelRadius = 140;
 int FollowerRadialMenu::followerWheelFrameOffsetX = 0;
 int FollowerRadialMenu::followerWheelFrameOffsetY = 0;
+int FollowerRadialMenu::followerWheelInnerCircleRadiusOffset = 0;
+int FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = 0;
 void FollowerRadialMenu::loadFollowerJSON()
 {
 	if ( !PHYSFS_getRealDir("/data/follower_wheel.json") )
@@ -1655,6 +1663,14 @@ void FollowerRadialMenu::loadFollowerJSON()
 				{
 					FollowerRadialMenu::followerWheelButtonThickness = d["panel_button_thickness"].GetInt();
 				}
+				if ( d.HasMember("panel_inner_circle_radius_offset") )
+				{
+					FollowerRadialMenu::followerWheelInnerCircleRadiusOffset = d["panel_inner_circle_radius_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_inner_circle_radius_offset_alternate") )
+				{
+					FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = d["panel_inner_circle_radius_offset_alternate"].GetInt();
+				}
 				if ( d.HasMember("panels") )
 				{
 					FollowerRadialMenu::panelEntries.clear();
@@ -1682,6 +1698,10 @@ void FollowerRadialMenu::loadFollowerJSON()
 						if ( (*itr).HasMember("path_hover") )
 						{
 							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked_hover") )
+						{
+							entry.path_locked_hover = (*itr)["path_locked_hover"].GetString();
 						}
 						if ( (*itr).HasMember("icon_offset_x") )
 						{
@@ -1720,6 +1740,10 @@ void FollowerRadialMenu::loadFollowerJSON()
 						if ( (*itr).HasMember("path_hover") )
 						{
 							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked_hover") )
+						{
+							entry.path_locked_hover = (*itr)["path_locked_hover"].GetString();
 						}
 						if ( (*itr).HasMember("icon_offset_x") )
 						{
@@ -1838,6 +1862,8 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bgFrame->setSize(SDL_Rect{0, 0, followerFrame->getSize().w, followerFrame->getSize().h});
 	bgFrame->setHollow(false);
 	bgFrame->setDisabled(false);
+	bgFrame->setInheritParentFrameOpacity(false);
+	bgFrame->setOpacity(0.0);
 
 	char* font = "fonts/pixel_maz_multiline.ttf#16#2";
 
@@ -1891,9 +1917,10 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bannerFrame->setSize(SDL_Rect{ 0, 0, 0, 40 });
 	bannerFrame->setHollow(false);
 	bannerFrame->setDisabled(false);
+	bannerFrame->setInheritParentFrameOpacity(false);
 	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_l.png", "banner left");
 	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_r.png", "banner right");
-	bannerFrame->addImage(SDL_Rect{ 0, 40 - 28, 0, 28 }, 0xFFFFFFFF, "*images/ui/FollowerWheel/banner-cmd_c.png", "banner center");
+	bannerFrame->addImage(SDL_Rect{ 0, 12, 0, 28 }, 0xFFFFFFFF, "*images/ui/FollowerWheel/banner-cmd_c.png", "banner center");
 	auto bannerText = bannerFrame->addField("banner txt", 128);
 	bannerText->setFont(font);
 	bannerText->setText("");
@@ -1902,6 +1929,36 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bannerText->setSize(SDL_Rect{ 0, 0, 0, 24 });
 	bannerText->setTextColor(hudColors.characterSheetLightNeutral);
 	bannerText->setOutlineColor(makeColor(29, 16, 11, 255));
+	auto bannerGlyph = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner glyph");
+	bannerGlyph->disabled = true;
+
+	auto wheelTitleText = bgFrame->addField("wheel title", 128);
+	wheelTitleText->setFont(font);
+	wheelTitleText->setText("");
+	wheelTitleText->setHJustify(Field::justify_t::LEFT);
+	wheelTitleText->setVJustify(Field::justify_t::TOP);
+	wheelTitleText->setSize(SDL_Rect{ 0, 0, 240, 24 });
+	wheelTitleText->setTextColor(makeColor(210, 183, 76, 255));
+	wheelTitleText->setOutlineColor(makeColor(29, 16, 11, 255));
+
+}
+
+void setFollowerBannerTextFormatted(const int player, Field* field, Uint32 color, std::set<int>& highlights, char const * const text, ...)
+{
+	if ( !field ) { return; }
+
+	char buf[256] = "";
+	va_list argptr;
+	va_start(argptr, text);
+	vsnprintf(buf, sizeof(buf), text, argptr);
+	va_end(argptr);
+
+	field->setText(buf);
+	field->clearWordsToHighlight();
+	for ( auto v : highlights )
+	{
+		field->addWordToHighlight(v, color);
+	}
 }
 
 void setFollowerBannerText(const int player, Field* field, char* iconName, char* textKey, Uint32 color)
@@ -1982,19 +2039,31 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Uint32 textHighlightColor = makeColor(255, 0, 0, 255);
 	bool tinkeringFollower = false;
 
-	if ( !followerToCommand && !followerFrame->isDisabled() )
+	if ( !followerToCommand && (!followerFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_FOLLOWERMENU) )
 	{
 		closeFollowerMenuGUI();
+		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		return;
 	}
 
-	if ( ticks % 50 == 0 )
-	{
-		consoleCommand("/loadfollowerwheel");
-	}
+	//if ( ticks % 50 == 0 )
+	//{
+	//	consoleCommand("/loadfollowerwheel");
+	//}
 
 	if ( followerToCommand )
 	{
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animTitle)) / 2.5;
+			animTitle += setpointDiff;
+			animTitle = std::min(1.0, animTitle);
+
+			real_t setpointDiff2 = fpsScale * std::max(.01, (1.0 - animWheel)) / 2.0;
+			animWheel += setpointDiff2;
+			animWheel = std::min(1.0, animWheel);
+		}
+
 		if ( players[gui_player] && players[gui_player]->entity
 			&& followerToCommand->monsterTarget == players[gui_player]->entity->getUID() )
 		{
@@ -2125,7 +2194,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
-					initfollowerMenuGUICursor(false);
+					if ( !players[gui_player]->gui_mode != GUI_MODE_FOLLOWERMENU )
+					{
+						initfollowerMenuGUICursor(true); // set gui_mode to follower menu
+					}
+					else
+					{
+						initfollowerMenuGUICursor(false);
+					}
 				}
 				input.consumeBinaryToggle("Command NPC");
 			}
@@ -2236,6 +2312,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		followerFrame->setDisabled(false);
 
 		auto bgFrame = followerFrame->findFrame("wheel base");
+		bgFrame->setOpacity(100.0 * animWheel);
 		bannerFrame = followerFrame->findFrame("banner frame");
 		bannerImgLeft = bannerFrame->findImage("banner left");
 		bannerImgRight = bannerFrame->findImage("banner right");
@@ -2319,6 +2396,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 		radius = FollowerRadialMenu::followerWheelRadius;
 		thickness = FollowerRadialMenu::followerWheelButtonThickness;
+		real_t menuScale = yres / (real_t)Frame::virtualScreenY;
+		radius *= menuScale;
+		thickness *= menuScale;
+		int centerButtonHighlightOffset = tinkeringFollower 
+			? FollowerRadialMenu::followerWheelInnerCircleRadiusOffset 
+			: FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate;
 
 		int highlight = -1;
 		int i = 0;
@@ -2337,8 +2420,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 
-		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
-
 		if ( inputs.hasController(gui_player) )
 		{
 			auto controller = inputs.getController(gui_player);
@@ -2348,17 +2429,52 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( dir != GameController::DpadDirection::INVALID )
 				{
 					controller->consumeDpadDirToggle();
-					highlight = dir;
+					switch ( dir )
+					{
+						case GameController::DpadDirection::UP:
+							highlight = 0;
+							break;
+						case GameController::DpadDirection::UPLEFT:
+							highlight = 1;
+							break;
+						case GameController::DpadDirection::LEFT:
+							highlight = 2;
+							break;
+						case GameController::DpadDirection::DOWNLEFT:
+							highlight = 3;
+							break;
+						case GameController::DpadDirection::DOWN:
+							highlight = 4;
+							break;
+						case GameController::DpadDirection::DOWNRIGHT:
+							highlight = 5;
+							break;
+						case GameController::DpadDirection::RIGHT:
+							highlight = 6;
+							break;
+						case GameController::DpadDirection::UPRIGHT:
+							highlight = 7;
+							break;
+						default:
+							break;
+					}
 					real_t angleMiddleForOption = PI / 2 + dir * (2 * PI / numoptions);
-					omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
-					omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
+					omousex = centerx + (radius + thickness) * .75 * cos(angleMiddleForOption);
+					omousey = centery + (radius + thickness) * .75 * sin(angleMiddleForOption);
 					inputs.setMouse(gui_player, Inputs::OX, omousex);
 					inputs.setMouse(gui_player, Inputs::OY, omousey);
 					inputs.setMouse(gui_player, Inputs::X, omousex);
 					inputs.setMouse(gui_player, Inputs::Y, omousey);
+
+					if ( highlight != -1 )
+					{
+						inputs.getVirtualMouse(gui_player)->draw_cursor = false;
+					}
 				}
 			}
 		}
+
+		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
 
 		angleStart = PI / 2 - (PI / numoptions);
 		angleMiddle = angleStart + PI / numoptions;
@@ -2389,6 +2505,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		angleMiddle = angleStart + PI / numoptions;
 		angleEnd = angleMiddle + PI / numoptions;
 
+		const real_t mouseDetectionAdjust = PI / 128;
 		for ( i = 0; i < numoptions; ++i )
 		{
 			// see if mouse cursor is within an option.
@@ -2396,12 +2513,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				if ( !mouseInCenterButton )
 				{
-					real_t x1 = menuX + (radius + thickness + 45) * cos(angleEnd);
-					real_t y1 = menuY - (radius + thickness + 45) * sin(angleEnd);
+					real_t x1 = menuX + (radius + thickness + 45) * cos(angleEnd + mouseDetectionAdjust);
+					real_t y1 = menuY - (radius + thickness + 45) * sin(angleEnd + mouseDetectionAdjust);
 					real_t x2 = menuX + 5 * cos(angleMiddle);
 					real_t y2 = menuY - 5 * sin(angleMiddle);
-					real_t x3 = menuX + (radius + thickness + 45) * cos(angleStart);
-					real_t y3 = menuY - (radius + thickness + 45) * sin(angleStart);
+					real_t x3 = menuX + (radius + thickness + 45) * cos(angleStart - mouseDetectionAdjust);
+					real_t y3 = menuY - (radius + thickness + 45) * sin(angleStart - mouseDetectionAdjust);
 					real_t a = ((y2 - y3)*(omousex - x3) + (x3 - x2)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
 					real_t b = ((y3 - y1)*(omousex - x3) + (x1 - x3)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
 					real_t c = 1 - a - b;
@@ -3067,7 +3184,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			if ( lockedOption )
 			{
-				panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_locked;
+				if ( highlight == i && !mouseInCenterButton )
+				{
+					panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_locked_hover;
+				}
+				else
+				{
+					panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_locked;
+				}
 			}
 			else if ( highlight == i && !mouseInCenterButton )
 			{
@@ -3094,7 +3218,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 		// draw center text.
 		if ( mouseInCenterButton )
 		{
-			panelImages[PANEL_DIRECTION_END]->path = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].path_hover;
+			bool mouseInCenterHighlightArea = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness + centerButtonHighlightOffset);
+			if ( mouseInCenterHighlightArea )
+			{
+				panelImages[PANEL_DIRECTION_END]->path = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].path_hover;
+			}
 
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
@@ -3127,45 +3255,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 		}
 
-		bannerFrame->setDisabled(false);
-		if ( auto textGet = bannerTxt->getTextObject() )
+		if ( highlight == -1 )
 		{
-			SDL_Rect txtPos = bannerTxt->getSize();
-			if ( !strcmp(bannerTxt->getText(), "") && txtPos.w == 0 )
-			{
-				txtPos.w = 82;
-			}
-			else if ( strcmp(bannerTxt->getText(), "") )
-			{
-				txtPos.w = textGet->getWidth();
-			}
-
-			bannerImgCenter->pos.w = txtPos.w + 8 + 8;
-			const int totalWidth = bannerImgLeft->pos.w + bannerImgRight->pos.w + bannerImgCenter->pos.w;
-
-			const int midx = followerFrame->getSize().w / 2;
-			const int midy = followerFrame->getSize().h / 2;
-
-			SDL_Rect bannerSize = bannerFrame->getSize();
-			bannerSize.w = totalWidth;
-			bannerSize.x = midx - (totalWidth / 2);
-			bannerSize.y = midy + FollowerRadialMenu::followerWheelRadius + FollowerRadialMenu::followerWheelButtonThickness + 4;
-			bannerFrame->setSize(bannerSize);
-			bannerImgLeft->pos.x = 0;
-			bannerImgCenter->pos.x = bannerImgLeft->pos.x + bannerImgLeft->pos.w;
-			bannerImgRight->pos.x = bannerImgCenter->pos.x + bannerImgCenter->pos.w;
-
-			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
-			if ( txtPos.x % 2 == 1 )
-			{
-				++txtPos.x;
-			}
-			txtPos.y = 17;
-			bannerTxt->setSize(txtPos);
+			setFollowerBannerText(gui_player, bannerTxt, "cancel", "default", hudColors.characterSheetRed);
 		}
+
+		bool disableActionGlyph = false;
 
 		if ( disableOption != 0 )
 		{
+			disableActionGlyph = true;
 			SDL_Rect tooltip;
 			tooltip.x = omousex + 16;
 			tooltip.y = omousey + 16;
@@ -3183,6 +3282,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
+				setFollowerBannerText(gui_player, bannerTxt, "invalid_action", "rest_cooldown", hudColors.characterSheetRed);
 			}
 			else if ( disableOption == -1 ) // disabled due to creature type
 			{
@@ -3192,6 +3292,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
 					uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
+				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable"];
+				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+					textMap.second, textMap.first.c_str(),
+					getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
@@ -3202,36 +3306,49 @@ void FollowerRadialMenu::drawFollowerMenu()
 				drawTooltip(&tooltip);
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
 					uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
+				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
+				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+					textMap.second, textMap.first.c_str(),
+					getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else
 			{
 				drawTooltip(&tooltip);
 				std::string requirement = "";
 				std::string current = "";
+				int requirementVal = 0;
+				int currentVal = 0;
 				if ( highlight >= ALLY_CMD_DEFEND && highlight <= ALLY_CMD_END && highlight != ALLY_CMD_CANCEL )
 				{
 					switch ( std::min(disableOption, SKILL_LEVEL_LEGENDARY) )
 					{
 						case 0:
 							requirement = language[363];
+							requirementVal = 0;
 							break;
 						case SKILL_LEVEL_NOVICE:
 							requirement = language[364];
+							requirementVal = SKILL_LEVEL_NOVICE;
 							break;
 						case SKILL_LEVEL_BASIC:
 							requirement = language[365];
+							requirementVal = SKILL_LEVEL_BASIC;
 							break;
 						case SKILL_LEVEL_SKILLED:
 							requirement = language[366];
+							requirementVal = SKILL_LEVEL_SKILLED;
 							break;
 						case SKILL_LEVEL_EXPERT:
 							requirement = language[367];
+							requirementVal = SKILL_LEVEL_EXPERT;
 							break;
 						case SKILL_LEVEL_MASTER:
 							requirement = language[368];
+							requirementVal = SKILL_LEVEL_MASTER;
 							break;
 						case SKILL_LEVEL_LEGENDARY:
 							requirement = language[369];
+							requirementVal = SKILL_LEVEL_LEGENDARY;
 							break;
 						default:
 							break;
@@ -3267,9 +3384,110 @@ void FollowerRadialMenu::drawFollowerMenu()
 						current = language[363];
 					}
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
+					currentVal = skillLVL;
 				}
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
 					uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
+				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_leader"];
+				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+					textMap.second,	textMap.first.c_str(),
+					currentVal, requirementVal);
+			}
+		}
+
+		bannerFrame->setDisabled(false);
+		if ( auto textGet = bannerTxt->getTextObject() )
+		{
+			SDL_Rect txtPos = bannerTxt->getSize();
+			if ( !strcmp(bannerTxt->getText(), "") && txtPos.w == 0 )
+			{
+				txtPos.w = 82;
+			}
+			else if ( strcmp(bannerTxt->getText(), "") )
+			{
+				txtPos.w = textGet->getWidth();
+			}
+
+			auto bannerGlyph = bannerFrame->findImage("banner glyph");
+			bannerGlyph->disabled = true;
+			bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
+			if ( auto imgGet = Image::get(bannerGlyph->path.c_str()) )
+			{
+				bannerGlyph->pos.w = imgGet->getWidth();
+				bannerGlyph->pos.h = imgGet->getHeight();
+				bannerGlyph->disabled = disableActionGlyph || !strcmp(bannerTxt->getText(), "");
+			}
+
+			bannerImgCenter->pos.w = txtPos.w + 16 + (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2));
+			const int totalWidth = bannerImgLeft->pos.w + bannerImgRight->pos.w + bannerImgCenter->pos.w;
+
+			const int midx = followerFrame->getSize().w / 2;
+			const int midy = followerFrame->getSize().h / 2;
+
+			SDL_Rect bannerSize = bannerFrame->getSize();
+			bannerSize.w = totalWidth;
+			bannerSize.x = midx - (totalWidth / 2);
+			bannerSize.y = midy + FollowerRadialMenu::followerWheelRadius + FollowerRadialMenu::followerWheelButtonThickness + 4;
+			if ( players[gui_player]->bUseCompactGUIHeight() )
+			{
+				bannerSize.y -= 16;
+			}
+			bannerSize.y += 32 * (1.0 - animTitle);
+			bannerFrame->setSize(bannerSize);
+			bannerFrame->setOpacity(100.0 * animTitle);
+			bannerImgLeft->pos.x = 0;
+			bannerImgCenter->pos.x = bannerImgLeft->pos.x + bannerImgLeft->pos.w;
+			bannerImgRight->pos.x = bannerImgCenter->pos.x + bannerImgCenter->pos.w;
+
+			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
+			txtPos.x += bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2);
+			if ( txtPos.x % 2 == 1 )
+			{
+				++txtPos.x;
+			}
+			txtPos.y = 17;
+			bannerTxt->setSize(txtPos);
+
+			bannerGlyph->pos.x = txtPos.x - bannerGlyph->pos.w - 8;
+			if ( bannerGlyph->pos.x % 2 == 1 )
+			{
+				++bannerGlyph->pos.x;
+			}
+			bannerGlyph->pos.y = txtPos.y + txtPos.h / 2 - bannerGlyph->pos.h / 2;
+			if ( bannerGlyph->pos.y % 2 == 1 )
+			{
+				bannerGlyph->pos.y -= 1;
+			}
+			bannerSize.h = std::max(40, bannerGlyph->pos.y + bannerGlyph->pos.h);
+			bannerFrame->setSize(bannerSize);
+
+			auto wheelTitleText = bgFrame->findField("wheel title");
+			if ( followerStats )
+			{
+				char buf[128] = "";
+				if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
+				{
+					snprintf(buf, sizeof(buf), language[4200], followerStats->name);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), language[4200], getMonsterLocalizedName(followerStats->type).c_str());
+				}
+				wheelTitleText->setText(buf);
+			}
+			if ( auto textGet2 = wheelTitleText->getTextObject() )
+			{
+				SDL_Rect titlePos = wheelTitleText->getSize();
+				titlePos.w = textGet2->getWidth();
+				titlePos.x = bannerSize.x + bannerSize.w / 2 - (titlePos.w / 2);
+				if ( titlePos.x % 2 == 1 )
+				{
+					++titlePos.x;
+				}
+				titlePos.y = midy - FollowerRadialMenu::followerWheelRadius - FollowerRadialMenu::followerWheelButtonThickness - 24;
+				titlePos.y -= 32 * (1.0 - animTitle);
+				++titlePos.y; // add 1 to be even pixeled
+				wheelTitleText->setSize(titlePos);
 			}
 		}
 

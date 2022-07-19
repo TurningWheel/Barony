@@ -1261,6 +1261,7 @@ public:
 		std::string path = "";
 		std::string path_locked = "";
 		std::string path_hover = "";
+		std::string path_locked_hover = "";
 		int icon_offsetx = 0;
 		int icon_offsety = 0;
 	};
@@ -1283,6 +1284,12 @@ public:
 	static int followerWheelButtonThickness;
 	static int followerWheelFrameOffsetX;
 	static int followerWheelFrameOffsetY;
+	static int followerWheelInnerCircleRadiusOffset;
+	static int followerWheelInnerCircleRadiusOffsetAlternate;
+
+	real_t animTitle = 0.0;
+	real_t animWheel = 0.0;
+	Uint32 openedThisTick = 0;
 
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();
