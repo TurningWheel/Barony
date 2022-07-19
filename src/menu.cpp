@@ -10641,13 +10641,6 @@ void doEndgame() {
 		}
 	}
 
-	// finish handling invite
-#ifdef STEAMWORKS
-	if ( stillConnectingToLobby )
-	{
-		processLobbyInvite();
-	}
-#endif
 #if defined USE_EOS
 	if ( !directConnect )
 	{

@@ -21,7 +21,7 @@ void steam_OnLobbyDataUpdatedCallback(void* pCallback);
 void steam_OnLobbyCreated(void* pCallback, bool bIOFailure);
 void processLobbyInvite();
 void steam_OnGameJoinRequested(void* pCallback);
-void steam_ConnectToLobby();
+void steam_ConnectToLobby(const char* arg);
 void steam_OnLobbyEntered(void* pCallback, bool bIOFailure);
 void steam_GameServerPingOnServerResponded(void* steamID);
 void steam_OnP2PSessionConnectFail(void* pCallback);
@@ -39,10 +39,12 @@ extern void* steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
 
 extern bool requestingLobbies;
 
+#include <string>
+
 extern bool serverLoadingSaveGame; // determines whether lobbyToConnectTo is loading a savegame or not
 extern void* currentLobby; // CSteamID to the current game lobby
 extern void* lobbyToConnectTo; // CSteamID of the game lobby that user has been invited to
-extern char pchCmdLine[1024]; // for game join requests
+extern std::string cmd_line; // for game join requests
 #ifdef STEAMWORKS
 extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;

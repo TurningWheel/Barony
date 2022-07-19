@@ -31,6 +31,8 @@
 #include "lobbies.hpp"
 #endif
 
+#define STEAMDEBUG
+
 #ifdef STEAMWORKS
 
 Uint32 numSteamLobbies = 0;
@@ -54,7 +56,7 @@ void* lobbyToConnectTo = NULL; // CSteamID of the game lobby that user has been 
 void* steamIDGameServer = NULL; // CSteamID to the current game server
 uint32_t steamServerIP = 0; // ipv4 address for the current game server
 uint16_t steamServerPort = 0; // port number for the current game server
-char pchCmdLine[1024] = { 0 }; // for game join requests
+std::string cmd_line; // for game join requests
 
 // menu stuff
 bool connectingToLobby = false, connectingToLobbyWindow = false;
@@ -1333,7 +1335,6 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 }
 
 #ifdef STEAMWORKS
-#define STEAMDEBUG
 
 /*-------------------------------------------------------------------------------
 
@@ -1497,16 +1498,6 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 			LobbyHandler.steamLobbyToValidate.SetAccountID(0);
 			return;
 		}
-	}
-
-	// finish processing lobby invite?
-	if ( stillConnectingToLobby )
-	{
-		stillConnectingToLobby = false;
-
-		void processLobbyInvite();
-		processLobbyInvite();
-		return;
 	}
 
 	// update current lobby info
@@ -1762,88 +1753,47 @@ void steam_OnGameJoinRequested( void* pCallback )
 	printlog( "OnGameJoinRequested\n" );
 #endif
 
-	// return to a state where we can join the lobby
-	if ( !intro )
-	{
-		buttonEndGameConfirm(NULL);
-	}
-	else if ( multiplayer != SINGLE )
-	{
-		buttonDisconnect(NULL);
-	}
-
-	// close current window
-	if ( subwindow )
-	{
-		if ( score_window )
-		{
-			// reset class loadout
-			stats[0]->sex = static_cast<sex_t>(0);
-			stats[0]->appearance = 0;
-			stats[0]->playerRace = RACE_HUMAN;
-			strcpy(stats[0]->name, "");
-			stats[0]->type = HUMAN;
-			client_classes[0] = 0;
-			stats[0]->clearStats();
-			initClass(0);
-		}
-		score_window = 0;
-		gamemods_window = 0;
-		lobby_window = false;
-		settings_window = false;
-		charcreation_step = 0;
-		subwindow = 0;
-		if ( SDL_IsTextInputActive() )
-		{
-			SDL_StopTextInput();
-		}
-	}
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	if ( lobbyToConnectTo )
-	{
-		cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Utter bodge.
+	if (lobbyToConnectTo) {
+		cpp_Free_CSteamID(lobbyToConnectTo);
 	}
 	lobbyToConnectTo = cpp_GameJoinRequested_m_steamIDLobby(pCallback);
-	processLobbyInvite();
+	MainMenu::receivedInvite(lobbyToConnectTo);
 }
 
 //Helper func. //TODO: Bugger.
 void cpp_SteamMatchmaking_JoinLobbyPCH(const char* pchLobbyID)
 {
-	CSteamID steamIDLobby( (uint64)atoll( pchLobbyID ) );
-	if ( steamIDLobby.IsValid() )
-	{
-		SteamAPICall_t steamAPICall = SteamMatchmaking()->JoinLobby(steamIDLobby);
-		steam_server_client_wrapper->m_SteamCallResultLobbyEntered_Set(steamAPICall);
+	CSteamID steamIDLobby(std::stoull(std::string(pchLobbyID)));
+	if (steamIDLobby.IsValid()) {
+		MainMenu::receivedInvite(&steamIDLobby);
+	} else {
+	    printlog("lobby id for invite invalid");
 	}
 }
 
-// searches (char pchCmdLine[]) for a connect lobby command
-void steam_ConnectToLobby()
+// checks command line arg for a connect lobby command
+void steam_ConnectToLobby(const char* arg)
 {
 #ifdef STEAMDEBUG
 	printlog( "ConnectToLobby\n" );
 #endif
+    printlog(arg);
 
 	// parse out the connect
 	char pchLobbyID[1024] = "";
 
 	// look for +connect_lobby command
-	const char* pchConnectLobbyParam = "+connect_lobby";
-	const char* pchConnectLobby = strstr( pchCmdLine, pchConnectLobbyParam );
-	if ( pchConnectLobby )
-	{
+	const char pchConnectLobbyParam[] = "+connect_lobby";
+	const char* pchConnectLobby = strstr(arg, pchConnectLobbyParam);
+	if (pchConnectLobby) {
 		// address should be right after the +connect_lobby, +1 on the end to skip the space
-		strcpy( pchLobbyID, (char*)(pchConnectLobby + strlen(pchConnectLobbyParam) + 1 ));
+		snprintf(pchLobbyID, sizeof(pchLobbyID), "%s", (char*)(pchConnectLobby + sizeof(pchConnectLobbyParam)));
 	}
 
 	// join lobby
-	if (  pchLobbyID[0] )
-	{
-		//c_SteamMatchmaking_JoinLobbyPCH( pchLobbyID, &steam_OnLobbyEntered );
-		cpp_SteamMatchmaking_JoinLobbyPCH( pchLobbyID);
+	if (pchLobbyID[0]) {
+	    printlog(pchLobbyID);
+		cpp_SteamMatchmaking_JoinLobbyPCH(pchLobbyID);
 	}
 }
 
@@ -1910,7 +1860,6 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 	    case k_EChatRoomEnterResponseRatelimitExceeded: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_TOO_MANY_JOINS; break; // Join failed - to many join attempts in a very short period of time
 	    default: connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR; break;
 		}
-		//openFailedConnectionWindow(CLIENT);
 		return;
 	}
 

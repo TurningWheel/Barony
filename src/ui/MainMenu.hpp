@@ -89,7 +89,7 @@ namespace MainMenu {
     void openGameoverWindow(int player, bool tutorial = false);
     void connectionErrorPrompt(const char* str);
 	void disconnectedFromServer(const char* text);
-	void receivedInvite();
+	void receivedInvite(void*);
 	void handleScanPacket();
 	void setupSplitscreen(); // resizes player game views
 }

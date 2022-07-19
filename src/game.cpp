@@ -5826,6 +5826,8 @@ int main(int argc, char** argv)
 		{
 			for (c = 1; c < argc; c++)
 			{
+			    cmd_line += argv[c];
+			    cmd_line += " ";
 				if ( argv[c] != NULL )
 				{
 					if ( !strcmp(argv[c], "-windowed") )
@@ -6096,14 +6098,8 @@ int main(int argc, char** argv)
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
 					if ( logoalpha >= 255 && !fadeout )
 					{
-						if ( !skipintro && !strcmp(classtoquickstart, "") )
-						{
-							MainMenu::beginFade(MainMenu::FadeDestination::IntroStoryScreen);
-						}
-						else
-						{
-							MainMenu::beginFade(MainMenu::FadeDestination::TitleScreen);
-						}
+						fadeout = true;
+						fadefinished = false;
 					}
 
 					bool skipButtonPressed = false;
