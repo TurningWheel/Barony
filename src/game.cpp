@@ -5826,8 +5826,10 @@ int main(int argc, char** argv)
 		{
 			for (c = 1; c < argc; c++)
 			{
+#ifdef STEAMWORKS
 			    cmd_line += argv[c];
 			    cmd_line += " ";
+#endif
 				if ( argv[c] != NULL )
 				{
 					if ( !strcmp(argv[c], "-windowed") )
