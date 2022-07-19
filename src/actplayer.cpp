@@ -4586,19 +4586,40 @@ void actPlayer(Entity* my)
 				auto& b = input.getBindings();
 				bool showNPCCommandsOnGamepad = false;
 				auto showNPCCommandsFind = b.find("Show NPC Commands");
+				std::string showNPCCommandsInputStr = "";
+				std::string lastNPCCommandInputStr = "";
 				if ( showNPCCommandsFind != b.end() )
 				{
 					showNPCCommandsOnGamepad = (*showNPCCommandsFind).second.isBindingUsingGamepad();
+					showNPCCommandsInputStr = (*showNPCCommandsFind).second.input;
 				}
 				bool lastNPCCommandOnGamepad = false;
 				auto lastNPCCommandFind = b.find("Command NPC");
 				if ( lastNPCCommandFind != b.end() )
 				{
 					lastNPCCommandOnGamepad = (*lastNPCCommandFind).second.isBindingUsingGamepad();
+					lastNPCCommandInputStr = (*lastNPCCommandFind).second.input;
 				}
 				
+				if ( players[PLAYER_NUM]->worldUI.bTooltipInView && players[PLAYER_NUM]->worldUI.tooltipsInRange.size() > 1 )
+				{
+					if ( showNPCCommandsOnGamepad &&
+						(showNPCCommandsInputStr == input.binding("CycleWorldTooltipNext")
+							|| showNPCCommandsInputStr == input.binding("CycleWorldTooltipPrev")) )
+					{
+						input.consumeBinaryToggle("Show NPC Commands");
+					}
+					if ( lastNPCCommandOnGamepad &&
+						(lastNPCCommandInputStr == input.binding("CycleWorldTooltipNext")
+							|| lastNPCCommandInputStr == input.binding("CycleWorldTooltipPrev")) )
+					{
+						input.consumeBinaryToggle("Command NPC");
+					}
+				}
+
 				if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
-						|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad && players[PLAYER_NUM]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+						|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad 
+							&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
