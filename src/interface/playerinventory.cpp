@@ -8544,7 +8544,7 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems() )
 						{
-							if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
+							if ( true /*keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]*/ )
 							{
 								// drop all.
 								int qty = item->count;
@@ -8571,13 +8571,13 @@ void Player::Inventory_t::updateInventory()
 									}
 								}
 							}
-							else 
-							{
-								if ( dropItem(item, player) ) // Quick item drop
-								{
-									item = nullptr;
-								}
-							}
+							//else 
+							//{
+							//	if ( dropItem(item, player) ) // Quick item drop
+							//	{
+							//		item = nullptr;
+							//	}
+							//}
 						}
 					}
 					else
