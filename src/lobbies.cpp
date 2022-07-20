@@ -61,6 +61,15 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 			snprintf(buf, 1023, "Failed to join lobby:\n\nLobby is full.");
 			break;
 #ifdef USE_EOS
+#ifdef STEAMWORKS
+		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
+			snprintf(buf, 1023, "Failed to join lobby:\n\nCrossplay not enabled.");
+			break;
+#else
+		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
+			snprintf(buf, 1023, "Failed to join lobby:\n\nNot connected to Epic Online.");
+			break;
+#endif
 		case static_cast<int>(EOS_EResult::EOS_NotFound):
 			snprintf(buf, 1023, "Failed to join lobby:\n\nLobby no longer exists.");
 			break;
@@ -713,13 +722,6 @@ void LobbyHandler_t::searchLobbyWithFilter(button_t* my)
 {
 #ifdef USE_EOS
 	EOS.LobbySearchResults.showLobbiesInProgress = LobbyHandler.filterShowInProgressLobbies;
-	for ( int c = 0; c < 4 && EOS.lobbySearchByCode[c] != 0; ++c )
-	{
-		if ( EOS.lobbySearchByCode[c] >= 'A' && EOS.lobbySearchByCode[c] <= 'Z' )
-		{
-			EOS.lobbySearchByCode[c] = 'a' + (EOS.lobbySearchByCode[c] - 'A'); // to lowercase.
-		}
-	}
 
 	if ( strcmp(EOS.lobbySearchByCode, "") != 0 )
 	{

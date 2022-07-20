@@ -60,7 +60,7 @@ extern int connectingToLobbyStatus;
 //These are all an utter bodge.
 //They should not exist, but potato.
 //TODO: Remove all of these wrappers and access the steam stuff directly.
-SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList();
+SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList(const char* roomkey);
 SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby);
 SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers);
 SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket();

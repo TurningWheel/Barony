@@ -11278,7 +11278,7 @@ void openSteamLobbyWaitWindow(button_t* my)
 #ifdef STEAMWORKS
 	//c_SteamMatchmaking_RequestLobbyList();
 	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
-	cpp_SteamMatchmaking_RequestLobbyList();
+	//cpp_SteamMatchmaking_RequestLobbyList();
 #endif
 
 	LobbyHandler.selectedLobbyInList = 0;

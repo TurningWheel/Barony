@@ -5754,6 +5754,7 @@ bind_failed:
         const Uint32 seconds = time(NULL) / seconds_in_day;
 
         if (add_to_list) {
+            playSound(238, 64);
             lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
             if (lobby_chat_messages.size() > lobby_chat_max_messages) {
                 lobby_chat_messages.pop_front();
@@ -5771,11 +5772,7 @@ bind_failed:
         auto frame = lobby->findFrame("chat window");
         if (!frame) {
             frame = toggleLobbyChatWindow();
-            assert(frame);
-        }
-
-        if (add_to_list) {
-            playSound(238, 64);
+            return;
         }
 
         const int w = frame->getSize().w;
@@ -5785,7 +5782,7 @@ bind_failed:
         auto subframe_size = subframe->getActualSize();
         int y = subframe_size.h;
 
-        static ConsoleVariable<bool> timestamp_messages("/chat_timestamp", true);
+        static ConsoleVariable<bool> timestamp_messages("/chat_timestamp", false);
 
         char buf[1024];
         const Uint32 hour = seconds / 3600;
@@ -5807,8 +5804,9 @@ bind_failed:
         field->setColor(color);
         field->setText(buf);
 
-        (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
-        field->setTooltip(buf);
+        //char tooltip_buf[32];
+        //(void)snprintf(tooltip_buf, sizeof(tooltip_buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
+        //field->setTooltip(tooltip_buf);
 
         const int new_w = std::max(subframe_size.w, text_w + 8);
 
@@ -5980,9 +5978,12 @@ bind_failed:
         chat_buffer->setColor(makeColor(201, 162, 100, 255));
         chat_buffer->setEditable(true);
         chat_buffer->setCallback([](Field& field){
-            sendChatMessageOverNet(field.getText());
-            field.setText("");
-            field.activate();
+            auto text = field.getText();
+            if (text && *text) {
+                sendChatMessageOverNet(text);
+                field.setText("");
+                field.activate();
+            }
             });
         chat_buffer->setTickCallback([](Widget& widget){
             auto field = static_cast<Field*>(&widget);
@@ -6045,10 +6046,6 @@ bind_failed:
     }
 
 	static void disconnectFromLobby() {
-	    if (multiplayer == SINGLE) {
-	        return;
-	    }
-
 	    if (multiplayer == SERVER) {
 		    // send disconnect message to clients
 		    for (int c = 1; c < MAXPLAYERS; c++) {
@@ -6140,12 +6137,16 @@ bind_failed:
 						net_packet->address.port = net_clients[c - 1].port;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
-					char shortname[32] = { 0 };
-					strncpy(shortname, stats[i]->name, 22);
 
 					char buf[1024];
-					snprintf(buf, sizeof(buf), language[1376], shortname);
+					snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
 					addLobbyChatMessage(0xffffffff, buf);
+
+				    if (directConnect) {
+		                createWaitingStone(i);
+		            } else {
+		                createInviteButton(i);
+		            }
 					continue;
 				}
 			}
@@ -6172,14 +6173,18 @@ bind_failed:
 			}
 
 			if (hostHasLostP2P) {
-#if defined(STEAMWORKS)
-				auto error_code = connectingToLobbyStatus;
-#elif defined(USE_EOS)
-				auto error_code = EOS.ConnectingToLobbyStatus;
-#else
-                auto error_code = -1; // just so this compiles always
-#endif
-				auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
+			    int error_code = -1;
+			    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                    error_code = EOS.ConnectingToLobbyStatus;
+#endif // USE_EOS
+			    }
+			    else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+			        error_code = connectingToLobbyStatus;
+#endif //STEAMWORKS
+			    }
+			    auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
                 disconnectFromLobby();
 	            destroyMainMenu();
 	            createMainMenu(false);
@@ -6319,9 +6324,13 @@ bind_failed:
 	        return;
 	    }
 
+	    char fmt[1024];
+	    int len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
+	    len = std::min((int)sizeof(fmt), len);
+
 		strcpy((char*)net_packet->data, "CMSG");
-		strcat((char*)(net_packet->data), msg);
-		net_packet->len = 4 + strlen(msg) + 1;
+		strcat((char*)(net_packet->data), fmt);
+		net_packet->len = 4 + len + 1;
 		net_packet->data[net_packet->len - 1] = 0;
 
         // send packet
@@ -6334,7 +6343,7 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
-	        addLobbyChatMessage(0xffffffff, msg);
+	        addLobbyChatMessage(0xffffffff, fmt);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
@@ -6592,6 +6601,10 @@ bind_failed:
 				// finally, open a player card!
 				if (playerNum >= 1 && playerNum < MAXPLAYERS) {
 			        createReadyStone(playerNum, false, false);
+
+				    char buf[1024];
+				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+				    addLobbyChatMessage(0xffffffff, buf);
 				}
 
 				continue;
@@ -6681,12 +6694,16 @@ bind_failed:
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
 
-				char shortname[32] = { 0 };
-				strncpy(shortname, stats[player]->name, 22);
-
 				char buf[1024];
-				snprintf(buf, sizeof(buf), language[1376], shortname);
+				snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
 				addLobbyChatMessage(0xffffffff, buf);
+
+			    if (directConnect) {
+	                createWaitingStone(player);
+	            } else {
+	                createInviteButton(player);
+	            }
+
 				continue;
 			}
 
@@ -7022,11 +7039,8 @@ bind_failed:
 				    stats[player]->playerRace = net_packet->data[8];
 				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
 
-				    char shortname[32] = { 0 };
-				    strncpy(shortname, stats[player]->name, 22);
-
 				    char buf[1024];
-				    snprintf(buf, sizeof(buf), language[1388], shortname);
+				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
 				    addLobbyChatMessage(0xffffffff, buf);
 
 			        if (player != clientnum) {
@@ -7079,7 +7093,7 @@ bind_failed:
 		                connectionErrorPrompt("You have been kicked\nfrom the remote server.");
 				    } else {
 				        char buf[1024];
-				        snprintf(buf, sizeof(buf), language[1120], stats[playerDisconnected]->name);
+				        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
 				        addLobbyChatMessage(0xffffffff, buf);
 					    if (directConnect) {
 			                createWaitingStone(playerDisconnected);
@@ -7127,6 +7141,38 @@ bind_failed:
 	        handlePacketsAsClient();
 	    }
         doKeepAlive();
+
+        // push username to lobby
+        if (multiplayer != SINGLE && !directConnect) {
+            if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+			    if (EOS.CurrentLobbyData.currentLobbyIsValid()) {
+			        if (EOS.CurrentLobbyData.getClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle()) < 0) {
+				        if (EOS.CurrentLobbyData.assignClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle(), clientnum)) {
+					        EOS.CurrentLobbyData.modifyLobbyMemberAttributeForCurrentUser();
+				        }
+				    }
+			    }
+#endif
+			}
+
+            if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+				if (currentLobby) {
+					const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(
+					    *static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
+					if (memberNumChar) {
+						std::string str = memberNumChar;
+						if (str.empty() || std::to_string(clientnum) != str) {
+							SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby),
+							    "clientnum", std::to_string(clientnum).c_str());
+							printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
+						}
+					}
+				}
+#endif
+			}
+		}
 	}
 
 	static void setupNetGameAsServer() {
@@ -7150,10 +7196,10 @@ bind_failed:
 	}
 
 	static void finalizeOnlineLobby() {
-	    closeNetworkInterfaces();
-	    directConnect = false;
 	    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
+	        closeNetworkInterfaces();
+	        directConnect = false;
 		    for ( int c = 0; c < MAXPLAYERS; c++ ) {
 			    if ( steamIDRemote[c] ) {
 				    cpp_Free_CSteamID(steamIDRemote[c]);
@@ -7162,10 +7208,6 @@ bind_failed:
 		    }
 		    ::currentLobbyType = k_ELobbyTypePublic;
 		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
-#endif
-	    } else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-		    EOS.createLobby();
 #endif
 	    }
 	    setupNetGameAsServer();
@@ -7414,6 +7456,17 @@ bind_failed:
 	                if (strncmp(address, steam_str, sizeof(steam_str) - 1) == 0) {
 		                lobby = getLobbySteamID(address);
 	                }
+	                else if ((char)tolower((int)address[0]) == 's' && strlen(address) == 5) {
+	                    connectingToLobby = true;
+	                    connectingToLobbyWindow = true;
+                        joinLobbyWaitingForHostResponse = true;
+                        LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                        flushP2PPackets(100, 200);
+                        requestingLobbies = true;
+                        cpp_SteamMatchmaking_RequestLobbyList(address + 1);
+		                return true;
+	                }
 	            }
 	            else if (pLobby) {
 	                lobby = static_cast<CSteamID*>(pLobby);
@@ -7440,6 +7493,23 @@ bind_failed:
 	                if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
 		                lobby = getLobbyEpic(address);
 		            }
+		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
+	                    memcpy(EOS.lobbySearchByCode, address + 1, 4);
+	                    EOS.lobbySearchByCode[4] = '\0';
+	                    EOS.LobbySearchResults.useLobbyCode = true;
+                        EOS.bConnectingToLobby = true;
+	                    EOS.bConnectingToLobbyWindow = true;
+                        EOS.bJoinLobbyWaitingForHostResponse = true;
+                        LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        flushP2PPackets(100, 200);
+	                    EOS.searchLobbies(
+	                        EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+		                    EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+		                    "");
+	                    EOS.LobbySearchResults.useLobbyCode = false;
+		                return true;
+	                }
 		        }
 		        else if (pLobby) {
 		            lobby = static_cast<EOSFuncs::LobbyData_t*>(pLobby);
@@ -11214,7 +11284,11 @@ bind_failed:
 		    } else {
 		        strcpy(shortname, stats[player]->name);
 		    }
-		    field->setText(shortname);
+
+		    char buf[128];
+		    snprintf(buf, sizeof(buf), "%s\n(%s)", shortname, players[player]->getAccountName());
+
+		    field->setText(buf);
 		    });
 
         if (local) {
@@ -11512,7 +11586,6 @@ bind_failed:
 			        soundCancel();
 			        disconnectFromLobby();
 			        destroyMainMenu();
-			        currentLobbyType = LobbyType::None;
 			        createMainMenu(false);
 			    } else {
 			        binaryPrompt(
@@ -11522,7 +11595,6 @@ bind_failed:
 			                soundActivate();
 			                disconnectFromLobby();
 			                destroyMainMenu();
-			                currentLobbyType = LobbyType::None;
 			                createMainMenu(false);
 	                    },
 	                    [](Button& button){ // no
@@ -12100,15 +12172,6 @@ bind_failed:
 	    }
 #endif
 
-        // set state
-#ifdef STEAMWORKS
-	    requestingLobbies = true;
-#endif
-#if defined USE_EOS
-	    EOS.bRequestingLobbies = true;
-#endif
-	    LobbyHandler.selectedLobbyInList = 0;
-
 	    // create new window
 	    textPrompt("lobby_list_request", "Requesting lobby list...",
 	        [](Widget& widget){
@@ -12131,7 +12194,7 @@ bind_failed:
 	                LobbyInfo info;
 	                info.name = lobbyText[c];
 	                info.players = lobbyPlayers[c];
-	                info.ping = 100; // TODO
+	                info.ping = 50; // TODO
 	                info.locked = false; // TODO
 	                info.flags = 0; // TODO
 	                info.address = "steam:" + std::to_string(c);
@@ -12144,7 +12207,7 @@ bind_failed:
 	                LobbyInfo info;
 	                info.name = lobby.LobbyAttributes.lobbyName;
 	                info.players = MAXPLAYERS - lobby.FreeSlots;
-	                info.ping = 100; // TODO
+	                info.ping = 50; // TODO
 	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
 	                info.flags = lobby.LobbyAttributes.serverFlags;
 	                info.address = "epic:" + std::to_string(c);
@@ -12155,10 +12218,13 @@ bind_failed:
 	        });
 
         // request new lobbies
+	    LobbyHandler.selectedLobbyInList = 0;
 #ifdef STEAMWORKS
-	    cpp_SteamMatchmaking_RequestLobbyList();
+	    requestingLobbies = true;
+	    cpp_SteamMatchmaking_RequestLobbyList(nullptr);
 #endif
 #ifdef USE_EOS
+	    EOS.bRequestingLobbies = true;
 #ifdef STEAMWORKS
 	    if ( EOS.CurrentUserInfo.bUserLoggedIn )
 	    {
@@ -13607,6 +13673,33 @@ bind_failed:
 		    "host_lan_image"
 		);
 
+		auto host_online_fn = [](Button&){
+		    soundActivate();
+#ifdef USE_EOS
+		    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+	            closeNetworkInterfaces();
+	            directConnect = false;
+		        EOS.createLobby();
+		        textPrompt("host_eos_prompt", "Creating online lobby...",
+		            [](Widget&){
+                    if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
+                        return;
+                    } else {
+                        if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
+		                    createLobby(LobbyType::LobbyOnline);
+                        } else {
+                            closePrompt("host_eos_prompt");
+	                        monoPrompt("Failed to create lobby", "Okay",
+	                            [](Button&){soundCancel(); closeMono();});
+                        }
+                    }
+		            });
+	        }
+#else
+		    createLobby(LobbyType::LobbyOnline);
+#endif
+		    };
+
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
@@ -13628,7 +13721,7 @@ bind_failed:
 		host_online_button->setWidgetUp("host_lan");
 		host_online_button->setWidgetDown("join");
 #if defined(STEAMWORKS) || defined(USE_EOS)
-		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+		host_online_button->setCallback(host_online_fn);
 #else
 		host_online_button->setCallback([](Button&){soundError();});
 #endif
@@ -15843,13 +15936,17 @@ bind_failed:
 	}
 
 	void disconnectedFromServer(const char* text) {
-	    // when a player is disconnected from the server in-game
-	    multiplayer = SINGLE;
-		disconnectFromLobby();
-	    destroyMainMenu();
-		createDummyMainMenu();
-        disconnectPrompt(text);
-	    pauseGame(2, 0);
+	    // when a player is disconnected from the server
+	    if (multiplayer != SINGLE) {
+	        multiplayer = SINGLE;
+		    disconnectFromLobby();
+	        destroyMainMenu();
+		    createDummyMainMenu();
+            disconnectPrompt(text);
+            if (!intro) {
+	            pauseGame(2, 0);
+	        }
+	    }
 	}
 
     void openGameoverWindow(int player, bool tutorial) {

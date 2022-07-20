@@ -35,6 +35,7 @@
 
 #ifdef STEAMWORKS
 
+static std::string roomkey_cached;
 Uint32 numSteamLobbies = 0;
 int selectedSteamLobby = 0;
 char lobbyText[MAX_STEAM_LOBBIES][64];
@@ -679,12 +680,19 @@ SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket()
 	return m_SteamCallResultEncryptedAppTicket;
 }
 
-SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList()
+SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList(const char* roomkey)
 {
+    if (roomkey) {
+        SteamMatchmaking()->AddRequestLobbyListStringFilter("roomkey", roomkey, ELobbyComparison::k_ELobbyComparisonEqual);
+        roomkey_cached = roomkey;
+    } else {
+        roomkey_cached = "";
+    }
     SteamMatchmaking()->AddRequestLobbyListDistanceFilter(ELobbyDistanceFilter::k_ELobbyDistanceFilterWorldwide);
 	SteamMatchmaking()->AddRequestLobbyListNearValueFilter("lobbyCreationTime", SteamUtils()->GetServerRealTime());
-	SteamMatchmaking()->AddRequestLobbyListNumericalFilter("lobbyModifiedTime", 
-		SteamUtils()->GetServerRealTime() - 8, k_ELobbyComparisonEqualToOrGreaterThan);
+	auto realtime = SteamUtils()->GetServerRealTime();
+	SteamMatchmaking()->AddRequestLobbyListNumericalFilter("lobbyModifiedTime",
+		realtime - 8, k_ELobbyComparisonEqualToOrGreaterThan);
 	SteamAPICall_t m_SteamCallResultLobbyMatchList = SteamMatchmaking()->RequestLobbyList();
 	steam_server_client_wrapper->m_SteamCallResultLobbyMatchList_Set(m_SteamCallResultLobbyMatchList);
 	return m_SteamCallResultLobbyMatchList;
@@ -1397,6 +1405,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 	{
 		// we had a Steam I/O failure - we probably timed out talking to the Steam back-end servers
 		// doesn't matter in this case, we can just act if no lobbies were received
+		printlog("steam_OnLobbyMatchListCallback() failed - are we disconnected from steam?");
 	}
 
 	// lobbies are returned in order of closeness to the user, so add them to the list in that order
@@ -1409,10 +1418,12 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		lobbyIDs[iLobby] = steamIDLobby;
 
 		// pull some info from the lobby metadata (name, players, etc)
-		const char* lobbyName = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "name"); //TODO: Again with the void pointers.
-		const char* lobbyVersion = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "ver"); //TODO: VOID.
-		int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(steamIDLobby)); //TODO MORE VOID POINTERS.
-		const char* lobbyNumMods = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "svNumMods"); //TODO: VOID.
+		auto lobby = *static_cast<CSteamID*>(steamIDLobby);
+		const char* lobbyTime = SteamMatchmaking()->GetLobbyData(lobby, "lobbyModifiedTime");
+		const char* lobbyName = SteamMatchmaking()->GetLobbyData(lobby, "name");
+		const char* lobbyVersion = SteamMatchmaking()->GetLobbyData(lobby, "ver");
+		const int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(lobby);
+		const char* lobbyNumMods = SteamMatchmaking()->GetLobbyData(lobby, "svNumMods");
 		int numMods = atoi(lobbyNumMods);
 		string versionText = lobbyVersion;
 		if ( versionText ==  "" )
@@ -1454,6 +1465,13 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			snprintf( lobbyText[iLobby], maxCharacters - 1, "Lobby %d", static_cast<CSteamID*>(steamIDLobby)->GetAccountID() ); //TODO: MORE VOID POINTER BUGGERY.
 			lobbyPlayers[iLobby] = 0;
 		}
+	}
+	if (!roomkey_cached.empty()) {
+	    roomkey_cached = "";
+	    if (numSteamLobbies) {
+	        multiplayer = SINGLE;
+	        MainMenu::receivedInvite(lobbyIDs[0]);
+	    }
 	}
 }
 
@@ -1532,6 +1550,22 @@ void* cpp_LobbyCreated_Lobby(void* pCallback)
 	return id;
 }
 
+static std::string generateRoomKey(Uint32 key)
+{
+	const char allChars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	std::string code = "";
+	while ( key != 0 )
+	{
+		code += (allChars[key % 36]);
+		key /= 36;
+	}
+	while ( code.size() < 4 )
+	{
+		code += '0';
+	}
+	return code;
+}
+
 void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 {
 #ifdef STEAMDEBUG
@@ -1554,6 +1588,12 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 
 		// set the game version of the lobby
 		SteamMatchmaking()->SetLobbyData(*lobby, "ver", VERSION);
+
+		// set room key
+		Uint32 keygen = local_rng.uniform(0, (36 * 36 * 36 * 36) - 1); // limit of 'zzzz' as base-36 string
+		auto key = generateRoomKey(keygen);
+		SteamMatchmaking()->SetLobbyData(*lobby, "roomkey", key.c_str());
+		printlog("Steam room key is: %s", key.c_str());
 
 		// set lobby server flags
 		char svFlagsChar[16];
