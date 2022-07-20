@@ -2854,7 +2854,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				hit.entity = ohitentity;
 			}
 
-			if ( stats[player.playernum] && stats[player.playernum]->defending )
+			if ( !followerSelectInteract && stats[player.playernum] && stats[player.playernum]->defending )
 			{
 				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 				{

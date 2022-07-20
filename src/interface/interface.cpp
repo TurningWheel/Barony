@@ -1596,6 +1596,8 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 	animTitle = 0.0;
 	animWheel = 0.0;
 	openedThisTick = 0;
+	animInvalidAction = 0.0;
+	animInvalidActionTicks = 0;
 }
 
 bool FollowerRadialMenu::followerMenuIsOpen()
@@ -1941,6 +1943,10 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	wheelTitleText->setTextColor(makeColor(210, 183, 76, 255));
 	wheelTitleText->setOutlineColor(makeColor(29, 16, 11, 255));
 
+	auto wheelSkillImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill img");
+	wheelSkillImg->disabled = true;
+	auto wheelStatImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "stat img");
+	wheelStatImg->disabled = true;
 }
 
 void setFollowerBannerTextFormatted(const int player, Field* field, Uint32 color, std::set<int>& highlights, char const * const text, ...)
@@ -1989,6 +1995,111 @@ std::vector<FollowerRadialMenu::PanelEntry>& getPanelEntriesForFollower(bool isT
 	}
 }
 
+std::vector<Entity*> getAllOtherFollowersForSendAllCommand(const int gui_player, Entity* followerToCommand, Monster followerType, int optionSelected)
+{
+	std::vector<Entity*> vec;
+	if ( !followerToCommand )
+	{
+		return vec;
+	}
+	if ( optionSelected != ALLY_CMD_MOVETO_CONFIRM
+		&& optionSelected != ALLY_CMD_ATTACK_CONFIRM
+		&& optionSelected != ALLY_CMD_FOLLOW
+		&& optionSelected != ALLY_CMD_DEFEND )
+	{
+		return vec;
+	}
+
+	if ( optionSelected == ALLY_CMD_ATTACK_CONFIRM )
+	{
+		// only send commands if we're trying to attack
+		Entity* target = uidToEntity(followerToCommand->monsterAllyInteractTarget);
+		if ( target )
+		{
+			if ( target->behavior != &actMonster && target->behavior != &actPlayer )
+			{
+				return vec;
+			}
+		}
+		else
+		{
+			return vec;
+		}
+	}
+
+	for ( node_t* node = stats[gui_player]->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		Entity* follower2 = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			if ( follower2 = uidToEntity(*((Uint32*)node->element)) )
+			{
+				if ( follower2 == followerToCommand || !follower2->getStats() )
+				{
+					continue;
+				}
+				auto follower2Type = follower2->getStats()->type;
+
+				if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM || optionSelected == ALLY_CMD_FOLLOW 
+					|| optionSelected == ALLY_CMD_DEFEND )
+				{
+					if ( (followerType == SENTRYBOT || followerType == SPELLBOT)
+						&& (follower2Type != SENTRYBOT && follower2Type != SPELLBOT) )
+					{
+						continue; // bots have unique moveto cmd
+					}
+					if ( followerType != SENTRYBOT && followerType != SPELLBOT
+						&& (follower2Type == SENTRYBOT || follower2Type == SPELLBOT) )
+					{
+						continue; // bots have unique moveto cmd
+					}
+				}
+
+				if ( optionSelected == ALLY_CMD_FOLLOW )
+				{
+					if ( !(follower2->monsterAllyState == ALLY_STATE_DEFEND || follower2->monsterAllyState == ALLY_STATE_MOVETO) )
+					{
+						continue;
+					}
+					if ( (followerType == GYROBOT && follower2Type != GYROBOT)
+						|| (followerType != GYROBOT && follower2Type == GYROBOT) )
+					{
+						continue; // gyrobot must issue follow/wait separately
+					}
+				}
+				else if ( optionSelected == ALLY_CMD_DEFEND )
+				{
+					if ( follower2->monsterAllyState == ALLY_STATE_DEFEND || follower2->monsterAllyState == ALLY_STATE_MOVETO )
+					{
+						continue;
+					}
+					if ( (followerType == GYROBOT && follower2Type != GYROBOT)
+						|| (followerType != GYROBOT && follower2Type == GYROBOT) )
+					{
+						continue; // gyrobot must issue follow/wait separately
+					}
+				}
+				
+				int skillLVL2 = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
+				if ( FollowerMenu[gui_player].isTinkeringFollower(follower2Type) )
+				{
+					skillLVL2 = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
+				}
+				if ( follower2->monsterAllySummonRank != 0 )
+				{
+					skillLVL2 = SKILL_LEVEL_LEGENDARY;
+				}
+				int disableOption2 = FollowerMenu[gui_player].optionDisabledForCreature(skillLVL2, follower2Type, optionSelected, follower2);
+				if ( disableOption2 == 0 )
+				{
+					vec.push_back(follower2);
+				}
+			}
+		}
+	}
+	return vec;
+}
+
 void FollowerRadialMenu::drawFollowerMenu()
 {
 	auto player = players[gui_player];
@@ -1998,8 +2109,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 		return;
 	}
 
+	Input& input = Input::inputs[gui_player];
+
 	if ( selectMoveTo )
 	{
+		if ( input.binaryToggle("MenuCancel") )
+		{
+			input.consumeBinaryToggle("MenuCancel");
+			closeFollowerMenuGUI();
+		}
 		if ( !followerToCommand )
 		{
 			selectMoveTo = false;
@@ -2028,7 +2146,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
 	Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
-	Input& input = Input::inputs[gui_player];
 	std::map<int, Frame::image_t*> panelImages;
 	std::map<int, Frame::image_t*> panelIcons;
 	Frame* bannerFrame = nullptr;
@@ -2041,6 +2158,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	if ( !followerToCommand && (!followerFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_FOLLOWERMENU) )
 	{
+		closeFollowerMenuGUI();
+		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		return;
+	}
+	if ( input.binaryToggle("MenuCancel") )
+	{
+		input.consumeBinaryToggle("MenuCancel");
 		closeFollowerMenuGUI();
 		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		return;
@@ -2062,6 +2186,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			real_t setpointDiff2 = fpsScale * std::max(.01, (1.0 - animWheel)) / 2.0;
 			animWheel += setpointDiff2;
 			animWheel = std::min(1.0, animWheel);
+
+			// shaking feedback for invalid action
+			// constant decay for animation
+			real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+			animInvalidAction -= setpointDiffX;
+			animInvalidAction = std::max(0.0, animInvalidAction);
 		}
 
 		if ( players[gui_player] && players[gui_player]->entity
@@ -2123,16 +2253,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( attackCommandOnly(followerStats->type) )
 					{
 						// attack only.
-						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand);
 					}
 					else
 					{
-						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected, followerToCommand);
 					}
 				}
 				else
 				{
-					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected, followerToCommand);
 				}
 			}
 		}
@@ -2189,6 +2319,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
+			if ( disableOption != 0 )
+			{
+				animInvalidAction = 1.0;
+				animInvalidActionTicks = ticks;
+			}
+
 			if ( input.binaryToggle("Command NPC") )
 			{
 				if ( keepWheelOpen )
@@ -2240,6 +2376,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( disableOption == 0 )
 					{
+						bool modifierPressed = false;
+						if ( input.binaryToggle("Block") )
+						{
+							modifierPressed = true;
+						}
+
 						if ( optionSelected == ALLY_CMD_DEFEND &&
 							(followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
 						{
@@ -2249,20 +2391,62 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							if ( optionSelected == ALLY_CMD_ATTACK_CONFIRM )
 							{
+								Uint32 olduid = followerToCommand->monsterAllyInteractTarget;
 								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, 0, 0, followerToCommand->monsterAllyInteractTarget);
+								Uint32 newuid = followerToCommand->monsterAllyInteractTarget;
+								if ( modifierPressed )
+								{
+									followerToCommand->monsterAllyInteractTarget = olduid;
+									auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+									for ( auto f : repeatCommandToFollowers )
+									{
+										f->monsterAllyInteractTarget = olduid;
+										sendAllyCommandClient(gui_player, f->getUID(), optionSelected, 0, 0, f->monsterAllyInteractTarget);
+									}
+									followerToCommand->monsterAllyInteractTarget = newuid;
+								}
 							}
 							else if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM )
 							{
 								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, moveToX, moveToY);
+								if ( modifierPressed )
+								{
+									auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+									for ( auto f : repeatCommandToFollowers )
+									{
+										sendAllyCommandClient(gui_player, f->getUID(), optionSelected, moveToX, moveToY);
+									}
+								}
 							}
 							else
 							{
 								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, 0, 0);
+								if ( modifierPressed )
+								{
+									auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+									for ( auto f : repeatCommandToFollowers )
+									{
+										sendAllyCommandClient(gui_player, f->getUID(), optionSelected, 0, 0);
+									}
+								}
 							}
 						}
 						else
 						{
+							Uint32 olduid = followerToCommand->monsterAllyInteractTarget;
 							followerToCommand->monsterAllySendCommand(optionSelected, moveToX, moveToY, followerToCommand->monsterAllyInteractTarget);
+							Uint32 newuid = followerToCommand->monsterAllyInteractTarget;
+							if ( modifierPressed )
+							{
+								followerToCommand->monsterAllyInteractTarget = olduid;
+								auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+								for ( auto f : repeatCommandToFollowers )
+								{
+									f->monsterAllyInteractTarget = olduid;
+									f->monsterAllySendCommand(optionSelected, moveToX, moveToY, f->monsterAllyInteractTarget);
+								}
+								followerToCommand->monsterAllyInteractTarget = newuid;
+							}
 						}
 					}
 					else if ( usingLastCmd )
@@ -2532,7 +2716,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 							// draw borders around highlighted item.
 							Uint32 borderColor = uint32ColorBaronyBlue;
-							if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+							if ( optionDisabledForCreature(skillLVL, followerStats->type, i, followerToCommand) != 0 )
 							{
 								borderColor = uint32ColorOrange;
 							}
@@ -2562,7 +2746,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			// draw the text for the menu wheel.
 
 			bool lockedOption = false;
-			if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+			if ( optionDisabledForCreature(skillLVL, followerStats->type, i, followerToCommand) != 0 )
 			{
 				if ( *cvar_showoldwheel )
 				{
@@ -3000,7 +3184,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( !attackCommandOnly(followerStats->type) )
 					{
-						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0 )
+						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand) == 0 )
 						{
 							getSizeOfText(ttf12, "Interact / ", &width, nullptr);
 							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]) : SDL_Rect{};
@@ -3242,16 +3426,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( attackCommandOnly(followerStats->type) )
 				{
 					// attack only.
-					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand);
 				}
 				else
 				{
-					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight, followerToCommand);
 				}
 			}
 			else
 			{
-				disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+				disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight, followerToCommand);
 			}
 		}
 
@@ -3261,7 +3445,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		}
 
 		bool disableActionGlyph = false;
-
+		bool missingSkillLevel = false;
 		if ( disableOption != 0 )
 		{
 			disableActionGlyph = true;
@@ -3280,8 +3464,8 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
-				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
+				//drawTooltip(&tooltip);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
 				setFollowerBannerText(gui_player, bannerTxt, "invalid_action", "rest_cooldown", hudColors.characterSheetRed);
 			}
 			else if ( disableOption == -1 ) // disabled due to creature type
@@ -3289,9 +3473,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3103]) * TTF12_WIDTH + 8;
 				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
-				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
+				//drawTooltip(&tooltip);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					//uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
@@ -3301,11 +3485,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
-				drawTooltip(&tooltip);
+				//drawTooltip(&tooltip);
 				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
-				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
+				//drawTooltip(&tooltip);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					//uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
@@ -3313,7 +3497,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 			else
 			{
-				drawTooltip(&tooltip);
+				//drawTooltip(&tooltip);
 				std::string requirement = "";
 				std::string current = "";
 				int requirementVal = 0;
@@ -3386,12 +3570,55 @@ void FollowerRadialMenu::drawFollowerMenu()
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
 					currentVal = skillLVL;
 				}
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-					uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
-				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_leader"];
-				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
-					textMap.second,	textMap.first.c_str(),
-					currentVal, requirementVal);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
+					//uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
+				if ( tinkeringFollower )
+				{
+					auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_tinker"];
+					setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+						textMap.second, textMap.first.c_str(),
+						currentVal, requirementVal);
+				}
+				else
+				{
+					auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_leader"];
+					setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+						textMap.second,	textMap.first.c_str(),
+						currentVal, requirementVal);
+				}
+				missingSkillLevel = true;
+			}
+		}
+
+		auto wheelSkillImg = bannerFrame->findImage("skill img");
+		wheelSkillImg->disabled = true;
+		auto wheelStatImg = bannerFrame->findImage("stat img");
+		wheelStatImg->disabled = true;
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( (tinkeringFollower && skill.skillId == PRO_LOCKPICKING)
+				|| (!tinkeringFollower && skill.skillId == PRO_LEADERSHIP) )
+			{
+				if ( skillCapstoneUnlocked(gui_player, skill.skillId) )
+				{
+					wheelSkillImg->path = skill.skillIconPathLegend;
+				}
+				else
+				{
+					wheelSkillImg->path = skill.skillIconPath;
+				}
+				wheelStatImg->path = skill.statIconPath;
+				if ( auto imgGet = Image::get(wheelSkillImg->path.c_str()) )
+				{
+					wheelSkillImg->pos.w = imgGet->getWidth();
+					wheelSkillImg->pos.h = imgGet->getHeight();
+				}
+				if ( auto imgGet = Image::get(wheelStatImg->path.c_str()) )
+				{
+					wheelStatImg->pos.w = imgGet->getWidth();
+					wheelStatImg->pos.h = imgGet->getHeight();
+				}
+				break;
 			}
 		}
 
@@ -3419,6 +3646,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 
 			bannerImgCenter->pos.w = txtPos.w + 16 + (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2));
+			int missingSkillLevelIconWidth = 0;
+			if ( missingSkillLevel )
+			{
+				missingSkillLevelIconWidth = wheelStatImg->pos.w + wheelSkillImg->pos.w + 8;
+			}
+			bannerImgCenter->pos.w += missingSkillLevelIconWidth / 2;
 			const int totalWidth = bannerImgLeft->pos.w + bannerImgRight->pos.w + bannerImgCenter->pos.w;
 
 			const int midx = followerFrame->getSize().w / 2;
@@ -3432,7 +3665,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				bannerSize.y -= 16;
 			}
-			bannerSize.y += 32 * (1.0 - animTitle);
+			//bannerSize.y += 32 * (1.0 - animTitle);
 			bannerFrame->setSize(bannerSize);
 			bannerFrame->setOpacity(100.0 * animTitle);
 			bannerImgLeft->pos.x = 0;
@@ -3441,12 +3674,31 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
 			txtPos.x += bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2);
+			if ( missingSkillLevel )
+			{
+				txtPos.x -= (missingSkillLevelIconWidth / 2) - 4;
+			}
 			if ( txtPos.x % 2 == 1 )
 			{
 				++txtPos.x;
 			}
+			if ( animInvalidAction > 0.01 )
+			{
+				txtPos.x += -2 + 2 * (cos(animInvalidAction * 4 * PI));
+			}
 			txtPos.y = 17;
 			bannerTxt->setSize(txtPos);
+
+			if ( missingSkillLevel )
+			{
+				wheelSkillImg->pos.x = txtPos.x + txtPos.w;
+				wheelSkillImg->pos.y = txtPos.y - 3;
+				wheelSkillImg->disabled = false;
+
+				wheelStatImg->pos.x = wheelSkillImg->pos.x + wheelSkillImg->pos.w;
+				wheelStatImg->pos.y = wheelSkillImg->pos.y;
+				wheelStatImg->disabled = false;
+			}
 
 			bannerGlyph->pos.x = txtPos.x - bannerGlyph->pos.w - 8;
 			if ( bannerGlyph->pos.x % 2 == 1 )
@@ -3475,9 +3727,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				wheelTitleText->setText(buf);
 			}
+			SDL_Rect titlePos = wheelTitleText->getSize();
 			if ( auto textGet2 = wheelTitleText->getTextObject() )
 			{
-				SDL_Rect titlePos = wheelTitleText->getSize();
 				titlePos.w = textGet2->getWidth();
 				titlePos.x = bannerSize.x + bannerSize.w / 2 - (titlePos.w / 2);
 				if ( titlePos.x % 2 == 1 )
@@ -3713,7 +3965,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 		skillLVL = SKILL_LEVEL_LEGENDARY;
 	}
 
-	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
+	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
 	{
@@ -3792,7 +4044,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	return true;
 }
 
-int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monsterType, int option)
+int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monsterType, int option, Entity* follower)
 {
 	int creatureTier = 0;
 
@@ -3837,9 +4089,9 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	}
 
 	Stat* followerStats = nullptr;
-	if ( followerToCommand )
+	if ( follower )
 	{
-		followerStats = followerToCommand->getStats();
+		followerStats = follower->getStats();
 	}
 
 	int requirement = AllyNPCSkillRequirements[option];
@@ -3955,7 +4207,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	}
 
 	if ( option == ALLY_CMD_SPECIAL
-		&& followerToCommand->monsterAllySpecialCooldown != 0 )
+		&& follower->monsterAllySpecialCooldown != 0 )
 	{
 		return -2; // disabled due to cooldown.
 	}
@@ -4006,7 +4258,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_DROP_EQUIP:
-			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			if ( follower && follower->monsterAllySummonRank != 0 )
 			{
 				return -1;
 			}
@@ -4086,7 +4338,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_CLASS_TOGGLE:
-			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			if ( follower && follower->monsterAllySummonRank != 0 )
 			{
 				return 0;
 			}

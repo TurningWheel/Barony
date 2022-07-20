@@ -1290,6 +1290,8 @@ public:
 	real_t animTitle = 0.0;
 	real_t animWheel = 0.0;
 	Uint32 openedThisTick = 0;
+	real_t animInvalidAction = 0.0;
+	Uint32 animInvalidActionTicks = 0;
 
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();
@@ -1299,7 +1301,7 @@ public:
 	int numMonstersToDrawInParty();
 	void updateScrollPartySheet();
 	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
-	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option);
+	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option, Entity* follower);
 	bool allowedClassToggle(int monsterType);
 	bool allowedItemPickupToggle(int monsterType);
 	static bool allowedInteractFood(int monsterType);

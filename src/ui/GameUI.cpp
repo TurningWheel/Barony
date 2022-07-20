@@ -3567,6 +3567,10 @@ void createWorldTooltipPrompts(const int player)
 		0xFFFFFFFF, "images/system/white.png", "glyph img");
 	glyph->disabled = true;
 
+	auto glyphAdditional = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "glyph img 2");
+	glyphAdditional->disabled = true;
+
 	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "cursor img");
 	cursor->disabled = true;
@@ -3603,6 +3607,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	icon->disabled = true;
 	auto glyph = worldTooltipFrame->findImage("glyph img");
 	glyph->disabled = true;
+	auto glyphAdditional = worldTooltipFrame->findImage("glyph img 2");
+	glyphAdditional->disabled = true;
 	auto cursor = worldTooltipFrame->findImage("cursor img");
 	cursor->disabled = true;
 	auto text = worldTooltipFrame->findField("prompt text");
@@ -3725,6 +3731,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
 			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
+			auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", true);
+			auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", false);
 			if ( ticks % 50 < 25 )
 			{
 				glyph->path = glyphPathPressed;
@@ -3765,6 +3773,34 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					}
 				}
 			}
+
+			textPos.x += skillIconToGlyphPadding;
+
+			if ( Input::inputs[player.playernum].binaryToggle("Block") )
+			{
+				glyphAdditional->path = glyphAdditionalPathUnpressed;
+				if ( auto imgGet = Image::get(glyphAdditional->path.c_str()) )
+				{
+					glyphAdditional->disabled = false;
+					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphAdditional->pos = glyphPos;
+					if ( auto imgGetUnpressed = Image::get(glyphAdditionalPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyphAdditional->pos.h )
+						{
+							glyphAdditional->pos.y -= (glyphAdditional->pos.h - unpressedHeight);
+						}
+
+						if ( unpressedHeight != nominalGlyphHeight )
+						{
+							glyphAdditional->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+						}
+					}
+					textPos.x += glyphAdditional->pos.w;
+				}
+			}
+
 			textPos.x += skillIconToGlyphPadding;
 
 			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
@@ -20089,7 +20125,7 @@ void Player::Hotbar_t::updateHotbar()
 	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
 	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
 
-	if ( !player.shootmode )
+	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen() )
 	{
 		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarCancel") )
 		{
