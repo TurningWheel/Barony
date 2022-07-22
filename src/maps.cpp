@@ -1522,7 +1522,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		for (node2 = map.entities->first; node2 != nullptr; node2 = node2->next)
 		{
 			entity = (Entity*)node2->element;
-			if ( entity->x / 16 == door->x && entity->y / 16 == door->y && (entity->sprite == 2 || entity->sprite == 3) )
+			if ( entity->x / 16 == door->x && entity->y / 16 == door->y 
+				&& (entity->sprite == 2 || entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 20
+					|| entity->sprite == 113 || entity->sprite == 114) )
 			{
 				switch ( door->dir )
 				{
@@ -1532,7 +1534,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y )
 								{
@@ -1563,7 +1567,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2 )
 								{
@@ -1594,7 +1600,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y )
 								{
@@ -1625,7 +1633,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2 )
 								{
