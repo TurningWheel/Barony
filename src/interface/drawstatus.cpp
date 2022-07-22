@@ -198,9 +198,10 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0
 			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
 		{
-			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() != target )
+			player = source->monsterAllyIndex;
+			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() == target )
 			{
-				player = source->monsterAllyIndex; // don't update enemy bar if attacking leader.
+				player = -1; // don't update enemy bar if attacking leader.
 			}
 		}
 		else if ( source->behavior == &actMonster && source->monsterIllusionTauntingThisUid != 0 )
@@ -211,12 +212,13 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 				player = parent->skill[2]; // don't update enemy bar if attacking leader.
 			}
 		}
-		else if ( source->behavior == &actMonster && monsterIsImmobileTurret(source, nullptr)
+		else if ( source->behavior == &actMonster && source->monsterAllyIndex >= 0/*monsterIsImmobileTurret(source, nullptr)*/
 			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
 		{
-			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() != target )
+			player = source->monsterAllyIndex;
+			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() == target )
 			{
-				player = source->monsterAllyIndex; // don't update enemy bar if attacking leader.
+				player = -1; // don't update enemy bar if attacking leader.
 			}
 		}
 	}
@@ -2601,6 +2603,10 @@ void drawStatusNew(const int player)
 		else if ( players[player]->hotbar.useHotbarFaceMenu && players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
 		{
 			drawHotBarTooltipOnCycle = true;
+		}
+		if ( hotbar_t.animHide > 0.01 )
+		{
+			drawHotBarTooltipOnCycle = false;
 		}
 	}
 
