@@ -1618,6 +1618,10 @@ int FollowerRadialMenu::followerWheelFrameOffsetX = 0;
 int FollowerRadialMenu::followerWheelFrameOffsetY = 0;
 int FollowerRadialMenu::followerWheelInnerCircleRadiusOffset = 0;
 int FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = 0;
+Uint32 followerTitleColor = 0xFFFFFFFF;
+Uint32 followerTitleHighlightColor = 0xFFFFFFFF;
+Uint32 followerBannerTextColor = 0xFFFFFFFF;
+Uint32 followerBannerTextHighlightColor = 0xFFFFFFFF;
 void FollowerRadialMenu::loadFollowerJSON()
 {
 	if ( !PHYSFS_getRealDir("/data/follower_wheel.json") )
@@ -1672,6 +1676,41 @@ void FollowerRadialMenu::loadFollowerJSON()
 				if ( d.HasMember("panel_inner_circle_radius_offset_alternate") )
 				{
 					FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = d["panel_inner_circle_radius_offset_alternate"].GetInt();
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("banner_default") )
+					{
+						followerBannerTextColor = makeColor(
+							d["colors"]["banner_default"]["r"].GetInt(),
+							d["colors"]["banner_default"]["g"].GetInt(),
+							d["colors"]["banner_default"]["b"].GetInt(),
+							d["colors"]["banner_default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("banner_highlight_default") )
+					{
+						followerBannerTextHighlightColor = makeColor(
+							d["colors"]["banner_highlight_default"]["r"].GetInt(),
+							d["colors"]["banner_highlight_default"]["g"].GetInt(),
+							d["colors"]["banner_highlight_default"]["b"].GetInt(),
+							d["colors"]["banner_highlight_default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("title") )
+					{
+						followerTitleColor = makeColor(
+							d["colors"]["title"]["r"].GetInt(),
+							d["colors"]["title"]["g"].GetInt(),
+							d["colors"]["title"]["b"].GetInt(),
+							d["colors"]["title"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("title_creature_highlight") )
+					{
+						followerTitleHighlightColor = makeColor(
+							d["colors"]["title_creature_highlight"]["r"].GetInt(),
+							d["colors"]["title_creature_highlight"]["g"].GetInt(),
+							d["colors"]["title_creature_highlight"]["b"].GetInt(),
+							d["colors"]["title_creature_highlight"]["a"].GetInt());
+					}
 				}
 				if ( d.HasMember("panels") )
 				{
@@ -1929,7 +1968,7 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bannerText->setHJustify(Field::justify_t::LEFT);
 	bannerText->setVJustify(Field::justify_t::TOP);
 	bannerText->setSize(SDL_Rect{ 0, 0, 0, 24 });
-	bannerText->setTextColor(hudColors.characterSheetLightNeutral);
+	bannerText->setTextColor(followerBannerTextColor);
 	bannerText->setOutlineColor(makeColor(29, 16, 11, 255));
 	auto bannerGlyph = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner glyph");
 	bannerGlyph->disabled = true;
@@ -1942,7 +1981,7 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	wheelTitleText->setHJustify(Field::justify_t::LEFT);
 	wheelTitleText->setVJustify(Field::justify_t::TOP);
 	wheelTitleText->setSize(SDL_Rect{ 0, 0, 240, 24 });
-	wheelTitleText->setTextColor(makeColor(210, 183, 76, 255));
+	wheelTitleText->setTextColor(followerTitleColor);
 	wheelTitleText->setOutlineColor(makeColor(29, 16, 11, 255));
 
 	auto wheelSkillImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill img");
@@ -2164,7 +2203,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Frame::image_t* bannerImgLeft = nullptr;
 	Frame::image_t* bannerImgRight = nullptr;
 	Frame::image_t* bannerImgCenter = nullptr;
-	Uint32 textHighlightColor = makeColor(255, 0, 0, 255);
+	Uint32 textHighlightColor = followerBannerTextHighlightColor;
 	bool tinkeringFollower = false;
 
 	if ( !followerToCommand && (!followerFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_FOLLOWERMENU) )
@@ -3831,6 +3870,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 			if ( followerStats )
 			{
 				char buf[128] = "";
+				int spaces = 0;
+				int spaces2 = 0;
+				for ( int c = 0; c <= strlen(language[4200]); ++c )
+				{
+					if ( language[4200][c] == '\0' )
+					{
+						break;
+					}
+					if ( language[4200][c] == ' ' )
+					{
+						++spaces;
+					}
+				}
 				if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
 				{
 					snprintf(buf, sizeof(buf), language[4200], followerStats->name);
@@ -3839,7 +3891,27 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					snprintf(buf, sizeof(buf), language[4200], getMonsterLocalizedName(followerStats->type).c_str());
 				}
+
+				for ( int c = 0; c <= strlen(buf); ++c )
+				{
+					if ( buf[c] == '\0' )
+					{
+						break;
+					}
+					if ( buf[c] == ' ' )
+					{
+						++spaces2;
+					}
+				}
 				wheelTitleText->setText(buf);
+				wheelTitleText->clearWordsToHighlight();
+				int wordIndex = 1;
+				while ( spaces2 >= spaces ) // every additional space means +1 word to highlight for the monster's name
+				{
+					wheelTitleText->addWordToHighlight(wordIndex, followerTitleHighlightColor);
+					--spaces2;
+					++wordIndex;
+				}
 			}
 			SDL_Rect titlePos = wheelTitleText->getSize();
 			if ( auto textGet2 = wheelTitleText->getTextObject() )
