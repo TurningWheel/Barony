@@ -34,51 +34,51 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 	switch ( result )
 	{
 		case EResult_LobbyFailures::LOBBY_GAME_IN_PROGRESS:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nGame in progress not joinable.");
+			snprintf(buf, 1023, "Failed to join lobby:\nGame in progress not joinable.");
 			break;
 		case EResult_LobbyFailures::LOBBY_USING_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nCompatible save required.");
+			snprintf(buf, 1023, "Failed to join lobby:\nCompatible save required.");
 			break;
 		case EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nOnly new characters allowed.");
+			snprintf(buf, 1023, "Failed to join lobby:\nOnly new characters allowed.");
 			break;
 		case EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nIncompatible save game.");
+			snprintf(buf, 1023, "Failed to join lobby:\nIncompatible save game.");
 			break;
 		case EResult_LobbyFailures::LOBBY_JOIN_CANCELLED:
-			snprintf(buf, 1023, "Lobby join cancelled.\n\nSafely leaving lobby.");
+			snprintf(buf, 1023, "Lobby join cancelled.\nSafely leaving lobby.");
 			break;
 		case EResult_LobbyFailures::LOBBY_JOIN_TIMEOUT:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nTimeout waiting for server.");
+			snprintf(buf, 1023, "Failed to join lobby:\nTimeout waiting for server.");
 			break;
 		case EResult_LobbyFailures::LOBBY_NO_OWNER:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nNo host found for lobby.");
+			snprintf(buf, 1023, "Failed to join lobby:\nNo host found for lobby.");
 			break;
 		case EResult_LobbyFailures::LOBBY_NOT_FOUND:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nLobby no longer exists.");
+			snprintf(buf, 1023, "Failed to join lobby:\nLobby no longer exists.");
 			break;
 		case EResult_LobbyFailures::LOBBY_TOO_MANY_PLAYERS:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nLobby is full.");
+			snprintf(buf, 1023, "Failed to join lobby:\nLobby is full.");
 			break;
 #ifdef USE_EOS
 #ifdef STEAMWORKS
 		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
-			snprintf(buf, 1023, "Failed to join lobby:\n\nCrossplay not enabled.");
+			snprintf(buf, 1023, "Failed to join lobby:\nCrossplay not enabled.");
 			break;
 #else
 		case static_cast<int>(EOS_EResult::EOS_InvalidUser):
-			snprintf(buf, 1023, "Failed to join lobby:\n\nNot connected to Epic Online.");
+			snprintf(buf, 1023, "Failed to join lobby:\nNot connected to Epic Online.");
 			break;
 #endif
 		case static_cast<int>(EOS_EResult::EOS_NotFound):
-			snprintf(buf, 1023, "Failed to join lobby:\n\nLobby no longer exists.");
+			snprintf(buf, 1023, "Failed to join lobby:\nLobby no longer exists.");
 			break;
 		case static_cast<int>(EOS_EResult::EOS_Lobby_TooManyPlayers):
-			snprintf(buf, 1023, "Failed to join lobby:\n\nLobby is full.");
+			snprintf(buf, 1023, "Failed to join lobby:\nLobby is full.");
 			break;
 #endif
 		default:
-			snprintf(buf, 1023, "Failed to join lobby:\n\nError code: %d.", result);
+			snprintf(buf, 1023, "Failed to join lobby:\nError code: %d.", result);
 			break;
 	}
 	printlog("[Lobbies Error]: %s", buf);

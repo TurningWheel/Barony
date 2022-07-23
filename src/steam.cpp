@@ -49,11 +49,9 @@ Uint32 currentSvFlags = 0;
 #ifdef STEAMWORKS
 ELobbyType currentLobbyType = k_ELobbyTypePrivate;
 #endif
-bool stillConnectingToLobby = false;
+static bool handlingInvite = false;
 
-bool serverLoadingSaveGame = false; // determines whether lobbyToConnectTo is loading a savegame or not
 void* currentLobby = NULL; // CSteamID to the current game lobby
-void* lobbyToConnectTo = NULL; // CSteamID of the game lobby that user has been invited to
 void* steamIDGameServer = NULL; // CSteamID to the current game server
 uint32_t steamServerIP = 0; // ipv4 address for the current game server
 uint16_t steamServerPort = 0; // port number for the current game server
@@ -1518,26 +1516,36 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 		}
 	}
 
+	void* tempSteamID = cpp_LobbyDataUpdated_pCallback_m_ulSteamIDLobby(pCallback);
+
 	// update current lobby info
-	void* tempSteamID = cpp_LobbyDataUpdated_pCallback_m_ulSteamIDLobby(pCallback); //TODO: BUGGER VOID POINTER.
 	if ( currentLobby )
 	{
-		if ( (static_cast<CSteamID*>(currentLobby))->ConvertToUint64() == (static_cast<CSteamID*>(tempSteamID))->ConvertToUint64() )
+	    auto lobby = static_cast<CSteamID*>(currentLobby);
+	    auto newlobby = static_cast<CSteamID*>(tempSteamID);
+		if ( lobby->ConvertToUint64() == newlobby->ConvertToUint64() )
 		{
 			// extract the display name from the lobby metadata
-			const char* lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name" );
+			const char* lobbyName = SteamMatchmaking()->GetLobbyData( *lobby, "name" );
 			if ( lobbyName )
 			{
 				snprintf( currentLobbyName, 31, "%s", lobbyName );
 			}
 
 			// get the server flags
-			const char* svFlagsChar = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "svFlags" );
+			const char* svFlagsChar = SteamMatchmaking()->GetLobbyData( *lobby, "svFlags" );
 			if ( svFlagsChar )
 			{
 				svFlags = atoi(svFlagsChar);
 			}
 		}
+	}
+	if ( handlingInvite )
+	{
+	    // this is where invites are actually processed on steam.
+	    // we do it here to ensure info about the savegame in the lobby is up-to-date.
+		handlingInvite = false;
+		MainMenu::receivedInvite(tempSteamID);
 	}
 	cpp_Free_CSteamID(tempSteamID);
 }
@@ -1704,79 +1712,50 @@ void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure)
 }
 #endif //USE_EOS
 
-void processLobbyInvite()
+bool processLobbyInvite(void* lobbyToConnectTo)
 {
-	if ( !intro )
-	{
-		stillConnectingToLobby = true;
-		return;
-	}
-	if ( !lobbyToConnectTo )
-	{
-		printlog( "warning: tried to process invitation to null lobby" );
-		stillConnectingToLobby = false;
-		return;
-	}
-	const char* loadingSaveGameChar = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(lobbyToConnectTo), "loadingsavegame" );
+    assert(lobbyToConnectTo);
+	auto lobby = static_cast<CSteamID*>(lobbyToConnectTo);
+	const char* pchLoadingSaveGame = SteamMatchmaking()->GetLobbyData(*lobby, "loadingsavegame");
+	assert(pchLoadingSaveGame && pchLoadingSaveGame[0]);
 
-	if ( loadingSaveGameChar && loadingSaveGameChar[0] )
-	{
-		Uint32 temp32 = atoi(loadingSaveGameChar);
-		Uint32 gameKey = getSaveGameUniqueGameKey(false);
-		if ( temp32 && temp32 == gameKey )
-		{
-			loadingsavegame = temp32;
-			buttonLoadMultiplayerGame(NULL);
+	Uint32 saveGameKey = atoi(pchLoadingSaveGame);      // get the savegame key of the server.
+	Uint32 gameKey = getSaveGameUniqueGameKey(false);   // maybe we were already loading a compatible save.
+	if (saveGameKey && saveGameKey == gameKey) {
+		loadingsavegame = saveGameKey; // save game matches! load game.
+	}
+	else if (!saveGameKey) {
+		loadingsavegame = 0; // cancel our savegame load. when we enter the lobby, our character will be flushed.
+	}
+	else {
+		// try reload from your other savefiles since this didn't match the default savegameIndex.
+		if (savegamesList.empty()) {
+			reloadSavegamesList(false);
 		}
-		else if ( !temp32 )
-		{
-			loadingsavegame = 0;
-			buttonOpenCharacterCreationWindow(NULL);
+		bool foundSave = false;
+		for (auto it = savegamesList.begin(); it != savegamesList.end(); ++it) {
+			auto entry = *it;
+			savegameCurrentFileIndex = std::get<2>(entry);
+			gameKey = getSaveGameUniqueGameKey(false, savegameCurrentFileIndex);
+			if (std::get<1>(entry) != SINGLE && saveGameKey == gameKey) {
+				foundSave = true;
+				break;
+			}
 		}
-		else
-		{
-			// try reload from your other savefiles since this didn't match the default savegameIndex.
-			if ( savegamesList.empty() )
-			{
-				reloadSavegamesList(false);
-			}
-			bool foundSave = false;
-			for ( auto it = savegamesList.begin(); it != savegamesList.end(); ++it )
-			{
-				auto entry = *it;
-				savegameCurrentFileIndex = std::get<2>(entry);
-				gameKey = getSaveGameUniqueGameKey(false, savegameCurrentFileIndex);
-				if ( std::get<1>(entry) != SINGLE && temp32 == gameKey )
-				{
-					foundSave = true;
-					break;
-				}
-			}
+		if (foundSave ) {
+			loadingsavegame = saveGameKey;
+		} else {
+			printlog("warning: received invitation to lobby with which you have no compatible save game.\n");
+			return false;
+		}
+	}
 
-			if ( !foundSave )
-			{
-				savegameCurrentFileIndex = 0;
-				printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
-				if ( lobbyToConnectTo )
-				{
-					cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
-				}
-				lobbyToConnectTo = NULL;
-			}
-			else
-			{
-				loadingsavegame = temp32;
-				buttonLoadMultiplayerGame(NULL);
-			}
-		}
-		stillConnectingToLobby = false;
+	if (loadingsavegame) {
+	    auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
+	    loadGame(info.player_num);
 	}
-	else
-	{
-		stillConnectingToLobby = true;
-		SteamMatchmaking()->RequestLobbyData(*static_cast<CSteamID*>(lobbyToConnectTo));
-		printlog("warning: failed to determine whether lobby is using a saved game or not...\n");
-	}
+
+	return true;
 }
 
 //Helper func. //TODO: Bugger.
@@ -1793,11 +1772,14 @@ void steam_OnGameJoinRequested( void* pCallback )
 	printlog( "OnGameJoinRequested\n" );
 #endif
 
-	if (lobbyToConnectTo) {
-		cpp_Free_CSteamID(lobbyToConnectTo);
-	}
-	lobbyToConnectTo = cpp_GameJoinRequested_m_steamIDLobby(pCallback);
-	MainMenu::receivedInvite(lobbyToConnectTo);
+	handlingInvite = true;
+	auto lobby = cpp_GameJoinRequested_m_steamIDLobby(pCallback);
+	SteamMatchmaking()->RequestLobbyData(*lobby);
+	cpp_Free_CSteamID(lobby);
+
+	//The invite is not actually passed to the rest of the game right here.
+	//This is because we need to gather data from the lobby about the save game.
+	//MainMenu::receivedInvite(lobby);
 }
 
 //Helper func. //TODO: Bugger.
@@ -1805,7 +1787,10 @@ void cpp_SteamMatchmaking_JoinLobbyPCH(const char* pchLobbyID)
 {
 	CSteamID steamIDLobby(std::stoull(std::string(pchLobbyID)));
 	if (steamIDLobby.IsValid()) {
-		MainMenu::receivedInvite(&steamIDLobby);
+	    //The invite is not actually passed to the rest of the game right here.
+	    //This is because we need to gather data from the lobby about the save game.
+	    handlingInvite = true;
+		SteamMatchmaking()->RequestLobbyData(steamIDLobby);
 	} else {
 	    printlog("lobby id for invite invalid");
 	}

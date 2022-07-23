@@ -920,6 +920,7 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 						EOSFuncs::logInfo("OnMemberStatusReceived: received user: %s, event: %d, updating lobby", 
 							EOSFuncs::Helpers_t::shortProductIdToString(data->TargetUserId).c_str(),
 							static_cast<int>(data->CurrentStatus));
+						return;
 					}
 				}
 				break;

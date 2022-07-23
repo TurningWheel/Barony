@@ -19,13 +19,16 @@ void steam_OnP2PSessionRequest(void* p_Callback); //TODO: Finalize porting.
 void steam_OnLobbyMatchListCallback(void* pCallback, bool bIOFailure);
 void steam_OnLobbyDataUpdatedCallback(void* pCallback);
 void steam_OnLobbyCreated(void* pCallback, bool bIOFailure);
-void processLobbyInvite();
 void steam_OnGameJoinRequested(void* pCallback);
 void steam_ConnectToLobby(const char* arg);
 void steam_OnLobbyEntered(void* pCallback, bool bIOFailure);
 void steam_GameServerPingOnServerResponded(void* steamID);
 void steam_OnP2PSessionConnectFail(void* pCallback);
 void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure);
+
+// determine if the given lobby is using a savegame; if it is, load our compatible save.
+// @return true if we are able to join the lobby, otherwise false (because no compatible save was found)
+bool processLobbyInvite(void* lobby);
 
 #define MAX_STEAM_LOBBIES 100
 
@@ -41,15 +44,12 @@ extern bool requestingLobbies;
 
 #include <string>
 
-extern bool serverLoadingSaveGame; // determines whether lobbyToConnectTo is loading a savegame or not
 extern void* currentLobby; // CSteamID to the current game lobby
-extern void* lobbyToConnectTo; // CSteamID of the game lobby that user has been invited to
 extern std::string cmd_line; // for game join requests
 #ifdef STEAMWORKS
 extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;
 extern bool connectingToLobby, connectingToLobbyWindow;
-extern bool stillConnectingToLobby;
 extern bool joinLobbyWaitingForHostResponse;
 extern bool denyLobbyJoinEvent;
 extern int connectingToLobbyStatus;
