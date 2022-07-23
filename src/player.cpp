@@ -1163,11 +1163,18 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY )
 	{
-		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
-			&& ( player.shopGUI.bOpen 
-				|| GenericGUI[player.playernum].isGUIOpen()) )
+		if ( moduleToAccess == MODULE_HOTBAR )
 		{
-			return false;
+			if ( player.inventoryUI.bCompactView
+				&& (player.shopGUI.bOpen
+					|| GenericGUI[player.playernum].isGUIOpen()) )
+			{
+				return false;
+			}
+			if ( player.hotbar.animHide > 0.01 )
+			{
+				return false;
+			}
 		}
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen()
@@ -3519,6 +3526,10 @@ void Player::WorldUI_t::handleTooltips()
 			else
 			{
 				bDoingActionHideTooltips = true;
+				if ( FollowerMenu[player].selectMoveTo )
+				{
+					bDoingActionHideTooltips = false; // selecting follower target is OK if defending
+				}
 			}
 		}
 		

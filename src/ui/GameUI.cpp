@@ -3728,105 +3728,105 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 			textPos.x += 40;
 			textPos.y += 20;
+		}
 
-			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
-			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
-			auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", true);
-			auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", false);
-			if ( ticks % 50 < 25 )
+		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
+		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
+		auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", true);
+		auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", false);
+		if ( ticks % 50 < 25 )
+		{
+			glyph->path = glyphPathPressed;
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
 			{
-				glyph->path = glyphPathPressed;
-				if ( auto imgGet = Image::get(glyph->path.c_str()) )
+				glyph->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyph->pos = glyphPos;
+				if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
 				{
-					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-					glyph->pos = glyphPos;
-					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					const int unpressedHeight = imgGetUnpressed->getHeight();
+					if ( unpressedHeight != glyph->pos.h )
 					{
-						const int unpressedHeight = imgGetUnpressed->getHeight();
-						if ( unpressedHeight != glyph->pos.h )
-						{
-							glyph->pos.y -= (glyph->pos.h - unpressedHeight);
-						}
-
-						if ( unpressedHeight != nominalGlyphHeight )
-						{
-							glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
-						}
+						glyph->pos.y -= (glyph->pos.h - unpressedHeight);
 					}
-					textPos.x += glyph->pos.w;
-				}
-			}
-			else
-			{
-				glyph->path = glyphPathUnpressed;
-				if ( auto imgGet = Image::get(glyph->path.c_str()) )
-				{
-					glyph->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-					glyph->pos = glyphPos;
-					textPos.x += glyph->pos.w;
 
-					if ( glyph->pos.h != nominalGlyphHeight )
+					if ( unpressedHeight != nominalGlyphHeight )
 					{
-						glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+						glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
 					}
 				}
-			}
-
-			textPos.x += skillIconToGlyphPadding;
-
-			if ( Input::inputs[player.playernum].binaryToggle("Block") )
-			{
-				glyphAdditional->path = glyphAdditionalPathUnpressed;
-				if ( auto imgGet = Image::get(glyphAdditional->path.c_str()) )
-				{
-					glyphAdditional->disabled = false;
-					SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-					glyphAdditional->pos = glyphPos;
-					if ( auto imgGetUnpressed = Image::get(glyphAdditionalPathUnpressed.c_str()) )
-					{
-						const int unpressedHeight = imgGetUnpressed->getHeight();
-						if ( unpressedHeight != glyphAdditional->pos.h )
-						{
-							glyphAdditional->pos.y -= (glyphAdditional->pos.h - unpressedHeight);
-						}
-
-						if ( unpressedHeight != nominalGlyphHeight )
-						{
-							glyphAdditional->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
-						}
-					}
-					textPos.x += glyphAdditional->pos.w;
-				}
-			}
-
-			textPos.x += skillIconToGlyphPadding;
-
-			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
-			{
-				if ( skill.skillId == PRO_LEADERSHIP )
-				{
-					if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
-					{
-						icon->path = skill.skillIconPathLegend;
-					}
-					else
-					{
-						icon->path = skill.skillIconPath;
-					}
-					break;
-				}
-			}
-
-			if ( auto imgGet = Image::get(icon->path.c_str()) )
-			{
-				icon->disabled = false;
-				SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
-				icon->pos = iconPos;
-				textPos.x += icon->pos.w + skillIconToGlyphPadding;
+				textPos.x += glyph->pos.w;
 			}
 		}
+		else
+		{
+			glyph->path = glyphPathUnpressed;
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
+			{
+				glyph->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyph->pos = glyphPos;
+				textPos.x += glyph->pos.w;
+
+				if ( glyph->pos.h != nominalGlyphHeight )
+				{
+					glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+				}
+			}
+		}
+
+		textPos.x += skillIconToGlyphPadding;
+
+		if ( Input::inputs[player.playernum].binary("Block") )
+		{
+			glyphAdditional->path = glyphAdditionalPathUnpressed;
+			if ( auto imgGet = Image::get(glyphAdditional->path.c_str()) )
+			{
+				glyphAdditional->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyphAdditional->pos = glyphPos;
+				if ( auto imgGetUnpressed = Image::get(glyphAdditionalPathUnpressed.c_str()) )
+				{
+					const int unpressedHeight = imgGetUnpressed->getHeight();
+					if ( unpressedHeight != glyphAdditional->pos.h )
+					{
+						glyphAdditional->pos.y -= (glyphAdditional->pos.h - unpressedHeight);
+					}
+
+					if ( unpressedHeight != nominalGlyphHeight )
+					{
+						glyphAdditional->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+					}
+				}
+				textPos.x += glyphAdditional->pos.w;
+				textPos.x += skillIconToGlyphPadding;
+			}
+		}
+
+		for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+		{
+			if ( skill.skillId == PRO_LEADERSHIP )
+			{
+				if ( skillCapstoneUnlocked(player.playernum, PRO_LEADERSHIP) )
+				{
+					icon->path = skill.skillIconPathLegend;
+				}
+				else
+				{
+					icon->path = skill.skillIconPath;
+				}
+				break;
+			}
+		}
+
+		if ( auto imgGet = Image::get(icon->path.c_str()) )
+		{
+			icon->disabled = false;
+			SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			icon->pos = iconPos;
+			textPos.x += icon->pos.w + skillIconToGlyphPadding;
+		}
+		
 
 		if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 		{
@@ -3836,12 +3836,30 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				)
 			{
 				text->setDisabled(false);
-				text->setText(language[3650]);
+				if ( !glyphAdditional->disabled )
+				{
+					std::string txt = language[4201];
+					txt += language[3650];
+					text->setText(txt.c_str());
+				}
+				else
+				{
+					text->setText(language[3650]);
+				}
 			}
 			else
 			{
 				text->setDisabled(false);
-				text->setText(language[3039]);
+				if ( !glyphAdditional->disabled )
+				{
+					std::string txt = language[4201];
+					txt += language[3039];
+					text->setText(txt.c_str());
+				}
+				else
+				{
+					text->setText(language[3039]);
+				}
 			}
 		}
 		else
@@ -3875,6 +3893,17 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			{
 				text->setDisabled(false);
 				text->setText(followerMenu.interactText);
+			}
+		}
+
+		if ( !glyphAdditional->disabled )
+		{
+			if ( !strstr(text->getText(), language[4201]) ) // no "(ALL) " text
+			{
+				glyphAdditional->disabled = true;
+				textPos.x -= glyphAdditional->pos.w + skillIconToGlyphPadding;
+				icon->pos.x -= glyphAdditional->pos.w + skillIconToGlyphPadding;
+				//textPos.x -= icon->pos.w + skillIconToGlyphPadding;
 			}
 		}
 	}
@@ -12282,7 +12311,7 @@ void Player::Hotbar_t::processHotbar()
 		players[player.playernum]->camera_virtualWidth(),
 		players[player.playernum]->camera_virtualHeight() });
 
-	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() || (player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight()) )
+	if ( gamePaused || nohud || !players[player.playernum]->isLocalPlayer() )
 	{
 		// hide
 		hotbarFrame->setDisabled(true);
@@ -18152,6 +18181,29 @@ void Player::HUD_t::updateXPBar()
 	{
 		pos.y = 8 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
 	}
+
+	bool tempHideXP = false;
+	if ( player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight() )
+	{
+		tempHideXP = true;
+	}
+	if ( tempHideXP )
+	{
+		//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		//real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideXP)) / 2.5;
+		//animHideXP += setpointDiff;
+		//animHideXP = std::min(1.0, animHideXP);
+		animHideXP = 1.0;
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.1, (animHideXP)) / 2.5;
+		animHideXP -= setpointDiff;
+		animHideXP = std::max(0.0, animHideXP);
+	}
+	//pos.y -= animHideXP * (pos.y + pos.h);
+	xpFrame->setOpacity((1.0 - animHideXP) * 100.0);
 	xpFrame->setSize(pos);
 
 	auto xpBg = xpFrame->findImage("xp img base");
@@ -18300,15 +18352,6 @@ void Player::HUD_t::updateXPBar()
 	xpProgressClipFrame->setSize(clipFramePos);
 	auto xpProgressClipFrameImg = xpProgressClipFrame->findImage("xp img progress clipped");
 	xpProgressClipFrameImg->pos.x = -(xpProgressClipFrameImg->pos.w - pos.w) / 2;
-
-	if ( player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight() )
-	{
-		xpFrame->setDisabled(true);
-	}
-	else
-	{
-		xpFrame->setDisabled(false);
-	}
 }
 
 SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
@@ -20112,6 +20155,26 @@ void Player::Hotbar_t::updateHotbar()
 		return;
 	}
 
+	bool tempHideHotbar = false;
+	if ( player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight() )
+	{
+		tempHideHotbar = true;
+	}
+	if ( tempHideHotbar )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHide)) / 2.5;
+		animHide += setpointDiff;
+		animHide = std::min(1.0, animHide);
+	}
+	else
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiff = fpsScale * std::max(.1, (animHide)) / 2.5;
+		animHide -= setpointDiff;
+		animHide = std::max(0.0, animHide);
+	}
+
 	bool bCompactView = false;
 	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
@@ -20124,6 +20187,8 @@ void Player::Hotbar_t::updateHotbar()
 	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
 	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
 	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
+	hotbarStartY1 += animHide * abs(getHotbarStartY1());
+	hotbarStartY2 += animHide * abs(getHotbarStartY1());
 
 	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen() )
 	{

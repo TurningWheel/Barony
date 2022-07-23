@@ -1347,6 +1347,7 @@ public:
 		Frame* cursorFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
+		real_t animHideXP = 0.0;
 
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;
@@ -1769,7 +1770,8 @@ public:
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
 		int oldSlotFrameTrackSlot = -1;
-		// end temp stuff
+		
+		real_t animHide = 0.0;
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
 		const int getSlotSize() const { return 48; }

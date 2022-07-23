@@ -4758,7 +4758,12 @@ void ingameHud()
 						    }
 					    }
 
-					    if ( input.binaryToggle("Block")
+						if ( FollowerMenu[player].followerMenuIsOpen() )
+						{
+							input.consumeBinaryToggle("Block"); // moveto or interact we can block, but dont cast spell
+							allowCasting = false;
+						}
+					    else if ( input.binaryToggle("Block")
 						    && strcmp(input.binding("Block"), "Mouse3") == 0
 						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
 					    {

@@ -1933,6 +1933,8 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bannerText->setOutlineColor(makeColor(29, 16, 11, 255));
 	auto bannerGlyph = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner glyph");
 	bannerGlyph->disabled = true;
+	auto bannerGlyph2 = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner modifier glyph");
+	bannerGlyph2->disabled = true;
 
 	auto wheelTitleText = bgFrame->addField("wheel title", 128);
 	wheelTitleText->setFont(font);
@@ -1995,6 +1997,18 @@ std::vector<FollowerRadialMenu::PanelEntry>& getPanelEntriesForFollower(bool isT
 	}
 }
 
+bool commandCanBeSentToAll(int optionSelected)
+{
+	if ( optionSelected != ALLY_CMD_MOVETO_CONFIRM
+		&& optionSelected != ALLY_CMD_ATTACK_CONFIRM
+		&& optionSelected != ALLY_CMD_FOLLOW
+		&& optionSelected != ALLY_CMD_DEFEND )
+	{
+		return false;
+	}
+	return true;
+}
+
 std::vector<Entity*> getAllOtherFollowersForSendAllCommand(const int gui_player, Entity* followerToCommand, Monster followerType, int optionSelected)
 {
 	std::vector<Entity*> vec;
@@ -2002,10 +2016,7 @@ std::vector<Entity*> getAllOtherFollowersForSendAllCommand(const int gui_player,
 	{
 		return vec;
 	}
-	if ( optionSelected != ALLY_CMD_MOVETO_CONFIRM
-		&& optionSelected != ALLY_CMD_ATTACK_CONFIRM
-		&& optionSelected != ALLY_CMD_FOLLOW
-		&& optionSelected != ALLY_CMD_DEFEND )
+	if ( !commandCanBeSentToAll(optionSelected) )
 	{
 		return vec;
 	}
@@ -2174,6 +2185,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 	//{
 	//	consoleCommand("/loadfollowerwheel");
 	//}
+
+	bool modifierPressed = false;
+	bool modifierActiveForOption = false;
+	if ( input.binary("Block") )
+	{
+		modifierPressed = true;
+	}
 
 	if ( followerToCommand )
 	{
@@ -2376,10 +2394,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( disableOption == 0 )
 					{
-						bool modifierPressed = false;
-						if ( input.binaryToggle("Block") )
+						if ( modifierPressed )
 						{
-							modifierPressed = true;
+							if ( !usingLastCmd )
+							{
+								if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
+								{
+									input.consumeBinaryToggle("Block"); // don't try cast when menu closes.
+								}
+							}
 						}
 
 						if ( optionSelected == ALLY_CMD_DEFEND &&
@@ -2764,7 +2787,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( i == highlight )
 					{
 						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_active_hover;
-						setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "free_look", textHighlightColor);
+						if ( modifierPressed && commandCanBeSentToAll(i) )
+						{
+							modifierActiveForOption = true;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "free_look_all", textHighlightColor);
+						}
+						else
+						{
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "free_look", textHighlightColor);
+						}
 					}
 					else
 					{
@@ -2778,12 +2809,43 @@ void FollowerRadialMenu::drawFollowerMenu()
 					// "follow"
 					if ( i == highlight )
 					{
-						panelIcons[i]->path = iconEntries["leader_wait"].path_active_hover;
-						setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "follow", textHighlightColor);
+						if ( tinkeringFollower )
+						{
+							panelIcons[i]->path = iconEntries["tinker_wait"].path_active_hover;
+							if ( modifierPressed && commandCanBeSentToAll(i) )
+							{
+								modifierActiveForOption = true;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "follow_all", textHighlightColor);
+							}
+							else
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "follow", textHighlightColor);
+							}
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_wait"].path_active_hover;
+							if ( modifierPressed && commandCanBeSentToAll(i) )
+							{
+								modifierActiveForOption = true;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "follow_all", textHighlightColor);
+							}
+							else
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "follow", textHighlightColor);
+							}
+						}
 					}
 					else
 					{
-						panelIcons[i]->path = iconEntries["leader_wait"].path_active;
+						if ( tinkeringFollower )
+						{
+							panelIcons[i]->path = iconEntries["tinker_wait"].path_active;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_wait"].path_active;
+						}
 					}
 				}
 			}
@@ -2799,7 +2861,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( i == highlight )
 					{
 						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_hover;
-						setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "hold_aim", textHighlightColor);
+						if ( modifierPressed && commandCanBeSentToAll(i) )
+						{
+							modifierActiveForOption = true;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "hold_aim_all", textHighlightColor);
+						}
+						else
+						{
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "hold_aim", textHighlightColor);
+						}
 					}
 					else
 					{
@@ -3316,7 +3386,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 							if ( i == highlight )
 							{
 								panelIcons[i]->path = iconEntries["tinker_wait"].path_hover;
-								setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "wait_here", textHighlightColor);
+								if ( modifierPressed && commandCanBeSentToAll(i) )
+								{
+									modifierActiveForOption = true;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "wait_here_all", textHighlightColor);
+								}
+								else
+								{
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "wait_here", textHighlightColor);
+								}
 							}
 							else
 							{
@@ -3328,7 +3406,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 							if ( i == highlight )
 							{
 								panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
-								setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "wait_here", textHighlightColor);
+								if ( modifierPressed && commandCanBeSentToAll(i) )
+								{
+									modifierActiveForOption = true;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "wait_here_all", textHighlightColor);
+								}
+								else
+								{
+									setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "wait_here", textHighlightColor);
+								}
 							}
 							else
 							{
@@ -3638,14 +3724,25 @@ void FollowerRadialMenu::drawFollowerMenu()
 			auto bannerGlyph = bannerFrame->findImage("banner glyph");
 			bannerGlyph->disabled = true;
 			bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
+			auto bannerGlyphModifier = bannerFrame->findImage("banner modifier glyph");
+			bannerGlyphModifier->disabled = true;
+			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Block");
 			if ( auto imgGet = Image::get(bannerGlyph->path.c_str()) )
 			{
 				bannerGlyph->pos.w = imgGet->getWidth();
 				bannerGlyph->pos.h = imgGet->getHeight();
 				bannerGlyph->disabled = disableActionGlyph || !strcmp(bannerTxt->getText(), "");
 			}
+			if ( auto imgGet = Image::get(bannerGlyphModifier->path.c_str()) )
+			{
+				bannerGlyphModifier->pos.w = imgGet->getWidth();
+				bannerGlyphModifier->pos.h = imgGet->getHeight();
+				bannerGlyphModifier->disabled = bannerGlyph->disabled || !modifierActiveForOption;
+			}
 
-			bannerImgCenter->pos.w = txtPos.w + 16 + (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2));
+			bannerImgCenter->pos.w = txtPos.w + 16 
+				+ (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2))
+				+ (bannerGlyphModifier->disabled ? 0 : (bannerGlyphModifier->pos.w + 2));
 			int missingSkillLevelIconWidth = 0;
 			if ( missingSkillLevel )
 			{
@@ -3674,6 +3771,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
 			txtPos.x += bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2);
+			txtPos.x += bannerGlyphModifier->disabled ? 0 : ((bannerGlyphModifier->pos.w + 0) / 2);
 			if ( missingSkillLevel )
 			{
 				txtPos.x -= (missingSkillLevelIconWidth / 2) - 4;
@@ -3711,6 +3809,22 @@ void FollowerRadialMenu::drawFollowerMenu()
 				bannerGlyph->pos.y -= 1;
 			}
 			bannerSize.h = std::max(40, bannerGlyph->pos.y + bannerGlyph->pos.h);
+			if ( !bannerGlyphModifier->disabled )
+			{
+				bannerGlyphModifier->pos.x = txtPos.x - bannerGlyphModifier->pos.w - 8;
+				bannerGlyph->pos.x = bannerGlyphModifier->pos.x - bannerGlyph->pos.w - 2;
+
+				if ( bannerGlyphModifier->pos.x % 2 == 1 )
+				{
+					++bannerGlyphModifier->pos.x;
+				}
+				bannerGlyphModifier->pos.y = txtPos.y + txtPos.h / 2 - bannerGlyphModifier->pos.h / 2;
+				if ( bannerGlyphModifier->pos.y % 2 == 1 )
+				{
+					bannerGlyphModifier->pos.y -= 1;
+				}
+				bannerSize.h = std::max(bannerSize.h, bannerGlyphModifier->pos.y + bannerGlyphModifier->pos.h);
+			}
 			bannerFrame->setSize(bannerSize);
 
 			auto wheelTitleText = bgFrame->findField("wheel title");
@@ -3971,7 +4085,15 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			strcpy(interactText, language[4043]); // "Attack "
+			if ( Input::inputs[gui_player].binary("Block") )
+			{
+				strcpy(interactText, language[4201]); //"(ALL) "
+				strcat(interactText, language[4043]); // "Attack "
+			}
+			else
+			{
+				strcpy(interactText, language[4043]); // "Attack "
+			}
 		}
 	}
 	else
@@ -4028,7 +4150,15 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			strcpy(interactText, language[4043]); // "Attack "
+			if ( Input::inputs[gui_player].binary("Block") )
+			{
+				strcpy(interactText, language[4201]); //"(ALL) "
+				strcat(interactText, language[4043]); // "Attack "
+			}
+			else
+			{
+				strcpy(interactText, language[4043]); // "Attack "
+			}
 			int monsterType = selectedEntity.getMonsterTypeFromSprite();
 			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
