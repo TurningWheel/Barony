@@ -974,6 +974,8 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 	return image;
 }
 
+static ConsoleVariable<float> cvar_enemybarDepthRange("/enemybar_depth_range", 0.99);
+
 bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly)
 {
 	if ( !enemyHPBarDetails ) 
@@ -1054,7 +1056,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	/*if ( entity && entity->flags[OVERDRAW] )
 	{
 	}*/
-	glDepthRange(0, .99);
+	glDepthRange(0, *cvar_enemybarDepthRange);
 
 	// get shade factor
 	if ( mode == REALCOLORS )
@@ -1674,9 +1676,11 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glDisable(GL_ALPHA_TEST);
 }
 
+static ConsoleVariable<float> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.98);
+
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
-	if ( text.empty() == true )
+	if ( text.empty() == true || !entity )
 	{
 		return;
 	}
@@ -1752,7 +1756,11 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	}
 	else
 	{
-		if ( entity->behavior != &actSpriteNametag )
+		if ( entity->behavior == &actDamageGib )
+		{
+			glDepthRange(0, *cvar_dmgSpriteDepthRange);
+		}
+		else if ( entity->behavior != &actSpriteNametag )
 		{
 			glDepthRange(0, 0.98);
 		}

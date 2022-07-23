@@ -24,10 +24,6 @@
 #include "../mod_tools.hpp"
 #include "../ui/GameUI.hpp"
 
-//Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
-//Uint32 enemy_timer = 0, enemy_lastuid = 0;
-//Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
-
 /*-------------------------------------------------------------------------------
 
 	handleDamageIndicators
@@ -306,41 +302,59 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		}
 	}
 
-	if ( player >= 0 && players[player]->isLocalPlayer() )
+	if ( player >= 0 /*&& players[player]->isLocalPlayer()*/ )
 	{
+		// add enemy bar to the server
+		int p = player;
+		if ( !players[player]->isLocalPlayer() )
+		{
+			p = clientnum; // remote clients, add it to the local list.
+		}
 		if ( stats )
 		{
-			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, oldhp,
-				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp,
+				enemyHPDamageBarHandler[p].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 		else
 		{
-			enemyHPDamageBarHandler[player].addEnemyToList(hp, maxhp, oldhp,
-				enemyHPDamageBarHandler[player].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp,
+				enemyHPDamageBarHandler[p].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
 		}
 	}
-	else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	
+	if ( player >= 0 && multiplayer == SERVER )
 	{
-		strcpy((char*)net_packet->data, "ENHP");
-		SDLNet_Write32(hp, &net_packet->data[4]);
-		SDLNet_Write32(maxhp, &net_packet->data[8]);
-		SDLNet_Write32(enemyHPDamageBarHandler[player].enemy_bar_client_color, &net_packet->data[12]);
-		if ( stats )
+		// send to all remote players
+		for ( int p = 1; p < MAXPLAYERS; ++p )
 		{
-			SDLNet_Write32(oldhp, &net_packet->data[16]);
+			if ( !players[p]->isLocalPlayer() )
+			{
+				if ( p == playertarget )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "ENHP");
+				SDLNet_Write16(static_cast<Sint16>(hp), &net_packet->data[4]);
+				SDLNet_Write16(static_cast<Sint16>(maxhp), &net_packet->data[6]);
+				if ( stats )
+				{
+					SDLNet_Write16(static_cast<Sint16>(oldhp), &net_packet->data[8]);
+				}
+				else
+				{
+					SDLNet_Write16(static_cast<Sint16>(oldhp), &net_packet->data[8]);
+				}
+				SDLNet_Write32(target->getUID(), &net_packet->data[10]);
+				net_packet->data[14] = lowPriorityTick ? 1 : 0; // 1 == true
+				strcpy((char*)(&net_packet->data[15]), name);
+				net_packet->data[15 + strlen(name)] = 0;
+				net_packet->address.host = net_clients[p - 1].host;
+				net_packet->address.port = net_clients[p - 1].port;
+				net_packet->len = 15 + strlen(name) + 1;
+				sendPacketSafe(net_sock, -1, net_packet, p - 1);
+
+			}
 		}
-		else
-		{
-			SDLNet_Write32(oldhp, &net_packet->data[16]);
-		}
-		SDLNet_Write32(target->getUID(), &net_packet->data[20]);
-		net_packet->data[24] = lowPriorityTick ? 1 : 0; // 1 == true
-		strcpy((char*)(&net_packet->data[25]), name);
-		net_packet->data[25 + strlen(name)] = 0;
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 25 + strlen(name) + 1;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
 
