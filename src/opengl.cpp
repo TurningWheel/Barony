@@ -974,7 +974,7 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 	return image;
 }
 
-static ConsoleVariable<float> cvar_enemybarDepthRange("/enemybar_depth_range", 0.99);
+static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.99);
 
 bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly)
 {
@@ -1676,7 +1676,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glDisable(GL_ALPHA_TEST);
 }
 
-static ConsoleVariable<float> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.98);
+static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.98);
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
