@@ -974,7 +974,9 @@ SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
 	return image;
 }
 
+#ifndef EDITOR
 static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.99);
+#endif
 
 bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly)
 {
@@ -1056,7 +1058,9 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	/*if ( entity && entity->flags[OVERDRAW] )
 	{
 	}*/
+#ifndef EDITOR
 	glDepthRange(0, *cvar_enemybarDepthRange);
+#endif // !EDITOR
 
 	// get shade factor
 	if ( mode == REALCOLORS )
@@ -1676,7 +1680,9 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glDisable(GL_ALPHA_TEST);
 }
 
+#ifndef EDITOR
 static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_range", 0.98);
+#endif // !EDITOR
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
@@ -1758,7 +1764,9 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	{
 		if ( entity->behavior == &actDamageGib )
 		{
+#ifndef EDITOR
 			glDepthRange(0, *cvar_dmgSpriteDepthRange);
+#endif // !EDITOR
 		}
 		else if ( entity->behavior != &actSpriteNametag )
 		{
