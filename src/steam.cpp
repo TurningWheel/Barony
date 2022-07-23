@@ -1773,9 +1773,10 @@ void steam_OnGameJoinRequested( void* pCallback )
 #endif
 
 	handlingInvite = true;
-	auto lobby = cpp_GameJoinRequested_m_steamIDLobby(pCallback);
+	auto pLobby = cpp_GameJoinRequested_m_steamIDLobby(pCallback);
+	auto lobby = static_cast<CSteamID*>(pLobby);
 	SteamMatchmaking()->RequestLobbyData(*lobby);
-	cpp_Free_CSteamID(lobby);
+	cpp_Free_CSteamID(pLobby);
 
 	//The invite is not actually passed to the rest of the game right here.
 	//This is because we need to gather data from the lobby about the save game.
