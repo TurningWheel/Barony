@@ -16724,7 +16724,8 @@ bind_failed:
             if (processLobbyInvite(lobby)) { // load any relevant save data
                 connectToServer(nullptr, lobby, LobbyType::LobbyOnline);
             } else {
-                auto str = LobbyHandler.getLobbyJoinFailedConnectString(EResult_LobbyFailures::LOBBY_USING_SAVEGAME);
+                const auto error = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+                const auto str = LobbyHandler.getLobbyJoinFailedConnectString(error);
                 monoPrompt(str.c_str(), "Okay",
                 [](Button&){
                 soundCancel();
