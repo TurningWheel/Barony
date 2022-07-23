@@ -8647,6 +8647,7 @@ bind_failed:
 		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(2);}); break;
 		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(3);}); break;
 		}
+		custom_difficulty->select();
 
 		auto invite_label = card->addField("invite_label", 64);
 		invite_label->setSize(SDL_Rect{82, 146, 122, 26});
