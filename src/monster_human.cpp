@@ -63,7 +63,8 @@ void initHuman(Entity* my, Stat* myStats)
 			if ( my->monsterSpecialTimer == 0 )
 			{
 				if ( local_rng.rand() % 25 == 0 && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] 
-					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0
+					&& myStats->leader_uid == 0 )
 				{
 					specialMonsterVariant = 1;
 					int specialMonsterType = local_rng.rand() % 10;
@@ -234,6 +235,10 @@ void initHuman(Entity* my, Stat* myStats)
 								{
 									entity->parent = my->getUID();
 									entity->flags[USERFLAG2] = true;
+									if ( Stat* followerStats = entity->getStats() )
+									{
+										followerStats->leader_uid = entity->parent;
+									}
 								}
 							}
 							break;
