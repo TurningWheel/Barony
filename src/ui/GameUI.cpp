@@ -5060,6 +5060,14 @@ static Frame* createMinimap(int player) {
 
         auto frame = static_cast<Frame*>(&widget);
         frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});
+		if ( frame->isInvisible() )
+		{
+			frame->setHollow(true);
+		}
+		else
+		{
+			frame->setHollow(false);
+		}
         });
 
     return window;

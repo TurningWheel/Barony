@@ -3747,7 +3747,10 @@ void handleEvents(void)
 								// default 0 for normal mouse events
 								inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							}
-							break;
+						}
+						else
+						{
+							inputs.getVirtualMouse(i)->draw_cursor = false;
 						}
 					}
 				}
