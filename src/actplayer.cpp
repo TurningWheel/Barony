@@ -1291,18 +1291,17 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
 	//}
 
-	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( entity == my )
+		if ( players[i] && players[i]->entity )
 		{
-			continue;
-		}
-		if ( entity->behavior == &actPlayer )
-		{
-			if ( entityInsideEntity(my, entity) )
+			if ( players[i]->entity == my )
 			{
-				double tangent = atan2(my->y - entity->y, my->x - entity->x);
+				continue;
+			}
+			if ( entityInsideEntity(my, players[i]->entity) )
+			{
+				double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
 				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
 			}
@@ -4777,8 +4776,10 @@ void actPlayer(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity[0] == my) || (client_selected[i] == my)
-				|| i == PLAYER_CLICKED - 1 || (i > 0 && splitscreen && selectedEntity[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) 
+				|| (client_selected[i] == my)
+				|| (i == PLAYER_CLICKED - 1) 
+				|| (i > 0 && splitscreen && selectedEntity[i] == my) )
 			{
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)

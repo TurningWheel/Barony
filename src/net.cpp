@@ -3222,7 +3222,8 @@ void clientHandlePacket()
 			    }
 		    }
 		}
-		else if ( !strcmp(msg, language[1109]) )
+		
+		if ( !strcmp(msg, language[1109]) )
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
@@ -3238,7 +3239,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		else if ( !strncmp(msg, language[1114], 28) )
+		else if ( !strncmp(msg, language[1114], 28) ) // Zap brigade music
 		{
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
@@ -3248,7 +3249,7 @@ void clientHandlePacket()
 		}
 		else if ( (strstr(msg, language[1160])) != NULL )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( int c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( !strncmp(stats[c]->name, msg, strlen(stats[c]->name)) )
 				{
