@@ -10325,29 +10325,31 @@ bind_failed:
 		    constexpr int column = bottom.w / num_class_stats;
 
             // character attribute ratings
-		    static constexpr Uint32 good = makeColorRGB(0, 192, 255);
+		    static constexpr Uint32 good = makeColorRGB(0, 191, 255);
+		    static constexpr Uint32 decent = makeColorRGB(0, 191, 255);
 		    static constexpr Uint32 average = makeColorRGB(191, 191, 191);
+		    static constexpr Uint32 poor = makeColorRGB(255, 64, 0);
 		    static constexpr Uint32 bad = makeColorRGB(255, 64, 0);
 		    static constexpr Uint32 class_stat_colors[][num_class_stats] = {
-		        {good, good, bad, bad, good, good},               // barbarian
+		        {good, decent, bad, bad, decent, decent},               // barbarian
 		        {good, bad, good, bad, bad, good},                      // warrior
-		        {average, average, good, good, good, average},      // healer
-		        {bad, good, bad, bad, good, good},                    // rogue
-		        {good, average, good, average, good, bad},        // wanderer
-		        {average, bad, good, good, average, average},       // cleric
-		        {average, bad, good, average, good, good},          // merchant
-		        {bad, average, bad, good, good, good},                // wizard
-		        {bad, good, bad, good, good, bad},                // arcanist
+		        {average, average, decent, good, decent, average},      // healer
+		        {bad, good, bad, bad, good, decent},                    // rogue
+		        {decent, average, decent, average, decent, bad},        // wanderer
+		        {average, bad, decent, decent, average, average},       // cleric
+		        {average, bad, decent, average, decent, good},          // merchant
+		        {bad, average, bad, good, good, decent},                // wizard
+		        {bad, decent, bad, decent, decent, bad},                // arcanist
 		        {average, average, average, average, average, average}, // joker
 		        {good, good, average, good, average, average},          // sexton
-		        {good, good, good, average, average, bad},            // ninja
-		        {good, bad, good, average, bad, bad},                 // monk
-		        {bad, bad, good, good, good, good},               // conjurer
+		        {good, good, decent, average, average, bad},            // ninja
+		        {decent, bad, good, average, bad, bad},                 // monk
+		        {bad, bad, decent, good, decent, decent},               // conjurer
 		        {average, average, bad, good, good, average},           // accursed
-		        {average, average, bad, good, good, good},            // mesmer
-		        {average, average, bad, good, bad, good},           // brewer
-		        {bad, good, bad, average, good, average},             // mechanist
-		        {good, average, bad, average, good, good},        // punisher
+		        {average, average, bad, good, decent, good},            // mesmer
+		        {average, average, bad, decent, bad, decent},           // brewer
+		        {bad, decent, bad, average, good, average},             // mechanist
+		        {decent, average, bad, average, decent, decent},        // punisher
 		        {average, average, average, average, average, average}, // shaman
 		        {bad, good, bad, average, good, average},               // hunter
 		    };
@@ -10412,8 +10414,6 @@ bind_failed:
 		    difficulty_header->setSize(difficulty_size);
 
 		    // difficulty stars
-		    static constexpr Uint32 decent = makeColorRGB(64, 160, 191);
-		    static constexpr Uint32 poor = makeColorRGB(191, 96, 64);
 		    static constexpr int star_buf_size = 32;
 	        static auto stars_fn = [](Field& field, int index){
 		        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
