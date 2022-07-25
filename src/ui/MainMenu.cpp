@@ -1196,6 +1196,7 @@ namespace MainMenu {
         );
     }
 
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
     static void openDLCPrompt() {
         textFieldPrompt("", "Enter DLC Key...", "Enter DLC Serial Key", "Confirm", "Cancel",
             [](Button& button){ // okay
@@ -1294,6 +1295,7 @@ namespace MainMenu {
                 play->select();
             });
     }
+#endif
 
 /******************************************************************************/
 
@@ -16408,7 +16410,13 @@ bind_failed:
 		        if (enabledDLCPack1 && enabledDLCPack2) {
                     openURLTryWithOverlay("http://www.baronygame.com/");
                 } else {
+#if defined(STEAMWORKS)
+                    openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
+#elif defined(USE_EOS)
+                    openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
+#else
                     openDLCPrompt();
+#endif
                 }
 		        },
 		        [](Button&){ // banner #2
