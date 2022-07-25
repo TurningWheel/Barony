@@ -209,7 +209,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 			}
 		}
 		else if ( source->behavior == &actMonster && source->monsterAllyIndex >= 0/*monsterIsImmobileTurret(source, nullptr)*/
-			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
+			&& (target->behavior == &actMonster || target->behavior == &actPlayer || target->behavior == &actDoor) )
 		{
 			player = source->monsterAllyIndex;
 			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() == target )
@@ -3084,7 +3084,9 @@ void drawStatusNew(const int player)
 				// no action, gamepads can't scroll when useHotbarFaceMenu
 			}
 			else if ( shootmode && !players[player]->GUI.isDropdownActive() && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
+				&& gui_mode != (GUI_MODE_SHOP) 
+				&& !players[player]->bookGUI.bBookOpen
+				&& !players[player]->signGUI.bSignOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
@@ -3115,7 +3117,9 @@ void drawStatusNew(const int player)
 				// no action, gamepads can't scroll when useHotbarFaceMenu
 			}
 			else if ( shootmode && !players[player]->GUI.isDropdownActive() && !openedChest[player]
-				&& gui_mode != (GUI_MODE_SHOP) && !players[player]->bookGUI.bBookOpen
+				&& gui_mode != (GUI_MODE_SHOP) 
+				&& !players[player]->bookGUI.bBookOpen
+				&& !players[player]->signGUI.bSignOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
@@ -3144,6 +3148,7 @@ void drawStatusNew(const int player)
 				&& (!hotbar_t.useHotbarFaceMenu || (hotbar_t.useHotbarFaceMenu && !inputs.hasController(player)))
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
+				&& !players[player]->signGUI.bSignOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
 				//Show a tooltip
@@ -3153,7 +3158,7 @@ void drawStatusNew(const int player)
 				item = uidToItem(hotbar[hotbar_t.current_hotbar].item);
 			}
 
-			//if ( !shootmode && input.binaryToggle("HotbarInventoryClearSlot") && !players[player]->bookGUI.bBookOpen ) //TODO: Don't activate if any of the previous if statement's conditions are true?
+			//if ( !shootmode && input.binaryToggle("HotbarInventoryClearSlot") && !players[player]->bookGUI.bBookOpen && !players[player]->signGUI.bSignOpen) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			//{
 			//	//Clear a hotbar slot if in-inventory.
 			//	input.consumeBinaryToggle("HotbarInventoryClearSlot");
@@ -3165,7 +3170,10 @@ void drawStatusNew(const int player)
 			{
 				inventoryInteractable = players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR;
 			}
-			if ( !shootmode && inventoryInteractable && !players[player]->bookGUI.bBookOpen && !openedChest[player]
+			if ( !shootmode && inventoryInteractable 
+				&& !players[player]->bookGUI.bBookOpen 
+				&& !players[player]->signGUI.bSignOpen
+				&& !openedChest[player]
 				&& mouseInsidePlayerHotbar(player) )
 			{
 				if ( tooltipOpen

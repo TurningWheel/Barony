@@ -4655,6 +4655,7 @@ timeToGoAgain:
 												{
 													hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 												}
+												updateEnemyBar(my, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 												playSoundEntity(hit.entity, 28, 64);
 												if ( hit.entity->doorHealth <= 0 )
 												{
@@ -5719,6 +5720,7 @@ timeToGoAgain:
 											{
 												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 											}
+											updateEnemyBar(my, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 											playSoundEntity(hit.entity, 28, 64);
 											if ( hit.entity->doorHealth <= 0 )
 											{
