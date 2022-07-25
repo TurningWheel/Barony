@@ -20,6 +20,7 @@
 #include "../classdescriptions.hpp"
 #include "../lobbies.hpp"
 #include "../interface/consolecommand.hpp"
+#include "../interface/ui.hpp"
 #include "../eos.hpp"
 #include "../colors.hpp"
 
@@ -8568,7 +8569,7 @@ bind_failed:
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
-				achievements->setColor(makeColor(40, 180, 37, 255));
+				achievements->setColor(makeColor(37, 40, 180, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
@@ -9260,7 +9261,7 @@ bind_failed:
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
-				achievements->setColor(makeColor(40, 180, 37, 255));
+				achievements->setColor(makeColor(37, 40, 180, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
@@ -16013,20 +16014,46 @@ bind_failed:
 		    100,
 		    });
 		start->setBorder(0);
-		start->setColor(makeColor(0, 0, 0, 127));
-		start->setHighlightColor(makeColor(0, 0, 0, 127));
+		start->setColor(makeColor(255, 255, 255, 255));
+		start->setHighlightColor(makeColor(255, 255, 255, 255));
+		start->setBackground("images/ui/Main Menus/StartGradient.png");
 		start->setFont(bigfont_outline);
-		start->setText("Press to Start\n ");
-		start->setButtonsOffset(SDL_Rect{0, 16, 0, 0});
+		start->setText("Press to Start");
 		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		start->setButtonsOffset(SDL_Rect{0, 24, 0, 0});
 		start->setHideKeyboardGlyphs(false);
+		//start->setSelectorOffset(SDL_Rect{32, 32, -32, -32});
+		start->setHideSelectors(true);
 		start->addWidgetAction("MenuConfirm", "start");
-		start->select();
 		start->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
 		    soundActivate();
 		    });
+		start->setTickCallback([](Widget& widget){
+		    auto button = static_cast<Button*>(&widget);
+		    auto color = button->getColor();
+            Uint8 r, g, b, a;
+            ::getColor(color, &r, &g, &b, &a);
+            static bool fadingDown = true;
+            if (fadingDown) {
+                if (a == 127) {
+                    fadingDown = false;
+                } else {
+                    --a;
+                }
+            } else {
+                if (a == 255) {
+                    fadingDown = true;
+                } else {
+                    ++a;
+                }
+            }
+            const Uint32 newColor = makeColor(r, g, b, a);
+            button->setColor(newColor);
+            button->setHighlightColor(newColor);
+		    });
+		start->select();
 
 #ifdef STEAMWORKS
 	    if (!cmd_line.empty()) {
@@ -16212,7 +16239,11 @@ bind_failed:
 				});
 			int back = c - 1 < 0 ? num_options - 1 : c - 1;
 			int forward = c + 1 >= num_options ? 0 : c + 1;
-			button->setWidgetDown(options[forward].name);
+			if (ingame || c + 1 < num_options) {
+			    button->setWidgetDown(options[forward].name);
+			} else {
+			    button->setWidgetDown("banner1");
+			}
 			button->setWidgetUp(options[back].name);
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
@@ -16244,23 +16275,54 @@ bind_failed:
 		);
 
 		if (!ingame) {
-#if 0
-			for (int c = 0; c < 2; ++c) {
+
+		    const char* banner_images[][2] = {
+		        {
+		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
+		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_high.png",
+		        },
+		        {
+		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_base.png",
+		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_high.png",
+		        },
+		    };
+		    void(* banner_funcs[])(Button&) = {
+		        [](Button&){
+		        // TODO QoD banner click
+                openURLTryWithOverlay("http://www.baronygame.com/");
+	            printlog("Clicked QoD banner");
+		        },
+		        [](Button&){
+                openURLTryWithOverlay("https://discord.gg/xDhtaR9KA2");
+		        printlog("Clicked Discord banner");
+		        },
+		    };
+		    constexpr int num_banners = sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+			for (int c = 0; c < num_banners; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
-				auto banner = main_menu_frame->addFrame(name.c_str());
-				banner->setSize(SDL_Rect{
-					(Frame::virtualScreenX - 472) / 2,
-					y,
-					472,
-					76
-					});
-				banner->setActualSize(SDL_Rect{0, 0, banner->getSize().w, banner->getSize().h});
-				std::string background = std::string("*images/ui/Main Menus/Main/UI_MainMenu_EXBanner") + std::to_string(c + 1) + std::string(".png");
-				banner->addImage(banner->getActualSize(), 0xffffffff, background.c_str());
+				auto banner = main_menu_frame->addButton(name.c_str());
+				banner->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, 76});
+				banner->setBackground(banner_images[c][0]);
+				banner->setBackgroundHighlighted(banner_images[c][1]);
+				banner->setCallback(banner_funcs[c]);
+		        banner->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
+				//banner->setHideSelectors(true);
+
+				if (c == 0) {
+				    banner->setWidgetUp("Quit");
+				} else {
+				    banner->setWidgetUp((std::string("banner") + std::to_string(c + 0)).c_str());
+				}
+				if (c == num_banners - 1) {
+				    banner->setWidgetDown("Play Game");
+				} else {
+				    banner->setWidgetDown((std::string("banner") + std::to_string(c + 2)).c_str());
+				}
+				banner->setWidgetBack("back_button");
+
 				y += banner->getSize().h;
 				y += 16;
 			}
-#endif
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
@@ -16293,9 +16355,7 @@ bind_failed:
 			online_players->setFont(smallfont_outline);
 			online_players->setHJustify(Field::justify_t::RIGHT);
 			online_players->setVJustify(Field::justify_t::TOP);
-			online_players->setSize(SDL_Rect{
-				Frame::virtualScreenX - 200,
-				4, 200, 50});
+			online_players->setSize(SDL_Rect{Frame::virtualScreenX - 200, 4, 200, 50});
 			online_players->setColor(0xffffffff);
 			online_players->setTickCallback([](Widget& widget){
 			    auto online_players = static_cast<Field*>(&widget);
