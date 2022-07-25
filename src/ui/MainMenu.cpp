@@ -902,6 +902,7 @@ namespace MainMenu {
 
 	static Frame* textFieldPrompt(
 		const char* field_text,
+	    const char* tip_text,
 		const char* guide_text,
 		const char* okay_text,
 		const char* cancel_text,
@@ -922,7 +923,27 @@ namespace MainMenu {
 			"text_box"
 		);
 
-		constexpr int field_buffer_size = 64;
+		constexpr int field_buffer_size = 128;
+
+		auto tip = frame->addField("tip", field_buffer_size);
+		tip->setSize(SDL_Rect{(364 - 242) / 2, 36, 242, 28});
+		tip->setFont(smallfont_outline);
+		tip->setText(tip_text);
+		tip->setUserData(const_cast<void*>((const void*)tip_text));
+		tip->setHJustify(Field::justify_t::LEFT);
+		tip->setVJustify(Field::justify_t::CENTER);
+		tip->setColor(makeColor(166, 123, 81, 255));
+		tip->setBackgroundColor(makeColor(52, 30, 22, 255));
+		tip->setTickCallback([](Widget& widget){
+	        auto tip = static_cast<Field*>(&widget);
+		    auto parent = static_cast<Frame*>(widget.getParent());
+		    auto field = parent->findField("field");
+		    if (field && (field->isActivated() || field->getText()[0] != '\0')) {
+		        tip->setText("");
+		    } else {
+		        tip->setText((const char*)tip->getUserData());
+		    }
+		    });
 
 		auto field = frame->addField("field", field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
@@ -937,9 +958,6 @@ namespace MainMenu {
 		field->setHJustify(Field::justify_t::LEFT);
 		field->setVJustify(Field::justify_t::CENTER);
 		field->setColor(makeColor(166, 123, 81, 255));
-		field->setBackgroundColor(makeColor(52, 30, 22, 255));
-		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
-		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		field->setWidgetSearchParent(field->getParent()->getName());
 		field->setWidgetBack("cancel");
 		field->setWidgetDown("okay");
@@ -1176,6 +1194,105 @@ namespace MainMenu {
                 closeMono();
             }
         );
+    }
+
+    static void openDLCPrompt() {
+        textFieldPrompt("", "Enter DLC Key...", "Enter DLC Serial Key", "Confirm", "Cancel",
+            [](Button& button){ // okay
+                soundActivate();
+
+                static std::string text;
+
+                auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+                auto field = frame->findField("field"); assert(field);
+                text = field->getText();
+                closeTextField();
+
+                if (text.empty()) {
+                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                    auto play = buttons->findButton("Play Game");
+                    play->select();
+                } else {
+                    static Uint32 window_ticks;
+                    window_ticks = ticks;
+                    textPrompt("dlc_check_window", "", [](Widget& widget){
+                        auto field = static_cast<Field*>(&widget);
+                        auto time = ticks - window_ticks;
+                        if (time % TICKS_PER_SECOND < 10) {
+                            field->setText("Verifying");
+                        }
+                        else if (time % TICKS_PER_SECOND < 20) {
+                            field->setText("Verifying.");
+                        }
+                        else if (time % TICKS_PER_SECOND < 30) {
+                            field->setText("Verifying..");
+                        }
+                        else if (time % TICKS_PER_SECOND < 40) {
+                            field->setText("Verifying...");
+                        }
+                        else {
+                            field->setText("Verifying....");
+                        }
+                        if (time > TICKS_PER_SECOND * 2) {
+                            closePrompt("dlc_check_window");
+		                    std::size_t DLCHash = serialHash(text);
+
+		                    auto prompt = [](const char* text){
+		                        monoPrompt(text, "Okay", [](Button&){
+		                            soundActivate();
+		                            closeMono();
+                                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                                    auto play = buttons->findButton("Play Game");
+                                    play->select();
+		                            });
+		                        };
+
+		                    if (DLCHash == 144425) {
+			                    playSound(402, 92);
+			                    printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+			                    prompt("Myths and Outcasts DLC\nhas been unlocked!");
+			                    enabledDLCPack1 = true;
+
+                                char path[PATH_MAX] = "";
+                                completePath(path, "mythsandoutcasts.key", outputdir);
+
+                                // write the serial file
+                                File* fp = nullptr;
+                                if (fp = FileIO::open(path, "wb")) {
+                                    fp->write(text.c_str(), sizeof(char), text.size());
+                                    FileIO::close(fp);
+                                }
+		                    } else if ( DLCHash == 135398 ) {
+			                    playSound(402, 92);
+			                    printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+			                    prompt("Legends and Pariahs DLC\nhas been unlocked!");
+			                    enabledDLCPack2 = true;
+
+                                char path[PATH_MAX] = "";
+                                completePath(path, "legendsandpariahs.key", outputdir);
+
+                                // write the serial file
+                                File* fp = nullptr;
+                                if (fp = FileIO::open(path, "wb")) {
+                                    fp->write(text.c_str(), sizeof(char), text.size());
+                                    FileIO::close(fp);
+                                }
+		                    } else {
+		                        soundError();
+			                    printlog("[LICENSE]: DLC license key invalid.");
+			                    prompt("Invalid license key.");
+		                    }
+                        }
+                        });
+                }
+            },
+            [](Button&){ // cancel
+                soundCancel();
+                closeTextField();
+                auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                auto play = buttons->findButton("Play Game");
+                play->select();
+            });
     }
 
 /******************************************************************************/
@@ -9522,19 +9639,19 @@ bind_failed:
         for (int c = 0; c < num_races; ++c) {
 		    auto race = subframe->addButton(races[c]);
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
-		    race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
 		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
-		        race->setIcon("*#images/ui/Main Menus/sublist_item-locked.png");
+		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
 		        race->setDisabled(true);
 		    }
 		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
-		        race->setIcon("*#images/ui/Main Menus/sublist_item-locked.png");
+		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
 		        race->setDisabled(true);
 		    }
 		    else {
-		        race->setIcon("*#images/ui/Main Menus/sublist_item-picked.png");
+		        race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
 		        race->setDisabled(false);
 		    }
+		    race->setIcon("*#images/ui/Main Menus/sublist_item-picked.png");
 		    race->setStyle(Button::style_t::STYLE_RADIO);
 		    race->setBorder(0);
 		    race->setColor(0xffffffff);
@@ -13071,21 +13188,23 @@ bind_failed:
 		refresh->setCallback(refresh_fn);
 
 		static auto enter_code_fn = [](Button& button){
+		    static const char* guide_ipaddr = "Enter an IP address to connect to.";
+		    static const char* guide_roomcode = "Enter the code to a lobby you wish to connect to.";
 		    static const char* guide;
-		    static const char* ipaddr = "Enter an IP address to connect to.";
-		    static const char* roomcode = "Enter the code to a lobby you wish to connect to.";
-		    guide = strcmp(button.getText(), "Enter IP\nAddress") ? roomcode : ipaddr;
-            textFieldPrompt(last_address, guide, "Connect", "Cancel",
+		    guide = directConnect ? guide_ipaddr : guide_roomcode;
+		    static const char* tip_ipaddr = "Enter IP address...";
+		    static const char* tip_roomcode = "Enter roomcode...";
+		    static const char* tip;
+		    tip = directConnect ? tip_ipaddr : tip_roomcode;
+            textFieldPrompt(last_address, tip, guide, "Connect", "Cancel",
                 [](Button&){ // connect
                     const char* address = closeTextField(); // only valid for one frame
-                    if (guide == ipaddr) {
+                    if (directConnect) {
                         soundActivate();
                         (void)connectToServer(address, nullptr, LobbyType::LobbyLAN);
-                    } else if (guide == roomcode) {
+                    } else {
                         soundActivate();
                         (void)connectToServer(address, nullptr, LobbyType::LobbyOnline);
-                    } else {
-                        soundError();
                     }
                 },
                 [](Button&){ // cancel
@@ -14923,17 +15042,17 @@ bind_failed:
 
 		// change "notification" section into subsection banner
 		auto notification = main_menu_frame->findFrame("notification"); assert(notification);
-		auto image = notification->findImage("background"); assert(image);
-		image->path = "*images/ui/Main Menus/AdventureArchives/UI_AdventureArchives_TitleGraphic00.png";
-		image->disabled = false;
+		const int note_y = notification->getSize().y;
+		notification->removeSelf();
+		notification = main_menu_frame->addFrame("notification");
 		notification->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 204 * 2) / 2,
-			notification->getSize().y,
-			204 * 2,
-			43 * 2
-			});
+			(Frame::virtualScreenX - 204 * 2) / 2, note_y, 204 * 2, 43 * 2});
 		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-		image->pos = notification->getActualSize();
+		auto image = notification->addImage(
+		    notification->getActualSize(),
+		    0xffffffff,
+		    "*images/ui/Main Menus/AdventureArchives/UI_AdventureArchives_TitleGraphic00.png",
+		    "background");
 
 		// add banner text to notification
 		auto banner_text = notification->addField("text", 64);
@@ -14944,12 +15063,9 @@ bind_failed:
 		banner_text->setSize(SDL_Rect{19 * 2, 15 * 2, 166 * 2, 12 * 2});
 
 		// disable banners
-		for (int c = 0; c < 2; ++c) {
-			std::string name = std::string("banner") + std::to_string(c + 1);
-			auto banner = main_menu_frame->findFrame(name.c_str());
-			if (banner) {
-			    banner->setDisabled(true);
-			}
+		auto banners = main_menu_frame->findFrame("banners");
+		if (banners) {
+		    banners->setDisabled(true);
 		}
 
 		// delete existing buttons
@@ -15885,8 +16001,8 @@ bind_failed:
 
         // just always enable DLC in debug. saves headaches
 #ifndef NDEBUG
-		enabledDLCPack1 = true;
-		enabledDLCPack2 = true;
+		//enabledDLCPack1 = true;
+		//enabledDLCPack2 = true;
 #endif
 
 #ifdef STEAMWORKS
@@ -16129,18 +16245,8 @@ bind_failed:
 
 		if (!ingame) {
 			auto notification = main_menu_frame->addFrame("notification");
-			notification->setSize(SDL_Rect{
-				(Frame::virtualScreenX - 236 * 2) / 2,
-				y,
-				236 * 2,
-				49 * 2
-				});
+			notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
 			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-			auto image = notification->addImage(notification->getActualSize(), 0xffffffff,
-				"*images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
-#if 1
-            image->disabled = true;
-#endif
 			y += notification->getSize().h;
 			y += 16;
 		}
@@ -16275,7 +16381,6 @@ bind_failed:
 		);
 
 		if (!ingame) {
-
 		    const char* banner_images[][2] = {
 		        {
 		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
@@ -16286,22 +16391,37 @@ bind_failed:
 		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_high.png",
 		        },
 		    };
-		    void(* banner_funcs[])(Button&) = {
-		        [](Button&){
-		        // TODO QoD banner click
-                openURLTryWithOverlay("http://www.baronygame.com/");
-	            printlog("Clicked QoD banner");
+		    if (!enabledDLCPack1 && !enabledDLCPack2) {
+		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+		    }
+		    else if (!enabledDLCPack1) {
+		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
+		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
+		    }
+		    else if (!enabledDLCPack2) {
+		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
+		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
+		    }
+		    void(*banner_funcs[])(Button&) = {
+		        [](Button&){ // banner #1
+		        if (enabledDLCPack1 && enabledDLCPack2) {
+                    openURLTryWithOverlay("http://www.baronygame.com/");
+                } else {
+                    openDLCPrompt();
+                }
 		        },
-		        [](Button&){
+		        [](Button&){ // banner #2
                 openURLTryWithOverlay("https://discord.gg/xDhtaR9KA2");
-		        printlog("Clicked Discord banner");
 		        },
 		    };
 		    constexpr int num_banners = sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+		    auto banners = main_menu_frame->addFrame("banners");
+		    banners->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, Frame::virtualScreenY - y});
 			for (int c = 0; c < num_banners; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
-				auto banner = main_menu_frame->addButton(name.c_str());
-				banner->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, 76});
+				auto banner = banners->addButton(name.c_str());
+				banner->setSize(SDL_Rect{0, c * 92, 472, 76});
 				banner->setBackground(banner_images[c][0]);
 				banner->setBackgroundHighlighted(banner_images[c][1]);
 				banner->setCallback(banner_funcs[c]);

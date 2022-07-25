@@ -6594,7 +6594,8 @@ int main(int argc, char** argv)
 			GO_SwapBuffers(screen);
 
 			// screenshots
-			if ( Input::inputs[clientnum].consumeBinaryToggle("Screenshot") )
+			if (Input::inputs[clientnum].consumeBinaryToggle("Screenshot") ||
+			    (inputs.hasController(clientnum) && Input::inputs[clientnum].consumeBinaryToggle("GamepadScreenshot")))
 			{
 				takeScreenshot();
 			}

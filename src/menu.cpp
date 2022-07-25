@@ -15007,7 +15007,7 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 	}
 }
 #else
-size_t serialHash(std::string input)
+size_t serialHash(const std::string& input)
 {
 	if ( input.empty() || input.size() != 19 )
 	{
@@ -15015,14 +15015,13 @@ size_t serialHash(std::string input)
 	}
 	int i = 0;
 	size_t hash = 0;
-	for ( std::string::iterator it = input.begin(); it != input.end(); ++it )
+	for ( auto it : input )
 	{
-		char c = *it;
-		if ( c == '\0' || c == '\n' )
+		if ( it == '\0' || it == '\n' )
 		{
 			break;
 		}
-		hash += static_cast<size_t>(c) * (i * i);
+		hash += static_cast<size_t>(it) * (i * i);
 		++i;
 	}
 	return hash;
