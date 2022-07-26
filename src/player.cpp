@@ -1177,6 +1177,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 			}
 		}
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
+			|| player.signGUI.bSignOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen()
 			|| player.hud.mapWindow || player.hud.logWindow )
 		{
@@ -2715,6 +2716,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	worldUI(*this),
 	hotbar(*this),
 	bookGUI(*this),
+	signGUI(*this),
 	paperDoll(*this),
 	minimap(*this),
 	shopGUI(*this)
@@ -5496,6 +5498,7 @@ void Player::clearGUIPointers()
 	shopGUI.itemRequiresTitleReflow = true;
 
 	bookGUI.bookFrame = nullptr;
+	signGUI.signFrame = nullptr;
 
 	characterSheet.sheetFrame = nullptr;
 

@@ -3959,4 +3959,8 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_scriptdata("/loadscripts", "loads scripts.json", []CCMD{
+		ScriptTextParser.readFromFile();
+		messagePlayer(clientnum, MESSAGE_MISC, "reloaded scripts.json");
+	});
 }

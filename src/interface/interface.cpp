@@ -75,19 +75,6 @@ SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
 int rightsidebar_height = 0;
 
 SDL_Surface* bookgui_img = NULL;
-//SDL_Surface *nextpage_img = NULL;
-//SDL_Surface *previouspage_img = NULL;
-//SDL_Surface *bookclose_img = NULL;
-//node_t* book_page = NULL;
-//int bookgui_offset_x = 0;
-//int bookgui_offset_y = 0;
-//bool dragging_book_GUI = false;
-//bool book_open = false;
-//book_t* open_book = NULL;
-//Item* open_book_item = NULL;
-//int book_characterspace_x = 0;
-//int book_characterspace_y = 0;
-
 SDL_Surface* book_highlighted_left_img = NULL;
 SDL_Surface* book_highlighted_right_img = NULL;
 
@@ -1092,6 +1079,7 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 	switch ( activeModule )
 	{
 		case MODULE_BOOK_VIEW:
+		case MODULE_SIGN_VIEW:
 		case MODULE_SKILLS_LIST:
 		case MODULE_LOG:
 		case MODULE_MAP:
@@ -1493,6 +1481,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	inventoryUI.closeInventory();
 	skillSheet.closeSkillSheet();
 	bookGUI.closeBookGUI();
+	signGUI.closeSignGUI();
 
 	if ( hud.mapWindow )
 	{

@@ -5091,6 +5091,10 @@ void ingameHud()
 			{
 				players[player]->bookGUI.closeBookGUI();
 			}
+			if ( players[player]->signGUI.bSignOpen )
+			{
+				players[player]->signGUI.closeSignGUI();
+			}
 			if ( players[player]->skillSheet.bSkillSheetOpen )
 			{
 				players[player]->skillSheet.closeSkillSheet();
@@ -5147,6 +5151,7 @@ void ingameHud()
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
+		players[player]->signGUI.updateSignGUI();
 		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->GUI.handleModuleNavigation(false);

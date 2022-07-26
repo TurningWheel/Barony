@@ -27,6 +27,7 @@ GameplayCustomManager gameplayCustomManager;
 GameModeManager_t gameModeManager;
 ItemTooltips_t ItemTooltips;
 GlyphRenderer_t GlyphHelper;
+ScriptTextParser_t ScriptTextParser;
 #ifndef NINTENDO
 IRCHandler_t IRCHandler;
 #endif // !NINTENDO
@@ -3926,4 +3927,137 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 
 	printlog("[Glyph Export]: Completed export of %d glyphs with %d errors.", allGlyphs.size(), errors);
 #endif
+}
+
+bool ScriptTextParser_t::readFromFile()
+{
+	if ( PHYSFS_getRealDir("/data/scripts.json") )
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/scripts.json");
+		inputPath.append("/data/scripts.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return false;
+		}
+		char buf[65536];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return false;
+		}
+
+		allEntries.clear();
+
+		for ( rapidjson::Value::ConstMemberIterator entry_itr = d["entries"].MemberBegin(); entry_itr != d["entries"].MemberEnd(); ++entry_itr )
+		{
+			std::string key = entry_itr->name.GetString();
+			allEntries[key] = Entry_t();
+			auto& entry = allEntries[key];
+			entry.name = key;
+			if ( entry_itr->value.HasMember("sign") )
+			{
+				entry.objectType = OBJ_SIGN;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["sign"].Begin(); text_itr != entry_itr->value["sign"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				if ( entry_itr->value.HasMember("variables") )
+				{
+					for ( rapidjson::Value::ConstValueIterator var_itr = entry_itr->value["variables"].Begin();
+						var_itr != entry_itr->value["variables"].End(); ++var_itr )
+					{
+						Entry_t::Variable_t variable;
+						variable.type = TEXT;
+						if ( (*var_itr).HasMember("type") )
+						{
+							std::string typeTxt = (*var_itr)["type"].GetString();
+							if ( typeTxt == "text" )
+							{
+								variable.type = TEXT;
+							}
+							else if ( typeTxt == "input_glyph" )
+							{
+								variable.type = GLYPH;
+							}
+							else if ( typeTxt == "image" )
+							{
+								variable.type = IMG;
+							}
+						}
+						if ( (*var_itr).HasMember("value") )
+						{
+							variable.value = (*var_itr)["value"].GetString();
+						}
+						if ( (*var_itr).HasMember("sizex") )
+						{
+							variable.sizex = (*var_itr)["sizex"].GetInt();
+						}
+						if ( (*var_itr).HasMember("sizey") )
+						{
+							variable.sizey = (*var_itr)["sizey"].GetInt();
+						}
+						entry.variables.push_back(variable);
+					}
+				}
+			}
+			else if ( entry_itr->value.HasMember("script") )
+			{
+				entry.objectType = OBJ_SCRIPT;
+				entry.formattedText = entry_itr->value["script"].GetString();
+			}
+			else if ( entry_itr->value.HasMember("message") )
+			{
+				entry.objectType = OBJ_MESSAGE;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["message"].Begin(); text_itr != entry_itr->value["message"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				if ( entry_itr->value.HasMember("variables") )
+				{
+					for ( rapidjson::Value::ConstValueIterator var_itr = entry_itr->value["variables"].Begin();
+						var_itr != entry_itr->value["variables"].End(); ++var_itr )
+					{
+						Entry_t::Variable_t variable;
+						variable.type = TEXT;
+						if ( (*var_itr).HasMember("type") )
+						{
+							std::string typeTxt = (*var_itr)["type"].GetString();
+							if ( typeTxt == "text" )
+							{
+								variable.type = TEXT;
+							}
+							else if ( typeTxt == "input_glyph" )
+							{
+								variable.type = GLYPH;
+							}
+							else if ( typeTxt == "image" )
+							{
+								variable.type = IMG;
+							}
+						}
+						if ( (*var_itr).HasMember("value") )
+						{
+							variable.value = (*var_itr)["value"].GetString();
+						}
+						entry.variables.push_back(variable);
+					}
+				}
+			}
+		}
+
+		printlog("[JSON]: Successfully read json file %s, processed %d script variables", inputPath.c_str(), allEntries.size());
+		return true;
+	}
+	printlog("[JSON]: Error: Could not locate json file %s", "/data/scripts.json");
+	return false;
 }

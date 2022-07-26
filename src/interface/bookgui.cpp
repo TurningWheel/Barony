@@ -24,6 +24,7 @@
 #include "../ui/Image.hpp"
 #include "../ui/GameUI.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 void Player::BookGUI_t::createBookGUI()
 {
@@ -296,25 +297,6 @@ void Player::BookGUI_t::updateBookGUI()
 		promptPrev->setSize(textPos);
 	}
 
-	//Center the book GUI.
-	SDL_Rect pos;
-	pos.x = getStartX();
-	pos.y = getStartY();
-	/*if (mouseInBounds(player.playernum, getStartX() + getBookWidth() - FLIPMARGIN, getStartX() + getBookWidth(),
-		getStartY() + DRAGHEIGHT_BOOK, getStartY() + getBookHeight()) )
-	{
-		drawImage(book_highlighted_right_img, NULL, &pos);
-	}
-	else if (mouseInBounds(player.playernum, getStartX(), getStartX() + FLIPMARGIN,
-		getStartY() + DRAGHEIGHT_BOOK, getStartY() + getBookHeight()) )
-	{
-		drawImage(book_highlighted_left_img, NULL, &pos);
-	}
-	else
-	{
-		drawImage(bookgui_img, NULL, &pos);
-	}*/
-
 	auto leftColumn = innerFrame->findField("left column text");
 	auto rightColumn = innerFrame->findField("right column text");
 
@@ -556,4 +538,417 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 	{
 		steamAchievement("BARONY_ACH_WELL_READ");
 	}
+}
+
+void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
+{
+	if ( ScriptTextParser.allEntries.find(name) == ScriptTextParser.allEntries.end() )
+	{
+		closeSignGUI();
+		return;
+	}
+
+	player.GUI.previousModule = player.GUI.activeModule;
+
+	players[player.playernum]->openStatusScreen(GUI_MODE_SIGN,
+		INVENTORY_MODE_ITEM, player.GUI.MODULE_SIGN_VIEW); // Reset the GUI to the inventory.
+	bSignOpen = true;
+	signName = name;
+	signUID = uid;
+}
+
+void Player::SignGUI_t::closeSignGUI()
+{
+	bSignOpen = false;
+	signName = "";
+	signUID = 0;
+
+	if ( signFrame )
+	{
+		signFrame->setDisabled(true);
+	}
+
+	player.GUI.returnToPreviousActiveModule();
+}
+
+void Player::SignGUI_t::createSignGUI()
+{
+	if ( signFrame )
+	{
+		return;
+	}
+
+	char name[32];
+	snprintf(name, sizeof(name), "player sign %d", player.playernum);
+	Frame* frame = gameUIFrame[player.playernum]->addFrame(name);
+	signFrame = frame;
+	frame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+	frame->setHollow(false);
+	frame->setBorder(0);
+	frame->setOwner(player.playernum);
+	frame->setInheritParentFrameOpacity(false);
+
+	auto fade = frame->addImage(
+		SDL_Rect{ 0, 0, frame->getSize().w, frame->getSize().h },
+		0, "images/system/white.png", "fade img");
+	Uint8 r, g, b, a;
+	getColor(fade->color, &r, &g, &b, &a);
+	a = 0;
+	fade->color = makeColor(r, g, b, a);
+
+	Frame* signBackground = frame->addFrame("sign frame");
+	const int width = 534;
+	const int promptHeight = 27;
+	const int promptWidth = 60;
+	const int height = 306;
+	signBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height + promptHeight * 2 });
+	auto bgImg = signBackground->addImage(SDL_Rect{ 0, promptHeight, width, height }, 0xFFFFFFFF,
+		"images/system/white.png", "sign img");
+
+	std::string promptFont = "fonts/pixel_maz.ttf#32#2";
+	auto promptBack = signBackground->addField("prompt back txt", 16);
+	promptBack->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // lower right corner
+		bgImg->pos.y + bgImg->pos.h, promptWidth, promptHeight });
+	promptBack->setFont(promptFont.c_str());
+	promptBack->setHJustify(Field::justify_t::RIGHT);
+	promptBack->setVJustify(Field::justify_t::CENTER);
+	promptBack->setText(language[4053]);
+	promptBack->setColor(makeColor(201, 162, 100, 255));
+
+	auto promptBackImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 64),
+		"", "prompt back img");
+	promptBackImg->disabled = true;
+
+	//auto promptNextPage = signBackground->addField("prompt next txt", 16);
+	//promptNextPage->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // upper right corner
+	//	0, promptWidth, promptHeight });
+	//promptNextPage->setFont(promptFont.c_str());
+	//promptNextPage->setHJustify(Field::justify_t::RIGHT);
+	//promptNextPage->setVJustify(Field::justify_t::CENTER);
+	//promptNextPage->setText(language[4054]);
+	//promptNextPage->setColor(makeColor(201, 162, 100, 255));
+
+	//auto promptNextPageImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+	//	"", "prompt next img");
+	//promptNextPageImg->disabled = true;
+
+	//auto promptPrevPage = signBackground->addField("prompt prev txt", 16);
+	//promptPrevPage->setSize(SDL_Rect{ 16, // upper left corner
+	//	0, promptWidth, promptHeight });
+	//promptPrevPage->setFont(promptFont.c_str());
+	//promptPrevPage->setHJustify(Field::justify_t::LEFT);
+	//promptPrevPage->setVJustify(Field::justify_t::CENTER);
+	//promptPrevPage->setText(language[4055]);
+	//promptPrevPage->setColor(makeColor(201, 162, 100, 255));
+
+	//auto promptPrevPageImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+	//	"", "prompt prev img");
+	//promptPrevPageImg->disabled = true;
+
+	std::string signFont = "fonts/pixel_maz_multiline.ttf#16#2";
+	for ( int i = 1; i <= 10; ++i )
+	{
+		char fieldBuf[32] = "";
+		char imgBuf[32] = "";
+		snprintf(fieldBuf, sizeof(fieldBuf), "text %d", i);
+		snprintf(imgBuf, sizeof(imgBuf), "img %d", i);
+		Field* signText = signBackground->addField(fieldBuf, 1024);
+		signText->setText("");
+		const int pageWidth = 440;
+		const int pageHeight = 270;
+		const int leftMargin = 30;
+		const int topMargin = 10;
+		signText->setSize(SDL_Rect{ leftMargin, bgImg->pos.y + topMargin, pageWidth, pageHeight });
+		signText->setFont(signFont.c_str());
+		signText->setHJustify(Field::justify_t::LEFT);
+		signText->setVJustify(Field::justify_t::TOP);
+		signText->setColor(makeColor(255, 255, 255, 255));
+		signText->setDisabled(true);
+
+		Frame::image_t* signImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "", imgBuf);
+		signImg->disabled = true;
+	}
+}
+
+void Player::SignGUI_t::updateSignGUI()
+{
+	if ( !signFrame )
+	{
+		createSignGUI();
+	}
+
+	bool errorOpening = false;
+	if ( signName == "" || ScriptTextParser.allEntries.find(signName) == ScriptTextParser.allEntries.end() )
+	{
+		errorOpening = true;
+	}
+
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
+		&& player.GUI.activeModule != player.GUI.MODULE_SIGN_VIEW )
+	{
+		bSignOpen = false;
+	}
+
+	if ( !bSignOpen || errorOpening )
+	{
+		signFrame->setDisabled(true);
+		bSignOpen = false;
+		signName = "";
+
+		auto innerFrame = signFrame->findFrame("sign frame");
+		SDL_Rect pos = innerFrame->getSize();
+		signFadeInAnimationY = 0.0;
+		pos.y = -pos.h;
+		innerFrame->setSize(pos);
+
+		auto fade = signFrame->findImage("fade img");
+		Uint8 r, g, b, a;
+		getColor(fade->color, &r, &g, &b, &a);
+		a = 0;
+		fade->color = makeColor(r, g, b, a);
+		return;
+	}
+
+	signFrame->setDisabled(false);
+	signFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
+	auto innerFrame = signFrame->findFrame("sign frame");
+	SDL_Rect bookSize = innerFrame->getSize();
+	bookSize.x = signFrame->getSize().w / 2 - bookSize.w / 2;
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - signFadeInAnimationY)) / 5.0;
+	signFadeInAnimationY += setpointDiffX;
+	signFadeInAnimationY = std::min(1.0, signFadeInAnimationY);
+
+	auto fade = signFrame->findImage("fade img");
+	Uint8 r, g, b, a;
+	getColor(fade->color, &r, &g, &b, &a);
+	a = 128 * signFadeInAnimationY;
+	fade->color = makeColor(r, g, b, a);
+
+	int baseY = (signFrame->getSize().h / 2 - bookSize.h / 2);
+	bookSize.y = -bookSize.h + signFadeInAnimationY * (baseY + bookSize.h);
+	innerFrame->setSize(bookSize);
+
+	bool drawGlyphs = ::inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
+
+	if ( auto promptBack = innerFrame->findField("prompt back txt") )
+	{
+		promptBack->setDisabled(!drawGlyphs);
+		promptBack->setText(language[4053]);
+		auto promptImg = innerFrame->findImage("prompt back img");
+		promptImg->disabled = !drawGlyphs;
+		SDL_Rect glyphPos = promptImg->pos;
+		if ( auto textGet = Text::get(promptBack->getText(), promptBack->getFont(),
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+		{
+			SDL_Rect textPos = promptBack->getSize();
+			textPos.w = textGet->getWidth();
+			textPos.x = bookSize.w - textPos.w - 16;
+			promptBack->setSize(textPos);
+			glyphPos.x = promptBack->getSize().x + promptBack->getSize().w - textGet->getWidth() - 4;
+		}
+		promptImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+		Image* glyphImage = Image::get(promptImg->path.c_str());
+		if ( glyphImage )
+		{
+			glyphPos.w = glyphImage->getWidth();
+			glyphPos.h = glyphImage->getHeight();
+			glyphPos.x -= glyphPos.w;
+			glyphPos.y = promptBack->getSize().y + promptBack->getSize().h / 2 - glyphPos.h / 2;
+			promptImg->pos = glyphPos;
+		}
+	}
+
+	// book gui
+	if ( Input::inputs[player.playernum].binaryToggle("MenuLeftClick") )
+	{
+		if ( !innerFrame->capturesMouse() )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
+			closeSignGUI();
+			return;
+		}
+	}
+
+	if ( player.GUI.activeModule == player.GUI.MODULE_SIGN_VIEW
+		&& player.bControlEnabled && !gamePaused
+		&& !player.usingCommand() )
+	{
+		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
+		{
+			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+			closeSignGUI();
+			return;
+		}
+	}
+
+	auto& signEntry = ScriptTextParser.allEntries[signName];
+	std::vector<Field*> allFields;
+	std::vector<Frame::image_t*> allImgs;
+	for ( int i = 1; i <= 10; ++i )
+	{
+		char fieldBuf[32] = "";
+		char imgBuf[32] = "";
+		snprintf(fieldBuf, sizeof(fieldBuf), "text %d", i);
+		snprintf(imgBuf, sizeof(imgBuf), "img %d", i);
+		auto text = innerFrame->findField(fieldBuf);
+		auto img = innerFrame->findImage(imgBuf);
+		text->setDisabled(true);
+		img->disabled = true;
+		allFields.push_back(text);
+		allImgs.push_back(img);
+	}
+
+	int variableIndex = 0;
+	int imgIndex = 0;
+	std::string formattedText = "";
+	int fontHeight = 24;
+	if ( auto fontGet = Font::get(allFields[0]->getFont()) )
+	{
+		fontHeight = fontGet->height(false) + fontGet->getOutline() * 2;
+	}
+	int spaceWidth = 10;
+	if ( auto textGet = Text::get(" ", allFields[0]->getFont(), 
+		allFields[0]->getTextColor(), allFields[0]->getOutlineColor()) )
+	{
+		spaceWidth = textGet->getWidth();
+	}
+	int currentY = 30;
+	int nextCurrentY = 0;
+	for ( int line = 0; line < signEntry.rawText.size(); ++line )
+	{
+		if ( line >= 10 )
+		{
+			break;
+		}
+		Field* txt = allFields[line];
+		for ( auto c : signEntry.rawText[line] )
+		{
+			if ( c == '$' )
+			{
+				if ( signEntry.variables.size() > variableIndex )
+				{
+					auto& var = signEntry.variables[variableIndex];
+					if ( var.type == ScriptTextParser_t::TEXT )
+					{
+						formattedText += var.value;
+					}
+					else if ( var.type == ScriptTextParser_t::GLYPH )
+					{
+						// set image as binding
+						Frame::image_t* img = allImgs[imgIndex];
+						img->path = Input::inputs[player.playernum].getGlyphPathForBinding(var.value.c_str());
+						if ( auto imgGet = Image::get(img->path.c_str()))
+						{
+							img->disabled = false;
+							img->pos.w = imgGet->getWidth();
+							img->pos.h = imgGet->getHeight();
+							img->pos.y = currentY + fontHeight / 2 - img->pos.h / 2;
+							if ( img->pos.y % 2 == 1 )
+							{
+								--img->pos.y;
+							}
+							if ( auto textGet = Text::get(formattedText.c_str(), txt->getFont(), txt->getTextColor(),
+								txt->getOutlineColor()) )
+							{
+								// position just after the text.
+								img->pos.x = txt->getSize().x + textGet->getWidth() + (spaceWidth / 2);
+							}
+							int numspaces = 1 + (imgGet->getWidth() / spaceWidth);
+							while ( numspaces > 0 )
+							{
+								formattedText += ' '; // add spaces to cover image width
+								--numspaces;
+							}
+							if ( img->pos.y < currentY )
+							{
+								// img overhangs the last line,
+								const int diff = (currentY - img->pos.y);
+								currentY += diff;
+								img->pos.y += diff;
+							}
+							if ( img->pos.y + img->pos.h > (currentY + fontHeight) )
+							{
+								nextCurrentY = (img->pos.y + img->pos.h) - (currentY + fontHeight);
+							}
+						}
+						++imgIndex;
+					}
+					else if ( var.type == ScriptTextParser_t::IMG )
+					{
+						// set image
+						Frame::image_t* img = allImgs[imgIndex];
+						img->path = var.value;
+						if ( auto imgGet = Image::get(img->path.c_str()) )
+						{
+							img->disabled = false;
+							img->pos.w = imgGet->getWidth();
+							img->pos.h = imgGet->getHeight();
+							if ( var.sizex != 0 )
+							{
+								img->pos.w = var.sizex;
+							}
+							if ( var.sizey != 0 )
+							{
+								img->pos.h = var.sizey;
+							}
+							img->pos.y = currentY + fontHeight / 2 - img->pos.h / 2;
+							if ( img->pos.y % 2 == 1 )
+							{
+								--img->pos.y;
+							}
+							if ( auto textGet = Text::get(formattedText.c_str(), txt->getFont(), txt->getTextColor(),
+								txt->getOutlineColor()) )
+							{
+								// position just after the text.
+								img->pos.x = txt->getSize().x + textGet->getWidth() + (spaceWidth / 2);
+							}
+							int numspaces = 1 + (img->pos.w / spaceWidth);
+							while ( numspaces > 0 )
+							{
+								formattedText += ' '; // add spaces to cover image width
+								--numspaces;
+							}
+							if ( img->pos.y < currentY )
+							{
+								// img overhangs the last line,
+								const int diff = (currentY - img->pos.y);
+								currentY += diff;
+								img->pos.y += diff;
+							}
+							if ( img->pos.y + img->pos.h >(currentY + fontHeight) )
+							{
+								nextCurrentY = (img->pos.y + img->pos.h) - (currentY + fontHeight);
+							}
+						}
+						++imgIndex;
+					}
+					++variableIndex;
+				}
+			}
+			else
+			{
+				formattedText += c;
+			}
+		}
+		txt->setText(formattedText.c_str());
+		txt->setDisabled(false);
+		SDL_Rect pos = txt->getSize();
+		pos.y = currentY;
+		txt->setSize(pos);
+		currentY += txt->getNumTextLines() * fontHeight + nextCurrentY;
+		nextCurrentY = 0;
+		formattedText = "";
+	}
+	return;
 }

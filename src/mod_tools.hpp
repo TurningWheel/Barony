@@ -2856,3 +2856,40 @@ public:
 extern GlyphRenderer_t GlyphHelper;
 
 bool charIsWordSeparator(char c);
+
+class ScriptTextParser_t
+{
+public:
+	ScriptTextParser_t() {};
+	~ScriptTextParser_t() {};
+	bool readFromFile();
+	enum ObjectType_t : int {
+		OBJ_SIGN,
+		OBJ_MESSAGE,
+		OBJ_SCRIPT
+	};
+	enum VariableTypes : int {
+		TEXT,
+		GLYPH,
+		IMG,
+		SCRIPT
+	};
+
+	struct Entry_t
+	{
+		std::string name = "";
+		std::vector<std::string> rawText;
+		struct Variable_t
+		{
+			VariableTypes type = TEXT;
+			std::string value = "";
+			int sizex = 0;
+			int sizey = 0;
+		};
+		std::vector<Variable_t> variables;
+		std::string formattedText = "";
+		ObjectType_t objectType = OBJ_MESSAGE;
+	};
+	std::map<std::string, Entry_t> allEntries;
+};
+extern ScriptTextParser_t ScriptTextParser;
