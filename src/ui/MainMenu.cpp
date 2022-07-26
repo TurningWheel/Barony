@@ -6987,7 +6987,7 @@ bind_failed:
 					Uint32 bytesRead = 0;
 					if (!SteamNetworking()->ReadP2PPacket(
 					    net_packet->data, packetlen,
-					    &bytesRead, &newSteamID, 0) || bytesRead != 8 + MAXPLAYERS * (5 + 23)) {
+					    &bytesRead, &newSteamID, 0)) {
 						continue;
 					}
 					net_packet->len = packetlen;
@@ -7317,8 +7317,8 @@ bind_failed:
 			            } else {
 			                createInviteButton(playerDisconnected);
 			            }
+				        checkReadyStates();
 				    }
-				    checkReadyStates();
 				    continue;
 			    }
 
@@ -8688,7 +8688,7 @@ bind_failed:
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
-				achievements->setColor(makeColor(37, 40, 180, 255));
+				achievements->setColor(makeColor(37, 90, 255, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
@@ -9380,7 +9380,7 @@ bind_failed:
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
-				achievements->setColor(makeColor(37, 40, 180, 255));
+				achievements->setColor(makeColor(37, 90, 255, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
@@ -10687,6 +10687,7 @@ bind_failed:
 			case DLC::MythsAndOutcasts: button->setBackground((prefix + "ClassSelect_IconBGMyths_00.png").c_str()); break;
 			case DLC::LegendsAndPariahs: button->setBackground((prefix + "ClassSelect_IconBGLegends_00.png").c_str()); break;
 			}
+			button->setIconColor(0);
 			button->setIcon((prefix + full_class.image).c_str());
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
 			if (!strcmp(name, current_class_name)) {
@@ -11678,9 +11679,13 @@ bind_failed:
 	}
 
 	static void checkReadyStates() {
-	    assert(main_menu_frame);
+	    if (!main_menu_frame) {
+	        return;
+	    }
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		if (!lobby) {
+		    return;
+		}
 
         bool atLeastOnePlayer = false;
 	    bool allReady = true;
@@ -14194,9 +14199,9 @@ bind_failed:
 		);
 
 		auto host_online_fn = [](Button&){
-		    soundActivate();
-#ifdef USE_EOS
 		    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+		        soundActivate();
 	            closeNetworkInterfaces();
 	            directConnect = false;
 		        EOS.createLobby();
@@ -14214,9 +14219,16 @@ bind_failed:
                         }
                     }
 		            });
+#endif // USE_EOS
 	        }
-#else
-		    createLobby(LobbyType::LobbyOnline);
+		    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+		        soundActivate();
+		        createLobby(LobbyType::LobbyOnline);
+#endif // STEAMWORKS
+		    }
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
+            soundError();
 #endif
 		    };
 
