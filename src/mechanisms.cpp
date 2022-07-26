@@ -527,7 +527,11 @@ void actTrapPermanent(Entity* my)
 void Entity::toggleSwitch(int skillIndexForPower)
 {
 	//If off, power on and send poweron signal. If on, power off and send poweroff signal.
-	Sint32& switchPower = skill[skillIndexForPower >= 0 ? skillIndexForPower : 0];
+	if ( skillIndexForPower < 0 )
+	{
+		skillIndexForPower = 0;
+	}
+	Sint32& switchPower = skill[skillIndexForPower];
 	switchPower = (switchPower == SWITCH_UNPOWERED);
 	serverUpdateEntitySkill(this, skillIndexForPower);
 
