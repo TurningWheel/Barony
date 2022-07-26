@@ -48,7 +48,10 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	_railSize.w = std::min(railSize.w, _size.w - railSize.x + _actualSize.x) + std::min(0, railSize.x - _actualSize.x);
 	_railSize.h = std::min(railSize.h, _size.h - railSize.y + _actualSize.y) + std::min(0, railSize.y - _actualSize.y);
 	if (_railSize.w > 0 && _railSize.h > 0) {
-		if (railImage.empty()) {
+		auto& imageToUse = activated ?
+			(handleImageActivated.empty() ? handleImage : handleImageActivated) :
+			handleImage;
+		if (railImage.empty() && imageToUse.empty()) {
 			Uint8 r, g, b, a;
 			::getColor(color, &r, &g, &b, &a);
 			r = (r / 3) * 2;
@@ -56,7 +59,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 			b = (b / 3) * 2;
 			Uint32 darkColor = makeColor(r, g, b, a);
 			white->drawColor(nullptr, _railSize, viewport, darkColor);
-		} else {
+		} else if (!railImage.empty()) {
 			Frame::image_t image;
 			image.path = railImage;
 			image.color = focused ? highlightColor : color;

@@ -133,6 +133,7 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("GamepadLoginB", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("GamepadLoginStart", (std::string("Pad") + std::to_string(c) + std::string("ButtonStart")).c_str()));
 
+		inputs[c].kb_system_bindings.insert(std::make_pair("GamepadScreenshot", "F6"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));

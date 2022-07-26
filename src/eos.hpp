@@ -276,6 +276,7 @@ public:
 		bool bLobbyHasBasicDetailsRead = false;
 		bool bAwaitingLeaveCallback = false;
 		bool bAwaitingCreationCallback = false;
+		EOS_EResult LobbyCreationResult = EOS_EResult::EOS_Success;
 		bool bDenyLobbyJoinEvent = false;
 
 		class PlayerLobbyData_t {

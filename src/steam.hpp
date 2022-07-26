@@ -19,13 +19,16 @@ void steam_OnP2PSessionRequest(void* p_Callback); //TODO: Finalize porting.
 void steam_OnLobbyMatchListCallback(void* pCallback, bool bIOFailure);
 void steam_OnLobbyDataUpdatedCallback(void* pCallback);
 void steam_OnLobbyCreated(void* pCallback, bool bIOFailure);
-void processLobbyInvite();
 void steam_OnGameJoinRequested(void* pCallback);
-void steam_ConnectToLobby();
+void steam_ConnectToLobby(const char* arg);
 void steam_OnLobbyEntered(void* pCallback, bool bIOFailure);
 void steam_GameServerPingOnServerResponded(void* steamID);
 void steam_OnP2PSessionConnectFail(void* pCallback);
 void steam_OnRequestEncryptedAppTicket(void* pCallback, bool bIOFailure);
+
+// determine if the given lobby is using a savegame; if it is, load our compatible save.
+// @return true if we are able to join the lobby, otherwise false (because no compatible save was found)
+bool processLobbyInvite(void* lobby);
 
 #define MAX_STEAM_LOBBIES 100
 
@@ -39,15 +42,14 @@ extern void* steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
 
 extern bool requestingLobbies;
 
-extern bool serverLoadingSaveGame; // determines whether lobbyToConnectTo is loading a savegame or not
+#include <string>
+
 extern void* currentLobby; // CSteamID to the current game lobby
-extern void* lobbyToConnectTo; // CSteamID of the game lobby that user has been invited to
-extern char pchCmdLine[1024]; // for game join requests
+extern std::string cmd_line; // for game join requests
 #ifdef STEAMWORKS
 extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;
 extern bool connectingToLobby, connectingToLobbyWindow;
-extern bool stillConnectingToLobby;
 extern bool joinLobbyWaitingForHostResponse;
 extern bool denyLobbyJoinEvent;
 extern int connectingToLobbyStatus;
@@ -58,7 +60,7 @@ extern int connectingToLobbyStatus;
 //These are all an utter bodge.
 //They should not exist, but potato.
 //TODO: Remove all of these wrappers and access the steam stuff directly.
-SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList();
+SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList(const char* roomkey);
 SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby);
 SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers);
 SteamAPICall_t cpp_SteamMatchmaking_RequestAppTicket();

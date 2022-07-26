@@ -97,6 +97,7 @@ public:
 	const char*					getBackgroundActivated() const { return backgroundActivated.c_str(); }
 	SDL_Rect                    getTextOffset() const { return textOffset; }
 	Uint32						getColor() const { return color; }
+	const bool					isOntop() const { return ontop; }
 
 	void	setBorder(int _border) { border = _border; }
 	void	setPos(int x, int y) { size.x = x; size.y = y; }
@@ -109,6 +110,7 @@ public:
 	void	setText(const char* _text) { text = _text; }
 	void	setFont(const char* _font) { font = _font; }
 	void	setIcon(const char* _icon);
+	void    setIconColor(const Uint32& _color) { iconColor = _color; }
 	void	setTooltip(const char* _tooltip) { tooltip = _tooltip; }
 	void	setStyle(int _style) { style = static_cast<style_t>(_style); }
 	void	setCallback(void (*const fn)(Button&)) { callback = fn; }
@@ -119,6 +121,7 @@ public:
 	void	setHJustify(const int _justify) { hjustify = static_cast<justify_t>(_justify); }
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
 	void    setTextOffset(const SDL_Rect& offset) { textOffset = offset; }
+	void	setOntop(const bool _ontop) { ontop = _ontop; }
 
 private:
 	void (*callback)(Button&) = nullptr;			//!< native callback for clicking
@@ -132,6 +135,7 @@ private:
 	int border = 2;									//!< size of the button border in pixels
 	SDL_Rect size{0,0,0,0};							//!< size and position of the button within its parent frame
 	Uint32 color = 0;								//!< the button's color
+	Uint32 iconColor = 0xffffffff;                  //!< icon color
 	Uint32 highlightColor = 0;						//!< color used when the button is selected/highlighted
 	Uint32 textColor = 0;							//!< text color
 	Uint32 textHighlightColor = 0;					//!< text color used when the button is selected/highlighted
@@ -140,4 +144,5 @@ private:
 	justify_t hjustify = CENTER;					//!< horizontal text justification
 	justify_t vjustify = CENTER;					//!< vertical text justification
 	SDL_Rect textOffset{0, 0, 0, 0};                //!< offset used by label test
+	bool ontop = false;								//!< whether the button is drawn ontop of others
 };

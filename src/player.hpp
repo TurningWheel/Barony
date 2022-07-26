@@ -616,6 +616,8 @@ public:
 	void init();
 	void cleanUpOnEntityRemoval();
 
+	const char* getAccountName() const;
+
 	view_t& camera() const { return *cam; }
 	const int camera_x1() const { return cam->winx; }
 	const int camera_x2() const { return cam->winx + cam->winw; }

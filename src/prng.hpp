@@ -18,6 +18,11 @@ static uint8_t marker[256];
 
 class BaronyRNG {
 public:
+    BaronyRNG() = default;
+    BaronyRNG(const BaronyRNG&) = default;
+    BaronyRNG(BaronyRNG&&) = default;
+    ~BaronyRNG() = default;
+
     void seedTime();                      // seed according to a 32-bit time value
     void seedBytes(const void*, size_t);  // seed given byte buffer (uses 256 bytes at most)
     void getBytes(void*, size_t);         // fill a buffer with pseudo-random bytes

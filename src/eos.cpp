@@ -27,6 +27,7 @@
 #include "interface/ui.hpp"
 #include "lobbies.hpp"
 #include "prng.hpp"
+#include "ui/MainMenu.hpp"
 
 EOSFuncs EOS;
 
@@ -400,14 +401,16 @@ void EOS_CALL EOSFuncs::OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbac
 		EOSFuncs::logError("OnCreateLobbyFinished: null data");
 		return;
 	}
-	else if ( data->ResultCode == EOS_EResult::EOS_Success )
+
+	EOS.CurrentLobbyData.LobbyCreationResult = data->ResultCode;
+	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{
 		EOS.CurrentLobbyData.LobbyId = data->LobbyId;
 
 		EOS.CurrentLobbyData.LobbyAttributes.lobbyName = EOS.CurrentUserInfo.Name + "'s lobby";
 		strncpy(EOS.currentLobbyName, EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str(), 31);
 
-		Uint32 keygen = local_rng.rand() % (1679615 + 1); // limit of 'zzzz' as base-36 string
+		Uint32 keygen = local_rng.uniform(0, (36 * 36 * 36 * 36) - 1); // limit of 'zzzz' as base-36 string
 		EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey = EOS.getLobbyCodeFromGameKey(keygen);
 		std::chrono::system_clock::duration epochDuration = std::chrono::system_clock::now().time_since_epoch();
 		EOS.CurrentLobbyData.LobbyAttributes.lobbyCreationTime = std::chrono::duration_cast<std::chrono::seconds>(epochDuration).count();
@@ -895,11 +898,21 @@ void EOS_CALL EOSFuncs::OnMemberStatusReceived(const EOS_Lobby_LobbyMemberStatus
 				{
 					if ( data->CurrentStatus == EOS_ELobbyMemberStatus::EOS_LMS_CLOSED
 						|| (data->CurrentStatus == EOS_ELobbyMemberStatus::EOS_LMS_KICKED
-							&& (data->TargetUserId == EOS.CurrentUserInfo.getProductUserIdHandle()))
+							&& data->TargetUserId == EOS.CurrentUserInfo.getProductUserIdHandle())
 						)
 					{
 						// if lobby closed or we got kicked, then clear data.
 						LobbyLeaveCleanup(EOS.CurrentLobbyData);
+					    switch (data->CurrentStatus) {
+					    case EOS_ELobbyMemberStatus::EOS_LMS_CLOSED:
+					        //MainMenu::disconnectedFromServer("The host has shutdown the lobby.");
+					        break;
+					    case EOS_ELobbyMemberStatus::EOS_LMS_KICKED:
+					        //MainMenu::disconnectedFromServer("You have been kicked\nfrom the online lobby.");
+					        break;
+					    default:
+					        break;
+					    }
 					}
 					else
 					{
@@ -1816,6 +1829,17 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	LobbyParameters_t::LobbyJoinOptions joinOptions, EOS_LobbyId lobbyIdToSearch)
 {
 	LobbySearchResults.lastResultWasFiltered = false;
+
+	if ( LobbySearchResults.useLobbyCode )
+	{
+	    for ( int c = 0; c < 4 && EOS.lobbySearchByCode[c] != 0; ++c )
+	    {
+		    if ( EOS.lobbySearchByCode[c] >= 'A' && EOS.lobbySearchByCode[c] <= 'Z' )
+		    {
+			    EOS.lobbySearchByCode[c] = 'a' + (EOS.lobbySearchByCode[c] - 'A'); // to lowercase.
+		    }
+	    }
+	}
 
 	LobbyHandle = EOS_Platform_GetLobbyInterface(PlatformHandle);
 	logInfo("searchLobbies: starting search");

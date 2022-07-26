@@ -810,7 +810,7 @@ int loadConfig(char* filename)
 	// open the config file
 	if ( (fp = FileIO::open(filename, "rb")) == NULL )
 	{
-		printlog("warning: config file '%s' does not exist!\n", filename);
+		printlog("note: config file '%s' does not exist!\n", filename);
 		defaultConfig(); //Set up the game with the default config.
 		return 0;
 	}
