@@ -4816,7 +4816,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// message
 	{'MSGS', [](){
-		int pnum = net_packet->data[4];
+		const int pnum = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
 		MessageType type = MESSAGE_CHAT; // the only kind of message you can get from a client.
