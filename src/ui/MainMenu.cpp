@@ -6949,13 +6949,13 @@ bind_failed:
 	    }},
 
 		// we can get an ENTU packet if the server already started and we missed it somehow
-	    {'ENTU', [](){
+	    /*{'ENTU', [](){
             destroyMainMenu();
             createDummyMainMenu();
 		    beginFade(FadeDestination::GameStart);
 
 		    // NOTE we may not get a unique game key or server flags this way!!
-	    }},
+	    }},*/
 
 	    // new player
 	    {'JOIN', [](){
@@ -16530,6 +16530,7 @@ bind_failed:
 		    disconnectFromLobby();
 	        destroyMainMenu();
 		    createDummyMainMenu();
+	        inputs.setPlayerIDAllowedKeyboard(clientnum);
             disconnectPrompt(text);
             if (!intro) {
 	            pauseGame(2, 0);
