@@ -22,6 +22,40 @@ extern "C"
 }
 #endif
 
+#include <assert.h>
+
+void copyString(char* const dest, const char* const src, size_t dest_size, size_t src_size) {
+    assert(dest);
+    assert(src);
+    assert(dest_size);
+    assert(src_size);
+    if (!dest || !src || !dest_size || !src_size) {
+        return;
+    }
+    if (src_size < dest_size) {
+        memcpy(dest, src, src_size);
+        dest[src_size] = '\0';
+    } else {
+        memcpy(dest, src, dest_size);
+        dest[dest_size - 1] = '\0';
+    }
+}
+
+void copyStringUnsafe(char* const dest, const char* const src, size_t size) {
+    assert(dest);
+    assert(src);
+    assert(size);
+    if (!dest || !src || !size) {
+        return;
+    }
+    --size;
+    size_t c = 0;
+    for (; c < size && src[c] != '\0'; ++c) {
+        dest[c] = src[c];
+    }
+	dest[c] = '\0';
+}
+
 // main definitions
 Sint32 display_id = 0;
 Sint32 xres = 1280;

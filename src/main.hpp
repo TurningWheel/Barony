@@ -17,7 +17,27 @@ typedef float real_t;
 typedef double real_t;
 #endif
 
-#include <algorithm> //For min and max, because the #define breaks everything in c++.
+#include <stddef.h>
+#include <algorithm>
+
+template<typename T>
+constexpr const T& clamp( const T& v, const T& lo, const T& hi ) {
+    return std::min(std::max(lo, v), hi);
+}
+
+// copy a null-terminated string to another string buffer
+// @param dest destination string buffer
+// @param src source string
+// @param size size of dest string buffer in bytes
+void copyStringUnsafe(char* const dest, const char* const src, size_t size);
+
+// copy a string to another buffer and add a terminator
+// @param dest destination string
+// @param src source buffer
+// @param dest_size size of out string buffer in bytes
+// @param src_size size of in buffer in bytes
+void copyString(char* const dest, const char* const src, size_t dest_size, size_t src_size);
+
 #include <iostream>
 #include <list>
 #include <string>

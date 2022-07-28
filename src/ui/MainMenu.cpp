@@ -6363,21 +6363,18 @@ bind_failed:
 		    net_packet->data[4] = player;
 
 		    // encode name
-		    size_t name_len = strlen(stats[player]->name);
-		    name_len = std::min(name_len, (size_t)22);
-		    memcpy(net_packet->data + 5, stats[player]->name, name_len);
-		    net_packet->data[5 + name_len] = '\0';
+		    copyString((char*)net_packet->data + 5, stats[player]->name, 32, sizeof(Stat::name));
 
 		    // encode class, sex, race, and appearance
-            SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[28]);
-            SDLNet_Write32((Uint32)stats[player]->sex, &net_packet->data[32]);
+            SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[37]);
+            SDLNet_Write32((Uint32)stats[player]->sex, &net_packet->data[41]);
             Uint32 raceAndAppearance =
                 ((stats[player]->appearance & 0xff) << 8) |
                 (stats[player]->playerRace & 0xff);
-            SDLNet_Write32(raceAndAppearance, &net_packet->data[36]);
+            SDLNet_Write32(raceAndAppearance, &net_packet->data[45]);
 
             // send packet
-            net_packet->len = 40;
+            net_packet->len = 49;
 	        if (multiplayer == SERVER) {
 		        for (int i = 1; i < MAXPLAYERS; i++ ) {
 			        if ( client_disconnected[i] ) {
@@ -6646,6 +6643,224 @@ bind_failed:
 		}
 	}
 
+	static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
+		{'JOIN', [](){
+			int playerNum = MAXPLAYERS;
+
+			// when processing connection requests using Steamworks or EOS,
+			// we can reject join requests out of hand if the player with
+			// the associated ID is already connected to this server.
+			if (!directConnect) {
+				if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+					bool skipJoin = false;
+					for (int c = 1; c < MAXPLAYERS; c++) {
+						if (client_disconnected[c] || !steamIDRemote[c - 1]) {
+							continue;
+						}
+						if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
+							// we've already accepted this player. NEXT!
+							skipJoin = true;
+							break;
+						}
+					}
+					if (skipJoin) {
+						return;
+					}
+#endif // STEAMWORKS
+				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+					bool skipJoin = false;
+					EOSFuncs::logInfo("newRemoteProductId: %s", EOSFuncs::Helpers_t::productIdToString(newRemoteProductId));
+					if (newRemoteProductId && EOS.P2PConnectionInfo.isPeerIndexed(newRemoteProductId)) {
+						if (EOS.P2PConnectionInfo.getIndexFromPeerId(newRemoteProductId) >= 0) {
+							// we've already accepted this player. NEXT!
+							skipJoin = true;
+						}
+					}
+					if (skipJoin) {
+						return;
+					}
+#endif // USE_EOS
+				}
+			}
+
+			// process incoming join request
+			NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
+
+			// finalize connections for Steamworks / EOS
+			if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
+				if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+					for (int responses = 0; responses < 5; ++responses) {
+						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						SDL_Delay(5);
+					}
+#endif // STEAMWORKS
+				} else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+#ifdef USE_EOS
+					for ( int responses = 0; responses < 5; ++responses ) {
+						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
+						SDL_Delay(5);
+					}
+#endif // USE_EOS
+				}
+			} else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
+				if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+#ifdef STEAMWORKS
+					if ( steamIDRemote[playerNum - 1] ) {
+						cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
+					}
+					steamIDRemote[playerNum - 1] = new CSteamID();
+					*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
+					for ( int responses = 0; responses < 5; ++responses ) {
+						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						SDL_Delay(5);
+					}
+#endif // STEAMWORKS
+				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#if defined USE_EOS
+					EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
+					for (int responses = 0; responses < 5; ++responses) {
+						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
+						SDL_Delay(5);
+					}
+#endif
+				}
+			}
+
+			// assume success after this point
+			assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
+			    result == NET_LOBBY_JOIN_P2P_SUCCESS);
+
+			// finally, open a player card!
+			if (playerNum >= 1 && playerNum < MAXPLAYERS) {
+		        createReadyStone(playerNum, false, false);
+
+			    char buf[1024];
+			    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+			    addLobbyChatMessage(0xffffffff, buf);
+			}
+		}},
+
+		// network scan
+		{'SCAN', [](){
+		    handleScanPacket();
+		}},
+
+		// update player attributes
+		{'PLYR', [](){
+		    // forward to other players
+			for (int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+	        copyString(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
+	        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
+	        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
+	        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
+	        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+	        stats[player]->playerRace = (raceAndAppearance & 0xFF);
+	        stats[player]->clearStats();
+	        initClass(player);
+		}},
+
+		// update ready status
+		{'REDY', [](){
+		    // forward to other players
+			for (int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		    Uint8 status = net_packet->data[5];
+		    createReadyStone((int)player, false, status ? true : false);
+		}},
+
+		// got a chat message
+		{'CMSG', [](){
+		    // forward to other players
+			for (int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
+		}},
+
+			// player disconnected
+		{'DISC', [](){
+		    // TODO verify packet origin
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+            if (player == 0) {
+                // yeah right
+                return;
+            }
+			client_disconnected[player] = true;
+
+#ifdef STEAMWORKS
+            if (steamIDRemote[player - 1]) {
+                cpp_Free_CSteamID(steamIDRemote[player - 1]);
+			    steamIDRemote[player - 1] = nullptr;
+			}
+#endif
+
+		    // forward to other players
+			for (int c = 1; c < MAXPLAYERS; c++) {
+				if (client_disconnected[c]) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
+			addLobbyChatMessage(0xffffffff, buf);
+
+		    if (directConnect) {
+                createWaitingStone(player);
+            } else {
+                createInviteButton(player);
+            }
+		}},
+
+		// client requesting new svFlags
+		{'SVFL', [](){
+			// update svFlags for everyone
+			SDLNet_Write32(svFlags, &net_packet->data[4]);
+			net_packet->len = 8;
+			for (int c = 1; c < MAXPLAYERS; c++) {
+				if (client_disconnected[c]) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}},
+
+		// keepalive
+		{'KPAL', [](){
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+			client_keepalive[player] = ticks;
+		}},
+    };
+
 	static void handlePacketsAsServer() {
 #ifdef STEAMWORKS
 		CSteamID newSteamID;
@@ -6700,238 +6915,154 @@ bind_failed:
 
 			Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 
-			if (packetId == 'JOIN') {
-				int playerNum = MAXPLAYERS;
-
-				// when processing connection requests using Steamworks or EOS,
-				// we can reject join requests out of hand if the player with
-				// the associated ID is already connected to this server.
-				if (!directConnect) {
-					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-						bool skipJoin = false;
-						for (int c = 1; c < MAXPLAYERS; c++) {
-							if (client_disconnected[c] || !steamIDRemote[c - 1]) {
-								continue;
-							}
-							if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
-								// we've already accepted this player. NEXT!
-								skipJoin = true;
-								break;
-							}
-						}
-						if (skipJoin) {
-							continue;
-						}
-#endif // STEAMWORKS
-					} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-						bool skipJoin = false;
-						EOSFuncs::logInfo("newRemoteProductId: %s", EOSFuncs::Helpers_t::productIdToString(newRemoteProductId));
-						if (newRemoteProductId && EOS.P2PConnectionInfo.isPeerIndexed(newRemoteProductId)) {
-							if (EOS.P2PConnectionInfo.getIndexFromPeerId(newRemoteProductId) >= 0) {
-								// we've already accepted this player. NEXT!
-								skipJoin = true;
-							}
-						}
-						if (skipJoin) {
-							continue;
-						}
-#endif // USE_EOS
-					}
-				}
-
-				// process incoming join request
-				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
-
-				// finalize connections for Steamworks / EOS
-				if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
-					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-						for (int responses = 0; responses < 5; ++responses) {
-							SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-							SDL_Delay(5);
-						}
-#endif // STEAMWORKS
-					} else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
-#ifdef USE_EOS
-						for ( int responses = 0; responses < 5; ++responses ) {
-							EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-							SDL_Delay(5);
-						}
-#endif // USE_EOS
-					}
-				} else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
-					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
-#ifdef STEAMWORKS
-						if ( steamIDRemote[playerNum - 1] ) {
-							cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
-						}
-						steamIDRemote[playerNum - 1] = new CSteamID();
-						*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
-						for ( int responses = 0; responses < 5; ++responses ) {
-							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-							SDL_Delay(5);
-						}
-#endif // STEAMWORKS
-					} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#if defined USE_EOS
-						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
-						for (int responses = 0; responses < 5; ++responses) {
-							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
-							SDL_Delay(5);
-						}
-#endif
-					}
-				}
-
-				// assume success after this point
-				assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
-				    result == NET_LOBBY_JOIN_P2P_SUCCESS);
-
-
-				// finally, open a player card!
-				if (playerNum >= 1 && playerNum < MAXPLAYERS) {
-			        createReadyStone(playerNum, false, false);
-
-				    char buf[1024];
-				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
-				    addLobbyChatMessage(0xffffffff, buf);
-				}
-
-				continue;
-			}
-
-			// network scan
-			else if (packetId == 'SCAN') {
-			    handleScanPacket();
-			    continue;
-			}
-
-			// update player attributes
-			else if (packetId == 'PLYR') {
-			    // forward to other players
-				for (int i = 1; i < MAXPLAYERS; i++ ) {
-					if ( client_disconnected[i] ) {
-						continue;
-					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
-				}
-				Uint8 player = net_packet->data[4];
-		        strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
-		        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
-		        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
-		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
-		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
-		        stats[player]->clearStats();
-		        initClass(player);
-			    continue;
-			}
-
-			// update ready status
-			else if (packetId == 'REDY') {
-			    // forward to other players
-				for (int i = 1; i < MAXPLAYERS; i++ ) {
-					if ( client_disconnected[i] ) {
-						continue;
-					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
-				}
-			    Uint8 player = net_packet->data[4];
-			    Uint8 status = net_packet->data[5];
-			    createReadyStone((int)player, false, status ? true : false);
-			    continue;
-			}
-
-			// got a chat message
-			else if (packetId == 'CMSG') {
-			    // forward to other players
-				for (int i = 1; i < MAXPLAYERS; i++ ) {
-					if ( client_disconnected[i] ) {
-						continue;
-					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
-				}
-				addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				continue;
-			}
-
-			// player disconnected
-			else if (packetId == 'DISC') {
-			    int player = net_packet->data[4];
-				client_disconnected[player] = true;
-
-#ifdef STEAMWORKS
-                if (steamIDRemote[player - 1]) {
-                    cpp_Free_CSteamID(steamIDRemote[player - 1]);
-				    steamIDRemote[player - 1] = nullptr;
-				}
-#endif
-
-			    // forward to other players
-				for (int c = 1; c < MAXPLAYERS; c++) {
-					if (client_disconnected[c]) {
-						continue;
-					}
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 5;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				}
-
-				char buf[1024];
-				snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
-				addLobbyChatMessage(0xffffffff, buf);
-
-			    if (directConnect) {
-	                createWaitingStone(player);
-	            } else {
-	                createInviteButton(player);
-	            }
-
-				continue;
-			}
-
-			// client requesting new svFlags
-			else if (packetId == 'SVFL') {
-				// update svFlags for everyone
-				SDLNet_Write32(svFlags, &net_packet->data[4]);
-				net_packet->len = 8;
-				for (int c = 1; c < MAXPLAYERS; c++) {
-					if (client_disconnected[c]) {
-						continue;
-					}
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				}
-				continue;
-			}
-
-			// keepalive
-			else if (packetId == 'KPAL') {
-				client_keepalive[net_packet->data[4]] = ticks;
-				continue;
-			}
-
-            // error
-			else {
-			    printlog("Got a mystery packet: %c%c%c%c",
-			        (char)net_packet->data[0],
-			        (char)net_packet->data[1],
-			        (char)net_packet->data[2],
-			        (char)net_packet->data[3]);
-			    continue;
-			}
+		    auto find = serverPacketHandlers.find(packetId);
+		    if (find == serverPacketHandlers.end()) {
+                // error
+		        printlog("Got a mystery packet: %c%c%c%c",
+		            (char)net_packet->data[0],
+		            (char)net_packet->data[1],
+		            (char)net_packet->data[2],
+		            (char)net_packet->data[3]);
+		    } else {
+		        (*(find->second))(); // handle packet
+		    }
 		}
 	}
+
+	static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
+	    // game start
+	    {'STRT', [](){
+            destroyMainMenu();
+            createDummyMainMenu();
+	        lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+	        uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+	        local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	        beginFade(FadeDestination::GameStart);
+	        numplayers = MAXPLAYERS;
+	        if (net_packet->data[12] == 0) {
+	            // is this necessary? I don't think so
+		        //loadingsavegame = 0;
+	        }
+	    }},
+
+		// we can get an ENTU packet if the server already started and we missed it somehow
+	    {'ENTU', [](){
+            destroyMainMenu();
+            createDummyMainMenu();
+		    beginFade(FadeDestination::GameStart);
+
+		    // NOTE we may not get a unique game key or server flags this way!!
+	    }},
+
+	    // new player
+	    {'JOIN', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		    client_disconnected[player] = false;
+		    client_classes[player] = net_packet->data[5];
+		    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
+		    stats[player]->appearance = net_packet->data[7];
+		    stats[player]->playerRace = net_packet->data[8];
+		    copyString(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
+
+		    char buf[1024];
+		    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
+		    addLobbyChatMessage(0xffffffff, buf);
+
+	        if (player != clientnum) {
+	            createReadyStone((int)player, false, false);
+	        }
+	    }},
+
+	    // lock/unlock a player slot
+	    {'LOCK', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+	        const bool locked = net_packet->data[5];
+	        playerSlotsLocked[player] = locked;
+
+            // these functions automatically create locked
+            // stones instead if the player is now locked
+	        if (directConnect) {
+	            createWaitingStone(player);
+	        } else {
+	            createInviteButton(player);
+	        }
+	        checkReadyStates();
+	    }},
+
+	    // update player attributes
+	    {'PLYR', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		    if (player != clientnum) {
+                copyString(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
+                client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
+                stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
+                Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
+                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+                stats[player]->playerRace = (raceAndAppearance & 0xFF);
+                stats[player]->clearStats();
+                initClass(player);
+            }
+            checkReadyStates();
+	    }},
+
+	    // update ready status
+	    {'REDY', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+	        Uint8 status = net_packet->data[5];
+	        if (player != clientnum) {
+	            createReadyStone((int)player, false, status ? true : false);
+	        }
+	    }},
+
+		// player disconnect
+	    {'DISC', [](){
+		    const int playerDisconnected = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+			client_disconnected[playerDisconnected] = true;
+		    if (playerDisconnected == clientnum || playerDisconnected == 0) {
+			    // we got dropped
+                multiplayer = SINGLE; // so we don't send DISC packets
+                disconnectFromLobby();
+	            destroyMainMenu();
+	            createMainMenu(false);
+                connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
+		    } else {
+		        char buf[1024];
+		        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
+		        addLobbyChatMessage(0xffffffff, buf);
+			    if (directConnect) {
+	                createWaitingStone(playerDisconnected);
+	            } else {
+	                createInviteButton(playerDisconnected);
+	            }
+		        checkReadyStates();
+		    }
+	    }},
+
+	    // kicked
+	    {'KICK', [](){
+            multiplayer = SINGLE; // so we don't send DISC packets
+            disconnectFromLobby();
+            destroyMainMenu();
+            createMainMenu(false);
+            connectionErrorPrompt("You have been kicked\nfrom the remote server.");
+	    }},
+
+	    // got a chat message
+	    {'CMSG', [](){
+		    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
+	    }},
+
+	    // update svFlags
+	    {'SVFL', [](){
+		    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+	    }},
+
+	    // keepalive
+	    {'KPAL', [](){
+		    return; // just a keep alive
+	    }},
+	};
 
 	static void handlePacketsAsClient() {
 	    if (receivedclientnum == false) {
@@ -7093,7 +7224,7 @@ bind_failed:
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (6 + 32) + 3]); // sex
 						stats[c]->appearance = net_packet->data[8 + c * (6 + 32) + 4]; // appearance
 						stats[c]->playerRace = net_packet->data[8 + c * (6 + 32) + 5]; // player race
-						snprintf(stats[c]->name, sizeof(stats[c]->name), "%s", (char*)(net_packet->data + 8 + c * (6 + 32) + 6)); // name
+						copyString(stats[c]->name, (char*)(net_packet->data + 8 + c * (6 + 32) + 6), sizeof(Stat::name), 32); // name
 
 		                stats[c]->clearStats();
 		                initClass(c);
@@ -7196,157 +7327,16 @@ bind_failed:
 			    Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 			    client_keepalive[0] = ticks;
 
-			    // game start
-			    if (packetId == 'STRT') {
-                    destroyMainMenu();
-                    createDummyMainMenu();
-				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-				    uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
-				    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-				    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-				    beginFade(FadeDestination::GameStart);
-				    numplayers = MAXPLAYERS;
-				    if (net_packet->data[12] == 0) {
-				        // is this necessary? I don't think so
-					    //loadingsavegame = 0;
-				    }
-				    continue;
-			    }
-
-			    // we can get an ENTU packet if the server already started and we missed it somehow
-			    else if (packetId == 'ENTU') {
-                    destroyMainMenu();
-                    createDummyMainMenu();
-				    beginFade(FadeDestination::GameStart);
-
-				    // NOTE we may not get a unique game key or server flags this way!!
-
-				    continue;
-			    }
-
-			    // new player
-			    else if (packetId == 'JOIN') {
-			        int player = net_packet->data[4];
-				    client_disconnected[player] = false;
-				    client_classes[player] = net_packet->data[5];
-				    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
-				    stats[player]->appearance = net_packet->data[7];
-				    stats[player]->playerRace = net_packet->data[8];
-				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
-
-				    char buf[1024];
-				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
-				    addLobbyChatMessage(0xffffffff, buf);
-
-			        if (player != clientnum) {
-			            createReadyStone((int)player, false, false);
-			        }
-				    continue;
-			    }
-
-			    // lock/unlock a player slot
-			    else if (packetId == 'LOCK') {
-			        int player = net_packet->data[4];
-			        bool locked = net_packet->data[5];
-			        playerSlotsLocked[player] = locked;
-
-                    // these functions automatically create locked
-                    // stones instead if the player is now locked
-			        if (directConnect) {
-			            createWaitingStone(player);
-			        } else {
-			            createInviteButton(player);
-			        }
-			        checkReadyStates();
-			        continue;
-			    }
-
-			    // update player attributes
-			    else if (packetId == 'PLYR') {
-				    Uint8 player = net_packet->data[4];
-				    if (player != clientnum) {
-		                strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
-		                client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
-		                stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
-		                Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
-		                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-		                stats[player]->playerRace = (raceAndAppearance & 0xFF);
-		                stats[player]->clearStats();
-		                initClass(player);
-		            }
-		            checkReadyStates();
-			        continue;
-			    }
-
-			    // update ready status
-			    else if (packetId == 'REDY') {
-			        Uint8 player = net_packet->data[4];
-			        Uint8 status = net_packet->data[5];
-			        if (player != clientnum) {
-			            createReadyStone((int)player, false, status ? true : false);
-			        }
-			        continue;
-			    }
-
-			    // player disconnect
-			    else if (packetId == 'DISC' || packetId == 'KICK') {
-				    int playerDisconnected = 0;
-				    if (packetId == 'KICK') {
-					    playerDisconnected = clientnum;
-				    } else {
-					    playerDisconnected = net_packet->data[4];
-					    client_disconnected[playerDisconnected] = true;
-				    }
-				    if (playerDisconnected == clientnum || playerDisconnected == 0) {
-					    // we got kicked!
-		                multiplayer = SINGLE; // so we don't send DISC packets
-		                disconnectFromLobby();
-			            destroyMainMenu();
-			            createMainMenu(false);
-			            if (packetId == 'KICK') {
-		                    connectionErrorPrompt("You have been kicked\nfrom the remote server.");
-		                } else {
-		                    connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
-		                }
-				    } else {
-				        char buf[1024];
-				        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
-				        addLobbyChatMessage(0xffffffff, buf);
-					    if (directConnect) {
-			                createWaitingStone(playerDisconnected);
-			            } else {
-			                createInviteButton(playerDisconnected);
-			            }
-				        checkReadyStates();
-				    }
-				    continue;
-			    }
-
-			    // got a chat message
-			    else if (packetId == 'CMSG') {
-				    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				    continue;
-			    }
-
-			    // update svFlags
-			    else if (packetId == 'SVFL') {
-				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-				    continue;
-			    }
-
-			    // keepalive
-			    else if (packetId == 'KPAL') {
-				    continue; // just a keep alive
-			    }
-
-                // error
-			    else {
+			    auto find = clientPacketHandlers.find(packetId);
+			    if (find == clientPacketHandlers.end()) {
+                    // error
 			        printlog("Got a mystery packet: %c%c%c%c",
 			            (char)net_packet->data[0],
 			            (char)net_packet->data[1],
 			            (char)net_packet->data[2],
 			            (char)net_packet->data[3]);
-			        continue;
+			    } else {
+			        (*(find->second))(); // handle packet
 			    }
 			}
 		}
@@ -7496,40 +7486,29 @@ bind_failed:
     static void sendJoinRequest() {
 	    printlog("sending join request...\n");
 
-	    // send join request
-	    strcpy((char*)net_packet->data, "JOIN");
-	    if (loadingsavegame)
-	    {
-		    strncpy((char*)net_packet->data + 4, stats[getSaveGameClientnum(false)]->name, 22);
-		    SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[27]);
-		    SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[31]);
-		    Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
-		    appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
-		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
-		    strcpy((char*)net_packet->data + 39, VERSION);
-		    net_packet->data[47] = 0;
-		    net_packet->data[48] = getSaveGameClientnum(false);
-	    } else {
-		    strncpy((char*)net_packet->data + 4, stats[0]->name, 22);
-		    SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[27]);
-		    SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[31]);
-		    Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
-		    appearanceAndRace |= ((Uint8)stats[0]->playerRace);
-		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
-		    strcpy((char*)net_packet->data + 39, VERSION);
-		    net_packet->data[47] = 0;
-		    net_packet->data[48] = 0;
-	    }
+	    const Uint32 index = loadingsavegame ?
+	        std::min(getSaveGameClientnum(false), MAXPLAYERS - 1) : 0;
+
+	    // construct packet
+	    memcpy(net_packet->data, "JOIN", 4);
+	    copyString((char*)net_packet->data + 4, stats[index]->name, 32, sizeof(Stat::name));
+	    SDLNet_Write32((Uint32)client_classes[index], &net_packet->data[36]);
+	    SDLNet_Write32((Uint32)stats[index]->sex, &net_packet->data[40]);
+	    Uint32 appearanceAndRace = ((Uint8)stats[index]->appearance << 8); // store in bits 8 - 15
+	    appearanceAndRace |= (Uint8)stats[index]->playerRace; // store in bits 0 - 7
+	    SDLNet_Write32(appearanceAndRace, &net_packet->data[44]);
+	    copyString((char*)net_packet->data + 48, VERSION, 8, sizeof(VERSION));
+	    net_packet->data[56] = index;
 	    if (loadingsavegame) {
 		    // send over the map seed being used
-		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[49]);
+		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[57]);
 	    } else {
-		    SDLNet_Write32(0, &net_packet->data[49]);
+		    SDLNet_Write32(0, &net_packet->data[57]);
 	    }
-	    SDLNet_Write32(loadingsavegame, &net_packet->data[53]); // send unique game key
+	    SDLNet_Write32(loadingsavegame, &net_packet->data[61]); // send unique game key
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
-	    net_packet->len = 57;
+	    net_packet->len = 65;
 
 	    /*if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
