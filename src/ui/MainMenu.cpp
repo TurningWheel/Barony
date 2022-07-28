@@ -6644,105 +6644,6 @@ bind_failed:
 	}
 
 	static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
-		{'JOIN', [](){
-			int playerNum = MAXPLAYERS;
-
-			// when processing connection requests using Steamworks or EOS,
-			// we can reject join requests out of hand if the player with
-			// the associated ID is already connected to this server.
-			if (!directConnect) {
-				if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-					bool skipJoin = false;
-					for (int c = 1; c < MAXPLAYERS; c++) {
-						if (client_disconnected[c] || !steamIDRemote[c - 1]) {
-							continue;
-						}
-						if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
-							// we've already accepted this player. NEXT!
-							skipJoin = true;
-							break;
-						}
-					}
-					if (skipJoin) {
-						return;
-					}
-#endif // STEAMWORKS
-				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-					bool skipJoin = false;
-					EOSFuncs::logInfo("newRemoteProductId: %s", EOSFuncs::Helpers_t::productIdToString(newRemoteProductId));
-					if (newRemoteProductId && EOS.P2PConnectionInfo.isPeerIndexed(newRemoteProductId)) {
-						if (EOS.P2PConnectionInfo.getIndexFromPeerId(newRemoteProductId) >= 0) {
-							// we've already accepted this player. NEXT!
-							skipJoin = true;
-						}
-					}
-					if (skipJoin) {
-						return;
-					}
-#endif // USE_EOS
-				}
-			}
-
-			// process incoming join request
-			NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
-
-			// finalize connections for Steamworks / EOS
-			if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
-				if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-					for (int responses = 0; responses < 5; ++responses) {
-						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-					}
-#endif // STEAMWORKS
-				} else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
-#ifdef USE_EOS
-					for ( int responses = 0; responses < 5; ++responses ) {
-						EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-						SDL_Delay(5);
-					}
-#endif // USE_EOS
-				}
-			} else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
-				if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
-#ifdef STEAMWORKS
-					if ( steamIDRemote[playerNum - 1] ) {
-						cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
-					}
-					steamIDRemote[playerNum - 1] = new CSteamID();
-					*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
-					for ( int responses = 0; responses < 5; ++responses ) {
-						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						SDL_Delay(5);
-					}
-#endif // STEAMWORKS
-				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#if defined USE_EOS
-					EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
-					for (int responses = 0; responses < 5; ++responses) {
-						EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
-						SDL_Delay(5);
-					}
-#endif
-				}
-			}
-
-			// assume success after this point
-			assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
-			    result == NET_LOBBY_JOIN_P2P_SUCCESS);
-
-			// finally, open a player card!
-			if (playerNum >= 1 && playerNum < MAXPLAYERS) {
-		        createReadyStone(playerNum, false, false);
-
-			    char buf[1024];
-			    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
-			    addLobbyChatMessage(0xffffffff, buf);
-			}
-		}},
-
 		// network scan
 		{'SCAN', [](){
 		    handleScanPacket();
@@ -6914,6 +6815,105 @@ bind_failed:
 			}
 
 			Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+
+			if (packetId == 'JOIN') {
+			    int playerNum = MAXPLAYERS;
+
+			    // when processing connection requests using Steamworks or EOS,
+			    // we can reject join requests out of hand if the player with
+			    // the associated ID is already connected to this server.
+			    if (!directConnect) {
+				    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+					    bool skipJoin = false;
+					    for (int c = 1; c < MAXPLAYERS; c++) {
+						    if (client_disconnected[c] || !steamIDRemote[c - 1]) {
+							    continue;
+						    }
+						    if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
+							    // we've already accepted this player. NEXT!
+							    skipJoin = true;
+							    break;
+						    }
+					    }
+					    if (skipJoin) {
+						    return;
+					    }
+#endif // STEAMWORKS
+				    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+					    bool skipJoin = false;
+					    EOSFuncs::logInfo("newRemoteProductId: %s", EOSFuncs::Helpers_t::productIdToString(newRemoteProductId));
+					    if (newRemoteProductId && EOS.P2PConnectionInfo.isPeerIndexed(newRemoteProductId)) {
+						    if (EOS.P2PConnectionInfo.getIndexFromPeerId(newRemoteProductId) >= 0) {
+							    // we've already accepted this player. NEXT!
+							    skipJoin = true;
+						    }
+					    }
+					    if (skipJoin) {
+						    return;
+					    }
+#endif // USE_EOS
+				    }
+			    }
+
+			    // process incoming join request
+			    NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
+
+			    // finalize connections for Steamworks / EOS
+			    if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
+				    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+					    for (int responses = 0; responses < 5; ++responses) {
+						    SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						    SDL_Delay(5);
+					    }
+#endif // STEAMWORKS
+				    } else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+#ifdef USE_EOS
+					    for ( int responses = 0; responses < 5; ++responses ) {
+						    EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
+						    SDL_Delay(5);
+					    }
+#endif // USE_EOS
+				    }
+			    } else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
+				    if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+#ifdef STEAMWORKS
+					    if ( steamIDRemote[playerNum - 1] ) {
+						    cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
+					    }
+					    steamIDRemote[playerNum - 1] = new CSteamID();
+					    *static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
+					    for ( int responses = 0; responses < 5; ++responses ) {
+						    SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						    SDL_Delay(5);
+					    }
+#endif // STEAMWORKS
+				    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#if defined USE_EOS
+					    EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
+					    for (int responses = 0; responses < 5; ++responses) {
+						    EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
+						    SDL_Delay(5);
+					    }
+#endif
+				    }
+			    }
+
+			    // assume success after this point
+			    assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
+			        result == NET_LOBBY_JOIN_P2P_SUCCESS);
+
+			    // finally, open a player card!
+			    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
+		            createReadyStone(playerNum, false, false);
+
+			        char buf[1024];
+			        snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+			        addLobbyChatMessage(0xffffffff, buf);
+			    }
+			}
 
 		    auto find = serverPacketHandlers.find(packetId);
 		    if (find == serverPacketHandlers.end()) {
