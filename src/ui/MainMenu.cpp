@@ -2657,14 +2657,8 @@ namespace MainMenu {
 		sliderRight->ontop = true;
 
 		// banner
-		auto banner = window->addImage(
-			SDL_Rect{14, 4, 950, 50},
-			makeColor(50, 56, 67, 255),
-			"images/system/white.png",
-			"banner_area"
-		);
 		auto banner_text = window->addField("banner_text", 64);
-		banner_text->setSize(banner->pos);
+		banner_text->setSize(SDL_Rect{14, 4, 950, 50});
 		banner_text->setText("AUTOMATIC INVENTORY BEHAVIOR");
 		banner_text->setFont(bigfont_outline);
 		banner_text->setJustify(Field::justify_t::CENTER);
@@ -2684,44 +2678,31 @@ namespace MainMenu {
 		sort_text->setHJustify(Field::justify_t::CENTER);
 
 		// background
-		auto rock_background = window->addImage(
-			SDL_Rect{18, 54, 942, 658},
-			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Settings/Settings_Window_06_BGPattern.png",
-			"rock_background"
-		);
-		rock_background->tiled = true;
-		auto gradient_background = window->addImage(
-			SDL_Rect{18, 54, 942, 658},
-			makeColor(255, 255, 255, 255),
-			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
-			"gradient_background"
-		);
-		auto window_frame = window->addImage(
+		auto background = window->addImage(
 			window->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_Window00.png",
-			"window_frame"
+			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_WindowALL01.png",
+			"background"
 		);
-		window_frame->ontop = true;
 
 		// bottom buttons
 		struct Option {
 			const char* name;
+			const char* text;
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			{"Defaults", inventorySortingDefaults},
-			{"Discard", inventorySortingDiscard},
-			{"Confirm", inventorySortingConfirm},
+			{"Defaults", "Restore\nDefaults", inventorySortingDefaults},
+			{"Discard", "Discard\n& Exit", inventorySortingDiscard},
+			{"Confirm", "Confirm\n& Exit", inventorySortingConfirm},
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 		for (int c = 0; c < num_options; ++c) {
 			auto button = window->addButton(options[c].name);
 			button->setSize(SDL_Rect{412 + (582 - 412) * c, 638, 164, 62});
 			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/Button_Basic00.png");
-			button->setText(options[c].name);
-			button->setFont(bigfont_outline);
+			button->setText(options[c].text);
+			button->setFont(smallfont_outline);
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			if (c > 0) {
@@ -2759,20 +2740,13 @@ namespace MainMenu {
 		const int num_hotbar_buttons = sizeof(hotbar_callbacks) / sizeof(hotbar_callbacks[0]);
 		for (int c = num_hotbar_buttons - 1; c >= 0; --c) {
 			auto button = window->addButton((std::string("hotbar_button") + std::to_string(c)).c_str());
-			button->setSize(SDL_Rect{62, 88 + c * 50, 48, 48});
-			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Backing00.png");
-			button->setIcon("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_X00.png");
+			button->setSize(SDL_Rect{72, 88 + c * 50, 44, 42});
+			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Box01.png");
+			button->setIcon("*#images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Checkmark01.png");
 			button->setStyle(Button::style_t::STYLE_CHECKBOX);
 			button->setCallback(hotbar_callbacks[c]);
+			button->setSelectorOffset(SDL_Rect{0, 6, -4, 4});
 			button->setBorder(0);
-			button->setTickCallback([](Widget& widget){
-				auto button = static_cast<Button*>(&widget);
-				if (button->isSelected()) {
-					button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Selected00.png");
-				} else {
-					button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Backing00.png");
-				}
-				});
 			if (c > 0) {
 				button->setWidgetUp((std::string("hotbar_button") + std::to_string(c - 1)).c_str());
 			}
