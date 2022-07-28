@@ -11979,6 +11979,8 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
+		lobby_chat_messages.clear();
+
 		// just in case we're still awaiting a controller for player 1,
 		// this clears it.
 		if (type == LobbyType::LobbyLocal) {
