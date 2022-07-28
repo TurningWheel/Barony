@@ -3959,8 +3959,13 @@ namespace ConsoleCommands {
 		}
 	});
 
-	static ConsoleCommand ccmd_scriptdata("/loadscripts", "loads scripts.json", []CCMD{
-		ScriptTextParser.readFromFile();
+	static ConsoleCommand ccmd_loadscripts("/loadscripts", "loads scripts.json", []CCMD{
+		ScriptTextParser.readAllScripts();
 		messagePlayer(clientnum, MESSAGE_MISC, "reloaded scripts.json");
+	});
+
+	static ConsoleCommand ccmd_dumpsigns("/dumpsigns", "dumps signs on level to signs.json", []CCMD{
+		ScriptTextParser.writeWorldSignsToFile();
+		messagePlayer(clientnum, MESSAGE_MISC, "dumped data/scripts/scripts.json");
 	});
 }

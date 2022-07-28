@@ -148,6 +148,7 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("data");
 			PHYSFS_mkdir("data/custom-monsters");
 			PHYSFS_mkdir("data/statues");
+			PHYSFS_mkdir("data/scripts");
 			PHYSFS_mkdir("config");
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");

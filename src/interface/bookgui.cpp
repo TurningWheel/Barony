@@ -548,6 +548,16 @@ void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
 		return;
 	}
 
+	if ( inputs.hasController(player.playernum) )
+	{
+		std::string gamepadName = name;
+		gamepadName += "_gamepad";
+		if ( ScriptTextParser.allEntries.find(gamepadName) != ScriptTextParser.allEntries.end() )
+		{
+			name = gamepadName;
+		}
+	}
+
 	player.GUI.previousModule = player.GUI.activeModule;
 
 	players[player.playernum]->openStatusScreen(GUI_MODE_SIGN,
@@ -600,13 +610,13 @@ void Player::SignGUI_t::createSignGUI()
 	fade->color = makeColor(r, g, b, a);
 
 	Frame* signBackground = frame->addFrame("sign frame");
-	const int width = 534;
+	const int width = 366;
 	const int promptHeight = 27;
 	const int promptWidth = 60;
-	const int height = 306;
+	const int height = 282;
 	signBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height + promptHeight * 2 });
 	auto bgImg = signBackground->addImage(SDL_Rect{ 0, promptHeight, width, height }, 0xFFFFFFFF,
-		"images/system/white.png", "sign img");
+		"#*images/ui/Signs/UI_Sign_Window_00.png", "sign img");
 
 	std::string promptFont = "fonts/pixel_maz.ttf#32#2";
 	auto promptBack = signBackground->addField("prompt back txt", 16);
@@ -657,15 +667,15 @@ void Player::SignGUI_t::createSignGUI()
 		snprintf(imgBuf, sizeof(imgBuf), "img %d", i);
 		Field* signText = signBackground->addField(fieldBuf, 1024);
 		signText->setText("");
-		const int pageWidth = 440;
-		const int pageHeight = 270;
-		const int leftMargin = 30;
+		const int leftMargin = 16;
+		const int pageWidth = width - leftMargin * 2;
+		const int pageHeight = 24;
 		const int topMargin = 10;
 		signText->setSize(SDL_Rect{ leftMargin, bgImg->pos.y + topMargin, pageWidth, pageHeight });
 		signText->setFont(signFont.c_str());
 		signText->setHJustify(Field::justify_t::LEFT);
 		signText->setVJustify(Field::justify_t::TOP);
-		signText->setColor(makeColor(255, 255, 255, 255));
+		signText->setTextColor(makeColor(255, 255, 255, 255));
 		signText->setDisabled(true);
 
 		Frame::image_t* signImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 },
@@ -804,6 +814,12 @@ void Player::SignGUI_t::updateSignGUI()
 		auto text = innerFrame->findField(fieldBuf);
 		auto img = innerFrame->findImage(imgBuf);
 		text->setDisabled(true);
+		text->setFont(signEntry.font.c_str());
+		text->setHJustify(signEntry.hjustify);
+		text->setVJustify(signEntry.vjustify);
+		text->setTextColor(signEntry.fontColor);
+		text->setOutlineColor(signEntry.fontOutlineColor);
+		text->clearWordsToHighlight();
 		img->disabled = true;
 		allFields.push_back(text);
 		allImgs.push_back(img);
@@ -823,7 +839,9 @@ void Player::SignGUI_t::updateSignGUI()
 	{
 		spaceWidth = textGet->getWidth();
 	}
-	int currentY = 30;
+	int currentY = 30 + signEntry.padTopY;
+	const int topMostY = currentY;
+	int bottomMostY = topMostY;
 	int nextCurrentY = 0;
 	for ( int line = 0; line < signEntry.rawText.size(); ++line )
 	{
@@ -831,7 +849,9 @@ void Player::SignGUI_t::updateSignGUI()
 		{
 			break;
 		}
+		std::vector<Frame::image_t*> imgsThisLine;
 		Field* txt = allFields[line];
+		int imageTopMostY = currentY;
 		for ( auto c : signEntry.rawText[line] )
 		{
 			if ( c == '$' )
@@ -847,7 +867,16 @@ void Player::SignGUI_t::updateSignGUI()
 					{
 						// set image as binding
 						Frame::image_t* img = allImgs[imgIndex];
-						img->path = Input::inputs[player.playernum].getGlyphPathForBinding(var.value.c_str());
+						imgsThisLine.push_back(img);
+
+						if ( var.value == "Pause Game" && inputs.bPlayerUsingKeyboardControl(player.playernum) )
+						{
+							img->path = Input::inputs[player.playernum].getGlyphPathForInput("Escape");
+						}
+						else
+						{
+							img->path = Input::inputs[player.playernum].getGlyphPathForBinding(var.value.c_str());
+						}
 						if ( auto imgGet = Image::get(img->path.c_str()))
 						{
 							img->disabled = false;
@@ -863,6 +892,14 @@ void Player::SignGUI_t::updateSignGUI()
 							{
 								// position just after the text.
 								img->pos.x = txt->getSize().x + textGet->getWidth() + (spaceWidth / 2);
+								if ( formattedText != "" )
+								{
+									img->pos.x += signEntry.imageInlineTextAdjustX;
+								}
+							}
+							if ( img->pos.x % 2 == 1 )
+							{
+								++img->pos.x;
 							}
 							int numspaces = 1 + (imgGet->getWidth() / spaceWidth);
 							while ( numspaces > 0 )
@@ -870,16 +907,26 @@ void Player::SignGUI_t::updateSignGUI()
 								formattedText += ' '; // add spaces to cover image width
 								--numspaces;
 							}
-							if ( img->pos.y < currentY )
+							if ( img->pos.y < imageTopMostY )
 							{
-								// img overhangs the last line,
-								const int diff = (currentY - img->pos.y);
+								// img overhangs the last line, push this one down
+								const int diff = (imageTopMostY - img->pos.y);
 								currentY += diff;
 								img->pos.y += diff;
+
+								// move previous images down
+								for ( auto i : imgsThisLine )
+								{
+									if ( i != img )
+									{
+										i->pos.y += diff;
+									}
+								}
 							}
+							imageTopMostY = std::min(imageTopMostY, img->pos.y);
 							if ( img->pos.y + img->pos.h > (currentY + fontHeight) )
 							{
-								nextCurrentY = (img->pos.y + img->pos.h) - (currentY + fontHeight);
+								nextCurrentY = std::max(nextCurrentY, (img->pos.y + img->pos.h) - (currentY + fontHeight));
 							}
 						}
 						++imgIndex;
@@ -888,6 +935,7 @@ void Player::SignGUI_t::updateSignGUI()
 					{
 						// set image
 						Frame::image_t* img = allImgs[imgIndex];
+						imgsThisLine.push_back(img);
 						img->path = var.value;
 						if ( auto imgGet = Image::get(img->path.c_str()) )
 						{
@@ -912,6 +960,14 @@ void Player::SignGUI_t::updateSignGUI()
 							{
 								// position just after the text.
 								img->pos.x = txt->getSize().x + textGet->getWidth() + (spaceWidth / 2);
+								if ( formattedText != "" )
+								{
+									img->pos.x += signEntry.imageInlineTextAdjustX;
+								}
+							}
+							if ( img->pos.x % 2 == 1 )
+							{
+								++img->pos.x;
 							}
 							int numspaces = 1 + (img->pos.w / spaceWidth);
 							while ( numspaces > 0 )
@@ -919,16 +975,26 @@ void Player::SignGUI_t::updateSignGUI()
 								formattedText += ' '; // add spaces to cover image width
 								--numspaces;
 							}
-							if ( img->pos.y < currentY )
+							if ( img->pos.y < imageTopMostY )
 							{
-								// img overhangs the last line,
-								const int diff = (currentY - img->pos.y);
+								// img overhangs the last line, push this one down
+								const int diff = (imageTopMostY - img->pos.y);
 								currentY += diff;
 								img->pos.y += diff;
+
+								// move previous images down
+								for ( auto i : imgsThisLine )
+								{
+									if ( i != img )
+									{
+										i->pos.y += diff;
+									}
+								}
 							}
+							imageTopMostY = std::min(imageTopMostY, img->pos.y);
 							if ( img->pos.y + img->pos.h >(currentY + fontHeight) )
 							{
-								nextCurrentY = (img->pos.y + img->pos.h) - (currentY + fontHeight);
+								nextCurrentY = std::max(nextCurrentY, (img->pos.y + img->pos.h) - (currentY + fontHeight));
 							}
 						}
 						++imgIndex;
@@ -946,9 +1012,60 @@ void Player::SignGUI_t::updateSignGUI()
 		SDL_Rect pos = txt->getSize();
 		pos.y = currentY;
 		txt->setSize(pos);
-		currentY += txt->getNumTextLines() * fontHeight + nextCurrentY;
+		const int oldCurrentY = currentY;
+		currentY += std::max(1, txt->getNumTextLines()) * fontHeight + nextCurrentY + signEntry.padPerLine[line];
 		nextCurrentY = 0;
+
+		if ( txt->getHJustify() == Field::justify_t::CENTER )
+		{
+			// adjust all images based on text width.
+			const int textCenterOffset = txt->getTextObject()->getWidth();
+			const int textStartX = txt->getSize().w / 2 - (textCenterOffset / 2);
+			for ( auto i : imgsThisLine )
+			{
+				i->pos.x += textStartX;
+				if ( i->pos.x % 2 == 1 )
+				{
+					++i->pos.x;
+				}
+			}
+		}
+		if ( formattedText != "" )
+		{
+			bottomMostY = currentY;
+		}
+		else
+		{
+			bottomMostY = oldCurrentY; // empty string, img only don't add buffer for line height.
+		}
 		formattedText = "";
+	}
+
+	int verticalAdjustY = 0;
+	if ( signEntry.vjustify == Field::justify_t::CENTER )
+	{
+		verticalAdjustY = (innerFrame->getSize().h / 2) - ((bottomMostY - topMostY) / 2) - topMostY;
+	}
+
+	for ( auto f : allFields )
+	{
+		SDL_Rect pos = f->getSize();
+		pos.y += verticalAdjustY;
+		f->setSize(pos);
+	}
+	for ( auto i : allImgs )
+	{
+		i->pos.y += verticalAdjustY;
+	}
+	for ( auto highlight : signEntry.wordHighlights )
+	{
+		int line = 0;
+		while ( highlight >= Field::TEXT_HIGHLIGHT_WORDS_PER_LINE )
+		{
+			highlight -= Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+			++line;
+		}
+		allFields[line]->addWordToHighlight(highlight, signEntry.fontHighlightColor);
 	}
 	return;
 }

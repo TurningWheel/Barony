@@ -2862,7 +2862,9 @@ class ScriptTextParser_t
 public:
 	ScriptTextParser_t() {};
 	~ScriptTextParser_t() {};
-	bool readFromFile();
+	void readAllScripts();
+	bool readFromFile(const std::string& filename);
+	void writeWorldSignsToFile();
 	enum ObjectType_t : int {
 		OBJ_SIGN,
 		OBJ_MESSAGE,
@@ -2889,6 +2891,16 @@ public:
 		std::vector<Variable_t> variables;
 		std::string formattedText = "";
 		ObjectType_t objectType = OBJ_MESSAGE;
+		int hjustify = 4;
+		int vjustify = 0;
+		std::vector<int> padPerLine;
+		int padTopY = 0;
+		std::string font = "";
+		Uint32 fontColor = 0xFFFFFFFF;
+		Uint32 fontOutlineColor = 0xFFFFFFFF;
+		Uint32 fontHighlightColor = 0xFFFFFFFF;
+		std::vector<int> wordHighlights;
+		int imageInlineTextAdjustX = 0; // when img is placed inbetween text, move it by this adjustment to center
 	};
 	std::map<std::string, Entry_t> allEntries;
 };
