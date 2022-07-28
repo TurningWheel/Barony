@@ -1476,7 +1476,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 
 		// on success, client gets legit player number
 		client_disconnected[c] = false;
-        copyString(stats[c]->name, (const char*)net_packet->data + 4, sizeof(Stat::name), 32);
+        stringCopy(stats[c]->name, (const char*)net_packet->data + 4, sizeof(Stat::name), 32);
 		client_classes[c] = (int)SDLNet_Read32(&net_packet->data[36]);
 		stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[40]));
 		Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[44]);
@@ -1501,7 +1501,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 			net_packet->data[6] = stats[c]->sex; // sex
 			net_packet->data[7] = (Uint8)stats[c]->appearance; // appearance
 			net_packet->data[8] = (Uint8)stats[c]->playerRace; // player race
-			copyString((char*)net_packet->data + 9, stats[c]->name, 32, sizeof(Stat::name)); // name
+			stringCopy((char*)net_packet->data + 9, stats[c]->name, 32, sizeof(Stat::name)); // name
 			net_packet->address.host = net_clients[x - 1].host;
 			net_packet->address.port = net_clients[x - 1].port;
 			net_packet->len = 9 + 32;
@@ -4795,7 +4795,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	        // yeah right
 	        return;
 	    }
-		copyString(shortname, stats[playerDisconnected]->name, sizeof(shortname), sizeof(Stat::name));
+		stringCopy(shortname, stats[playerDisconnected]->name, sizeof(shortname), sizeof(Stat::name));
 		client_disconnected[playerDisconnected] = true;
 		for ( int c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -4822,7 +4822,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		MessageType type = MESSAGE_CHAT; // the only kind of message you can get from a client.
 
 		char shortname[16];
-		copyString(shortname, stats[pnum]->name, sizeof(shortname), 10);
+		stringCopy(shortname, stats[pnum]->name, sizeof(shortname), 10);
 
 		char fmt[1024];
 		const int len = snprintf(fmt, sizeof(fmt), "%s: %s", shortname, (char*)(&net_packet->data[9]));
@@ -4840,7 +4840,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			memcpy((char*)net_packet->data, "MSGS", 4);
 			SDLNet_Write32(color, &net_packet->data[4]);
 			SDLNet_Write32((Uint32)type, &net_packet->data[8]);
-			copyString((char*)(&net_packet->data[12]), fmt, len + 1, sizeof(fmt));
+			stringCopy((char*)(&net_packet->data[12]), fmt, len + 1, sizeof(fmt));
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 12 + len + 1;

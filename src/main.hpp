@@ -25,18 +25,26 @@ constexpr const T& clamp( const T& v, const T& lo, const T& hi ) {
     return std::min(std::max(lo, v), hi);
 }
 
-// copy a null-terminated string to another string buffer
-// @param dest destination string buffer
-// @param src source string
-// @param size size of dest string buffer in bytes
-void copyStringUnsafe(char* const dest, const char* const src, size_t size);
+// the following functions are safe variants of C's string library.
+// they include the buffer length of each input as secondary parameters to
+// prevent buffer overruns.
+// they also ALWAYS append null when modifying a string, within the space
+// provided.
+// logically, if a function reaches the end of a string buffer as indicated
+// by the given size, the behavior is identical to the case where it meets
+// a null-terminator.
+// in other words, input strings do not have to be null-terminated if their
+// associated size argument matches exactly the amount of data you wish to use.
+// otherwise the functions will stop at the first null-terminator found,
+// matching the behavior of the original C library.
 
-// copy a string to another buffer and add a terminator
-// @param dest destination string
-// @param src source buffer
-// @param dest_size size of out string buffer in bytes
-// @param src_size size of in buffer in bytes
-void copyString(char* const dest, const char* const src, size_t dest_size, size_t src_size);
+char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size);
+char* stringCopyUnsafe(char* dest, const char* src, size_t dest_size);
+char* stringCat(char* dest, const char* src, size_t dest_size, size_t src_size);
+int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_size);
+size_t stringLen(const char* str, size_t size);
+const char* stringStr(const char* str1, const char* str2, size_t str1_size, size_t str2_size);
+char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size);
 
 #include <iostream>
 #include <list>

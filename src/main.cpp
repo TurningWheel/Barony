@@ -24,14 +24,17 @@ extern "C"
 
 #include <assert.h>
 
-void copyString(char* const dest, const char* const src, size_t dest_size, size_t src_size) {
+char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size) {
+    // verify input
     assert(dest);
     assert(src);
     assert(dest_size);
     assert(src_size);
     if (!dest || !src || !dest_size || !src_size) {
-        return;
+	    return dest;
     }
+
+    // copy string
     if (src_size < dest_size) {
         memcpy(dest, src, src_size);
         dest[src_size] = '\0';
@@ -39,21 +42,160 @@ void copyString(char* const dest, const char* const src, size_t dest_size, size_
         memcpy(dest, src, dest_size);
         dest[dest_size - 1] = '\0';
     }
+
+	return dest;
 }
 
-void copyStringUnsafe(char* const dest, const char* const src, size_t size) {
+char* stringCopyUnsafe(char* dest, const char* src, size_t size) {
+    // verify input
     assert(dest);
     assert(src);
     assert(size);
     if (!dest || !src || !size) {
-        return;
+	    return dest;
     }
+
+    // copy string
     --size;
     size_t c = 0;
     for (; c < size && src[c] != '\0'; ++c) {
         dest[c] = src[c];
     }
 	dest[c] = '\0';
+
+	return dest;
+}
+
+char* stringCat(char* dest, const char* src, size_t dest_size, size_t src_size) {
+    // verify input
+    assert(dest);
+    assert(src);
+    assert(dest_size);
+    assert(src_size);
+    if (!dest || !src || !dest_size || !src_size) {
+	    return dest;
+    }
+
+    // find end of dest string
+    size_t off = 0;
+    for (; off < dest_size && dest[off] != '\0'; ++off);
+    dest += off;
+    dest_size -= off;
+    if (!dest || !dest_size) {
+        return dest;
+    }
+
+    // copy string
+    if (src_size < dest_size) {
+        memcpy(dest, src, src_size);
+        dest[src_size] = '\0';
+    } else {
+        memcpy(dest, src, dest_size);
+        dest[dest_size - 1] = '\0';
+    }
+
+	return dest;
+}
+
+int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_size) {
+    // verify input
+    assert(str1);
+    assert(str2);
+    assert(str1_size);
+    assert(str2_size);
+    if (!str1 || !str2 || !str1_size || !str2_size) {
+	    return 0;
+    }
+
+    // scan strings for first difference
+    size_t c = 0;
+    for (; c < str1_size && c < str2_size &&
+        str1[c] != '\0' && str2[c] != '\0' &&
+        str1[c] == str2[c]; ++c);
+
+    bool end_of_str1 = false;
+    bool end_of_str2 = false;
+
+    // reached end of first string'
+    if (c == str1_size || str1[c] == '\0') {
+        end_of_str1 = true;
+    }
+
+    // reached end of second string
+    if (c == str2_size || str2[c] == '\0') {
+        end_of_str2 = true;
+    }
+
+    if (end_of_str1 && end_of_str2) {
+        return 0; // reached end of both strings, they are identical
+    }
+    else if (end_of_str1 && !end_of_str2) {
+        return -str2[c]; // reached end of only str1, return <0
+    }
+    else if (end_of_str2 && !end_of_str1) {
+        return str1[c]; // reached end of only str2, return >0
+    }
+    else {
+        return str1[c] - str2[c]; // found a different character
+    }
+}
+
+size_t stringLen(const char* str, size_t size) {
+    // verify input
+    assert(str);
+    assert(size);
+    if (!str || !size) {
+	    return 0;
+    }
+
+    // find end of string
+    size_t len = 0;
+    for (; len < size && str[len] != '\0'; ++len);
+    return len;
+}
+
+const char* stringStr(const char* str1, const char* str2, size_t str1_size, size_t str2_size) {
+    // verify input
+    assert(str1);
+    assert(str2);
+    assert(str1_size);
+    assert(str2_size);
+    if (!str1 || !str2 || !str1_size || !str2_size) {
+	    return nullptr;
+    }
+
+    // scan str1 for a match of str2
+    for (size_t s = 0; s < str1_size && str1[s] != '\0'; ++s) {
+        const char* ptr = str1 + s;
+        if (!stringCmp(ptr, str2, str1_size - s, str2_size)) {
+            return ptr;
+        }
+    }
+
+    // no match found
+    return nullptr;
+}
+
+char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size) {
+    // verify input
+    assert(str1);
+    assert(str2);
+    assert(str1_size);
+    assert(str2_size);
+    if (!str1 || !str2 || !str1_size || !str2_size) {
+	    return nullptr;
+    }
+
+    // scan str1 for a match of str2
+    for (size_t s = 0; s < str1_size && str1[s] != '\0'; ++s) {
+        char* ptr = str1 + s;
+        if (!stringCmp(ptr, str2, str1_size - s, str2_size)) {
+            return ptr;
+        }
+    }
+
+    // no match found
+    return nullptr;
 }
 
 // main definitions

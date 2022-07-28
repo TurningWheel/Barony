@@ -6363,7 +6363,7 @@ bind_failed:
 		    net_packet->data[4] = player;
 
 		    // encode name
-		    copyString((char*)net_packet->data + 5, stats[player]->name, 32, sizeof(Stat::name));
+		    stringCopy((char*)net_packet->data + 5, stats[player]->name, 32, sizeof(Stat::name));
 
 		    // encode class, sex, race, and appearance
             SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[37]);
@@ -6661,7 +6661,7 @@ bind_failed:
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-	        copyString(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
+	        stringCopy(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
 	        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
 	        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
 	        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
@@ -6965,7 +6965,7 @@ bind_failed:
 		    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
 		    stats[player]->appearance = net_packet->data[7];
 		    stats[player]->playerRace = net_packet->data[8];
-		    copyString(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
+		    stringCopy(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
 
 		    char buf[1024];
 		    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
@@ -6996,7 +6996,7 @@ bind_failed:
 	    {'PLYR', [](){
 	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		    if (player != clientnum) {
-                copyString(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
+                stringCopy(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
                 client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
                 stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
                 Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
@@ -7226,7 +7226,7 @@ bind_failed:
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (6 + 32) + 3]); // sex
 						stats[c]->appearance = net_packet->data[8 + c * (6 + 32) + 4]; // appearance
 						stats[c]->playerRace = net_packet->data[8 + c * (6 + 32) + 5]; // player race
-						copyString(stats[c]->name, (char*)(net_packet->data + 8 + c * (6 + 32) + 6), sizeof(Stat::name), 32); // name
+						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * (6 + 32) + 6), sizeof(Stat::name), 32); // name
 
 		                stats[c]->clearStats();
 		                initClass(c);
@@ -7493,13 +7493,13 @@ bind_failed:
 
 	    // construct packet
 	    memcpy(net_packet->data, "JOIN", 4);
-	    copyString((char*)net_packet->data + 4, stats[index]->name, 32, sizeof(Stat::name));
+	    stringCopy((char*)net_packet->data + 4, stats[index]->name, 32, sizeof(Stat::name));
 	    SDLNet_Write32((Uint32)client_classes[index], &net_packet->data[36]);
 	    SDLNet_Write32((Uint32)stats[index]->sex, &net_packet->data[40]);
 	    Uint32 appearanceAndRace = ((Uint8)stats[index]->appearance << 8); // store in bits 8 - 15
 	    appearanceAndRace |= (Uint8)stats[index]->playerRace; // store in bits 0 - 7
 	    SDLNet_Write32(appearanceAndRace, &net_packet->data[44]);
-	    copyString((char*)net_packet->data + 48, VERSION, 8, sizeof(VERSION));
+	    stringCopy((char*)net_packet->data + 48, VERSION, 8, sizeof(VERSION));
 	    net_packet->data[56] = index;
 	    if (loadingsavegame) {
 		    // send over the map seed being used
