@@ -1402,7 +1402,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
     printlog("processing lobby join request\n");
 
 	Uint32 result = MAXPLAYERS;
-	if ( strcmp(VERSION, (char*)net_packet->data + 39) )
+	if ( strcmp(VERSION, (char*)net_packet->data + 48) ) // TODO this should be safer.
 	{
 		result = MAXPLAYERS + 1; // wrong version number
 	}

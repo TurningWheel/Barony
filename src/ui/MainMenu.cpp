@@ -6902,8 +6902,10 @@ bind_failed:
 			    }
 
 			    // assume success after this point
-			    assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
-			        result == NET_LOBBY_JOIN_P2P_SUCCESS);
+			    if (result != NET_LOBBY_JOIN_DIRECTIP_SUCCESS &&
+			        result != NET_LOBBY_JOIN_P2P_SUCCESS) {
+			        printlog("Player failed to join lobby");
+			    }
 
 			    // finally, open a player card!
 			    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
