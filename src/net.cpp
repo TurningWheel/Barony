@@ -1408,9 +1408,9 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 	}
 	else
 	{
-		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[53]);
-		Uint32 clientms = SDLNet_Read32(&net_packet->data[49]);
-		if ( net_packet->data[48] == 0 )
+		Uint32 clientms = SDLNet_Read32(&net_packet->data[57]);
+		Uint32 clientlsg = SDLNet_Read32(&net_packet->data[61]);
+		if ( net_packet->data[56] == 0 )
 		{
 			// client will enter any player spot
 			for ( result = 1; result < MAXPLAYERS; result++ )
@@ -1424,7 +1424,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		else
 		{
 			// client is joining a particular player spot
-			result = net_packet->data[48];
+			result = net_packet->data[56];
 			if ( result >= MAXPLAYERS || !client_disconnected[result] || lockedSlots[result] )
 			{
 				result = MAXPLAYERS;  // client wants to fill a space that is already filled
