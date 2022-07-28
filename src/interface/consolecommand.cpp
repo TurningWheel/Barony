@@ -3734,6 +3734,11 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded charsheet_settings.json");
 		});
 
+	static ConsoleCommand ccmd_loadfollowerwheel("/loadfollowerwheel", "", []CCMD{
+		FollowerRadialMenu::loadFollowerJSON();
+		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded follower_wheel.json");
+	});
+
 	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
@@ -3954,4 +3959,13 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_loadscripts("/loadscripts", "loads scripts.json", []CCMD{
+		ScriptTextParser.readAllScripts();
+		messagePlayer(clientnum, MESSAGE_MISC, "reloaded scripts.json");
+	});
+
+	static ConsoleCommand ccmd_dumpsigns("/dumpsigns", "dumps signs on level to signs.json", []CCMD{
+		ScriptTextParser.writeWorldSignsToFile();
+		messagePlayer(clientnum, MESSAGE_MISC, "dumped data/scripts/scripts.json");
+	});
 }

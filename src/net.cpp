@@ -2417,19 +2417,19 @@ void clientHandlePacket()
 	// enemy hp bar
 	else if ( packetId == 'ENHP' )
 	{
-		Sint32 enemy_hp = SDLNet_Read32(&net_packet->data[4]);
-		Sint32 enemy_maxhp = SDLNet_Read32(&net_packet->data[8]);
-		Uint32 enemy_bar_color = SDLNet_Read32(&net_packet->data[12]); // receive color enemy bar data for my client.
-		Sint32 oldhp = SDLNet_Read32(&net_packet->data[16]);
-		Uint32 uid = SDLNet_Read32(&net_packet->data[20]);
+		Sint16 enemy_hp = SDLNet_Read16(&net_packet->data[4]);
+		Sint16 enemy_maxhp = SDLNet_Read16(&net_packet->data[6]);
+		Sint16 oldhp = SDLNet_Read16(&net_packet->data[8]);
+		Uint32 uid = SDLNet_Read32(&net_packet->data[10]);
 		bool lowPriorityTick = false;
-		if ( net_packet->data[24] == 1 )
+		if ( net_packet->data[14] == 1 )
 		{
 			lowPriorityTick = true;
 		}
 		char enemy_name[128] = "";
-		strcpy(enemy_name, (char*)(&net_packet->data[25]));
-		enemyHPDamageBarHandler[clientnum].addEnemyToList(enemy_hp, enemy_maxhp, oldhp, enemy_bar_color, uid, enemy_name, lowPriorityTick);
+		strcpy(enemy_name, (char*)(&net_packet->data[15]));
+		enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
+			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), 0, uid, enemy_name, lowPriorityTick);
 		return;
 	}
 
@@ -3224,7 +3224,8 @@ void clientHandlePacket()
 			    }
 		    }
 		}
-		else if ( !strcmp(msg, language[1109]) )
+		
+		if ( !strcmp(msg, language[1109]) )
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
@@ -3240,7 +3241,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		else if ( !strncmp(msg, language[1114], 28) )
+		else if ( !strncmp(msg, language[1114], 28) ) // Zap brigade music
 		{
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
@@ -3250,7 +3251,7 @@ void clientHandlePacket()
 		}
 		else if ( (strstr(msg, language[1160])) != NULL )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( int c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( !strncmp(stats[c]->name, msg, strlen(stats[c]->name)) )
 				{

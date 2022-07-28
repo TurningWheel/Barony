@@ -317,12 +317,17 @@ void GameController::handleAnalog(int player)
 
 		if ( radialMenuOpen )
 		{
-			real_t floatx = getRightXPercent();
-			real_t floaty = getRightYPercent();
+			const real_t floatx = getRawRightXMove();
+			const real_t floaty = getRawRightYMove();
+
+			const real_t maxInputVector = 32767;
+			const real_t magnitude = sqrt(pow(floatx, 2) + pow(floaty, 2));
+			const real_t normalised = magnitude / (maxInputVector);
+			real_t deadzone = 0.8;
+
 			const int numoptions = 8;
-			real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
 			DpadDirection dir = DpadDirection::CENTERED;
-			if ( magnitude > 1 )
+			if ( normalised >= deadzone )
 			{
 				real_t stickAngle = atan2(floaty, floatx);
 				while ( stickAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
@@ -355,6 +360,7 @@ void GameController::handleAnalog(int player)
 					virtualDpad.consumed = false;
 					//messagePlayer(0, "%d", virtualDpad.padVirtualDpad);
 				}
+				inputs.getVirtualMouse(player)->lastMovementFromController = true;
 			}
 			rightx = 0;
 			righty = 0;
@@ -1158,13 +1164,21 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY )
 	{
-		if ( moduleToAccess == MODULE_HOTBAR && player.inventoryUI.bCompactView
-			&& ( player.shopGUI.bOpen 
-				|| GenericGUI[player.playernum].isGUIOpen()) )
+		if ( moduleToAccess == MODULE_HOTBAR )
 		{
-			return false;
+			if ( player.inventoryUI.bCompactView
+				&& (player.shopGUI.bOpen
+					|| GenericGUI[player.playernum].isGUIOpen()) )
+			{
+				return false;
+			}
+			if ( player.hotbar.animHide > 0.01 )
+			{
+				return false;
+			}
 		}
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
+			|| player.signGUI.bSignOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen()
 			|| player.hud.mapWindow || player.hud.logWindow )
 		{
@@ -2703,6 +2717,7 @@ Player::Player(int in_playernum, bool in_local_host) :
 	worldUI(*this),
 	hotbar(*this),
 	bookGUI(*this),
+	signGUI(*this),
 	paperDoll(*this),
 	minimap(*this),
 	shopGUI(*this)
@@ -2849,7 +2864,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				hit.entity = ohitentity;
 			}
 
-			if ( stats[player.playernum] && stats[player.playernum]->defending )
+			if ( !followerSelectInteract && stats[player.playernum] && stats[player.playernum]->defending )
 			{
 				if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 				{
@@ -3475,13 +3490,14 @@ void Player::WorldUI_t::handleTooltips()
 			// follower menu can be "open" but selectMoveTo == true means the GUI is closed and selecting move or interact.
 			if ( FollowerMenu[player].selectMoveTo == false )
 			{
-				continue;
+				radialMenuOpen = true;
 			}
+			radialMenuOpen = false;
 			followerSelectInteract = (FollowerMenu[player].optionSelected == ALLY_CMD_ATTACK_SELECT);
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( !players[player]->shootmode )
+		if ( !players[player]->shootmode || radialMenuOpen )
 		{
 			bDoingActionHideTooltips = true;
 		}
@@ -3513,6 +3529,10 @@ void Player::WorldUI_t::handleTooltips()
 			else
 			{
 				bDoingActionHideTooltips = true;
+				if ( FollowerMenu[player].selectMoveTo )
+				{
+					bDoingActionHideTooltips = false; // selecting follower target is OK if defending
+				}
 			}
 		}
 		
@@ -5479,6 +5499,7 @@ void Player::clearGUIPointers()
 	shopGUI.itemRequiresTitleReflow = true;
 
 	bookGUI.bookFrame = nullptr;
+	signGUI.signFrame = nullptr;
 
 	characterSheet.sheetFrame = nullptr;
 
@@ -5537,6 +5558,8 @@ void Player::clearGUIPointers()
 		skillSheetEntryFrames[playernum].effectFrames[i] = nullptr;
 	}
 	skillSheetEntryFrames[playernum].legendFrame = nullptr;
+
+	FollowerMenu[playernum].followerFrame = nullptr;
 }
 
 const char* Player::getAccountName() const {

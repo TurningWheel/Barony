@@ -843,6 +843,7 @@
     <ClInclude Include="..\..\src\input.hpp" />
     <ClInclude Include="..\..\src\main.hpp" />
     <ClInclude Include="..\..\src\mod_tools.hpp" />
+    <ClInclude Include="..\..\src\prng.hpp" />
     <ClInclude Include="..\..\src\savepng.hpp" />
     <ClInclude Include="..\..\src\stat_editor.hpp" />
     <ClInclude Include="..\..\src\steam.hpp" />
@@ -879,6 +880,7 @@
     <ClCompile Include="..\..\src\mod_tools.cpp" />
     <ClCompile Include="..\..\src\objects.cpp" />
     <ClCompile Include="..\..\src\opengl.cpp" />
+    <ClCompile Include="..\..\src\prng.cpp" />
     <ClCompile Include="..\..\src\stat_editor.cpp" />
     <ClCompile Include="..\..\src\stat_shared.cpp" />
     <ClCompile Include="..\..\src\steam_shared.cpp" />

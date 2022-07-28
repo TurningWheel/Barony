@@ -596,6 +596,9 @@
     <ClInclude Include="..\..\src\input.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\interface\consolecommand.hpp">
+      <Filter>Header Files\interface</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\src\game.ico">

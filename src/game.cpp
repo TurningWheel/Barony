@@ -2551,7 +2551,7 @@ void gameLogic(void)
 							break;
 					}
 
-					if ( item->type == FOOD_BLOOD )
+					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
 					{
 						bloodCount += item->count;
 						if ( bloodCount >= 20 )
@@ -3078,6 +3078,7 @@ void gameLogic(void)
 				playerInventory.setSizeY(playerInventory.DEFAULT_INVENTORY_SIZEY);
 			}
 
+			int bloodCount = 0;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -3113,9 +3114,13 @@ void gameLogic(void)
 					}
 				}
 
-				if ( item->type == FOOD_BLOOD && item->count >= 20 )
+				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == VAMPIRE && stats[clientnum]->appearance == 0 )
 				{
-					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					bloodCount += item->count;
+					if ( bloodCount >= 20 )
+					{
+						steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					}
 				}
 
 				if ( item->status == BROKEN && itemCategory(item) != SPELL_CAT
@@ -3742,7 +3747,10 @@ void handleEvents(void)
 								// default 0 for normal mouse events
 								inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							}
-							break;
+						}
+						else
+						{
+							inputs.getVirtualMouse(i)->draw_cursor = false;
 						}
 					}
 				}
@@ -4753,7 +4761,12 @@ void ingameHud()
 						    }
 					    }
 
-					    if ( input.binaryToggle("Block")
+						if ( FollowerMenu[player].followerMenuIsOpen() )
+						{
+							input.consumeBinaryToggle("Block"); // moveto or interact we can block, but dont cast spell
+							allowCasting = false;
+						}
+					    else if ( input.binaryToggle("Block")
 						    && strcmp(input.binding("Block"), "Mouse3") == 0
 						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
 					    {
@@ -4844,6 +4857,15 @@ void ingameHud()
 			&& !gamePaused
 			&& bControlEnabled )
 		{
+			if ( worldUIBlocksFollowerCycle )
+			{
+				std::string cycleNPCbinding = input.binding("Cycle NPCs");
+				if ( cycleNPCbinding != input.binding("CycleWorldTooltipNext")
+					&& cycleNPCbinding != input.binding("CycleWorldTooltipPrev") )
+				{
+					worldUIBlocksFollowerCycle = false;
+				}
+			}
 			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
 			{
 				//(players[player]->shootmode && !worldUIBlocksFollowerCycle) || FollowerMenu[player].followerMenuIsOpen())) ) -- todo needed?
@@ -5069,6 +5091,10 @@ void ingameHud()
 			{
 				players[player]->bookGUI.closeBookGUI();
 			}
+			if ( players[player]->signGUI.bSignOpen )
+			{
+				players[player]->signGUI.closeSignGUI();
+			}
 			if ( players[player]->skillSheet.bSkillSheetOpen )
 			{
 				players[player]->skillSheet.closeSkillSheet();
@@ -5125,6 +5151,7 @@ void ingameHud()
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
+		players[player]->signGUI.updateSignGUI();
 		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements
 		players[player]->inventoryUI.updateItemContextMenuClickFrame();
 		players[player]->GUI.handleModuleNavigation(false);
@@ -6637,6 +6664,11 @@ int main(int argc, char** argv)
 
 				players[i]->GUI.clearHoveringOverModuleButton();
 			}
+
+			Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
+			Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
+			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 

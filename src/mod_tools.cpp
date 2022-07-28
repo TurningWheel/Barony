@@ -27,6 +27,7 @@ GameplayCustomManager gameplayCustomManager;
 GameModeManager_t gameModeManager;
 ItemTooltips_t ItemTooltips;
 GlyphRenderer_t GlyphHelper;
+ScriptTextParser_t ScriptTextParser;
 #ifndef NINTENDO
 IRCHandler_t IRCHandler;
 #endif // !NINTENDO
@@ -3925,5 +3926,524 @@ void GlyphRenderer_t::renderGlyphsToPNGs()
 	}
 
 	printlog("[Glyph Export]: Completed export of %d glyphs with %d errors.", allGlyphs.size(), errors);
+#endif
+}
+
+void ScriptTextParser_t::readAllScripts()
+{
+	allEntries.clear();
+
+	std::string baseDir = "data/scripts";
+	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
+	for ( auto file : files )
+	{
+		std::string checkFile = baseDir + '/' + file;
+		PHYSFS_Stat stat;
+		if ( PHYSFS_stat(checkFile.c_str(), &stat) == 0 ) { continue; }
+
+		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
+		{
+			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
+			for ( auto file2 : files2 )
+			{
+				std::string checkFile2 = checkFile + '/' + file2;
+				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
+
+				if ( stat.filetype != PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
+				{
+					readFromFile(checkFile2);
+				}
+			}
+		}
+		else
+		{
+			readFromFile(checkFile);
+		}
+	}
+}
+
+bool ScriptTextParser_t::readFromFile(const std::string& filename)
+{
+	if ( filename.find(".json") == std::string::npos )
+	{
+		return false;
+	}
+	if ( PHYSFS_getRealDir(filename.c_str()) )
+	{
+		std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+		inputPath.append(filename.c_str());
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return false;
+		}
+		char buf[65536];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") || !d.HasMember("script_entries") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return false;
+		}
+
+		Uint32 defaultFontColor = 0xFFFFFFFF;
+		Uint32 defaultFontOutlineColor = 0;
+		Uint32 defaultFontHighlightColor = 0xFFFFFFFF;
+		Uint32 defaultFontHighlight2Color = 0xFFFFFFFF;
+		if ( d.HasMember("default_attributes") )
+		{
+			if ( d["default_attributes"].HasMember("font_color") )
+			{
+				defaultFontColor = makeColor(
+					d["default_attributes"]["font_color"]["r"].GetInt(),
+					d["default_attributes"]["font_color"]["g"].GetInt(),
+					d["default_attributes"]["font_color"]["b"].GetInt(),
+					d["default_attributes"]["font_color"]["a"].GetInt());
+			}
+			if ( d["default_attributes"].HasMember("font_outline_color") )
+			{
+				defaultFontOutlineColor = makeColor(
+					d["default_attributes"]["font_outline_color"]["r"].GetInt(),
+					d["default_attributes"]["font_outline_color"]["g"].GetInt(),
+					d["default_attributes"]["font_outline_color"]["b"].GetInt(),
+					d["default_attributes"]["font_outline_color"]["a"].GetInt());
+			}
+			if ( d["default_attributes"].HasMember("font_highlight_color") )
+			{
+				defaultFontHighlightColor = makeColor(
+					d["default_attributes"]["font_highlight_color"]["r"].GetInt(),
+					d["default_attributes"]["font_highlight_color"]["g"].GetInt(),
+					d["default_attributes"]["font_highlight_color"]["b"].GetInt(),
+					d["default_attributes"]["font_highlight_color"]["a"].GetInt());
+			}
+			if ( d["default_attributes"].HasMember("font_highlight2_color") )
+			{
+				defaultFontHighlight2Color = makeColor(
+					d["default_attributes"]["font_highlight2_color"]["r"].GetInt(),
+					d["default_attributes"]["font_highlight2_color"]["g"].GetInt(),
+					d["default_attributes"]["font_highlight2_color"]["b"].GetInt(),
+					d["default_attributes"]["font_highlight2_color"]["a"].GetInt());
+			}
+		}
+
+		for ( rapidjson::Value::ConstMemberIterator entry_itr = d["script_entries"].MemberBegin(); entry_itr != d["script_entries"].MemberEnd(); ++entry_itr )
+		{
+			std::string key = entry_itr->name.GetString();
+			allEntries[key] = Entry_t();
+			auto& entry = allEntries[key];
+			entry.name = key;
+			entry.fontColor = defaultFontColor;
+			entry.fontOutlineColor = defaultFontOutlineColor;
+			entry.fontHighlightColor = defaultFontHighlightColor;
+			if ( entry_itr->value.HasMember("sign") )
+			{
+				entry.objectType = OBJ_SIGN;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["sign"].Begin(); text_itr != entry_itr->value["sign"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				if ( entry_itr->value.HasMember("variables") )
+				{
+					for ( rapidjson::Value::ConstValueIterator var_itr = entry_itr->value["variables"].Begin();
+						var_itr != entry_itr->value["variables"].End(); ++var_itr )
+					{
+						Entry_t::Variable_t variable;
+						variable.type = TEXT;
+						if ( (*var_itr).HasMember("type") )
+						{
+							std::string typeTxt = (*var_itr)["type"].GetString();
+							if ( typeTxt == "text" )
+							{
+								variable.type = TEXT;
+							}
+							else if ( typeTxt == "input_glyph" )
+							{
+								variable.type = GLYPH;
+							}
+							else if ( typeTxt == "image" )
+							{
+								variable.type = IMG;
+							}
+						}
+						if ( (*var_itr).HasMember("value") )
+						{
+							variable.value = (*var_itr)["value"].GetString();
+						}
+						if ( (*var_itr).HasMember("sizex") )
+						{
+							variable.sizex = (*var_itr)["sizex"].GetInt();
+						}
+						if ( (*var_itr).HasMember("sizey") )
+						{
+							variable.sizey = (*var_itr)["sizey"].GetInt();
+						}
+						entry.variables.push_back(variable);
+					}
+				}
+				for ( size_t s = 0; s < entry.rawText.size(); ++s )
+				{
+					entry.padPerLine.push_back(0);
+				}
+				if ( entry_itr->value.HasMember("attributes") )
+				{
+					if ( entry_itr->value["attributes"].HasMember("font") )
+					{
+						entry.font = entry_itr->value["attributes"]["font"].GetString();
+					}
+					if ( entry_itr->value["attributes"].HasMember("horizontal_justify") )
+					{
+						std::string s = entry_itr->value["attributes"]["horizontal_justify"].GetString();
+						if ( s == "center" )
+						{
+							entry.hjustify = Field::justify_t::CENTER;
+						}
+						else if ( s == "left" )
+						{
+							entry.hjustify = Field::justify_t::LEFT;
+						}
+						else if ( s == "right" )
+						{
+							entry.hjustify = Field::justify_t::RIGHT;
+						}
+					}
+					if ( entry_itr->value["attributes"].HasMember("vertical_justify") )
+					{
+						std::string s = entry_itr->value["attributes"]["vertical_justify"].GetString();
+						if ( s == "center" )
+						{
+							entry.vjustify = Field::justify_t::CENTER;
+						}
+						else if ( s == "top" )
+						{
+							entry.vjustify = Field::justify_t::TOP;
+						}
+						else if ( s == "bottom" )
+						{
+							entry.vjustify = Field::justify_t::BOTTOM;
+						}
+					}
+					if ( entry_itr->value["attributes"].HasMember("top_padding") )
+					{
+						entry.padTopY = entry_itr->value["attributes"]["top_padding"].GetInt();
+					}
+					if ( entry_itr->value["attributes"].HasMember("line_padding") )
+					{
+						if ( entry_itr->value["attributes"]["line_padding"].IsInt() )
+						{
+							for ( auto& s : entry.padPerLine )
+							{
+								s = entry_itr->value["attributes"]["line_padding"].GetInt();
+							}
+						}
+						else if ( entry_itr->value["attributes"]["line_padding"].IsArray() )
+						{
+							size_t s = 0;
+							for ( auto arr_itr = entry_itr->value["attributes"]["line_padding"].Begin();
+								arr_itr != entry_itr->value["attributes"]["line_padding"].End(); ++arr_itr )
+							{
+								entry.padPerLine[s] = arr_itr->GetInt();
+								++s;
+								if ( s >= entry.padPerLine.size() )
+								{
+									break;
+								}
+							}
+						}
+					}
+					if ( entry_itr->value["attributes"].HasMember("font_color") )
+					{
+						entry.fontColor = makeColor(
+							entry_itr->value["attributes"]["font_color"]["r"].GetInt(),
+							entry_itr->value["attributes"]["font_color"]["g"].GetInt(),
+							entry_itr->value["attributes"]["font_color"]["b"].GetInt(),
+							entry_itr->value["attributes"]["font_color"]["a"].GetInt());
+					}
+					if ( entry_itr->value["attributes"].HasMember("font_outline_color") )
+					{
+						entry.fontOutlineColor = makeColor(
+							entry_itr->value["attributes"]["font_outline_color"]["r"].GetInt(),
+							entry_itr->value["attributes"]["font_outline_color"]["g"].GetInt(),
+							entry_itr->value["attributes"]["font_outline_color"]["b"].GetInt(),
+							entry_itr->value["attributes"]["font_outline_color"]["a"].GetInt());
+					}
+					if ( entry_itr->value["attributes"].HasMember("font_highlight_color") )
+					{
+						entry.fontHighlightColor = makeColor(
+							entry_itr->value["attributes"]["font_highlight_color"]["r"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight_color"]["g"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight_color"]["b"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight_color"]["a"].GetInt());
+					}
+					if ( entry_itr->value["attributes"].HasMember("font_highlight2_color") )
+					{
+						entry.fontHighlight2Color = makeColor(
+							entry_itr->value["attributes"]["font_highlight2_color"]["r"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight2_color"]["g"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight2_color"]["b"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight2_color"]["a"].GetInt());
+					}
+					if ( entry_itr->value["attributes"].HasMember("word_highlights") )
+					{
+						if ( entry_itr->value["attributes"]["word_highlights"].IsArray() )
+						{
+							int lineNumber = 0;
+							for ( auto highlight_itr = entry_itr->value["attributes"]["word_highlights"].Begin();
+								highlight_itr != entry_itr->value["attributes"]["word_highlights"].End(); ++highlight_itr )
+							{
+								for ( auto line_itr = (*highlight_itr).Begin(); line_itr != (*highlight_itr).End(); ++line_itr )
+								{
+									entry.wordHighlights.push_back(lineNumber + line_itr->GetInt());
+								}
+								lineNumber += Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+							}
+						}
+					}
+					if ( entry_itr->value["attributes"].HasMember("word_highlights2") )
+					{
+						if ( entry_itr->value["attributes"]["word_highlights2"].IsArray() )
+						{
+							int lineNumber = 0;
+							for ( auto highlight_itr = entry_itr->value["attributes"]["word_highlights2"].Begin();
+								highlight_itr != entry_itr->value["attributes"]["word_highlights2"].End(); ++highlight_itr )
+							{
+								for ( auto line_itr = (*highlight_itr).Begin(); line_itr != (*highlight_itr).End(); ++line_itr )
+								{
+									entry.wordHighlights2.push_back(lineNumber + line_itr->GetInt());
+								}
+								lineNumber += Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+							}
+						}
+					}
+					if ( entry_itr->value["attributes"].HasMember("inline_img_adjust_x") )
+					{
+						entry.imageInlineTextAdjustX = entry_itr->value["attributes"]["inline_img_adjust_x"].GetInt();
+					}
+				}
+			}
+			else if ( entry_itr->value.HasMember("script") )
+			{
+				entry.objectType = OBJ_SCRIPT;
+				entry.formattedText = entry_itr->value["script"].GetString();
+			}
+			else if ( entry_itr->value.HasMember("message") )
+			{
+				entry.objectType = OBJ_MESSAGE;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["message"].Begin(); text_itr != entry_itr->value["message"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				if ( entry_itr->value.HasMember("variables") )
+				{
+					for ( rapidjson::Value::ConstValueIterator var_itr = entry_itr->value["variables"].Begin();
+						var_itr != entry_itr->value["variables"].End(); ++var_itr )
+					{
+						Entry_t::Variable_t variable;
+						variable.type = TEXT;
+						if ( (*var_itr).HasMember("type") )
+						{
+							std::string typeTxt = (*var_itr)["type"].GetString();
+							if ( typeTxt == "text" )
+							{
+								variable.type = TEXT;
+							}
+							else if ( typeTxt == "input_glyph" )
+							{
+								variable.type = GLYPH;
+							}
+							else if ( typeTxt == "image" )
+							{
+								variable.type = IMG;
+							}
+						}
+						if ( (*var_itr).HasMember("value") )
+						{
+							variable.value = (*var_itr)["value"].GetString();
+						}
+						entry.variables.push_back(variable);
+					}
+				}
+			}
+		}
+
+		printlog("[JSON]: Successfully read json file %s, processed %d script variables", inputPath.c_str(), allEntries.size());
+		return true;
+	}
+	printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+	return false;
+}
+
+void ScriptTextParser_t::writeWorldSignsToFile()
+{
+#ifndef EDITOR
+	rapidjson::Document exportDocument;
+	exportDocument.SetObject();
+	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(1));
+	rapidjson::Value objScriptEntries(rapidjson::kObjectType);
+
+	char suffix = 'a';
+	char suffix2 = 'a';
+	bool doubleSuffix = false;
+
+	SDL_Color fontColor{ 255, 255, 255, 255 };
+	SDL_Color fontOutline{ 29, 16, 11, 255 };
+	SDL_Color fontHighlight{ 255, 0, 255, 255 };
+
+	rapidjson::Value objDefaultAttributes(rapidjson::kObjectType);
+	{
+		rapidjson::Value objFontColor(rapidjson::kObjectType);
+		objFontColor.AddMember("r", rapidjson::Value(fontColor.r), exportDocument.GetAllocator());
+		objFontColor.AddMember("g", rapidjson::Value(fontColor.g), exportDocument.GetAllocator());
+		objFontColor.AddMember("b", rapidjson::Value(fontColor.b), exportDocument.GetAllocator());
+		objFontColor.AddMember("a", rapidjson::Value(fontColor.a), exportDocument.GetAllocator());
+
+		rapidjson::Value objFontOutlineColor(rapidjson::kObjectType);
+		objFontOutlineColor.AddMember("r", rapidjson::Value(fontOutline.r), exportDocument.GetAllocator());
+		objFontOutlineColor.AddMember("g", rapidjson::Value(fontOutline.g), exportDocument.GetAllocator());
+		objFontOutlineColor.AddMember("b", rapidjson::Value(fontOutline.b), exportDocument.GetAllocator());
+		objFontOutlineColor.AddMember("a", rapidjson::Value(fontOutline.a), exportDocument.GetAllocator());
+
+		rapidjson::Value objFontHighlightColor(rapidjson::kObjectType);
+		objFontHighlightColor.AddMember("r", rapidjson::Value(fontHighlight.r), exportDocument.GetAllocator());
+		objFontHighlightColor.AddMember("g", rapidjson::Value(fontHighlight.g), exportDocument.GetAllocator());
+		objFontHighlightColor.AddMember("b", rapidjson::Value(fontHighlight.b), exportDocument.GetAllocator());
+		objFontHighlightColor.AddMember("a", rapidjson::Value(fontHighlight.a), exportDocument.GetAllocator());
+
+		rapidjson::Value objFontHighlight2Color(rapidjson::kObjectType);
+		objFontHighlight2Color.AddMember("r", rapidjson::Value(fontHighlight.r), exportDocument.GetAllocator());
+		objFontHighlight2Color.AddMember("g", rapidjson::Value(fontHighlight.g), exportDocument.GetAllocator());
+		objFontHighlight2Color.AddMember("b", rapidjson::Value(fontHighlight.b), exportDocument.GetAllocator());
+		objFontHighlight2Color.AddMember("a", rapidjson::Value(fontHighlight.a), exportDocument.GetAllocator());
+
+		objDefaultAttributes.AddMember("font_color", objFontColor, exportDocument.GetAllocator());
+		objDefaultAttributes.AddMember("font_outline_color", objFontOutlineColor, exportDocument.GetAllocator());
+		objDefaultAttributes.AddMember("font_highlight_color", objFontHighlightColor, exportDocument.GetAllocator());
+		objDefaultAttributes.AddMember("font_highlight2_color", objFontHighlight2Color, exportDocument.GetAllocator());
+	}
+	objScriptEntries.AddMember("default_attributes", objDefaultAttributes, exportDocument.GetAllocator());
+
+	for ( auto node = map.entities->first; node != NULL; node = node->next )
+	{
+		auto entity = (Entity*)node->element;
+		if ( entity->behavior == &actFloorDecoration && entity->sprite == 991 /* sign */ )
+		{
+			std::string key = map.filename;
+			size_t find = key.find(".lmp");
+			key.erase(find, strlen(".lmp"));
+			if ( doubleSuffix ) { key += suffix2; }
+			key += suffix;
+			if ( suffix == 'z' )
+			{
+				doubleSuffix = true;
+				suffix = 'a';
+			}
+			suffix += 1;
+			
+			printlog("Sign '%s': x: %d y: %d", key.c_str(), static_cast<int>(entity->x) >> 4, static_cast<int>(entity->y) >> 4);
+
+			rapidjson::Value objEntry(rapidjson::kObjectType);
+			rapidjson::Value arrSignText(rapidjson::kArrayType);
+
+			// assemble the string.
+			char buf[256] = "";
+			int totalChars = 0;
+			for ( int i = 8; i < 60; ++i )
+			{
+				if ( i == 28 ) // circuit_status
+				{
+					continue;
+				}
+				if ( entity->skill[i] != 0 )
+				{
+					for ( int c = 0; c < 4; ++c )
+					{
+						buf[totalChars] = static_cast<char>((entity->skill[i] >> (c * 8)) & 0xFF);
+						//messagePlayer(0, "%d %d", i, c);
+						++totalChars;
+					}
+				}
+			}
+			if ( buf[totalChars] != '\0' )
+			{
+				buf[totalChars] = '\0';
+			}
+			std::string output = buf;
+
+			std::vector<std::string> signText;
+			int line = 0;
+			signText.push_back("");
+			for ( int i = 0; i < output.size(); ++i )
+			{
+				if ( i == 0 && output[0] == '#' )
+				{
+					continue;
+				}
+				if ( output[i] == '\0' )
+				{
+					break;
+				}
+				if ( output[i] == '\\' && (i + 1) < output.size() && output[i + 1] == 'n' )
+				{
+					++i;
+					++line;
+					signText.push_back("");
+					continue;
+				}
+				signText[line] += output[i];
+			}
+
+			for ( auto& line : signText )
+			{
+				rapidjson::Value lineString(line.c_str(), exportDocument.GetAllocator());
+				arrSignText.PushBack(lineString, exportDocument.GetAllocator());
+			}
+			objEntry.AddMember("sign", arrSignText, exportDocument.GetAllocator());
+
+			rapidjson::Value objAttributes(rapidjson::kObjectType);
+			{
+				objAttributes.AddMember("font", rapidjson::StringRef("fonts/pixel_maz_multiline.ttf#16#2"), exportDocument.GetAllocator());
+				objAttributes.AddMember("horizontal_justify", rapidjson::StringRef("center"), exportDocument.GetAllocator());
+				objAttributes.AddMember("vertical_justify", rapidjson::StringRef("center"), exportDocument.GetAllocator());
+				objAttributes.AddMember("line_padding", rapidjson::Value(0), exportDocument.GetAllocator());
+				objAttributes.AddMember("top_padding", rapidjson::Value(0), exportDocument.GetAllocator());
+				objAttributes.AddMember("inline_img_adjust_x", rapidjson::Value(0), exportDocument.GetAllocator());
+				rapidjson::Value objWordHighlights(rapidjson::kArrayType);
+				objAttributes.AddMember("word_highlights", objWordHighlights, exportDocument.GetAllocator());
+				rapidjson::Value objWordHighlights2(rapidjson::kArrayType);
+				objAttributes.AddMember("word_highlights2", objWordHighlights2, exportDocument.GetAllocator());
+			}
+			objEntry.AddMember("attributes", objAttributes, exportDocument.GetAllocator());
+
+			rapidjson::Value objVariables(rapidjson::kArrayType);
+			objEntry.AddMember("variables", objVariables, exportDocument.GetAllocator());
+
+			rapidjson::Value entryName(key.c_str(), exportDocument.GetAllocator());
+			objScriptEntries.AddMember(entryName, objEntry, exportDocument.GetAllocator());
+		}
+	}
+
+	CustomHelpers::addMemberToRoot(exportDocument, "script_entries", objScriptEntries);
+
+	std::string outputPath = PHYSFS_getRealDir("/data/scripts");
+	outputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "data/scripts/script.json";
+	outputPath.append(fileName.c_str());
+
+	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	if ( !fp )
+	{
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	exportDocument.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
 #endif
 }

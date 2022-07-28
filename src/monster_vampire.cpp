@@ -48,7 +48,8 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 
 			bool lesserMonster = false;
-			if ( !strncmp(myStats->name, "young vampire", strlen("young vampire")) )
+			if ( !strncmp(myStats->name, "young vampire", strlen("young vampire"))
+				&& myStats->leader_uid == 0 )
 			{
 				lesserMonster = true;
 				myStats->HP = 150;
@@ -84,6 +85,7 @@ void initVampire(Entity* my, Stat* myStats)
 							if ( followerStats )
 							{
 								strcpy(followerStats->name, "enslaved ghoul");
+								followerStats->leader_uid = entity->parent;
 							}
 						}
 					}

@@ -643,16 +643,7 @@ void BookParser_t::createBook(std::string filename)
 	}
 	return;
 
-	//const int book_characterspace_x = Player::BookGUI_t::BOOK_PAGE_WIDTH / BOOK_FONT_WIDTH;
-	//const int book_characterspace_y = Player::BookGUI_t::BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
-	//const int max_characters = 1024;// book_characterspace_x * book_characterspace_y;
-	//
-	//book->pages.first = nullptr;
-	//book->pages.last = nullptr;
-	//
 	//const Uint32 color = makeColor( 0, 0, 0, 255);
-
-
 	//strncpy(string->data, pageText.c_str(), 120);
 	//int len = strlen(pageText.c_str());
 	//string->data[120] = '\0';

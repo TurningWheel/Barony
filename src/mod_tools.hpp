@@ -2856,3 +2856,54 @@ public:
 extern GlyphRenderer_t GlyphHelper;
 
 bool charIsWordSeparator(char c);
+
+class ScriptTextParser_t
+{
+public:
+	ScriptTextParser_t() {};
+	~ScriptTextParser_t() {};
+	void readAllScripts();
+	bool readFromFile(const std::string& filename);
+	void writeWorldSignsToFile();
+	enum ObjectType_t : int {
+		OBJ_SIGN,
+		OBJ_MESSAGE,
+		OBJ_SCRIPT
+	};
+	enum VariableTypes : int {
+		TEXT,
+		GLYPH,
+		IMG,
+		SCRIPT
+	};
+
+	struct Entry_t
+	{
+		std::string name = "";
+		std::vector<std::string> rawText;
+		struct Variable_t
+		{
+			VariableTypes type = TEXT;
+			std::string value = "";
+			int sizex = 0;
+			int sizey = 0;
+		};
+		std::vector<Variable_t> variables;
+		std::string formattedText = "";
+		ObjectType_t objectType = OBJ_MESSAGE;
+		int hjustify = 4;
+		int vjustify = 0;
+		std::vector<int> padPerLine;
+		int padTopY = 0;
+		std::string font = "";
+		Uint32 fontColor = 0xFFFFFFFF;
+		Uint32 fontOutlineColor = 0xFFFFFFFF;
+		Uint32 fontHighlightColor = 0xFFFFFFFF;
+		Uint32 fontHighlight2Color = 0xFFFFFFFF;
+		std::vector<int> wordHighlights;
+		std::vector<int> wordHighlights2;
+		int imageInlineTextAdjustX = 0; // when img is placed inbetween text, move it by this adjustment to center
+	};
+	std::map<std::string, Entry_t> allEntries;
+};
+extern ScriptTextParser_t ScriptTextParser;

@@ -163,6 +163,7 @@ static const int GUI_MODE_INVENTORY = 0;
 static const int GUI_MODE_MAGIC = 1;
 static const int GUI_MODE_SHOP = 2;
 static const int GUI_MODE_FOLLOWERMENU = 3;
+static const int GUI_MODE_SIGN = 4;
 
 extern SDL_Surface* font12x12_small_bmp;
 extern SDL_Surface* backdrop_blessed_bmp;
@@ -1007,40 +1008,12 @@ extern SDL_Surface* bookgui_img;
 extern SDL_Surface* book_highlighted_left_img; //Draw this when the mouse is over the left half of the book.
 extern SDL_Surface* book_highlighted_right_img; //Draw this when the mouse is over the right half of the book.
 class BookParser_t;
-#define BOOK_FONT ttf12
-#define BOOK_FONT_WIDTH TTF12_WIDTH
-#define BOOK_FONT_HEIGHT TTF12_HEIGHT
-//TODO: Calculate these two automatically based off of the buttons?
-//#define BOOK_PAGE_WIDTH 248
-//#define BOOK_PAGE_HEIGHT 256
-//#define BOOK_TITLE_PADDING 2 //The amount of empty space above and below the book titlename.
-//#define BOOK_TITLE_HEIGHT (BOOK_TITLE_FONT_SIZE + BOOK_TITLE_PADDING) //The total y space the book's title takes up. Used for calculating BOOK_DRAWSPACE_Y.
-//int bookTitleHeight(struct book_t* book); //Returns how much space the book's title will occupy.
-//#define BOOK_DRAWSPACE_X 280
-//#define BOOK_DRAWSPACE_X (bookgui_img->w - (BOOK_BORDER_THICKNESS * 2))
-//#define START_OF_BOOKDRAWSPACE_X (BOOK_BORDER_THICKNESS) //This is the amount to add to BOOK_GUI_X to get the render area for the text.
-//#define BOOK_DRAWSPACE_Y 180
-//#define BOOK_DRAWSPACE_Y (bookgui_img->h - (BOOK_BORDER_THICKNESS * 2) - std::max(previouspage_img->h, nextpage_img->h)) //NOTE: You need to manually add  "- bookTitleHeight(open_book)" wherever you use this define.
-//#define START_OF_BOOK_DRAWSPACE_Y (BOOK_BORDER_THICKNESS) //This is the amount to add to BOOK_GUI_Y to get the render area for the text. //NOTE: You need to manually add  "+ bookTitleHeight(open_book)" wherever you use this define.
-//#define FLIPMARGIN 240
-//#define DRAGHEIGHT_BOOK 32
-//extern int book_characterspace_x; //How many characters can fit along the x axis.
-//extern int book_characterspace_y; //How many characters can fit along the y axis.
-//void updateBookGUI();
-//void closeBookGUI();
-//void openBook(struct book_t* book, Item* item);
-
 
 //------Hotbar Defines-----
 /*
  * The hotbar itself is an array.
  * NOTE: If the status bar width is changed, you need to change the slot image too. Make sure the status bar width stays divisible by 10.
  */
-
-#define HOTBAR_EMPTY 0
-#define HOTBAR_ITEM 1
-#define HOTBAR_SPELL 2
-
 extern SDL_Surface* hotbar_img; //A 64x64 slot.
 extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)
 
@@ -1213,8 +1186,10 @@ public:
 	int sidebarScrollIndex; // entries scrolled in the sidebar list if overflowed with followers.
 	int maxMonstersToDraw;
 	int gui_player = 0;
+	Frame* followerFrame;
 
 	FollowerRadialMenu() :
+		followerFrame(nullptr),
 		followerToCommand(nullptr),
 		recentEntity(nullptr),
 		entityToInteractWith(nullptr),
@@ -1236,6 +1211,61 @@ public:
 		memset(interactText, 0, 128);
 	}
 
+	void createFollowerMenuGUI();
+	void updateFollowerMenuGUI();
+	bool followerGUIHasBeenCreated() const;
+	static void loadFollowerJSON();
+	enum PanelDirections : int
+	{
+		NORTH,
+		NORTHWEST,
+		WEST,
+		SOUTHWEST,
+		SOUTH,
+		SOUTHEAST,
+		EAST,
+		NORTHEAST,
+		PANEL_DIRECTION_END
+	};
+	struct PanelEntry
+	{
+		int x = 0;
+		int y = 0;
+		std::string path = "";
+		std::string path_locked = "";
+		std::string path_hover = "";
+		std::string path_locked_hover = "";
+		int icon_offsetx = 0;
+		int icon_offsety = 0;
+	};
+	static std::vector<PanelEntry> panelEntries;
+	static std::vector<PanelEntry> panelEntriesAlternate;
+	struct IconEntry
+	{
+		std::string name = "";
+		int id = -1;
+		std::string path = "";
+		std::string path_hover = "";
+		std::string path_active = "";
+		std::string path_active_hover = "";
+		int icon_offsetx = 0;
+		int icon_offsety = 0;
+		std::map<std::string, std::pair<std::string, std::set<int>>> text_map;
+	};
+	static std::map<std::string, IconEntry> iconEntries;
+	static int followerWheelRadius;
+	static int followerWheelButtonThickness;
+	static int followerWheelFrameOffsetX;
+	static int followerWheelFrameOffsetY;
+	static int followerWheelInnerCircleRadiusOffset;
+	static int followerWheelInnerCircleRadiusOffsetAlternate;
+
+	real_t animTitle = 0.0;
+	real_t animWheel = 0.0;
+	Uint32 openedThisTick = 0;
+	real_t animInvalidAction = 0.0;
+	Uint32 animInvalidActionTicks = 0;
+
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();
 	void initfollowerMenuGUICursor(bool openInventory);
@@ -1244,7 +1274,7 @@ public:
 	int numMonstersToDrawInParty();
 	void updateScrollPartySheet();
 	bool allowedInteractEntity(Entity& selectedEntity, bool updateInteractText = true);
-	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option);
+	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option, Entity* follower);
 	bool allowedClassToggle(int monsterType);
 	bool allowedItemPickupToggle(int monsterType);
 	static bool allowedInteractFood(int monsterType);

@@ -4163,7 +4163,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							if ( achievementObserver.checkUidIsFromPlayer(static_cast<Uint32>(myStats->burningInflictedBy)) >= 0 )
 							{
-								steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller), "BARONY_ACH_TAKING_WITH");
+								steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->burningInflictedBy), "BARONY_ACH_TAKING_WITH");
 							}
 						}
 					}
@@ -4673,6 +4673,61 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 	myStats->OLDHP = myStats->HP;
+}
+
+real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats)
+{
+	if ( !myStats || !my )
+	{
+		return 1.0;
+	}
+
+	if ( myStats->defending )
+	{
+		return 1.0;
+	}
+
+	int blessings = 0;
+	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(myStats);
+
+	if ( myStats->helmet && myStats->helmet->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->helmet->beatitude) : myStats->helmet->beatitude;
+	}
+	if ( myStats->breastplate && myStats->breastplate->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->breastplate->beatitude) : myStats->breastplate->beatitude;
+	}
+	if ( myStats->gloves && myStats->gloves->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->gloves->beatitude) : myStats->gloves->beatitude;
+	}
+	if ( myStats->shoes && myStats->shoes->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->shoes->beatitude) : myStats->shoes->beatitude;
+	}
+	if ( myStats->shield && myStats->shield->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->shield->beatitude) : myStats->shield->beatitude;
+	}
+	if ( myStats->cloak && myStats->cloak->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->cloak->beatitude) : myStats->cloak->beatitude;
+	}
+	if ( myStats->ring && myStats->ring->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->ring->beatitude) : myStats->ring->beatitude;
+	}
+	if ( myStats->mask && myStats->mask->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->mask->beatitude) : myStats->mask->beatitude;
+	}
+	if ( myStats->amulet && myStats->amulet->doesItemProvideBeatitudeAC() )
+	{
+		blessings += cursedItemIsBuff ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude;
+	}
+
+	return std::max(0.0, std::min(1.0, .75 + 0.025 * blessings));
 }
 
 /*-------------------------------------------------------------------------------
@@ -7535,33 +7590,39 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damagePreMultiplier = 2;
 					}
 
+					int myAttack = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats));
+					int enemyAC = AC(hitstats);
+					if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
+					{
+						real_t amount = 0.f;
+						real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
+						if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
+						{
+							enemyAC *= amount;
+							gugnirProc = true;
+						}
+					}
+					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, this, myStats);
+					int attackAfterReductions = static_cast<int>(std::max(0.0, ((myAttack * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * myAttack);
 					if ( weaponskill == PRO_UNARMED )
 					{
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						damage = attackAfterReductions * weaponMultipliers;
 					}
 					else if ( weaponskill == PRO_RANGED )
 					{
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						damage = attackAfterReductions * weaponMultipliers;
 					}
 					else if ( weaponskill >= 0 )
 					{
-						int enemyAC = AC(hitstats);
-						if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
-						{
-							real_t amount = 0.f;
-							real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
-							if ( (local_rng.rand() % 100 < static_cast<int>(percent)) )
-							{
-								enemyAC *= amount;
-								gugnirProc = true;
-							}
-						}
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - enemyAC) * weaponMultipliers;
+						damage = attackAfterReductions * weaponMultipliers;
 					}
 					else
 					{
-						damage = std::max(0, (Entity::getAttack(this, myStats, behavior == &actPlayer) * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
+						damage = attackAfterReductions;
 					}
+
+					damage = std::max(0, damage);
+
 					if ( weaponskill == PRO_AXE )
 					{
 						damage++;
@@ -7625,22 +7686,66 @@ void Entity::attack(int pose, int charge, Entity* target)
 							gungnir = true;
 						}
 					}
-					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || (weaponskill == PRO_UNARMED && behavior != &actMonster) || weaponskill == PRO_RANGED )
+
+					static ConsoleVariable<bool> cvar_atkonhit("/enemy_debugatkonhit", false);
+					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD) || (weaponskill == PRO_UNARMED && behavior != &actMonster) || weaponskill == PRO_RANGED )
 					{
-						int chance = 0;
-						if ( weaponskill == PRO_POLEARM )
+						if ( *cvar_atkonhit )
 						{
-							chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+							int chance = 0;
+							if ( weaponskill == PRO_POLEARM )
+							{
+								chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+							}
+							else
+							{
+								chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
+							}
+							messagePlayer(0, MESSAGE_DEBUG, "Old range minmax: %d-%d", damage - chance, damage);
 						}
-						else
-						{
-							chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
-						}
-						if ( chance > 0 )
+						/*if ( chance > 0 )
 						{
 							damage = (damage - chance) + (local_rng.rand() % chance) + 1;
+						}*/
+						 real_t variance = 20;
+						 real_t baseSkillModifier = 50.0; // 40-60 base
+						if ( weaponskill == PRO_UNARMED )
+						{
+							variance = 30.0;
+							baseSkillModifier = 45.0; // 30-60 base
+						}
+						else if ( weaponskill == PRO_POLEARM )
+						{
+							if ( gungnir )
+							{
+								variance = 0.0;
+								baseSkillModifier = 60.0;
+							}
+							else
+							{
+								variance = 10.0;
+								baseSkillModifier = 55.0; // 50-60 base
+							}
+						}
+						real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->PROFICIENCIES[weaponskill] / 2.0);
+						skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
+						skillModifier /= 100.0;
+						skillModifier = std::min(skillModifier, 1.0);
+						damage = damage - static_cast<int>((1.0 - skillModifier) * damage);
+						if ( *cvar_atkonhit )
+						{
+							messagePlayer(0, MESSAGE_DEBUG, "New Dmg: %.f%%: %d", 100.0 * skillModifier, damage);
 						}
 					}
+
+					if ( *cvar_atkonhit )
+					{
+						if ( weaponskill >= 0 )
+						{
+							messagePlayer(0, MESSAGE_DEBUG, "Old damage max: %d", (int)((std::max(0, (myAttack - enemyAC)) * weaponMultipliers)));
+						}
+					}
+
 
 					int olddamage = damage;
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
@@ -8534,6 +8639,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									playerPoisonedTarget = true;
 									hitstats->EFFECTS[EFF_POISONED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+									hitstats->poisonKiller = getUID();
 									if (arachnophobia_filter) {
 									    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
 									} else {
@@ -16624,11 +16730,13 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 
 	// get arrow power.
 	attack += marksman.getRangedAttack();
-	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
-	if ( chance > 0 )
-	{
-		attack = (attack - chance) + (local_rng.rand() % chance) + 1;
-	}
+	real_t variance = 20;
+	real_t baseSkillModifier = 50.0; // 40-60 base
+	real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats.PROFICIENCIES[PRO_RANGED] / 2.0);
+	skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
+	skillModifier /= 100.0;
+	skillModifier = std::min(skillModifier, 1.0);
+	attack = attack - static_cast<int>((1.0 - skillModifier) * attack);
 	this->arrowPower = attack;
 }
 
@@ -17670,7 +17778,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "inner")
 		|| strstr(monsterStats.name, "training")
 		|| strstr(monsterStats.name, "Training")
-		|| strstr(monsterStats.name, "Mysterious") )
+		|| strstr(monsterStats.name, "Mysterious")
+		|| strstr(monsterStats.name, "shaman") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		return true;
@@ -18411,10 +18520,13 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			else
 			{
-				if ( shieldLimb->sprite != items[TOOL_TINKERING_KIT].index )
+				// automaton arm clips through shield. extend shield out more.
+				if ( race == AUTOMATON )
 				{
-					// automaton arm clips through shield. extend shield out more.
-					if ( race == AUTOMATON )
+					if ( shieldLimb->sprite != items[TOOL_TINKERING_KIT].index
+						&& shieldLimb->sprite != items[TOOL_TORCH].index
+						&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index
+						&& shieldLimb->sprite != items[TOOL_LANTERN].index )
 					{
 						shieldLimb->focalx += 0.75;
 						shieldLimb->focaly += 1.25;

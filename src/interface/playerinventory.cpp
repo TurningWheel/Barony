@@ -6835,6 +6835,7 @@ void Player::Inventory_t::updateInventory()
 							starty = slotFrame->getAbsoluteSize().y;
 							startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
 							starty -= players[player]->camera_virtualy1();
+							highlightHeight = slotFrame->getSize().h;
 						}
 					}
 				}
@@ -7121,11 +7122,16 @@ void Player::Inventory_t::updateInventory()
 				{
 					width = highlightWidth;
 				}
+				int height = getSlotSize();
+				if ( highlightHeight > 0 )
+				{
+					height = highlightHeight;
+				}
 				selectedSlotFrame->setSize(SDL_Rect{ startx + 1, starty + 1, selectedSlotFrame->getSize().w, selectedSlotFrame->getSize().h });
 				selectedSlotFrame->setDisabled(false);
 
 				selectedSlotCursor->setDisabled(false);
-				updateSelectedSlotAnimation(startx, starty, width, getSlotSize(), inputs.getVirtualMouse(player)->draw_cursor);
+				updateSelectedSlotAnimation(startx, starty, width, height, inputs.getVirtualMouse(player)->draw_cursor);
 				//messagePlayer(0, "0: %d, %d", x, y);
 			}
 		}
@@ -8538,10 +8544,40 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems() )
 						{
-							if ( dropItem(item, player) ) // Quick item drop
+							if ( true /*keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]*/ )
 							{
-								item = nullptr;
+								// drop all.
+								int qty = item->count;
+								bool droppedAll = false;
+								bool unableToDropAll = false;
+								while ( item && item->count > 1 )
+								{
+									droppedAll = dropItem(item, player);
+									if ( droppedAll )
+									{
+										item = nullptr;
+									}
+									else if ( item->count == qty ) // couldn't drop
+									{
+										unableToDropAll = true;
+										break;
+									}
+								}
+								if ( !droppedAll && !unableToDropAll )
+								{
+									if ( dropItem(item, player) ) // Quick item drop
+									{
+										item = nullptr;
+									}
+								}
 							}
+							//else 
+							//{
+							//	if ( dropItem(item, player) ) // Quick item drop
+							//	{
+							//		item = nullptr;
+							//	}
+							//}
 						}
 					}
 					else
@@ -9460,8 +9496,8 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else
 		{
-			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_INTERACT);
+			options.push_back(PROMPT_CONSUME_ALTERNATE);
 			options.push_back(PROMPT_APPRAISE);
 			options.push_back(PROMPT_DROP);
 		}

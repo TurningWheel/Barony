@@ -575,6 +575,7 @@ public:
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
 	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false);
+	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	Sint32 getRangedAttack();
 	Sint32 getThrownAttack();

@@ -62,12 +62,8 @@ enum ArrowSpriteTypes : int
 
 void actArrow(Entity* my)
 {
-	double dist;
-	int damage;
-	Entity* entity;
-	node_t* node;
-	double tangent;
-
+	double dist = 0.0;
+	node_t* node = nullptr;
 
 	// lifespan
 	ARROW_LIFE++;
@@ -277,7 +273,7 @@ void actArrow(Entity* my)
 			{
 				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
 				{
-					entity = (Entity*)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity && (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
 					{
 						if ( entityInsideEntity(my, entity) )
@@ -458,25 +454,33 @@ void actArrow(Entity* my)
 						}
 					}
 
+					int enemyAC = AC(hitstats);
+
 					// do damage
-					if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+					if ( my->arrowArmorPierce > 0 && enemyAC > 0 )
 					{
 						if ( my->arrowQuiverType == QUIVER_PIERCE )
 						{
 							bool oldDefend = hitstats->defending;
 							hitstats->defending = false;
-							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor not caring about shield
+							enemyAC = AC(hitstats);
+							enemyAC /= 2; // pierce half armor not caring about shield
 							hitstats->defending = oldDefend;
 						}
 						else
 						{
-							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
+							enemyAC /= 2; // pierce half armor.
 						}
 					}
 					else
 					{
-						damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+						// normal damage.
 					}
+
+					real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parent ? parent->getStats() : nullptr);
+					int attackAfterReductions = static_cast<int>(std::max(0.0, ((my->arrowPower * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * my->arrowPower);
+					int damage = attackAfterReductions;
+					damage = std::max(0, damage);
 
 					if ( silverDamage || huntingDamage )
 					{
@@ -669,7 +673,7 @@ void actArrow(Entity* my)
 						Entity* ohitentity = hit.entity;
 						for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
 						{
-							entity = (Entity*)node->element;
+							Entity* entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 							{
 								Stat* buddystats = entity->getStats();
@@ -683,7 +687,7 @@ void actArrow(Entity* my)
 									{
 										if ( entity->monsterState == MONSTER_STATE_WAIT ) // monster is waiting
 										{
-											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
+											real_t tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{

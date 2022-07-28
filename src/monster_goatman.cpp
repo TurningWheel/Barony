@@ -87,7 +87,8 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+				&& myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Gharbad");
 				myStats->STR += 10;
@@ -158,6 +159,10 @@ void initGoatman(Entity* my, Stat* myStats)
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 					if ( local_rng.rand() % 5 == 0 )
 					{
@@ -166,6 +171,10 @@ void initGoatman(Entity* my, Stat* myStats)
 						if ( entity )
 						{
 							entity->parent = my->getUID();
+							if ( Stat* followerStats = entity->getStats() )
+							{
+								followerStats->leader_uid = entity->parent;
+							}
 						}
 					}
 				}

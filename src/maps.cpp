@@ -763,9 +763,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			node->deconstructor = &mapDeconstructor;
 
 			// more nodes are created to record the exit points on the sublevel
-			/*for ( y = 0; y < subRoomMap->height; y++ )
+			for ( int y = 0; y < subRoomMap->height; y++ )
 			{
-				for ( x = 0; x < subRoomMap->width; x++ )
+				for ( int x = 0; x < subRoomMap->width; x++ )
 				{
 					if ( x == 0 || y == 0 || x == subRoomMap->width - 1 || y == subRoomMap->height - 1 )
 					{
@@ -796,7 +796,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 				}
-			}*/
+			}
 		}
 	}
 
@@ -1245,7 +1245,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					k++;
 				}
 				subRoomMap = (map_t*)subRoomNode->element;
-				subRoomDoorNode = nullptr;
+				subRoomDoorNode = subRoomNode->next;
 			}
 			else
 			{
@@ -1288,7 +1288,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 					subRoomNode = ((list_t*)subRoomNode->element)->first;
 					subRoomMap = (map_t*)subRoomNode->element;
-					subRoomDoorNode = nullptr;
+					subRoomDoorNode = subRoomNode->next;
 				}
 			}
 
@@ -1522,7 +1522,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		for (node2 = map.entities->first; node2 != nullptr; node2 = node2->next)
 		{
 			entity = (Entity*)node2->element;
-			if ( entity->x / 16 == door->x && entity->y / 16 == door->y && (entity->sprite == 2 || entity->sprite == 3) )
+			if ( entity->x / 16 == door->x && entity->y / 16 == door->y 
+				&& (entity->sprite == 2 || entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 20
+					|| entity->sprite == 113 || entity->sprite == 114) )
 			{
 				switch ( door->dir )
 				{
@@ -1532,7 +1534,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y )
 								{
@@ -1563,7 +1567,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2 )
 								{
@@ -1594,7 +1600,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y )
 								{
@@ -1625,7 +1633,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3 )
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2 )
 								{

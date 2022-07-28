@@ -641,8 +641,7 @@ void actFloorDecoration(Entity* my)
 	}
 
 	// using
-	int i;
-	for ( i = 0; i < MAXPLAYERS; i++ )
+	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
 		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
@@ -672,6 +671,34 @@ void actFloorDecoration(Entity* my)
 					buf[totalChars] = '\0';
 				}
 				std::string output = buf;
+
+				if ( buf[0] == '$' )
+				{
+					// try to replace text with data file entry
+					std::string key = "";
+					for ( int j = 0; j <= totalChars; ++j )
+					{
+						char c = buf[j];
+						if ( c == '$' ) { continue; }
+						if ( charIsWordSeparator(c) ) { break; }
+						key += c;
+					}
+					if ( ScriptTextParser.allEntries.find(key) != ScriptTextParser.allEntries.end() )
+					{
+						if ( players[i]->isLocalPlayer() )
+						{
+							if ( players[i]->isLocalPlayerAlive() )
+							{
+								players[i]->signGUI.openSign(key, my->getUID());
+							}
+						}
+						else
+						{
+							// TODO multiplayer
+						}
+						break;
+					}
+				}
 
 
 				size_t foundSignpostCharacter = output.find("#");
@@ -717,7 +744,7 @@ void actFloorDecoration(Entity* my)
 					found = output.find("\\n");
 				}
 				strcpy(buf, output.c_str());
-				messagePlayer(i, MESSAGE_INTERACTION, buf);
+				messagePlayer(i, MESSAGE_INSPECTION, buf);
 			}
 		}
 	}
@@ -2943,12 +2970,30 @@ std::string TextSourceScript::getScriptFromEntity(Entity& src)
 	{
 		buf[totalChars] = '\0';
 	}
+
+	if ( buf[0] == '$' )
+	{
+		// try to replace script with data file entry
+		std::string key = "";
+		for ( int i = 0; i <= totalChars; ++i )
+		{
+			char c = buf[i];
+			if ( c == '$' ) { continue; }
+			if ( charIsWordSeparator(c) ) { break; }
+			key += c;
+		}
+		if ( ScriptTextParser.allEntries.find(key) != ScriptTextParser.allEntries.end() )
+		{
+			return ScriptTextParser.allEntries[key].formattedText;
+		}
+	}
 	return buf;
 }
 
 void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 {
 	std::string script = getScriptFromEntity(src);
+
 	size_t foundScriptTag = script.find("@script");
 	if ( foundScriptTag != std::string::npos )
 	{

@@ -75,19 +75,6 @@ SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
 int rightsidebar_height = 0;
 
 SDL_Surface* bookgui_img = NULL;
-//SDL_Surface *nextpage_img = NULL;
-//SDL_Surface *previouspage_img = NULL;
-//SDL_Surface *bookclose_img = NULL;
-//node_t* book_page = NULL;
-//int bookgui_offset_x = 0;
-//int bookgui_offset_y = 0;
-//bool dragging_book_GUI = false;
-//bool book_open = false;
-//book_t* open_book = NULL;
-//Item* open_book_item = NULL;
-//int book_characterspace_x = 0;
-//int book_characterspace_y = 0;
-
 SDL_Surface* book_highlighted_left_img = NULL;
 SDL_Surface* book_highlighted_right_img = NULL;
 
@@ -1092,6 +1079,7 @@ bool Player::GUI_t::bActiveModuleHasNoCursor()
 	switch ( activeModule )
 	{
 		case MODULE_BOOK_VIEW:
+		case MODULE_SIGN_VIEW:
 		case MODULE_SKILLS_LIST:
 		case MODULE_LOG:
 		case MODULE_MAP:
@@ -1493,6 +1481,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	inventoryUI.closeInventory();
 	skillSheet.closeSkillSheet();
 	bookGUI.closeBookGUI();
+	signGUI.closeSignGUI();
 
 	if ( hud.mapWindow )
 	{
@@ -1520,22 +1509,25 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 
 void FollowerRadialMenu::initfollowerMenuGUICursor(bool openInventory)
 {
+	bool oldshootmode = players[gui_player]->shootmode;
 	if ( openInventory )
 	{
 		//players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[gui_player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
 		players[gui_player]->openStatusScreen(GUI_MODE_FOLLOWERMENU, INVENTORY_MODE_ITEM);
 	}
 
-	//const Sint32 mousex = inputs.getMouse(player, Inputs::X);
-	//const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-	//const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
-	//const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
+	if ( !oldshootmode )
+	{
+		Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER | Inputs::UNSET_RELATIVE_MOUSE);
+		inputs.warpMouse(gui_player, 
+			players[gui_player]->camera_x1() + (players[gui_player]->camera_width() / 2),
+			players[gui_player]->camera_y1() + (players[gui_player]->camera_height() / 2), flags);
+	}
 
 	inputs.setMouse(gui_player, Inputs::OX, inputs.getMouse(gui_player, Inputs::X));
 	inputs.setMouse(gui_player, Inputs::OY, inputs.getMouse(gui_player, Inputs::Y));
-
-	//omousex = mousex;
-	//omousey = mousey;
+	
 	if ( menuX == -1 )
 	{
 		menuX = inputs.getMouse(gui_player, Inputs::X);
@@ -1582,6 +1574,19 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 		}
 	}
 	optionSelected = -1;
+	if ( followerFrame )
+	{
+		followerFrame->setDisabled(true);
+		for ( auto f : followerFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+	}
+	animTitle = 0.0;
+	animWheel = 0.0;
+	openedThisTick = 0;
+	animInvalidAction = 0.0;
+	animInvalidActionTicks = 0;
 }
 
 bool FollowerRadialMenu::followerMenuIsOpen()
@@ -1593,16 +1598,586 @@ bool FollowerRadialMenu::followerMenuIsOpen()
 	return false;
 }
 
+std::vector<FollowerRadialMenu::PanelEntry> FollowerRadialMenu::panelEntries;
+std::vector<FollowerRadialMenu::PanelEntry> FollowerRadialMenu::panelEntriesAlternate;
+std::map<std::string, FollowerRadialMenu::IconEntry> FollowerRadialMenu::iconEntries;
+int FollowerRadialMenu::followerWheelButtonThickness = 70;
+int FollowerRadialMenu::followerWheelRadius = 140;
+int FollowerRadialMenu::followerWheelFrameOffsetX = 0;
+int FollowerRadialMenu::followerWheelFrameOffsetY = 0;
+int FollowerRadialMenu::followerWheelInnerCircleRadiusOffset = 0;
+int FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = 0;
+Uint32 followerTitleColor = 0xFFFFFFFF;
+Uint32 followerTitleHighlightColor = 0xFFFFFFFF;
+Uint32 followerBannerTextColor = 0xFFFFFFFF;
+Uint32 followerBannerTextHighlightColor = 0xFFFFFFFF;
+void FollowerRadialMenu::loadFollowerJSON()
+{
+	if ( !PHYSFS_getRealDir("/data/follower_wheel.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: data/follower_wheel.json");
+	}
+	else
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/follower_wheel.json");
+		inputPath.append("/data/follower_wheel.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		}
+		else
+		{
+			char buf[65536];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+			rapidjson::Document d;
+			d.ParseStream(is);
+			if ( !d.HasMember("version") )
+			{
+				printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			}
+			else
+			{
+				if ( d.HasMember("panel_center_x_offset") )
+				{
+					FollowerRadialMenu::followerWheelFrameOffsetX = d["panel_center_x_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_center_y_offset") )
+				{
+					FollowerRadialMenu::followerWheelFrameOffsetY = d["panel_center_y_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_radius") )
+				{
+					FollowerRadialMenu::followerWheelRadius = d["panel_radius"].GetInt();
+				}
+				if ( d.HasMember("panel_button_thickness") )
+				{
+					FollowerRadialMenu::followerWheelButtonThickness = d["panel_button_thickness"].GetInt();
+				}
+				if ( d.HasMember("panel_inner_circle_radius_offset") )
+				{
+					FollowerRadialMenu::followerWheelInnerCircleRadiusOffset = d["panel_inner_circle_radius_offset"].GetInt();
+				}
+				if ( d.HasMember("panel_inner_circle_radius_offset_alternate") )
+				{
+					FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate = d["panel_inner_circle_radius_offset_alternate"].GetInt();
+				}
+				if ( d.HasMember("colors") )
+				{
+					if ( d["colors"].HasMember("banner_default") )
+					{
+						followerBannerTextColor = makeColor(
+							d["colors"]["banner_default"]["r"].GetInt(),
+							d["colors"]["banner_default"]["g"].GetInt(),
+							d["colors"]["banner_default"]["b"].GetInt(),
+							d["colors"]["banner_default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("banner_highlight_default") )
+					{
+						followerBannerTextHighlightColor = makeColor(
+							d["colors"]["banner_highlight_default"]["r"].GetInt(),
+							d["colors"]["banner_highlight_default"]["g"].GetInt(),
+							d["colors"]["banner_highlight_default"]["b"].GetInt(),
+							d["colors"]["banner_highlight_default"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("title") )
+					{
+						followerTitleColor = makeColor(
+							d["colors"]["title"]["r"].GetInt(),
+							d["colors"]["title"]["g"].GetInt(),
+							d["colors"]["title"]["b"].GetInt(),
+							d["colors"]["title"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("title_creature_highlight") )
+					{
+						followerTitleHighlightColor = makeColor(
+							d["colors"]["title_creature_highlight"]["r"].GetInt(),
+							d["colors"]["title_creature_highlight"]["g"].GetInt(),
+							d["colors"]["title_creature_highlight"]["b"].GetInt(),
+							d["colors"]["title_creature_highlight"]["a"].GetInt());
+					}
+				}
+				if ( d.HasMember("panels") )
+				{
+					FollowerRadialMenu::panelEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["panels"].Begin();
+						itr != d["panels"].End(); ++itr )
+					{
+						FollowerRadialMenu::panelEntries.push_back(FollowerRadialMenu::PanelEntry());
+						auto& entry = FollowerRadialMenu::panelEntries[FollowerRadialMenu::panelEntries.size() - 1];
+						if ( (*itr).HasMember("x") )
+						{
+							entry.x = (*itr)["x"].GetInt();
+						}
+						if ( (*itr).HasMember("y") )
+						{
+							entry.y = (*itr)["y"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							entry.path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked") )
+						{
+							entry.path_locked = (*itr)["path_locked"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked_hover") )
+						{
+							entry.path_locked_hover = (*itr)["path_locked_hover"].GetString();
+						}
+						if ( (*itr).HasMember("icon_offset_x") )
+						{
+							entry.icon_offsetx = (*itr)["icon_offset_x"].GetInt();
+						}
+						if ( (*itr).HasMember("icon_offset_y") )
+						{
+							entry.icon_offsety = (*itr)["icon_offset_y"].GetInt();
+						}
+					}
+				}
+				if ( d.HasMember("panels_alternate") )
+				{
+					FollowerRadialMenu::panelEntriesAlternate.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["panels_alternate"].Begin();
+						itr != d["panels_alternate"].End(); ++itr )
+					{
+						FollowerRadialMenu::panelEntriesAlternate.push_back(FollowerRadialMenu::PanelEntry());
+						auto& entry = FollowerRadialMenu::panelEntriesAlternate[FollowerRadialMenu::panelEntriesAlternate.size() - 1];
+						if ( (*itr).HasMember("x") )
+						{
+							entry.x = (*itr)["x"].GetInt();
+						}
+						if ( (*itr).HasMember("y") )
+						{
+							entry.y = (*itr)["y"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							entry.path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked") )
+						{
+							entry.path_locked = (*itr)["path_locked"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							entry.path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_locked_hover") )
+						{
+							entry.path_locked_hover = (*itr)["path_locked_hover"].GetString();
+						}
+						if ( (*itr).HasMember("icon_offset_x") )
+						{
+							entry.icon_offsetx = (*itr)["icon_offset_x"].GetInt();
+						}
+						if ( (*itr).HasMember("icon_offset_y") )
+						{
+							entry.icon_offsety = (*itr)["icon_offset_y"].GetInt();
+						}
+					}
+				}
+				if ( d.HasMember("icons") )
+				{
+					FollowerRadialMenu::iconEntries.clear();
+					for ( rapidjson::Value::ConstValueIterator itr = d["icons"].Begin();
+						itr != d["icons"].End(); ++itr )
+					{
+						std::string actionName = "";
+						if ( (*itr).HasMember("action") )
+						{
+							actionName = (*itr)["action"].GetString();
+						}
+						if ( actionName == "" )
+						{
+							continue;
+						}
+						FollowerRadialMenu::iconEntries[actionName] = FollowerRadialMenu::IconEntry();
+						FollowerRadialMenu::iconEntries[actionName].name = actionName;
+						if ( (*itr).HasMember("id") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].id = (*itr)["id"].GetInt();
+						}
+						if ( (*itr).HasMember("path") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path = (*itr)["path"].GetString();
+						}
+						if ( (*itr).HasMember("path_active") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path_active = (*itr)["path_active"].GetString();
+						}
+						if ( (*itr).HasMember("path_hover") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path_hover = (*itr)["path_hover"].GetString();
+						}
+						if ( (*itr).HasMember("path_active_hover") )
+						{
+							FollowerRadialMenu::iconEntries[actionName].path_active_hover = (*itr)["path_active_hover"].GetString();
+						}
+						if ( (*itr).HasMember("text_maps") )
+						{
+							for ( rapidjson::Value::ConstValueIterator itr2 = (*itr)["text_maps"].Begin();
+								itr2 != (*itr)["text_maps"].End(); ++itr2 )
+							{
+								for ( rapidjson::Value::ConstMemberIterator itr3 = itr2->MemberBegin();
+									itr3 != itr2->MemberEnd(); ++itr3 )
+								{
+									std::string mapKey = itr3->name.GetString();
+									std::string mapText = itr3->value["text"].GetString();
+									std::set<int> mapHighlights;
+									for ( rapidjson::Value::ConstValueIterator highlightItr = itr3->value["word_highlights"].Begin();
+										highlightItr != itr3->value["word_highlights"].End(); ++highlightItr )
+									{
+										mapHighlights.insert(highlightItr->GetInt());
+									}
+									FollowerRadialMenu::iconEntries[actionName].text_map[mapKey] = std::make_pair(mapText, mapHighlights);
+								}
+							}
+						}
+					}
+				}
+				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+			}
+		}
+	}
+}
+
+bool FollowerRadialMenu::followerGUIHasBeenCreated() const
+{
+	if ( followerFrame )
+	{
+		if ( !followerFrame->getFrames().empty() )
+		{
+			for ( auto f : followerFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void FollowerRadialMenu::createFollowerMenuGUI()
+{
+	const int player = getPlayer();
+	if ( !gui || !followerFrame )
+	{
+		return;
+	}
+	if ( followerGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	const int midx = followerFrame->getSize().w / 2;
+	const int midy = followerFrame->getSize().h / 2;
+
+	auto bgFrame = followerFrame->addFrame("wheel base");
+	bgFrame->setSize(SDL_Rect{0, 0, followerFrame->getSize().w, followerFrame->getSize().h});
+	bgFrame->setHollow(false);
+	bgFrame->setDisabled(false);
+	bgFrame->setInheritParentFrameOpacity(false);
+	bgFrame->setOpacity(0.0);
+
+	char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+
+	int panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		if ( panelIndex < PANEL_DIRECTION_END )
+		{
+			SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "panel %d", panelIndex);
+			Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
+			if ( auto imgGet = Image::get(img->path.c_str()) )
+			{
+				img->pos.w = imgGet->getWidth();
+				img->pos.h = imgGet->getHeight();
+			}
+		}
+		++panelIndex;
+	}
+
+	panelIndex = 0;
+	for ( auto& entry : panelEntries )
+	{
+		if ( panelIndex < PANEL_DIRECTION_END )
+		{
+			SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+			char buf[32] = "";
+			snprintf(buf, sizeof(buf), "icon %d", panelIndex);
+			Frame::image_t* imgIcon = bgFrame->addImage(pos, 0xFFFFFFFF, "", buf);
+			imgIcon->disabled = true;
+		}
+		++panelIndex;
+	}
+
+	{
+		// do center panel
+		auto& entry = panelEntries[panelEntries.size() - 1];
+		SDL_Rect pos{ entry.x + midx, entry.y + midy, 0, 0 };
+		char buf[32] = "";
+		snprintf(buf, sizeof(buf), "panel %d", PANEL_DIRECTION_END);
+		Frame::image_t* img = bgFrame->addImage(pos, 0xFFFFFFFF, entry.path.c_str(), buf);
+		if ( auto imgGet = Image::get(img->path.c_str()) )
+		{
+			img->pos.w = imgGet->getWidth();
+			img->pos.h = imgGet->getHeight();
+		}
+	}
+
+	auto bannerFrame = followerFrame->addFrame("banner frame");
+	bannerFrame->setSize(SDL_Rect{ 0, 0, 0, 40 });
+	bannerFrame->setHollow(false);
+	bannerFrame->setDisabled(false);
+	bannerFrame->setInheritParentFrameOpacity(false);
+	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_l.png", "banner left");
+	bannerFrame->addImage(SDL_Rect{ 0, 0, 42, 40 }, 0xFFFFFFFF, "#*images/ui/FollowerWheel/banner-cmd_r.png", "banner right");
+	bannerFrame->addImage(SDL_Rect{ 0, 12, 0, 28 }, 0xFFFFFFFF, "*images/ui/FollowerWheel/banner-cmd_c.png", "banner center");
+	auto bannerText = bannerFrame->addField("banner txt", 128);
+	bannerText->setFont(font);
+	bannerText->setText("");
+	bannerText->setHJustify(Field::justify_t::LEFT);
+	bannerText->setVJustify(Field::justify_t::TOP);
+	bannerText->setSize(SDL_Rect{ 0, 0, 0, 24 });
+	bannerText->setTextColor(followerBannerTextColor);
+	bannerText->setOutlineColor(makeColor(29, 16, 11, 255));
+	auto bannerGlyph = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner glyph");
+	bannerGlyph->disabled = true;
+	auto bannerGlyph2 = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "banner modifier glyph");
+	bannerGlyph2->disabled = true;
+
+	auto wheelTitleText = bgFrame->addField("wheel title", 128);
+	wheelTitleText->setFont(font);
+	wheelTitleText->setText("");
+	wheelTitleText->setHJustify(Field::justify_t::LEFT);
+	wheelTitleText->setVJustify(Field::justify_t::TOP);
+	wheelTitleText->setSize(SDL_Rect{ 0, 0, 240, 24 });
+	wheelTitleText->setTextColor(followerTitleColor);
+	wheelTitleText->setOutlineColor(makeColor(29, 16, 11, 255));
+
+	auto wheelSkillImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill img");
+	wheelSkillImg->disabled = true;
+	auto wheelStatImg = bannerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "stat img");
+	wheelStatImg->disabled = true;
+}
+
+void setFollowerBannerTextFormatted(const int player, Field* field, Uint32 color, std::set<int>& highlights, char const * const text, ...)
+{
+	if ( !field ) { return; }
+
+	char buf[256] = "";
+	va_list argptr;
+	va_start(argptr, text);
+	vsnprintf(buf, sizeof(buf), text, argptr);
+	va_end(argptr);
+
+	field->setText(buf);
+	field->clearWordsToHighlight();
+	for ( auto v : highlights )
+	{
+		field->addWordToHighlight(v, color);
+	}
+}
+
+void setFollowerBannerText(const int player, Field* field, char* iconName, char* textKey, Uint32 color)
+{
+	if ( !field ) { return; }
+	if ( FollowerMenu[player].iconEntries.find(iconName) == FollowerMenu[player].iconEntries.end() )
+	{
+		return;
+	}
+	auto& textMap = FollowerMenu[player].iconEntries[iconName].text_map[textKey];
+	field->setText(textMap.first.c_str());
+	field->clearWordsToHighlight();
+	for ( auto v : textMap.second )
+	{
+		field->addWordToHighlight(v, color);
+	}
+}
+
+std::vector<FollowerRadialMenu::PanelEntry>& getPanelEntriesForFollower(bool isTinkeringCreation)
+{
+	if ( isTinkeringCreation )
+	{
+		return FollowerRadialMenu::panelEntries;
+	}
+	else
+	{
+		return FollowerRadialMenu::panelEntriesAlternate;
+	}
+}
+
+bool commandCanBeSentToAll(int optionSelected)
+{
+	if ( optionSelected != ALLY_CMD_MOVETO_CONFIRM
+		&& optionSelected != ALLY_CMD_ATTACK_CONFIRM
+		&& optionSelected != ALLY_CMD_FOLLOW
+		&& optionSelected != ALLY_CMD_DEFEND )
+	{
+		return false;
+	}
+	return true;
+}
+
+std::vector<Entity*> getAllOtherFollowersForSendAllCommand(const int gui_player, Entity* followerToCommand, Monster followerType, int optionSelected)
+{
+	std::vector<Entity*> vec;
+	if ( !followerToCommand )
+	{
+		return vec;
+	}
+	if ( !commandCanBeSentToAll(optionSelected) )
+	{
+		return vec;
+	}
+
+	if ( optionSelected == ALLY_CMD_ATTACK_CONFIRM )
+	{
+		// only send commands if we're trying to attack
+		Entity* target = uidToEntity(followerToCommand->monsterAllyInteractTarget);
+		if ( target )
+		{
+			if ( target->behavior != &actMonster && target->behavior != &actPlayer )
+			{
+				return vec;
+			}
+		}
+		else
+		{
+			return vec;
+		}
+	}
+
+	for ( node_t* node = stats[gui_player]->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		Entity* follower2 = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			if ( follower2 = uidToEntity(*((Uint32*)node->element)) )
+			{
+				if ( follower2 == followerToCommand || !follower2->getStats() )
+				{
+					continue;
+				}
+				auto follower2Type = follower2->getStats()->type;
+
+				if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM || optionSelected == ALLY_CMD_FOLLOW 
+					|| optionSelected == ALLY_CMD_DEFEND )
+				{
+					if ( (followerType == SENTRYBOT || followerType == SPELLBOT)
+						&& (follower2Type != SENTRYBOT && follower2Type != SPELLBOT) )
+					{
+						continue; // bots have unique moveto cmd
+					}
+					if ( followerType != SENTRYBOT && followerType != SPELLBOT
+						&& (follower2Type == SENTRYBOT || follower2Type == SPELLBOT) )
+					{
+						continue; // bots have unique moveto cmd
+					}
+				}
+
+				if ( optionSelected == ALLY_CMD_FOLLOW )
+				{
+					if ( !(follower2->monsterAllyState == ALLY_STATE_DEFEND || follower2->monsterAllyState == ALLY_STATE_MOVETO) )
+					{
+						continue;
+					}
+					if ( (followerType == GYROBOT && follower2Type != GYROBOT)
+						|| (followerType != GYROBOT && follower2Type == GYROBOT) )
+					{
+						continue; // gyrobot must issue follow/wait separately
+					}
+				}
+				else if ( optionSelected == ALLY_CMD_DEFEND )
+				{
+					if ( follower2->monsterAllyState == ALLY_STATE_DEFEND || follower2->monsterAllyState == ALLY_STATE_MOVETO )
+					{
+						continue;
+					}
+					if ( (followerType == GYROBOT && follower2Type != GYROBOT)
+						|| (followerType != GYROBOT && follower2Type == GYROBOT) )
+					{
+						continue; // gyrobot must issue follow/wait separately
+					}
+				}
+				
+				int skillLVL2 = stats[gui_player]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[gui_player], players[gui_player]->entity);
+				if ( FollowerMenu[gui_player].isTinkeringFollower(follower2Type) )
+				{
+					skillLVL2 = stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity);
+				}
+				if ( follower2->monsterAllySummonRank != 0 )
+				{
+					skillLVL2 = SKILL_LEVEL_LEGENDARY;
+				}
+				int disableOption2 = FollowerMenu[gui_player].optionDisabledForCreature(skillLVL2, follower2Type, optionSelected, follower2);
+				if ( disableOption2 == 0 )
+				{
+					vec.push_back(follower2);
+				}
+			}
+		}
+	}
+	return vec;
+}
+
 void FollowerRadialMenu::drawFollowerMenu()
 {
+	auto player = players[gui_player];
+	if ( !player->isLocalPlayer() )
+	{
+		closeFollowerMenuGUI();
+		return;
+	}
+
+	Input& input = Input::inputs[gui_player];
+
 	if ( selectMoveTo )
 	{
+		if ( input.binaryToggle("MenuCancel") )
+		{
+			input.consumeBinaryToggle("MenuCancel");
+			closeFollowerMenuGUI();
+		}
 		if ( !followerToCommand )
 		{
 			selectMoveTo = false;
+			closeFollowerMenuGUI();
+		}
+		else if ( followerFrame )
+		{
+			followerFrame->setDisabled(true);
 		}
 		return;
 	}
+
+	if ( !followerFrame )
+	{
+		return;
+	}
+
+	followerFrame->setSize(SDL_Rect{ players[gui_player]->camera_virtualx1(),
+		players[gui_player]->camera_virtualy1(),
+		players[gui_player]->camera_virtualWidth(),
+		players[gui_player]->camera_virtualHeight() });
 
 	int disableOption = 0;
 	bool keepWheelOpen = false;
@@ -1610,10 +2185,61 @@ void FollowerRadialMenu::drawFollowerMenu()
 	Sint32 omousex = inputs.getMouse(gui_player, Inputs::OX);
 	Sint32 omousey = inputs.getMouse(gui_player, Inputs::OY);
 
-	Input& input = Input::inputs[gui_player];
+	std::map<int, Frame::image_t*> panelImages;
+	std::map<int, Frame::image_t*> panelIcons;
+	Frame* bannerFrame = nullptr;
+	Field* bannerTxt = nullptr;
+	Frame::image_t* bannerImgLeft = nullptr;
+	Frame::image_t* bannerImgRight = nullptr;
+	Frame::image_t* bannerImgCenter = nullptr;
+	Uint32 textHighlightColor = followerBannerTextHighlightColor;
+	bool tinkeringFollower = false;
+
+	if ( !followerToCommand && (!followerFrame->isDisabled() || players[gui_player]->gui_mode == GUI_MODE_FOLLOWERMENU) )
+	{
+		closeFollowerMenuGUI();
+		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		return;
+	}
+	if ( input.binaryToggle("MenuCancel") )
+	{
+		input.consumeBinaryToggle("MenuCancel");
+		closeFollowerMenuGUI();
+		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		return;
+	}
+
+	//if ( ticks % 50 == 0 )
+	//{
+	//	consoleCommand("/loadfollowerwheel");
+	//}
+
+	bool modifierPressed = false;
+	bool modifierActiveForOption = false;
+	if ( input.binary("Block") )
+	{
+		modifierPressed = true;
+	}
 
 	if ( followerToCommand )
 	{
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animTitle)) / 2.5;
+			animTitle += setpointDiff;
+			animTitle = std::min(1.0, animTitle);
+
+			real_t setpointDiff2 = fpsScale * std::max(.01, (1.0 - animWheel)) / 2.0;
+			animWheel += setpointDiff2;
+			animWheel = std::min(1.0, animWheel);
+
+			// shaking feedback for invalid action
+			// constant decay for animation
+			real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+			animInvalidAction -= setpointDiffX;
+			animInvalidAction = std::max(0.0, animInvalidAction);
+		}
+
 		if ( players[gui_player] && players[gui_player]->entity
 			&& followerToCommand->monsterTarget == players[gui_player]->entity->getUID() )
 		{
@@ -1624,9 +2250,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 		Stat* followerStats = followerToCommand->getStats();
 		if ( !followerStats )
 		{
+			closeFollowerMenuGUI();
 			return;
 		}
-		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
+		tinkeringFollower = isTinkeringFollower(followerStats->type);
+
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] && players[gui_player]->entity
 			&& players[gui_player]->bControlEnabled && !gamePaused
@@ -1671,16 +2299,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( attackCommandOnly(followerStats->type) )
 					{
 						// attack only.
-						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand);
 					}
 					else
 					{
-						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+						disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected, followerToCommand);
 					}
 				}
 				else
 				{
-					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, optionSelected, followerToCommand);
 				}
 			}
 		}
@@ -1737,12 +2365,25 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
+			if ( disableOption != 0 )
+			{
+				animInvalidAction = 1.0;
+				animInvalidActionTicks = ticks;
+			}
+
 			if ( input.binaryToggle("Command NPC") )
 			{
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
-					initfollowerMenuGUICursor(false);
+					if ( !players[gui_player]->gui_mode != GUI_MODE_FOLLOWERMENU )
+					{
+						initfollowerMenuGUICursor(true); // set gui_mode to follower menu
+					}
+					else
+					{
+						initfollowerMenuGUICursor(false);
+					}
 				}
 				input.consumeBinaryToggle("Command NPC");
 			}
@@ -1781,6 +2422,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( disableOption == 0 )
 					{
+						if ( modifierPressed )
+						{
+							if ( !usingLastCmd )
+							{
+								if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
+								{
+									input.consumeBinaryToggle("Block"); // don't try cast when menu closes.
+								}
+							}
+						}
+
 						if ( optionSelected == ALLY_CMD_DEFEND &&
 							(followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
 						{
@@ -1790,20 +2442,62 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							if ( optionSelected == ALLY_CMD_ATTACK_CONFIRM )
 							{
+								Uint32 olduid = followerToCommand->monsterAllyInteractTarget;
 								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, 0, 0, followerToCommand->monsterAllyInteractTarget);
+								Uint32 newuid = followerToCommand->monsterAllyInteractTarget;
+								if ( modifierPressed )
+								{
+									followerToCommand->monsterAllyInteractTarget = olduid;
+									auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+									for ( auto f : repeatCommandToFollowers )
+									{
+										f->monsterAllyInteractTarget = olduid;
+										sendAllyCommandClient(gui_player, f->getUID(), optionSelected, 0, 0, f->monsterAllyInteractTarget);
+									}
+									followerToCommand->monsterAllyInteractTarget = newuid;
+								}
 							}
 							else if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM )
 							{
 								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, moveToX, moveToY);
+								if ( modifierPressed )
+								{
+									auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+									for ( auto f : repeatCommandToFollowers )
+									{
+										sendAllyCommandClient(gui_player, f->getUID(), optionSelected, moveToX, moveToY);
+									}
+								}
 							}
 							else
 							{
 								sendAllyCommandClient(gui_player, followerToCommand->getUID(), optionSelected, 0, 0);
+								if ( modifierPressed )
+								{
+									auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+									for ( auto f : repeatCommandToFollowers )
+									{
+										sendAllyCommandClient(gui_player, f->getUID(), optionSelected, 0, 0);
+									}
+								}
 							}
 						}
 						else
 						{
+							Uint32 olduid = followerToCommand->monsterAllyInteractTarget;
 							followerToCommand->monsterAllySendCommand(optionSelected, moveToX, moveToY, followerToCommand->monsterAllyInteractTarget);
+							Uint32 newuid = followerToCommand->monsterAllyInteractTarget;
+							if ( modifierPressed )
+							{
+								followerToCommand->monsterAllyInteractTarget = olduid;
+								auto repeatCommandToFollowers = getAllOtherFollowersForSendAllCommand(gui_player, followerToCommand, followerStats->type, optionSelected);
+								for ( auto f : repeatCommandToFollowers )
+								{
+									f->monsterAllyInteractTarget = olduid;
+									f->monsterAllySendCommand(optionSelected, moveToX, moveToY, f->monsterAllyInteractTarget);
+								}
+								followerToCommand->monsterAllyInteractTarget = newuid;
+							}
 						}
 					}
 					else if ( usingLastCmd )
@@ -1842,8 +2536,56 @@ void FollowerRadialMenu::drawFollowerMenu()
 		}
 	}
 
+	static ConsoleVariable<bool> cvar_showoldwheel("/followerwheel_old_enable", false);
+
 	if ( followerToCommand )
 	{
+		if ( !followerGUIHasBeenCreated() )
+		{
+			createFollowerMenuGUI();
+		}
+		followerFrame->setDisabled(false);
+
+		auto bgFrame = followerFrame->findFrame("wheel base");
+		bgFrame->setOpacity(100.0 * animWheel);
+		bannerFrame = followerFrame->findFrame("banner frame");
+		bannerImgLeft = bannerFrame->findImage("banner left");
+		bannerImgRight = bannerFrame->findImage("banner right");
+		bannerImgCenter = bannerFrame->findImage("banner center");
+		bannerTxt = bannerFrame->findField("banner txt");
+		bannerTxt->setText("");
+
+		int direction = NORTH;
+		const int midx = followerFrame->getSize().w / 2;
+		const int midy = followerFrame->getSize().h / 2;
+		for ( auto img : bgFrame->getImages() )
+		{
+			if ( direction < PANEL_DIRECTION_END )
+			{
+				panelImages[direction] = img;
+				img->pos.x = getPanelEntriesForFollower(tinkeringFollower)[direction].x + midx + FollowerRadialMenu::followerWheelFrameOffsetX;
+				img->pos.y = getPanelEntriesForFollower(tinkeringFollower)[direction].y + midy + FollowerRadialMenu::followerWheelFrameOffsetY;
+				img->path = getPanelEntriesForFollower(tinkeringFollower)[direction].path;
+			}
+			else if ( direction < 2 * PANEL_DIRECTION_END )
+			{
+				img->disabled = true;
+				img->path = "";
+				int direction2 = direction - PANEL_DIRECTION_END;
+				panelIcons[direction2] = img;
+				panelIcons[direction2]->pos.x = panelImages[direction2]->pos.x + getPanelEntriesForFollower(tinkeringFollower)[direction2].icon_offsetx;
+				panelIcons[direction2]->pos.y = panelImages[direction2]->pos.y + getPanelEntriesForFollower(tinkeringFollower)[direction2].icon_offsety;
+			}
+			else if ( direction == 2 * PANEL_DIRECTION_END ) // center img
+			{
+				panelImages[PANEL_DIRECTION_END] = img;
+				img->pos.x = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].x + midx + FollowerRadialMenu::followerWheelFrameOffsetX;
+				img->pos.y = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].y + midy + FollowerRadialMenu::followerWheelFrameOffsetY;
+				img->path = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].path;
+			}
+			++direction;
+		}
+
 		int skillLVL = 0;
 		Stat* followerStats = followerToCommand->getStats();
 		if ( !followerStats )
@@ -1886,21 +2628,32 @@ void FollowerRadialMenu::drawFollowerMenu()
 			src.h = 125;
 			src.w = 125;
 		}
+
+		radius = FollowerRadialMenu::followerWheelRadius;
+		thickness = FollowerRadialMenu::followerWheelButtonThickness;
+		real_t menuScale = yres / (real_t)Frame::virtualScreenY;
+		radius *= menuScale;
+		thickness *= menuScale;
+		int centerButtonHighlightOffset = tinkeringFollower 
+			? FollowerRadialMenu::followerWheelInnerCircleRadiusOffset 
+			: FollowerRadialMenu::followerWheelInnerCircleRadiusOffsetAlternate;
+
 		int highlight = -1;
 		int i = 0;
 
 		int width = 0;
-		getSizeOfText(ttf12, language[3036], &width, nullptr);
-		if ( players[gui_player]->camera_height() < 768 )
+		if ( *cvar_showoldwheel )
 		{
-			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
+			getSizeOfText(ttf12, language[3036], &width, nullptr);
+			if ( players[gui_player]->camera_height() < 768 )
+			{
+				ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
+			}
+			else
+			{
+				ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
+			}
 		}
-		else
-		{
-			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
-		}
-
-		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
 
 		if ( inputs.hasController(gui_player) )
 		{
@@ -1911,115 +2664,75 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( dir != GameController::DpadDirection::INVALID )
 				{
 					controller->consumeDpadDirToggle();
-					highlight = dir;
+					switch ( dir )
+					{
+						case GameController::DpadDirection::UP:
+							highlight = 0;
+							break;
+						case GameController::DpadDirection::UPLEFT:
+							highlight = 1;
+							break;
+						case GameController::DpadDirection::LEFT:
+							highlight = 2;
+							break;
+						case GameController::DpadDirection::DOWNLEFT:
+							highlight = 3;
+							break;
+						case GameController::DpadDirection::DOWN:
+							highlight = 4;
+							break;
+						case GameController::DpadDirection::DOWNRIGHT:
+							highlight = 5;
+							break;
+						case GameController::DpadDirection::RIGHT:
+							highlight = 6;
+							break;
+						case GameController::DpadDirection::UPRIGHT:
+							highlight = 7;
+							break;
+						default:
+							break;
+					}
 					real_t angleMiddleForOption = PI / 2 + dir * (2 * PI / numoptions);
-					omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
-					omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
+					omousex = centerx + (radius + thickness) * .75 * cos(angleMiddleForOption);
+					omousey = centery + (radius + thickness) * .75 * sin(angleMiddleForOption);
 					inputs.setMouse(gui_player, Inputs::OX, omousex);
 					inputs.setMouse(gui_player, Inputs::OY, omousey);
 					inputs.setMouse(gui_player, Inputs::X, omousex);
 					inputs.setMouse(gui_player, Inputs::Y, omousey);
-				}
-				/*
-				real_t magnitude = sqrt(pow(controller->getRightYPercent(), 2) + pow(controller->getRightXPercent(), 2));
-				if ( magnitude > 1 )
-				{
-					real_t stickAngle = atan2(controller->getRightYPercent(), controller->getRightXPercent());
-					while ( stickAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
-					{
-						stickAngle -= PI * 2;
-					}
-					while ( stickAngle < (PI / 2 - (PI / numoptions)))
-					{
-						stickAngle += PI * 2;
-					}
-					real_t currentCursorAngle = atan2(omousey - menuY, omousex - menuX);
-					while ( currentCursorAngle >= (2 * PI + (PI / 2 - (PI / numoptions))) )
-					{
-						currentCursorAngle -= PI * 2;
-					}
-					while ( currentCursorAngle < (PI / 2 - (PI / numoptions)) )
-					{
-						currentCursorAngle += PI * 2;
-					}
 
-					angleStart = PI / 2 - (PI / numoptions);
-					angleMiddle = angleStart + PI / numoptions;
-					angleEnd = angleMiddle + PI / numoptions;
-
-					int newOption = -1;
-					int currentOption = -1;
-					for ( i = 0; i < numoptions; ++i )
+					if ( highlight != -1 )
 					{
-						if ( (stickAngle >= angleStart && stickAngle < angleEnd) )
-						{
-							newOption = i;
-						}
-						if ( (currentCursorAngle >= angleStart && stickAngle < angleEnd) )
-						{
-							currentOption = (mouseInCenterButton ? -1 : i); // disregard if mouse in center
-						}
-						angleStart += 2 * PI / numoptions;
-						angleMiddle = angleStart + PI / numoptions;
-						angleEnd = angleMiddle + PI / numoptions;
-					}
-
-					real_t angleMiddleForOption = PI / 2 + newOption * (2 * PI / numoptions);
-					if ( mouseInCenterButton && newOption >= 0 )
-					{
-						omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
-						omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
-					}
-					else
-					{
-						switch ( newOption )
-						{
-							case UP: // up
-							case UPLEFT:
-							case UPRIGHT:
-								if ( currentOption == DOWN || currentOption == DOWNLEFT || currentOption == DOWNRIGHT )
-								{
-									newOption = -1;
-								}
-								break;
-							case LEFT:
-								break;
-							case DOWNLEFT:
-							case DOWN:
-							case DOWNRIGHT:
-								if ( currentOption == UP || currentOption == UPLEFT || currentOption == UPRIGHT )
-								{
-									newOption = -1;
-								}
-								break;
-							case RIGHT:
-								break;
-							default:
-								break;
-						}
-						if ( newOption != -1 )
-						{
-							angleMiddleForOption = PI / 2 + newOption * (2 * PI / numoptions);
-							omousex = centerx + (radius + thickness) / 2 * cos(angleMiddleForOption);
-							omousey = centery + (radius + thickness) / 2 * sin(angleMiddleForOption);
-						}
-						else
-						{
-							omousex = centerx;
-							omousey = centery;
-						}
+						inputs.getVirtualMouse(gui_player)->draw_cursor = false;
 					}
 				}
-				else
-				{
-					//omousex = centerx;
-					//omousey = centery;
-				}
-				inputs.setMouse(gui_player, Inputs::OX, omousex);
-				inputs.setMouse(gui_player, Inputs::OY, omousey);
-				inputs.setMouse(gui_player, Inputs::X, omousex);
-				inputs.setMouse(gui_player, Inputs::Y, omousey);
-				*/
+			}
+		}
+
+		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
+
+		angleStart = PI / 2 - (PI / numoptions);
+		angleMiddle = angleStart + PI / numoptions;
+		angleEnd = angleMiddle + PI / numoptions;
+
+		if ( *cvar_showoldwheel )
+		{
+			drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
+
+			for ( i = 0; i < numoptions; ++i )
+			{
+				// draw borders around ring.
+				drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
+					centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray, 192);
+				drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
+					centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray, 192);
+
+				drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray, 192);
+				drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray, 192);
+
+				angleStart += 2 * PI / numoptions;
+				angleMiddle = angleStart + PI / numoptions;
+				angleEnd = angleMiddle + PI / numoptions;
 			}
 		}
 
@@ -2027,28 +2740,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		angleMiddle = angleStart + PI / numoptions;
 		angleEnd = angleMiddle + PI / numoptions;
 
-		drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
-
-		for ( i = 0; i < numoptions; ++i )
-		{
-			// draw borders around ring.
-			drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
-				centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), uint32ColorGray, 192);
-			drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
-				centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray, 192);
-
-			drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray, 192);
-			drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray, 192);
-
-			angleStart += 2 * PI / numoptions;
-			angleMiddle = angleStart + PI / numoptions;
-			angleEnd = angleMiddle + PI / numoptions;
-		}
-
-		angleStart = PI / 2 - (PI / numoptions);
-		angleMiddle = angleStart + PI / numoptions;
-		angleEnd = angleMiddle + PI / numoptions;
-
+		const real_t mouseDetectionAdjust = PI / 128;
 		for ( i = 0; i < numoptions; ++i )
 		{
 			// see if mouse cursor is within an option.
@@ -2056,12 +2748,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				if ( !mouseInCenterButton )
 				{
-					real_t x1 = menuX + (radius + thickness + 45) * cos(angleEnd);
-					real_t y1 = menuY - (radius + thickness + 45) * sin(angleEnd);
+					real_t x1 = menuX + (radius + thickness + 45) * cos(angleEnd + mouseDetectionAdjust);
+					real_t y1 = menuY - (radius + thickness + 45) * sin(angleEnd + mouseDetectionAdjust);
 					real_t x2 = menuX + 5 * cos(angleMiddle);
 					real_t y2 = menuY - 5 * sin(angleMiddle);
-					real_t x3 = menuX + (radius + thickness + 45) * cos(angleStart);
-					real_t y3 = menuY - (radius + thickness + 45) * sin(angleStart);
+					real_t x3 = menuX + (radius + thickness + 45) * cos(angleStart - mouseDetectionAdjust);
+					real_t y3 = menuY - (radius + thickness + 45) * sin(angleStart - mouseDetectionAdjust);
 					real_t a = ((y2 - y3)*(omousex - x3) + (x3 - x2)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
 					real_t b = ((y3 - y1)*(omousex - x3) + (x1 - x3)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
 					real_t c = 1 - a - b;
@@ -2069,21 +2761,24 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						//barycentric calc for figuring if mouse point is within triangle.
 						highlight = i;
-						drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
-
-						// draw borders around highlighted item.
-						Uint32 borderColor = uint32ColorBaronyBlue;
-						if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+						if ( *cvar_showoldwheel )
 						{
-							borderColor = uint32ColorOrange;
-						}
-						drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
-							centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), borderColor, 192);
-						drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
-							centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
+							drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
 
-						drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
-						drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
+							// draw borders around highlighted item.
+							Uint32 borderColor = uint32ColorBaronyBlue;
+							if ( optionDisabledForCreature(skillLVL, followerStats->type, i, followerToCommand) != 0 )
+							{
+								borderColor = uint32ColorOrange;
+							}
+							drawLine(centerx + (radius - thickness) * cos(angleStart), centery - (radius - thickness) * sin(angleStart),
+								centerx + (radius + thickness) * cos(angleStart), centery - (radius + thickness) * sin(angleStart), borderColor, 192);
+							drawLine(centerx + (radius - thickness) * cos(angleEnd), centery - (radius - thickness) * sin(angleEnd),
+								centerx + (radius + thickness - 1) * cos(angleEnd), centery - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
+
+							drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
+							drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
+						}
 					}
 				}
 			}
@@ -2101,9 +2796,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			// draw the text for the menu wheel.
 
-			if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+			bool lockedOption = false;
+			if ( optionDisabledForCreature(skillLVL, followerStats->type, i, followerToCommand) != 0 )
 			{
-				drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+				if ( *cvar_showoldwheel )
+				{
+					drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+				}
+				lockedOption = true;
 			}
 			else if ( i == ALLY_CMD_DEFEND
 				&& (followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
@@ -2111,12 +2811,70 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 				{
 					getSizeOfText(ttf12, language[3675], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]) : SDL_Rect{};
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_active_hover;
+						if ( modifierPressed && commandCanBeSentToAll(i) )
+						{
+							modifierActiveForOption = true;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "free_look_all", textHighlightColor);
+						}
+						else
+						{
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "free_look", textHighlightColor);
+						}
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_active;
+					}
 				}
 				else
 				{
 					getSizeOfText(ttf12, language[3037 + i + 8], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]) : SDL_Rect{};
+					// "follow"
+					if ( i == highlight )
+					{
+						if ( tinkeringFollower )
+						{
+							panelIcons[i]->path = iconEntries["tinker_wait"].path_active_hover;
+							if ( modifierPressed && commandCanBeSentToAll(i) )
+							{
+								modifierActiveForOption = true;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "follow_all", textHighlightColor);
+							}
+							else
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "follow", textHighlightColor);
+							}
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_wait"].path_active_hover;
+							if ( modifierPressed && commandCanBeSentToAll(i) )
+							{
+								modifierActiveForOption = true;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "follow_all", textHighlightColor);
+							}
+							else
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "follow", textHighlightColor);
+							}
+						}
+					}
+					else
+					{
+						if ( tinkeringFollower )
+						{
+							panelIcons[i]->path = iconEntries["tinker_wait"].path_active;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_wait"].path_active;
+						}
+					}
 				}
 			}
 			else
@@ -2127,7 +2885,24 @@ void FollowerRadialMenu::drawFollowerMenu()
 					&& (followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
 				{
 					getSizeOfText(ttf12, language[3674], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]) : SDL_Rect{};
+					if ( i == highlight )
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path_hover;
+						if ( modifierPressed && commandCanBeSentToAll(i) )
+						{
+							modifierActiveForOption = true;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "hold_aim_all", textHighlightColor);
+						}
+						else
+						{
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_aim_look", "hold_aim", textHighlightColor);
+						}
+					}
+					else
+					{
+						panelIcons[i]->path = iconEntries["tinker_aim_look"].path;
+					}
 				}
 				else if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
@@ -2135,21 +2910,104 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						// draw higher.
 						getSizeOfText(ttf12, language[3619], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3620 + followerToCommand->monsterAllyClass], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]) : SDL_Rect{};
+						switch ( followerToCommand->monsterAllyClass )
+						{
+							case ALLY_GYRO_LIGHT_FAINT:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_faint"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_light_faint", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_faint"].path_active;
+								}
+								break;
+							case ALLY_GYRO_LIGHT_BRIGHT:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_bright"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_light_bright", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_bright"].path_active;
+								}
+								break;
+							case ALLY_GYRO_LIGHT_NONE:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_none"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_light_none", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_light_none"].path_active;
+								}
+							default:
+								break;
+						}
 					}
 					else if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 					{
 						getSizeOfText(ttf12, "Relinquish ", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_relinquish_soul"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "leader_relinquish_soul", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_relinquish_soul"].path;
+						}
 					}
 					else
 					{
 						// draw higher.
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]) : SDL_Rect{};
+						switch ( followerToCommand->monsterAllyClass )
+						{
+							case ALLY_CLASS_MELEE:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_class_melee"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_class_melee", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_class_melee"].path_active;
+								}
+								break;
+							case ALLY_CLASS_RANGED:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_class_ranged"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_class_ranged", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_class_ranged"].path_active;
+								}
+								break;
+							case ALLY_CLASS_MIXED:
+							default:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_class_mixed"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_class_mixed", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_class_mixed"].path_active;
+								}
+								break;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
@@ -2161,25 +3019,143 @@ void FollowerRadialMenu::drawFollowerMenu()
 							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
 						{
 							getSizeOfText(ttf12, "Detect", &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]) : SDL_Rect{};
 							getSizeOfText(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]) : SDL_Rect{};
 						}
 						else
 						{
 							getSizeOfText(ttf12, language[3623], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]) : SDL_Rect{};
 							getSizeOfText(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]) : SDL_Rect{};
+						}
+						switch ( followerToCommand->monsterAllyPickupItems )
+						{
+							case ALLY_GYRO_DETECT_ITEMS_METAL:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_metal"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_metal", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_metal"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_ITEMS_MAGIC:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_magic"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_magic", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_magic"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_ITEMS_VALUABLE:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_valuable"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_valuable", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_valuable"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_MONSTERS:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_monsters"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_monsters", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_monsters"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_EXITS:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_exits"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_exits", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_exits"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_TRAPS:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_traps"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_traps", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_traps"].path_active;
+								}
+								break;
+							case ALLY_GYRO_DETECT_NONE:
+							default:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_off"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_detect_off", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_detect_off"].path;
+								}
+								break;
 						}
 					}
 					else
 					{
 						// draw higher.
 						getSizeOfText(ttf12, "Pickup", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]) : SDL_Rect{};
+						switch ( followerToCommand->monsterAllyPickupItems )
+						{
+							case ALLY_PICKUP_ALL:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_all"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_pickup_all", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_all"].path_active;
+								}
+								break;
+							case ALLY_PICKUP_NONPLAYER:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_active_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_pickup_unowned", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_active;
+								}
+								break;
+							case ALLY_PICKUP_NONE:
+							default:
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_pickup_unowned", "leader_pickup_none", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_pickup_unowned"].path;
+								}
+								break;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_DROP_EQUIP )
@@ -2187,27 +3163,56 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == GYROBOT )
 					{
 						getSizeOfText(ttf12, language[3633], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3634], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_drop"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_drop", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_drop"].path;
+						}
 					}
 					else
 					{
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]) : SDL_Rect{};
 						if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
 						{
 							getSizeOfText(ttf12, language[3061], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_drop", "leader_drop_all", textHighlightColor);
+							}
 						}
 						else if ( skillLVL >= SKILL_LEVEL_MASTER )
 						{
 							getSizeOfText(ttf12, language[3060], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_drop", "leader_drop_equipment", textHighlightColor);
+							}
 						}
 						else
 						{
 							getSizeOfText(ttf12, language[3059], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								setFollowerBannerText(gui_player, bannerTxt, "leader_drop", "leader_drop_weapon", textHighlightColor);
+							}
+						}
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_drop"].path_hover;
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_drop"].path;
 						}
 					}
 				}
@@ -2216,45 +3221,139 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == GYROBOT )
 					{
 						getSizeOfText(ttf12, "Return &", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_return_and_land"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_return_and_land", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_return_and_land"].path;
+						}
 					}
 					else if ( followerStats->type == DUMMYBOT )
 					{
 						getSizeOfText(ttf12, language[3641], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]) : SDL_Rect{};
 						getSizeOfText(ttf12, language[3642], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_deactivate", "dummybot_deactivate", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path;
+						}
 					}
 					else if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 					{
 						getSizeOfText(ttf12, language[3649], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_deactivate", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_deactivate"].path;
+						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]) : SDL_Rect{};
+						// rest
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["leader_rest"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "leader_rest", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["leader_rest"].path;
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_ATTACK_SELECT )
 				{
 					if ( !attackCommandOnly(followerStats->type) )
 					{
-						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0 )
+						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand) == 0 )
 						{
 							getSizeOfText(ttf12, "Interact / ", &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]) : SDL_Rect{};
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_attack_or_interact"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_attack_or_interact", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_attack_or_interact"].path;
+							}
 						}
 						else
 						{
 							getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]);
+							(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]) : SDL_Rect{};
+							if ( tinkeringFollower )
+							{
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["tinker_interact"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_interact", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["tinker_interact"].path;
+								}
+							}
+							else
+							{
+								if ( i == highlight )
+								{
+									panelIcons[i]->path = iconEntries["leader_interact"].path_hover;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_interact", "default", textHighlightColor);
+								}
+								else
+								{
+									panelIcons[i]->path = iconEntries["leader_interact"].path;
+								}
+							}
 						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3104], &width, nullptr); // print just attack if no world interaction.
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]) : SDL_Rect{};
+						if ( tinkeringFollower )
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_attack"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_attack", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_attack"].path;
+							}
+						}
+						else
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_attack"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_attack", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_attack"].path;
+							}
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_MOVETO_SELECT )
@@ -2262,18 +3361,150 @@ void FollowerRadialMenu::drawFollowerMenu()
 					if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 					{
 						getSizeOfText(ttf12, language[3650], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]) : SDL_Rect{};
+						if ( i == highlight )
+						{
+							panelIcons[i]->path = iconEntries["tinker_lookat"].path_hover;
+							setFollowerBannerText(gui_player, bannerTxt, "tinker_lookat", "default", textHighlightColor);
+						}
+						else
+						{
+							panelIcons[i]->path = iconEntries["tinker_lookat"].path;
+						}
 					}
 					else
 					{
 						getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]) : SDL_Rect{};
+						if ( tinkeringFollower )
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveto"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_moveto", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveto"].path;
+							}
+						}
+						else
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_moveto"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_moveto", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_moveto"].path;
+							}
+						}
 					}
 				}
 				else
 				{
 					getSizeOfText(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]) : SDL_Rect{};
+					if ( i == ALLY_CMD_DEFEND )
+					{
+						// "wait"
+						if ( tinkeringFollower )
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_wait"].path_hover;
+								if ( modifierPressed && commandCanBeSentToAll(i) )
+								{
+									modifierActiveForOption = true;
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "wait_here_all", textHighlightColor);
+								}
+								else
+								{
+									setFollowerBannerText(gui_player, bannerTxt, "tinker_wait", "wait_here", textHighlightColor);
+								}
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_wait"].path;
+							}
+						}
+						else
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_wait"].path_hover;
+								if ( modifierPressed && commandCanBeSentToAll(i) )
+								{
+									modifierActiveForOption = true;
+									setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "wait_here_all", textHighlightColor);
+								}
+								else
+								{
+									setFollowerBannerText(gui_player, bannerTxt, "leader_wait", "wait_here", textHighlightColor);
+								}
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_wait"].path;
+							}
+						}
+					}
+					else if ( i == ALLY_CMD_MOVEASIDE )
+					{
+						if ( tinkeringFollower )
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveaside"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "tinker_moveaside", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["tinker_moveaside"].path;
+							}
+						}
+						else
+						{
+							if ( i == highlight )
+							{
+								panelIcons[i]->path = iconEntries["leader_moveaside"].path_hover;
+								setFollowerBannerText(gui_player, bannerTxt, "leader_moveaside", "default", textHighlightColor);
+							}
+							else
+							{
+								panelIcons[i]->path = iconEntries["leader_moveaside"].path;
+							}
+						}
+					}
+				}
+			}
+
+			if ( lockedOption )
+			{
+				if ( highlight == i && !mouseInCenterButton )
+				{
+					panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_locked_hover;
+				}
+				else
+				{
+					panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_locked;
+				}
+			}
+			else if ( highlight == i && !mouseInCenterButton )
+			{
+				panelImages[i]->path = getPanelEntriesForFollower(tinkeringFollower)[i].path_hover;
+			}
+
+			if ( !lockedOption && panelIcons[i]->path != "" )
+			{
+				if ( auto imgGet = Image::get(panelIcons[i]->path.c_str()) )
+				{
+					panelIcons[i]->disabled = false;
+					panelIcons[i]->pos.w = imgGet->getWidth();
+					panelIcons[i]->pos.h = imgGet->getHeight();
+					panelIcons[i]->pos.x -= panelIcons[i]->pos.w / 2;
+					panelIcons[i]->pos.y -= panelIcons[i]->pos.h / 2;
 				}
 			}
 
@@ -2281,12 +3512,22 @@ void FollowerRadialMenu::drawFollowerMenu()
 			angleMiddle = angleStart + PI / numoptions;
 			angleEnd = angleMiddle + PI / numoptions;
 		}
+
 		// draw center text.
 		if ( mouseInCenterButton )
 		{
+			bool mouseInCenterHighlightArea = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness + centerButtonHighlightOffset);
+			if ( mouseInCenterHighlightArea )
+			{
+				panelImages[PANEL_DIRECTION_END]->path = getPanelEntriesForFollower(tinkeringFollower)[PANEL_DIRECTION_END].path_hover;
+			}
+
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
-			drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue, 192);
+			if ( *cvar_showoldwheel )
+			{
+				drawCircle(centerx, centery, radius - thickness, uint32ColorBaronyBlue, 192);
+			}
 			//getSizeOfText(ttf12, language[3063], &width, nullptr);
 			//ttfPrintText(ttf12, centerx - width / 2, centery - 8, language[3063]);
 		}
@@ -2299,21 +3540,29 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( attackCommandOnly(followerStats->type) )
 				{
 					// attack only.
-					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand);
 				}
 				else
 				{
-					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+					disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight, followerToCommand);
 				}
 			}
 			else
 			{
-				disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+				disableOption = optionDisabledForCreature(skillLVL, followerStats->type, highlight, followerToCommand);
 			}
 		}
 
+		if ( highlight == -1 )
+		{
+			setFollowerBannerText(gui_player, bannerTxt, "cancel", "default", hudColors.characterSheetRed);
+		}
+
+		bool disableActionGlyph = false;
+		bool missingSkillLevel = false;
 		if ( disableOption != 0 )
 		{
+			disableActionGlyph = true;
 			SDL_Rect tooltip;
 			tooltip.x = omousex + 16;
 			tooltip.y = omousey + 16;
@@ -2329,57 +3578,75 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
-				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
+				//drawTooltip(&tooltip);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
+				setFollowerBannerText(gui_player, bannerTxt, "invalid_action", "rest_cooldown", hudColors.characterSheetRed);
 			}
 			else if ( disableOption == -1 ) // disabled due to creature type
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3103]) * TTF12_WIDTH + 8;
 				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
-				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
+				//drawTooltip(&tooltip);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					//uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
+				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable"];
+				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+					textMap.second, textMap.first.c_str(),
+					getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
-				drawTooltip(&tooltip);
+				//drawTooltip(&tooltip);
 				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
-				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
+				//drawTooltip(&tooltip);
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+					//uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
+				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
+				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+					textMap.second, textMap.first.c_str(),
+					getMonsterLocalizedName(followerStats->type).c_str());
 			}
 			else
 			{
-				drawTooltip(&tooltip);
+				//drawTooltip(&tooltip);
 				std::string requirement = "";
 				std::string current = "";
+				int requirementVal = 0;
+				int currentVal = 0;
 				if ( highlight >= ALLY_CMD_DEFEND && highlight <= ALLY_CMD_END && highlight != ALLY_CMD_CANCEL )
 				{
 					switch ( std::min(disableOption, SKILL_LEVEL_LEGENDARY) )
 					{
 						case 0:
 							requirement = language[363];
+							requirementVal = 0;
 							break;
 						case SKILL_LEVEL_NOVICE:
 							requirement = language[364];
+							requirementVal = SKILL_LEVEL_NOVICE;
 							break;
 						case SKILL_LEVEL_BASIC:
 							requirement = language[365];
+							requirementVal = SKILL_LEVEL_BASIC;
 							break;
 						case SKILL_LEVEL_SKILLED:
 							requirement = language[366];
+							requirementVal = SKILL_LEVEL_SKILLED;
 							break;
 						case SKILL_LEVEL_EXPERT:
 							requirement = language[367];
+							requirementVal = SKILL_LEVEL_EXPERT;
 							break;
 						case SKILL_LEVEL_MASTER:
 							requirement = language[368];
+							requirementVal = SKILL_LEVEL_MASTER;
 							break;
 						case SKILL_LEVEL_LEGENDARY:
 							requirement = language[369];
+							requirementVal = SKILL_LEVEL_LEGENDARY;
 							break;
 						default:
 							break;
@@ -2415,9 +3682,239 @@ void FollowerRadialMenu::drawFollowerMenu()
 						current = language[363];
 					}
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
+					currentVal = skillLVL;
 				}
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-					uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
+				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
+					//uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
+				if ( tinkeringFollower )
+				{
+					auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_tinker"];
+					setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+						textMap.second, textMap.first.c_str(),
+						currentVal, requirementVal);
+				}
+				else
+				{
+					auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_leader"];
+					setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+						textMap.second,	textMap.first.c_str(),
+						currentVal, requirementVal);
+				}
+				missingSkillLevel = true;
+			}
+		}
+
+		auto wheelSkillImg = bannerFrame->findImage("skill img");
+		wheelSkillImg->disabled = true;
+		auto wheelStatImg = bannerFrame->findImage("stat img");
+		wheelStatImg->disabled = true;
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( (tinkeringFollower && skill.skillId == PRO_LOCKPICKING)
+				|| (!tinkeringFollower && skill.skillId == PRO_LEADERSHIP) )
+			{
+				if ( skillCapstoneUnlocked(gui_player, skill.skillId) )
+				{
+					wheelSkillImg->path = skill.skillIconPathLegend;
+				}
+				else
+				{
+					wheelSkillImg->path = skill.skillIconPath;
+				}
+				wheelStatImg->path = skill.statIconPath;
+				if ( auto imgGet = Image::get(wheelSkillImg->path.c_str()) )
+				{
+					wheelSkillImg->pos.w = imgGet->getWidth();
+					wheelSkillImg->pos.h = imgGet->getHeight();
+				}
+				if ( auto imgGet = Image::get(wheelStatImg->path.c_str()) )
+				{
+					wheelStatImg->pos.w = imgGet->getWidth();
+					wheelStatImg->pos.h = imgGet->getHeight();
+				}
+				break;
+			}
+		}
+
+		bannerFrame->setDisabled(false);
+		if ( auto textGet = bannerTxt->getTextObject() )
+		{
+			SDL_Rect txtPos = bannerTxt->getSize();
+			if ( !strcmp(bannerTxt->getText(), "") && txtPos.w == 0 )
+			{
+				txtPos.w = 82;
+			}
+			else if ( strcmp(bannerTxt->getText(), "") )
+			{
+				txtPos.w = textGet->getWidth();
+			}
+
+			auto bannerGlyph = bannerFrame->findImage("banner glyph");
+			bannerGlyph->disabled = true;
+			bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
+			auto bannerGlyphModifier = bannerFrame->findImage("banner modifier glyph");
+			bannerGlyphModifier->disabled = true;
+			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Block");
+			if ( auto imgGet = Image::get(bannerGlyph->path.c_str()) )
+			{
+				bannerGlyph->pos.w = imgGet->getWidth();
+				bannerGlyph->pos.h = imgGet->getHeight();
+				bannerGlyph->disabled = disableActionGlyph || !strcmp(bannerTxt->getText(), "");
+			}
+			if ( auto imgGet = Image::get(bannerGlyphModifier->path.c_str()) )
+			{
+				bannerGlyphModifier->pos.w = imgGet->getWidth();
+				bannerGlyphModifier->pos.h = imgGet->getHeight();
+				bannerGlyphModifier->disabled = bannerGlyph->disabled || !modifierActiveForOption;
+			}
+
+			bannerImgCenter->pos.w = txtPos.w + 16 
+				+ (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2))
+				+ (bannerGlyphModifier->disabled ? 0 : (bannerGlyphModifier->pos.w + 2));
+			int missingSkillLevelIconWidth = 0;
+			if ( missingSkillLevel )
+			{
+				missingSkillLevelIconWidth = wheelStatImg->pos.w + wheelSkillImg->pos.w + 8;
+			}
+			bannerImgCenter->pos.w += missingSkillLevelIconWidth / 2;
+			const int totalWidth = bannerImgLeft->pos.w + bannerImgRight->pos.w + bannerImgCenter->pos.w;
+
+			const int midx = followerFrame->getSize().w / 2;
+			const int midy = followerFrame->getSize().h / 2;
+
+			SDL_Rect bannerSize = bannerFrame->getSize();
+			bannerSize.w = totalWidth;
+			bannerSize.x = midx - (totalWidth / 2);
+			bannerSize.y = midy + FollowerRadialMenu::followerWheelRadius + FollowerRadialMenu::followerWheelButtonThickness + 4;
+			if ( players[gui_player]->bUseCompactGUIHeight() )
+			{
+				bannerSize.y -= 16;
+			}
+			//bannerSize.y += 32 * (1.0 - animTitle);
+			bannerFrame->setSize(bannerSize);
+			bannerFrame->setOpacity(100.0 * animTitle);
+			bannerImgLeft->pos.x = 0;
+			bannerImgCenter->pos.x = bannerImgLeft->pos.x + bannerImgLeft->pos.w;
+			bannerImgRight->pos.x = bannerImgCenter->pos.x + bannerImgCenter->pos.w;
+
+			txtPos.x = bannerImgCenter->pos.x + (bannerImgCenter->pos.w / 2) - (txtPos.w / 2);
+			txtPos.x += bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2);
+			txtPos.x += bannerGlyphModifier->disabled ? 0 : ((bannerGlyphModifier->pos.w + 0) / 2);
+			if ( missingSkillLevel )
+			{
+				txtPos.x -= (missingSkillLevelIconWidth / 2) - 4;
+			}
+			if ( txtPos.x % 2 == 1 )
+			{
+				++txtPos.x;
+			}
+			if ( animInvalidAction > 0.01 )
+			{
+				txtPos.x += -2 + 2 * (cos(animInvalidAction * 4 * PI));
+			}
+			txtPos.y = 17;
+			bannerTxt->setSize(txtPos);
+
+			if ( missingSkillLevel )
+			{
+				wheelSkillImg->pos.x = txtPos.x + txtPos.w;
+				wheelSkillImg->pos.y = txtPos.y - 3;
+				wheelSkillImg->disabled = false;
+
+				wheelStatImg->pos.x = wheelSkillImg->pos.x + wheelSkillImg->pos.w;
+				wheelStatImg->pos.y = wheelSkillImg->pos.y;
+				wheelStatImg->disabled = false;
+			}
+
+			bannerGlyph->pos.x = txtPos.x - bannerGlyph->pos.w - 8;
+			if ( bannerGlyph->pos.x % 2 == 1 )
+			{
+				++bannerGlyph->pos.x;
+			}
+			bannerGlyph->pos.y = txtPos.y + txtPos.h / 2 - bannerGlyph->pos.h / 2;
+			if ( bannerGlyph->pos.y % 2 == 1 )
+			{
+				bannerGlyph->pos.y -= 1;
+			}
+			bannerSize.h = std::max(40, bannerGlyph->pos.y + bannerGlyph->pos.h);
+			if ( !bannerGlyphModifier->disabled )
+			{
+				bannerGlyphModifier->pos.x = txtPos.x - bannerGlyphModifier->pos.w - 8;
+				bannerGlyph->pos.x = bannerGlyphModifier->pos.x - bannerGlyph->pos.w - 2;
+
+				if ( bannerGlyphModifier->pos.x % 2 == 1 )
+				{
+					++bannerGlyphModifier->pos.x;
+				}
+				bannerGlyphModifier->pos.y = txtPos.y + txtPos.h / 2 - bannerGlyphModifier->pos.h / 2;
+				if ( bannerGlyphModifier->pos.y % 2 == 1 )
+				{
+					bannerGlyphModifier->pos.y -= 1;
+				}
+				bannerSize.h = std::max(bannerSize.h, bannerGlyphModifier->pos.y + bannerGlyphModifier->pos.h);
+			}
+			bannerFrame->setSize(bannerSize);
+
+			auto wheelTitleText = bgFrame->findField("wheel title");
+			if ( followerStats )
+			{
+				char buf[128] = "";
+				int spaces = 0;
+				int spaces2 = 0;
+				for ( int c = 0; c <= strlen(language[4200]); ++c )
+				{
+					if ( language[4200][c] == '\0' )
+					{
+						break;
+					}
+					if ( language[4200][c] == ' ' )
+					{
+						++spaces;
+					}
+				}
+				if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
+				{
+					snprintf(buf, sizeof(buf), language[4200], followerStats->name);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), language[4200], getMonsterLocalizedName(followerStats->type).c_str());
+				}
+
+				for ( int c = 0; c <= strlen(buf); ++c )
+				{
+					if ( buf[c] == '\0' )
+					{
+						break;
+					}
+					if ( buf[c] == ' ' )
+					{
+						++spaces2;
+					}
+				}
+				wheelTitleText->setText(buf);
+				wheelTitleText->clearWordsToHighlight();
+				int wordIndex = 1;
+				while ( spaces2 >= spaces ) // every additional space means +1 word to highlight for the monster's name
+				{
+					wheelTitleText->addWordToHighlight(wordIndex, followerTitleHighlightColor);
+					--spaces2;
+					++wordIndex;
+				}
+			}
+			SDL_Rect titlePos = wheelTitleText->getSize();
+			if ( auto textGet2 = wheelTitleText->getTextObject() )
+			{
+				titlePos.w = textGet2->getWidth();
+				titlePos.x = bannerSize.x + bannerSize.w / 2 - (titlePos.w / 2);
+				if ( titlePos.x % 2 == 1 )
+				{
+					++titlePos.x;
+				}
+				titlePos.y = midy - FollowerRadialMenu::followerWheelRadius - FollowerRadialMenu::followerWheelButtonThickness - 24;
+				titlePos.y -= 32 * (1.0 - animTitle);
+				++titlePos.y; // add 1 to be even pixeled
+				wheelTitleText->setSize(titlePos);
 			}
 		}
 
@@ -2643,13 +4140,21 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 		skillLVL = SKILL_LEVEL_LEGENDARY;
 	}
 
-	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
+	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
 	{
 		if ( updateInteractText )
 		{
-			strcpy(interactText, language[4043]); // "Attack "
+			if ( Input::inputs[gui_player].binary("Block") )
+			{
+				strcpy(interactText, language[4201]); //"(ALL) "
+				strcat(interactText, language[4043]); // "Attack "
+			}
+			else
+			{
+				strcpy(interactText, language[4043]); // "Attack "
+			}
 		}
 	}
 	else
@@ -2706,7 +4211,15 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			strcpy(interactText, language[4043]); // "Attack "
+			if ( Input::inputs[gui_player].binary("Block") )
+			{
+				strcpy(interactText, language[4201]); //"(ALL) "
+				strcat(interactText, language[4043]); // "Attack "
+			}
+			else
+			{
+				strcpy(interactText, language[4043]); // "Attack "
+			}
 			int monsterType = selectedEntity.getMonsterTypeFromSprite();
 			strcat(interactText, getMonsterLocalizedName((Monster)monsterType).c_str());
 		}
@@ -2722,7 +4235,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	return true;
 }
 
-int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monsterType, int option)
+int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monsterType, int option, Entity* follower)
 {
 	int creatureTier = 0;
 
@@ -2767,9 +4280,9 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	}
 
 	Stat* followerStats = nullptr;
-	if ( followerToCommand )
+	if ( follower )
 	{
-		followerStats = followerToCommand->getStats();
+		followerStats = follower->getStats();
 	}
 
 	int requirement = AllyNPCSkillRequirements[option];
@@ -2885,7 +4398,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	}
 
 	if ( option == ALLY_CMD_SPECIAL
-		&& followerToCommand->monsterAllySpecialCooldown != 0 )
+		&& follower->monsterAllySpecialCooldown != 0 )
 	{
 		return -2; // disabled due to cooldown.
 	}
@@ -2936,7 +4449,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_DROP_EQUIP:
-			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			if ( follower && follower->monsterAllySummonRank != 0 )
 			{
 				return -1;
 			}
@@ -3016,7 +4529,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_CLASS_TOGGLE:
-			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			if ( follower && follower->monsterAllySummonRank != 0 )
 			{
 				return 0;
 			}
@@ -6527,54 +8040,56 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	{
 	}*/
 	std::vector<Item*> items;
-	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 0;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 1;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 2;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 3;
-	items[items.size() - 1]->y = 0;
-	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = 4;
-	items[items.size() - 1]->y = 0;
 	items.push_back(newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 1;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 2;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 3;
+	items[items.size() - 1]->y = 0;
+	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 4;
+	items[items.size() - 1]->y = 0;
+
+	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 1;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 2;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 3;
 	items[items.size() - 1]->y = 1;
 	items.push_back(newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 4;
 	items[items.size() - 1]->y = 1;
-	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+
+	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 0;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 1;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 2;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 3;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items[items.size() - 1]->x = 4;
 	items[items.size() - 1]->y = 2;
-	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items[items.size() - 1]->x = -1;
-	items[items.size() - 1]->y = -1;
+	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items[items.size() - 1]->x = 0;
+	items[items.size() - 1]->y = 3;
 	for ( auto it = items.begin(); it != items.end(); ++it )
 	{
 		Item* item = *it;
@@ -7908,6 +9423,7 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 	return false;
 }
 
+const int TINKER_MIN_ITEM_SKILL_REQ = 10;
 
 int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 {
@@ -7927,7 +9443,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 		case TOOL_GLASSES:
 		case POTION_EMPTY:
 		case TOOL_DECOY:
-			if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity) >= 10 ) // 10 requirement
+			if ( stats[gui_player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[gui_player], players[gui_player]->entity) >= TINKER_MIN_ITEM_SKILL_REQ ) // 10 requirement
 			{
 				return 0;
 			}
@@ -9217,7 +10733,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 }
 
 const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_X = 5;
-const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_Y = 3;
+const int GenericGUIMenu::TinkerGUI_t::MAX_TINKER_Y = 4;
 
 void GenericGUIMenu::TinkerGUI_t::openTinkerMenu()
 {
@@ -9343,7 +10859,7 @@ void onTinkerChangeTabAction(const int playernum, bool changingToNewTab = true)
 	}
 }
 
-int GenericGUIMenu::TinkerGUI_t::heightOffsetWhenNotCompact = 200;
+int GenericGUIMenu::TinkerGUI_t::heightOffsetWhenNotCompact = 190;
 const int tinkerBaseWidth = 334;
 
 bool GenericGUIMenu::TinkerGUI_t::tinkerGUIHasBeenCreated() const
@@ -9741,7 +11257,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( !player->inventoryUI.bCompactView )
 		{
-			const int fullWidth = tinkerFramePos.w + 210 + (40 * (1.0 - animFilter)); // inventory width 210
+			const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
 			tinkerFramePos.x = -tinkerFramePos.w + animx * fullWidth;
 			if ( player->bUseCompactGUIWidth() )
 			{
@@ -9769,7 +11285,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( !player->inventoryUI.bCompactView )
 		{
-			const int fullWidth = tinkerFramePos.w + 210 + (40 * (1.0 - animFilter)); // inventory width 210
+			const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
 			tinkerFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
 			if ( player->bUseCompactGUIWidth() )
 			{
@@ -9823,9 +11339,9 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		drawerFrame->setDisabled(!bConstructDrawerOpen);
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
-		const int widthDifference = animDrawer * (drawerFramePos.w - 8);
+		const int widthDifference = animDrawer * (drawerFramePos.w);
 		drawerFramePos.x = 0;
-		drawerFramePos.y = 20;
+		drawerFramePos.y = 18;
 		drawerFrame->setSize(drawerFramePos);
 
 		tinkerFramePos.x -= widthDifference;
@@ -9931,10 +11447,17 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			tinkerKitStatus->setText("");
 		}
 
-		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
+		SDL_Rect textPos{ 0, 27, baseFrame->getSize().w, 24 };
 		tinkerKitTitle->setSize(textPos);
 		textPos.y += 20;
 		tinkerKitStatus->setSize(textPos);
+	}
+
+	// drawer title
+	if ( bConstructDrawerOpen )
+	{
+		auto blueprintsTitle = drawerFrame->findField("blueprints title");
+		blueprintsTitle->setText(language[4199]);
 	}
 
 	if ( itemActionType == TINKER_ACTION_OK	|| itemActionType == TINKER_ACTION_OK_UPGRADE
@@ -9969,10 +11492,10 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 
 		auto heldScrapBg = baseFrame->findImage("held scrap img");
 		heldScrapBg->pos.x = baseFrame->getSize().w - 18 - heldScrapBg->pos.w;
-		heldScrapBg->pos.y = baseFrame->getSize().h - 48 - 38;
+		heldScrapBg->pos.y = baseFrame->getSize().h - 48 - 32;
 
-		SDL_Rect metalPos{ heldScrapBg->pos.x, heldScrapBg->pos.y + 9, 74, 24 };
-		SDL_Rect magicPos{ heldScrapBg->pos.x, heldScrapBg->pos.y + 9, 166, 24 };
+		SDL_Rect metalPos{ heldScrapBg->pos.x - 4, heldScrapBg->pos.y + 9, 74, 24 };
+		SDL_Rect magicPos{ heldScrapBg->pos.x - 24, heldScrapBg->pos.y + 9, 166, 24 };
 		metalHeldText->setSize(metalPos);
 		metalHeldText->setColor(hudColors.characterSheetLightNeutral);
 		magicHeldText->setSize(magicPos);
@@ -9981,7 +11504,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		updateTinkerScrapHeld(metalHeldText, magicHeldText, heldMetalScrap, heldMagicScrap);
 
 		SDL_Rect heldScrapTxtPos = heldScrapText->getSize();
-		heldScrapTxtPos.w = heldScrapBg->pos.x - 4;
+		heldScrapTxtPos.w = heldScrapBg->pos.x + 2;
 		heldScrapTxtPos.x = 0;
 		heldScrapTxtPos.y = metalPos.y;
 		heldScrapTxtPos.h = 24;
@@ -10030,15 +11553,40 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3645]);
+
+		Uint32 inactiveColor = hudColors.characterSheetDarker1Neutral;
+		Uint32 activeColor = hudColors.characterSheetOffWhiteText;
+		Uint32 highlightColor = hudColors.characterSheetLighter1Neutral;
+
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Center_00.png");
+		Field* filterTxt = baseFrame->findField("filter salvage txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3645]);
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 126, 264, 82, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 116, 274, 94, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 		}
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_CenterHigh_00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -10056,17 +11604,38 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3644]);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Left_00.png");
+		filterTxt = baseFrame->findField("filter craft txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3644]);
+
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 50, 264, 70, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 44, 274, 74, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 			filterLeftSideX = btnPos.x;
 			filterStartY = btnPos.y;
 		}
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_LeftHigh_00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -10084,16 +11653,36 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3646]);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Right_00.png");
+		filterTxt = baseFrame->findField("filter repair txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3646]);
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 214, 264, 70, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 208, 274, 82, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 			filterRightSideX = btnPos.x + btnPos.w;
 		}
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_RightHigh_00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -10159,13 +11748,13 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
 	displayItemNamePos.h = 50;
 	displayItemName->setSize(displayItemNamePos);
-	SDL_Rect actionPromptTxtPos{ 0, 197, baseFrame->getSize().w - 18 - 8, 24 };
+	SDL_Rect actionPromptTxtPos{ 0, 211, baseFrame->getSize().w - 18 - 8, 24 };
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
 	tooltipPos.w = 298;
 	tooltipPos.h = baseFrame->getSize().h - 100;
-	tooltipPos.y = 88;
+	tooltipPos.y = 98;
 	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
 	itemDisplayTooltip->setSize(tooltipPos);
 
@@ -10200,7 +11789,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto costScrapText = itemDisplayTooltip->findField("item cost label");
 	{
 		costBg->pos.x = displayItemTextImgBaseX + displayItemTextImg->pos.w - costBg->pos.w;
-		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
+		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h + 4;
 		SDL_Rect metalPos{ costBg->pos.x + 12, costBg->pos.y + 9, 50, 24 };
 		SDL_Rect magicPos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
 		metalText->setSize(metalPos);
@@ -10537,7 +12126,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	else
 	{
 		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
-			|| (usingGamepad && !bConstructDrawerOpen)
+			|| (usingGamepad)
 			|| animTooltip < 0.9999 )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -10582,8 +12171,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
 	actionPromptCoverLeftImg->pos.x = 0;
 	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
-	actionPromptCoverLeftImg->pos.y = 60;
-	actionPromptCoverRightImg->pos.y = 60;
+	actionPromptCoverLeftImg->pos.y = 70;
+	actionPromptCoverRightImg->pos.y = 70;
 
 	{
 		actionPromptUnselectedTxt->setDisabled(false);
@@ -10613,7 +12202,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			{
 				pos.x += actionPromptUnselectedTxt->getSize().w * animPrompt;
 			}
-			pos.y = 63;
+			pos.y = 73;
 			actionPromptUnselectedTxt->setSize(pos);
 		}
 
@@ -10669,6 +12258,13 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	filterNavLeft->disabled = true;
 	auto filterNavRight = baseFrame->findImage("filter nav right");
 	filterNavRight->disabled = true;
+	auto filterNavLeftArrow = baseFrame->findImage("filter nav left arrow");
+	filterNavLeftArrow->disabled = true;
+	auto filterNavRightArrow = baseFrame->findImage("filter nav right arrow");
+	filterNavRightArrow->disabled = true;
+
+	static ConsoleVariable<int> cvar_tinkNavGlyphY("/tinker_glyph_nav_y", 30);
+	static ConsoleVariable<int> cvar_tinkNavGlyphX("/tinker_glyph_nav_x", 8);
 
 	if ( usingGamepad )
 	{
@@ -10678,18 +12274,35 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterNavLeft->pos.w = imgGet->getWidth();
 			filterNavLeft->pos.h = imgGet->getHeight();
 			filterNavLeft->disabled = false;
-			filterNavLeft->pos.x = filterLeftSideX - filterNavLeft->pos.w - 6;
-			filterNavLeft->pos.y = filterStartY + 10;
+
+			filterNavLeftArrow->disabled = false;
+			filterNavLeftArrow->pos.x = 12;
+			filterNavLeftArrow->pos.y = filterStartY - 6;
+
+			filterNavLeft->pos.x = filterNavLeftArrow->pos.x - 10 + *cvar_tinkNavGlyphX;
+			filterNavLeft->pos.y = filterNavLeftArrow->pos.y + filterNavLeftArrow->pos.h - 2;
+			filterNavLeft->pos.y -= filterNavLeft->pos.h;
+			filterNavLeft->pos.y -= *cvar_tinkNavGlyphY;
 		}
+
 		filterNavRight->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRight");
 		if ( auto imgGet = Image::get(filterNavRight->path.c_str()) )
 		{
 			filterNavRight->pos.w = imgGet->getWidth();
 			filterNavRight->pos.h = imgGet->getHeight();
 			filterNavRight->disabled = false;
-			filterNavRight->pos.x = filterRightSideX + 6;
-			filterNavRight->pos.y = filterStartY + 10;
+
+			filterNavRightArrow->disabled = false;
+			filterNavRightArrow->pos.x = filterRightSideX + 2;
+			filterNavRightArrow->pos.y = filterStartY - 6;
+
+			filterNavRight->pos.x = filterNavRightArrow->pos.x + filterNavRightArrow->pos.w + 10;
+			filterNavRight->pos.x -= filterNavRight->pos.w + *cvar_tinkNavGlyphX;
+			filterNavRight->pos.y = filterNavRightArrow->pos.y + filterNavRightArrow->pos.h - 2;
+			filterNavRight->pos.y -= filterNavRight->pos.h;
+			filterNavRight->pos.y -= *cvar_tinkNavGlyphY;
 		}
+
 	}
 
 	bool activateSelection = false;
@@ -10950,6 +12563,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 }
 
+const int kTinkerCraftSlotHeightOffset = 6; // slightly taller than normal slots
+
 void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 {
 	const int player = parentGUI.getPlayer();
@@ -10962,16 +12577,26 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		return;
 	}
 
-	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 304 };
+	SDL_Rect basePos{ 0, 0, tinkerBaseWidth, 312 };
 	{
 		auto drawerFrame = tinkerFrame->addFrame("tinker drawer");
-		SDL_Rect drawerPos{ 0, 0, 258, 228 };
+		SDL_Rect drawerPos{ 0, 0, 210, 256 };
 		drawerFrame->setSize(drawerPos);
 		drawerFrame->setHollow(false);
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Tinkering/Tinker_Construct_Drawer_00.png", "tinker drawer img");
+			"*images/ui/Tinkering/Tinker_Construct_Drawer_01.png", "tinker drawer img");
 		drawerFrame->setDisabled(true);
+
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto blueprintsTitle = drawerFrame->addField("blueprints title", 128);
+		blueprintsTitle->setFont(headerFont);
+		blueprintsTitle->setText(language[4199]);
+		blueprintsTitle->setHJustify(Field::justify_t::CENTER);
+		blueprintsTitle->setVJustify(Field::justify_t::TOP);
+		blueprintsTitle->setSize(SDL_Rect{ 60, 1, 90, 24 });
+		blueprintsTitle->setTextColor(hudColors.characterSheetLightNeutral);
+		blueprintsTitle->setOutlineColor(makeColor(29, 16, 11, 255));
 
 		const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
 
@@ -10980,14 +12605,15 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		const int baseSlotOffsetX = 0;
 		const int baseSlotOffsetY = 0;
 
-		SDL_Rect tinkerSlotsPos{ 0, 38, 258, 150 };
+		SDL_Rect tinkerSlotsPos{ 0, 0, 210, 256 };
 		{
 			const auto drawerSlotsFrame = drawerFrame->addFrame("drawer slots");
 			drawerSlotsFrame->setSize(tinkerSlotsPos);
 			drawerSlotsFrame->setHollow(true);
 
-			auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
-			makeColor(255, 255, 255, 255), "*images/ui/Tinkering/Tinker_Construct_DrawerSlots_00.png", "grid img");
+			/*auto gridImg = drawerSlotsFrame->addImage(SDL_Rect{ 0, 0, tinkerSlotsPos.w, tinkerSlotsPos.h },
+			makeColor(255, 255, 255, 255), "*images/ui/Tinkering/Tinker_Construct_DrawerSlots_01.png", "grid img");
+			gridImg->disabled = true;*/
 
 			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
 			const int maxTinkerX = MAX_TINKER_X;
@@ -10996,23 +12622,29 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			const int slotInnerWidth = inventorySlotSize - 2;
 			std::vector<std::pair<int, int>> slotCoords =
 			{
-				std::make_pair(28 + (slotInnerWidth + 2) * 0, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 1, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 2, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 3, 0),
-				std::make_pair(28 + (slotInnerWidth + 2) * 4, 0),
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 26),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 26),
 
-				std::make_pair(22, 48),
-				std::make_pair(22 + (slotInnerWidth + 6), 48),
-				std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 1, 48),
-				std::make_pair(22 + (slotInnerWidth + 6) + (slotInnerWidth + 4) * 2, 48),
-				std::make_pair(22 + (slotInnerWidth + 6) * 2 + (slotInnerWidth + 4) * 2, 48),
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 76),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 76),
 
-				std::make_pair(14, 110),
-				std::make_pair(14 + (slotInnerWidth + 10), 110),
-				std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 1, 110),
-				std::make_pair(14 + (slotInnerWidth + 10) + (slotInnerWidth + 8) * 2, 110),
-				std::make_pair(14 + (slotInnerWidth + 10) * 2 + (slotInnerWidth + 8) * 2, 110)
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 144),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 144),
+
+				std::make_pair(4 + (slotInnerWidth + 2) * 0, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 1, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 2, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 3, 194),
+				std::make_pair(4 + (slotInnerWidth + 2) * 4, 194)
 			};
 			auto slotCoordsIt = slotCoords.begin();
 			for ( int y = 0; y < maxTinkerY; ++y )
@@ -11026,16 +12658,32 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 
 					auto slotFrame = drawerSlotsFrame->addFrame(slotname);
 					tinkerSlotFrames[x + y * 100] = slotFrame;
-					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
+					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y - kTinkerCraftSlotHeightOffset, 
+						inventorySlotSize, inventorySlotSize + kTinkerCraftSlotHeightOffset };
+					if ( x == 0 )
+					{
+						slotPos.x += 2; // left/right columns have slightly thinner width
+						slotPos.w -= 2;
+					}
+					if ( x == maxTinkerX - 1 )
+					{
+						slotPos.w -= 2;
+					}
 					slotFrame->setSize(slotPos);
 
 					createPlayerInventorySlotFrameElements(slotFrame);
+					if ( auto itemSprite = slotFrame->findFrame("item sprite frame") )
+					{
+						SDL_Rect pos = itemSprite->getSize();
+						pos.y += 6;
+						itemSprite->setSize(pos);
+					}
 					if ( slotCoordsIt != slotCoords.end() )
 					{
 						++slotCoordsIt;
 					}
-					//slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
-					//	"images/system/white.png", "tmp");
+					/*slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
+						"images/system/white.png", "tmp");*/
 					slotFrame->setDisabled(true);
 				}
 			}
@@ -11075,9 +12723,6 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		itemDisplayTooltip->setHollow(true);
 		itemDisplayTooltip->setInheritParentFrameOpacity(false);
 		{
-			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 108 },
-				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_Tooltip_00.png", "tooltip img");
-
 			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
 			itemNameText->setFont(itemFont);
 			itemNameText->setText("");
@@ -11128,7 +12773,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 
 		{
 			auto closeBtn = bgFrame->addButton("close tinker button");
-			SDL_Rect closeBtnPos{ basePos.w - 8 - 26, 8, 26, 26 };
+			SDL_Rect closeBtnPos{ basePos.w - 4 - 26, 14, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -11182,10 +12827,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			actionPromptUnselectedTxt->setColor(makeColor(255, 255, 255, 255));
 			actionPromptUnselectedTxt->setDisabled(true);
 
-			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 60, 56, 26 },
+			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 70, 56, 26 },
 				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_PromptCoverLeft_00.png", "action prompt lcover");
 			actionPromptCoverLeftImg->ontop = true;
-			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 60, 56, 26 },
+			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 70, 56, 26 },
 				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_PromptCoverRight_00.png", "action prompt rcover");
 			actionPromptCoverRightImg->ontop = true;
 		}
@@ -11207,9 +12852,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			Button* filterBtn = bgFrame->addButton("filter salvage btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Salvage");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Center_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -11230,12 +12876,23 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
+			Field* filterTxt = bgFrame->addField("filter salvage txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Salvage");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
 			filterBtn = bgFrame->addButton("filter craft btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Craft");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Left_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -11249,12 +12906,23 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
+			filterTxt = bgFrame->addField("filter craft txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Craft");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
 			filterBtn = bgFrame->addButton("filter repair btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Repair");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Right_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -11268,6 +12936,23 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
+			filterTxt = bgFrame->addField("filter repair txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Repair");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
+			auto filterNavLeftArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Button_ArrowL_00.png", "filter nav left arrow");
+			filterNavLeftArrow->disabled = true;
+			auto filterNavRightArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
+				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Button_ArrowR_00.png", "filter nav right arrow");
+			filterNavRightArrow->disabled = true;
+
 			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "filter nav left");
 			filterNavLeft->disabled = true;
@@ -11277,7 +12962,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		}
 
 		{
-			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 34 },
+			auto heldScrapBg = bgFrame->addImage(SDL_Rect{ 0, 0, 176, 36 },
 				0xFFFFFFFF, "*images/ui/Tinkering/Tinker_ScrapBacking_00.png", "held scrap img");
 
 			auto heldScrapText = bgFrame->addField("held scrap label", 64);
@@ -11487,6 +13172,10 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 				Sint32 oldPER = stats[player]->PER;
 				stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+				if ( itemRequirement == 0 )
+				{
+					itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+				}
 				stats[player]->PER = oldPER;
 				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
 			}
@@ -11623,6 +13312,10 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 				Sint32 oldPER = stats[player]->PER;
 				stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 				itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+				if ( itemRequirement == 0 )
+				{
+					itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+				}
 				stats[player]->PER = oldPER;
 				stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
 			}
@@ -11652,7 +13345,15 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 						default:
 							break;
 					}
-					itemRequirement = std::min(100, craftRequirement * 20 + diff);
+					if ( craftRequirement == 0 )
+					{
+						craftRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+					}
+					else
+					{
+						craftRequirement *= 20;
+					}
+					itemRequirement = std::min(100, craftRequirement + diff);
 				}
 				else
 				{
@@ -11661,6 +13362,10 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 					Sint32 oldPER = stats[player]->PER;
 					stats[player]->PER += -statGetPER(stats[player], players[player]->entity);
 					itemRequirement = parentGUI.tinkeringPlayerHasSkillLVLToCraft(item) * 20; // manually hack this to max to get requirement
+					if ( itemRequirement == 0 )
+					{
+						itemRequirement = TINKER_MIN_ITEM_SKILL_REQ;
+					}
 					stats[player]->PER = oldPER;
 					stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = oldTinkering;
 				}

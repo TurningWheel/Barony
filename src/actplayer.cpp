@@ -527,7 +527,8 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	if ( player.shootmode && !player.usingCommand()
 		&& !gamePaused
-		&& player.bControlEnabled )
+		&& player.bControlEnabled
+		&& player.hotbar.faceMenuButtonHeld == Hotbar_t::FaceMenuGroup::GROUP_NONE )
 	{
 		if ( Input::inputs[playernum].consumeBinaryToggle("Quick Turn") )
 		{
@@ -809,7 +810,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				PLAYER_BOBMOVE -= .03 * refreshRateDelta;
 			}
 		}
-		else if ( !gamePaused 
+		else if ( !gamePaused
 			&& ((!inputs.hasController(PLAYER_NUM) 
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
@@ -842,6 +843,12 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 						PLAYER_BOBMOVE -= .025 * refreshRateDelta;
 					}
 				}
+			}
+			else if ( !swimming )
+			{
+				PLAYER_BOBMOVE = 0;
+				PLAYER_BOB = 0;
+				PLAYER_BOBMODE = 0;
 			}
 		}
 		else if ( !swimming )
@@ -995,7 +1002,7 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 
 real_t Player::PlayerMovement_t::getMaximumSpeed()
 {
-	real_t maxSpeed = 18.0;
+	real_t maxSpeed = 12.5;
 	if ( gameplayCustomManager.inUse() )
 	{
 		maxSpeed = gameplayCustomManager.playerSpeedMax;
@@ -1060,8 +1067,19 @@ int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
 
 real_t Player::PlayerMovement_t::getWeightRatio(int weight, Sint32 STR)
 {
+	real_t weightratio_zero = (1000 - weight) / (double)(1000);
+	weightratio_zero = fmin(fmax(0, weightratio_zero), 1);
+	real_t curveExponentFactor = 2.0;
+	int curveYoffset = 1;
+	weightratio_zero = -pow(1.0 - weightratio_zero, curveExponentFactor) + curveYoffset;
+
 	real_t weightratio = (1000 + STR * 100 - weight) / (double)(1000 + STR * 100);
 	weightratio = fmin(fmax(0, weightratio), 1);
+
+	if ( weight <= 1000 )
+	{
+		weightratio = std::max(weightratio, weightratio_zero);
+	}
 	return weightratio;
 }
 
@@ -1074,15 +1092,15 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, maxSpeed);
-	if ( DEX <= 5 )
+	else if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
 	{
-		speedFactor = std::min((DEX + 10) * weightratio, maxSpeed);
+		maxSpeed += 1.0;
 	}
-	else if ( DEX <= 15 )
+	real_t speedFactor = std::min((((DEX) * .4) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
+	/*if ( DEX <= 5 )
 	{
-		speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, maxSpeed);
-	}
+		speedFactor = std::min(((DEX * 0.5) + 8.5) * weightratio, maxSpeed);
+	}*/
 
 	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
 	{
@@ -1208,10 +1226,25 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
-		/*if ( ticks % 50 == 0 )
+		static ConsoleVariable<bool> cvar_debugspeedfactor("/player_showspeedfactor", false);
+		if ( *cvar_debugspeedfactor && ticks % 50 == 0 )
 		{
-		messagePlayer(0, "%f", speedFactor);
-		}*/
+			Sint32 STR = statGetSTR(stats[PLAYER_NUM], players[PLAYER_NUM]->entity);
+			real_t weightratioOld = (1000 + STR * 100 - weight) / (double)(1000 + STR * 100);
+			weightratioOld = fmin(fmax(0, weightratioOld), 1);
+			real_t maxSpeed = getMaximumSpeed();
+			Sint32 DEX = statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity);
+			real_t speedFactorOld = std::min((DEX * 0.1 + 15.5) * weightratioOld, maxSpeed);
+			if ( DEX <= 5 )
+			{
+				speedFactorOld = std::min((DEX + 10) * weightratioOld, maxSpeed);
+			}
+			else if ( DEX <= 15 )
+			{
+				speedFactorOld = std::min((DEX * 0.2 + 14) * weightratioOld, maxSpeed);
+			}
+			messagePlayer(0, MESSAGE_DEBUG, "New: %.3f | Old: %.3f | (%+.3f)", speedFactor, speedFactorOld, 100.0 * ((speedFactor / speedFactorOld) - 1.0));
+		}
 		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
@@ -1254,22 +1287,21 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	//if ( keystatus[SDL_SCANCODE_G] )
 	//{
-	//	//messagePlayer(0, "X: %5.5f, Y: %5.5f", PLAYER_VELX, PLAYER_VELY);
-	//	//messagePlayer(0, "Vel: %5.5f", getCurrentMovementSpeed());
+		//messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
+		//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
 	//}
 
-	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( entity == my )
+		if ( players[i] && players[i]->entity )
 		{
-			continue;
-		}
-		if ( entity->behavior == &actPlayer )
-		{
-			if ( entityInsideEntity(my, entity) )
+			if ( players[i]->entity == my )
 			{
-				double tangent = atan2(my->y - entity->y, my->x - entity->x);
+				continue;
+			}
+			if ( entityInsideEntity(my, players[i]->entity) )
+			{
+				double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 				PLAYER_VELX += cos(tangent) * 0.075 * refreshRateDelta;
 				PLAYER_VELY += sin(tangent) * 0.075 * refreshRateDelta;
 			}
@@ -4375,7 +4407,11 @@ void actPlayer(Entity* my)
 				bool skipUse = false;
 				if ( players[PLAYER_NUM]->worldUI.isEnabled() )
 				{
-					if ( !players[PLAYER_NUM]->shootmode && inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
+					if ( !players[PLAYER_NUM]->shootmode && input.input("Use").isBindingUsingGamepad() )
+					{
+						skipUse = true;
+					}
+					else if ( !players[PLAYER_NUM]->shootmode && inputs.bPlayerUsingKeyboardControl(PLAYER_NUM) )
 					{
 						tempDisableWorldUI = true;
 					}
@@ -4386,7 +4422,7 @@ void actPlayer(Entity* my)
 						skipUse = true;
 					}
 				}
-				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && inputs.hasController(PLAYER_NUM) 
+				else if ( !players[PLAYER_NUM]->worldUI.isEnabled() && input.input("Use").isBindingUsingGamepad()
 					&& !players[PLAYER_NUM]->shootmode )
 				{
 					skipUse = true;
@@ -4549,19 +4585,40 @@ void actPlayer(Entity* my)
 				auto& b = input.getBindings();
 				bool showNPCCommandsOnGamepad = false;
 				auto showNPCCommandsFind = b.find("Show NPC Commands");
+				std::string showNPCCommandsInputStr = "";
+				std::string lastNPCCommandInputStr = "";
 				if ( showNPCCommandsFind != b.end() )
 				{
 					showNPCCommandsOnGamepad = (*showNPCCommandsFind).second.isBindingUsingGamepad();
+					showNPCCommandsInputStr = (*showNPCCommandsFind).second.input;
 				}
 				bool lastNPCCommandOnGamepad = false;
 				auto lastNPCCommandFind = b.find("Command NPC");
 				if ( lastNPCCommandFind != b.end() )
 				{
 					lastNPCCommandOnGamepad = (*lastNPCCommandFind).second.isBindingUsingGamepad();
+					lastNPCCommandInputStr = (*lastNPCCommandFind).second.input;
 				}
 				
+				if ( players[PLAYER_NUM]->worldUI.bTooltipInView && players[PLAYER_NUM]->worldUI.tooltipsInRange.size() > 1 )
+				{
+					if ( showNPCCommandsOnGamepad &&
+						(showNPCCommandsInputStr == input.binding("CycleWorldTooltipNext")
+							|| showNPCCommandsInputStr == input.binding("CycleWorldTooltipPrev")) )
+					{
+						input.consumeBinaryToggle("Show NPC Commands");
+					}
+					if ( lastNPCCommandOnGamepad &&
+						(lastNPCCommandInputStr == input.binding("CycleWorldTooltipNext")
+							|| lastNPCCommandInputStr == input.binding("CycleWorldTooltipPrev")) )
+					{
+						input.consumeBinaryToggle("Command NPC");
+					}
+				}
+
 				if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
-						|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad && players[PLAYER_NUM]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
+						|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad 
+							&& players[PLAYER_NUM]->shootmode /*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 				{
 					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
 						&& followerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
@@ -4572,7 +4629,7 @@ void actPlayer(Entity* my)
 					{
 						selectedEntity[PLAYER_NUM] = followerMenu.recentEntity;
 						followerMenu.holdWheel = true;
-						if ( inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_FOLLOWERMENU) )
+						if ( showNPCCommandsOnGamepad )
 						{
 							followerMenu.holdWheel = false;
 						}
@@ -4719,8 +4776,10 @@ void actPlayer(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((i == 0 && selectedEntity[0] == my) || (client_selected[i] == my)
-				|| i == PLAYER_CLICKED - 1 || (i > 0 && splitscreen && selectedEntity[i] == my) )
+			if ( (i == 0 && selectedEntity[0] == my) 
+				|| (client_selected[i] == my)
+				|| (i == PLAYER_CLICKED - 1) 
+				|| (i > 0 && splitscreen && selectedEntity[i] == my) )
 			{
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)

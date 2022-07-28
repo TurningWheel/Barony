@@ -112,14 +112,14 @@ public:
 	{
 		INVALID = -2,
 		CENTERED = -1,
-		UP,
-		UPLEFT,
-		LEFT,
-		DOWNLEFT,
 		DOWN,
-		DOWNRIGHT,
+		DOWNLEFT,
+		LEFT,
+		UPLEFT,
+		UP,
+		UPRIGHT,
 		RIGHT,
-		UPRIGHT
+		DOWNRIGHT
 	};
 
 	enum RadialSelection : int
@@ -722,7 +722,8 @@ public:
 			MODULE_SPELLS,
 			MODULE_STATUS_EFFECTS,
 			MODULE_LOG,
-			MODULE_MAP
+			MODULE_MAP,
+			MODULE_SIGN_VIEW
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -1154,6 +1155,29 @@ public:
 		void openBook(int index, Item* item);
 	} bookGUI;
 
+	class SignGUI_t
+	{
+		Player& player;
+	public:
+		static const int SIGN_WIDTH = 220;
+		static const int SIGN_HEIGHT = 260;
+		SignGUI_t(Player& p) : player(p)
+		{};
+		~SignGUI_t() {};
+
+		real_t signFadeInAnimationY = 0.0;
+
+		Frame* signFrame = nullptr;
+		bool bSignOpen = false;
+		std::string signName = "";
+		int currentSignPage = 0;
+		void updateSignGUI();
+		void closeSignGUI();
+		void createSignGUI();
+		void openSign(std::string name, Uint32 uid);
+		Uint32 signUID = 0;
+	} signGUI;
+
 	class CharacterSheet_t
 	{
 		Player& player;
@@ -1272,6 +1296,8 @@ public:
 				int skillId = -1;
 				std::string skillIconPath;
 				std::string skillIconPathLegend;
+				std::string skillIconPath32px;
+				std::string skillIconPathLegend32px;
 				std::string statIconPath;
 				std::string description;
 				std::string legendaryDescription;
@@ -1347,6 +1373,7 @@ public:
 		Frame* cursorFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
 		real_t hudDamageTextVelocityY = 0.0;
+		real_t animHideXP = 0.0;
 
 		Entity* weapon = nullptr;
 		Entity* arm = nullptr;
@@ -1769,7 +1796,8 @@ public:
 		int radialHotbarSlots = NUM_HOTBAR_SLOTS;
 		int radialHotbarProgress = 0;
 		int oldSlotFrameTrackSlot = -1;
-		// end temp stuff
+		
+		real_t animHide = 0.0;
 
 		std::array<SDL_Rect, NUM_HOTBAR_SLOTS> faceButtonPositions;
 		const int getSlotSize() const { return 48; }

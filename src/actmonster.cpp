@@ -3473,6 +3473,33 @@ void actMonster(Entity* my)
 		}
 	}
 
+	if ( my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
+		&& myStats && myStats->leader_uid != 0 && my->flags[USERFLAG2] )
+	{
+		if ( !uidToEntity(myStats->leader_uid) )
+		{
+			my->flags[USERFLAG2] = false;
+			serverUpdateEntityFlag(my, USERFLAG2);
+			if ( monsterChangesColorWhenAlly(myStats) )
+			{
+				int bodypart = 0;
+				for ( node_t* node = my->children.first; node != nullptr; node = node->next )
+				{
+					if ( bodypart >= LIMB_HUMANOID_TORSO )
+					{
+						Entity* tmp = (Entity*)node->element;
+						if ( tmp )
+						{
+							tmp->flags[USERFLAG2] = false;
+							serverUpdateEntityFlag(tmp, USERFLAG2);
+						}
+					}
+					++bodypart;
+				}
+			}
+		}
+	}
+
 	bool wasInsideEntity = false;
 	if ( my->isMobile() )
 	{
@@ -4628,6 +4655,7 @@ timeToGoAgain:
 												{
 													hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 												}
+												updateEnemyBar(my, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 												playSoundEntity(hit.entity, 28, 64);
 												if ( hit.entity->doorHealth <= 0 )
 												{
@@ -5692,6 +5720,7 @@ timeToGoAgain:
 											{
 												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 											}
+											updateEnemyBar(my, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 											playSoundEntity(hit.entity, 28, 64);
 											if ( hit.entity->doorHealth <= 0 )
 											{

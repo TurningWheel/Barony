@@ -306,6 +306,7 @@ int initGame()
 		Player::SkillSheet_t::loadSkillSheetJSON();
 		Player::CharacterSheet_t::loadCharacterSheetJSON();
 		StatusEffectQueue_t::loadStatusEffectsJSON();
+		FollowerRadialMenu::loadFollowerJSON();
 
 		updateLoadingScreen(94);
 

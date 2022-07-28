@@ -1117,7 +1117,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 	}
 	else
 	{
-		if ( item == players[player]->bookGUI .openBookItem )
+		if ( item == players[player]->bookGUI.openBookItem )
 		{
 			players[player]->bookGUI.closeBookGUI();
 		}

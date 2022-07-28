@@ -2160,9 +2160,6 @@ int loadGame(int player, int saveIndex)
 	            (1 << 3);
 	    }
 	}
-	for (int c = 0; c < MAXPLAYERS; ++c) {
-	    client_disconnected[c] = !(players_connected & (1<<c));
-	}
 	switch (mul) {
 	default:
 	case SINGLE: multiplayer = SINGLE; splitscreen = false; directConnect = false; break;
@@ -2172,6 +2169,13 @@ int loadGame(int player, int saveIndex)
 	case DIRECTCLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = true; break;
 	case SERVERCROSSPLAY: multiplayer = SERVER; splitscreen = false; directConnect = false; break; // TODO!
 	case SPLITSCREEN: multiplayer = SINGLE; splitscreen = true; directConnect = false; break;
+	}
+
+	if ( multiplayer == SINGLE )
+	{
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			client_disconnected[c] = !(players_connected & (1<<c));
+		}
 	}
 
 	fp->read(&clientnum, sizeof(Uint32), 1);
