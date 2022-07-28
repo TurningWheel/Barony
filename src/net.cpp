@@ -4815,7 +4815,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	}},
 
 	// message
-	{'DISC', [](){
+	{'MSGS', [](){
 		int pnum = net_packet->data[4];
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
