@@ -869,7 +869,7 @@ void Player::SignGUI_t::updateSignGUI()
 						Frame::image_t* img = allImgs[imgIndex];
 						imgsThisLine.push_back(img);
 
-						if ( var.value == "Pause Game" && inputs.bPlayerUsingKeyboardControl(player.playernum) )
+						if ( var.value == "Pause Game" && Input::inputs[player.playernum].input("Pause Game").isBindingUsingKeyboard() )
 						{
 							img->path = Input::inputs[player.playernum].getGlyphPathForInput("Escape");
 						}
