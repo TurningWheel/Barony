@@ -1067,5 +1067,15 @@ void Player::SignGUI_t::updateSignGUI()
 		}
 		allFields[line]->addWordToHighlight(highlight, signEntry.fontHighlightColor);
 	}
+	for ( auto highlight : signEntry.wordHighlights2 )
+	{
+		int line = 0;
+		while ( highlight >= Field::TEXT_HIGHLIGHT_WORDS_PER_LINE )
+		{
+			highlight -= Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+			++line;
+		}
+		allFields[line]->addWordToHighlight(highlight, signEntry.fontHighlight2Color);
+	}
 	return;
 }

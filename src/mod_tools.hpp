@@ -2899,7 +2899,9 @@ public:
 		Uint32 fontColor = 0xFFFFFFFF;
 		Uint32 fontOutlineColor = 0xFFFFFFFF;
 		Uint32 fontHighlightColor = 0xFFFFFFFF;
+		Uint32 fontHighlight2Color = 0xFFFFFFFF;
 		std::vector<int> wordHighlights;
+		std::vector<int> wordHighlights2;
 		int imageInlineTextAdjustX = 0; // when img is placed inbetween text, move it by this adjustment to center
 	};
 	std::map<std::string, Entry_t> allEntries;

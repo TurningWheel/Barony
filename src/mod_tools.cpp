@@ -3996,6 +3996,7 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 		Uint32 defaultFontColor = 0xFFFFFFFF;
 		Uint32 defaultFontOutlineColor = 0;
 		Uint32 defaultFontHighlightColor = 0xFFFFFFFF;
+		Uint32 defaultFontHighlight2Color = 0xFFFFFFFF;
 		if ( d.HasMember("default_attributes") )
 		{
 			if ( d["default_attributes"].HasMember("font_color") )
@@ -4021,6 +4022,14 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 					d["default_attributes"]["font_highlight_color"]["g"].GetInt(),
 					d["default_attributes"]["font_highlight_color"]["b"].GetInt(),
 					d["default_attributes"]["font_highlight_color"]["a"].GetInt());
+			}
+			if ( d["default_attributes"].HasMember("font_highlight2_color") )
+			{
+				defaultFontHighlight2Color = makeColor(
+					d["default_attributes"]["font_highlight2_color"]["r"].GetInt(),
+					d["default_attributes"]["font_highlight2_color"]["g"].GetInt(),
+					d["default_attributes"]["font_highlight2_color"]["b"].GetInt(),
+					d["default_attributes"]["font_highlight2_color"]["a"].GetInt());
 			}
 		}
 
@@ -4172,6 +4181,14 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 							entry_itr->value["attributes"]["font_highlight_color"]["b"].GetInt(),
 							entry_itr->value["attributes"]["font_highlight_color"]["a"].GetInt());
 					}
+					if ( entry_itr->value["attributes"].HasMember("font_highlight2_color") )
+					{
+						entry.fontHighlight2Color = makeColor(
+							entry_itr->value["attributes"]["font_highlight2_color"]["r"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight2_color"]["g"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight2_color"]["b"].GetInt(),
+							entry_itr->value["attributes"]["font_highlight2_color"]["a"].GetInt());
+					}
 					if ( entry_itr->value["attributes"].HasMember("word_highlights") )
 					{
 						if ( entry_itr->value["attributes"]["word_highlights"].IsArray() )
@@ -4183,6 +4200,22 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 								for ( auto line_itr = (*highlight_itr).Begin(); line_itr != (*highlight_itr).End(); ++line_itr )
 								{
 									entry.wordHighlights.push_back(lineNumber + line_itr->GetInt());
+								}
+								lineNumber += Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
+							}
+						}
+					}
+					if ( entry_itr->value["attributes"].HasMember("word_highlights2") )
+					{
+						if ( entry_itr->value["attributes"]["word_highlights2"].IsArray() )
+						{
+							int lineNumber = 0;
+							for ( auto highlight_itr = entry_itr->value["attributes"]["word_highlights2"].Begin();
+								highlight_itr != entry_itr->value["attributes"]["word_highlights2"].End(); ++highlight_itr )
+							{
+								for ( auto line_itr = (*highlight_itr).Begin(); line_itr != (*highlight_itr).End(); ++line_itr )
+								{
+									entry.wordHighlights2.push_back(lineNumber + line_itr->GetInt());
 								}
 								lineNumber += Field::TEXT_HIGHLIGHT_WORDS_PER_LINE;
 							}
@@ -4282,9 +4315,16 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 		objFontHighlightColor.AddMember("b", rapidjson::Value(fontHighlight.b), exportDocument.GetAllocator());
 		objFontHighlightColor.AddMember("a", rapidjson::Value(fontHighlight.a), exportDocument.GetAllocator());
 
+		rapidjson::Value objFontHighlight2Color(rapidjson::kObjectType);
+		objFontHighlight2Color.AddMember("r", rapidjson::Value(fontHighlight.r), exportDocument.GetAllocator());
+		objFontHighlight2Color.AddMember("g", rapidjson::Value(fontHighlight.g), exportDocument.GetAllocator());
+		objFontHighlight2Color.AddMember("b", rapidjson::Value(fontHighlight.b), exportDocument.GetAllocator());
+		objFontHighlight2Color.AddMember("a", rapidjson::Value(fontHighlight.a), exportDocument.GetAllocator());
+
 		objDefaultAttributes.AddMember("font_color", objFontColor, exportDocument.GetAllocator());
 		objDefaultAttributes.AddMember("font_outline_color", objFontOutlineColor, exportDocument.GetAllocator());
 		objDefaultAttributes.AddMember("font_highlight_color", objFontHighlightColor, exportDocument.GetAllocator());
+		objDefaultAttributes.AddMember("font_highlight2_color", objFontHighlight2Color, exportDocument.GetAllocator());
 	}
 	objScriptEntries.AddMember("default_attributes", objDefaultAttributes, exportDocument.GetAllocator());
 
@@ -4375,6 +4415,8 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 				objAttributes.AddMember("inline_img_adjust_x", rapidjson::Value(0), exportDocument.GetAllocator());
 				rapidjson::Value objWordHighlights(rapidjson::kArrayType);
 				objAttributes.AddMember("word_highlights", objWordHighlights, exportDocument.GetAllocator());
+				rapidjson::Value objWordHighlights2(rapidjson::kArrayType);
+				objAttributes.AddMember("word_highlights2", objWordHighlights2, exportDocument.GetAllocator());
 			}
 			objEntry.AddMember("attributes", objAttributes, exportDocument.GetAllocator());
 
