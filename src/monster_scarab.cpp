@@ -525,6 +525,9 @@ void scarabDie(Entity* my)
 	my->spawnBlood(212);
 
 	playSoundEntity(my, 308 + local_rng.rand() % 2, 64); //TODO: Scarab death sound effect.
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }

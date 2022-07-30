@@ -155,6 +155,9 @@ void ratDie(Entity* my)
 	my->spawnBlood();
 
 	playSoundEntity(my, 30, 64);
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }

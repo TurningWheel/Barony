@@ -139,6 +139,9 @@ void slimeDie(Entity* my)
 	}
 
 	playSoundEntity(my, 69, 64);
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }
