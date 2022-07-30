@@ -23,6 +23,7 @@ See LICENSE for details.
 #include "net.hpp"
 #include "scores.hpp"
 #include "entity.hpp"
+#include "ui/Widget.hpp"
 
 class CustomHelpers
 {
@@ -2903,7 +2904,56 @@ public:
 		std::vector<int> wordHighlights;
 		std::vector<int> wordHighlights2;
 		int imageInlineTextAdjustX = 0; // when img is placed inbetween text, move it by this adjustment to center
+		std::string signAdditionalContentPath = "";
 	};
 	std::map<std::string, Entry_t> allEntries;
 };
 extern ScriptTextParser_t ScriptTextParser;
+
+#ifndef EDITOR
+//#define USE_THEORA_VIDEO
+#endif // !EDITOR
+#ifdef USE_THEORA_VIDEO
+#include <theoraplayer/Manager.h>
+#include <theoraplayer/theoraplayer.h>
+#include <theoraplayer/VideoFrame.h>
+class VideoManager_t
+{
+	theoraplayer::VideoClip* clip = NULL;
+	theoraplayer::OutputMode outputMode = theoraplayer::FORMAT_RGB;
+	bool isInit = false;
+	bool started = false;
+	GLuint textureId = 0;
+	unsigned int textureFormat = GL_RGB;
+	void drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy);
+	GLuint createTexture(int w, int h, unsigned int format);
+	int potCeil(int value)
+	{
+		--value;
+		value |= value >> 1;
+		value |= value >> 2;
+		value |= value >> 4;
+		value |= value >> 8;
+		value |= value >> 16;
+		++value;
+		return value;
+	}
+	void destroyClip();
+	void updateCurrentClip(float timeDelta);
+	void destroy();
+	void draw();
+	void init();
+	std::string currentfile = "";
+public:
+	VideoManager_t() {};
+	~VideoManager_t() {
+		destroy();
+	};
+	void drawAsFrameCallback(const Widget& widget, SDL_Rect rect);
+	void update();
+	void loadfile(const char* filename);
+	bool isPlaying(const char* filename) { return currentfile == filename && (clip != nullptr); }
+	void stop() { destroyClip(); }
+};
+extern VideoManager_t VideoManager;
+#endif

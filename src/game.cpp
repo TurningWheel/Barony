@@ -6619,6 +6619,10 @@ int main(int argc, char** argv)
 
 			UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), false);
 
+#ifdef USE_THEORA_VIDEO
+			VideoManager.update();
+#endif
+
 			// update screen
 			GO_SwapBuffers(screen);
 

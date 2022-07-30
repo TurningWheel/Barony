@@ -569,10 +569,13 @@ void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
 
 void Player::SignGUI_t::closeSignGUI()
 {
+#ifdef USE_THEORA_VIDEO
+	VideoManager.stop();
+#endif
 	bSignOpen = false;
 	signName = "";
 	signUID = 0;
-
+	signAnimVideo = 0.0;
 	if ( signFrame )
 	{
 		signFrame->setDisabled(true);
@@ -608,6 +611,8 @@ void Player::SignGUI_t::createSignGUI()
 	getColor(fade->color, &r, &g, &b, &a);
 	a = 0;
 	fade->color = makeColor(r, g, b, a);
+
+	Frame* videoFrame = frame->addFrame("video frame");
 
 	Frame* signBackground = frame->addFrame("sign frame");
 	const int width = 366;
@@ -682,6 +687,18 @@ void Player::SignGUI_t::createSignGUI()
 			0xFFFFFFFF, "", imgBuf);
 		signImg->disabled = true;
 	}
+
+	videoFrame->setDisabled(true);
+	videoFrame->setSize(SDL_Rect{ 0, 0, signBackground->getSize().w, signBackground->getSize().h });
+	auto videoImg = videoFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "video bg");
+	videoFrame->setInheritParentFrameOpacity(false);
+	videoFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+		float aspectRatio = Frame::virtualScreenX / (float)Frame::virtualScreenY;
+		int oldHeight = rect.h;
+		//rect.h = rect.w / aspectRatio;
+		//rect.y += (oldHeight - rect.h) / 2;
+		VideoManager.drawAsFrameCallback(widget, rect);
+	});
 }
 
 void Player::SignGUI_t::updateSignGUI()
@@ -705,10 +722,6 @@ void Player::SignGUI_t::updateSignGUI()
 
 	if ( !bSignOpen || errorOpening )
 	{
-		signFrame->setDisabled(true);
-		bSignOpen = false;
-		signName = "";
-
 		auto innerFrame = signFrame->findFrame("sign frame");
 		SDL_Rect pos = innerFrame->getSize();
 		signFadeInAnimationY = 0.0;
@@ -720,6 +733,8 @@ void Player::SignGUI_t::updateSignGUI()
 		getColor(fade->color, &r, &g, &b, &a);
 		a = 0;
 		fade->color = makeColor(r, g, b, a);
+
+		closeSignGUI();
 		return;
 	}
 
@@ -803,6 +818,38 @@ void Player::SignGUI_t::updateSignGUI()
 	}
 
 	auto& signEntry = ScriptTextParser.allEntries[signName];
+
+	auto videoFrame = signFrame->findFrame("video frame");
+	videoFrame->setDisabled(true);
+	if ( signFadeInAnimationY >= 0.99 && signEntry.signAdditionalContentPath != "" )
+	{
+#ifdef USE_THEORA_VIDEO
+		if ( !VideoManager.isPlaying(signEntry.signAdditionalContentPath.c_str()) )
+		{
+			VideoManager.loadfile(signEntry.signAdditionalContentPath.c_str());
+		}
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - signAnimVideo)) / 5.0;
+		signAnimVideo += setpointDiffX;
+		signAnimVideo = std::min(1.0, signAnimVideo);
+		videoFrame->setDisabled(false);
+		videoFrame->setOpacity(signAnimVideo * 100.0);
+		SDL_Rect pos = innerFrame->getSize();
+		pos.x = pos.x + signAnimVideo * pos.w;
+		videoFrame->setSize(pos);
+		auto videoImg = videoFrame->findImage("video bg");
+		videoImg->pos.w = pos.w;
+		videoImg->pos.h = pos.h;
+		videoImg->color = makeColor(0, 0, 0, 255 * signAnimVideo);
+#else
+		signAnimVideo = 0.0;
+#endif
+	}
+	else
+	{
+		signAnimVideo = 0.0;
+	}
+
 	std::vector<Field*> allFields;
 	std::vector<Frame::image_t*> allImgs;
 	for ( int i = 1; i <= 10; ++i )

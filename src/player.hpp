@@ -1164,7 +1164,7 @@ public:
 		~SignGUI_t() {};
 
 		real_t signFadeInAnimationY = 0.0;
-
+		real_t signAnimVideo = 0.0;
 		Frame* signFrame = nullptr;
 		bool bSignOpen = false;
 		std::string signName = "";

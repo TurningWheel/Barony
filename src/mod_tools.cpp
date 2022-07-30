@@ -28,6 +28,9 @@ GameModeManager_t gameModeManager;
 ItemTooltips_t ItemTooltips;
 GlyphRenderer_t GlyphHelper;
 ScriptTextParser_t ScriptTextParser;
+#ifdef USE_THEORA_VIDEO
+VideoManager_t VideoManager;
+#endif
 #ifndef NINTENDO
 IRCHandler_t IRCHandler;
 #endif // !NINTENDO
@@ -4042,6 +4045,7 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 			entry.fontColor = defaultFontColor;
 			entry.fontOutlineColor = defaultFontOutlineColor;
 			entry.fontHighlightColor = defaultFontHighlightColor;
+			entry.fontHighlight2Color = defaultFontHighlight2Color;
 			if ( entry_itr->value.HasMember("sign") )
 			{
 				entry.objectType = OBJ_SIGN;
@@ -4225,6 +4229,10 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 					{
 						entry.imageInlineTextAdjustX = entry_itr->value["attributes"]["inline_img_adjust_x"].GetInt();
 					}
+					if ( entry_itr->value["attributes"].HasMember("additional_img_content_path") )
+					{
+						entry.signAdditionalContentPath = entry_itr->value["attributes"]["additional_img_content_path"].GetString();
+					}
 				}
 			}
 			else if ( entry_itr->value.HasMember("script") )
@@ -4326,7 +4334,7 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 		objDefaultAttributes.AddMember("font_highlight_color", objFontHighlightColor, exportDocument.GetAllocator());
 		objDefaultAttributes.AddMember("font_highlight2_color", objFontHighlight2Color, exportDocument.GetAllocator());
 	}
-	objScriptEntries.AddMember("default_attributes", objDefaultAttributes, exportDocument.GetAllocator());
+	CustomHelpers::addMemberToRoot(exportDocument, "default_attributes", objDefaultAttributes);
 
 	for ( auto node = map.entities->first; node != NULL; node = node->next )
 	{
@@ -4447,3 +4455,196 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 	FileIO::close(fp);
 #endif
 }
+
+#ifdef USE_THEORA_VIDEO
+void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy)
+{
+	glBindTexture(GL_TEXTURE_2D, texID);
+	glBegin(GL_QUADS);
+	glTexCoord2f(sx, sy);    glVertex2f(x, Frame::virtualScreenY - y);
+	glTexCoord2f(sx, (sy + sh)); glVertex2f(x, Frame::virtualScreenY - (y + h));
+	glTexCoord2f(sx + sw, (sy + sh)); glVertex2f(x + w, Frame::virtualScreenY - (y + h));
+	glTexCoord2f(sx + sw, sy);    glVertex2f(x + w, Frame::virtualScreenY - y);
+	glEnd();
+}
+
+void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect rect)
+{
+	if ( !clip )
+	{
+		return;
+	}
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
+	if ( frame != NULL )
+	{
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, clip->getWidth(), clip->getHeight(), textureFormat, GL_UNSIGNED_BYTE, frame->getBuffer());
+		clip->popFrame();
+	}
+
+	float w = clip->getSubFrameWidth();
+	float h = clip->getSubFrameHeight();
+	float sx = clip->getSubFrameX();
+	float sy = clip->getSubFrameY();
+	float tw = potCeil(w);
+	float th = potCeil(h);
+
+	drawTexturedQuad(textureId, rect.x, rect.y, rect.w, rect.h, w / tw, h / th, sx / tw, sy / th);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+
+void VideoManager_t::draw()
+{
+	if ( !clip )
+	{
+		return;
+	}
+	glPushMatrix();
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_BLEND);
+
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
+	if ( frame != NULL )
+	{
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, clip->getWidth(), clip->getHeight(), textureFormat, GL_UNSIGNED_BYTE, frame->getBuffer());
+		clip->popFrame();
+	}
+	float w = clip->getSubFrameWidth();
+	float h = clip->getSubFrameHeight();
+	float sx = clip->getSubFrameX();
+	float sy = clip->getSubFrameY();
+	float tw = potCeil(w);
+	float th = potCeil(h);
+
+	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th);
+
+	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
+}
+
+unsigned int VideoManager_t::createTexture(int w, int h, unsigned int format)
+{
+	unsigned int textureId = 0;
+	glGenTextures(1, &textureId);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	unsigned char* data = new unsigned char[w * h * 4];
+	memset(data, 0, w * h * 4);
+	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_RGB ? GL_RGB : GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	delete[] data;
+	return textureId;
+}
+
+void VideoManager_t::init()
+{
+	if ( isInit )
+	{
+		return;
+	}
+	theoraplayer::init(1);
+	isInit = true;
+}
+
+void VideoManager_t::destroy()
+{
+	destroyClip();
+	theoraplayer::destroy();
+	isInit = false;
+}
+
+void VideoManager_t::destroyClip()
+{
+	started = false;
+	if ( clip )
+	{
+		theoraplayer::manager->destroyVideoClip(clip);
+		clip = NULL;
+	}
+	if ( textureId != 0 )
+	{
+		glDeleteTextures(1, &textureId);
+		textureId = 0;
+	}
+}
+
+void VideoManager_t::loadfile(const char* filename)
+{
+	if ( !isInit ) { init(); }
+	if ( clip )
+	{
+		destroyClip();
+	}
+	clip = theoraplayer::manager->createVideoClip(filename, outputMode, 16);
+	if ( !clip )
+	{
+		return;
+	}
+	currentfile = filename;
+	//  use this if you want to preload the file into ram and stream from there
+	//	clip = theoraplayer::manager->createVideoClip(new theoraplayer::MemoryDataSource("../media/short"), theoraplayer::FORMAT_RGB);
+	clip->setAutoRestart(true);
+	textureId = createTexture(potCeil(clip->getWidth()), potCeil(clip->getHeight()), textureFormat);
+}
+
+void VideoManager_t::updateCurrentClip(float timeDelta)
+{
+	if ( !clip )
+	{
+		started = false;
+		return;
+	}
+	if ( !started )
+	{
+		// let's wait until the system caches up a few frames on startup
+		if ( clip->getReadyFramesCount() < clip->getPrecachedFramesCount() * 0.5f )
+		{
+			return;
+		}
+		started = true;
+	}
+}
+
+void VideoManager_t::update()
+{
+	init();
+
+	if ( !isInit || !clip )
+	{
+		return;
+	}
+	//draw();
+	static Uint32 time = SDL_GetTicks();
+	Uint32 t = SDL_GetTicks();
+	float diff = (t - time) / 1000.0f;
+	if ( diff > 0.25f )
+	{
+		diff = 0.05f; // prevent spikes (usually happen on app load)
+	}
+	theoraplayer::manager->update(diff);
+	updateCurrentClip(diff);
+	time = t;
+}
+#endif
