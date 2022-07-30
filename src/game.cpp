@@ -4390,7 +4390,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
-	    MainMenu::soundToggleMenu();
+	    playSound(500, 96);
 		gamePaused = true;
 		bool noOneUsingKeyboard = true;
 		for (int c = 0; c < 4; ++c)

@@ -100,7 +100,9 @@ extern bool autoLimbReload;
 #include <math.h>
 #include <time.h>
 #include <fcntl.h>
-#ifndef WINDOWS
+#ifdef WINDOWS
+#include <winsock2.h>
+#else
 #include <unistd.h>
 #include <limits.h>
 #endif

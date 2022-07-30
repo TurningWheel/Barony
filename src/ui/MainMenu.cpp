@@ -273,10 +273,6 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
-	void soundToggleMenu() {
-		playSound(500, 96);
-	}
-
 	static inline int getMenuOwner() {
 	    return intro ? clientnum : pause_menu_owner;
 	}
@@ -1067,6 +1063,75 @@ namespace MainMenu {
 	    closePrompt("binary_prompt");
 	}
 
+	static Frame* trinaryPrompt(
+		const char* window_text,
+		const char* option1_text,
+		const char* option2_text,
+		const char* option3_text,
+		void (*option1_callback)(Button&),
+		void (*option2_callback)(Button&),
+		void (*option3_callback)(Button&)
+	) {
+		soundActivate();
+
+	    Frame* frame = createPrompt("trinary_prompt", false);
+	    if (!frame) {
+	        return nullptr;
+	    }
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 96});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		struct Option {
+		    const char* text;
+		    void (*callback)(Button&);
+		};
+		Option options[] = {
+		    {option1_text, option1_callback},
+		    {option2_text, option2_callback},
+		    {option3_text, option3_callback},
+		};
+		constexpr int num_options = sizeof(options) / sizeof(options[0]);
+
+        for (int c = 0; c < num_options; ++c) {
+            const std::string name = std::string("name") + std::to_string(c + 1);
+		    auto button = frame->addButton(name.c_str());
+		    button->setSize(SDL_Rect{(frame->getSize().w - 112 * num_options) / 2, frame->getSize().h - 64, 108, 52});
+		    button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		    button->setColor(makeColor(255, 255, 255, 255));
+		    button->setHighlightColor(makeColor(255, 255, 255, 255));
+		    button->setTextColor(makeColor(255, 255, 255, 255));
+		    button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		    button->setFont(smallfont_outline);
+		    button->setText(options[c].text);
+		    button->setWidgetSearchParent(frame->getName());
+		    if (c < num_options - 1) {
+                const std::string name = std::string("name") + std::to_string(c + 2);
+		        button->setWidgetRight(name.c_str());
+		    }
+		    if (c > 0) {
+                const std::string name = std::string("name") + std::to_string(c);
+		        button->setWidgetLeft(name.c_str());
+		    }
+		    button->setWidgetBack("option3");
+		    button->setCallback(options[c].callback);
+		}
+
+		auto selected = frame->findButton("option2");
+		if (selected) {
+		    selected->select();
+		}
+
+		return frame;
+	}
+
+	static void closeTrinary() {
+	    closePrompt("trinary_prompt");
+	}
+
 	static Frame* cancellablePrompt(
 	    const char* name,
 		const char* window_text,
@@ -1173,7 +1238,7 @@ namespace MainMenu {
 	    closePrompt("text_prompt");
 	}
 
-    void connectionErrorPrompt(const char* str) {
+    static void connectionErrorPrompt(const char* str) {
         soundError();
         resetLobbyJoinFlowState();
         monoPrompt(str, "Okay",
@@ -6242,7 +6307,7 @@ bind_failed:
 
 					char buf[1024];
 					snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
-					addLobbyChatMessage(0xffffffff, buf);
+					addLobbyChatMessage(uint32ColorYellow, buf);
 
 				    if (directConnect) {
 		                createWaitingStone(i);
@@ -6376,7 +6441,7 @@ bind_failed:
 
 			char buf[1024];
 			snprintf(buf, sizeof(buf), "*** %s has been kicked ***", players[index]->getAccountName());
-			addLobbyChatMessage(0xffffffff, buf);
+			addLobbyChatMessage(uint32ColorRed, buf);
 
 			client_disconnected[index] = true;
 
@@ -6487,13 +6552,23 @@ bind_failed:
 	        return;
 	    }
 
-	    char fmt[1024];
-	    int len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
+	    constexpr Uint32 color = uint32ColorWhite;
+
+	    int len;
+	    char fmt[256];
+	    if (directConnect) {
+	        char shortname[32];
+	        stringCopy(shortname, stats[clientnum]->name, sizeof(shortname), sizeof(Stat::name));
+	        len = snprintf(fmt, sizeof(fmt), "%s: %s", shortname, msg);
+	    } else {
+	        len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
+	    }
 	    len = std::min((int)sizeof(fmt), len);
 
-		strcpy((char*)net_packet->data, "CMSG");
-		strcat((char*)(net_packet->data), fmt);
-		net_packet->len = 4 + len + 1;
+		memcpy((char*)net_packet->data, "CMSG", 4);
+		SDLNet_Write32(color, &net_packet->data[4]);
+		stringCopyUnsafe((char*)net_packet->data + 8, fmt, sizeof(fmt));
+		net_packet->len = 8 + len + 1;
 		net_packet->data[net_packet->len - 1] = 0;
 
         // send packet
@@ -6506,39 +6581,11 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
-	        addLobbyChatMessage(0xffffffff, fmt);
+	        addLobbyChatMessage(color, fmt);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
 	        sendPacketSafe(net_sock, -1, net_packet, 0);
-	    }
-	}
-
-	void handleScanPacket() {
-	    if (directConnect) {
-	        char hostname[256] = { '\0' };
-#ifdef LINUX
-	        (void)gethostname(hostname, sizeof(hostname));
-#else
-	        strcpy(hostname, "Barony");
-#endif
-	        Uint32 hostname_len = (Uint32)strlen(hostname);
-	        SDLNet_Write32(hostname_len, &net_packet->data[4]);
-	        for (int c = 0; c < hostname_len; ++c) {
-                net_packet->data[8 + c] = hostname[c];
-	        }
-	        Uint32 offset = 8 + hostname_len;
-	        int numplayers = 0;
-	        for (int c = 0; c < MAXPLAYERS; ++c) {
-	            if (!client_disconnected[c]) {
-	                ++numplayers;
-	            }
-	        }
-	        SDLNet_Write32(numplayers, &net_packet->data[offset]);
-	        net_packet->data[offset + 4] = intro ? 0 : 1;
-	        SDLNet_Write32(svFlags, &net_packet->data[offset + 5]);
-	        net_packet->len = offset + 9;
-	        sendPacket(net_sock, -1, net_packet, 0);
 	    }
 	}
 
@@ -6672,7 +6719,8 @@ bind_failed:
 				net_packet->address.port = net_clients[i - 1].port;
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
-			addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
+			const Uint32 color = SDLNet_Read32(&net_packet->data[4]);
+			addLobbyChatMessage(color, (char*)(&net_packet->data[8]));
 		}},
 
 			// player disconnected
@@ -6705,7 +6753,7 @@ bind_failed:
 
 			char buf[1024];
 			snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
-			addLobbyChatMessage(0xffffffff, buf);
+			addLobbyChatMessage(uint32ColorYellow, buf);
 
 		    if (directConnect) {
                 createWaitingStone(player);
@@ -6887,7 +6935,7 @@ bind_failed:
 
 			        char buf[1024];
 			        snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
-			        addLobbyChatMessage(0xffffffff, buf);
+			        addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 			    }
 			}
 
@@ -6943,7 +6991,7 @@ bind_failed:
 
 		    char buf[1024];
 		    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
-		    addLobbyChatMessage(0xffffffff, buf);
+		    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 
 	        if (player != clientnum) {
 	            createReadyStone((int)player, false, false);
@@ -7005,7 +7053,7 @@ bind_failed:
 		    } else {
 		        char buf[1024];
 		        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
-		        addLobbyChatMessage(0xffffffff, buf);
+		        addLobbyChatMessage(uint32ColorYellow, buf);
 			    if (directConnect) {
 	                createWaitingStone(playerDisconnected);
 	            } else {
@@ -7026,7 +7074,8 @@ bind_failed:
 
 	    // got a chat message
 	    {'CMSG', [](){
-		    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
+	        const Uint32 color = SDLNet_Read32(&net_packet->data[4]);
+		    addLobbyChatMessage(color, (char*)(&net_packet->data[8]));
 	    }},
 
 	    // update svFlags
@@ -7380,20 +7429,6 @@ bind_failed:
 	}
 
 	static void finalizeOnlineLobby() {
-	    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-	        closeNetworkInterfaces();
-	        directConnect = false;
-		    for ( int c = 0; c < MAXPLAYERS; c++ ) {
-			    if ( steamIDRemote[c] ) {
-				    cpp_Free_CSteamID(steamIDRemote[c]);
-				    steamIDRemote[c] = NULL;
-			    }
-		    }
-		    ::currentLobbyType = k_ELobbyTypePublic;
-		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
-#endif
-	    }
 	    setupNetGameAsServer();
 		printlog( "online lobby opened successfully.\n");
 	}
@@ -7633,7 +7668,7 @@ bind_failed:
 	                }
 	                else if ((char)tolower((int)address[0]) == 's' && strlen(address) == 5) {
 		                // save address for next time
-		                snprintf(last_address, sizeof(last_address), "%s", address);
+		                stringCopyUnsafe(last_address, address, sizeof(last_address));
 	                    connectingToLobby = true;
 	                    connectingToLobbyWindow = true;
                         joinLobbyWaitingForHostResponse = true;
@@ -7684,7 +7719,7 @@ bind_failed:
 		            }
 		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
 		                // save address for next time
-		                snprintf(last_address, sizeof(last_address), "%s", address);
+		                stringCopyUnsafe(last_address, address, sizeof(last_address));
 	                    if (LobbyHandler.crossplayEnabled) {
 	                        memcpy(EOS.lobbySearchByCode, address + 1, 4);
 	                        EOS.lobbySearchByCode[4] = '\0';
@@ -7770,7 +7805,7 @@ bind_failed:
 		    }
 
 		    // save address for next time
-		    snprintf(last_address, sizeof(last_address), "%s", address);
+		    stringCopyUnsafe(last_address, address, sizeof(last_address));
 
 		    // resolve host's address
 		    printlog("resolving host's address at %s...\n", address);
@@ -7786,7 +7821,7 @@ bind_failed:
 		    }
 
 		    // open sockets
-		    printlog("opening TCP and UDP sockets...\n");
+		    printlog("opening UDP socket...\n");
 		    if (!(net_sock = SDLNet_UDP_Open(0))) {
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
@@ -11953,8 +11988,6 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		lobby_chat_messages.clear();
-
 		// just in case we're still awaiting a controller for player 1,
 		// this clears it.
 		if (type == LobbyType::LobbyLocal) {
@@ -12050,11 +12083,14 @@ bind_failed:
 		}
 
 		auto banner = lobby->addFrame("banner");
-		banner->setBorderColor(makeColor(11, 12, 15, 255));
-		banner->setColor(makeColor(22, 25, 30, 255));
-		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 64});
-		banner->setBorder(2);
+		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 66});
         {
+            auto background = banner->addImage(
+                SDL_Rect{0, 0, Frame::virtualScreenX, 66},
+                0xffffffff,
+                "*#images/ui/Main Menus/Play/PlayerCreation/Banner.png",
+                "background");
+
 		    auto back_button = createBackWidget(banner, [](Button&){
 		        if (currentLobbyType == LobbyType::LobbyLocal) {
 			        soundCancel();
@@ -12084,7 +12120,8 @@ bind_failed:
 #endif
 	                    });
 			    }
-			    });
+			    },
+			    SDL_Rect{4, 12, 0, 0});
 		    back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 		        if (currentLobbyType == LobbyType::None) {
 		            return;
@@ -12116,47 +12153,48 @@ bind_failed:
 		        });
 	        back_button->setWidgetRight("lobby_name");
 
-		    auto back_frame = back_button->getParent();
-		    back_frame->setTickCallback([](Widget& widget){
-			    auto frame = static_cast<Frame*>(&widget); assert(frame);
-			    auto parent = static_cast<Frame*>(frame->getParent()); assert(parent);
-			    auto lobby = static_cast<Frame*>(parent->getParent()); assert(lobby);
-			    bool allCardsClosed = true;
-			    for (int c = 0; c < 4; ++c) {
-			        if (clientnum != c && multiplayer != SINGLE) {
-			            continue;
-			        }
-				    if (isPlayerSignedIn(c)) {
-					    allCardsClosed = false;
-					    break;
-				    }
-			    }
-			    frame->setInvisible(!allCardsClosed);
-			    auto button = frame->findButton("back_button"); assert(button);
-			    button->setDisabled(!allCardsClosed);
-			    });
-
 			// lobby type
 			const char* type_str;
-			switch (type) {
-			default:
-			case LobbyType::LobbyLocal: type_str = "Local Lobby"; break;
-			case LobbyType::LobbyLAN: type_str = "LAN Lobby (Host)"; break;
-			case LobbyType::LobbyOnline: type_str = "Online Lobby (Host)"; break;
-			case LobbyType::LobbyJoined: type_str = directConnect ?
-			    "LAN Lobby (Joined)" : "Online Lobby (Joined)"; break;
+			if (type == LobbyType::LobbyLocal) {
+			    type_str = "Local Lobby";
+			} else {
+			    if (directConnect) {
+                    type_str = "LAN Lobby";
+			    } else {
+			        if (type == LobbyType::LobbyJoined) {
+			            if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			                type_str = "Online Lobby (Epic)";
+			            }
+			            else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			                type_str = "Online Lobby (Steam)";
+			            }
+			            else {
+			                type_str = "Online Lobby";
+			            }
+			        } else {
+			            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			                type_str = "Online Lobby (Epic)";
+			            }
+			            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			                type_str = "Online Lobby (Steam)";
+			            }
+			            else {
+			                type_str = "Online Lobby";
+			            }
+			        }
+			    }
 			}
 			auto label = banner->addField("label", 128);
 			label->setHJustify(Field::justify_t::CENTER);
 			label->setVJustify(Field::justify_t::CENTER);
-			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 8, 256, 48});
+			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 0, 256, 48});
 		    label->setFont(bigfont_outline);
 		    label->setText(type_str);
 
             // lobby name
             if (type != LobbyType::LobbyLocal) {
 		        auto text_box = banner->addImage(
-			        SDL_Rect{96, 16, 246, 36},
+			        SDL_Rect{96, 8, 246, 36},
 			        0xffffffff,
 			        "*images/ui/Main Menus/TextField_00.png",
 			        "text_box"
@@ -12171,7 +12209,7 @@ bind_failed:
 		        field->setEditable(type != LobbyType::LobbyJoined);
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
-		        field->setSize(SDL_Rect{98, 20, 242, 28});
+		        field->setSize(SDL_Rect{98, 12, 242, 28});
 		        field->setFont(smallfont_outline);
 		        field->setHJustify(Field::justify_t::LEFT);
 		        field->setVJustify(Field::justify_t::CENTER);
@@ -12189,10 +12227,13 @@ bind_failed:
             // chat button
             if (type != LobbyType::LobbyLocal) {
 			    auto chat_button = banner->addButton("chat");
-			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 144, 16, 128, 32});
-			    chat_button->setHighlightColor(makeColor(44, 50, 60, 255));
-		        chat_button->setColor(makeColor(44, 50, 60, 255));
+			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 212, 8, 134, 40});
+			    chat_button->setHighlightColor(0xffffffff);
+		        chat_button->setColor(0xffffffff);
+			    chat_button->setTextHighlightColor(0xffffffff);
+		        chat_button->setTextColor(0xffffffff);
 		        chat_button->setText("Chat");
+		        chat_button->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/Button_Chat00.png");
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
@@ -12236,6 +12277,83 @@ bind_failed:
 		            }
 		        }
 		    }
+		}
+
+		// announce lobby in chat window
+		lobby_chat_messages.clear();
+		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
+            if (directConnect) {
+                Uint16 port = ::portnumber;
+                char hostname[256] = { '\0' };
+                (void)gethostname(hostname, sizeof(hostname));
+                hostname[sizeof(hostname) - 1] = '\0';
+                char buf[1024];
+                snprintf(buf, sizeof(buf), "Server hosted at %s:%hu", hostname, port);
+                addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+            } else {
+                if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                    char roomkey[16];
+                    snprintf(roomkey, sizeof(roomkey), "s%s", getRoomCode());
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Lobby hosted via Steam. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // STEAMWORKS
+                }
+                else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                    char roomkey[16];
+                    snprintf(roomkey, sizeof(roomkey), "e%s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Lobby hosted via Epic Online. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // USE_EOS
+                }
+            }
+		}
+		else if (type == LobbyType::LobbyJoined) {
+            if (directConnect) {
+                char buf[1024];
+                Uint16 port = ::portnumber;
+                snprintf(buf, sizeof(buf), "Joined server at %s:%hu", last_address, port);
+                addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+            } else {
+                if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                    char roomkey[16];
+                    auto lobby = static_cast<CSteamID*>(currentLobby);
+                    snprintf(roomkey, sizeof(roomkey), "s%s", SteamMatchmaking()->GetLobbyData(*lobby, "roomkey"));
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Joined lobby via Steam. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // STEAMWORKS
+                }
+                else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                    char roomkey[16];
+                    snprintf(roomkey, sizeof(roomkey), "e%s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Joined lobby via Epic Online. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // USE_EOS
+                }
+            }
 		}
 	}
 
@@ -14156,13 +14274,13 @@ bind_failed:
 		);
 
 		auto host_online_fn = [](Button&){
+	        soundActivate();
+            closeNetworkInterfaces();
+            directConnect = false;
 		    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-		        soundActivate();
-	            closeNetworkInterfaces();
-	            directConnect = false;
 		        EOS.createLobby();
-		        textPrompt("host_eos_prompt", "Creating online lobby...",
+		        textPrompt("host_lobby_prompt", "Creating Epic lobby...",
 		            [](Widget&){
                     if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
                         return;
@@ -14170,7 +14288,7 @@ bind_failed:
                         if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
 		                    createLobby(LobbyType::LobbyOnline);
                         } else {
-                            closePrompt("host_eos_prompt");
+                            closePrompt("host_lobby_prompt");
 	                        monoPrompt("Failed to create lobby", "Okay",
 	                            [](Button&){soundCancel(); closeMono();});
                         }
@@ -14180,8 +14298,28 @@ bind_failed:
 	        }
 		    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-		        soundActivate();
-		        createLobby(LobbyType::LobbyOnline);
+		        for ( int c = 0; c < MAXPLAYERS; c++ ) {
+			        if ( steamIDRemote[c] ) {
+				        cpp_Free_CSteamID(steamIDRemote[c]);
+				        steamIDRemote[c] = NULL;
+			        }
+		        }
+		        ::currentLobbyType = k_ELobbyTypePublic;
+		        cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
+		        textPrompt("host_lobby_prompt", "Creating Steam lobby...",
+		            [](Widget&){
+                    if (steamAwaitingLobbyCreation) {
+                        return;
+                    } else {
+                        if (::currentLobby != nullptr) {
+		                    createLobby(LobbyType::LobbyOnline);
+                        } else {
+                            closePrompt("host_lobby_prompt");
+	                        monoPrompt("Failed to create lobby", "Okay",
+	                            [](Button&){soundCancel(); closeMono();});
+                        }
+                    }
+		            });
 #endif // STEAMWORKS
 		    }
 #if !defined(STEAMWORKS) && !defined(USE_EOS)
@@ -15587,13 +15725,8 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				Button* quit_button;
-	            if (strcmp(map.filename, "tutorial_hub.lmp")) {
-				    quit_button = buttons->findButton("Return to Hall of Trials"); assert(quit_button);
-				} else {
-				    quit_button = buttons->findButton("Reset Hall of Trials"); assert(quit_button);
-				}
-				quit_button->select();
+				auto quit = buttons->findButton("Return to Hall of Trials"); assert(quit);
+				quit->select();
 			    closeBinary();
 			});
 	}
@@ -16252,7 +16385,7 @@ bind_failed:
 				        });
 				} else {
 			        options.insert(options.end(), {
-				        {"Reset Hall of Trials", "RESET TRIAL HUB", mainReturnToHallofTrials},
+				        {"Return to Hall of Trials", "RETURN TO TRIAL HUB", mainReturnToHallofTrials},
 				        });
 				}
 			}

@@ -41,6 +41,11 @@ int selectedSteamLobby = 0;
 char lobbyText[MAX_STEAM_LOBBIES][64];
 void* lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
+bool steamAwaitingLobbyCreation = false;
+
+const char* getRoomCode() {
+    return roomkey_cached.c_str();
+}
 
 void* steamIDRemote[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
 
@@ -705,6 +710,13 @@ SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby)
 
 SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers)
 {
+    auto old_lobby = static_cast<CSteamID*>(currentLobby);
+	if ( old_lobby )
+	{
+		SteamMatchmaking()->LeaveLobby(*old_lobby);
+		cpp_Free_CSteamID((void*)old_lobby);
+	}
+    steamAwaitingLobbyCreation = true;
 	SteamAPICall_t steamAPICall = SteamMatchmaking()->CreateLobby(eLobbyType, cMaxMembers);
 	steam_server_client_wrapper->m_SteamCallResultLobbyCreated_Set(steamAPICall);
 	return steamAPICall;
@@ -1581,14 +1593,14 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 #endif
 	if ( static_cast<EResult>(static_cast<LobbyCreated_t*>(pCallback)->m_eResult) == k_EResultOK )   //TODO: Make sure port from c_EResult to EResult works flawlessly.
 	{
-	    auto lobby = static_cast<CSteamID*>(currentLobby);
-		if ( lobby )
+	    auto old_lobby = static_cast<CSteamID*>(currentLobby);
+		if ( old_lobby )
 		{
-			SteamMatchmaking()->LeaveLobby(*lobby);
-			cpp_Free_CSteamID((void*)lobby); //TODO: BUGGER THIS.
+			SteamMatchmaking()->LeaveLobby(*old_lobby);
+			cpp_Free_CSteamID((void*)old_lobby);
 		}
 		currentLobby = cpp_LobbyCreated_Lobby(pCallback);
-		lobby = static_cast<CSteamID*>(currentLobby);
+		auto lobby = static_cast<CSteamID*>(currentLobby);
 
 		// set the name of the lobby
 		snprintf( currentLobbyName, 31, "%s's lobby", SteamFriends()->GetPersonaName() );
@@ -1601,7 +1613,8 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		Uint32 keygen = local_rng.uniform(0, (36 * 36 * 36 * 36) - 1); // limit of 'zzzz' as base-36 string
 		auto key = generateRoomKey(keygen);
 		SteamMatchmaking()->SetLobbyData(*lobby, "roomkey", key.c_str());
-		printlog("Steam room key is: %s", key.c_str());
+		printlog("Steam room key is: s%s", key.c_str());
+		roomkey_cached = key;
 
 		// set lobby server flags
 		char svFlagsChar[16];
@@ -1648,6 +1661,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 	{
 		printlog( "warning: failed to create steam lobby.\n");
 	}
+    steamAwaitingLobbyCreation = false;
 }
 
 #ifdef USE_EOS

@@ -4526,7 +4526,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// network scan
 	{'SCAN', [](){
-	    MainMenu::handleScanPacket();
+	    handleScanPacket();
 	}},
 
 	// pause game
@@ -6363,4 +6363,29 @@ void deleteMultiplayerSaveGames()
 		net_packet->len = 4;
 		sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	}
+}
+
+void handleScanPacket() {
+    if (directConnect) {
+        char hostname[256] = { '\0' };
+        (void)gethostname(hostname, sizeof(hostname));
+        hostname[sizeof(hostname) - 1] = '\0';
+        Uint32 hostname_len = (Uint32)strlen(hostname);
+        SDLNet_Write32(hostname_len, &net_packet->data[4]);
+        for (int c = 0; c < hostname_len; ++c) {
+            net_packet->data[8 + c] = hostname[c];
+        }
+        Uint32 offset = 8 + hostname_len;
+        int numplayers = 0;
+        for (int c = 0; c < MAXPLAYERS; ++c) {
+            if (!client_disconnected[c]) {
+                ++numplayers;
+            }
+        }
+        SDLNet_Write32(numplayers, &net_packet->data[offset]);
+        net_packet->data[offset + 4] = intro ? 0 : 1;
+        SDLNet_Write32(svFlags, &net_packet->data[offset + 5]);
+        net_packet->len = offset + 9;
+        sendPacket(net_sock, -1, net_packet, 0);
+    }
 }

@@ -136,3 +136,5 @@ int steamPacketThread(void* data);
 int EOSPacketThread(void* data);
 
 void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.
+
+void handleScanPacket(); // when we receive a SCAN packet (request for lobby info)
