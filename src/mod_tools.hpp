@@ -2904,7 +2904,14 @@ public:
 		std::vector<int> wordHighlights;
 		std::vector<int> wordHighlights2;
 		int imageInlineTextAdjustX = 0; // when img is placed inbetween text, move it by this adjustment to center
-		std::string signAdditionalContentPath = "";
+		struct AdditionalContentProperties_t
+		{
+			SDL_Rect pos{0, 0, 0, 0};
+			std::string path = "";
+			std::string bgPath = "";
+			int imgBorder = 0;
+		};
+		AdditionalContentProperties_t signVideoContent;
 	};
 	std::map<std::string, Entry_t> allEntries;
 };
@@ -2925,7 +2932,7 @@ class VideoManager_t
 	bool started = false;
 	GLuint textureId = 0;
 	unsigned int textureFormat = GL_RGB;
-	void drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy);
+	void drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha);
 	GLuint createTexture(int w, int h, unsigned int format);
 	int potCeil(int value)
 	{
@@ -2949,11 +2956,11 @@ public:
 	~VideoManager_t() {
 		destroy();
 	};
-	void drawAsFrameCallback(const Widget& widget, SDL_Rect rect);
+	void drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha);
 	void update();
 	void loadfile(const char* filename);
 	bool isPlaying(const char* filename) { return currentfile == filename && (clip != nullptr); }
 	void stop() { destroyClip(); }
 };
-extern VideoManager_t VideoManager;
+extern VideoManager_t VideoManager[MAXPLAYERS];
 #endif

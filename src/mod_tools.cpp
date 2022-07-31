@@ -29,7 +29,7 @@ ItemTooltips_t ItemTooltips;
 GlyphRenderer_t GlyphHelper;
 ScriptTextParser_t ScriptTextParser;
 #ifdef USE_THEORA_VIDEO
-VideoManager_t VideoManager;
+VideoManager_t VideoManager[MAXPLAYERS];
 #endif
 #ifndef NINTENDO
 IRCHandler_t IRCHandler;
@@ -4229,9 +4229,36 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 					{
 						entry.imageInlineTextAdjustX = entry_itr->value["attributes"]["inline_img_adjust_x"].GetInt();
 					}
-					if ( entry_itr->value["attributes"].HasMember("additional_img_content_path") )
+					if ( entry_itr->value["attributes"].HasMember("video") )
 					{
-						entry.signAdditionalContentPath = entry_itr->value["attributes"]["additional_img_content_path"].GetString();
+						if ( entry_itr->value["attributes"]["video"].HasMember("path") )
+						{
+							entry.signVideoContent.path = entry_itr->value["attributes"]["video"]["path"].GetString();
+						}
+						if ( entry_itr->value["attributes"]["video"].HasMember("x") )
+						{
+							entry.signVideoContent.pos.x = entry_itr->value["attributes"]["video"]["x"].GetInt();
+						}
+						if ( entry_itr->value["attributes"]["video"].HasMember("y") )
+						{
+							entry.signVideoContent.pos.y = entry_itr->value["attributes"]["video"]["y"].GetInt();
+						}
+						if ( entry_itr->value["attributes"]["video"].HasMember("w") )
+						{
+							entry.signVideoContent.pos.w = entry_itr->value["attributes"]["video"]["w"].GetInt();
+						}
+						if ( entry_itr->value["attributes"]["video"].HasMember("h") )
+						{
+							entry.signVideoContent.pos.h = entry_itr->value["attributes"]["video"]["h"].GetInt();
+						}
+						if ( entry_itr->value["attributes"]["video"].HasMember("background_img") )
+						{
+							entry.signVideoContent.bgPath = entry_itr->value["attributes"]["video"]["background_img"].GetString();
+						}
+						if ( entry_itr->value["attributes"]["video"].HasMember("background_border") )
+						{
+							entry.signVideoContent.imgBorder = entry_itr->value["attributes"]["video"]["background_border"].GetInt();
+						}
 					}
 				}
 			}
@@ -4457,10 +4484,11 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 }
 
 #ifdef USE_THEORA_VIDEO
-void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy)
+void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha)
 {
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glBegin(GL_QUADS);
+	glColor4f(1.f, 1.f, 1.f, alpha);
 	glTexCoord2f(sx, sy);    glVertex2f(x, Frame::virtualScreenY - y);
 	glTexCoord2f(sx, (sy + sh)); glVertex2f(x, Frame::virtualScreenY - (y + h));
 	glTexCoord2f(sx + sw, (sy + sh)); glVertex2f(x + w, Frame::virtualScreenY - (y + h));
@@ -4468,7 +4496,7 @@ void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, floa
 	glEnd();
 }
 
-void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect rect)
+void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha)
 {
 	if ( !clip )
 	{
@@ -4500,7 +4528,59 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect rect)
 	float tw = potCeil(w);
 	float th = potCeil(h);
 
-	drawTexturedQuad(textureId, rect.x, rect.y, rect.w, rect.h, w / tw, h / th, sx / tw, sy / th);
+	SDL_Rect rect = frameSize;
+	if ( offset.w <= 0 )
+	{
+		// use native size of video
+		rect.w = w;
+		rect.w += offset.w;
+		w += offset.w;
+	}
+	else
+	{
+		// manual scale video
+		rect.w = offset.w;
+	}
+	if ( offset.h <= 0 )
+	{
+		// use native size of video
+		rect.h = h;
+		rect.h += offset.h;
+		h += offset.h;
+	}
+	else
+	{
+		// manual scale video
+		rect.h = offset.h;
+	}
+
+
+	if ( offset.x < 0 )
+	{
+		sx += -offset.x; // shift video to re-center
+		offset.x = 0;
+	}
+	else
+	{
+		if ( offset.x + rect.w > frameSize.w )
+		{
+			rect.w -= (offset.x + rect.w) - frameSize.w; // limit output rect width to frame
+		}
+	}
+	if ( offset.y < 0 )
+	{
+		sy += -offset.y; // shift video to re-center
+		offset.y = 0;
+	}
+	else
+	{
+		if ( offset.y + rect.h > frameSize.h )
+		{
+			rect.h -= (offset.y + rect.h) - frameSize.h; // limit output rect height to frame
+		}
+	}
+
+	drawTexturedQuad(textureId, rect.x + offset.x, rect.y + offset.y, rect.w, rect.h, w / tw, h / th, sx / tw, sy / th, alpha);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glMatrixMode(GL_PROJECTION);
@@ -4538,7 +4618,7 @@ void VideoManager_t::draw()
 	float tw = potCeil(w);
 	float th = potCeil(h);
 
-	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th);
+	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th, 1.f);
 
 	glPopMatrix();
 	glEnable(GL_DEPTH_TEST);
