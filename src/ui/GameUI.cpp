@@ -13271,15 +13271,23 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			if ( item->status == BROKEN )
 			{
-				brokenStatusFrame->setDisabled(false);
-				auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
-				if ( isHotbarIcon )
+				if ( players[player]->shopGUI.bOpen 
+					&& isItemSellableToShop(player, item) )
 				{
-					brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+					// don't grey out this item
 				}
 				else
 				{
-					brokenStatusImg->path = "images/system/white.png";
+					brokenStatusFrame->setDisabled(false);
+					auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
+					if ( isHotbarIcon )
+					{
+						brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+					}
+					else
+					{
+						brokenStatusImg->path = "images/system/white.png";
+					}
 				}
 			}
 		}

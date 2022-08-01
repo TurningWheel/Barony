@@ -3002,7 +3002,7 @@ void clientHandlePacket()
 	// open shop
 	else if (packetId == 'SHOP')
 	{
-		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_INVENTORY);
 		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_SHOP);
 
 		shopkeeper[clientnum] = (Uint32)SDLNet_Read32(&net_packet->data[4]);

@@ -115,7 +115,7 @@ void startTradingServer(Entity* entity, int player)
 
 	if ( players[player]->isLocalPlayer() )
 	{
-		players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		players[player]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_INVENTORY);
 		players[player]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_SHOP);
 
 		shopInv[player] = &stats->inventory;

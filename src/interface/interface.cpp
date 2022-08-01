@@ -1478,8 +1478,10 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	}
 	gui_mode = GUI_MODE_NONE;
 	GUI.activateModule(GUI_t::MODULE_NONE);
-
-	inventoryUI.closeInventory();
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_INVENTORY )
+	{
+		inventoryUI.closeInventory();
+	}
 	skillSheet.closeSkillSheet();
 	bookGUI.closeBookGUI();
 	if ( signGUI.bSignOpen )
